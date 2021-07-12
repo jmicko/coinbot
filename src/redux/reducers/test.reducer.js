@@ -9,7 +9,7 @@ const testReducer = (state = '', action) => {
       case 'RETURN_TEST_2':
         return 'TEST 2';
       case 'RETURN_TEST_3':
-        return action.payload.data;
+        return action.payload;
       default:
         return state;
     }

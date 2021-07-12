@@ -1,4 +1,4 @@
 CREATE TABLE "test" (
   "id" SERIAL PRIMARY KEY,
-  "test_number" int,
+  "test_number" int
 );

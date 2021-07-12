@@ -47,6 +47,16 @@ class Trade extends Component {
           </button>
           {/* {if } */}
         </div>
+        <div>
+          <button
+            onClick={() => { this.props.dispatch({ type: 'BUY_BTC' }); }}>
+            test buy
+          </button>
+          <button
+          onClick={() => {this.props.dispatch({ type: 'SELL_BTC' }); }}>
+            test sell
+          </button>
+        </div>
       </div>
     );
   }
