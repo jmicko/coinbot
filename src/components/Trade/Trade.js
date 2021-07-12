@@ -28,7 +28,7 @@ class Trade extends Component {
         <Link to="/">
           home
         </Link>
-        <div>
+        {/* <div>
           <button
             onClick={() => { this.props.dispatch({ type: 'RETURN_TEST_1' }); }}>
             test 1 reducer
@@ -45,8 +45,7 @@ class Trade extends Component {
             onClick={() => { this.props.dispatch({ type: 'TEST_SERVER' }); }}>
             test server
           </button>
-          {/* {if } */}
-        </div>
+        </div> */}
         <div>
           <button
             onClick={() => { this.props.dispatch({ type: 'BUY_BTC' }); }}>
@@ -55,6 +54,10 @@ class Trade extends Component {
           <button
           onClick={() => {this.props.dispatch({ type: 'SELL_BTC' }); }}>
             test sell
+          </button>
+          <button
+          onClick={() => {this.props.dispatch({ type: 'START_TRADE' }); }}>
+            start trade
           </button>
         </div>
       </div>

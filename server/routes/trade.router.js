@@ -22,6 +22,37 @@ const authedClient = new CoinbasePro.AuthenticatedClient(
   sandboxURI
 );
 
+// todo - function and boolean variable to turn auto trading on and off
+
+// todo - POST route for auto trading
+
+
+/**
+ * POST route test buy trade
+ */
+ router.post('/buybtc', (req, res) => {
+    // POST route code here
+    console.log('in the server trade POST route');
+  
+    // Buy 1 BTC @ 75 USD
+    const params = {
+      side: 'buy',
+      price: '30000.00', // USD
+      size: '0.001', // BTC
+      product_id: 'BTC-USD',
+    };
+    authedClient.placeOrder(params)
+    .then(data => {
+        console.log('order was sent successfully');
+        console.log(data);
+    })
+    .catch((error) => {
+        console.log('oder failed', error);
+        res.sendStatus(500)
+    });
+  
+  });
+
 
 
 
