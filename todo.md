@@ -22,10 +22,11 @@
 
 
 ## Back end
-- [x] connect to coinbase API
+
+### Database
 - [] set up db
     - [x] connect to db
-    - [] user table to store sensitive encrypted info. For now this is stored in a .env
+    - [] user table to store sensitive encrypted info. For now this is stored in a .env and is low priority as the bot is not design for a public multi-user scenario, but rather a single computer and one account.
         - [] username
         - [] API key
         - [] API password
@@ -36,11 +37,24 @@
         - [] size (string)
         - [] side (string)
         - [] settled (boolean)
+
+### Routes 
+- [] settings/status POST - turns the bot on and off
+- [] settings/status GET - handles bot status, available funds, etc
+- [] trade/order POST - sends an order to CB
+    - takes in an order price
+- [] trade/order GET - checks on all open orders to display them on screen
+- [] trade/order DELETE - takes in an order ID to be canceled on CB and then deleted from the DB
+
+### Functions
 - [] set up auto trader
     - ### transaction function
-        - [] takes in a price param (number as a string) and side param (buy/sell) to make purchase
+        - set up POST route at api/trade/order
+        - [] takes in a price param (number as a string) and side param (buy/sell) to make purchase or sale
         - [] send order to coinbase
         - [] store returned order ID, side (type of transaction, either buy/sell), status, and price in db
+
+
     - ### trade loop function
         - [] check if "watch" variable is true. If false, end the loop
         - [] wait 5 seconds and check on orders
@@ -53,17 +67,17 @@
                 - [] set status for that order ID in DB to complete. this needs to happen last so if there is an error creating the new order, the function will just check on it later
                     - if order has not gone through, just ignore and loop to next order. No 'else' statement.
 
-    - ### sell function
-        - [] takes in a price param to make sale
-        - [] send purchase order to coinbase
-        - [] store returned order ID, side (type of transaction, either buy/sell), status, and price in db
+- ### cancel position function
+    - [] set up DELETE route at api/trade/order/delete
+    - [] take in an order ID param
+    - [] send cancel order to CB
+    - [] after server sends success response, delete the row with that order ID from the DB.
+    - [] if the request fails because the order has already gone through, send error response so an alert can be shown on the front end
 
-    - ### cancel position function
-        - [] take in an order ID param
-        - [] send cancel order to CB
-        - [] after server sends success response, delete the row with that order ID from the DB.
+- ### control for turning bot on and off
+    - [] set up POST route at api/settings/toggle
+        - [] when route is hit, toggle "watch" variable between true/false. Aka, watch = !watch
+        - [] if watch is true, call trade loop function to watch order status and wait for transaction to go through
 
-    - ### control for turning bot on and off
-        - [] set up POST route at trade/toggle
-            - [] when route is hit, toggle "watch" variable between true/false. Aka, watch = !watch
-            - [] if watch is true, call trade loop function to watch order status and wait for transaction to go through
+### Misc
+- [x] connect to coinbase API
