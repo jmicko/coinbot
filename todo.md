@@ -1,6 +1,7 @@
 # Task list
 
 ## Front end
+### Layout
 - [] display currently available funds
 - [] display all currently open trades
     - [] current side (buying/selling)
@@ -19,7 +20,15 @@
 - [] toggle to turn trading on and off
     - [] send POST request to server to handle toggle and trade loop function
 - [] display current trading status. Maybe should be combined with trading toggle by toggling button color between green and red.
-
+### Reducers
+- [] status reducer - hold current price of bitcoin, and status of bot (on/off)
+- [] trade reducer - hold open trades to be displayed on Trade component
+### Components
+- [] Home
+- [] Trade - shows all trades and status of bot
+- [] SingleTrade - show a single trade
+- [] 
+- [] 
 
 ## Back end
 
