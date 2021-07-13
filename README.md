@@ -4,6 +4,11 @@
 
 Bitcoin trading bot built for coinbase. Strategy is to automatically buy bitcoin and then put in a sell order at a higher price. That sale will then trigger a buy order at a lower price, etc. 
 
+## DISCLAIMER
+This is an experimental bot. It requires a connection to a Coinbase Pro account, and has the ability to handle real money. Coinbase provides a sandbox API for testing purposes. It is recommended only to use the sandbox API with this bot as a demonstration of what is possible with the Coinbase API. Any use of the software provided in this repository is the responsibility of the user, and the developers of the software cannot be held responsible for any financial operations made with the software, or harm done to your computer as a result of using the software. Use of this software does not come with any guarantee of profits, losses, fees, taxes, or other financial consequences. Bitcoin and other cryptocurrencies may be taxed. Trading cryptocurrency is a risk taken by those making the trades. No financial advice is given in regards to the use of this software.
+
+You trade at your own risk.
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ### `Features`
