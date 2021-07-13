@@ -24,7 +24,7 @@ const authedClient = new CoinbasePro.AuthenticatedClient(
 
 
 // function to get open orders
-authedClient.getOrders({ after: 3000, status: 'open' }, callback);
+// authedClient.getOrders({ after: 3000, status: 'open' }, callback);
 
 // todo - function and boolean variable to turn auto trading on and off
 let trading = false;
