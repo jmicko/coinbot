@@ -15,6 +15,21 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 List of features coming soon...
 
+### `Setup`
+
+### Database
+Postgres should be setup and a new database should be created with the name "coinbot". There is a database.sql file that can be used to generate the required tables.
+
+### .env file
+- Currently, there is no method to store user information. A .env file should be created at the base of the file tree. Copy the following into the file and replace the info inside the quotes with the correct info for your setup. PG info is the usernamne and password used for access to Postgres. The Coinbase API info can be generated in the API settings on your account profile at public.sandbox.pro.coinbase.com
+
+    PGUSER='postgresUsernameGoesHere'
+    PGPASSWORD='postgresPasswordGoesHere'
+    SANDBOXKEY='keyGoesHere'
+    SANDBOXPASSWORD='passwordGoesHere'
+    SANDBOXSECRET='secretGoesHere'
+
+
 ## Available Scripts
 
 In the project directory, you can run:
