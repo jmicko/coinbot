@@ -1,4 +1,7 @@
-CREATE TABLE "test" (
-  "id" SERIAL PRIMARY KEY,
-  "test_number" int
+CREATE TABLE "orders" (
+  "id" varchar,
+  "price" varchar,
+  "size" varchar,
+  "side" varchar,
+  "settled" boolean
 );
