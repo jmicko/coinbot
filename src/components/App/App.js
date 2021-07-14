@@ -23,22 +23,6 @@ function App() {
           <Route 
           exact path="/" 
           component={Home} />
-
-          {/* <Route path="/character">
-            <AdminOrders
-              getOrders={this.getOrders}
-              orderHistory={this.state.orderHistory}
-              deletePizza={this.deletePizza}
-            />
-          </Route>
-          <Route path="/admin">
-            <AdminOrders
-              getOrders={this.getOrders}
-              orderHistory={this.state.orderHistory}
-              deletePizza={this.deletePizza}
-            />
-          </Route> */}
-          {/* <Route path="/checkout" component={Checkout} /> */}
         </Router>
     </div>
   );

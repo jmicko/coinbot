@@ -1,70 +1,40 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { connect } from 'react-redux';
+import { connect, useSelector, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 
 // Basic class component structure for React with default state
 // value setup. When making a new component be sure to replace
 // the component name TemplateClass with the name for the new
 // component.
-class Trade extends Component {
-  state = {
-    heading: 'Trade Component',
-  };
+function Trade (props) {
 
-  sagaTest = (event) => {
-    this.props.dispatch({
-      type: 'TEST_SAGA',
-    });
-  }
+  const [heading, setHeading] = useState('Trade Component');
+  // have this be the default value of whatever 0.001 worth of bitcoin is
+  // will need a function to poll the current value every 5 seconds from CB api
+  const [transactionPrice, setTransactionPrice] = useState(''); 
+  const [transactionAmount, setTransactionAmount] = useState('0.001');
 
-  render() {
+  
     return (
       <div>
-        <h2>{this.state.heading}</h2>
+        <h2>{heading}</h2>
         <p>
-          {JSON.stringify(this.props)}
+          {JSON.stringify(props)}
         </p>
         <Link to="/">
           home
         </Link>
-        {/* <div>
-          <button
-            onClick={() => { this.props.dispatch({ type: 'RETURN_TEST_1' }); }}>
-            test 1 reducer
-          </button>
-          <button
-            onClick={() => { this.props.dispatch({ type: 'RETURN_TEST_2' }); }}>
-            test 2 reducer
-          </button>
-          <button
-            onClick={() => { this.props.dispatch({ type: 'TEST_SAGA' }); }}>
-            test saga
-          </button>
-          <button
-            onClick={() => { this.props.dispatch({ type: 'TEST_SERVER' }); }}>
-            test server
-          </button>
-        </div> */}
+
         <div>
-          <button
-            onClick={() => { this.props.dispatch({ type: 'BUY_BTC' }); }}>
-            test buy
-          </button>
-          <button
-          onClick={() => {this.props.dispatch({ type: 'SELL_BTC' }); }}>
-            test sell
-          </button>
-          <button
-          onClick={() => {this.props.dispatch({ type: 'START_TRADE' }); }}>
-            start trade
-          </button>
+          {/* <form onSubmit={submitTransaction} >
+            
+          </form> */}
         </div>
       </div>
     );
-  }
+  
 }
 
-// change this line later when adding redux to --> connect(mapStoreToProps)(Trade)
 
 export default connect(mapStoreToProps)(Trade);
