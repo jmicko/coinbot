@@ -15,9 +15,14 @@ function Trade(props) {
   of bitcoin, rounded to the closest $100 */}
   const [transactionPrice, setTransactionPrice] = useState(30000);
   const [transactionAmount, setTransactionAmount] = useState(0.001);
+  const dispatch = useDispatch();
 
   function submitTransaction(event) {
     event.preventDefault();
+    dispatch({ type: 'START_TRADE', payload: {
+      price: transactionPrice,
+      size: transactionAmount,
+    }})
     console.log(`the price is: $${transactionPrice} per 1 BTC`);
     console.log(`the amount is: ${transactionAmount} BTC`);
   }

@@ -53,18 +53,59 @@ function watcher(){
 /**
  * POST route test buy trade
  */
- router.post('/buybtc', (req, res) => {
+ router.post('/order', (req, res) => {
     // POST route code here
     console.log('in the server trade POST route');
+    console.log('body of request', req.body);
+    console.log('body.size of request', req.body.size);
+    console.log('params of request', req.params);
+    const order = req.body;
   
+    // params const should take in values sent from trade component form
     // Buy 0.001 BTC @ 30,000 USD
     const params = {
       side: 'buy',
-      price: '30000.00', // USD
-      size: '0.001', // BTC
+      price: order.price, // USD
+      size: order.size, // BTC
       product_id: 'BTC-USD',
     };
+    // function to send the order with the CB API to CB and place the trade
     authedClient.placeOrder(params)
+    .then(data => {
+        console.log('order was sent successfully');
+        console.log(data);
+        res.sendStatus(200)
+    })
+    .catch((error) => {
+        console.log('oder failed', error);
+        res.sendStatus(500)
+    });
+  
+  });
+
+  /**
+ * GET route
+ */
+ router.get('/order', (req, res) => {
+    // GET route code here
+    console.log('in the server trade GET route')
+    .then(data => {
+        console.log('order was sent successfully');
+        console.log(data);
+    })
+    .catch((error) => {
+        console.log('oder failed', error);
+        res.sendStatus(500)
+    });
+  
+  });
+
+  /**
+ * DELETE route
+ */
+ router.delete('/order', (req, res) => {
+    // DELETE route code here
+    console.log('in the server trade DELETE route')
     .then(data => {
         console.log('order was sent successfully');
         console.log(data);
