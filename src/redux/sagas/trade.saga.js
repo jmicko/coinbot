@@ -4,15 +4,10 @@ import axios from 'axios';
 
 function* startTrade(action) {
     try {
-          const response = yield axios.post('/api/trade/start');
-        //   console.log('back from server', response.data.rows);
-        console.log('in the buy btc saga function');
-        // now that the session has ended on the server
-        // remove the client-side user object to let
-        // the client-side code know the user is logged out
-        yield put({ type: 'RETURN_TEST_3', payload: 'trading begun' });
-    } catch (error) {
-        console.log('Feedback get request failed', error);
+        const response = yield axios.post(`/api/trade/order`, action.payload);
+        console.log('response is.....', response);
+    } catch(error) {
+        console.log('POST order route has failed', error)
     }
 }
 

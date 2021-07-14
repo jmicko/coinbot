@@ -13,7 +13,7 @@
     - example: `<buying 0.001 BTC for $32 -- high: 32,000 -- low: 31,000 -- [CANCEL] >`
         - this will show which prices the bot is bouncing between
 - [] input for new price point to auto trade at
-    - mannually triggers transaction function on backend
+    - manually triggers transaction function on backend
     - initially this will assume an abundance of USD, and trigger a buy transaction.
     - Stretch goal: add buy and sell buttons to account for either an abundance of USD or BTC
     - Stretch goal: bot will occasionally check available account balances against current market values, and if there is enough surplus of USD or BTC, will automatically trigger a buy or sell transaction respectively. This allows for automatic deposits from a bank or bitcoin miner to be taken care of effortlessly by the bot at current prices, which are most likely to be profitable. This feature should be able to toggle on and off.
@@ -59,7 +59,7 @@
 - [] set up auto trader
     - ### transaction function
         - set up POST route at api/trade/order
-        - [] takes in a price param (number as a string) and side param (buy/sell) to make purchase or sale
+        - [] takes in a price param (number as a string), a value (number as a string), and side param (buy/sell) to make purchase or sale
         - [] send order to coinbase
         - [] store returned order ID, side (type of transaction, either buy/sell), status, and price in db
 
