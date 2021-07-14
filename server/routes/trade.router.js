@@ -30,13 +30,17 @@ const authedClient = new CoinbasePro.AuthenticatedClient(
 let trading = false;
 
 // toggle auto trading on and off
-function toggleTrade(status, trade){
+toggleTrade = () => {
     // toogle trading boolean
     trading = !trading;
     // if trading is true, triggers the trading function.
     if (trading) {
-        
+        tradeloop();
     }
+}
+
+tradeloop = () => {
+  console.log('Do you even know how to code?');
 }
 
 // trading function

@@ -50,7 +50,7 @@
 ### Routes 
 - [] settings/status POST - turns the bot on and off
 - [] settings/status GET - handles bot status, available funds, etc
-- [] trade/order POST - sends an order to CB
+- [x] trade/order POST - sends an order to CB
     - takes in an order price
 - [] trade/order GET - checks on all open orders to display them on screen
 - [] trade/order DELETE - takes in an order ID to be canceled on CB and then deleted from the DB
@@ -58,9 +58,10 @@
 ### Functions
 - [] set up auto trader
     - ### transaction function
-        - set up POST route at api/trade/order
-        - [] takes in a price param (number as a string), a value (number as a string), and side param (buy/sell) to make purchase or sale
-        - [] send order to coinbase
+        - [] set up POST route at api/trade/order
+        - [x] takes in a price param (number as a string), a value (number as a string), 
+        - [] and side param (buy/sell) to make purchase or sale
+        - [x] send order to coinbase
         - [] store returned order ID, side (type of transaction, either buy/sell), status, and price in db
 
 
