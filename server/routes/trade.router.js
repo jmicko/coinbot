@@ -44,14 +44,22 @@ function toggleTrade() {
 
 function tradeLoop() {
   if (trading) {
+    // send request to coinbase API to get status of all trades
+    authedClient.getOrder('f261bf17-5580-4949-8d80-fce2dd8d87b7')
+      .then(data => {
+        console.log('these are the orders', data)
+      })
+      .catch(error => {
+        console.log('there was an error fetching the orders', error)
+      })
     console.log('do you even know how to code?', count, trading);
     count++;
     // if the bot should still be trading, it waits 1 second and then calls itself again
     // by checking trading at the begining of the function, and calling itself at the end,
     // the code won't run if the toggle is turned off in the middle, but it will still finish a cycle
     setTimeout(() => {
-      tradeLoop()
-    }, 1000);
+      tradeLoop();
+    }, 100);
   }
 }
 
