@@ -26,40 +26,39 @@ const authedClient = new CoinbasePro.AuthenticatedClient(
 // function to get open orders
 // authedClient.getOrders({ after: 3000, status: 'open' }, callback);
 
-// todo - function and boolean variable to turn auto trading on and off
+// boolean variable to turn auto trading on and off
 let trading = false;
+let count = 0;
 
 // toggle auto trading on and off
 function toggleTrade() {
+  count = 0;
+  console.log('in toggleTrade function');
   // toggle trading boolean
-    trading = !trading;
-    // if trading is true, triggers the trading function.
-    if (trading) {
-      tradeloop();
-    }
+  trading = !trading;
+  // if the bot should now be trading, it starts the trade loop
+  if (trading) {
+    tradeLoop();
+  }
 }
 
-let count;
-async function tradeloop() {
-  // this method with setTimeout doesn't quite work. Toggle button turns trading to false, but the setTimeout keeps counting and recalling itself.
-  // close, but not quite!
-    setTimeout(() => {tradeloop()}, 1000);
-    console.log('Do you even know how to code?', count);
+function tradeLoop() {
+  if (trading) {
+    console.log('do you even know how to code?', count, trading);
     count++;
-  
-}
-
-// trading function
-// for now, trading function should just watch one value for testing sake,
-// but eventually will be triggered for each value that is watched.
-function watcher(){
-    console.log('watcher function is running');
+    // if the bot should still be trading, it waits 1 second and then calls itself again
+    // by checking trading at the begining of the function, and calling itself at the end,
+    // the code won't run if the toggle is turned off in the middle, but it will still finish a cycle
+    setTimeout(() => {
+      tradeLoop()
+    }, 1000);
+  }
 }
 
 
 // todo - POST route for auto trading
 router.post('/toggle', (req, res) => {
-  console.log('in the toggle post route....');
+  // When this route is hit, it turns on and off the trading loop
   toggleTrade();
   res.sendStatus(200);
 })
@@ -68,69 +67,69 @@ router.post('/toggle', (req, res) => {
 /**
  * POST route test buy trade
  */
- router.post('/order', (req, res) => {
-    // POST route code here
-    console.log('in the server trade POST route');
-    console.log('body of request', req.body);
-    console.log('body.size of request', req.body.size);
-    console.log('params of request', req.params);
-    const order = req.body;
-  
-    // params const should take in values sent from trade component form
-    // Buy 0.001 BTC @ 30,000 USD
-    const params = {
-      side: 'buy',
-      price: order.price, // USD
-      size: order.size, // BTC
-      product_id: 'BTC-USD',
-    };
-    // function to send the order with the CB API to CB and place the trade
-    authedClient.placeOrder(params)
-    .then(data => {
-        console.log('order was sent successfully');
-        console.log(data);
-        res.sendStatus(200)
-    })
-    .catch((error) => {
-        console.log('oder failed', error);
-        res.sendStatus(500)
-    });
-  
-  });
+router.post('/order', (req, res) => {
+  // POST route code here
+  console.log('in the server trade POST route');
+  console.log('body of request', req.body);
+  console.log('body.size of request', req.body.size);
+  console.log('params of request', req.params);
+  const order = req.body;
 
-  /**
- * GET route
- */
- router.get('/order', (req, res) => {
-    // GET route code here
-    console.log('in the server trade GET route')
+  // params const should take in values sent from trade component form
+  // Buy 0.001 BTC @ 30,000 USD
+  const params = {
+    side: 'buy',
+    price: order.price, // USD
+    size: order.size, // BTC
+    product_id: 'BTC-USD',
+  };
+  // function to send the order with the CB API to CB and place the trade
+  authedClient.placeOrder(params)
     .then(data => {
-        console.log('order was sent successfully');
-        console.log(data);
+      console.log('order was sent successfully');
+      console.log(data);
+      res.sendStatus(200)
     })
     .catch((error) => {
-        console.log('oder failed', error);
-        res.sendStatus(500)
+      console.log('oder failed', error);
+      res.sendStatus(500)
     });
-  
-  });
 
-  /**
- * DELETE route
- */
- router.delete('/order', (req, res) => {
-    // DELETE route code here
-    console.log('in the server trade DELETE route')
+});
+
+/**
+* GET route
+*/
+router.get('/order', (req, res) => {
+  // GET route code here
+  console.log('in the server trade GET route')
     .then(data => {
-        console.log('order was sent successfully');
-        console.log(data);
+      console.log('order was sent successfully');
+      console.log(data);
     })
     .catch((error) => {
-        console.log('oder failed', error);
-        res.sendStatus(500)
+      console.log('oder failed', error);
+      res.sendStatus(500)
     });
-  
-  });
+
+});
+
+/**
+* DELETE route
+*/
+router.delete('/order', (req, res) => {
+  // DELETE route code here
+  console.log('in the server trade DELETE route')
+    .then(data => {
+      console.log('order was sent successfully');
+      console.log(data);
+    })
+    .catch((error) => {
+      console.log('oder failed', error);
+      res.sendStatus(500)
+    });
+
+});
 
 
 
