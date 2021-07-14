@@ -30,17 +30,23 @@ const authedClient = new CoinbasePro.AuthenticatedClient(
 let trading = false;
 
 // toggle auto trading on and off
-toggleTrade = () => {
-    // toogle trading boolean
+function toggleTrade() {
+  // toggle trading boolean
     trading = !trading;
     // if trading is true, triggers the trading function.
     if (trading) {
-        tradeloop();
+      tradeloop();
     }
 }
 
-tradeloop = () => {
-  console.log('Do you even know how to code?');
+let count;
+async function tradeloop() {
+  // this method with setTimeout doesn't quite work. Toggle button turns trading to false, but the setTimeout keeps counting and recalling itself.
+  // close, but not quite!
+    setTimeout(() => {tradeloop()}, 1000);
+    console.log('Do you even know how to code?', count);
+    count++;
+  
 }
 
 // trading function
@@ -52,6 +58,11 @@ function watcher(){
 
 
 // todo - POST route for auto trading
+router.post('/toggle', (req, res) => {
+  console.log('in the toggle post route....');
+  toggleTrade();
+  res.sendStatus(200);
+})
 
 
 /**
