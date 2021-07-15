@@ -33,73 +33,80 @@ function compareOrders(dbOrders) {
   // set variable so other functions know a loop is looping
   // loop through dbOrders in a for each loop
   // dbOrders.forEach(dbOrder => {
-    theLoop(dbOrders);
-  }
-  
-  const theLoop = async (dbOrders) => {
-    compareOrdersLoop = true;
-    for (const dbOrder of dbOrders){
-      // wait for 1/10th of a second between each api call to prevent too many
-      await sleep(100);
-      console.log(dbOrder);
-      // pull the id from coinbase inside the loop and store as object
-      // send request to coinbase API to get status of a trade
-      // setTimeout(() => {
-        // }, 5000);
-        await authedClient.getOrder(dbOrder.id)
-        .then(cbOrder => {
-          // check if the CB order has been settled yet
-          console.log('this is the order settled value you asked for', cbOrder.settled, count);
-          // brother may I have some loops
-          if (cbOrder.settled) {
-            // if it has been settled, send a buy/sell order to CB
-            // assume selling, but if it was just sold, change side to buy
-            // the price to sell at is calculated to be 3% higher than the buy price
-            let side = 'sell';
-            let price = dbOrder.price * 1.03
-            if (dbOrder.side === 'sell') {
-              // the price to buy at is calculated to be 3% lower than the sell price
-              // todo - store original buy price in db, and always use it as the buy price 
-              // to avoid price creep from rounding issues
-              side = 'buy';
-              price = ((Math.round((33000 / 1.03) * 100)) / 100);
-              console.log('buying');
-            } else {
-              console.log('selling');
-            }
-            const tradeDetails = {
-              side: side,
-              price: price, // USD
-              size: dbOrder.size, // BTC
-              product_id: 'BTC-USD',
-            };
-            // function to send the order with the CB API to CB and place the trade
-            authedClient.placeOrder(tradeDetails)
-            .then(pendingTrade => {
-              // after trade is placed, store the returned pending trade values in the database
-              // req.pendingTrade = pendingTrade;
-              // console.log('req.pendingTrade is', req.pendingTrade);
-              let res;
-              // storeTransaction(pendingTrade, res, next)
-            })
-            // after order succeeds, update settled in DB to be TRUE
-            
+  theLoop(dbOrders);
+}
+
+const theLoop = async (dbOrders) => {
+  compareOrdersLoop = true;
+  for (const dbOrder of dbOrders) {
+    // wait for 1/10th of a second between each api call to prevent too many
+    await sleep(100);
+    console.log(dbOrder);
+    // pull the id from coinbase inside the loop and store as object
+    // send request to coinbase API to get status of a trade
+    // setTimeout(() => {
+    // }, 5000);
+    await authedClient.getOrder(dbOrder.id)
+      .then(cbOrder => {
+        // check if the CB order has been settled yet
+        console.log('this is the order settled value you asked for', cbOrder.settled, count);
+        // brother may I have some loops
+        if (cbOrder.settled) {
+          // if it has been settled, send a buy/sell order to CB
+          // assume selling, but if it was just sold, change side to buy
+          // the price to sell at is calculated to be 3% higher than the buy price
+          let side = 'sell';
+          let price = dbOrder.price * 1.03
+          if (dbOrder.side === 'sell') {
+            // the price to buy at is calculated to be 3% lower than the sell price
+            // todo - store original buy price in db, and always use it as the buy price 
+            // to avoid price creep from rounding issues
+            side = 'buy';
+            price = ((Math.round((33000 / 1.03) * 100)) / 100);
+            console.log('buying');
+          } else {
+            console.log('selling');
           }
-          count++;
-        })
-        .catch(error => {
-          console.log('there was an error fetching the orders', error)
-        })
+          const tradeDetails = {
+            side: side,
+            price: price, // USD
+            size: dbOrder.size, // BTC
+            product_id: 'BTC-USD',
+          };
+          // function to send the order with the CB API to CB and place the trade
+          authedClient.placeOrder(tradeDetails)
+            .then(pendingTrade =>
+              // after trade is placed, store the returned pending trade values in the database
+              storeTransaction(pendingTrade)
+            )
+            .then(result => { console.log('just got back from storing this in db:', result) })
+          
+          
+            // after order succeeds, update settled in DB to be TRUE
+
+          const queryText = `UPDATE "orders" SET "settled" = NOT "settled" WHERE "id"=$1;`;
+          pool.query(queryText, [cbOrder.id])
+            .then(() => {console.log('order updated');})
+            
+            .catch(error => {
+              console.log('houston we have a problem on line 88 in the loop', error);
+            })
+  }
+  count++;
+})
+        .catch (error => {
+  console.log('there was an error fetching the orders', error)
+})
       };
-      compareOrdersLoop = false;
+compareOrdersLoop = false;
       
     }
-    
-    function tradeLoop() {
-      if (trading) {
-        // if bot should be trading, also check if the loop from the compareOrders loop is running.
-        // if the compareOrders loop is not running, bot will wait a second and try again
-        if (!compareOrdersLoop) {
+
+function tradeLoop() {
+  if (trading) {
+    // if bot should be trading, also check if the loop from the compareOrders loop is running.
+    // if the compareOrders loop is not running, bot will wait a second and try again
+    if (!compareOrdersLoop) {
       // pull all "unsettled" orders from DB
       const sqlText = `SELECT * FROM "orders" WHERE "settled"=FALSE;`;
       pool.query(sqlText)
