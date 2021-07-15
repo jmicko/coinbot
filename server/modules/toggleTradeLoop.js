@@ -56,13 +56,13 @@ const theLoop = async (dbOrders) => {
           // assume selling, but if it was just sold, change side to buy
           // the price to sell at is calculated to be 3% higher than the buy price
           let side = 'sell';
-          let price = dbOrder.price * 1.03
+          let price = ((Math.round((dbOrder.price * 1.03) * 100)) / 100);
           if (dbOrder.side === 'sell') {
             // the price to buy at is calculated to be 3% lower than the sell price
             // todo - store original buy price in db, and always use it as the buy price 
             // to avoid price creep from rounding issues
             side = 'buy';
-            price = ((Math.round((33000 / 1.03) * 100)) / 100);
+            price = ((Math.round((dbOrder.price / 1.03) * 100)) / 100);
             console.log('buying');
           } else {
             console.log('selling');
