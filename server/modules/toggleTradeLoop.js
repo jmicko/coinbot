@@ -1,19 +1,5 @@
-const CoinbasePro = require('coinbase-pro');
 const pool = require('./pool');
-const key = process.env.SANDBOXKEY;
-const secret = process.env.SANDBOXSECRET;
-const passphrase = process.env.SANDBOXPASSWORD;
-
-// const apiURI = 'https://api.pro.coinbase.com';
-const sandboxURI = 'https://api-public.sandbox.pro.coinbase.com';
-
-const authedClient = new CoinbasePro.AuthenticatedClient(
-    key,
-    secret,
-    passphrase,
-    // apiURI
-    sandboxURI
-  );
+const authedClient = require('./authedClient');
 
 // boolean variable to turn auto trading on and off
 let trading = false;
@@ -43,6 +29,12 @@ function compareOrders(dbOrders) {
       .then(cbOrder => {
         // check if the CB order has been settled yet
         console.log('this is the order you asked for', cbOrder, count);
+        if (cbOrder.settled) {
+          // if it has been settled, send a buy/sell order to CB
+
+          // after order succeeds, update settled in DB to be TRUE
+
+        }
         count++;
       })
       .catch(error => {
