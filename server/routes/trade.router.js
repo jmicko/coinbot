@@ -32,8 +32,9 @@ router.post('/order', (req, res, next) => {
   // function to send the order with the CB API to CB and place the trade
   authedClient.placeOrder(tradeDetails)
     .then(pendingTrade => {
+      // after trade is placed, store the returned pending trade values in the database
       req.pendingTrade = pendingTrade;
-      console.log('req.pendingTrade is', req.pendingTrade);
+      // console.log('req.pendingTrade is', req.pendingTrade);
       storeTransaction(req, res, next)
     })
     .then(res.sendStatus(200))
@@ -50,11 +51,11 @@ router.get('/order', (req, res) => {
   // GET route code here
   console.log('in the server trade GET route')
     .then(data => {
-      console.log('order was sent successfully');
+      console.log('order was retrieved successfully');
       console.log(data);
     })
     .catch((error) => {
-      console.log('order failed', error);
+      console.log('something failed', error);
       res.sendStatus(500)
     });
 
@@ -67,11 +68,11 @@ router.delete('/order', (req, res) => {
   // DELETE route code here
   console.log('in the server trade DELETE route')
     .then(data => {
-      console.log('order was sent successfully');
+      console.log('order was deleted successfully');
       console.log(data);
     })
     .catch((error) => {
-      console.log('order failed', error);
+      console.log('something failed', error);
       res.sendStatus(500)
     });
 
