@@ -68,9 +68,9 @@
     - ### trade loop function
         - [x] check if "trading" variable is true. If false, end the loop
         - [x] wait n seconds and check on orders
-            - [] pull all open orders from db and loop through each one
-            - [] request order info from Coinbase (CB) API based on order ID from DB
-            - [] compare order settled from CB to order status in DB. If order has gone through:
+            - [x] pull all open orders from db and loop through each one
+            - [x] request order info from Coinbase (CB) API based on order ID from DB
+            - [] check if order settled. If order has gone through:
                 - [] initiate opposite type of sale (sell/buy) order with sell function. So if a buy was just detected as complete, initiate a sell. If a sell was completed, initiate a buy.
                     - if selling was completed, divide original order's sale price by 1.03 to get the price for the new buy order. This will create a buy at 3% lower cost than the sale that was just made.
                     - if buying was completed, multiply the original order's purchase price by 1.03 for a new sale price that is 3% higher.
