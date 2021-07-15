@@ -6,7 +6,6 @@ const bodyParser = require('body-parser');
 
 
 // Route includes
-const testRouter = require('./routes/test.router');
 const tradeRouter = require('./routes/trade.router');
 
 
@@ -16,7 +15,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 
 /* Routes */
-app.use('/api/test', testRouter);
 app.use('/api/trade', tradeRouter);
 
 // Serve static files
