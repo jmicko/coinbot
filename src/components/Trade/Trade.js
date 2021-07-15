@@ -30,9 +30,9 @@ function Trade(props) {
   return (
     <div>
       <h2>Trade Component</h2>
-      <p>
+      {/* <p>
         {JSON.stringify(props)}
-      </p>
+      </p> */}
 
       {/* todo - move links into the nav component */}
       <Link to="/">
@@ -79,9 +79,9 @@ function Trade(props) {
           {/* display some details about the new transaction that is going to be made */}
           <p>
             This will tell coinbot to start trading {transactionAmount} BTC 
-            between the low purchase price of {transactionPrice} 
-            and the high sell price of {Math.round(transactionPrice * 1.025)}. 
-            The value in USD for the initial transaction will be about {transactionPrice * transactionAmount}
+            between the low purchase price of ${transactionPrice} and 
+            the high sell price of ${((Math.round((transactionPrice * 1.03) * 100)) / 100)}. 
+            The value in USD for the initial transaction will be about ${((Math.round((transactionPrice * transactionAmount) * 100)) / 100)}.
           </p>
           <input className="btn" type="submit" name="submit" value="Start Trading" />
         </form>

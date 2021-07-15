@@ -80,27 +80,27 @@ const theLoop = async (dbOrders) => {
               storeTransaction(pendingTrade)
             )
             .then(result => { console.log('just got back from storing this in db:', result) })
-          
-          
-            // after order succeeds, update settled in DB to be TRUE
+
+
+          // after order succeeds, update settled in DB to be TRUE
 
           const queryText = `UPDATE "orders" SET "settled" = NOT "settled" WHERE "id"=$1;`;
           pool.query(queryText, [cbOrder.id])
-            .then(() => {console.log('order updated');})
-            
+            .then(() => { console.log('order updated'); })
+
             .catch(error => {
               console.log('houston we have a problem on line 88 in the loop', error);
             })
-  }
-  count++;
-})
-        .catch (error => {
-  console.log('there was an error fetching the orders', error)
-})
-      };
-compareOrdersLoop = false;
-      
-    }
+        }
+        count++;
+      })
+      .catch(error => {
+        console.log('there was an error fetching the orders', error)
+      })
+  };
+  compareOrdersLoop = false;
+  count = 0;
+}
 
 function tradeLoop() {
   if (trading) {
