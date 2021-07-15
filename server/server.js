@@ -4,6 +4,7 @@ require('dotenv').config();
 const app = express();
 const bodyParser = require('body-parser');
 
+
 // Route includes
 const testRouter = require('./routes/test.router');
 const tradeRouter = require('./routes/trade.router');
@@ -12,6 +13,7 @@ const tradeRouter = require('./routes/trade.router');
 // Body parser middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
 
 /* Routes */
 app.use('/api/test', testRouter);
