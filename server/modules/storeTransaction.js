@@ -17,6 +17,7 @@ const storeTransaction = (req, res, next) => {
     // that way it waits to make sure the pool query worked before moving on.
     // but does this move on to the next middleware, and then come back at the end for the catch?
     // does this even need a catch? commenting out for now. 
+    // does it even need a then? does it return anything?
     .then(
       next()
     )
