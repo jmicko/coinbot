@@ -73,18 +73,12 @@ router.post('/toggle', (req, res) => {
 
 
 /**
- * POST route test buy trade
+ * POST route sending trade
  */
 router.post('/order', (req, res) => {
   // POST route code here
-  console.log('in the server trade POST route');
-  console.log('body of request', req.body);
-  console.log('body.size of request', req.body.size);
-  console.log('params of request', req.params);
   const order = req.body;
-
   // params const should take in values sent from trade component form
-  // Buy 0.001 BTC @ 30,000 USD
   const params = {
     side: 'buy',
     price: order.price, // USD
@@ -94,9 +88,19 @@ router.post('/order', (req, res) => {
   // function to send the order with the CB API to CB and place the trade
   authedClient.placeOrder(params)
     .then(data => {
+      // add new order to the database
       console.log('order was sent successfully');
       console.log(data);
-      res.sendStatus(200)
+      const newOrder = data;
+      const sqlText = `INSERT INTO "orders" 
+                      ("id", "price", "size", "side", "settled") 
+                      VALUES ($1, $2, $3, $4, $5);`;
+      pool.query(sqlText, [newOrder.id, newOrder.price, newOrder.size, newOrder.side, newOrder.settled])
+          .then(res.sendStatus(200))
+          .catch((error) => {
+            console.log('SQL failed', error);
+            res.sendStatus(500)
+          });
     })
     .catch((error) => {
       console.log('oder failed', error);
