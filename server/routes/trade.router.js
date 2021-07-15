@@ -62,7 +62,7 @@ router.post('/order', (req, res) => {
           });
     })
     .catch((error) => {
-      console.log('oder failed', error);
+      console.log('order failed', error);
       res.sendStatus(500)
     });
 
@@ -79,7 +79,7 @@ router.get('/order', (req, res) => {
       console.log(data);
     })
     .catch((error) => {
-      console.log('oder failed', error);
+      console.log('order failed', error);
       res.sendStatus(500)
     });
 
@@ -96,7 +96,7 @@ router.delete('/order', (req, res) => {
       console.log(data);
     })
     .catch((error) => {
-      console.log('oder failed', error);
+      console.log('order failed', error);
       res.sendStatus(500)
     });
 
