@@ -54,7 +54,7 @@ const authedClient = new CoinbasePro.AuthenticatedClient(
 //         console.log('there was an error fetching the orders', error)
 //       })
 //     // if the bot should still be trading, it waits 1 second and then calls itself again
-//     // by checking trading at the begining of the function, and calling itself at the end,
+//     // by checking trading at the beginning of the function, and calling itself at the end,
 //     // the code won't run if the toggle is turned off in the middle, but it will still finish a cycle
 //     setTimeout(() => {
 //       tradeLoop();
