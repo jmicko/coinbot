@@ -14,7 +14,10 @@ function toggleTrade() {
   trading = !trading;
   // if the bot should now be trading, it starts the trade loop
   if (trading) {
+    console.log('bot is trading');
     tradeLoop();
+  } else {
+    console.log('bot is not trading');
   }
 }
 
@@ -28,7 +31,7 @@ function compareOrders(dbOrders) {
     authedClient.getOrder(dborder.id)
       .then(cbOrder => {
         // check if the CB order has been settled yet
-        console.log('this is the order you asked for', cbOrder, count);
+        console.log('this is the order settled value you asked for', cbOrder.settled, count);
         if (cbOrder.settled) {
           // if it has been settled, send a buy/sell order to CB
 
