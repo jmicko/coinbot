@@ -3,6 +3,7 @@ const authedClient = require('./authedClient');
 const storeTransaction = require('../modules/storeTransaction');
 
 // sleeper function to slow down the loop
+// can be called from an async function and takes in how many milliseconds to wait
 const sleep = (milliseconds) => {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
@@ -37,7 +38,8 @@ function compareOrders(dbOrders) {
   
   const theLoop = async (dbOrders) => {
     for (const dbOrder of dbOrders){
-      await sleep(1000)
+      // wait for 1/10th of a second between each api call to prevent too many
+      await sleep(100)
       console.log(dbOrder);
       // pull the id from coinbase inside the loop and store as object
       // send request to coinbase API to get status of a trade
@@ -95,7 +97,7 @@ function compareOrders(dbOrders) {
     function tradeLoop() {
       if (trading) {
         // if bot should be trading, also check if the loop from the compareOrders loop is running.
-        // if the compareOrders loop is not running, bot will wait a few second and try again
+        // if the compareOrders loop is not running, bot will wait a second and try again
         if (!compareOrdersLoop) {
       // pull all "unsettled" orders from DB
       const sqlText = `SELECT * FROM "orders" WHERE "settled"=FALSE;`;
