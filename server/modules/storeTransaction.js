@@ -18,8 +18,10 @@ const storeTransaction = (req, res, next) => {
     // but does this move on to the next middleware, and then come back at the end for the catch?
     // does this even need a catch? commenting out for now. 
     // does it even need a then? does it return anything?
-    .then(
+    .then(result =>{
+      console.log('============ STORED ID DATABASE', result);
       next()
+    }
     )
   // .catch((error) => {
   //   console.log('SQL failed', error);

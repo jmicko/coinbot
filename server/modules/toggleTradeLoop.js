@@ -40,7 +40,7 @@ function compareOrders(dbOrders) {
     compareOrdersLoop = true;
     for (const dbOrder of dbOrders){
       // wait for 1/10th of a second between each api call to prevent too many
-      await sleep(100)
+      await sleep(100);
       console.log(dbOrder);
       // pull the id from coinbase inside the loop and store as object
       // send request to coinbase API to get status of a trade
