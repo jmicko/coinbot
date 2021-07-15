@@ -19,7 +19,7 @@ router.post('/toggle', (req, res) => {
 /**
  * POST route sending trade
  */
-router.post('/order', (req, res, next) => {
+router.post('/order', (req, res) => {
   // POST route code here
   const order = req.body;
   // tradeDetails const should take in values sent from trade component form
@@ -31,12 +31,9 @@ router.post('/order', (req, res, next) => {
   };
   // function to send the order with the CB API to CB and place the trade
   authedClient.placeOrder(tradeDetails)
-    .then(pendingTrade => {
-      // after trade is placed, store the returned pending trade values in the database
-      req.pendingTrade = pendingTrade;
-      // console.log('req.pendingTrade is', req.pendingTrade);
-      storeTransaction(req, res, next)
-    })
+  // after trade is placed, store the returned pending trade values in the database
+    .then(pendingTrade => storeTransaction(pendingTrade))
+    // .then(result => {console.log('just got back from storing this in db:', result)})
     .then(res.sendStatus(200))
     .catch((error) => {
       console.log('new order process failed', error);

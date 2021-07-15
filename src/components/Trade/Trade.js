@@ -56,7 +56,7 @@ function Trade(props) {
                 name="transaction_price"
                 value={transactionPrice}
                 // todo - this could possibly be changed to 100, or add a selector menu thing to toggle between different amounts
-                step={500}
+                step={100}
                 required
                 onChange={(event) => setTransactionPrice(event.target.value)}
               />
