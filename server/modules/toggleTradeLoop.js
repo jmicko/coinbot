@@ -28,15 +28,16 @@ function toggleTrade() {
   }
 }
 
+// todo - this function does nothing. remove and fix other functions that call it
 function compareOrders(dbOrders) {
   // set variable so other functions know a loop is looping
-  compareOrdersLoop = true;
   // loop through dbOrders in a for each loop
   // dbOrders.forEach(dbOrder => {
     theLoop(dbOrders);
   }
   
   const theLoop = async (dbOrders) => {
+    compareOrdersLoop = true;
     for (const dbOrder of dbOrders){
       // wait for 1/10th of a second between each api call to prevent too many
       await sleep(100)
@@ -45,7 +46,7 @@ function compareOrders(dbOrders) {
       // send request to coinbase API to get status of a trade
       // setTimeout(() => {
         // }, 5000);
-        authedClient.getOrder(dbOrder.id)
+        await authedClient.getOrder(dbOrder.id)
         .then(cbOrder => {
           // check if the CB order has been settled yet
           console.log('this is the order settled value you asked for', cbOrder.settled, count);
