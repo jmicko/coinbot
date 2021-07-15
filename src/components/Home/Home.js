@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { 
+  // useState 
+} from 'react';
 import { Link } from 'react-router-dom';
 // import { connect } from 'react-redux';
 // import mapStoreToProps from '../../redux/mapStoreToProps';
@@ -9,11 +11,9 @@ import { Link } from 'react-router-dom';
 // component.
 function Home (props) {
   
-  const [heading, setHeading] = useState('Home Component');
-
     return (
       <div>
-        <h2>{heading}</h2>
+        <h2>{'Home Component'}</h2>
         <Link to="trade">
           trade
         </Link>

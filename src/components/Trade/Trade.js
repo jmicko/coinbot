@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { connect, useSelector, useDispatch } from 'react-redux';
+import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 
 // Basic class component structure for React with default state
@@ -11,8 +11,8 @@ function Trade(props) {
 
   // have this be the default value of whatever 0.001 worth of bitcoin is
   // will need a function to poll the current value every 5 seconds from CB api
-  {/* todo - default transactionPrice value should automatically start out at the current price
-  of bitcoin, rounded to the closest $100 */}
+  // todo - default transactionPrice value should automatically start out at the current price
+  // of bitcoin, rounded to the closest $100
   const [transactionPrice, setTransactionPrice] = useState(30000);
   const [transactionAmount, setTransactionAmount] = useState(0.001);
   const dispatch = useDispatch();
@@ -39,6 +39,10 @@ function Trade(props) {
         home
       </Link>
 
+      <button
+      onClick={ () => dispatch({ type: 'TOGGLE_BOT' }) }>
+        toggle bot
+      </button>
       <div>
         {/* form with a single input. Input takes a price point at which 
           to make a trade. todo - make function to send price to backend server */}

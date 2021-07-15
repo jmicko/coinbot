@@ -40,17 +40,17 @@
         - [] API key
         - [] API password
         - [] API secret
-    - [] orders table to store all orders that have been placed
-        - [] id (string, taken from CB API response after order is placed)
-        - [] price (string)
-        - [] size (string)
-        - [] side (string)
-        - [] settled (boolean)
+    - [x] orders table to store all orders that have been placed
+        - [x] id (string, taken from CB API response after order is placed)
+        - [x] price (string)
+        - [x] size (string)
+        - [x] side (string)
+        - [x] settled (boolean)
 
 ### Routes 
-- [] settings/status POST - turns the bot on and off
+- [x] trade/toggle POST - turns the bot on and off
 - [] settings/status GET - handles bot status, available funds, etc
-- [] trade/order POST - sends an order to CB
+- [x] trade/order POST - sends an order to CB
     - takes in an order price
 - [] trade/order GET - checks on all open orders to display them on screen
 - [] trade/order DELETE - takes in an order ID to be canceled on CB and then deleted from the DB
@@ -58,18 +58,19 @@
 ### Functions
 - [] set up auto trader
     - ### transaction function
-        - set up POST route at api/trade/order
-        - [] takes in a price param (number as a string), a value (number as a string), and side param (buy/sell) to make purchase or sale
-        - [] send order to coinbase
-        - [] store returned order ID, side (type of transaction, either buy/sell), status, and price in db
+        - [x] set up POST route at api/trade/order
+        - [x] takes in a price param (number as a string), a value (number as a string), 
+        - [] and side param (buy/sell) to make purchase or sale
+        - [x] send order to coinbase
+        - [x] store returned order ID, side (type of transaction, either buy/sell), status, and price in db
 
 
     - ### trade loop function
-        - [] check if "watch" variable is true. If false, end the loop
-        - [] wait 5 seconds and check on orders
-            - [] pull all open orders from db and loop through each one
-            - [] request order info from Coinbase (CB) API based on order ID from DB
-            - [] compare order settled from CB to order status in DB. If order has gone through:
+        - [x] check if "trading" variable is true. If false, end the loop
+        - [x] wait n seconds and check on orders
+            - [x] pull all open orders from db and loop through each one
+            - [x] request order info from Coinbase (CB) API based on order ID from DB
+            - [] check if order settled. If order has gone through:
                 - [] initiate opposite type of sale (sell/buy) order with sell function. So if a buy was just detected as complete, initiate a sell. If a sell was completed, initiate a buy.
                     - if selling was completed, divide original order's sale price by 1.03 to get the price for the new buy order. This will create a buy at 3% lower cost than the sale that was just made.
                     - if buying was completed, multiply the original order's purchase price by 1.03 for a new sale price that is 3% higher.
@@ -85,8 +86,8 @@
 
 - ### control for turning bot on and off
     - [] set up POST route at api/settings/toggle
-        - [] when route is hit, toggle "watch" variable between true/false. Aka, watch = !watch
-        - [] if watch is true, call trade loop function to watch order status and wait for transaction to go through
+        - [] when route is hit, toggle "trading" variable between true/false. Aka, trading = !trading
+        - [] if trading is true, call trade loop function to watch order status and wait for transaction to go through
 
 ### Misc
 - [x] connect to coinbase API
