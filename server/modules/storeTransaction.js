@@ -2,31 +2,21 @@
 const pool = require('./pool');
 // const authedClient = require('./authedClient');
 
-const storeTransaction = (req, res, next) => {
+// const stored = (pendingTrade) => {
+//   return new Promise(resolve => stored(pendingTrade))
+// }
 
+const storeTransaction = (pendingTrade) => {
   // add new order to the database
   console.log('order was sent successfully, adding to db');
-  console.log('pendingTrade details are:', req.pendingTrade);
-  // console.log(TradeDetails);
-  const newOrder = req.pendingTrade;
+  const newOrder = pendingTrade;
   const sqlText = `INSERT INTO "orders" 
-                      ("id", "price", "size", "side", "settled") 
-                      VALUES ($1, $2, $3, $4, $5);`;
-  pool.query(sqlText, [newOrder.id, newOrder.price, newOrder.size, newOrder.side, newOrder.settled])
-    // todo - not sure this is right. Should next be called inside then?
-    // that way it waits to make sure the pool query worked before moving on.
-    // but does this move on to the next middleware, and then come back at the end for the catch?
-    // does this even need a catch? commenting out for now. 
-    // does it even need a then? does it return anything?
-    .then(result =>{
-      console.log('============ STORED ID DATABASE', result);
-      next()
-    }
-    )
-  // .catch((error) => {
-  //   console.log('SQL failed', error);
-  //   res.sendStatus(500)
-  // });
+                  ("id", "price", "size", "side", "settled") 
+                  VALUES ($1, $2, $3, $4, $5);`;
+  // pretty sure noting is checking for errors here?
+  // there is no catch, but when called from a .then followed by a .catch, errors are caught so whatever lol
+  let stored = pool.query(sqlText, [newOrder.id, newOrder.price, newOrder.size, newOrder.side, newOrder.settled]);
+  return stored;
 }
 
 module.exports = storeTransaction;
