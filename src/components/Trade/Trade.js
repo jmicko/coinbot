@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
+import './Trade.css'
 
 // Basic class component structure for React with default state
 // value setup. When making a new component be sure to replace
@@ -29,16 +30,6 @@ function Trade(props) {
 
   return (
     <div>
-      <h2>Trade Component</h2>
-      {/* <p>
-        {JSON.stringify(props)}
-      </p> */}
-
-      {/* todo - move links into the nav component */}
-      <Link to="/">
-        home
-      </Link>
-
       <button
       onClick={ () => dispatch({ type: 'TOGGLE_BOT' }) }>
         toggle bot
