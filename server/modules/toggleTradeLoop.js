@@ -47,6 +47,7 @@ const theLoop = async (dbOrders) => {
     // setTimeout(() => {
     // }, 5000);
     await authedClient.getOrder(dbOrder.id)
+      // eslint-disable-next-line no-loop-func
       .then(cbOrder => {
         // check if the CB order has been settled yet
         console.log('this is the order settled value you asked for', cbOrder.settled, count);
