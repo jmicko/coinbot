@@ -1,7 +1,7 @@
 const express = require('express');
 const pool = require('../modules/pool');
 const authedClient = require('../modules/authedClient');
-const toggleTrade = require('../modules/toggleTradeLoop');
+const toggleCoinbot = require('../modules/theLoop');
 const storeTransaction = require('../modules/storeTransaction');
 
 
@@ -11,7 +11,7 @@ const router = express.Router();
 // todo - POST route for auto trading
 router.post('/toggle', (req, res) => {
   // When this route is hit, it turns on and off the trading loop
-  toggleTrade();
+  toggleCoinbot();
   res.sendStatus(200);
 })
 
