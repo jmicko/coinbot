@@ -29,13 +29,24 @@ app.use('/api/trade', tradeRouter);
 
 // this triggers on a new client connection
 io.on('connection', (socket) => {
+  
+  console.log('a user connected', socket.id);
+
+  // testing send message to client
+  let data = {message: 'hello there'}
+  socket.send(data);
+
+  // testing if passing the socket param into another file
+  // allows it to be used there to send a message
+
+
+
   // that id is undefined. The guide had front end logic for identifyind users. 
   // coinbot is not expected to be hosted publicly, so does not differentiate users for logical purposes
   // authentication may be built in later for public cloud hosting, but for now nothing is sent 
   // from the front end so id is undefined
   const id = socket.handshake.query.id;
   socket.join(id);
-  console.log('a user connected', id);
   
 
   // it looks like this takes in recipients who should see the message, and the message itself
@@ -65,6 +76,19 @@ io.on('connection', (socket) => {
       })
     });
   })
+
+  socket.on("disconnect", (reason) => {
+    console.log('client disconnected, reason:', reason);
+  });
+
+});
+
+// handle abnormal disconnects
+io.engine.on("connection_error", (err) => {
+  console.log(err.req);	     // the request object
+  console.log(err.code);     // the error code, for example 1
+  console.log(err.message);  // the error message, for example "Session ID unknown"
+  console.log(err.context);  // some additional error context
 });
 
 // Serve static files

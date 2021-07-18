@@ -1,27 +1,27 @@
-import React, { useContext, useEffect, useState } from 'react';
+// import React, { useContext, useEffect, useState } from 'react';
 
-const SocketContext = React.createContext();
+// const SocketContext = React.createContext();
 
-export function useSocket() {
-    return useContext(SocketContext);
-}
+// export function useSocket() {
+//     return useContext(SocketContext);
+// }
 
-export function SocketProvider({id, children}) {
-    const [socket, setSocket] = useState();
+// export function SocketProvider({id, children}) {
+//     const [socket, setSocket] = useState();
 
-    useEffect(() => {
-        const newSocket = io(
-            'http://localhost:5000', 
-            { query: { id }}
-        )
-        setSocket(newSocket);
+//     useEffect(() => {
+//         const newSocket = io(
+//             'http://localhost:5000', 
+//             { query: { id }}
+//         )
+//         setSocket(newSocket);
 
-        return () => newSocket.close
-    })
+//         return () => newSocket.close
+//     })
 
-    return (
-        <SocketContext.Provider value={socket}>
-            {children}
-        </SocketContext.Provider>
-    )
-}
+//     return (
+//         <SocketContext.Provider value={socket}>
+//             {children}
+//         </SocketContext.Provider>
+//     )
+// }
