@@ -118,4 +118,8 @@ function tradeLoop() {
   }
 }
 
-module.exports = toggleCoinbot;
+module.exports = {
+  toggleCoinbot: toggleCoinbot,
+  theLoop: theLoop,
+  tradeLoop: tradeLoop
+};
