@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
-import socketIOClient from "socket.io-client";
+import io from "socket.io-client";
 const ENDPOINT = "http://localhost:5000";
 
 
-const socket = socketIOClient(ENDPOINT, {transports: ['websocket']});
+const socket = io(ENDPOINT, {transports: ['websocket']});
+// adding cors arg in server let's us get rid of the transports arg
+// const socket = io(ENDPOINT);
 
 function Updates() {
   const [response, setResponse] = useState("");
@@ -13,7 +15,7 @@ function Updates() {
   // Looks like it can be. Also, moving the socket const into the function makes 
   // 3 connections for some reason
   // useEffect(() => {
-  //   const socket = socketIOClient(ENDPOINT, {transports: ['websocket']});
+  //   const socket = io(ENDPOINT, {transports: ['websocket']});
   //   socket.on("FromAPI", data => {
   //     setResponse(data);
   //   });
@@ -21,7 +23,7 @@ function Updates() {
   //     console.log(data);
   //   });
   // }, []);
-  
+
   // if client gets a message from server, it will show on screen
   socket.on("message", data => {
     console.log(data);

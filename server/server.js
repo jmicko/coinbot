@@ -5,6 +5,13 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
+// the line below allows us to remove the transports argument 
+// const io = new Server(server, {
+//   cors: {
+//     origin: ["http://localhost:3000"]
+//   }
+// });
+
 require('dotenv').config();
 const bodyParser = require('body-parser');
 
