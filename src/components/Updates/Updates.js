@@ -21,9 +21,18 @@ function Updates() {
   
   return (
     // show messages on screen
-    <p>
+    <div>
+
+    {/* <p>
       message from server: {JSON.stringify(message)}
-    </p>
+    </p> */}
+    <h3>Checking trade:</h3>
+    <p>Trade id: {message.id}</p>
+    <p>Price per BTC: {message.price}</p>
+    <p>Size: {message.size} BTC</p>
+    <p>Buy/Sell: {message.side}</p>
+    <p>Trade is settled: {message.settled ? "YES" : "no :("}</p>
+    </div>
   );
 }
 
