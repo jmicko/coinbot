@@ -3,7 +3,9 @@ const authedClient = require('./authedClient');
 const storeTransaction = require('./storeTransaction');
 
 // array to watch. if it changes, send it to the frontend via sockets somehow
-let transaction = {};
+// it is an array so that it can be shallow cloned into other places where it
+// can be watched in it's updated state
+const transaction = [];
 
 const getTransaction = () => {
   return transaction;
@@ -40,8 +42,8 @@ const theLoop = async (dbOrders) => {
   for (const dbOrder of dbOrders) {
     // wait for 1/10th of a second between each api call to prevent too many
     await sleep(100);
-    console.log(dbOrder.id);
-    transaction = dbOrder;
+    // console.log(dbOrder.id);
+    transaction[0] = dbOrder;
     // console.log(transaction);
     // pull the id from coinbase inside the loop and store as object
     // send request to coinbase API to get status of a trade
@@ -51,7 +53,7 @@ const theLoop = async (dbOrders) => {
       // eslint-disable-next-line no-loop-func
       .then(cbOrder => {
         // check if the CB order has been settled yet
-        console.log('this is the order settled value you asked for', cbOrder.settled, count);
+        // console.log('this is the order settled value you asked for', cbOrder.settled, count);
         // brother may I have some loops
         if (cbOrder.settled) {
           // if it has been settled, send a buy/sell order to CB

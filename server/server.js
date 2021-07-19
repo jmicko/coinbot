@@ -29,24 +29,32 @@ app.use('/api/trade', tradeRouter);
 
 // socket.io
 
+let transaction = theLoop.getTransaction();
+
+
+console.log(transaction);
 // this triggers on a new client connection
 io.on('connection', (socket) => {
-
+  
   console.log('a user connected', socket.id);
   // theLoop.toggleCoinbot();
 
 
-  console.log(theLoop.getTransaction());
+  console.log('transaction from io server:', transaction);
 
   // get the transaction from the loop in the transaction object via getTransaction function
-  let transaction = theLoop.getTransaction();
-  socket.emit('message', {message: transaction});
+
+
+
+    socket.emit('message', {message: transaction});
+
+  
 
 
   // testing send message to client
-  let data = { message: 'hello there' }
-  let data2 = { message: 'hello again' }
-  let data3 = { message: 'goodbye' }
+  // let data = { message: 'hello there' }
+  // let data2 = { message: 'hello again' }
+  // let data3 = { message: 'goodbye' }
   // this sends a message to the client
   // socket.send(data);
   // this is the same as above but it sends it twice?
