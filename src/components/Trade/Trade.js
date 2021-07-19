@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
+import './Trade.css'
 
 // Basic class component structure for React with default state
 // value setup. When making a new component be sure to replace
@@ -29,16 +30,6 @@ function Trade(props) {
 
   return (
     <div>
-      <h2>Trade Component</h2>
-      <p>
-        {JSON.stringify(props)}
-      </p>
-
-      {/* todo - move links into the nav component */}
-      <Link to="/">
-        home
-      </Link>
-
       <button
       onClick={ () => dispatch({ type: 'TOGGLE_BOT' }) }>
         toggle bot
@@ -79,9 +70,9 @@ function Trade(props) {
           {/* display some details about the new transaction that is going to be made */}
           <p>
             This will tell coinbot to start trading {transactionAmount} BTC 
-            between the low purchase price of {transactionPrice} 
-            and the high sell price of {Math.round(transactionPrice * 1.025)}. 
-            The value in USD for the initial transaction will be about {transactionPrice * transactionAmount}
+            between the low purchase price of ${transactionPrice} and 
+            the high sell price of ${((Math.round((transactionPrice * 1.03) * 100)) / 100)}. 
+            The value in USD for the initial transaction will be about ${((Math.round((transactionPrice * transactionAmount) * 100)) / 100)}.
           </p>
           <input className="btn" type="submit" name="submit" value="Start Trading" />
         </form>

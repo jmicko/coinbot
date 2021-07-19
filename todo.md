@@ -91,3 +91,26 @@
 
 ### Misc
 - [x] connect to coinbase API
+
+
+
+## COINBOT 2.0 future features
+
+
+- ### Fewer API calls
+    - Pull all open orders from CB into an array
+    - Pull all open orders from DB into a second array
+    - Compare both arrays, pop orders out of the DB array if they also exist in the CB array
+    - The orders that remain in the DB array will be settled in CB, and can be fed to the loop.
+    - This makes much fewer API calls 
+
+- ### Trade tier awareness
+    - Build logic into the bot to account for different fee pricing tiers
+    - possibly adjust the trade-pair margins of all open trades so they adjust for the new position
+        - this maybe should be a manual option as it will increase trade volume, but decrease individual trade profit.
+
+- ### Store both original buy and sell positions
+    - Running math in JS for pricing is not accurate and could allow the positions to creep
+    - upper and lower prices should be calculated before the trade is sent and stored in the DB
+    - the loop will reference the stored values for the new trades instead of multiplying and rounding with each trade
+    - this should also slightly improve performance because there are fewer calculations per trade

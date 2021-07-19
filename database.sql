@@ -1,3 +1,5 @@
+DROP TABLE "orders";
+
 CREATE TABLE "orders" (
   "id" varchar,
   "price" varchar,

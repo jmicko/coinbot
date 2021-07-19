@@ -15,11 +15,6 @@ class Nav extends Component {
             Coinbot
           </p>
         </header>
-        <main>
-          <p>
-            Let's trade bitcoins!
-          </p>
-        </main>
       </div>
     );
   }

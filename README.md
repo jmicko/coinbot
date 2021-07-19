@@ -11,11 +11,14 @@ You trade at your own risk.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-### `Features`
+## `Features`
 
 List of features coming soon...
 
-### `Setup`
+## `Important notes`
+- In it's current state, there is no option to cancel an order from the Coinbot app. Coinbot also does not have a way to detect if an order has been canceled from the coinbase website. If that happens, Coinbot will throw an error and will either stop, or continue checking the cancelled order and throwing the error.
+
+## `Setup`
 
 ### Database
 Postgres should be setup and a new database should be created with the name "coinbot". There is a database.sql file that can be used to generate the required tables.

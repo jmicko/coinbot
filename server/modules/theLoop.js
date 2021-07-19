@@ -1,6 +1,20 @@
 const pool = require('./pool');
 const authedClient = require('./authedClient');
-const storeTransaction = require('../modules/storeTransaction');
+const storeTransaction = require('./storeTransaction');
+
+// array for transaction communication to front end client. 
+// when socket connection is made, server will pass the socket object into transaction const
+// it can be accessed at transaction.socks like this:
+// transaction.socks.emit('message', {message: transaction.order});
+// this method of accessing the socket is dirty, but so are socks.
+// but not as dirty as underwear.
+// it's somewhere in the middle.
+// like some sort of... middlewear, if you will.
+const transaction = {};
+
+const getTransaction = () => {
+  return transaction;
+}
 
 // sleeper function to slow down the loop
 // can be called from an async function and takes in how many milliseconds to wait
@@ -8,48 +22,44 @@ const sleep = (milliseconds) => {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
-// boolean variable to turn auto trading on and off
-let trading = false;
+// boolean variable to turn coinbot on and off
+let coinbot = false;
 let count = 0;
-let compareOrdersLoop = false;
+let loopSwitch = false;
 
 
-// toggle auto trading on and off
-function toggleTrade() {
+// toggle coinbot on and off
+function toggleCoinbot() {
   console.log('in toggleTrade function');
-  // toggle trading boolean
-  trading = !trading;
-  // if the bot should now be trading, it starts the trade loop
-  if (trading) {
-    console.log('bot is trading');
+  // toggle coinbot boolean
+  coinbot = !coinbot;
+  // if the bot should now be coinbot, it starts the trade loop
+  if (coinbot) {
+    console.log('bot is coinbot');
     tradeLoop();
   } else {
-    console.log('bot is not trading');
+    console.log('bot is not coinbot');
   }
 }
 
-// todo - this function does nothing. remove and fix other functions that call it
-function compareOrders(dbOrders) {
-  // set variable so other functions know a loop is looping
-  // loop through dbOrders in a for each loop
-  // dbOrders.forEach(dbOrder => {
-  theLoop(dbOrders);
-}
-
 const theLoop = async (dbOrders) => {
-  compareOrdersLoop = true;
+  loopSwitch = true;
   for (const dbOrder of dbOrders) {
     // wait for 1/10th of a second between each api call to prevent too many
     await sleep(100);
-    console.log(dbOrder);
+    // console.log(dbOrder.id);
+    transaction.order = dbOrder;
+    transaction.socks.emit('message', { message: transaction.order });
+    // console.log(transaction);
     // pull the id from coinbase inside the loop and store as object
     // send request to coinbase API to get status of a trade
     // setTimeout(() => {
     // }, 5000);
     await authedClient.getOrder(dbOrder.id)
+      // eslint-disable-next-line no-loop-func
       .then(cbOrder => {
         // check if the CB order has been settled yet
-        console.log('this is the order settled value you asked for', cbOrder.settled, count);
+        // console.log('this is the order settled value you asked for', cbOrder.settled, count);
         // brother may I have some loops
         if (cbOrder.settled) {
           // if it has been settled, send a buy/sell order to CB
@@ -80,44 +90,41 @@ const theLoop = async (dbOrders) => {
               storeTransaction(pendingTrade)
             )
             .then(result => { console.log('just got back from storing this in db:', result) })
-          
-          
-            // after order succeeds, update settled in DB to be TRUE
 
+          // after order succeeds, update settled in DB to be TRUE
           const queryText = `UPDATE "orders" SET "settled" = NOT "settled" WHERE "id"=$1;`;
           pool.query(queryText, [cbOrder.id])
-            .then(() => {console.log('order updated');})
-            
+            .then(() => { console.log('order updated'); })
             .catch(error => {
               console.log('houston we have a problem on line 88 in the loop', error);
-            })
-  }
-  count++;
-})
-        .catch (error => {
-  console.log('there was an error fetching the orders', error)
-})
-      };
-compareOrdersLoop = false;
-      
-    }
+            });
+          }
+        count++;
+      })
+      .catch(error => {
+        console.log('there was an error fetching the orders', error)
+      })
+  };
+  loopSwitch = false;
+  count = 0;
+}
 
 function tradeLoop() {
-  if (trading) {
-    // if bot should be trading, also check if the loop from the compareOrders loop is running.
-    // if the compareOrders loop is not running, bot will wait a second and try again
-    if (!compareOrdersLoop) {
+  if (coinbot) {
+    // if bot should be coinbot, also check if the loop from the theLoop loop is running.
+    // if the theLoop loop is not running, bot will wait a second and try again
+    if (!loopSwitch) {
       // pull all "unsettled" orders from DB
       const sqlText = `SELECT * FROM "orders" WHERE "settled"=FALSE;`;
       pool.query(sqlText)
         // pass the DB orders to a function to compare them to the orders in CB
-        .then((result) => compareOrders(result.rows))
+        .then((result) => theLoop(result.rows))
         .catch(error => {
           console.log('error fetching orders from database', error);
         });
     }
-    // if the bot should still be trading, it waits 1 second and then calls itself again
-    // by checking trading at the beginning of the function, and calling itself at the end,
+    // if the bot should still be coinbot, it waits 1 second and then calls itself again
+    // by checking coinbot at the beginning of the function, and calling itself at the end,
     // the code won't run if the toggle is turned off in the middle, but it will still finish a cycle
     setTimeout(() => {
       tradeLoop();
@@ -125,4 +132,9 @@ function tradeLoop() {
   }
 }
 
-module.exports = toggleTrade;
+module.exports = {
+  toggleCoinbot: toggleCoinbot,
+  theLoop: theLoop,
+  tradeLoop: tradeLoop,
+  getTransaction: getTransaction
+};

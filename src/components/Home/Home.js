@@ -1,8 +1,11 @@
 import React, { 
-  // useState 
+   useState,
+   useEffect,
 } from 'react';
-import { Link } from 'react-router-dom';
-// import { connect } from 'react-redux';
+// import { Link } from 'react-router-dom';
+// import { useSelector, useDispatch } from 'react-redux';
+import Trade from '../Trade/Trade.js';
+import Updates from '../Updates/Updates.js';
 // import mapStoreToProps from '../../redux/mapStoreToProps';
 
 // Basic class component structure for React with default state
@@ -13,10 +16,11 @@ function Home (props) {
   
     return (
       <div>
-        <h2>{'Home Component'}</h2>
-        <Link to="trade">
-          trade
-        </Link>
+        <h2>Welcome to Coinbot3000</h2>
+        <Trade />
+        <h5>View Trades</h5>
+        {/* TODO - display all orders from database in two categories "buy" & "sell" */}
+        <Updates />
       </div>
     );
 }
