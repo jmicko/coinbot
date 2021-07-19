@@ -35,18 +35,21 @@ let transaction = theLoop.getTransaction();
 console.log(transaction);
 // this triggers on a new client connection
 io.on('connection', (socket) => {
+
+  let id = socket.id;
   
-  console.log('a user connected', socket.id);
+  console.log('a user connected', id);
   // theLoop.toggleCoinbot();
 
 
-  console.log('transaction from io server:', transaction);
+  // console.log('transaction from io server:', transaction);
 
   // get the transaction from the loop in the transaction object via getTransaction function
 
+  transaction.socks = socket;
 
 
-    socket.emit('message', {message: transaction});
+    socket.emit('message', {message: 'transaction'});
 
   
 
