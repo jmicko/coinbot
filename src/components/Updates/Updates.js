@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import io from "socket.io-client";
 const ENDPOINT = "http://localhost:5000";
 const socket = io(ENDPOINT, { transports: ['websocket'] });
@@ -6,7 +6,6 @@ const socket = io(ENDPOINT, { transports: ['websocket'] });
 // const socket = io(ENDPOINT);
 
 function Updates() {
-  const [response, setResponse] = useState("");
   const [message, setMessage] = useState("");
   const [checkerUpdate, setCheckerUpdate] = useState("");
 

@@ -10,12 +10,11 @@ import { connect } from 'react-redux';
 // Directory imports
 import Trade from '../Trade/Trade';
 import Home from '../Home/Home';
-import Nav from '../Nav/Nav';
 
 function App() {
   return (
     <div className="App">
-      <Nav />
+      {/* <Nav /> */}
       <Router>
           <Route 
           exact path="/trade" 

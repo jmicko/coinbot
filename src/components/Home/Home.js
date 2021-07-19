@@ -1,6 +1,6 @@
-import React, { 
-   useState,
-   useEffect,
+import React, {
+  useState,
+  useEffect,
 } from 'react';
 // import { Link } from 'react-router-dom';
 // import { useSelector, useDispatch } from 'react-redux';
@@ -12,17 +12,18 @@ import Updates from '../Updates/Updates.js';
 // value setup. When making a new component be sure to replace
 // the component name TemplateClass with the name for the new
 // component.
-function Home (props) {
-  
-    return (
-      <div>
+function Home(props) {
+
+  return (
+    <div>
+      <header className="App-header">
         <h2>Welcome to Coinbot3000</h2>
-        <Trade />
-        <h5>View Trades</h5>
-        {/* TODO - display all orders from database in two categories "buy" & "sell" */}
-        <Updates />
-      </div>
-    );
+      </header>
+      <Trade />
+      {/* TODO - display all orders from database in two categories "buy" & "sell" */}
+      <Updates />
+    </div>
+  );
 }
 
 export default Home;
