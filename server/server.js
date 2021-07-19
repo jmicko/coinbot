@@ -11,22 +11,9 @@ const options = {
 };
 const io = require("socket.io")(server, options);
 
-// const server = http.createServer(app);
-
-// const io = new Server(server);
-// const theLoop = require('./modules/theLoop');
-
-// the line below allows us to remove the transports argument on front end in socket const
-// todo - but why is it a new server?
-// const io = Server(server, {
-//   cors: {
-//     origin: ["http://localhost:3000"]
-//   }
-// });
-
 require('dotenv').config();
 const bodyParser = require('body-parser');
-
+const theLoop = require('./modules/theLoop')
 
 // Route includes
 const tradeRouter = require('./routes/trade.router');
@@ -46,6 +33,15 @@ app.use('/api/trade', tradeRouter);
 io.on('connection', (socket) => {
 
   console.log('a user connected', socket.id);
+  // theLoop.toggleCoinbot();
+
+
+  console.log(theLoop.getTransaction());
+
+  // get the transaction from the loop in the transaction object via getTransaction function
+  let transaction = theLoop.getTransaction();
+  socket.emit('message', {message: transaction});
+
 
   // testing send message to client
   let data = { message: 'hello there' }
@@ -56,9 +52,9 @@ io.on('connection', (socket) => {
   // this is the same as above but it sends it twice?
   // Yeah, if both are not commented out, it sends twice
   // ohhhhhh it's because it emits for each client?
-  socket.emit('message', data2);
+  // socket.emit('message', data2);
   // brodcast sends to all but original client
-  socket.broadcast.emit('message', data3);
+  // socket.broadcast.emit('message', data3);
 
 
 

@@ -12,36 +12,17 @@ function Updates() {
   const [message, setMessage] = useState("");
   let count = 0;
 
-  // not sure why this is in useEffect. Can it be moved out?
-  // Looks like it can be. Also, moving the socket const into the function makes 
-  // 3 connections for some reason, but putting it all the way up top makes one
-  // useEffect(() => {
-  //   // const socket = io(ENDPOINT, { transports: ['websocket'] });
-  //   // socket.on("messagew", data => {
-  //   //   setResponse(data);
-  //   // });
-  //   // socket.on("message", data => {
-  //   //   console.log(data);
-  //   // });
-  // },
+  // console log any messages from server
   socket.on("message", data => {
     console.log(data, count);
     count++;
     setMessage(data.message)
   });
   
-  // // if client gets a message from server, it will show on screen
-  // socket.on("message", data => {
-  //   console.log(data, count);
-  //   count++;
-  //   setMessage(data.message)
-  // });
-
-
-
   return (
+    // show messages on screen
     <p>
-      message from server: {message}
+      message from server: {JSON.stringify(message)}
     </p>
   );
 }

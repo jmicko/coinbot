@@ -3,7 +3,11 @@ const authedClient = require('./authedClient');
 const storeTransaction = require('./storeTransaction');
 
 // array to watch. if it changes, send it to the frontend via sockets somehow
-const transaction = [];
+let transaction = {};
+
+const getTransaction = () => {
+  return transaction;
+}
 
 // sleeper function to slow down the loop
 // can be called from an async function and takes in how many milliseconds to wait
@@ -36,7 +40,9 @@ const theLoop = async (dbOrders) => {
   for (const dbOrder of dbOrders) {
     // wait for 1/10th of a second between each api call to prevent too many
     await sleep(100);
-    console.log(dbOrder);
+    console.log(dbOrder.id);
+    transaction = dbOrder;
+    // console.log(transaction);
     // pull the id from coinbase inside the loop and store as object
     // send request to coinbase API to get status of a trade
     // setTimeout(() => {
@@ -124,5 +130,6 @@ function tradeLoop() {
 module.exports = {
   toggleCoinbot: toggleCoinbot,
   theLoop: theLoop,
-  tradeLoop: tradeLoop
+  tradeLoop: tradeLoop,
+  getTransaction: getTransaction
 };
