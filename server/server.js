@@ -37,38 +37,13 @@ console.log(transaction);
 io.on('connection', (socket) => {
 
   let id = socket.id;
-  
-  console.log('a user connected', id);
-  // theLoop.toggleCoinbot();
 
+  console.log('a user connected. id:', id);
 
-  // console.log('transaction from io server:', transaction);
-
-  // get the transaction from the loop in the transaction object via getTransaction function
-
+  // send the socket to the loop by storing it in the cloned transaction object
   transaction.socks = socket;
 
-
-    socket.emit('message', {message: 'transaction'});
-
-  
-
-
-  // testing send message to client
-  // let data = { message: 'hello there' }
-  // let data2 = { message: 'hello again' }
-  // let data3 = { message: 'goodbye' }
-  // this sends a message to the client
-  // socket.send(data);
-  // this is the same as above but it sends it twice?
-  // Yeah, if both are not commented out, it sends twice
-  // ohhhhhh it's because it emits for each client?
-  // socket.emit('message', data2);
-  // brodcast sends to all but original client
-  // socket.broadcast.emit('message', data3);
-
-
-
+  socket.emit('message', { message: 'welome!' });
 
   socket.on("disconnect", (reason) => {
     console.log('client disconnected, reason:', reason);

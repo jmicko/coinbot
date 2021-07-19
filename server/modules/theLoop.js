@@ -2,9 +2,14 @@ const pool = require('./pool');
 const authedClient = require('./authedClient');
 const storeTransaction = require('./storeTransaction');
 
-// array to watch. if it changes, send it to the frontend via sockets somehow
-// it is an array so that it can be shallow cloned into other places where it
-// can be watched in it's updated state
+// array for transaction communication to front end client. 
+// when socket connection is made, server will pass the socket object into transaction const
+// it can be accessed at transaction.socks like this:
+// transaction.socks.emit('message', {message: transaction.order});
+// this method of accessing the socket is dirty, but so are socks.
+// but not as dirty as underwear.
+// it's somewhere in the middle.
+// like some sort of... middlewear, if you will.
 const transaction = {};
 
 const getTransaction = () => {
@@ -44,7 +49,7 @@ const theLoop = async (dbOrders) => {
     await sleep(100);
     // console.log(dbOrder.id);
     transaction.order = dbOrder;
-    transaction.socks.emit('message', {message: transaction.order});
+    transaction.socks.emit('message', { message: transaction.order });
     // console.log(transaction);
     // pull the id from coinbase inside the loop and store as object
     // send request to coinbase API to get status of a trade
@@ -86,17 +91,14 @@ const theLoop = async (dbOrders) => {
             )
             .then(result => { console.log('just got back from storing this in db:', result) })
 
-
           // after order succeeds, update settled in DB to be TRUE
-
           const queryText = `UPDATE "orders" SET "settled" = NOT "settled" WHERE "id"=$1;`;
           pool.query(queryText, [cbOrder.id])
             .then(() => { console.log('order updated'); })
-
             .catch(error => {
               console.log('houston we have a problem on line 88 in the loop', error);
-            })
-        }
+            });
+          }
         count++;
       })
       .catch(error => {
