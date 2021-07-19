@@ -43,7 +43,7 @@ io.on('connection', (socket) => {
   // send the socket to the loop by storing it in the cloned transaction object
   transaction.socks = socket;
 
-  socket.emit('message', { message: 'welome!' });
+  socket.emit('message', { message: 'welcome!' });
 
   socket.on("disconnect", (reason) => {
     console.log('client disconnected, reason:', reason);
