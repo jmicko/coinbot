@@ -2,6 +2,9 @@ const pool = require('./pool');
 const authedClient = require('./authedClient');
 const storeTransaction = require('./storeTransaction');
 
+// array to watch. if it changes, send it to the frontend via sockets somehow
+const transaction = [];
+
 // sleeper function to slow down the loop
 // can be called from an async function and takes in how many milliseconds to wait
 const sleep = (milliseconds) => {

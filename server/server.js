@@ -1,12 +1,24 @@
 const express = require('express');
 const app = express();
-const http = require('http');
-const server = http.createServer(app);
-const { Server } = require("socket.io");
-const io = new Server(server);
+// const http = require('http');
 
-// the line below allows us to remove the transports argument 
-// const io = new Server(server, {
+const server = require("http").createServer(app);
+
+const options = {
+  cors: {
+    origin: ["http://localhost:3000"]
+  }
+};
+const io = require("socket.io")(server, options);
+
+// const server = http.createServer(app);
+
+// const io = new Server(server);
+// const theLoop = require('./modules/theLoop');
+
+// the line below allows us to remove the transports argument on front end in socket const
+// todo - but why is it a new server?
+// const io = Server(server, {
 //   cors: {
 //     origin: ["http://localhost:3000"]
 //   }
@@ -30,65 +42,34 @@ app.use('/api/trade', tradeRouter);
 
 // socket.io
 
-// these functions are taken from this guide on making a whatsapp clone. 
-// found at https://www.youtube.com/watch?v=tBr-PybP_9c
-// todo - modify them for our use case
-
 // this triggers on a new client connection
 io.on('connection', (socket) => {
-  
+
   console.log('a user connected', socket.id);
 
   // testing send message to client
-  let data = {message: 'hello there'}
-  socket.send(data);
+  let data = { message: 'hello there' }
+  let data2 = { message: 'hello again' }
+  let data3 = { message: 'goodbye' }
+  // this sends a message to the client
+  // socket.send(data);
+  // this is the same as above but it sends it twice?
+  // Yeah, if both are not commented out, it sends twice
+  // ohhhhhh it's because it emits for each client?
+  socket.emit('message', data2);
+  // brodcast sends to all but original client
+  socket.broadcast.emit('message', data3);
 
-  // testing if passing the socket param into another file
-  // allows it to be used there to send a message
 
 
-
-  // that id is undefined. The guide had front end logic for identifyind users. 
-  // coinbot is not expected to be hosted publicly, so does not differentiate users for logical purposes
-  // authentication may be built in later for public cloud hosting, but for now nothing is sent 
-  // from the front end so id is undefined
-  const id = socket.handshake.query.id;
-  socket.join(id);
-  
-
-  // it looks like this takes in recipients who should see the message, and the message itself
-  // unsure of where it gets the recipients in the first place, 
-  // but we will want to send to anyone connected for now
-  socket.on('send-message', ({recipients, text}) =>{
-    
-    recipients.forEach(recipient => {
-      // creates an array for all recipients of messages other than the sender
-      // we probably just want the original recipients array because we will 
-      // be sending updates from the trade loop
-      const newRecipients = recipients.filter(r => r!== recipient);
-
-      // this takes the id from joining. There must be a list somewhere of all connections
-      // because it pushes the id for each recipient. Not sure if this is stored in the front end
-      // and comes in with the message or on the backend. assuming front end.
-      newRecipients.push(id);
-
-      // this is where the server actually makes the broadcast
-      // it appears that the .to function specifies who it should be sent to.
-      // possibly socket.broadcast.emit('receive-message', /*message details*/) 
-      // could be used to send to everyone connected updates about the bot?
-      socket.broadcast.to(recipient).emit('receive-message', {
-        recipients: newRecipients,
-        sender: id,
-        text
-      })
-    });
-  })
 
   socket.on("disconnect", (reason) => {
     console.log('client disconnected, reason:', reason);
   });
 
 });
+
+// socket.io routes
 
 // handle abnormal disconnects
 io.engine.on("connection_error", (err) => {
