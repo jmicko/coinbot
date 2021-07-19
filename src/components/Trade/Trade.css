@@ -1,0 +1,9 @@
+.decrease input {
+    background-color: red;
+    width           : 4rem;
+}
+
+.increase input {
+    background-color: rgb(20, 238, 20);
+    width           : 4rem;
+}
