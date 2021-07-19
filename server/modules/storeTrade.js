@@ -1,12 +1,6 @@
-// const express = require('express');
 const pool = require('./pool');
-// const authedClient = require('./authedClient');
 
-// const stored = (pendingTrade) => {
-//   return new Promise(resolve => stored(pendingTrade))
-// }
-
-const storeTransaction = (pendingTrade) => {
+const storeTrade = (pendingTrade) => {
   // add new order to the database
   console.log('order was sent successfully, adding to db');
   const newOrder = pendingTrade;
@@ -19,4 +13,4 @@ const storeTransaction = (pendingTrade) => {
   return stored;
 }
 
-module.exports = storeTransaction;
+module.exports = storeTrade;

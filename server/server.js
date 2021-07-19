@@ -1,9 +1,6 @@
 const express = require('express');
 const app = express();
-// const http = require('http');
-
 const server = require("http").createServer(app);
-
 const options = {
   cors: {
     origin: ["http://localhost:3000"]
@@ -27,31 +24,25 @@ app.use(bodyParser.urlencoded({ extended: true }));
 /* Routes */
 app.use('/api/trade', tradeRouter);
 
-// socket.io
-
-let transaction = theLoop.getTransaction();
-
-
-console.log(transaction);
+/* socket.io */
 // this triggers on a new client connection
 io.on('connection', (socket) => {
-
   let id = socket.id;
-
-  console.log('a user connected. id:', id);
-
-  // send the socket to the loop by storing it in the cloned transaction object
-  transaction.socks = socket;
-
+  console.log(`client with id: ${id} connected!`);
+  // message to client confirming connection
   socket.emit('message', { message: 'welcome!' });
+  // relay updates from the loop about trades that are being checked
+  socket.on('checkerUpdate', (trade) => {
+    // socket.broadcast.emit('message', { message: 'welcome!' });
+    socket.broadcast.emit('checkerUpdate', trade);
+    // console.log('server got a trade checker update!', trade);
+  })
 
   socket.on("disconnect", (reason) => {
-    console.log('client disconnected, reason:', reason);
+    console.log(`client with id: ${id} disconnected, reason:`, reason);
   });
 
 });
-
-// socket.io routes
 
 // handle abnormal disconnects
 io.engine.on("connection_error", (err) => {
@@ -60,6 +51,7 @@ io.engine.on("connection_error", (err) => {
   console.log(err.message);  // the error message, for example "Session ID unknown"
   console.log(err.context);  // some additional error context
 });
+/* end socket.io */
 
 // Serve static files
 app.use(express.static('build'));
