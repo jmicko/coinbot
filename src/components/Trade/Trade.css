@@ -51,13 +51,9 @@
 .btn-send-trade {
     float: right;
     background-color: rgb(93, 216, 238);
+    font-size: large;
 }
 
 .number-inputs {
     margin: .4rem 0 .4rem auto;
 }
-
-/* label {
-    margin: auto 0;
-    width: 100%;
-} */

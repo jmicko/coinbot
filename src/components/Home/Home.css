@@ -10,7 +10,7 @@
 .header {
     grid-column-start  : 1;
     grid-column-end    : 4;
-    background-color   : #282c34;
+    background-color   : #2d996c;
     /* display         : flex; */
     /* flex-direction  : column; */
     text-align         : center;
