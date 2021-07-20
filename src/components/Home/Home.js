@@ -6,6 +6,8 @@ import React, {
 // import { useSelector, useDispatch } from 'react-redux';
 import Trade from '../Trade/Trade.js';
 import Updates from '../Updates/Updates.js';
+import ToggleBot from '../ToggleBot/ToggleBot'
+import './Home.css'
 // import mapStoreToProps from '../../redux/mapStoreToProps';
 
 // Basic class component structure for React with default state
@@ -15,12 +17,14 @@ import Updates from '../Updates/Updates.js';
 function Home(props) {
 
   return (
-    <div>
-      <header className="App-header">
+    <div className="Home">
+      <header className="header">
         <h2>Welcome to Coinbot3000</h2>
       </header>
+      <ToggleBot />
       <Trade />
       {/* TODO - display all orders from database in two categories "buy" & "sell" */}
+      <p className="TradeList">LIST OF TRADES GOES HERE</p>
       <Updates />
     </div>
   );

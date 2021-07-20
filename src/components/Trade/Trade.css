@@ -1,9 +1,63 @@
+.Trade {
+    display              : grid;
+    grid-column-start    : 2;
+    grid-row             : 2;
+    grid-template-columns: auto auto;
+    grid-template-rows   : auto auto;
+    height               : min-content;
+}
+
 .decrease input {
     background-color: red;
     width           : 4rem;
+    /* margin       : auto; */
+    /* margin-right : 0; */
 }
+
+/* .decrease {
+    margin: 0;
+} */
 
 .increase input {
     background-color: rgb(20, 238, 20);
     width           : 4rem;
 }
+
+.trade-description {
+    grid-column: 2;
+    grid-row   : 2;
+    margin     : 0 1rem;
+}
+
+.new-trade-form {
+    grid-column: 1;
+    grid-row   : 2;
+    display: flex;
+    /* justify-content: right; */
+    flex-direction: column;
+}
+
+.title {
+    grid-row   : 1;
+    grid-column: 1 / 3;
+    margin     : 1rem auto;
+}
+
+.increment-buttons {
+    margin: auto 0 auto auto;
+    width : fit-content;
+}
+
+.btn-send-trade {
+    float: right;
+    background-color: rgb(93, 216, 238);
+}
+
+.number-inputs {
+    margin: .4rem 0 .4rem auto;
+}
+
+/* label {
+    margin: auto 0;
+    width: 100%;
+} */

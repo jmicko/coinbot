@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import io from "socket.io-client";
+import './Updates.css'
 const ENDPOINT = "http://localhost:5000";
 const socket = io(ENDPOINT, { transports: ['websocket'] });
 // adding cors arg in server let's us get rid of the transports arg
@@ -23,12 +24,9 @@ function Updates() {
 
   return (
     // show messages on screen
-    <div>
+    <div className="Updates">
       <h3>Checking trade:</h3>
-      <p>Trade id: {checkerUpdate.id}</p>
-      <p>Price per BTC: {checkerUpdate.price}</p>
-      <p>Size: {checkerUpdate.size} BTC</p>
-      <p>Buy/Sell: {checkerUpdate.side}</p>
+      <p>Trade id: {checkerUpdate.id} -- Price per BTC: {checkerUpdate.price} -- Size: {checkerUpdate.size} BTC -- Buy/Sell: {checkerUpdate.side}</p>
       <p>Trade is settled: {checkerUpdate.settled ? "YES" : "no :("}</p>
     </div>
   );
