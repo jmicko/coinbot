@@ -3,7 +3,7 @@
     /* this is STRICTLY A BUSINESS ROBOT, and the color should reflect that! */
     background-color     : rgb(172, 171, 133);
     grid-template-columns: 1fr 4fr 1fr;
-    grid-template-rows   : 5rem auto auto 10rem;
+    grid-template-rows   : calc((9px + 2vmin)*4.3) auto auto 10rem;
     height: 100vh;
 }
 
@@ -15,6 +15,6 @@
     /* flex-direction  : column; */
     text-align         : center;
     align-items        : center;
-    font-size          : calc(10px + 2vmin);
+    font-size          : calc(9px + 2vmin);
     color              : white;
 }
