@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
-import './Trade.css'
+import './Trade.css';
+
 
 // Basic class component structure for React with default state
 // value setup. When making a new component be sure to replace
@@ -20,25 +21,24 @@ function Trade(props) {
 
   function submitTransaction(event) {
     event.preventDefault();
-    dispatch({ type: 'START_TRADE', payload: {
-      price: transactionPrice,
-      size: transactionAmount,
-    }})
+    dispatch({
+      type: 'START_TRADE', payload: {
+        price: transactionPrice,
+        size: transactionAmount,
+      }
+    })
     console.log(`the price is: $${transactionPrice} per 1 BTC`);
     console.log(`the amount is: ${transactionAmount} BTC`);
   }
 
   return (
-    <div>
-      <button
-      onClick={ () => dispatch({ type: 'TOGGLE_BOT' }) }>
-        toggle bot
-      </button>
-      <div>
+    <div className="Trade" >
+      <h3 className="title">New Trade Position</h3>
+      {/* <div> */}
         {/* form with a single input. Input takes a price point at which 
-          to make a trade. todo - make function to send price to backend server */}
-        <form onSubmit={submitTransaction} >
-          <div>
+          to make a trade */}
+        <form className="new-trade-form" onSubmit={submitTransaction} >
+          <div className="number-inputs">
             {/* input for setting the price/BTC per transaction. Can be adjusted in $500 steps, or manually input */}
             <label htmlFor="price">
               Trade price per 1 BTC (in USD):
@@ -52,8 +52,20 @@ function Trade(props) {
                 onChange={(event) => setTransactionPrice(event.target.value)}
               />
             </label>
+            <div className="increment-buttons">
+              <div className="increase">
+                <input type="button" onClick={(event) => setTransactionPrice(transactionPrice + 1000)} value="+1000"></input>
+                <input type="button" onClick={(event) => setTransactionPrice(transactionPrice + 100)} value="+100"></input>
+                <input type="button" onClick={(event) => setTransactionPrice(transactionPrice + 10)} value="+10"></input>
+              </div>
+              <div className="decrease">
+                <input type="button" onClick={(event) => setTransactionPrice(transactionPrice - 1000)} value="-1000"></input>
+                <input type="button" onClick={(event) => setTransactionPrice(transactionPrice - 100)} value="-100"></input>
+                <input type="button" onClick={(event) => setTransactionPrice(transactionPrice - 10)} value="-10"></input>
+              </div>
+            </div>
           </div>
-          <div>
+          <div className="number-inputs">
             {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
             <label htmlFor="amount">
               Trade amount (in BTC):
@@ -66,17 +78,31 @@ function Trade(props) {
                 onChange={(event) => setTransactionAmount(event.target.value)}
               />
             </label>
+            <div className="increment-buttons">
+              <div className="increase">
+                <input type="button" onClick={(event) => setTransactionAmount(Math.round(transactionAmount * 1000 + 1000) /1000)} value="+1"></input>
+                <input type="button" onClick={(event) => setTransactionAmount(Math.round(transactionAmount * 1000 + 100) /1000)} value="+.1"></input>
+                <input type="button" onClick={(event) => setTransactionAmount(Math.round(transactionAmount * 1000 + 10) / 1000)} value="+.01"></input>
+                <input type="button" onClick={(event) => setTransactionAmount(Math.round(transactionAmount * 1000 + 1) / 1000)} value="+.001"></input>
+              </div>
+              <div className="decrease">
+                <input type="button" onClick={(event) => setTransactionAmount(Math.round(transactionAmount * 1000 - 1000) / 1000)} value="-1"></input>
+                <input type="button" onClick={(event) => setTransactionAmount(Math.round(transactionAmount * 1000 - 100) / 1000)} value="-.1"></input>
+                <input type="button" onClick={(event) => setTransactionAmount(Math.round(transactionAmount * 1000 - 10) / 1000)} value="-.01"></input>
+                <input type="button" onClick={(event) => setTransactionAmount(Math.round(transactionAmount * 1000 - 1) / 1000)} value="-.001"></input>
+              </div>
+            </div>
           </div>
           {/* display some details about the new transaction that is going to be made */}
-          <p>
-            This will tell coinbot to start trading {transactionAmount} BTC 
-            between the low purchase price of ${transactionPrice} and 
-            the high sell price of ${((Math.round((transactionPrice * 1.03) * 100)) / 100)}. 
+          <input className="btn-send-trade" type="submit" name="submit" value="Send new trade position" />
+        </form>
+          <p className="trade-description">
+            This will tell coinbot to start trading {transactionAmount} BTC
+            between the low purchase price of ${transactionPrice} and
+            the high sell price of ${((Math.round((transactionPrice * 1.03) * 100)) / 100)}.
             The value in USD for the initial transaction will be about ${((Math.round((transactionPrice * transactionAmount) * 100)) / 100)}.
           </p>
-          <input className="btn" type="submit" name="submit" value="Start Trading" />
-        </form>
-      </div>
+      {/* </div> */}
     </div>
   );
 }
