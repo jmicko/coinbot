@@ -45,7 +45,7 @@
 
 .increment-buttons {
     margin: auto 0 auto auto;
-    width : fit-content;
+    width : max-content;
 }
 
 .btn-send-trade {
@@ -56,4 +56,11 @@
 
 .number-inputs {
     margin: .4rem 0 .4rem auto;
+    display: flex;
+    flex-direction: column;
+    justify-items: right;
+}
+
+label {
+    width: max-content;
 }
