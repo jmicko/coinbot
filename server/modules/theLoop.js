@@ -16,8 +16,8 @@ const sleep = (milliseconds) => {
 
 // boolean variable to turn coinbot on and off
 let coinbot = false;
-let count = 0;
-let loopSwitch = false;
+// let count = 0;
+// let loopSwitch = false;
 
 
 // toggle coinbot on and off
@@ -52,44 +52,73 @@ function toggleCoinbot() {
 
 
 
-const theLoop = async (dbOrders) => {
+const theLoop = async () => {
   //  always check if coinbot should be running
-  if (coinbot) {
-    console.log('bot is coinbot');
-    // wait for 1/10th of a second between each full loop call to prevent too many
-    // need to make fewer than 15/sec
-    await sleep(100);
-    // make variables to store the results from the 2 api calls, 
-    // and one for orders that should be settled but need to be checked individually
-    // let dbOrders = [],
-    //   cbOrders = [];
-      Promise.all([
-        // get all open orders from db
-        databaseClient.getUnsettledTrades(),
-        authedClient.getOrders({ status: 'open' })
-      ])
-      .then((results) => {
-        // store the orders in the corrosponding arrays so they can be compared
-        const dbOrders = results[0],
-              cbOrders = results[1];
-        const ordersToCheck = orderElimination (dbOrders, cbOrders);
-        console.log('check', ordersToCheck);
-        // filter results from cb out of results from db
-        // will be left with results from db that should be settled in cb
-      })
-      .then(() => {
-        // compare the arrays and remove any where the ids match in both
-      })
-      .then(() => {
-        // loop through the remaining array and double check each settled === true
-      })
-      .catch(error => {
-        console.log('error in the loop', error);
-      });
-    // now get all open orders from coinbase
+  // wait for 1/10th of a second between each full loop call to prevent too many
+  // need to make fewer than 15/sec
+  await sleep(5000);
+  console.log('==============bot is coinbot');
+  // make variables to store the results from the 2 api calls, 
+  // and one for orders that should be settled but need to be checked individually
+  // let dbOrders = [],
+  //   cbOrders = [];
+  Promise.all([
+    // get all open orders from db
+    databaseClient.getUnsettledTrades(),
+    authedClient.getOrders({ status: 'open' })
+  ])
+    .then((results) => {
+      // store the orders in the corrosponding arrays so they can be compared
+      const dbOrders = results[0],
+        cbOrders = results[1];
+      // compare the arrays and remove any where the ids match in both
+      const ordersToCheck = orderElimination(dbOrders, cbOrders);
+      // console.log('check', ordersToCheck);
+      return ordersToCheck;
+      // filter results from cb out of results from db
+      // will be left with results from db that should be settled in cb
+    })
+    .then(async (ordersToCheck) => {
+      // loop through the remaining array and double check each settled === true
+      // for (const order of ordersToCheck) {
+        // await sleep(100);
+      await checker(ordersToCheck);
+      // }
+      console.log('+++++++++++++through the loop again');
+    })
+    .then(() => {
+      if (coinbot) {
+        console.log('=============through the loop again');
+        theLoop()
+      }
 
-    // - get all open orders from cb api instead of getting them one at a time in the loop
+    })
+    .catch(error => {
+      console.log('error in the loop', error);
+      console.error(error)
+      // if (error.Error) {
+        
+      // }
+    });
+}
 
+const checker = async (ordersToCheck) => {
+  // brother may I have some loops
+  for (const order of ordersToCheck) {
+    // need to stop the loop if coinbot is off
+    if (coinbot) {
+      // wait for 1/10th of a second between each api call to prevent too many
+      await sleep(100);
+      socket.emit('checkerUpdate', order);
+      console.log('checking this', order);
+      // pull the id from coinbase inside the loop and store as object
+      // send request to coinbase API to get status of a trade
+      await authedClient.getOrder(order.id)
+        .then((cbOrder) => {
+          console.log('loop boy loop boy', cbOrder);
+          return true;
+        });
+    }
   }
 }
 
@@ -110,8 +139,8 @@ const orderElimination = (dbOrders, cbOrders) => {
 }
 
 
-const oldtheLoop = async (dbOrders) => {
-  loopSwitch = true;
+const orderChecker = async (dbOrders) => {
+  // loopSwitch = true;
   for (const dbOrder of dbOrders) {
     // need to stop the loop if coinbot is off
     if (coinbot) {
@@ -152,7 +181,7 @@ const oldtheLoop = async (dbOrders) => {
             authedClient.placeOrder(tradeDetails)
               .then(pendingTrade =>
                 // after trade is placed, store the returned pending trade values in the database
-                storeTrade(pendingTrade)
+                databaseClient.storeTrade(pendingTrade)
               )
               .then(result => { console.log('just got back from storing this in db:', result) })
 
@@ -171,7 +200,7 @@ const oldtheLoop = async (dbOrders) => {
         })
     };
   }
-  loopSwitch = false;
+  coinbot = false;
   count = 0;
 }
 
@@ -183,28 +212,28 @@ const oldtheLoop = async (dbOrders) => {
 // there's gotta be a better way lol.
 // the loop can just call itself at the end of the loop can't it?
 // the loop can be one function and the toggle can be another. call it first from the toggle and then call itself
-function oldtradeLoop() {
-  if (coinbot) {
-    // if bot should be coinbot, also check if the loop from the theLoop loop is running.
-    // if the theLoop loop is not running, bot will wait a second and try again
-    if (!loopSwitch) {
-      // pull all "unsettled" orders from DB
-      const sqlText = `SELECT * FROM "orders" WHERE "settled"=FALSE;`;
-      pool.query(sqlText)
-        // pass the DB orders to a function to compare them to the orders in CB
-        .then((result) => theLoop(result.rows))
-        .catch(error => {
-          console.log('error fetching orders from database', error);
-        });
-    }
-    // if the bot should still be coinbot, it waits 1 second and then calls itself again
-    // by checking coinbot at the beginning of the function, and calling itself at the end,
-    // the code won't run if the toggle is turned off in the middle, but it will still finish a cycle
-    setTimeout(() => {
-      tradeLoop();
-    }, 1000);
-  }
-}
+// function oldtradeLoop() {
+//   if (coinbot) {
+//     // if bot should be coinbot, also check if the loop from the theLoop loop is running.
+//     // if the theLoop loop is not running, bot will wait a second and try again
+//     if (!loopSwitch) {
+//       // pull all "unsettled" orders from DB
+//       const sqlText = `SELECT * FROM "orders" WHERE "settled"=FALSE;`;
+//       pool.query(sqlText)
+//         // pass the DB orders to a function to compare them to the orders in CB
+//         .then((result) => theLoop(result.rows))
+//         .catch(error => {
+//           console.log('error fetching orders from database', error);
+//         });
+//     }
+//     // if the bot should still be coinbot, it waits 1 second and then calls itself again
+//     // by checking coinbot at the beginning of the function, and calling itself at the end,
+//     // the code won't run if the toggle is turned off in the middle, but it will still finish a cycle
+//     setTimeout(() => {
+//       tradeLoop();
+//     }, 1000);
+//   }
+// }
 
 module.exports = {
   toggleCoinbot: toggleCoinbot,
