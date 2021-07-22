@@ -7,7 +7,7 @@ const getUnsettledTrades = () => {
     pool.query(sqlText)
       .then((results) => {
         // promise returns promise from pool if success
-        resolve(results);
+        resolve(results.rows);
       })
       .catch((err) => {
         // or promise relays errors from pool to parent

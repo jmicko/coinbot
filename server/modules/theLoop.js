@@ -61,32 +61,52 @@ const theLoop = async (dbOrders) => {
     await sleep(100);
     // make variables to store the results from the 2 api calls, 
     // and one for orders that should be settled but need to be checked individually
-    let dbOrders = [],
-      cbOrders = [],
-      odersToCheck = [];
-    Promise.all([
-      // get all open orders from db
-      databaseClient.getUnsettledTrades(),
-      authedClient.getOrders({ status: 'open' })
-    ])
+    // let dbOrders = [],
+    //   cbOrders = [];
+      Promise.all([
+        // get all open orders from db
+        databaseClient.getUnsettledTrades(),
+        authedClient.getOrders({ status: 'open' })
+      ])
       .then((results) => {
-        // store the orders in the corrosponding arrays so they can be compared later
-        dbOrders = results[0].rows;
-        cbOrders = results[1];
-        // console.log('database', dbOrders);
-        // console.log('Coinbase', cbOrders);
+        // store the orders in the corrosponding arrays so they can be compared
+        const dbOrders = results[0],
+              cbOrders = results[1];
+        const ordersToCheck = orderElimination (dbOrders, cbOrders);
+        console.log('check', ordersToCheck);
+        // filter results from cb out of results from db
+        // will be left with results from db that should be settled in cb
       })
       .then(() => {
         // compare the arrays and remove any where the ids match in both
       })
+      .then(() => {
+        // loop through the remaining array and double check each settled === true
+      })
       .catch(error => {
-        console.log('error fetching orders from database', error);
+        console.log('error in the loop', error);
       });
     // now get all open orders from coinbase
 
     // - get all open orders from cb api instead of getting them one at a time in the loop
 
   }
+}
+
+// take in an array and an item to check
+const orderElimination = (dbOrders, cbOrders) => {
+  // let dbOrders = [];
+  for (let i = 0; i < cbOrders.length; i++) {
+    // look at each id of coinbase orders
+    const cbOrderID = cbOrders[i].id;
+    // console.log(cbOrderID);
+    // filter out dborders of that id
+    dbOrders = dbOrders.filter(id => {
+      return (id.id !== cbOrderID)
+    })
+  }
+  // console.log('======CHECK THESE:', dbOrders);
+  return dbOrders;
 }
 
 
@@ -154,6 +174,8 @@ const oldtheLoop = async (dbOrders) => {
   loopSwitch = false;
   count = 0;
 }
+
+
 
 
 // Wait, what does this even do?
