@@ -38,11 +38,7 @@ const checker = async (ordersToCheck, socket) => {
                                 return pool.query(queryText, [cbOrder.id]);
                             })
                             .then((results) => {
-                                console.log(results.command);
-                                return results.command;
-                            })
-                            .then((result) => {
-                                console.log('order updated', result);
+                                console.log('order updated', results.command);
                                 return true
                             })
                             .catch(error => {
@@ -67,11 +63,8 @@ const checker = async (ordersToCheck, socket) => {
                             return pool.query(queryText, [dbOrder.id]);
                         }
                     } else {
-                        console.log('problem in the loop', error);
+                        console.log('yousa got a biiiig big problems', error);
                     }
-                })
-                .finally((error) => {
-                    console.log('yousa got a biiiig big problems');
                 })
         }
     }
