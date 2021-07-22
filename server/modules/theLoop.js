@@ -26,6 +26,11 @@ function toggleCoinbot() {
     : console.log('bot is not coinbot');
 }
 
+// todo - something is causing an insufficient funds message when many orders are placed rapidly from DOM
+// possibly need to put our arrays in an order. They are coming back in random order from db. Maybe need to order by date?
+// depending on settled status, the loop may be trying to sell btc that it doesn't acually have.
+// solution for now is to not smash that send new trade button. You don't have that kind of money anyway.
+// also possible that smashing send trade button simply makes too make requests, and one of them stores in db but doesn't go through?
 
 const theLoop = async () => {
   //  always check if coinbot should be running
@@ -76,43 +81,30 @@ const theLoop = async () => {
 
 const checker = async (ordersToCheck) => {
   // brother may I have some loops
+  // the order object can be used throughout the loop to refer to the old order that may have settled
   for (const order of ordersToCheck) {
     // need to stop the loop if coinbot is off
     if (coinbot) {
       // wait for 1/10th of a second between each api call to prevent too many
-      await sleep(100);
+      await sleep(500);
       socket.emit('checkerUpdate', order);
       console.log('checking this', order);
-      // pull the id from coinbase inside the loop and store as object
+
       // send request to coinbase API to get status of a trade
       authedClient.getOrder(order.id)
+        // now can refer to order as old status of trade and cbOrder as current status
         .then((cbOrder) => {
-          console.log('loop boy loop boy', cbOrder.settled);
-          console.log('loop boy loop boy', order.settled);
+          // console.log('loop boy loop boy', cbOrder.settled);
+          // console.log('loop boy loop boy', order.settled);
+
           // if it has indeed settled, make the opposit trade and call it good
           if (cbOrder.settled) {
+            // tell frontend it is settled
             socket.emit('checkerUpdate', cbOrder);
-            // if it has been settled, send a buy/sell order to CB
-            // assume selling, but if it was just sold, change side to buy
-            // the price to sell at is calculated to be 3% higher than the buy price
-            let side = 'sell';
-            let price = ((Math.round((order.price * 1.03) * 100)) / 100);
-            if (order.side === 'sell') {
-              // the price to buy at is calculated to be 3% lower than the sell price
-              // todo - store original buy price in db, and always use it as the buy price 
-              // to avoid price creep from rounding issues
-              side = 'buy';
-              price = ((Math.round((order.price / 1.03) * 100)) / 100);
-              console.log('buying');
-            } else {
-              console.log('selling');
-            }
-            const tradeDetails = {
-              side: side,
-              price: price, // USD
-              size: order.size, // BTC
-              product_id: 'BTC-USD',
-            };
+
+            // get the trade details for the new trade. Flip buy/sell and get new price
+            const tradeDetails = flipTrade(order, cbOrder);
+
             // function to send the order with the CB API to CB and place the trade
             authedClient.placeOrder(tradeDetails)
               .then(pendingTrade =>
@@ -124,12 +116,20 @@ const checker = async (ordersToCheck) => {
                 const queryText = `UPDATE "orders" SET "settled" = NOT "settled" WHERE "id"=$1;`;
                 pool.query(queryText, [cbOrder.id])
               })
-              .then(() => { console.log('order updated'); })
+              .then(() => {
+                console.log('order updated');
+                return true
+              })
               .catch(error => {
-                console.log('houston we have a problem on line 88 in the loop', error);
+                if (error.message) {
+                  console.log(error.message);
+                } else {
+                  console.log('houston we have a problem in the loop', error);
+                }
               });
+          } else {
+            return true;
           }
-          return true;
         })
         .catch((err) => {
           console.log(err);
@@ -138,9 +138,39 @@ const checker = async (ordersToCheck) => {
   }
 }
 
+// function for flipping sides on a trade
+// Returns the tradeDetails object needed to send trade to CB
+const flipTrade = (dbOrder, cbOrder) => {
+  // set up the object to be sent
+  const tradeDetails = {
+    side: '',
+    price: '', // USD
+    // when flipping a trade, size and product will always be the same
+    size: dbOrder.size, // BTC
+    product_id: cbOrder.product_id,
+  };
+
+  // todo - need to store more info in db
+  // need the trade-pair margin instead of calculating new price each time
+
+  // add buy/sell requirement and price
+  if (cbOrder.side === "buy") {
+    // if it was a buy, sell for more. multiply old price
+    tradeDetails.side = "sell"
+    tradeDetails.price = ((Math.round((dbOrder.price * 1.03) * 100)) / 100);
+    console.log('selling');
+  } else {
+    // if it was a sell, buy for less. divide old price
+    tradeDetails.side = "buy"
+    tradeDetails.price = ((Math.round((dbOrder.price / 1.03) * 100)) / 100);
+    console.log('buying');
+  }
+  // return the tradeDetails object
+  return tradeDetails;
+}
+
 // take in an array and an item to check
 const orderElimination = (dbOrders, cbOrders) => {
-  // let dbOrders = [];
   for (let i = 0; i < cbOrders.length; i++) {
     // look at each id of coinbase orders
     const cbOrderID = cbOrders[i].id;
