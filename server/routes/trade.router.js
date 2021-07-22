@@ -31,6 +31,9 @@ router.post('/order', (req, res) => {
   authedClient.placeOrder(tradeDetails)
   // after trade is placed, store the returned pending trade values in the database
     .then(pendingTrade => databaseClient.storeTrade(pendingTrade))
+    .then(results => {
+      console.log(`order sent to db, got this back:`, results.message);
+    })
     // .then(result => {console.log('just got back from storing this in db:', result)})
     .catch((error) => {
       console.log('new order process failed', error);

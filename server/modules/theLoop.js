@@ -85,12 +85,12 @@ const checker = async (ordersToCheck) => {
       console.log('checking this', order);
       // pull the id from coinbase inside the loop and store as object
       // send request to coinbase API to get status of a trade
-      await authedClient.getOrder(order.id)
-      .then((cbOrder) => {
-        console.log('loop boy loop boy', cbOrder.settled);
-        console.log('loop boy loop boy', order.settled);
-        // if it has indeed settled, make the opposit trade and call it good
-        if (cbOrder.settled) {
+      authedClient.getOrder(order.id)
+        .then((cbOrder) => {
+          console.log('loop boy loop boy', cbOrder.settled);
+          console.log('loop boy loop boy', order.settled);
+          // if it has indeed settled, make the opposit trade and call it good
+          if (cbOrder.settled) {
             socket.emit('checkerUpdate', cbOrder);
             // if it has been settled, send a buy/sell order to CB
             // assume selling, but if it was just sold, change side to buy

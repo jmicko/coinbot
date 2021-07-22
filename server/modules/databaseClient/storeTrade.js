@@ -9,8 +9,12 @@ const storeTrade = (pendingTrade) => {
     VALUES ($1, $2, $3, $4, $5);`;
     pool.query(sqlText, [newOrder.id, newOrder.price, newOrder.size, newOrder.side, newOrder.settled])
     .then((results) => {
-      console.log(`order ${newOrder.id} was successfully stored in db`);
-      resolve(results);
+      const success = {
+        message : `order ${newOrder.id} was successfully stored in db`,
+        results : results
+      }
+      // console.log(`order ${newOrder.id} was successfully stored in db`);
+      resolve(success);
     })
     .catch((err) => {
       console.log('problem storing order in db', err);
