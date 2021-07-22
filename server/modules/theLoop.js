@@ -14,15 +14,12 @@ const sleep = (milliseconds) => {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
-// boolean variable to turn coinbot on and off
-let coinbot = false;
-
 // toggle coinbot on and off
 function toggleCoinbot() {
   // toggle coinbot boolean
-  coinbot = !coinbot;
+  robot.botstatus.toggle = !robot.botstatus.toggle;
   // if the bot should now be coinbot, it starts the trade loop
-  coinbot
+  robot.botstatus.toggle
     ? theLoop()
     : console.log('bot is not coinbot');
 }
@@ -69,7 +66,7 @@ const theLoop = async () => {
       return success;
     })
     .then(() => {
-      if (coinbot) {
+      if (robot.botstatus.toggle) {
         console.log('=============through the loop again');
         theLoop()
       }
@@ -89,7 +86,7 @@ const checker = async (ordersToCheck) => {
   // the order object can be used throughout the loop to refer to the old order that may have settled
   for (const dbOrder of ordersToCheck) {
     // need to stop the loop if coinbot is off
-    if (coinbot) {
+    if (robot.botstatus.toggle) {
       // wait for 1/10th of a second between each api call to prevent too many
       await sleep(500);
       socket.emit('checkerUpdate', dbOrder);
