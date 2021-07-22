@@ -37,24 +37,32 @@ const checker = async (ordersToCheck, socket) => {
                   // after order succeeds, update settled in DB to be TRUE
                   const queryText = `UPDATE "orders" SET "settled" = NOT "settled" WHERE "id"=$1;`;
                   pool.query(queryText, [cbOrder.id])
-                })
-                .then(() => {
-                  console.log('order updated');
-                  return true
-                })
-                .catch(error => {
-                  if (error.message) {
-                    console.log(error.message);
-                  } else {
-                    console.log('houston we have a problem in the loop', error);
-                  }
+                  .then((results) => {
+                      console.log(results.command);
+                      return results.command;
+                    })
+                    .then((result) => {
+                        console.log('order updated', result);
+                        return true
+                    })
+                    .catch(error => {
+                        if (error.message) {
+                            console.log(error.message);
+                        } else {
+                            console.log('houston we have a problem in the loop', error);
+                        }
+                    })
                 });
             } else {
               return true;
             }
           })
           .catch((err) => {
-            console.log(err);
+            if (error.message) {
+                console.log(error.message);
+            } else {
+                console.log('problem in the loop', error);
+            }
           });
       }
     }
