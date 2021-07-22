@@ -10,7 +10,6 @@ const io = require("socket.io")(server, options);
 
 require('dotenv').config();
 const bodyParser = require('body-parser');
-const theLoop = require('./modules/theLoop')
 
 // Route includes
 const tradeRouter = require('./routes/trade.router');

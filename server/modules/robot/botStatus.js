@@ -1,6 +1,6 @@
-const botstatus = {
+const botStatus = {
     toggle : false,
     loop : false
 }
 
-module.exports = botstatus;
+module.exports = botStatus;

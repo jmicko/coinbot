@@ -1,7 +1,8 @@
-const botstatus = require('./botStatus');
+const botStatus = require('./botStatus');
+const toggleCoinbot = require('./toggleCoinbot');
 
 const robot = {
-    botstatus : botstatus
+    toggleCoinbot: toggleCoinbot
 }
 
 module.exports = robot;

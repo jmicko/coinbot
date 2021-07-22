@@ -1,7 +1,8 @@
-const pool = require('./pool');
-const authedClient = require('./authedClient');
-const databaseClient = require('./databaseClient/databaseClient');
-const robot = require('./robot/robot');
+const pool = require('../pool');
+const authedClient = require('../authedClient');
+const databaseClient = require('../databaseClient/databaseClient');
+const robot = require('./robot');
+const botStatus = require('./botStatus');
 
 // The express server itself can use the socket.io-client package to call the ws connections
 const io = require("socket.io-client");
@@ -14,15 +15,7 @@ const sleep = (milliseconds) => {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
-// toggle coinbot on and off
-function toggleCoinbot() {
-  // toggle coinbot boolean
-  robot.botstatus.toggle = !robot.botstatus.toggle;
-  // if the bot should now be coinbot, it starts the trade loop
-  robot.botstatus.toggle
-    ? theLoop()
-    : console.log('bot is not coinbot');
-}
+
 
 // todo - something is causing an insufficient funds message when many orders are placed rapidly from DOM
 // possibly need to put our arrays in an order. They are coming back in random order from db. Maybe need to order by date?
@@ -66,7 +59,7 @@ const theLoop = async () => {
       return success;
     })
     .then(() => {
-      if (robot.botstatus.toggle) {
+      if (botStatus.toggle) {
         console.log('=============through the loop again');
         theLoop()
       }
@@ -86,7 +79,7 @@ const checker = async (ordersToCheck) => {
   // the order object can be used throughout the loop to refer to the old order that may have settled
   for (const dbOrder of ordersToCheck) {
     // need to stop the loop if coinbot is off
-    if (robot.botstatus.toggle) {
+    if (botStatus.toggle) {
       // wait for 1/10th of a second between each api call to prevent too many
       await sleep(500);
       socket.emit('checkerUpdate', dbOrder);
@@ -181,7 +174,4 @@ const orderElimination = (dbOrders, cbOrders) => {
   return dbOrders;
 }
 
-module.exports = {
-  toggleCoinbot: toggleCoinbot,
-  theLoop: theLoop,
-};
+module.exports = theLoop;
