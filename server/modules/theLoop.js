@@ -56,7 +56,7 @@ const theLoop = async () => {
   //  always check if coinbot should be running
   // wait for 1/10th of a second between each full loop call to prevent too many
   // need to make fewer than 15/sec
-  await sleep(5000);
+  await sleep(1000);
   console.log('==============bot is coinbot');
   // make variables to store the results from the 2 api calls, 
   // and one for orders that should be settled but need to be checked individually
@@ -78,13 +78,10 @@ const theLoop = async () => {
       // filter results from cb out of results from db
       // will be left with results from db that should be settled in cb
     })
-    .then(async (ordersToCheck) => {
+    .then((ordersToCheck) => {
       // loop through the remaining array and double check each settled === true
-      // for (const order of ordersToCheck) {
-        // await sleep(100);
-      await checker(ordersToCheck);
-      // }
-      console.log('+++++++++++++through the loop again');
+      const success = checker(ordersToCheck);
+      return success;
     })
     .then(() => {
       if (coinbot) {
@@ -97,7 +94,7 @@ const theLoop = async () => {
       console.log('error in the loop', error);
       console.error(error)
       // if (error.Error) {
-        
+
       // }
     });
 }
@@ -114,9 +111,53 @@ const checker = async (ordersToCheck) => {
       // pull the id from coinbase inside the loop and store as object
       // send request to coinbase API to get status of a trade
       await authedClient.getOrder(order.id)
-        .then((cbOrder) => {
-          console.log('loop boy loop boy', cbOrder);
+      .then((cbOrder) => {
+        console.log('loop boy loop boy', cbOrder.settled);
+        console.log('loop boy loop boy', order.settled);
+        // if it has indeed settled, make the opposit trade and call it good
+        if (cbOrder.settled) {
+            socket.emit('checkerUpdate', cbOrder);
+            // if it has been settled, send a buy/sell order to CB
+            // assume selling, but if it was just sold, change side to buy
+            // the price to sell at is calculated to be 3% higher than the buy price
+            let side = 'sell';
+            let price = ((Math.round((order.price * 1.03) * 100)) / 100);
+            if (order.side === 'sell') {
+              // the price to buy at is calculated to be 3% lower than the sell price
+              // todo - store original buy price in db, and always use it as the buy price 
+              // to avoid price creep from rounding issues
+              side = 'buy';
+              price = ((Math.round((order.price / 1.03) * 100)) / 100);
+              console.log('buying');
+            } else {
+              console.log('selling');
+            }
+            const tradeDetails = {
+              side: side,
+              price: price, // USD
+              size: order.size, // BTC
+              product_id: 'BTC-USD',
+            };
+            // function to send the order with the CB API to CB and place the trade
+            authedClient.placeOrder(tradeDetails)
+              .then(pendingTrade =>
+                // after trade is placed, store the returned pending trade values in the database
+                databaseClient.storeTrade(pendingTrade)
+              )
+              .then(result => {
+                // after order succeeds, update settled in DB to be TRUE
+                const queryText = `UPDATE "orders" SET "settled" = NOT "settled" WHERE "id"=$1;`;
+                pool.query(queryText, [cbOrder.id])
+              })
+              .then(() => { console.log('order updated'); })
+              .catch(error => {
+                console.log('houston we have a problem on line 88 in the loop', error);
+              });
+          }
           return true;
+        })
+        .catch((err) => {
+          console.log(err);
         });
     }
   }
@@ -146,7 +187,7 @@ const orderChecker = async (dbOrders) => {
     if (coinbot) {
       // wait for 1/10th of a second between each api call to prevent too many
       await sleep(100);
-      socket.emit('checkerUpdate', dbOrder);
+      // socket.emit('checkerUpdate', dbOrder);
       // pull the id from coinbase inside the loop and store as object
       // send request to coinbase API to get status of a trade
       await authedClient.getOrder(dbOrder.id)
@@ -156,6 +197,7 @@ const orderChecker = async (dbOrders) => {
           // console.log('this is the order settled value you asked for', cbOrder.settled, count);
           // brother may I have some loops
           if (cbOrder.settled) {
+            socket.emit('checkerUpdate', cbOrder);
             // if it has been settled, send a buy/sell order to CB
             // assume selling, but if it was just sold, change side to buy
             // the price to sell at is calculated to be 3% higher than the buy price
