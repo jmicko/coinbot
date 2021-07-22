@@ -1,17 +1,22 @@
 const pool = require('../pool');
 
-// todo - this should be turned into a promise
 const storeTrade = (pendingTrade) => {
-  // add new order to the database
-  console.log('order was sent successfully, adding to db');
-  const newOrder = pendingTrade;
-  const sqlText = `INSERT INTO "orders" 
-                  ("id", "price", "size", "side", "settled") 
-                  VALUES ($1, $2, $3, $4, $5);`;
-  // pretty sure noting is checking for errors here?
-  // there is no catch, but when called from a .then followed by a .catch, errors are caught so whatever lol
-  let stored = pool.query(sqlText, [newOrder.id, newOrder.price, newOrder.size, newOrder.side, newOrder.settled]);
-  return stored;
+  return new Promise((resolve, reject) => {
+    // add new order to the database
+    const newOrder = pendingTrade;
+    const sqlText = `INSERT INTO "orders" 
+    ("id", "price", "size", "side", "settled") 
+    VALUES ($1, $2, $3, $4, $5);`;
+    pool.query(sqlText, [newOrder.id, newOrder.price, newOrder.size, newOrder.side, newOrder.settled])
+    .then((results) => {
+      console.log(`order ${newOrder.id} was successfully stored in db`);
+      resolve(results);
+    })
+    .catch((err) => {
+      console.log('problem storing order in db', err);
+      reject(err);
+    });
+  });
 }
 
 module.exports = storeTrade;
