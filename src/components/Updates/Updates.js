@@ -12,6 +12,7 @@ function Updates() {
 
   // console log any messages from server
   socket.on('checkerUpdate', data => {
+    console.log(data);
     setCheckerUpdate(data)
     // console.log('update from the loop', checkerUpdate);
   });
@@ -27,7 +28,7 @@ function Updates() {
     <div className="Updates">
       <h3>Checking trade:</h3>
       <p>Trade id: {checkerUpdate.id} -- Price per BTC: {checkerUpdate.price} -- Size: {checkerUpdate.size} BTC -- Buy/Sell: {checkerUpdate.side}</p>
-      <p>Trade is settled: {checkerUpdate.settled ? "YES" : "no :("}</p>
+      <p>Trade is settled: {checkerUpdate.settled ? "YES :)" : "no :("}</p>
     </div>
   );
 }

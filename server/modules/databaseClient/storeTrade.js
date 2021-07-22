@@ -1,5 +1,6 @@
-const pool = require('./pool');
+const pool = require('../pool');
 
+// todo - this should be turned into a promise
 const storeTrade = (pendingTrade) => {
   // add new order to the database
   console.log('order was sent successfully, adding to db');
