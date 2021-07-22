@@ -1,3 +1,5 @@
+// function for flipping sides on a trade
+// Returns the tradeDetails object needed to send trade to CB
 const flipTrade = (dbOrder, cbOrder) => {
     // set up the object to be sent
     const tradeDetails = {
