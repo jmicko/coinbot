@@ -1,9 +1,10 @@
-const botStatus = require('./botStatus');
+
 const toggleCoinbot = require('./toggleCoinbot');
+const orderElimination = require('./orderElimination')
+const flipTrade = require('./flipTrade')
 
-const robot = {
-    botStatus: botStatus,
-    toggleCoinbot: toggleCoinbot
+module.exports = {
+    toggleCoinbot: toggleCoinbot,
+    orderElimination: orderElimination,
+    flipTrade: flipTrade
 }
-
-module.exports = robot;

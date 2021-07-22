@@ -3,6 +3,10 @@ const authedClient = require('../authedClient');
 const databaseClient = require('../databaseClient/databaseClient');
 const botStatus = require('./botStatus');
 const flipTrade = require('./flipTrade');
+const orderElimination = require('./orderElimination');
+// const toggleCoinbot = require('./toggleCoinbot');
+// const robot = require('./robot');
+
 
 // The express server itself can use the socket.io-client package to call the ws connections
 const io = require("socket.io-client");
@@ -126,19 +130,6 @@ const checker = async (ordersToCheck) => {
 // Returns the tradeDetails object needed to send trade to CB
 
 
-// take in an array and an item to check
-const orderElimination = (dbOrders, cbOrders) => {
-  for (let i = 0; i < cbOrders.length; i++) {
-    // look at each id of coinbase orders
-    const cbOrderID = cbOrders[i].id;
-    // console.log(cbOrderID);
-    // filter out dborders of that id
-    dbOrders = dbOrders.filter(id => {
-      return (id.id !== cbOrderID)
-    })
-  }
-  // console.log('======CHECK THESE:', dbOrders);
-  return dbOrders;
-}
+
 
 module.exports = theLoop;
