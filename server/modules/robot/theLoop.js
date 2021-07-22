@@ -2,8 +2,9 @@ const pool = require('../pool');
 const authedClient = require('../authedClient');
 const databaseClient = require('../databaseClient/databaseClient');
 const botStatus = require('./botStatus');
-const flipTrade = require('./flipTrade');
 const orderElimination = require('./orderElimination');
+const checker = require('./checker');
+const sleep = require('./sleep');
 // const toggleCoinbot = require('./toggleCoinbot');
 // const robot = require('./robot');
 
@@ -15,9 +16,7 @@ const socket = io(ENDPOINT);
 
 // sleeper function to slow down the loop
 // can be called from an async function and takes in how many milliseconds to wait
-const sleep = (milliseconds) => {
-  return new Promise(resolve => setTimeout(resolve, milliseconds))
-}
+
 
 // todo - something is causing an insufficient funds message when many orders are placed rapidly from DOM
 // possibly need to put our arrays in an order. They are coming back in random order from db. Maybe need to order by date?
@@ -57,7 +56,7 @@ const theLoop = async () => {
     })
     .then((ordersToCheck) => {
       // loop through the remaining array and double check each settled === true
-      const success = checker(ordersToCheck);
+      const success = checker(ordersToCheck, socket);
       return success;
     })
     .then(() => {
@@ -72,62 +71,8 @@ const theLoop = async () => {
     });
 }
 
-const checker = async (ordersToCheck) => {
-  // brother may I have some loops
-  // the order object can be used throughout the loop to refer to the old order that may have settled
-  for (const dbOrder of ordersToCheck) {
-    // need to stop the loop if coinbot is off
-    if (botStatus.toggle) {
-      // wait for 1/10th of a second between each api call to prevent too many
-      await sleep(500);
-      socket.emit('checkerUpdate', dbOrder);
-      console.log('checking this', dbOrder);
 
-      // send request to coinbase API to get status of a trade
-      authedClient.getOrder(dbOrder.id)
-        // now can refer to dbOrder as old status of trade and cbOrder as current status
-        .then((cbOrder) => {
-          // if it has indeed settled, make the opposit trade and call it good
-          if (cbOrder.settled) {
-            // tell frontend it is settled
-            socket.emit('checkerUpdate', cbOrder);
-            // get the trade details for the new trade. Flip buy/sell and get new price
-            const tradeDetails = flipTrade(dbOrder, cbOrder);
-            // function to send the order with the CB API to CB and place the trade
-            authedClient.placeOrder(tradeDetails)
-              .then(pendingTrade =>
-                // after trade is placed, store the returned pending trade values in the database
-                databaseClient.storeTrade(pendingTrade)
-              )
-              .then(result => {
-                // after order succeeds, update settled in DB to be TRUE
-                const queryText = `UPDATE "orders" SET "settled" = NOT "settled" WHERE "id"=$1;`;
-                pool.query(queryText, [cbOrder.id])
-              })
-              .then(() => {
-                console.log('order updated');
-                return true
-              })
-              .catch(error => {
-                if (error.message) {
-                  console.log(error.message);
-                } else {
-                  console.log('houston we have a problem in the loop', error);
-                }
-              });
-          } else {
-            return true;
-          }
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-    }
-  }
-}
 
-// function for flipping sides on a trade
-// Returns the tradeDetails object needed to send trade to CB
 
 
 
