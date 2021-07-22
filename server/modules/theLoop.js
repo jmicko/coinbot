@@ -1,6 +1,7 @@
 const pool = require('./pool');
 const authedClient = require('./authedClient');
-const databaseClient = require('./databaseClient/databaseClient')
+const databaseClient = require('./databaseClient/databaseClient');
+const robot = require('./robot/robot');
 
 // The express server itself can use the socket.io-client package to call the ws connections
 const io = require("socket.io-client");
