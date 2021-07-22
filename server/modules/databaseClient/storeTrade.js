@@ -11,7 +11,8 @@ const storeTrade = (pendingTrade) => {
     .then((results) => {
       const success = {
         message : `order ${newOrder.id} was successfully stored in db`,
-        results : results
+        results : results,
+        success : true
       }
       // console.log(`order ${newOrder.id} was successfully stored in db`);
       resolve(success);

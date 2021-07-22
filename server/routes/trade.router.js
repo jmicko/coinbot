@@ -33,11 +33,15 @@ router.post('/order', (req, res) => {
     .then(pendingTrade => databaseClient.storeTrade(pendingTrade))
     .then(results => {
       console.log(`order sent to db, got this back:`, results.message);
+      if (results.success) {
+        res.sendStatus(200)
+      } else {
+        res.sendStatus(500)
+      }
     })
     // .then(result => {console.log('just got back from storing this in db:', result)})
     .catch((error) => {
       console.log('new order process failed', error);
-      res.sendStatus(500)
     });
 });
 
