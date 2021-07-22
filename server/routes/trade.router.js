@@ -3,7 +3,7 @@ const router = express.Router();
 const pool = require('../modules/pool');
 const authedClient = require('../modules/authedClient');
 const theLoop = require('../modules/theLoop');
-const storeTrade = require('../modules/storeTrade');
+const databaseClient = require('../modules/databaseClient/databaseClient');
 
 
 // todo - POST route for auto trading
@@ -30,7 +30,7 @@ router.post('/order', (req, res) => {
   // function to send the order with the CB API to CB and place the trade
   authedClient.placeOrder(tradeDetails)
   // after trade is placed, store the returned pending trade values in the database
-    .then(pendingTrade => storeTrade(pendingTrade))
+    .then(pendingTrade => databaseClient.storeTrade(pendingTrade))
     // .then(result => {console.log('just got back from storing this in db:', result)})
     .then(res.sendStatus(200))
     .catch((error) => {

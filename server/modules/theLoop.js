@@ -1,6 +1,7 @@
 const pool = require('./pool');
 const authedClient = require('./authedClient');
-const storeTrade = require('./storeTrade');
+const databaseClient = require('./databaseClient/databaseClient')
+// const storeTrade = require('./databaseClient/storeTrade');
 
 // The express server itself can use the socket.io-client package to call the ws connections
 const io = require("socket.io-client");
@@ -21,27 +22,77 @@ let loopSwitch = false;
 
 // toggle coinbot on and off
 function toggleCoinbot() {
-  console.log('in toggleTrade function');
   // toggle coinbot boolean
   coinbot = !coinbot;
   // if the bot should now be coinbot, it starts the trade loop
+  coinbot
+    ? theLoop()
+    : console.log('bot is not coinbot');
+}
+
+/* our functions should be returning things instead of calling a function at the end.
+   that way they won't be chained together and will be easier to use separately.
+   the functions we are calling at the end should actually be calling that function and using what is returned. */
+
+/* todo - need to make this faster, and more efficient by making fewer calls to CB API
+- before loop
+-- get all open orders from db
+-- get all open orders from cb api instead of getting them one at a time in the loop
+-- pass the cbOrders array into the loop
+-- inside loop (pass in the dbOrders and the cbOrders array)
+-- for each dbOrder (same as we have it)
+-- check if the order id exists in the cbOrders array
+-- if it does not, it has probably settled
+-- make an api call to get that order info
+-- if CB confirms it is settled, make the new trade, mark in db, etc
+-- we need to figure out error checking.
+-- if not settled per cb, continue through the loop
+      */
+
+
+
+
+const theLoop = async (dbOrders) => {
+  //  always check if coinbot should be running
   if (coinbot) {
     console.log('bot is coinbot');
-    tradeLoop();
-  } else {
-    console.log('bot is not coinbot');
+    // wait for 1/10th of a second between each full loop call to prevent too many
+    // need to make fewer than 15/sec
+    await sleep(100);
+    // make variables to store the results from the 2 api calls, 
+    // and one for orders that should be settled but need to be checked individually
+    let dbOrders = [],
+      cbOrders = [],
+      odersToCheck = [];
+    // get all open orders from db
+    databaseClient.getUnsettledTrades()
+      .then((results) => {
+        // store the orders in the dbOrders array so they can be compared later
+        dbOrders = results.rows;
+        console.log(dbOrders);
+      })
+      .then(() => {
+        // get all open orders from coinbase api
+      })
+      .catch(error => {
+        console.log('error fetching orders from database', error);
+      });
+    // now get all open orders from coinbase
+
+    // - get all open orders from cb api instead of getting them one at a time in the loop
+
   }
 }
 
-const theLoop = async (dbOrders) => {
+
+const oldtheLoop = async (dbOrders) => {
   loopSwitch = true;
   for (const dbOrder of dbOrders) {
     // need to stop the loop if coinbot is off
     if (coinbot) {
       // wait for 1/10th of a second between each api call to prevent too many
       await sleep(100);
-      trade = dbOrder;
-      socket.emit('checkerUpdate', trade);
+      socket.emit('checkerUpdate', dbOrder);
       // pull the id from coinbase inside the loop and store as object
       // send request to coinbase API to get status of a trade
       await authedClient.getOrder(dbOrder.id)
@@ -99,7 +150,13 @@ const theLoop = async (dbOrders) => {
   count = 0;
 }
 
-function tradeLoop() {
+
+// Wait, what does this even do?
+// it gets orders from the db and tries to call the loop every second
+// there's gotta be a better way lol.
+// the loop can just call itself at the end of the loop can't it?
+// the loop can be one function and the toggle can be another. call it first from the toggle and then call itself
+function oldtradeLoop() {
   if (coinbot) {
     // if bot should be coinbot, also check if the loop from the theLoop loop is running.
     // if the theLoop loop is not running, bot will wait a second and try again
@@ -125,5 +182,4 @@ function tradeLoop() {
 module.exports = {
   toggleCoinbot: toggleCoinbot,
   theLoop: theLoop,
-  tradeLoop: tradeLoop,
 };
