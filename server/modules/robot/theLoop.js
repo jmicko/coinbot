@@ -1,8 +1,8 @@
 const pool = require('../pool');
 const authedClient = require('../authedClient');
 const databaseClient = require('../databaseClient/databaseClient');
-const robot = require('./robot');
 const botStatus = require('./botStatus');
+const flipTrade = require('./flipTrade');
 
 // The express server itself can use the socket.io-client package to call the ws connections
 const io = require("socket.io-client");
@@ -14,8 +14,6 @@ const socket = io(ENDPOINT);
 const sleep = (milliseconds) => {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
-
-
 
 // todo - something is causing an insufficient funds message when many orders are placed rapidly from DOM
 // possibly need to put our arrays in an order. They are coming back in random order from db. Maybe need to order by date?
@@ -63,14 +61,10 @@ const theLoop = async () => {
         console.log('=============through the loop again');
         theLoop()
       }
-
     })
     .catch(error => {
       console.log('error in the loop', error);
       console.error(error)
-      // if (error.Error) {
-
-      // }
     });
 }
 
@@ -130,34 +124,7 @@ const checker = async (ordersToCheck) => {
 
 // function for flipping sides on a trade
 // Returns the tradeDetails object needed to send trade to CB
-const flipTrade = (dbOrder, cbOrder) => {
-  // set up the object to be sent
-  const tradeDetails = {
-    side: '',
-    price: '', // USD
-    // when flipping a trade, size and product will always be the same
-    size: dbOrder.size, // BTC
-    product_id: cbOrder.product_id,
-  };
 
-  // todo - need to store more info in db
-  // need the trade-pair margin instead of calculating new price each time
-
-  // add buy/sell requirement and price
-  if (cbOrder.side === "buy") {
-    // if it was a buy, sell for more. multiply old price
-    tradeDetails.side = "sell"
-    tradeDetails.price = ((Math.round((dbOrder.price * 1.03) * 100)) / 100);
-    console.log('selling');
-  } else {
-    // if it was a sell, buy for less. divide old price
-    tradeDetails.side = "buy"
-    tradeDetails.price = ((Math.round((dbOrder.price / 1.03) * 100)) / 100);
-    console.log('buying');
-  }
-  // return the tradeDetails object
-  return tradeDetails;
-}
 
 // take in an array and an item to check
 const orderElimination = (dbOrders, cbOrders) => {
