@@ -64,15 +64,20 @@ const theLoop = async (dbOrders) => {
     let dbOrders = [],
       cbOrders = [],
       odersToCheck = [];
-    // get all open orders from db
-    databaseClient.getUnsettledTrades()
+    Promise.all([
+      // get all open orders from db
+      databaseClient.getUnsettledTrades(),
+      authedClient.getOrders({ status: 'open' })
+    ])
       .then((results) => {
-        // store the orders in the dbOrders array so they can be compared later
-        dbOrders = results.rows;
-        console.log(dbOrders);
+        // store the orders in the corrosponding arrays so they can be compared later
+        dbOrders = results[0].rows;
+        cbOrders = results[1];
+        // console.log('database', dbOrders);
+        // console.log('Coinbase', cbOrders);
       })
       .then(() => {
-        // get all open orders from coinbase api
+        // compare the arrays and remove any where the ids match in both
       })
       .catch(error => {
         console.log('error fetching orders from database', error);
