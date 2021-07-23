@@ -20,11 +20,11 @@ const sleep = require('./sleep');
 // or maybe the loop does not wait to update to settled before calling itself again
 // POSSIBLE FIX - move trade updating into own function and make it a promise
 
-const theLoop = () => {
+const theLoop = async () => {
   //  always check if coinbot should be running
   // wait for 1/10th of a second between each full loop call to prevent too many
   // need to make fewer than 15/sec
-  sleep(1000)
+  await sleep(1000)
     .then(() => {
       console.log('==============bot is coinbot');
       socketClient.sendMessage(`another loop, brother: ${botStatus.loop}`);
@@ -33,7 +33,7 @@ const theLoop = () => {
       // and one for orders that should be settled but need to be checked individually
       // let dbOrders = [],
       //   cbOrders = [];
-      Promise.all([
+      return Promise.all([
         // get all open orders from db
         databaseClient.getUnsettledTrades(),
         authedClient.getOrders({ status: 'open' })
@@ -43,28 +43,23 @@ const theLoop = () => {
           const dbOrders = results[0],
             cbOrders = results[1];
           // compare the arrays and remove any where the ids match in both
-          const ordersToCheck = orderElimination(dbOrders, cbOrders);
-          // console.log('check', ordersToCheck);
-          return ordersToCheck;
           // filter results from cb out of results from db
           // will be left with results from db that should be settled in cb
+          return orderElimination(dbOrders, cbOrders);
         })
         .then((ordersToCheck) => {
           // loop through the remaining array and double check each settled === true
-          const success = checker(ordersToCheck);
-          return success;
+          return checker(ordersToCheck);
         })
     })
     .catch(error => {
       console.log('error in the loop', error);
-      console.error(error)
-    })
-    .finally(() => {
-      if (botStatus.toggle) {
-        console.log('=============through the loop again');
-        theLoop()
-      }
+      console.error(error);
     });
+  if (botStatus.toggle) {
+    console.log('=============through the loop again');
+    theLoop()
+  }
 }
 
 
