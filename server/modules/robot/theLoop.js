@@ -5,18 +5,11 @@ const botStatus = require('./botStatus');
 const orderElimination = require('./orderElimination');
 const checker = require('./checker');
 const sleep = require('./sleep');
-// const toggleCoinbot = require('./toggleCoinbot');
-// const robot = require('./robot');
-
 
 // The express server itself can use the socket.io-client package to call the ws connections
 const io = require("socket.io-client");
 const ENDPOINT = "http://localhost:5000";
 const socket = io(ENDPOINT);
-
-// sleeper function to slow down the loop
-// can be called from an async function and takes in how many milliseconds to wait
-
 
 // todo - something is causing an insufficient funds message when many orders are placed rapidly from DOM
 // possibly need to put our arrays in an order. They are coming back in random order from db. Maybe need to order by date?
@@ -34,6 +27,8 @@ const theLoop = async () => {
   // need to make fewer than 15/sec
   await sleep(1000);
   console.log('==============bot is coinbot');
+  socket.emit('message', { message: `another loop, brother: ${botStatus.loop}` });
+  botStatus.loop++;
   // make variables to store the results from the 2 api calls, 
   // and one for orders that should be settled but need to be checked individually
   // let dbOrders = [],

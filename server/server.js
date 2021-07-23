@@ -30,13 +30,21 @@ io.on('connection', (socket) => {
   console.log(`client with id: ${id} connected!`);
   // message to client confirming connection
   socket.emit('message', { message: 'welcome!' });
+
   // relay updates from the loop about trades that are being checked
+  socket.on('message', (message) => {
+    // socket.broadcast.emit('message', { message: 'welcome!' });
+    console.log(message);
+    socket.broadcast.emit('message', message);
+    // console.log('server got a trade checker update!', trade);
+  })
+
   socket.on('checkerUpdate', (trade) => {
     // socket.broadcast.emit('message', { message: 'welcome!' });
     socket.broadcast.emit('checkerUpdate', trade);
     // console.log('server got a trade checker update!', trade);
   })
-
+  
   socket.on("disconnect", (reason) => {
     console.log(`client with id: ${id} disconnected, reason:`, reason);
   });

@@ -64,6 +64,7 @@ const checker = async (ordersToCheck, socket) => {
                         }
                     } else {
                         console.log('yousa got a biiiig big problems', error);
+                        socket.emit('message', { message: 'big doo doo' });
                     }
                 })
         }
