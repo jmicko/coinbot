@@ -34,8 +34,15 @@ const checker = async (ordersToCheck, socket) => {
                             })
                             .then(result => {
                                 // after order succeeds, update settled in DB to be TRUE
-                                const queryText = `UPDATE "orders" SET "settled" = NOT "settled" WHERE "id"=$1;`;
-                                return pool.query(queryText, [cbOrder.id]);
+                                const queryText = `UPDATE "orders" SET "settled" = NOT "settled", "done_at" = $1, "fill_fees" = $2,
+                                "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
+                                return pool.query(queryText, [
+                                    cbOrder.done_at,
+                                    cbOrder.fill_fees,
+                                    cbOrder.filled_size,
+                                    cbOrder.executed_value,
+                                    cbOrder.id
+                                ]);
                             })
                             .then((results) => {
                                 console.log('order updated', results.command);
