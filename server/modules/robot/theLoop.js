@@ -54,15 +54,15 @@ const theLoop = async () => {
       const success = checker(ordersToCheck, socket);
       return success;
     })
-    .then(() => {
+    .catch(error => {
+      console.log('error in the loop', error);
+      console.error(error)
+    })
+    .finally(() =>{
       if (botStatus.toggle) {
         console.log('=============through the loop again');
         theLoop()
       }
-    })
-    .catch(error => {
-      console.log('error in the loop', error);
-      console.error(error)
     });
 }
 
