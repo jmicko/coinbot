@@ -41,7 +41,11 @@ router.post('/order', (req, res) => {
     })
     // .then(result => {console.log('just got back from storing this in db:', result)})
     .catch((error) => {
-      console.log('new order process failed', error);
+      if (error.data.message === 'Insufficient funds') {
+        console.log('no money');
+        res.sendStatus(400);
+      }
+      console.log('new order process failed', error.data.message);
     });
 });
 
