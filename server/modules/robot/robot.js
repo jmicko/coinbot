@@ -1,10 +1,10 @@
 
 const toggleCoinbot = require('./toggleCoinbot');
-const orderElimination = require('./orderElimination')
+const orderSubtractor = require('./orderSubtractor')
 const flipTrade = require('./flipTrade')
 
 module.exports = {
     toggleCoinbot: toggleCoinbot,
-    orderElimination: orderElimination,
+    orderSubtractor: orderSubtractor,
     flipTrade: flipTrade
 }

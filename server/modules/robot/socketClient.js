@@ -7,7 +7,7 @@ const sendMessage = (message) => {
 }
 
 const sendCheckerUpdate = (update) => {
-    socket.emit('checkerUpdate', { message: update });
+    socket.emit('exchangeUpdate', { message: update });
 }
 
 const socketClient = {
