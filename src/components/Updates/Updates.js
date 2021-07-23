@@ -7,7 +7,7 @@ const socket = io(ENDPOINT, { transports: ['websocket'] });
 // const socket = io(ENDPOINT);
 
 function Updates() {
-  const [message, setMessage] = useState("");
+  const [amessage, setaMessage] = useState("");
   const [checkerUpdate, setCheckerUpdate] = useState("");
 
   // console log any messages from server
@@ -19,8 +19,8 @@ function Updates() {
 
 
   socket.on('message', message => {
-    setMessage(message)
-    console.log(message);
+    // setaMessage(message.message);
+    console.log(message.message);
   });
 
   return (

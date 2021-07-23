@@ -15,14 +15,18 @@ function Trade(props) {
   // will need a function to poll the current value every 5 seconds from CB api
   // todo - default transactionPrice value should automatically start out at the current price
   // of bitcoin, rounded to the closest $100
+  const [transactionSide, setTransactionSide] = useState('buy');
   const [transactionPrice, setTransactionPrice] = useState(30000);
   const [transactionAmount, setTransactionAmount] = useState(0.001);
+  const [transactionProduct, setTransactionProduct] = useState('BTC_USD');
+  const [TradePairRatio, setTradePairRatio] = useState('BTC_USD');
   const dispatch = useDispatch();
 
   function submitTransaction(event) {
     event.preventDefault();
     dispatch({
       type: 'START_TRADE', payload: {
+        side: transactionSide,
         price: transactionPrice,
         size: transactionAmount,
       }
