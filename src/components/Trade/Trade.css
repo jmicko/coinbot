@@ -1,7 +1,7 @@
 .Trade {
     display              : grid;
-    grid-column-start    : 2;
-    grid-row             : 2;
+    grid-column-start    : 1;
+    grid-row             : 2/4;
     grid-template-columns: auto auto;
     grid-template-rows   : auto auto;
     height               : min-content;
