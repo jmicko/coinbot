@@ -5,10 +5,12 @@ const theLoop = require('./theLoop');
 function toggleCoinbot() {
     // toggle coinbot boolean
     botStatus.toggle = !botStatus.toggle;
-    // if the bot should now be coinbot, it starts the trade loop
-    botStatus.toggle
-        ? theLoop()
-        : console.log('bot is not coinbot');
+    // if the bot should now be trading, it starts the loop
+    if(botStatus.toggle){
+        theLoop()
+    } else {
+        botStatus.loop = 0;
+    }
 }
 
 module.exports = toggleCoinbot;

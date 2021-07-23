@@ -32,7 +32,7 @@ router.post('/order', (req, res) => {
   // after trade is placed, store the returned pending trade values in the database
     .then(pendingTrade => databaseClient.storeTrade(pendingTrade))
     .then(results => {
-      console.log(`order sent to db, got this back:`, results.message);
+      console.log(`order placed, given to db with reply:`, results.message);
       if (results.success) {
         res.sendStatus(200)
       } else {
@@ -50,7 +50,7 @@ router.post('/order', (req, res) => {
 });
 
 /**
-* GET route
+* GET route - will be used for getting some account settings etc
 */
 router.get('/order', (req, res) => {
   // GET route code here

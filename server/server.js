@@ -36,13 +36,12 @@ io.on('connection', (socket) => {
     // socket.broadcast.emit('message', { message: 'welcome!' });
     console.log(message);
     socket.broadcast.emit('message', message);
-    // console.log('server got a trade checker update!', trade);
   })
 
-  socket.on('checkerUpdate', (trade) => {
+  socket.on('exchangeUpdate', (trade) => {
     // socket.broadcast.emit('message', { message: 'welcome!' });
-    socket.broadcast.emit('checkerUpdate', trade);
-    // console.log('server got a trade checker update!', trade);
+    socket.broadcast.emit('exchangeUpdate', trade);
+    // console.log('server got a trade exchange update!', trade);
   })
   
   socket.on("disconnect", (reason) => {

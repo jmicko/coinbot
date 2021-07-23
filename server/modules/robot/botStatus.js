@@ -1,6 +1,6 @@
 const botStatus = {
     toggle : false,
-    loop : 1
+    loop : 0
 }
 
 module.exports = botStatus;
