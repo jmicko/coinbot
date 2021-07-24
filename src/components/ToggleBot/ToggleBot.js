@@ -8,7 +8,7 @@ function ToggleBot() {
   return (
     <div className="ToggleBot">
       <button
-        className="toggle"
+        className="toggle btn-blue"
         onClick={() => dispatch({ type: 'TOGGLE_BOT' })}>
         TOGGLE BOT
     </button>

@@ -1,3 +1,5 @@
+/* === MAIN === */
+
 .Trade {
     display              : grid;
     grid-column-start    : 1;
@@ -5,22 +7,19 @@
     grid-template-columns: auto auto;
     grid-template-rows   : auto auto;
     height               : min-content;
+    margin: 1rem;
+    border: 1px solid black;
 }
 
-.decrease input {
-    background-color: red;
-    width           : 4rem;
-    /* margin       : auto; */
-    /* margin-right : 0; */
-}
-
-/* .decrease {
-    margin: 0;
-} */
-
-.increase input {
-    background-color: rgb(20, 238, 20);
-    width           : 4rem;
+.title {
+    grid-row   : 1;
+    grid-column: 1 / 3;
+    background-color: rgb(98, 127, 128);
+    /* margin     : .4rem auto; */
+    margin-top: 0;
+    text-align: center;
+    /* border-top: 1px solid black; */
+    border-bottom: 1px solid black;
 }
 
 .trade-description {
@@ -29,38 +28,56 @@
     margin     : 0 1rem;
 }
 
+/* === FORM === */
+
 .new-trade-form {
-    grid-column: 1;
-    grid-row   : 2;
-    display: flex;
+    grid-column       : 1;
+    grid-row          : 2;
+    display           : flex;
     /* justify-content: right; */
-    flex-direction: column;
-}
-
-.title {
-    grid-row   : 1;
-    grid-column: 1 / 3;
-    margin     : 1rem auto;
-}
-
-.increment-buttons {
-    margin: auto 0 auto auto;
-    width : max-content;
-}
-
-.btn-send-trade {
-    float: right;
-    background-color: rgb(93, 216, 238);
-    font-size: large;
-}
-
-.number-inputs {
-    margin: .4rem 0 .4rem auto;
-    display: flex;
-    flex-direction: column;
-    justify-items: right;
+    flex-direction    : column;
 }
 
 label {
-    width: max-content;
+    /* width: max-content; */
+}
+
+/* === INPUTS === */
+
+input {
+    background      : rgb(209, 202, 192);
+    /* color        : rgb(209, 202, 192); */
+    background-color: rgb(209, 202, 192);
+    font-family     : inherit;
+    /* width        : 100%; */
+    /* margin       : 0% .2%; */
+}
+
+.number-inputs {
+    /* margin: .4rem 0 .4rem auto; */
+    display         : flex;
+    flex-direction  : column;
+    /* justify-items: right; */
+}
+
+/* === BUTTONS === */
+
+.increment-buttons {
+    margin: auto;
+    width : max-content;
+}
+
+.increase input {
+    /* background-color: rgb(20, 238, 20); */
+    width: 4rem;
+}
+
+.decrease input {
+    width: 4rem;
+}
+
+.btn-send-trade {
+    /* float: right; */
+    /* background-color: rgb(93, 216, 238); */
+    font-size: large;
 }
