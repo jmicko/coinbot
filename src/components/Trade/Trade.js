@@ -139,16 +139,21 @@ function Trade(props) {
         <input className="btn-send-trade btn-blue" type="submit" name="submit" value="Start new trade pair" />
         <div className="boxed dark">
           <h4 className="title">New position</h4>
-          <p className="info"><strong>BUY:</strong> ${(transactionPrice * transactionAmount)}</p>
-          <p className="info"><strong>SELL:</strong>${(Math.round((transactionPrice* transactionAmount * (TradePairRatio + 100))) / 100)}</p>
+          <p className="info"><strong>BUY*:</strong> ${(transactionPrice * transactionAmount)}</p>
+          <p className="info"><strong>SELL*:</strong>${(Math.round((transactionPrice* transactionAmount * (TradePairRatio + 100))) / 100)}</p>
+          {/* todo - currently using .005 as the fee multiplier. Should GET account info from coinbase and use that instead */}
           <p className="info"><strong>FEE*:</strong> ${(transactionPrice * transactionAmount * .005)}</p>
+          <p className="info"><strong>PAIR MARGIN*:</strong> ${(Math.round(( ((transactionPrice* transactionAmount * (TradePairRatio))) - (transactionPrice * transactionAmount) )*100))/100}</p>
+          {/* todo - currently using .005 as the fee multiplier. Should GET account info from coinbase and use that instead */}
+          <p className="info"><strong>PAIR PROFIT*:</strong> ${(Math.round(( (Math.round((transactionPrice* transactionAmount * (TradePairRatio + 100))) / 100) - (transactionPrice * transactionAmount)  - (transactionPrice * transactionAmount * .005) * 2)*100))/100}</p>
+
           <p className="info">
             This will tell coinbot to start trading {transactionAmount} BTC
             between the low purchase price of ${transactionPrice} and
             the high sell price of ${(Math.round((transactionPrice * (TradePairRatio + 100))) / 100)}.
             The value in USD for the initial transaction will be about ${((Math.round((transactionPrice * transactionAmount) * 100)) / 100)}.
           </p>
-          <p className="small">*Fee is estimated and may be different at time of transaction.</p>
+          <p className="small info">*Costs, fees, margin, and profit, are estimated and may be different at time of transaction. This is mostly due to rounding issues market conditions.</p>
         </div>
       </form>
       {/* </div> */}

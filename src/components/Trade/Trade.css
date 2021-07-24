@@ -21,6 +21,10 @@
     margin     : .4rem;
 }
 
+.small {
+    font-size: small;
+}
+
 /* === FORM === */
 
 .new-trade-form {
