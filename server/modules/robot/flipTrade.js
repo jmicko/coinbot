@@ -17,12 +17,12 @@ const flipTrade = (dbOrder, cbOrder) => {
     if (cbOrder.side === "buy") {
       // if it was a buy, sell for more. multiply old price
       tradeDetails.side = "sell"
-      tradeDetails.price = ((Math.round((dbOrder.price * 1.03) * 100)) / 100);
+      tradeDetails.price = dbOrder.original_sell_price;
       console.log('selling');
     } else {
       // if it was a sell, buy for less. divide old price
       tradeDetails.side = "buy"
-      tradeDetails.price = ((Math.round((dbOrder.price / 1.03) * 100)) / 100);
+      tradeDetails.price = original_buy_price;
       console.log('buying');
     }
     // return the tradeDetails object

@@ -33,7 +33,7 @@ router.post('/order', (req, res) => {
   // function to send the order with the CB API to CB and place the trade
   authedClient.placeOrder(tradeDetails)
   // after trade is placed, store the returned pending trade values in the database
-    .then(pendingTrade => databaseClient.storeTrade(pendingTrade, tradeDetails))
+    .then(pendingTrade => databaseClient.storeTrade(pendingTrade, order))
     .then(results => {
       console.log(`order placed, given to db with reply:`, results.message);
       if (results.success) {

@@ -20,7 +20,7 @@ const exchange = async (ordersToCheck) => {
           console.log('at the exchange with trade ID:', dbOrder.id);
           // send request to coinbase API to get status of a trade
           return authedClient.getOrder(dbOrder.id)
-            // now can refer to dbOrder as old status of trade and cbOrder as current status
+            // ----- now can refer to dbOrder as old status of trade and cbOrder as current status
             .then((cbOrder) => {
               // if it has indeed settled, make the opposit trade and call it good
               if (cbOrder.settled) {
@@ -32,7 +32,7 @@ const exchange = async (ordersToCheck) => {
                 return authedClient.placeOrder(tradeDetails)
                   .then(pendingTrade => {
                     // after trade is placed, store the returned pending trade values in the database
-                    databaseClient.storeTrade(pendingTrade)
+                    databaseClient.storeTrade(pendingTrade, dbOrder)
                       .then(() => {
                         // after order succeeds, update settled in DB to be TRUE and add settlement info
                         const queryText = `UPDATE "orders" SET "settled" = NOT "settled", "done_at" = $1, "fill_fees" = $2,
