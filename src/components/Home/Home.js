@@ -7,6 +7,7 @@ import React, {
 import Trade from '../Trade/Trade.js';
 import Updates from '../Updates/Updates.js';
 import ToggleBot from '../ToggleBot/ToggleBot'
+import TradeList from '../TradeList/TradeList'
 import './Home.css'
 // import mapStoreToProps from '../../redux/mapStoreToProps';
 
@@ -24,7 +25,7 @@ function Home(props) {
       <ToggleBot />
       <Trade />
       {/* TODO - display all orders from database in two categories "buy" & "sell" */}
-      <p className="TradeList">LIST OF TRADES GOES HERE</p>
+      <TradeList />
       <Updates />
     </div>
   );

@@ -24,10 +24,10 @@ function Updates() {
 
   return (
     // show messages on screen
-    <div className="Updates">
-      <h3>Checking trade:</h3>
-      <p>Trade id: {exchangeUpdate.id} -- Price per BTC: {exchangeUpdate.price} -- Size: {exchangeUpdate.size} BTC -- Buy/Sell: {exchangeUpdate.side}</p>
-      <p>Trade is settled: {exchangeUpdate.settled ? "YES :)" : "no :("}</p>
+    <div className="Updates boxed">
+      <h3 className="title">Coinbot message board:</h3>
+      <p>Trade id: {exchangeUpdate.id} -- Price per BTC: {exchangeUpdate.price} -- Size: {exchangeUpdate.size} BTC -- Buy/Sell: {exchangeUpdate.side}
+         -- Settled: {exchangeUpdate.settled ? "YES :)" : "no :("}</p>
     </div>
   );
 }

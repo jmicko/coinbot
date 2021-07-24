@@ -6,9 +6,8 @@
     grid-row             : 2/4;
     grid-template-columns: auto auto;
     grid-template-rows   : auto auto;
-    height               : min-content;
-    margin: 1rem;
-    border: 1px solid black;
+    /* height               : min-content; */
+
 }
 
 .title {

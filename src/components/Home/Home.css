@@ -9,7 +9,7 @@
 .header {
     grid-column-start  : 1;
     grid-column-end    : 4;
-    background-color: rgb(98, 127, 128);
+    background-color: #000000;
     text-align         : center;
     align-items        : center;
     font-size          : calc(9px + 2vmin);

@@ -5,6 +5,13 @@ body {
   font-family     : 'Syne Mono', monospace;
 }
 
+/* === BOXES === */
+.boxed {
+  margin: .2rem;
+  border: 1px solid black;
+  /* width: fit-content; */
+}
+
 /* === BUTTONS === */
 
 .btn-red {
