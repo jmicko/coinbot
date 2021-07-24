@@ -13,6 +13,7 @@ function* toggleBot(action) {
 
 function* startTrade(action) {
     try {
+        console.log('payload is:', action.payload);
         const response = yield axios.post(`/api/trade/order`, action.payload);
         console.log('response is.....', response);
     } catch (error) {

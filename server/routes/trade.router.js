@@ -22,15 +22,18 @@ router.post('/order', (req, res) => {
   const order = req.body;
   // tradeDetails const should take in values sent from trade component form
   const tradeDetails = {
-    side: 'buy',
+    // original_sell_price: order.original_sell_price,
+    // original_buy_price: order.price,
+    side: order.side,
     price: order.price, // USD
     size: order.size, // BTC
-    product_id: 'BTC-USD',
+    product_id: order.product_id,
   };
+  console.log(tradeDetails);
   // function to send the order with the CB API to CB and place the trade
   authedClient.placeOrder(tradeDetails)
   // after trade is placed, store the returned pending trade values in the database
-    .then(pendingTrade => databaseClient.storeTrade(pendingTrade))
+    .then(pendingTrade => databaseClient.storeTrade(pendingTrade, order))
     .then(results => {
       console.log(`order placed, given to db with reply:`, results.message);
       if (results.success) {
@@ -41,11 +44,14 @@ router.post('/order', (req, res) => {
     })
     // .then(result => {console.log('just got back from storing this in db:', result)})
     .catch((error) => {
-      if (error.data.message === 'Insufficient funds') {
+      if (error.data.message !== undefined && error.data.message === 'Insufficient funds') {
         console.log('no money');
         res.sendStatus(400);
+        console.log('new order process failed', error.data.message);
+      } else {
+        console.log('new order process failed', error);
+        res.sendStatus(500)
       }
-      console.log('new order process failed', error.data.message);
     });
 });
 

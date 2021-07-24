@@ -1,15 +1,13 @@
 .ToggleBot {
-    grid-column-start: 3;
+    grid-column: 4;
+    grid-row: 2;
+    /* margin: .2rem; */
+    height: 10rem;
 }
 
 .toggle {
-    background-color: hotpink;
-    width: 100%;
+    background-color: #b34053;
+    width: 10rem;
     height: 10rem;
     font-size: xx-large;
-}
-
-.TradeList {
-    grid-column: 2;
-    grid-row: 3;
 }

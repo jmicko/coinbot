@@ -1,3 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne+Mono&display=swap');
+
 body {
-  background-color     : rgb(172, 171, 133);
+  background-color: #c7c7b1;
+  font-family     : 'Syne Mono', monospace;
+
+}
+
+/* === BOXES === */
+.boxed {
+  /* margin: .2rem; */
+  border: 1px solid black;
+  height: fit-content;
+  /* width: fit-content; */
+}
+
+.tall {
+  height: 100%;
+}
+
+.dark {
+  background-color: darkgrey;
+  border: none;
+}
+
+/* === BUTTONS === */
+
+.btn-red {
+  background-color: rgb(236, 65, 65);
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px rgba(255, 255, 255, .6), inset -2px -2px rgba(0, 0, 0, .6);
+}
+
+.btn-red:hover {
+  background-color: lightcoral;
+}
+
+.btn-red:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accesibility concerns */
+  background-color: rgba(184, 113, 140, 0.507);
+}
+
+.btn-green {
+  background-color: rgb(109, 145, 108);
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px rgba(255, 255, 255, .6), inset -2px -2px rgba(0, 0, 0, .6);
+}
+
+.btn-green:hover {
+  background-color: rgb(156, 180, 155);
+}
+
+.btn-green:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accesibility concerns */
+  background-color: rgba(128, 177, 159, 0.596);
+}
+
+.btn-blue {
+  background-color: rgb(108, 123, 145);
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px rgba(255, 255, 255, .6), inset -2px -2px rgba(0, 0, 0, .6);
+}
+
+.btn-blue:hover {
+  background-color: rgb(155, 160, 180);
+}
+
+.btn-blue:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accesibility concerns */
+  background-color: rgba(119, 115, 179, 0.596);
+}
+
+button:active {
+  box-shadow: inset -2px -2px rgba(255, 255, 255, .6), inset 2px 2px rgba(0, 0, 0, .6);
 }

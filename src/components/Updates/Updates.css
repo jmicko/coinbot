@@ -1,4 +1,5 @@
 .Updates {
-    grid-row-start: 4;
-    grid-column: 2 / 4;
+    grid-row: 4;
+    grid-column: 2 / 5;
+    height: fit-content;
 }
