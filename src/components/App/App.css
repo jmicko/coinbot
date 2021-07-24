@@ -10,7 +10,17 @@ body {
 .boxed {
   /* margin: .2rem; */
   border: 1px solid black;
+  height: fit-content;
   /* width: fit-content; */
+}
+
+.tall {
+  height: 100%;
+}
+
+.dark {
+  background-color: darkgrey;
+  border: none;
 }
 
 /* === BUTTONS === */

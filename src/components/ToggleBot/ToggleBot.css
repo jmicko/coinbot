@@ -1,6 +1,8 @@
 .ToggleBot {
-    grid-column-start: 4;
-    margin: .2rem;
+    grid-column: 4;
+    grid-row: 2;
+    /* margin: .2rem; */
+    height: 10rem;
 }
 
 .toggle {
@@ -8,9 +10,4 @@
     width: 10rem;
     height: 10rem;
     font-size: xx-large;
-}
-
-.TradeList {
-    grid-column: 2;
-    grid-row: 3;
 }

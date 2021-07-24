@@ -7,7 +7,9 @@ function TradeList() {
   const dispatch = useDispatch();
 
   return (
-    <div className="TradeList boxed">
+    <div className="TradeList boxed tall dark">
+      <SingleTrade />
+      <SingleTrade />
       <SingleTrade />
       <SingleTrade />
       <SingleTrade />

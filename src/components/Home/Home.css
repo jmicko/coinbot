@@ -3,12 +3,13 @@
     /* this is STRICTLY A BUSINESS ROBOT, and the color should reflect that! */
     grid-template-columns: 0fr min-content 4fr min-content 0fr;
     gap                  : .4rem;
-    grid-template-rows   : calc((9px + 2vmin)*4.3) auto auto min-content 0fr;
+    grid-template-rows   : calc((9px + 2vmin)*4.3) max-content auto min-content 0fr;
     height               : 100vh;
 }
 
 .header {
     grid-column     : 1/6;
+    grid-row        : 1;
     background-color: #000000;
     text-align      : center;
     align-items     : center;
