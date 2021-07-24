@@ -2,7 +2,7 @@
 
 # Coinbot
 
-Bitcoin trading bot built for coinbase. Strategy is to automatically buy bitcoin and then put in a sell order at a higher price. That sale will then trigger a buy order at a lower price, etc. 
+Bitcoin trading bot built for the Coinbase Pro cryptocurrency exchange. Strategy is built on the creation of a trade-pair. Two order price positions, a buy price and a sell price, are tied together in the coinbot's database. The bot keeps track of which "side" is currently on order on Coinbase. When the coinbot detects a trade has settled on the exchange, it flips sides on the trade.
 
 ## DISCLAIMER
 This is an experimental bot. It requires a connection to a Coinbase Pro account, and has the ability to handle real money. Coinbase provides a sandbox API for testing purposes. It is recommended only to use the sandbox API with this bot as a demonstration of what is possible with the Coinbase API. Any use of the software provided in this repository is the responsibility of the user, and the developers of the software cannot be held responsible for any financial operations made with the software, or harm done to your computer as a result of using the software. Use of this software does not come with any guarantee of profits, losses, fees, taxes, or other financial consequences. Bitcoin and other cryptocurrencies may be taxed. Trading cryptocurrency is a risk taken by those making the trades. No financial advice is given in regards to the use of this software.
@@ -13,7 +13,7 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 ## `Features`
 
-List of features coming soon...
+### Create new trade pairs
 
 ## `Important notes`
 - In it's current state, there is no option to cancel an order from the Coinbot app. Coinbot also does not have a way to detect if an order has been canceled from the coinbase website. If that happens, Coinbot will throw an error and will either stop, or continue checking the cancelled order and throwing the error.

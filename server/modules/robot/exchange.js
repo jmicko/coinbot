@@ -61,7 +61,7 @@ const exchange = async (ordersToCheck) => {
         }
       })
       .catch((error) => {
-        if (error.data.message) {
+        if ((error.data !== undefined) && (error.data.message !== undefined)) {
           console.log('error message, end of loop:', error.data.message);
           // orders that have been canceled are deleted from coinbase and return a 404.
           // error handling should delete them so they are not counted toward profits if simply marked settled

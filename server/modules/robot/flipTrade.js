@@ -22,7 +22,7 @@ const flipTrade = (dbOrder, cbOrder) => {
     } else {
       // if it was a sell, buy for less. divide old price
       tradeDetails.side = "buy"
-      tradeDetails.price = original_buy_price;
+      tradeDetails.price = dbOrder.original_buy_price;
       console.log('buying');
     }
     // return the tradeDetails object
