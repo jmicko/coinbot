@@ -140,10 +140,10 @@ function Trade(props) {
         <input className="btn-send-trade btn-blue" type="submit" name="submit" value="Start new trade pair" />
         <div className="boxed dark">
           <h4 className="title">New position</h4>
-          <p className="info"><strong>BUY*:</strong> ${(price * transactionAmount)}</p>
+          <p className="info"><strong>BUY*:</strong> ${Math.round(price * transactionAmount * 100) / 100}</p>
           <p className="info"><strong>SELL*:</strong>${(Math.round((price* transactionAmount * (TradePairRatio + 100))) / 100)}</p>
           {/* todo - currently using .005 as the fee multiplier. Should GET account info from coinbase and use that instead */}
-          <p className="info"><strong>FEE*:</strong> ${(price * transactionAmount * .005)}</p>
+          <p className="info"><strong>FEE*:</strong> ${Math.round(price * transactionAmount * .5) / 100}</p>
           <p className="info"><strong>PAIR MARGIN*:</strong> ${(Math.round(( ((price* transactionAmount * (TradePairRatio))) - (price * transactionAmount) )*100))/100}</p>
           {/* todo - currently using .005 as the fee multiplier. Should GET account info from coinbase and use that instead */}
           <p className="info"><strong>PAIR PROFIT*:</strong> ${(Math.round(( (Math.round((price* transactionAmount * (TradePairRatio + 100))) / 100) - (price * transactionAmount)  - (price * transactionAmount * .005) * 2)*100))/100}</p>
