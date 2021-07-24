@@ -22,11 +22,14 @@ router.post('/order', (req, res) => {
   const order = req.body;
   // tradeDetails const should take in values sent from trade component form
   const tradeDetails = {
-    side: 'buy',
+    // original_sell_price: order.original_sell_price,
+    // original_buy_price: order.price,
+    side: order.side,
     price: order.price, // USD
     size: order.size, // BTC
-    product_id: 'BTC-USD',
+    product_id: order.product_id,
   };
+  console.log(tradeDetails);
   // function to send the order with the CB API to CB and place the trade
   authedClient.placeOrder(tradeDetails)
   // after trade is placed, store the returned pending trade values in the database

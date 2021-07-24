@@ -13,30 +13,31 @@ function Trade(props) {
 
   // have this be the default value of whatever 0.001 worth of bitcoin is
   // will need a function to poll the current value every 5 seconds from CB api
-  // todo - default transactionPrice value should automatically start out at the current price
+  // todo - default price value should automatically start out at the current price
   // of bitcoin, rounded to the closest $100
   const [transactionSide, setTransactionSide] = useState('buy');
-  const [transactionPrice, setTransactionPrice] = useState(30000);
+  const [price, setTransactionPrice] = useState(30000);
   // const [flippedPrice, setFlippedPrice] = useState(30000);
   const [transactionAmount, setTransactionAmount] = useState(0.001);
-  const [transactionProduct, setTransactionProduct] = useState('BTC_USD');
+  const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
   const [TradePairRatio, setTradePairRatio] = useState(1.1);
   const dispatch = useDispatch();
 
   function submitTransaction(event) {
     event.preventDefault();
     // calculate flipped price
-    let original_sell_price = (Math.round((transactionPrice * (TradePairRatio + 100))) / 100)
+    let original_sell_price = (Math.round((price * (TradePairRatio + 100))) / 100)
     dispatch({
       type: 'START_TRADE', payload: {
         original_sell_price: original_sell_price,
+        original_buy_price: price,
         side: transactionSide,
-        price: transactionPrice,
+        price: price,
         size: transactionAmount,
-        transactionProduct: transactionProduct
+        product_id: transactionProduct
       }
     })
-    console.log(`the price is: $${transactionPrice} per 1 BTC`);
+    console.log(`the price is: $${price} per 1 BTC`);
     console.log(`the amount is: ${transactionAmount} BTC`);
   }
 
@@ -57,7 +58,7 @@ function Trade(props) {
           <input
             type="number"
             name="transaction_price"
-            value={Number(transactionPrice)}
+            value={Number(price)}
             // todo - this could possibly be changed to 100, or add a selector menu thing to toggle between different amounts
             step={100}
             required
@@ -65,14 +66,14 @@ function Trade(props) {
           />
           <div className="increment-buttons">
             <div className="increase">
-              <input type="button" className="btn-green" onClick={(event) => setTransactionPrice(transactionPrice + 1000)} value="+1000"></input>
-              <input type="button" className="btn-green" onClick={(event) => setTransactionPrice(transactionPrice + 100)} value="+100"></input>
-              <input type="button" className="btn-green" onClick={(event) => setTransactionPrice(transactionPrice + 10)} value="+10"></input>
+              <input type="button" className="btn-green" onClick={(event) => setTransactionPrice(price + 1000)} value="+1000"></input>
+              <input type="button" className="btn-green" onClick={(event) => setTransactionPrice(price + 100)} value="+100"></input>
+              <input type="button" className="btn-green" onClick={(event) => setTransactionPrice(price + 10)} value="+10"></input>
             </div>
             <div className="decrease">
-              <input type="button" className="btn-red" onClick={(event) => setTransactionPrice(transactionPrice - 1000)} value="-1000"></input>
-              <input type="button" className="btn-red" onClick={(event) => setTransactionPrice(transactionPrice - 100)} value="-100"></input>
-              <input type="button" className="btn-red" onClick={(event) => setTransactionPrice(transactionPrice - 10)} value="-10"></input>
+              <input type="button" className="btn-red" onClick={(event) => setTransactionPrice(price - 1000)} value="-1000"></input>
+              <input type="button" className="btn-red" onClick={(event) => setTransactionPrice(price - 100)} value="-100"></input>
+              <input type="button" className="btn-red" onClick={(event) => setTransactionPrice(price - 10)} value="-10"></input>
             </div>
           </div>
         </div>
@@ -139,19 +140,19 @@ function Trade(props) {
         <input className="btn-send-trade btn-blue" type="submit" name="submit" value="Start new trade pair" />
         <div className="boxed dark">
           <h4 className="title">New position</h4>
-          <p className="info"><strong>BUY*:</strong> ${(transactionPrice * transactionAmount)}</p>
-          <p className="info"><strong>SELL*:</strong>${(Math.round((transactionPrice* transactionAmount * (TradePairRatio + 100))) / 100)}</p>
+          <p className="info"><strong>BUY*:</strong> ${(price * transactionAmount)}</p>
+          <p className="info"><strong>SELL*:</strong>${(Math.round((price* transactionAmount * (TradePairRatio + 100))) / 100)}</p>
           {/* todo - currently using .005 as the fee multiplier. Should GET account info from coinbase and use that instead */}
-          <p className="info"><strong>FEE*:</strong> ${(transactionPrice * transactionAmount * .005)}</p>
-          <p className="info"><strong>PAIR MARGIN*:</strong> ${(Math.round(( ((transactionPrice* transactionAmount * (TradePairRatio))) - (transactionPrice * transactionAmount) )*100))/100}</p>
+          <p className="info"><strong>FEE*:</strong> ${(price * transactionAmount * .005)}</p>
+          <p className="info"><strong>PAIR MARGIN*:</strong> ${(Math.round(( ((price* transactionAmount * (TradePairRatio))) - (price * transactionAmount) )*100))/100}</p>
           {/* todo - currently using .005 as the fee multiplier. Should GET account info from coinbase and use that instead */}
-          <p className="info"><strong>PAIR PROFIT*:</strong> ${(Math.round(( (Math.round((transactionPrice* transactionAmount * (TradePairRatio + 100))) / 100) - (transactionPrice * transactionAmount)  - (transactionPrice * transactionAmount * .005) * 2)*100))/100}</p>
+          <p className="info"><strong>PAIR PROFIT*:</strong> ${(Math.round(( (Math.round((price* transactionAmount * (TradePairRatio + 100))) / 100) - (price * transactionAmount)  - (price * transactionAmount * .005) * 2)*100))/100}</p>
 
           <p className="info">
             This will tell coinbot to start trading {transactionAmount} BTC
-            between the low purchase price of ${transactionPrice} and
-            the high sell price of ${(Math.round((transactionPrice * (TradePairRatio + 100))) / 100)}.
-            The value in USD for the initial transaction will be about ${((Math.round((transactionPrice * transactionAmount) * 100)) / 100)}.
+            between the low purchase price of ${price} and
+            the high sell price of ${(Math.round((price * (TradePairRatio + 100))) / 100)}.
+            The value in USD for the initial transaction will be about ${((Math.round((price * transactionAmount) * 100)) / 100)}.
           </p>
           <p className="small info">*Costs, fees, margin, and profit, are estimated and may be different at time of transaction. This is mostly due to rounding issues market conditions.</p>
         </div>
