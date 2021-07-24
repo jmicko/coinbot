@@ -1,17 +1,17 @@
 .Home {
     display              : grid;
     /* this is STRICTLY A BUSINESS ROBOT, and the color should reflect that! */
-    grid-template-columns: 1fr 4fr 1fr;
-    grid-template-rows   : calc((9px + 2vmin)*4.3) auto auto 10rem;
-    height: 100vh;
+    grid-template-columns: 0fr min-content 4fr min-content 0fr;
+    gap                  : .4rem;
+    grid-template-rows   : calc((9px + 2vmin)*4.3) auto auto min-content 0fr;
+    height               : 100vh;
 }
 
 .header {
-    grid-column-start  : 1;
-    grid-column-end    : 4;
+    grid-column     : 1/6;
     background-color: #000000;
-    text-align         : center;
-    align-items        : center;
-    font-size          : calc(9px + 2vmin);
-    color              : white;
+    text-align      : center;
+    align-items     : center;
+    font-size       : calc(9px + 2vmin);
+    color           : white;
 }

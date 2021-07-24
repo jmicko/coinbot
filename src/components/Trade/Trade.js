@@ -132,13 +132,13 @@ function Trade(props) {
 
 
         {/* display some details about the new transaction that is going to be made */}
+        <input className="btn-send-trade btn-blue" type="submit" name="submit" value="Send new trade position" />
       <p className="trade-description">
         This will tell coinbot to start trading {transactionAmount} BTC
         between the low purchase price of ${transactionPrice} and
         the high sell price of ${((Math.round((transactionPrice * 1.03) * 100)) / 100)}.
         The value in USD for the initial transaction will be about ${((Math.round((transactionPrice * transactionAmount) * 100)) / 100)}.
       </p>
-        <input className="btn-send-trade btn-blue" type="submit" name="submit" value="Send new trade position" />
       </form>
       {/* </div> */}
     </div>

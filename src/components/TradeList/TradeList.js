@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { connect, useDispatch } from 'react-redux';
+import SingleTrade from '../SingleTrade/SingleTrade'
 import './TradeList.css'
 
 function TradeList() {
@@ -7,7 +8,17 @@ function TradeList() {
 
   return (
     <div className="TradeList boxed">
-      <p className="single-trade">LIST OF TRADES GOES HERE</p>
+      <SingleTrade />
+      <SingleTrade />
+      <SingleTrade />
+      <SingleTrade />
+      <SingleTrade />
+      <SingleTrade />
+      <SingleTrade />
+      <SingleTrade />
+      <SingleTrade />
+      <SingleTrade />
+
     </div>
   )
 }

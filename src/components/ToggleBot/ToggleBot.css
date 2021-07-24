@@ -1,10 +1,10 @@
 .ToggleBot {
-    grid-column-start: 3;
+    grid-column-start: 4;
     margin: .2rem;
 }
 
 .toggle {
-    background-color: #cc6699;
+    background-color: #b34053;
     width: 10rem;
     height: 10rem;
     font-size: xx-large;

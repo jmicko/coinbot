@@ -1,0 +1,25 @@
+.SingleTrade {
+    text-align: center;
+    border-bottom: black 1px solid;
+    height: fit-content;
+    background-color: rgb(125, 209, 132);
+}
+.SingleTrade:nth-child(2n) {
+    background-color: rgb(96, 173, 103);
+}
+.SingleTrade:nth-child(8n) {
+    background-color: rgb(167, 119, 92);
+}
+
+.SingleTrade:nth-child(9n) {
+    background-color: rgb(199, 144, 112);
+}
+
+.SingleTrade:nth-child(10n) {
+    background-color: rgb(167, 119, 92);
+}
+
+.SingleTrade p{
+    margin: auto;
+    padding: 1rem;
+}
