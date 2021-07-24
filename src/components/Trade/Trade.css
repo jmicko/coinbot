@@ -67,7 +67,7 @@ input {
 }
 
 .btn-send-trade {
-    /* float: right; */
-    /* background-color: rgb(93, 216, 238); */
-    font-size: large;
+    height: 3rem;
+    margin: 1rem auto;
+    font-size: larger;
 }

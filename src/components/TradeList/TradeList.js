@@ -15,6 +15,7 @@ function TradeList() {
       <SingleTrade />
       <SingleTrade />
       <SingleTrade />
+      <center><p>Robot goes here</p></center>
       <SingleTrade />
       <SingleTrade />
       <SingleTrade />
