@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import io from "socket.io-client";
 import './Updates.css'
-const ENDPOINT = "http://localhost:5000";
-const socket = io(ENDPOINT, { transports: ['websocket'] });
+// const ENDPOINT = "http://localhost:5000";
+// const socket = io(ENDPOINT, { transports: ['websocket'] });
 // adding cors arg in server let's us get rid of the transports arg
 // const socket = io(ENDPOINT);
 
@@ -11,16 +11,16 @@ function Updates() {
   const [exchangeUpdate, setExchangeUpdate] = useState("");
 
   // console log any messages from server
-  socket.on('exchangeUpdate', data => {
-    console.log(data);
-    setExchangeUpdate(data)
-    // console.log('update from the loop', exchangeUpdate);
-  });
+  // socket.on('exchangeUpdate', data => {
+  //   console.log(data);
+  //   setExchangeUpdate(data)
+  //   // console.log('update from the loop', exchangeUpdate);
+  // });
 
-  socket.on('message', message => {
-    // setaMessage(message.message);
-    console.log(message.message);
-  });
+  // socket.on('message', message => {
+  //   // setaMessage(message.message);
+  //   console.log(message.message);
+  // });
 
   return (
     // show messages on screen
