@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from 'react';
 import io from "socket.io-client";
 import './Updates.css'
 const ENDPOINT = "http://localhost:5000";
@@ -12,6 +12,7 @@ function Updates() {
   const [fromBot, storeFromBot] = useState("");
   // const [exchangeUpdate, setExchangeUpdate] = useState("");
 
+  useEffect(() => {
   // console log any messages from server
   socket.on('update', data => {
     // console.log(data);
@@ -25,6 +26,8 @@ function Updates() {
     storeFromBot(message.message);
     console.log(`message:`, message);
   });
+
+}, [])
 
   return (
     // show messages on screen

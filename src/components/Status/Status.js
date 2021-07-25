@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { connect, useDispatch } from 'react-redux';
 import io from "socket.io-client";
 import './Status.css'
@@ -9,14 +9,16 @@ function Status() {
   const dispatch = useDispatch();
   const [loopStatus, setLoopStatus] = useState("I count loops");
 
-  
-
-  socket.on('update', message => {
-    // setaMessage(message.message);
-    // count++;
-    setLoopStatus(message.loopStatus);
-    console.log(`messrage:`, message.loopStatus);
-  });
+  useEffect(() => {
+    
+    socket.on('update', message => {
+      // setaMessage(message.message);
+      // count++;
+      setLoopStatus(message.loopStatus);
+      console.log(`messrage:`, message.loopStatus);
+    });
+    
+  }, [])
 
   return (
     <div className="Status boxed">
