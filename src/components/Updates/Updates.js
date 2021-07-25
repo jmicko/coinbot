@@ -13,8 +13,8 @@ function Updates() {
   // const [exchangeUpdate, setExchangeUpdate] = useState("");
 
   // console log any messages from server
-  socket.on('exchangeUpdate', data => {
-    console.log(data);
+  socket.on('update', data => {
+    // console.log(data);
     // setExchangeUpdate(data)
     // console.log('update from the loop', exchangeUpdate);
   });

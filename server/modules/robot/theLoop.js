@@ -14,7 +14,7 @@ const theLoop = async () => {
 
 
   // socketClient.sendMessage(`hi ${botStatus.loop}` );
-  socketClient.emit('message', { message: `hi ${botStatus.loop}` });
+  socketClient.emit('update', { loopStatus: `${botStatus.loop} loop${botStatus.loop === 1 ? '' : 's'}, brother` });
 
 
   // socketClient.emit(`${botStatus.loop} loop${botStatus.loop === 1 ? '' : 's'}, brother`);

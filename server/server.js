@@ -36,7 +36,14 @@ io.on('connection', (socket) => {
   socket.on('message', (message) => {
     // socket.broadcast.emit('message', { message: 'welcome!' });
     console.log(message.message);
-    socket.broadcast.emit('message', message.message);
+    socket.broadcast.emit('message', message);
+  })
+
+  // relay updates from the loop about trades that are being checked
+  socket.on('update', (message) => {
+    // socket.broadcast.emit('message', { message: 'welcome!' });
+    console.log(message);
+    socket.broadcast.emit('update', message);
   })
 
   socket.on('exchangeUpdate', (trade) => {
