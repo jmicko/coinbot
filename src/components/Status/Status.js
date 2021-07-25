@@ -15,7 +15,7 @@ function Status() {
       // setaMessage(message.message);
       // count++;
       setLoopStatus(message.loopStatus);
-      console.log(`messrage:`, message.loopStatus);
+      console.log(`message:`, message.loopStatus);
     });
     
   }, [])

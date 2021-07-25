@@ -24,7 +24,7 @@ function Updates() {
     // setaMessage(message.message);
     count++;
     storeFromBot(message.message);
-    console.log(`message:`, message);
+    console.log(`message #${count}:`, message);
   });
 
 }, [])
@@ -36,7 +36,7 @@ function Updates() {
 
       {/* <p>Trade id: {exchangeUpdate.id} -- Price per BTC: {exchangeUpdate.price} -- Size: {exchangeUpdate.size} BTC -- Buy/Sell: {exchangeUpdate.side}
         -- Settled: {exchangeUpdate.settled ? "YES :)" : "no :("}</p> */}
-      <p>message: {fromBot}</p>
+      <p>message #{count}: {fromBot}</p>
 
     </div>
   );
