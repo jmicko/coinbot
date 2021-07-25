@@ -6,16 +6,15 @@ import {
   // Switch,
 } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { SocketProvider } from "../../contexts/SocketProvider";
+import { SocketProvider, useSocket } from "../../contexts/SocketProvider";
 
 // Directory imports
-import Trade from '../Trade/Trade';
 import Home from '../Home/Home';
 
 function App() {
   return (
     <div className="App">
-      {/* <Nav /> */}
+      {/* all components wrapped inside the socket provider will have access to the same socket */}
       <SocketProvider>
         <Router>
           <Route

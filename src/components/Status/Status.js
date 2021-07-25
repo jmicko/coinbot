@@ -1,30 +1,42 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { connect, useDispatch } from 'react-redux';
-import io from "socket.io-client";
+// import io from "socket.io-client";
 import './Status.css'
-const ENDPOINT = "http://localhost:5000";
-const socket = io(ENDPOINT, { transports: ['websocket'] });
+import { useSocket } from "../../contexts/SocketProvider";
 
-function Status() {
+
+function Status(props) {
   const dispatch = useDispatch();
   const [loopStatus, setLoopStatus] = useState("I count loops");
+  const [connection, setConnection] = useState("disconnected");
 
+  const socket = useSocket();
+
+  // need use effect to prevent multiplying connections every time component renders
   useEffect(() => {
+    // socket may not exist on page load because it hasn't connected yet
+    if (socket == null) return;
     
+
     socket.on('update', message => {
-      // setaMessage(message.message);
-      // count++;
-      setLoopStatus(message.loopStatus);
-      console.log(`message:`, message.loopStatus);
+      if (message.loopStatus != null){
+        setLoopStatus(message.loopStatus)
+        // console.log(`message:`, message.loopStatus);
+      }
     });
-    
-  }, [])
+    // this will remove the listener when component rerenders
+    return () => socket.off('update')
+// useEffect will depend on socket because the connection will 
+// not be there right when the page loads
+  }, [socket])
 
   return (
+
     <div className="Status boxed">
-        <h3 className="title">
+      <h3 className="title">
         Status
-        </h3>
+      </h3>
+      <p className="info">{connection}</p>
       <p className="info">{loopStatus}</p>
     </div>
   )

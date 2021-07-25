@@ -9,6 +9,8 @@ import Updates from '../Updates/Updates.js';
 import ToggleBot from '../ToggleBot/ToggleBot'
 import TradeList from '../TradeList/TradeList'
 import Status from '../Status/Status'
+import { useSocket } from "../../contexts/SocketProvider";
+import { SocketProvider } from "../../contexts/SocketProvider";
 import './Home.css'
 // import mapStoreToProps from '../../redux/mapStoreToProps';
 
@@ -28,7 +30,9 @@ function Home(props) {
       {/* TODO - display all orders from database in two categories "buy" & "sell" */}
       <TradeList />
       <Updates />
-      <Status />
+      {/* <SocketProvider> */}
+        <Status />
+      {/* </SocketProvider> */}
     </div>
   );
 }
