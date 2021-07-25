@@ -19,11 +19,17 @@ function Status(props) {
     
 
     socket.on('update', message => {
+      // loop status updates get saved to own state
       if (message.loopStatus != null){
         setLoopStatus(message.loopStatus)
+      }
+      // connection status updates get saved to own state
+      if (message.connection != null){
+        setConnection(message.connection)
         // console.log(`message:`, message.loopStatus);
       }
     });
+
     // this will remove the listener when component rerenders
     return () => socket.off('update')
 // useEffect will depend on socket because the connection will 
