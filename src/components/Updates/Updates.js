@@ -25,6 +25,9 @@ function Updates() {
     count++;
     storeFromBot(message.message);
     console.log(`message #${count}:`, message);
+    setTimeout(() => {
+      storeFromBot("waiting for more messages...");
+    }, 6000);
   });
 
 }, [])
