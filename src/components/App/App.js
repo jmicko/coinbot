@@ -6,6 +6,7 @@ import {
   // Switch,
 } from 'react-router-dom';
 import { connect } from 'react-redux';
+import { SocketProvider } from "../../contexts/SocketProvider";
 
 // Directory imports
 import Trade from '../Trade/Trade';
@@ -15,14 +16,13 @@ function App() {
   return (
     <div className="App">
       {/* <Nav /> */}
-      <Router>
-          <Route 
-          exact path="/trade" 
-          component={Trade} />
-          <Route 
-          exact path="/" 
-          component={Home} />
+      <SocketProvider>
+        <Router>
+          <Route
+            exact path="/"
+            component={Home} />
         </Router>
+      </SocketProvider>
     </div>
   );
 }
