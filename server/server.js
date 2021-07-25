@@ -31,6 +31,7 @@ io.on('connection', (socket) => {
   // console.log('the socket is', socket.handshake);
   // message to client confirming connection
   socket.emit('message', { message: 'welcome!' });
+  socket.emit('message', { message: 'trade a coin or two!' });
   socket.emit('update', { connection: 'Connected!' });
 
   // relay updates from the loop about trades that are being checked

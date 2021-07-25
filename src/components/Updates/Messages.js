@@ -9,7 +9,7 @@ function Updates() {
   // const [exchangeUpdate, setExchangeUpdate] = useState("");
 
   const socket = useSocket();
-
+  const [messages, setMessages] = useState([]);
   // need use effect to prevent multiplying connections every time component renders
   useEffect(() => {
     // socket may not exist on page load because it hasn't connected yet
@@ -17,9 +17,7 @@ function Updates() {
     
 
     socket.on('message', message => {
-      if (message.loopStatus != null){
-
-      }
+      setMessages(prevMessages => [...prevMessages, message.message])
     });
     // this will remove the listener when component rerenders
     return () => socket.off('update')
@@ -31,6 +29,8 @@ function Updates() {
     // show messages on screen
     <div className="Updates boxed">
       <h3 className="title">Coinbot message board:</h3>
+
+    <>{JSON.stringify(messages)}</>
 
       {/* <p>Trade id: {exchangeUpdate.id} -- Price per BTC: {exchangeUpdate.price} -- Size: {exchangeUpdate.size} BTC -- Buy/Sell: {exchangeUpdate.side}
         -- Settled: {exchangeUpdate.settled ? "YES :)" : "no :("}</p> */}
