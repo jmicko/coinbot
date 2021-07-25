@@ -48,6 +48,7 @@ const theLoop = async () => {
     theLoop()
   } else {
     console.log('no more loops :(');
+    socketClient.emit('message', { message: 'no more loops :(' });
   }
 }
 

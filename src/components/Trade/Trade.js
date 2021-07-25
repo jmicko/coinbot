@@ -137,7 +137,7 @@ function Trade(props) {
 
 
         {/* display some details about the new transaction that is going to be made */}
-        <input className="btn-send-trade btn-blue" type="submit" name="submit" value="Start new trade pair" />
+        <input className="btn-send-trade btn-blue" type="submit" name="submit" value="Start New Trade-Pair" />
         <div className="boxed dark">
           <h4 className="title">New position</h4>
           <p className="info"><strong>BUY*:</strong> ${Math.round(price * transactionAmount * 100) / 100}</p>

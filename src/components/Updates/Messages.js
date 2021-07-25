@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSocket } from "../../contexts/SocketProvider";
-import './Updates.css'
+import './Messages.css'
 
 let count = 0;
 
@@ -14,23 +14,37 @@ function Updates() {
   useEffect(() => {
     // socket may not exist on page load because it hasn't connected yet
     if (socket == null) return;
-    
+
 
     socket.on('message', message => {
-      setMessages(prevMessages => [...prevMessages, message.message])
+      setMessages(prevMessages => [...prevMessages, message.message]);
     });
     // this will remove the listener when component rerenders
-    return () => socket.off('update')
-// useEffect will depend on socket because the connection will 
-// not be there right when the page loads
-  }, [socket])
+    return () => socket.off('message')
+    // useEffect will depend on socket because the connection will 
+    // not be there right when the page loads
+  }, [socket]);
+  
+  
+  useEffect(() =>{
+    // todo - figure out why this is 2 instead of 3. Something about renders
+    if (messages.length > 2) {
+      messages.shift();
+      // setMessages(messages);
+    }
+
+  }, [messages])
 
   return (
     // show messages on screen
     <div className="Updates boxed">
-      <h3 className="title">Coinbot message board:</h3>
+      <h3 className="title">Coinbot Message Board:</h3>
 
-    <>{JSON.stringify(messages)}</>
+      {/* <>{JSON.stringify(messages)}</> */}
+      {messages.map((message, i) => {
+        return <p key={i}>{message}</p>
+      })}
+
 
       {/* <p>Trade id: {exchangeUpdate.id} -- Price per BTC: {exchangeUpdate.price} -- Size: {exchangeUpdate.size} BTC -- Buy/Sell: {exchangeUpdate.side}
         -- Settled: {exchangeUpdate.settled ? "YES :)" : "no :("}</p> */}
