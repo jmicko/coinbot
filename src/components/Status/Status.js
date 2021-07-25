@@ -18,14 +18,14 @@ function Status(props) {
     if (socket == null) return;
     
 
-    socket.on('update', message => {
+    socket.on('update', update => {
       // loop status updates get saved to own state
-      if (message.loopStatus != null){
-        setLoopStatus(message.loopStatus)
+      if (update.loopStatus != null){
+        setLoopStatus(update.loopStatus)
       }
       // connection status updates get saved to own state
-      if (message.connection != null){
-        setConnection(message.connection)
+      if (update.connection != null){
+        setConnection(update.connection)
         // console.log(`message:`, message.loopStatus);
       }
     });
