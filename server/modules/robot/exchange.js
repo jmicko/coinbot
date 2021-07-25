@@ -1,7 +1,7 @@
 const pool = require('../pool');
 const authedClient = require('../authedClient');
 const databaseClient = require('../databaseClient/databaseClient');
-const socketClient = require('./socketClient');
+const socketClient = require('../socketClient');
 const flipTrade = require('./flipTrade');
 const botStatus = require('./botStatus');
 const sleep = require('./sleep');
@@ -16,7 +16,7 @@ const exchange = async (ordersToCheck) => {
     .then(() => {
         // need to stop the loop if coinbot is off
         if (botStatus.toggle) {
-          socketClient.sendCheckerUpdate(dbOrder);
+          // socketClient.sendCheckerUpdate(dbOrder);
           console.log('at the exchange with trade ID:', dbOrder.id);
           // send request to coinbase API to get status of a trade
           return authedClient.getOrder(dbOrder.id)
@@ -25,7 +25,7 @@ const exchange = async (ordersToCheck) => {
               // if it has indeed settled, make the opposit trade and call it good
               if (cbOrder.settled) {
                 // tell frontend it is settled
-                socketClient.sendCheckerUpdate(cbOrder);
+                // socketClient.sendCheckerUpdate(cbOrder);
                 // get the trade details for the new trade. Flip buy/sell and get new price
                 const tradeDetails = flipTrade(dbOrder, cbOrder);
                 // function to send the order with the CB API to CB and place the trade

@@ -28,14 +28,15 @@ app.use('/api/trade', tradeRouter);
 io.on('connection', (socket) => {
   let id = socket.id;
   console.log(`client with id: ${id} connected!`);
+  // console.log('the socket is', socket.handshake);
   // message to client confirming connection
   socket.emit('message', { message: 'welcome!' });
 
   // relay updates from the loop about trades that are being checked
   socket.on('message', (message) => {
     // socket.broadcast.emit('message', { message: 'welcome!' });
-    console.log(message);
-    socket.broadcast.emit('message', message);
+    console.log(message.message);
+    socket.broadcast.emit('message', message.message);
   })
 
   socket.on('exchangeUpdate', (trade) => {
