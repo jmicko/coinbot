@@ -3,13 +3,17 @@ import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 import './Status.css'
 import { useSocket } from "../../contexts/SocketProvider";
-
+import CoinbasePro from 'coinbase-pro';
+// add coinbase public client on the front end because it requires no auth, easier to set up,
+// and makes client make those calls so less done on the server => easier to process the loop
+const publicClient = new CoinbasePro.PublicClient();
 
 
 function Status(props) {
   const dispatch = useDispatch();
   const [loopStatus, setLoopStatus] = useState("I count loops");
   const [connection, setConnection] = useState("disconnected");
+  const [BTC_USD_price, setBTC_USD_price] = useState("");
 
   const socket = useSocket();
 
@@ -36,6 +40,32 @@ function Status(props) {
     // useEffect will depend on socket because the connection will 
     // not be there right when the page loads
   }, [socket])
+  
+  // to get price of bitcoin updated on dom
+  function ticker(data) {
+    publicClient.getProductTicker('BTC-USD',(error, response, data) => {
+      if (error) {
+        // handle the error
+        console.log(error);
+        setConnection('Ticker broke')
+      } else {
+        setConnection('Connected!')
+        // save price
+        // todo - dispatch to store and give button to use current price in trade-pair
+          setBTC_USD_price(data.price)
+          // console.log('ticker', BTC_USD_price);
+        }
+    });
+  }
+
+  // calls the ticker at regular intervals
+  useEffect(() => {
+    const interval = setInterval(() => {
+      ticker()
+    }, 500);
+    // need to clear on return or it will make dozens of calls per second
+    return () => clearInterval(interval);
+  }, []);
 
   return (
 
@@ -44,6 +74,8 @@ function Status(props) {
         Status
       </h3>
       {/* todo - maybe style in some divider lines here or something */}
+      <p className="info"><strong>~~~ BTC-USD ~~~</strong></p>
+      <p className="info">${BTC_USD_price}/coin</p>
       <p className="info"><strong>~~~ Coinbot ~~~</strong></p>
       <p className="info">{connection}</p>
       <p className="info"><strong>~~~ The Loop ~~~</strong></p>
