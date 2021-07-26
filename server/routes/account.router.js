@@ -3,7 +3,6 @@ const router = express.Router();
 const pool = require('../modules/pool');
 const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient/databaseClient');
-const customCoinbaseClient = require('../modules/customCoinbaseClient');
 
 
 /**
@@ -20,7 +19,15 @@ router.get('/fees', (req, res) => {
   // GET route code here
   console.log('in the server account GET route')
 
-      res.sendStatus(200)
+  authedClient.get(['fees'])
+  .then((result) => {
+    console.log(result);
+    res.send(result)
+  })
+  .catch((error) => {
+    res.sendStatus(500)
+  })
+
 
 });
 
