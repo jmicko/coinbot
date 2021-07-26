@@ -4,10 +4,6 @@
     display              : block;
     grid-column          : 2;
     grid-row             : 2/4;
-    /* overflow: auto; */
-    overflow-y: auto;
-    /* height               : min-content; */
-
 }
 
 

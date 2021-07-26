@@ -8,26 +8,28 @@ function TradeList() {
 
   return (
     <div className="TradeList">
-      <SingleTrade side='buy' />
-      <SingleTrade side='buy' />
-      <SingleTrade side='buy' />
-      <SingleTrade side='buy' />
-      <SingleTrade side='buy' />
-      <SingleTrade side='buy' />
-      <SingleTrade side='buy' />
-      <SingleTrade side='buy' />
-      <SingleTrade side='buy' />
-      <SingleTrade side='buy' />
-      <center><p>Robot goes here</p></center>
-      <SingleTrade side='sell'  />
-      <SingleTrade side='sell'  />
-      <SingleTrade side='sell'  />
-      <SingleTrade side='sell'  />
-      <SingleTrade side='sell'  />
-      <SingleTrade side='sell'  />
-      <SingleTrade side='sell'  />
-      <SingleTrade side='sell'  />
+      <div className="scrollable boxed">
+        <SingleTrade side='buy' />
+        <SingleTrade side='buy' />
+        <SingleTrade side='buy' />
+        <SingleTrade side='buy' />
+        <SingleTrade side='buy' />
+        <SingleTrade side='buy' />
+        <SingleTrade side='buy' />
+        <SingleTrade side='buy' />
+        <SingleTrade side='buy' />
+        <SingleTrade side='buy' />
+        <center><p>Robot goes here</p></center>
+        <SingleTrade side='sell' />
+        <SingleTrade side='sell' />
+        <SingleTrade side='sell' />
+        <SingleTrade side='sell' />
+        <SingleTrade side='sell' />
+        <SingleTrade side='sell' />
+        <SingleTrade side='sell' />
+        <SingleTrade side='sell' />
 
+      </div>
     </div>
   )
 }

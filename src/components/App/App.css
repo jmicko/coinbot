@@ -25,14 +25,17 @@ body {
 
 /* === BOXES === */
 .boxed {
-  /* margin: .2rem; */
   border: 1px solid black;
-  /* margin     : .4rem; */
-  /* width: fit-content; */
 }
 
 .fit {
   height: fit-content;
+}
+
+
+.scrollable {
+  overflow-y: auto;
+  max-height: 100%;
 }
 
 /* .tall {
