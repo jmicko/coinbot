@@ -1,39 +1,25 @@
-.SingleTrade {
-    text-align: center;
+.buy {
+
     border-bottom: black 1px solid;
     height: fit-content;
     background-color: rgb(125, 209, 132);
 }
-.SingleTrade:nth-child(2n) {
+.buy:nth-child(2n) {
     background-color: rgb(96, 173, 103);
 }
 
-.SingleTrade:nth-child(9n) {
+.sell {
     background-color: rgb(167, 119, 92);
     border-top: solid 1px black;
 }
 
-.SingleTrade:nth-child(10n) {
+.sell:nth-child(2n) {
     background-color: rgb(199, 144, 112);
 }
 
-.SingleTrade:nth-child(11n) {
-    background-color: rgb(167, 119, 92);
-}
-
-.SingleTrade:nth-child(12n) {
-    background-color: rgb(199, 144, 112);
-}
-
-.SingleTrade:nth-child(13n) {
-    background-color: rgb(167, 119, 92);
-}
-
-.SingleTrade:last-child {
-    border: none;
-}
-
-.SingleTrade p{
+.buy p,
+.sell p{
     margin: auto;
     padding: 1rem;
+    text-align: center;
 }

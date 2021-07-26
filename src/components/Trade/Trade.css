@@ -1,12 +1,10 @@
 /* === MAIN === */
 
 .Trade {
-    display              : grid;
+    /* display              : grid; */
     grid-column          : 2;
     grid-row             : 2/4;
-    /* grid-template-columns: auto auto;
-    grid-template-rows   : auto auto; */
-    height               : min-content;
+    /* height               : min-content; */
 
 }
 
@@ -28,10 +26,9 @@
 /* === FORM === */
 
 .new-trade-form {
-    display           : flex;
-    flex-direction    : column;
+    /* display           : flex;
+    flex-direction    : column; */
     margin     : .4rem;
-
 }
 
 

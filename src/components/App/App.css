@@ -10,13 +10,14 @@ body {
 .boxed {
   /* margin: .2rem; */
   border: 1px solid black;
+  /* margin     : .4rem; */
   height: fit-content;
   /* width: fit-content; */
 }
 
-.tall {
+/* .tall {
   height: 100%;
-}
+} */
 
 .dark {
   background-color: darkgrey;

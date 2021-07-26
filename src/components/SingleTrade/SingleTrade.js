@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { connect, useDispatch } from 'react-redux';
 import './SingleTrade.css'
 
-function SingleTrade() {
+function SingleTrade(props) {
   const dispatch = useDispatch();
 
   return (
-    <div className="SingleTrade">
-      <p className="trade">~~~~~~~~~~ LIST OF TRADES GOES HERE ~~~~~~~~~~</p>
+    <div className={`${props.side}`}>
+      <p>{props.side}~~~~~~~~~~ LIST OF TRADES GOES HERE ~~~~~~~~~~</p>
     </div>
   )
 }

@@ -1,4 +1,10 @@
 .TradeList {
-    grid-row: 2/4;
+    grid-row: 2 / 4;
     grid-column: 3 / 4;
+    overflow-y: scroll;
+    display: block;
+    /* height: auto; */
+    /* height: 100%; */
+    /* height: min-content; */
+    /* height: max-content; */
 }

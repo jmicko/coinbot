@@ -1,8 +1,8 @@
 .ToggleBot {
     grid-column: 4;
-    grid-row: 2;
-    /* margin: .2rem; */
+    grid-row: 2/3;
     height: 10rem;
+    display: block;
 }
 
 .toggle {

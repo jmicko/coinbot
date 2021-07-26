@@ -7,20 +7,26 @@ function TradeList() {
   const dispatch = useDispatch();
 
   return (
-    <div className="TradeList boxed tall dark">
-      <SingleTrade />
-      <SingleTrade />
-      <SingleTrade />
-      <SingleTrade />
-      <SingleTrade />
-      <SingleTrade />
-      <SingleTrade />
+    <div className="TradeList">
+      <SingleTrade side='buy' />
+      <SingleTrade side='buy' />
+      <SingleTrade side='buy' />
+      <SingleTrade side='buy' />
+      <SingleTrade side='buy' />
+      <SingleTrade side='buy' />
+      <SingleTrade side='buy' />
+      <SingleTrade side='buy' />
+      <SingleTrade side='buy' />
+      <SingleTrade side='buy' />
       <center><p>Robot goes here</p></center>
-      <SingleTrade />
-      <SingleTrade />
-      <SingleTrade />
-      <SingleTrade />
-      <SingleTrade />
+      <SingleTrade side='sell'  />
+      <SingleTrade side='sell'  />
+      <SingleTrade side='sell'  />
+      <SingleTrade side='sell'  />
+      <SingleTrade side='sell'  />
+      <SingleTrade side='sell'  />
+      <SingleTrade side='sell'  />
+      <SingleTrade side='sell'  />
 
     </div>
   )

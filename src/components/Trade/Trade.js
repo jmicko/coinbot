@@ -54,7 +54,7 @@ function Trade(props) {
 
 
   return (
-    <div className="Trade boxed tall" >
+    <div className="Trade boxed" >
       <h3 className="title">New Trade-Pair</h3>
       {/* <div> */}
       {/* form with a single input. Input takes a price point at which 
