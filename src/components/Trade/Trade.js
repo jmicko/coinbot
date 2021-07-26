@@ -145,11 +145,11 @@ function Trade(props) {
                 <input type="button" className="btn-red" onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 100) / 1000)} value="-0.1"></input>
               </div>
             </div>
+          <input className="btn-send-trade btn-blue" type="submit" name="submit" value="Start New Trade-Pair" />
           </div>
 
 
           {/* display some details about the new transaction that is going to be made */}
-          <input className="btn-send-trade btn-blue" type="submit" name="submit" value="Start New Trade-Pair" />
           <div className="boxed dark">
             <h4 className="title">New position</h4>
             <p className="info"><strong>BUY*:</strong> ${Math.round(price * transactionAmount * 100) / 100}</p>
