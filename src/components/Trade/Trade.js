@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
@@ -17,16 +17,16 @@ function Trade(props) {
   // of bitcoin, rounded to the closest $100
   const [transactionSide, setTransactionSide] = useState('buy');
   const [price, setTransactionPrice] = useState(30000);
-  // const [flippedPrice, setFlippedPrice] = useState(30000);
   const [transactionAmount, setTransactionAmount] = useState(0.001);
   const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
-  const [TradePairRatio, setTradePairRatio] = useState(1.1);
+  const [tradePairRatio, setTradePairRatio] = useState(1.1);
+  const [fees, setFees] = useState(0.005);
   const dispatch = useDispatch();
 
   function submitTransaction(event) {
     event.preventDefault();
     // calculate flipped price
-    let original_sell_price = (Math.round((price * (TradePairRatio + 100))) / 100)
+    let original_sell_price = (Math.round((price * (Number(tradePairRatio) + 100))) / 100)
     dispatch({
       type: 'START_TRADE', payload: {
         original_sell_price: original_sell_price,
@@ -37,9 +37,21 @@ function Trade(props) {
         product_id: transactionProduct
       }
     })
-    console.log(`the price is: $${price} per 1 BTC`);
-    console.log(`the amount is: ${transactionAmount} BTC`);
   }
+
+  // when the page loads, get the account fees 
+  useEffect(() => {
+    // getFees()
+    dispatch({type: 'FETCH_FEES'})
+
+  }, [])
+
+  // once the account fees load into redux, 
+  useEffect(() => {
+    console.log('fees from useEffect:', props.store.accountReducer.feeReducer);
+    setFees(props.store.accountReducer.feeReducer.maker_fee_rate)
+  }, [props.store.accountReducer.feeReducer])
+
 
   return (
     <div className="Trade boxed tall" >
@@ -60,20 +72,20 @@ function Trade(props) {
             name="transaction_price"
             value={Number(price)}
             // todo - this could possibly be changed to 100, or add a selector menu thing to toggle between different amounts
-            step={100}
+            step={1}
             required
             onChange={(event) => setTransactionPrice(event.target.value)}
           />
           <div className="increment-buttons">
             <div className="increase">
-              <input type="button" className="btn-green" onClick={(event) => setTransactionPrice(price + 1000)} value="+1000"></input>
-              <input type="button" className="btn-green" onClick={(event) => setTransactionPrice(price + 100)} value="+100"></input>
-              <input type="button" className="btn-green" onClick={(event) => setTransactionPrice(price + 10)} value="+10"></input>
+              <input type="button" className="btn-green" onClick={(event) => setTransactionPrice(Number(price) + 1000)} value="+1000"></input>
+              <input type="button" className="btn-green" onClick={(event) => setTransactionPrice(Number(price) + 100)} value="+100"></input>
+              <input type="button" className="btn-green" onClick={(event) => setTransactionPrice(Number(price) + 10)} value="+10"></input>
             </div>
             <div className="decrease">
-              <input type="button" className="btn-red" onClick={(event) => setTransactionPrice(price - 1000)} value="-1000"></input>
-              <input type="button" className="btn-red" onClick={(event) => setTransactionPrice(price - 100)} value="-100"></input>
-              <input type="button" className="btn-red" onClick={(event) => setTransactionPrice(price - 10)} value="-10"></input>
+              <input type="button" className="btn-red" onClick={(event) => setTransactionPrice(Number(price) - 1000)} value="-1000"></input>
+              <input type="button" className="btn-red" onClick={(event) => setTransactionPrice(Number(price) - 100)} value="-100"></input>
+              <input type="button" className="btn-red" onClick={(event) => setTransactionPrice(Number(price) - 10)} value="-10"></input>
             </div>
           </div>
         </div>
@@ -94,16 +106,16 @@ function Trade(props) {
           />
           <div className="increment-buttons">
             <div className="increase">
-              <input type="button" className="btn-green" onClick={(event) => setTransactionAmount(Math.round(transactionAmount * 1000 + 1000) / 1000)} value="+1"></input>
-              <input type="button" className="btn-green" onClick={(event) => setTransactionAmount(Math.round(transactionAmount * 1000 + 100) / 1000)} value="+.100"></input>
-              <input type="button" className="btn-green" onClick={(event) => setTransactionAmount(Math.round(transactionAmount * 1000 + 10) / 1000)} value="+.010"></input>
-              <input type="button" className="btn-green" onClick={(event) => setTransactionAmount(Math.round(transactionAmount * 1000 + 1) / 1000)} value="+.001"></input>
+              <input type="button" className="btn-green" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 1000 + 1000) / 1000)} value="+1"></input>
+              <input type="button" className="btn-green" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 1000 + 100) / 1000)} value="+.100"></input>
+              <input type="button" className="btn-green" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 1000 + 10) / 1000)} value="+.010"></input>
+              <input type="button" className="btn-green" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 1000 + 1) / 1000)} value="+.001"></input>
             </div>
             <div className="decrease">
-              <input type="button" className="btn-red" onClick={(event) => setTransactionAmount(Math.round(transactionAmount * 1000 - 1000) / 1000)} value="-1"></input>
-              <input type="button" className="btn-red" onClick={(event) => setTransactionAmount(Math.round(transactionAmount * 1000 - 100) / 1000)} value="-.100"></input>
-              <input type="button" className="btn-red" onClick={(event) => setTransactionAmount(Math.round(transactionAmount * 1000 - 10) / 1000)} value="-.010"></input>
-              <input type="button" className="btn-red" onClick={(event) => setTransactionAmount(Math.round(transactionAmount * 1000 - 1) / 1000)} value="-.001"></input>
+              <input type="button" className="btn-red" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 1000 - 1000) / 1000)} value="-1"></input>
+              <input type="button" className="btn-red" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 1000 - 100) / 1000)} value="-.100"></input>
+              <input type="button" className="btn-red" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 1000 - 10) / 1000)} value="-.010"></input>
+              <input type="button" className="btn-red" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 1000 - 1) / 1000)} value="-.001"></input>
             </div>
           </div>
         </div>
@@ -117,40 +129,38 @@ function Trade(props) {
           <input
             type="number"
             name="trade-pair-ratio"
-            value={Number(TradePairRatio)}
+            value={Number(tradePairRatio)}
             step={0.001}
             required
-            onChange={(event) => setTradePairRatio(event.target.value)}
+            onChange={(event) => setTradePairRatio(Number(event.target.value))}
           />
           <div className="increment-buttons">
             <div className="increase">
-              <input type="button" className="btn-green" onClick={(event) => setTradePairRatio(Math.round(TradePairRatio * 1000 + 1000) / 1000)} value="+1"></input>
-              <input type="button" className="btn-green" onClick={(event) => setTradePairRatio(Math.round(TradePairRatio * 1000 + 100) / 1000)} value="+0.1"></input>
+              <input type="button" className="btn-green" onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 + 1000) / 1000)} value="+1"></input>
+              <input type="button" className="btn-green" onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 + 100) / 1000)} value="+0.1"></input>
 
             </div>
             <div className="decrease">
-              <input type="button" className="btn-red" onClick={(event) => setTradePairRatio(Math.round(TradePairRatio * 1000 - 1000) / 1000)} value="-1"></input>
-              <input type="button" className="btn-red" onClick={(event) => setTradePairRatio(Math.round(TradePairRatio * 1000 - 100) / 1000)} value="-0.1"></input>
+              <input type="button" className="btn-red" onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 1000) / 1000)} value="-1"></input>
+              <input type="button" className="btn-red" onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 100) / 1000)} value="-0.1"></input>
             </div>
           </div>
         </div>
 
 
         {/* display some details about the new transaction that is going to be made */}
-        <input className="btn-send-trade btn-blue" type="submit" name="submit" value="Start new trade pair" />
+        <input className="btn-send-trade btn-blue" type="submit" name="submit" value="Start New Trade-Pair" />
         <div className="boxed dark">
           <h4 className="title">New position</h4>
           <p className="info"><strong>BUY*:</strong> ${Math.round(price * transactionAmount * 100) / 100}</p>
-          <p className="info"><strong>SELL*:</strong>${(Math.round((price* transactionAmount * (TradePairRatio + 100))) / 100)}</p>
-          {/* todo - currently using .005 as the fee multiplier. Should GET account info from coinbase and use that instead */}
-          <p className="info"><strong>FEE*:</strong> ${Math.round(price * transactionAmount * .5) / 100}</p>
-          <p className="info"><strong>PAIR MARGIN*:</strong> ${(Math.round(( ((price* transactionAmount * (TradePairRatio + 100))) / 100 - (price * transactionAmount) )*100))/100}</p>
-          {/* todo - currently using .005 as the fee multiplier. Should GET account info from coinbase and use that instead */}
-          <p className="info"><strong>PAIR PROFIT*:</strong> ${(Math.round(( (Math.round((price* transactionAmount * (TradePairRatio + 100))) / 100) - (price * transactionAmount)  - (price * transactionAmount * .005) * 2)*100))/100}</p>
+          <p className="info"><strong>SELL*:</strong>${(Math.round((price* transactionAmount * (tradePairRatio + 100))) / 100)}</p>
+          <p className="info"><strong>FEE*:</strong> ${Math.round(price * transactionAmount * (fees * 100)) / 100}</p>
+          <p className="info"><strong>PAIR MARGIN*:</strong> ${(Math.round(( ((price* transactionAmount * (tradePairRatio + 100))) / 100 - (price * transactionAmount) )*100))/100}</p>
+          <p className="info"><strong>PAIR PROFIT*:</strong> ${(Math.round(( (Math.round((price* transactionAmount * (tradePairRatio + 100))) / 100) - (price * transactionAmount)  - (price * transactionAmount * fees) * 2)*100))/100}</p>
           <p className="info">
             This will tell coinbot to start trading {transactionAmount} BTC
-            between the low purchase price of ${price} and
-            the high sell price of ${(Math.round((price * (TradePairRatio + 100))) / 100)}.
+            between the low purchase price of <strong>${price}</strong> and
+            the high sell price of <strong>${(Math.round((price * (tradePairRatio + 100))) / 100)}</strong>.
             The value in USD for the initial transaction will be about ${((Math.round((price * transactionAmount) * 100)) / 100)}.
           </p>
           <p className="small info">*Costs, fees, margin, and profit, are estimated and may be different at time of transaction. This is mostly due to rounding issues market conditions.</p>

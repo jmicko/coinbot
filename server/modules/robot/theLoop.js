@@ -1,6 +1,6 @@
 const authedClient = require('../authedClient');
 const databaseClient = require('../databaseClient/databaseClient');
-const socketClient = require('./socketClient');
+const socketClient = require('../socketClient');
 const botStatus = require('./botStatus');
 const orderSubtractor = require('./orderSubtractor');
 const exchange = require('./exchange');
@@ -11,7 +11,13 @@ const sleep = require('./sleep');
 // Needs to wait for confirmation at every step, or it may act on old data and oversell/overbuy.
 const theLoop = async () => {
   botStatus.loop++;
-  socketClient.sendMessage(`${botStatus.loop} loop${botStatus.loop === 1 ? '' : 's'}, brother`);
+
+
+  // socketClient.sendMessage(`hi ${botStatus.loop}` );
+  socketClient.emit('update', { loopStatus: `${botStatus.loop} loop${botStatus.loop === 1 ? '' : 's'}, brother` });
+
+
+  // socketClient.emit(`${botStatus.loop} loop${botStatus.loop === 1 ? '' : 's'}, brother`);
   // wait for 1/10th of a second between each loop to prevent too many API calls per second
   await sleep(100)
   .then(() => {
@@ -42,6 +48,7 @@ const theLoop = async () => {
     theLoop()
   } else {
     console.log('no more loops :(');
+    socketClient.emit('update', { loopStatus: 'no more loops :(' });
   }
 }
 

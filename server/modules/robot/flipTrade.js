@@ -1,3 +1,5 @@
+const socketClient = require('../socketClient');
+
 // function for flipping sides on a trade
 // Returns the tradeDetails object needed to send trade to CB
 const flipTrade = (dbOrder, cbOrder) => {
@@ -18,11 +20,13 @@ const flipTrade = (dbOrder, cbOrder) => {
       // if it was a buy, sell for more. multiply old price
       tradeDetails.side = "sell"
       tradeDetails.price = dbOrder.original_sell_price;
+      socketClient.emit('message', { message: `Flipping sides to SELL on order ${dbOrder.id}` });
       console.log('selling');
     } else {
       // if it was a sell, buy for less. divide old price
       tradeDetails.side = "buy"
       tradeDetails.price = dbOrder.original_buy_price;
+      socketClient.emit('message', { message: `Flipping sides to BUY on order ${dbOrder.id}` });
       console.log('buying');
     }
     // return the tradeDetails object

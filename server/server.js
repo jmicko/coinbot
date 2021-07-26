@@ -13,6 +13,7 @@ const bodyParser = require('body-parser');
 
 // Route includes
 const tradeRouter = require('./routes/trade.router');
+const accountRouter = require('./routes/account.router');
 
 
 // Body parser middleware
@@ -20,22 +21,34 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 
-/* Routes */
+/* REST Routes */
 app.use('/api/trade', tradeRouter);
+app.use('/api/account', accountRouter);
+// app.use('/api/bot', tradeRouter);
 
 /* socket.io */
 // this triggers on a new client connection
 io.on('connection', (socket) => {
   let id = socket.id;
   console.log(`client with id: ${id} connected!`);
+  // console.log('the socket is', socket.handshake);
   // message to client confirming connection
   socket.emit('message', { message: 'welcome!' });
+  socket.emit('message', { message: 'trade a coin or two!' });
+  socket.emit('update', { connection: 'Connected!' });
 
   // relay updates from the loop about trades that are being checked
   socket.on('message', (message) => {
     // socket.broadcast.emit('message', { message: 'welcome!' });
-    console.log(message);
+    console.log(message.message);
     socket.broadcast.emit('message', message);
+  })
+
+  // relay updates from the loop about trades that are being checked
+  socket.on('update', (message) => {
+    // socket.broadcast.emit('message', { message: 'welcome!' });
+    console.log(message);
+    socket.broadcast.emit('update', message);
   })
 
   socket.on('exchangeUpdate', (trade) => {
@@ -43,7 +56,7 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('exchangeUpdate', trade);
     // console.log('server got a trade exchange update!', trade);
   })
-  
+
   socket.on("disconnect", (reason) => {
     console.log(`client with id: ${id} disconnected, reason:`, reason);
   });

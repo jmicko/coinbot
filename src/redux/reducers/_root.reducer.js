@@ -1,5 +1,6 @@
 import { combineReducers } from 'redux';
 import tradeReducer from './trade.reducer';
+import accountReducer from './account.reducer';
 
 
 // rootReducer is the primary reducer for our entire project
@@ -10,6 +11,7 @@ import tradeReducer from './trade.reducer';
 // This is what we get when we use 'state' inside of 'mapStateToProps'
 const rootReducer = combineReducers({
   tradeReducer,
+  accountReducer,
 });
 
 export default rootReducer;

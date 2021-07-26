@@ -6,23 +6,22 @@ import {
   // Switch,
 } from 'react-router-dom';
 import { connect } from 'react-redux';
+import { SocketProvider, useSocket } from "../../contexts/SocketProvider";
 
 // Directory imports
-import Trade from '../Trade/Trade';
 import Home from '../Home/Home';
 
 function App() {
   return (
     <div className="App">
-      {/* <Nav /> */}
-      <Router>
-          <Route 
-          exact path="/trade" 
-          component={Trade} />
-          <Route 
-          exact path="/" 
-          component={Home} />
+      {/* all components wrapped inside the socket provider will have access to the same socket */}
+      <SocketProvider>
+        <Router>
+          <Route
+            exact path="/"
+            component={Home} />
         </Router>
+      </SocketProvider>
     </div>
   );
 }
