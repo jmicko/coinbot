@@ -1,27 +1,15 @@
 /* === MAIN === */
 
 .Trade {
-    /* display              : grid; */
+    display              : block;
     grid-column          : 2;
     grid-row             : 2/4;
+    /* overflow: auto; */
+    overflow-y: auto;
     /* height               : min-content; */
 
 }
 
-.title {
-    background-color: rgb(98, 127, 128);
-    margin          : 0;
-    text-align      : center;
-    border-bottom   : 1px solid black;
-}
-
-.info {
-    margin     : .4rem;
-}
-
-.small {
-    font-size: small;
-}
 
 /* === FORM === */
 

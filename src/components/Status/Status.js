@@ -69,7 +69,7 @@ function Status(props) {
 
   return (
 
-    <div className="Status boxed">
+    <div className="Status boxed fit">
       <h3 className="title">
         Status
       </h3>

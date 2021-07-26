@@ -1,9 +1,26 @@
 @import url('https://fonts.googleapis.com/css2?family=Syne+Mono&display=swap');
 
+/* === MAIN === */
+
 body {
   background-color: #c7c7b1;
   font-family     : 'Syne Mono', monospace;
 
+}
+
+.title {
+  background-color: rgb(98, 127, 128);
+  margin          : 0;
+  text-align      : center;
+  border-bottom   : 1px solid black;
+}
+
+.info {
+  margin     : .4rem;
+}
+
+.small {
+  font-size: small;
 }
 
 /* === BOXES === */
@@ -11,8 +28,11 @@ body {
   /* margin: .2rem; */
   border: 1px solid black;
   /* margin     : .4rem; */
-  height: fit-content;
   /* width: fit-content; */
+}
+
+.fit {
+  height: fit-content;
 }
 
 /* .tall {
