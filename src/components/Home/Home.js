@@ -21,7 +21,7 @@ function Home(props) {
   return (
     <div className="Home">
       <header className="header">
-        <h2>Welcome to Coinbot3000</h2>
+        <h2>WE USE COINBOT.</h2>
       </header>
       <ToggleBot />
       <Trade />
