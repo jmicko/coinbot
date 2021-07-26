@@ -17,7 +17,7 @@ router.post('/toggle', (req, res) => {
 /**
  * POST route sending trade
  */
-router.post('/order', (req, res) => {
+router.post('/', (req, res) => {
   // POST route code here
   const order = req.body;
   // tradeDetails const should take in values sent from trade component form
@@ -58,7 +58,7 @@ router.post('/order', (req, res) => {
 /**
 * GET route - will be used for getting some account settings etc
 */
-router.get('/order', (req, res) => {
+router.get('/', (req, res) => {
   // GET route code here
   console.log('in the server trade GET route')
     .then(data => {

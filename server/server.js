@@ -13,6 +13,7 @@ const bodyParser = require('body-parser');
 
 // Route includes
 const tradeRouter = require('./routes/trade.router');
+const accountRouter = require('./routes/account.router');
 
 
 // Body parser middleware
@@ -20,8 +21,10 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 
-/* Routes */
+/* REST Routes */
 app.use('/api/trade', tradeRouter);
+app.use('/api/account', accountRouter);
+// app.use('/api/bot', tradeRouter);
 
 /* socket.io */
 // this triggers on a new client connection
