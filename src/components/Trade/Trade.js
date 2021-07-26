@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
@@ -36,12 +36,24 @@ function Trade(props) {
         product_id: transactionProduct
       }
     })
-    console.log(`the price is: $${price} per 1 BTC`);
-    console.log(`the amount is: ${transactionAmount} BTC`);
+  }
+
+  useEffect(() => {
+    getFees()
+    return () => {
+      
+    }
+  }, [])
+
+  function getFees(event) {
+    console.log('getting fees');
+    dispatch({type: 'FETCH_FEES'})
+
   }
 
   return (
     <div className="Trade boxed tall" >
+      <>{JSON.stringify(props)}</>
       <h3 className="title">New Trade-Pair</h3>
       {/* <div> */}
       {/* form with a single input. Input takes a price point at which 
