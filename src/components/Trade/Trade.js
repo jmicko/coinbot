@@ -55,7 +55,6 @@ function Trade(props) {
 
   return (
     <div className="Trade boxed tall" >
-      <>{JSON.stringify(props.store.accountReducer.feeReducer.maker_fee_rate)}</>
       <h3 className="title">New Trade-Pair</h3>
       {/* <div> */}
       {/* form with a single input. Input takes a price point at which 
