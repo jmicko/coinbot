@@ -13,15 +13,11 @@ router.post('/', (req, res) => {
 });
 
 /**
-* GET route - will be used for getting some account settings etc
+* GET route to get the fees when the user loads the page
 */
 router.get('/fees', (req, res) => {
-  // GET route code here
-  console.log('in the server account GET route')
-
   authedClient.get(['fees'])
   .then((result) => {
-    console.log(result);
     res.send(result)
   })
   .catch((error) => {

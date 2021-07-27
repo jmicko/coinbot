@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require('../modules/pool');
 const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient/databaseClient');
+const socketClient = require('../modules/socketClient');
 const robot = require('../modules/robot/robot')
 
 
@@ -64,9 +65,17 @@ router.delete('/', (req, res) => {
   console.log('in the server trade DELETE route', req.body.id)
   authedClient.cancelOrder(orderId)
     .then(data => {
-      console.log('order was deleted successfully', data);
-      console.log(data);
-      res.sendStatus(200)
+      console.log('order was deleted successfully from cb', data);
+      const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+      pool.query(queryText, [data])
+      .then(() => {
+        socketClient.emit('message', {
+          message: `order was tossed out of ol' databanks`,
+          orderUpdate: true
+        });
+        console.log('deleted from db as well');
+        res.sendStatus(200);
+      })
     })
     .catch((error) => {
       console.log('something failed', error);

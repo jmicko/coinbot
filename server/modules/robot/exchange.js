@@ -72,9 +72,15 @@ const exchange = async (ordersToCheck) => {
           // orders that have been canceled are deleted from coinbase and return a 404.
           // error handling should delete them so they are not counted toward profits if simply marked settled
           if (error.data.message === 'NotFound') {
-            console.log('try that again please');
+            console.log('order not found in account. deleting from db');
             const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-            return pool.query(queryText, [dbOrder.id]);
+            return pool.query(queryText, [dbOrder.id])
+            .then(() => {
+              socketClient.emit('message', {
+                message: `exchange was tossed into the ol' databanks`,
+                orderUpdate: true
+              });
+            })
           }
         } else {
           console.log('yousa got a biiiig big problems', error);

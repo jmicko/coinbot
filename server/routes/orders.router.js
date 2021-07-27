@@ -10,8 +10,6 @@ const robot = require('../modules/robot/robot')
 * GET route - get all orders
 */
 router.get('/', (req, res) => {
-  // GET route code here
-  console.log('in the server orders GET route')
   // ask db for an array of buys and an array of sells
   return Promise.all([
     // get all open orders from db and from coinbase
@@ -24,7 +22,7 @@ router.get('/', (req, res) => {
         sells: sells,
         buys: buys
       }
-      console.log(buys);
+      // console.log(buys);
       res.send(openOrdersInOrder)
     })
     .catch((error) => {
