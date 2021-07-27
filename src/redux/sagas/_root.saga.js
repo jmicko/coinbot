@@ -1,6 +1,7 @@
 import { all } from 'redux-saga/effects';
 import tradeSaga from './trade.saga';
 import accountSaga from './account.saga';
+import orderSaga from './order.saga';
 
 // rootSaga is the primary saga.
 // It bundles up all of the other sagas so our project can use them.
@@ -13,5 +14,6 @@ export default function* rootSaga() {
   yield all([
       tradeSaga(),
       accountSaga(),
+      orderSaga(),
   ]);
 }

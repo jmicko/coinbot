@@ -88,9 +88,9 @@ body::-webkit-scrollbar-thumb,
 /* === BUTTONS === */
 
 .btn-red {
-  background-color: rgb(236, 65, 65);
+  background-color: #ec4141;
   font-family     : inherit;
-  box-shadow      : inset 2px 2px rgba(255, 255, 255, .6), inset -2px -2px rgba(0, 0, 0, .6);
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
 }
 
 .btn-red:hover {
@@ -101,13 +101,13 @@ body::-webkit-scrollbar-thumb,
   /* remove annoying rounded blue outline when button is focused */
   outline         : none;
   /* change color when focused to resolve accesibility concerns */
-  background-color: rgba(184, 113, 140, 0.507);
+  background-color: #b8718c81;
 }
 
 .btn-green {
   background-color: rgb(109, 145, 108);
   font-family     : inherit;
-  box-shadow      : inset 2px 2px rgba(255, 255, 255, .6), inset -2px -2px rgba(0, 0, 0, .6);
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
 }
 
 .btn-green:hover {
@@ -124,7 +124,7 @@ body::-webkit-scrollbar-thumb,
 .btn-blue {
   background-color: rgb(108, 123, 145);
   font-family     : inherit;
-  box-shadow      : inset 2px 2px rgba(255, 255, 255, .6), inset -2px -2px rgba(0, 0, 0, .6);
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
 }
 
 .btn-blue:hover {
@@ -135,9 +135,9 @@ body::-webkit-scrollbar-thumb,
   /* remove annoying rounded blue outline when button is focused */
   outline         : none;
   /* change color when focused to resolve accesibility concerns */
-  background-color: rgba(119, 115, 179, 0.596);
+  background-color: #7773b398;
 }
 
 button:active {
-  box-shadow: inset -2px -2px rgba(255, 255, 255, .6), inset 2px 2px rgba(0, 0, 0, .6);
+  box-shadow: inset -2px -2px #ffffff99, inset 2px 2px #00000099;
 }

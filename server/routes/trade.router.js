@@ -56,23 +56,6 @@ router.post('/', (req, res) => {
 });
 
 /**
-* GET route - will be used for getting some account settings etc
-*/
-router.get('/', (req, res) => {
-  // GET route code here
-  console.log('in the server trade GET route')
-    .then(data => {
-      console.log('order was retrieved successfully');
-      console.log(data);
-    })
-    .catch((error) => {
-      console.log('something failed', error);
-      res.sendStatus(500)
-    });
-
-});
-
-/**
 * DELETE route
 */
 router.delete('/order', (req, res) => {

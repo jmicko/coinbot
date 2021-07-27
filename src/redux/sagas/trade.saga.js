@@ -23,8 +23,6 @@ function* startTrade(action) {
 
 function* tradeSaga() {
     yield takeLatest('TOGGLE_BOT', toggleBot);
-    // yield takeLatest('BUY_BTC', buybtc);
-    // yield takeLatest('SELL_BTC', sellbtc);
     yield takeLatest('START_TRADE', startTrade);
 }
 
