@@ -3,7 +3,7 @@ const authedClient = require('../authedClient');
 const databaseClient = require('../databaseClient/databaseClient');
 const socketClient = require('../socketClient');
 const flipTrade = require('./flipTrade');
-const botStatus = require('./botStatus');
+const robot = require('./robot');
 const sleep = require('./sleep');
 
 
@@ -15,7 +15,7 @@ const exchange = async (ordersToCheck) => {
     await sleep(100)
       .then(() => {
         // need to stop the loop if coinbot is off
-        if (botStatus.toggle) {
+        if (robot.looping) {
           // socketClient.sendCheckerUpdate(dbOrder);
           console.log('at the exchange with trade ID:', dbOrder.id);
           socketClient.emit('message', { message: `at the exchange with trade ID: ${dbOrder.id}` });

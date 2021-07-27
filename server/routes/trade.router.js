@@ -4,13 +4,14 @@ const pool = require('../modules/pool');
 const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient/databaseClient');
 const socketClient = require('../modules/socketClient');
-const robot = require('../modules/robot/robot')
+const toggleCoinbot = require('../modules/robot/toggleCoinbot');
 
 
 // todo - POST route for auto trading
 router.post('/toggle', (req, res) => {
   // When this route is hit, it turns on and off the trading loop
-  robot.toggleCoinbot();
+  console.log('toggle route');
+  toggleCoinbot();
   res.sendStatus(200);
 })
 
