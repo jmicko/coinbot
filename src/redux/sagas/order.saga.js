@@ -2,10 +2,9 @@ import { put, takeLatest } from 'redux-saga/effects';
 import axios from 'axios';
 
 
-function* fetchOrders(action) {
+function* fetchOrders() {
   try {
-      console.log('payload is:', action.payload);
-      const response = yield axios.get(`/api/orders/`, action.payload);
+      const response = yield axios.get(`/api/orders/`);
       console.log('orders response is.....', response.data);
       yield put({ type: 'SET_ORDERS', payload: response.data})
   } catch (error) {

@@ -12,14 +12,24 @@ const robot = require('../modules/robot/robot')
 router.get('/', (req, res) => {
   // GET route code here
   console.log('in the server orders GET route')
-
-  // .then((result) => {
-  //   console.log(result);
-  //   res.send(result)
-  // })
-  // .catch((error) => {
-    res.send('wooohooooo')
-  // })
+  // ask db for an array of buys and an array of sells
+  return Promise.all([
+    // get all open orders from db and from coinbase
+    databaseClient.getUnsettledTrades('buy'),
+    databaseClient.getUnsettledTrades('sell'),
+  ])
+    .then((result) => {
+      const buys = result[0], sells = result[1];
+      const openOrdersInOrder = {
+        sells: sells,
+        buys: buys
+      }
+      console.log(buys);
+      res.send(openOrdersInOrder)
+    })
+    .catch((error) => {
+      res.send(500)
+    })
 
 
 });

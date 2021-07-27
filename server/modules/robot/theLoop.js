@@ -23,7 +23,7 @@ const theLoop = async () => {
   .then(() => {
     return Promise.all([
       // get all open orders from db and from coinbase
-      databaseClient.getUnsettledTrades(),
+      databaseClient.getUnsettledTrades('all'),
       authedClient.getOrders({ status: 'open' })
     ])
     .then((results) => {
