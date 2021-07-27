@@ -16,11 +16,25 @@ function SingleTrade(props) {
     setProfit(profit);
   }, [props.store.accountReducer]);
 
+  // delete the order if the abandone button is clicked.
+  // the loop already detects deleted orders, so only need to make a call to coinbase
+  // no need to bother the database if it is busy
+  function deleteOrder() {
+      dispatch({
+        type: 'DELETE_ORDER', payload: {
+          id: props.order.id,
+        }
+      })
+  }
+
   // todo - probably need to refactor this thing asap. Should use more useState hooks to make these strings a bit less horrifying
   // postgres is much better at math using exact 
 
   return (
     <div className={`${props.order.side}`}>
+      <button className="btn-red" onClick={deleteOrder()}>
+        Abandon
+      </button>
       <p>
         <strong>
           {(props.order.side == 'sell')

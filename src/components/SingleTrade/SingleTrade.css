@@ -20,6 +20,14 @@
 .buy p,
 .sell p{
     margin: auto;
-    padding: .2rem;
+    padding: .25rem;
     text-align: center;
+}
+
+.buy button,
+.sell button{
+    float: right;
+    margin: 0;
+    padding: .2rem;
+    /* text-align: center; */
 }
