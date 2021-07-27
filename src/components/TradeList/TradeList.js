@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { connect, useDispatch } from 'react-redux';
+import mapStoreToProps from '../../redux/mapStoreToProps';
 import SingleTrade from '../SingleTrade/SingleTrade'
 import { useSocket } from "../../contexts/SocketProvider";
 import './TradeList.css'
@@ -7,15 +8,33 @@ import './TradeList.css'
 
 
 
-function TradeList() {
+function TradeList(props) {
   const dispatch = useDispatch();
   const socket = useSocket();
 
-  // not sure if orders should be stored in local state or redux but here's this
-  const [buys, setBuys] = useState([]);
-  const [sells, setSells] = useState([]);
+  // these will store mapped arrays as html so they can be used after page loads
+  const [buys, setBuys] = useState(<></>);
+  const [sells, setSells] = useState(<></>);
 
   // need to set up a listener to listen for messages from the exchange
+  // and also grab them when page loads - function below grabs on load
+  useEffect(() => {
+    getOpenOrders();
+  }, []);
+
+  // this watches the store and maps arrays to html when it changes because can't map nothing
+  useEffect(() => {
+    if (props.store.ordersReducer.openOrdersInOrder.sells != undefined) {
+      setSells(props.store.ordersReducer.openOrdersInOrder.sells.map((sell) => {
+        return <SingleTrade key={sell.id} order={sell} side='sell' />
+      }))
+    }
+    if (props.store.ordersReducer.openOrdersInOrder.buys != undefined) {
+      setBuys(props.store.ordersReducer.openOrdersInOrder.buys.map((sell) => {
+        return <SingleTrade key={sell.id} order={sell} side='buy' />
+      }))
+    }
+  }, [props.store.ordersReducer.openOrdersInOrder.sells, props.store.ordersReducer.openOrdersInOrder.sells]);
 
   // need use effect to prevent multiplying connections every time component renders
   useEffect(() => {
@@ -43,40 +62,17 @@ function TradeList() {
 
   }
 
-  // orders should be selected as two arrays, one for buys and one for sells. Order buy price, highest at top.
-
-  // store arrays in the redux store maybe?
-
   // map the sell array on top and buy array on bottom
-
-
 
   return (
     <div className="TradeList">
       <div className="scrollable boxed">
-        <SingleTrade side='sell' />
-        <SingleTrade side='sell' />
-        <SingleTrade side='sell' />
-        <SingleTrade side='sell' />
-        <SingleTrade side='sell' />
-        <SingleTrade side='sell' />
-        <SingleTrade side='sell' />
-        <SingleTrade side='sell' />
+        {sells}
         <center><p>Robot goes here</p></center>
-        <SingleTrade side='buy' />
-        <SingleTrade side='buy' />
-        <SingleTrade side='buy' />
-        <SingleTrade side='buy' />
-        <SingleTrade side='buy' />
-        <SingleTrade side='buy' />
-        <SingleTrade side='buy' />
-        <SingleTrade side='buy' />
-        <SingleTrade side='buy' />
-        <SingleTrade side='buy' />
-
+        {buys}
       </div>
     </div>
   )
 }
 
-export default TradeList;
+export default connect(mapStoreToProps)(TradeList);

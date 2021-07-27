@@ -8,6 +8,7 @@ function SingleTrade(props) {
   return (
     <div className={`${props.side}`}>
       <p>{props.side}~~~~~~~~~~ LIST OF TRADES GOES HERE ~~~~~~~~~~</p>
+      <>{JSON.stringify(props.side)}</>
     </div>
   )
 }
