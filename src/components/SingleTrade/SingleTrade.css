@@ -17,13 +17,13 @@
     background-color: rgb(199, 144, 112);
 }
 
-.buy p,
-.sell p{
+.single-trade {
     margin: auto;
     padding: .25rem;
     text-align: center;
 }
 
+.deleting,
 .buy button,
 .sell button{
     float: right;

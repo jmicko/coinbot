@@ -6,6 +6,7 @@ import './SingleTrade.css'
 function SingleTrade(props) {
   const dispatch = useDispatch();
   const [profit, setProfit] = useState(0);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (props.store.accountReducer == undefined) {
@@ -21,6 +22,7 @@ function SingleTrade(props) {
   // no need to bother the database if it is busy
   function deleteOrder() {
     console.log('clicked delete');
+    setDeleting(true)
       dispatch({
         type: 'DELETE_TRADE', payload: {
           id: props.order.id,
@@ -33,10 +35,11 @@ function SingleTrade(props) {
 
   return (
     <div className={`${props.order.side}`}>
-      <button className="btn-red" onClick={() => {deleteOrder()}}>
-        Abandon
-      </button>
-      <p>
+      {(deleting === true)
+      ? <p className="deleting">Deleting...</p>
+    : <button className="btn-red" onClick={() => {deleteOrder()}}>Abandon</button>
+    }
+      <p className="single-trade">
         <strong>
           {(props.order.side == 'sell')
             ? 'Sell'
