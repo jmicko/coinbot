@@ -3,6 +3,8 @@ import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 import SingleTrade from '../SingleTrade/SingleTrade'
 import { useSocket } from "../../contexts/SocketProvider";
+import coinbotFilled from "../../../src/coinbotFilled.png";
+import coinbotFilledGif from "../../../src/coinbotFilled.gif";
 import './TradeList.css'
 
 
@@ -69,7 +71,7 @@ function TradeList(props) {
       <div className="scrollable boxed">
       {/* <>{JSON.stringify(props.store.accountReducer)}</> */}
         {sells}
-        <center><p>Robot goes here</p></center>
+        <center><img className="coinbot-image" src={coinbotFilled} alt="coinbot" /><image></image></center>
         {buys}
       </div>
     </div>
