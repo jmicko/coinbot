@@ -16,7 +16,7 @@ const theLoop = async () => {
   console.log('starting the loop');
   robot.loop++;
   socketClient.emit('update', { loopStatus: `${robot.loop} loop${robot.loop === 1 ? '' : 's'}, brother` });
-  await sleep(1000)
+  await sleep(100)
   .then(() => {
     return Promise.all([
       // get all open orders from db and from coinbase

@@ -11,7 +11,7 @@ const feeReducer = (state = {}, action) => {
   };
 
 
-const profitReducer = (state = [{sum: "0"}], action) => {
+const profitsReducer = (state = [{sum: "0"}], action) => {
     switch (action.type) {
       case 'SET_PROFITS':
         return action.payload;
@@ -25,6 +25,6 @@ const profitReducer = (state = [{sum: "0"}], action) => {
   // state.errors.loginMessage and state.errors.registrationMessage
   export default combineReducers({
     feeReducer,
-    profitReducer,
+    profitsReducer,
   });
   

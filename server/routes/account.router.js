@@ -36,7 +36,6 @@ router.get('/profits', (req, res) => {
   WHERE "side" = 'sell' AND "settled" = 'true';`;
   pool.query(queryText)
     .then((result) => {
-      console.log('profits:', result.rows);
       res.send(result.rows)
     })
     .catch((error) => {
