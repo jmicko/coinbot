@@ -44,9 +44,9 @@ function TradeList(props) {
     if (socket == null) return;
 
 
-    socket.on('message', message => {
-      // check if the message is an order update, meaning there is something to change on dom
-      if (message.orderUpdate != null) {
+    socket.on('update', update => {
+      // check if the update is an order update, meaning there is something to change on dom
+      if (update.orderUpdate != null) {
         // do api call for all open orders
         getOpenOrders()
       }

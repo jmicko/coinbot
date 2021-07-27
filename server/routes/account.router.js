@@ -17,12 +17,32 @@ router.post('/', (req, res) => {
 */
 router.get('/fees', (req, res) => {
   authedClient.get(['fees'])
-  .then((result) => {
-    res.send(result)
-  })
-  .catch((error) => {
-    res.sendStatus(500)
-  })
+    .then((result) => {
+      res.send(result)
+    })
+    .catch((error) => {
+      res.sendStatus(500)
+    })
+
+
+});
+
+/**
+* GET route to get total profit estimate
+*/
+router.get('/profits', (req, res) => {
+  const queryText = `SELECT SUM((("original_sell_price" * "size") - "fill_fees") - (("original_buy_price" * "size") - "fill_fees")) 
+  FROM public.orders 
+  WHERE "side" = 'sell' AND "settled" = 'true';`;
+  pool.query(queryText)
+    .then((result) => {
+      console.log('profits:', result.rows);
+      res.send(result.rows)
+    })
+    .catch((error) => {
+      console.log('error in profits:', error);
+      res.sendStatus(500)
+    })
 
 
 });

@@ -46,7 +46,7 @@ const exchange = async (ordersToCheck) => {
                           cbOrder.id
                         ])
                           .then((results) => {
-                            socketClient.emit('message', {
+                            socketClient.emit('update', {
                               message: `an exchange was made`,
                               orderUpdate: true
                             });

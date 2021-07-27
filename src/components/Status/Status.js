@@ -26,7 +26,8 @@ function Status(props) {
     socket.on('update', update => {
       // loop status updates get saved to own state
       if (update.loopStatus != null) {
-        setLoopStatus(update.loopStatus)
+        setLoopStatus(update.loopStatus);
+        getProfits();
       }
       // connection status updates get saved to own state
       if (update.connection != null) {
@@ -34,13 +35,19 @@ function Status(props) {
         // console.log(`message:`, message.loopStatus);
       }
     });
-
+    
     // this will remove the listener when component rerenders
     return () => socket.off('update')
     // useEffect will depend on socket because the connection will 
     // not be there right when the page loads
   }, [socket])
   
+  function getProfits() {
+    dispatch({
+      type: 'FETCH_PROFITS'
+    });
+  }
+
   // to get price of bitcoin updated on dom
   function ticker(data) {
     publicClient.getProductTicker('BTC-USD',(error, response, data) => {
@@ -55,13 +62,13 @@ function Status(props) {
           setBTC_USD_price(data.price)
           // console.log('ticker', BTC_USD_price);
         }
-    });
+    })
   }
 
   // calls the ticker at regular intervals
   useEffect(() => {
     const interval = setInterval(() => {
-      ticker()
+      ticker();
     }, 500);
     // need to clear on return or it will make dozens of calls per second
     return () => clearInterval(interval);
