@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require('../modules/pool');
 const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient/databaseClient');
+const socketClient = require('../modules/socketClient');
 const robot = require('../modules/robot/robot')
 
 
@@ -32,7 +33,7 @@ router.post('/', (req, res) => {
   console.log(tradeDetails);
   // function to send the order with the CB API to CB and place the trade
   authedClient.placeOrder(tradeDetails)
-  // after trade is placed, store the returned pending trade values in the database
+    // after trade is placed, store the returned pending trade values in the database
     .then(pendingTrade => databaseClient.storeTrade(pendingTrade, order))
     .then(results => {
       console.log(`order placed, given to db with reply:`, results.message);
@@ -56,37 +57,30 @@ router.post('/', (req, res) => {
 });
 
 /**
-* GET route - will be used for getting some account settings etc
-*/
-router.get('/', (req, res) => {
-  // GET route code here
-  console.log('in the server trade GET route')
-    .then(data => {
-      console.log('order was retrieved successfully');
-      console.log(data);
-    })
-    .catch((error) => {
-      console.log('something failed', error);
-      res.sendStatus(500)
-    });
-
-});
-
-/**
 * DELETE route
 */
-router.delete('/order', (req, res) => {
+router.delete('/', (req, res) => {
   // DELETE route code here
-  console.log('in the server trade DELETE route')
+  const orderId = req.body.id;
+  console.log('in the server trade DELETE route', req.body.id)
+  authedClient.cancelOrder(orderId)
     .then(data => {
-      console.log('order was deleted successfully');
-      console.log(data);
+      console.log('order was deleted successfully from cb', data);
+      const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+      pool.query(queryText, [data])
+      .then(() => {
+        socketClient.emit('message', {
+          message: `order was tossed out of ol' databanks`,
+          orderUpdate: true
+        });
+        console.log('deleted from db as well');
+        res.sendStatus(200);
+      })
     })
     .catch((error) => {
       console.log('something failed', error);
       res.sendStatus(500)
     });
-
 });
 
 

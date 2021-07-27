@@ -1,22 +1,69 @@
 @import url('https://fonts.googleapis.com/css2?family=Syne+Mono&display=swap');
 
+/* === MAIN === */
+
+html {
+  --scrollbarBG: #50575a;
+  --thumbBG: #41bcc060;
+}
+
 body {
   background-color: #c7c7b1;
   font-family     : 'Syne Mono', monospace;
+}
 
+.title {
+  background-color: rgb(98, 127, 128);
+  margin          : 0;
+  text-align      : center;
+  border-bottom   : 1px solid black;
+}
+
+.info {
+  margin     : .4rem;
+}
+
+.small {
+  font-size: small;
 }
 
 /* === BOXES === */
-.boxed {
-  /* margin: .2rem; */
-  border: 1px solid black;
-  height: fit-content;
-  /* width: fit-content; */
+
+body,
+.scrollable {
+  overflow-y: auto;
+  max-height: 100%;
+  scrollbar-color: var(--thumbBG) var(--scrollbarBG);
 }
 
-.tall {
-  height: 100%;
+body::-webkit-scrollbar,
+.scrollable::-webkit-scrollbar {
+  width: 18px;
 }
+
+body::-webkit-scrollbar-track,
+.scrollable::-webkit-scrollbar-track {
+  background: var(--scrollbarBG);
+}
+
+body::-webkit-scrollbar-thumb,
+.scrollable::-webkit-scrollbar-thumb {
+  background-color: var(--thumbBG) ;
+  /* border-radius: 6px; */
+  border: 3px solid var(--scrollbarBG);
+}
+
+.boxed {
+  border: 1px solid black;
+}
+
+.fit {
+  height: fit-content;
+}
+
+/* .tall {
+  height: 100%;
+} */
 
 .dark {
   background-color: darkgrey;
@@ -26,9 +73,9 @@ body {
 /* === BUTTONS === */
 
 .btn-red {
-  background-color: rgb(236, 65, 65);
+  background-color: #ec4141;
   font-family     : inherit;
-  box-shadow      : inset 2px 2px rgba(255, 255, 255, .6), inset -2px -2px rgba(0, 0, 0, .6);
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
 }
 
 .btn-red:hover {
@@ -39,13 +86,13 @@ body {
   /* remove annoying rounded blue outline when button is focused */
   outline         : none;
   /* change color when focused to resolve accesibility concerns */
-  background-color: rgba(184, 113, 140, 0.507);
+  background-color: #b8718c81;
 }
 
 .btn-green {
   background-color: rgb(109, 145, 108);
   font-family     : inherit;
-  box-shadow      : inset 2px 2px rgba(255, 255, 255, .6), inset -2px -2px rgba(0, 0, 0, .6);
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
 }
 
 .btn-green:hover {
@@ -62,7 +109,7 @@ body {
 .btn-blue {
   background-color: rgb(108, 123, 145);
   font-family     : inherit;
-  box-shadow      : inset 2px 2px rgba(255, 255, 255, .6), inset -2px -2px rgba(0, 0, 0, .6);
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
 }
 
 .btn-blue:hover {
@@ -73,9 +120,9 @@ body {
   /* remove annoying rounded blue outline when button is focused */
   outline         : none;
   /* change color when focused to resolve accesibility concerns */
-  background-color: rgba(119, 115, 179, 0.596);
+  background-color: #7773b398;
 }
 
 button:active {
-  box-shadow: inset -2px -2px rgba(255, 255, 255, .6), inset 2px 2px rgba(0, 0, 0, .6);
+  box-shadow: inset -2px -2px #ffffff99, inset 2px 2px #00000099;
 }

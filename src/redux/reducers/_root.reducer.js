@@ -1,6 +1,7 @@
 import { combineReducers } from 'redux';
 import tradeReducer from './trade.reducer';
 import accountReducer from './account.reducer';
+import ordersReducer from './orders.reducer';
 
 
 // rootReducer is the primary reducer for our entire project
@@ -12,6 +13,7 @@ import accountReducer from './account.reducer';
 const rootReducer = combineReducers({
   tradeReducer,
   accountReducer,
+  ordersReducer,
 });
 
 export default rootReducer;

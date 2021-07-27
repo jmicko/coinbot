@@ -1,4 +1,5 @@
 const pool = require('../pool');
+const socketClient = require('../socketClient');
 
 const storeTrade = (newOrder, originalDetails) => {
   return new Promise((resolve, reject) => {
@@ -29,6 +30,10 @@ const storeTrade = (newOrder, originalDetails) => {
           results: results,
           success: true
         }
+        socketClient.emit('message', {
+          message: `exchange was tossed into the ol' databanks`,
+          orderUpdate: true
+        });
         // console.log(`order ${newOrder.id} was successfully stored in db`);
         resolve(success);
       })

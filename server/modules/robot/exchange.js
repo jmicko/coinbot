@@ -13,7 +13,7 @@ const exchange = async (ordersToCheck) => {
     // the dbOrder object can be used throughout the loop to refer to the old order that may have settled
     // wait for 1/10th of a second  to prevent too many api calls
     await sleep(100)
-    .then(() => {
+      .then(() => {
         // need to stop the loop if coinbot is off
         if (botStatus.toggle) {
           // socketClient.sendCheckerUpdate(dbOrder);
@@ -46,7 +46,11 @@ const exchange = async (ordersToCheck) => {
                           cbOrder.id
                         ])
                           .then((results) => {
-                            socketClient.emit('message', { message: `exchange was made and tossed into the ol' databanks` });
+                            socketClient.emit('message', {
+                              message: `an exchange was made`,
+                              orderUpdate: true
+                            });
+                            // socketClient.emit('order', { message: `exchange was made and tossed into the ol' databanks` });
                             console.log('order flipped and updated in db', results.command);
                           })
                           .catch(error => {
@@ -68,9 +72,15 @@ const exchange = async (ordersToCheck) => {
           // orders that have been canceled are deleted from coinbase and return a 404.
           // error handling should delete them so they are not counted toward profits if simply marked settled
           if (error.data.message === 'NotFound') {
-            console.log('try that again please');
+            console.log('order not found in account. deleting from db');
             const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-            return pool.query(queryText, [dbOrder.id]);
+            return pool.query(queryText, [dbOrder.id])
+            .then(() => {
+              socketClient.emit('message', {
+                message: `exchange was tossed into the ol' databanks`,
+                orderUpdate: true
+              });
+            })
           }
         } else {
           console.log('yousa got a biiiig big problems', error);

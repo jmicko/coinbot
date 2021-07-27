@@ -21,5 +21,20 @@ CREATE TABLE IF NOT EXISTS "orders"
 );
 
 
-SELECT * FROM "orders"
-ORDER BY original_buy_price DESC
+
+
+-- this may be a way to get profits
+-- SELECT SUM((("original_sell_price" * "size") - "fill_fees") - (("original_buy_price" * "size") - "fill_fees")) FROM public.orders WHERE "side" = 'sell' AND "settled" = 'true';
+
+
+-- random usefull stuff
+-- SELECT * FROM "orders"
+-- ORDER BY original_buy_price DESC;
+
+-- SELECT * FROM "orders";
+
+-- SELECT * FROM "orders" WHERE "settled"=false;
+
+-- SELECT * FROM "orders" WHERE "side"='buy' AND "settled"=false;
+
+-- SELECT * FROM "orders" WHERE "side"='sell' AND "settled"=false;
