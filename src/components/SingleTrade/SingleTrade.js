@@ -20,8 +20,9 @@ function SingleTrade(props) {
   // the loop already detects deleted orders, so only need to make a call to coinbase
   // no need to bother the database if it is busy
   function deleteOrder() {
+    console.log('clicked delete');
       dispatch({
-        type: 'DELETE_ORDER', payload: {
+        type: 'DELETE_TRADE', payload: {
           id: props.order.id,
         }
       })
@@ -32,7 +33,7 @@ function SingleTrade(props) {
 
   return (
     <div className={`${props.order.side}`}>
-      <button className="btn-red" onClick={deleteOrder()}>
+      <button className="btn-red" onClick={() => {deleteOrder()}}>
         Abandon
       </button>
       <p>

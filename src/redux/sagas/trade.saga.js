@@ -21,9 +21,20 @@ function* startTrade(action) {
     }
 }
 
+function* deleteTrade(action) {
+    try {
+        console.log('payload is...', action.payload);
+        const response = yield axios.delete(`/api/trade/`, { data: action.payload });
+        console.log('response is.....', response);
+    } catch (error) {
+        console.log('POST order route has failed', error)
+    }
+}
+
 function* tradeSaga() {
     yield takeLatest('TOGGLE_BOT', toggleBot);
     yield takeLatest('START_TRADE', startTrade);
+    yield takeLatest('DELETE_TRADE', deleteTrade);
 }
 
 export default tradeSaga;
