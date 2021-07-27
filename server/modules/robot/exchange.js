@@ -47,7 +47,7 @@ const exchange = async (ordersToCheck) => {
                         ])
                           .then((results) => {
                             socketClient.emit('message', {
-                              message: `exchange was made and tossed into the ol' databanks`,
+                              message: `an exchange was made`,
                               orderUpdate: true
                             });
                             // socketClient.emit('order', { message: `exchange was made and tossed into the ol' databanks` });
