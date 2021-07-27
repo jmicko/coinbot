@@ -20,6 +20,6 @@
 .buy p,
 .sell p{
     margin: auto;
-    padding: 1rem;
+    padding: .2rem;
     text-align: center;
 }

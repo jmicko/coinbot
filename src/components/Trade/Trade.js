@@ -156,7 +156,7 @@ function Trade(props) {
             <p className="info"><strong>SELL*:</strong>${(Math.round((price * transactionAmount * (tradePairRatio + 100))) / 100)}</p>
             <p className="info"><strong>FEE*:</strong> ${Math.round(price * transactionAmount * (fees * 100)) / 100}</p>
             <p className="info"><strong>PAIR MARGIN*:</strong> ${(Math.round((((price * transactionAmount * (tradePairRatio + 100))) / 100 - (price * transactionAmount)) * 100)) / 100}</p>
-            <p className="info"><strong>PAIR PROFIT*:</strong> ${(Math.round(((Math.round((price * transactionAmount * (tradePairRatio + 100))) / 100) - (price * transactionAmount) - (price * transactionAmount * fees) * 2) * 100)) / 100}</p>
+            <p className="info"><strong>PAIR PROFIT*:</strong> ${(Math.round((((price * transactionAmount * (tradePairRatio + 100)) / 100) - (price * transactionAmount) - (price * transactionAmount * fees) * 2) * 100)) / 100}</p>
             <p className="info">
               This will tell coinbot to start trading {transactionAmount} BTC
               between the low purchase price of <strong>${price}</strong> and

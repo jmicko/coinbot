@@ -26,12 +26,12 @@ function TradeList(props) {
   useEffect(() => {
     if (props.store.ordersReducer.openOrdersInOrder.sells != undefined) {
       setSells(props.store.ordersReducer.openOrdersInOrder.sells.map((sell) => {
-        return <SingleTrade key={sell.id} order={sell} side='sell' />
+        return <SingleTrade key={sell.id} order={sell} />
       }))
     }
     if (props.store.ordersReducer.openOrdersInOrder.buys != undefined) {
       setBuys(props.store.ordersReducer.openOrdersInOrder.buys.map((sell) => {
-        return <SingleTrade key={sell.id} order={sell} side='buy' />
+        return <SingleTrade key={sell.id} order={sell} />
       }))
     }
   }, [props.store.ordersReducer.openOrdersInOrder.sells, props.store.ordersReducer.openOrdersInOrder.sells]);
@@ -67,6 +67,7 @@ function TradeList(props) {
   return (
     <div className="TradeList">
       <div className="scrollable boxed">
+      {/* <>{JSON.stringify(props.store.accountReducer)}</> */}
         {sells}
         <center><p>Robot goes here</p></center>
         {buys}
