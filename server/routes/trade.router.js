@@ -70,7 +70,7 @@ router.delete('/', (req, res) => {
       const queryText = `DELETE from "orders" WHERE "id"=$1;`;
       pool.query(queryText, [data])
       .then(() => {
-        socketClient.emit('message', {
+        socketClient.emit('update', {
           message: `order was tossed out of ol' databanks`,
           orderUpdate: true
         });

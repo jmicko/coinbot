@@ -76,7 +76,7 @@ const exchange = async (ordersToCheck) => {
             const queryText = `DELETE from "orders" WHERE "id"=$1;`;
             return pool.query(queryText, [dbOrder.id])
             .then(() => {
-              socketClient.emit('message', {
+              socketClient.emit('update', {
                 message: `exchange was tossed into the ol' databanks`,
                 orderUpdate: true
               });
