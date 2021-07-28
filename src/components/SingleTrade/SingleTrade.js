@@ -9,13 +9,13 @@ function SingleTrade(props) {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    if (props.store.accountReducer === undefined) {
-      return
-    }
+    // if (props.store.accountReducer === undefined) {
+    //   return
+    // }
     // this formula is ridiculous but hey, at least I didn't inject it right into the html, right?
     const profit = Math.round((((props.order.original_sell_price * props.order.size - props.order.original_buy_price * props.order.size)) - ((props.store.accountReducer.feeReducer.maker_fee_rate * props.order.original_buy_price * props.order.size)+(props.store.accountReducer.feeReducer.maker_fee_rate * props.order.original_sell_price * props.order.size))) * 100) / 100;
     setProfit(profit);
-  }, [props.store.accountReducer]);
+  }, [props.store.accountReducer, props.order.original_sell_price, props.order.original_buy_price, props.order.size]);
 
   // delete the order if the abandone button is clicked.
   // the loop already detects deleted orders, so only need to make a call to coinbase
