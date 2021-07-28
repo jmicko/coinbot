@@ -3,7 +3,7 @@ const authedClient = require('../authedClient');
 const databaseClient = require('../databaseClient/databaseClient');
 const socketClient = require('../socketClient');
 const flipTrade = require('./flipTrade');
-const botStatus = require('./botStatus');
+const robot = require('./robot');
 const sleep = require('./sleep');
 
 
@@ -15,7 +15,7 @@ const exchange = async (ordersToCheck) => {
     await sleep(100)
       .then(() => {
         // need to stop the loop if coinbot is off
-        if (botStatus.toggle) {
+        if (robot.looping) {
           // socketClient.sendCheckerUpdate(dbOrder);
           console.log('at the exchange with trade ID:', dbOrder.id);
           socketClient.emit('message', { message: `at the exchange with trade ID: ${dbOrder.id}` });
@@ -46,7 +46,7 @@ const exchange = async (ordersToCheck) => {
                           cbOrder.id
                         ])
                           .then((results) => {
-                            socketClient.emit('message', {
+                            socketClient.emit('update', {
                               message: `an exchange was made`,
                               orderUpdate: true
                             });
@@ -76,7 +76,7 @@ const exchange = async (ordersToCheck) => {
             const queryText = `DELETE from "orders" WHERE "id"=$1;`;
             return pool.query(queryText, [dbOrder.id])
             .then(() => {
-              socketClient.emit('message', {
+              socketClient.emit('update', {
                 message: `exchange was tossed into the ol' databanks`,
                 orderUpdate: true
               });

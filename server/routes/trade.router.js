@@ -4,13 +4,14 @@ const pool = require('../modules/pool');
 const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient/databaseClient');
 const socketClient = require('../modules/socketClient');
-const robot = require('../modules/robot/robot')
+const toggleCoinbot = require('../modules/robot/toggleCoinbot');
 
 
 // todo - POST route for auto trading
 router.post('/toggle', (req, res) => {
   // When this route is hit, it turns on and off the trading loop
-  robot.toggleCoinbot();
+  console.log('toggle route');
+  toggleCoinbot();
   res.sendStatus(200);
 })
 
@@ -45,7 +46,7 @@ router.post('/', (req, res) => {
     })
     // .then(result => {console.log('just got back from storing this in db:', result)})
     .catch((error) => {
-      if (error.data.message !== undefined && error.data.message === 'Insufficient funds') {
+      if (error.data !== undefined && error.data.message !== undefined && error.data.message === 'Insufficient funds') {
         console.log('no money');
         res.sendStatus(400);
         console.log('new order process failed', error.data.message);
@@ -69,7 +70,7 @@ router.delete('/', (req, res) => {
       const queryText = `DELETE from "orders" WHERE "id"=$1;`;
       pool.query(queryText, [data])
       .then(() => {
-        socketClient.emit('message', {
+        socketClient.emit('update', {
           message: `order was tossed out of ol' databanks`,
           orderUpdate: true
         });

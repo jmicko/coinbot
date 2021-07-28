@@ -1,7 +1,7 @@
 const authedClient = require('../authedClient');
 const databaseClient = require('../databaseClient/databaseClient');
 const socketClient = require('../socketClient');
-const botStatus = require('./botStatus');
+const robot = require('./robot');
 const orderSubtractor = require('./orderSubtractor');
 const exchange = require('./exchange');
 const sleep = require('./sleep');
@@ -10,15 +10,12 @@ const sleep = require('./sleep');
 // This entire function needs to be careful with async coding
 // Needs to wait for confirmation at every step, or it may act on old data and oversell/overbuy.
 const theLoop = async () => {
-  botStatus.loop++;
-
-
-  // socketClient.sendMessage(`hi ${botStatus.loop}` );
-  socketClient.emit('update', { loopStatus: `${botStatus.loop} loop${botStatus.loop === 1 ? '' : 's'}, brother` });
-
-
-  // socketClient.emit(`${botStatus.loop} loop${botStatus.loop === 1 ? '' : 's'}, brother`);
-  // wait for 1/10th of a second between each loop to prevent too many API calls per second
+  if (!robot.looping) {
+    return
+  }
+  console.log('starting the loop');
+  robot.loop++;
+  socketClient.emit('update', { loopStatus: `${robot.loop} loop${robot.loop === 1 ? '' : 's'}, brother` });
   await sleep(100)
   .then(() => {
     return Promise.all([
@@ -40,16 +37,20 @@ const theLoop = async () => {
   .catch(error => {
     console.log('error in the loop', error);
     console.error(error);
-  });
-  // after all is done, the loop will call itself. Maybe put this into a .finally()?
-  //  always check if coinbot should be running before initiatin lööps
-  if (botStatus.toggle) {
-    console.log('start the loop again!');
-    theLoop()
-  } else {
-    console.log('no more loops :(');
-    socketClient.emit('update', { loopStatus: 'no more loops :(' });
-  }
+  })
+  .finally(() => {
+
+    // after all is done, the loop will call itself. Maybe put this into a .finally()?
+    //  always check if coinbot should be running before initiatin lööps
+    if (robot.looping) {
+      console.log('start the loop again!');
+      theLoop()
+    } else {
+      // console.log('no more loops :(');
+      socketClient.emit('update', { loopStatus: 'no more loops :(' });
+    }
+    robot.canToggle = true;
+  })
 }
 
 

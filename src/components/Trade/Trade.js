@@ -1,18 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 import './Trade.css';
 
 
-// Basic class component structure for React with default state
-// value setup. When making a new component be sure to replace
-// the component name TemplateClass with the name for the new
-// component.
 function Trade(props) {
 
-  // have this be the default value of whatever 0.001 worth of bitcoin is
-  // will need a function to poll the current value every 5 seconds from CB api
   // todo - default price value should automatically start out at the current price
   // of bitcoin, rounded to the closest $100
   const [transactionSide, setTransactionSide] = useState('buy');
@@ -42,9 +35,8 @@ function Trade(props) {
   // when the page loads, get the account fees 
   useEffect(() => {
     // getFees()
-    dispatch({ type: 'FETCH_FEES' })
-
-  }, [])
+    dispatch({ type: 'FETCH_FEES' });
+  }, [dispatch])
 
   // once the account fees load into redux, 
   useEffect(() => {

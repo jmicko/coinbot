@@ -1,10 +1,19 @@
 import { combineReducers } from 'redux';
 
-// registrationMessage holds the string that will display
-// on the registration screen if there's an error
+
 const feeReducer = (state = {}, action) => {
     switch (action.type) {
       case 'SET_FEES':
+        return action.payload;
+      default:
+        return state;
+    }
+  };
+
+
+const profitsReducer = (state = [{sum: "0"}], action) => {
+    switch (action.type) {
+      case 'SET_PROFITS':
         return action.payload;
       default:
         return state;
@@ -16,5 +25,6 @@ const feeReducer = (state = {}, action) => {
   // state.errors.loginMessage and state.errors.registrationMessage
   export default combineReducers({
     feeReducer,
+    profitsReducer,
   });
   

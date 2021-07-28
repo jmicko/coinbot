@@ -6,7 +6,7 @@ import {
   // Switch,
 } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { SocketProvider, useSocket } from "../../contexts/SocketProvider";
+import { SocketProvider } from "../../contexts/SocketProvider";
 
 // Directory imports
 import Home from '../Home/Home';
