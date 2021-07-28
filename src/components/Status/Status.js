@@ -14,8 +14,14 @@ function Status(props) {
   const [loopStatus, setLoopStatus] = useState("I count loops");
   const [connection, setConnection] = useState("disconnected");
   const [BTC_USD_price, setBTC_USD_price] = useState("");
-
+  
   const socket = useSocket();
+  
+  const getProfits = () => {
+    dispatch({
+      type: 'FETCH_PROFITS'
+    });
+  }
 
   // need use effect to prevent multiplying connections every time component renders
   useEffect(() => {
@@ -40,13 +46,7 @@ function Status(props) {
     return () => socket.off('update')
     // useEffect will depend on socket because the connection will 
     // not be there right when the page loads
-  }, [socket])
-  
-  function getProfits() {
-    dispatch({
-      type: 'FETCH_PROFITS'
-    });
-  }
+  }, [socket]);
 
   // to get price of bitcoin updated on dom
   function ticker(data) {

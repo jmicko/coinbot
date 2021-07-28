@@ -4,7 +4,7 @@ import mapStoreToProps from '../../redux/mapStoreToProps';
 import SingleTrade from '../SingleTrade/SingleTrade'
 import { useSocket } from "../../contexts/SocketProvider";
 import coinbotFilled from "../../../src/coinbotFilled.png";
-import coinbotFilledGif from "../../../src/coinbotFilled.gif";
+// import coinbotFilledGif from "../../../src/coinbotFilled.gif";
 import './TradeList.css'
 
 
@@ -17,7 +17,14 @@ function TradeList(props) {
   // these will store mapped arrays as html so they can be used after page loads
   const [buys, setBuys] = useState(<></>);
   const [sells, setSells] = useState(<></>);
-
+  
+  
+    // when an exchange is made and stored, do a REST call to get all open orders
+    const getOpenOrders = () => {
+      console.log('dispatching to fetch orders');
+      dispatch({ type: 'FETCH_ORDERS' });
+  
+    }
   // need to set up a listener to listen for messages from the exchange
   // and also grab them when page loads - function below grabs on load
   useEffect(() => {
@@ -26,12 +33,12 @@ function TradeList(props) {
 
   // this watches the store and maps arrays to html when it changes because can't map nothing
   useEffect(() => {
-    if (props.store.ordersReducer.openOrdersInOrder.sells != undefined) {
+    if (props.store.ordersReducer.openOrdersInOrder.sells !== undefined) {
       setSells(props.store.ordersReducer.openOrdersInOrder.sells.map((sell) => {
         return <SingleTrade key={sell.id} order={sell} />
       }))
     }
-    if (props.store.ordersReducer.openOrdersInOrder.buys != undefined) {
+    if (props.store.ordersReducer.openOrdersInOrder.buys !== undefined) {
       setBuys(props.store.ordersReducer.openOrdersInOrder.buys.map((sell) => {
         return <SingleTrade key={sell.id} order={sell} />
       }))
@@ -56,13 +63,6 @@ function TradeList(props) {
     // useEffect will depend on socket because the connection will 
     // not be there right when the page loads
   }, [socket])
-
-  // when an exchange is made and stored, do a REST call to get all open orders
-  function getOpenOrders() {
-    console.log('dispatching to fetch orders');
-    dispatch({ type: 'FETCH_ORDERS' });
-
-  }
 
   // map the sell array on top and buy array on bottom
 
