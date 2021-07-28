@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 import SingleTrade from '../SingleTrade/SingleTrade'
@@ -17,19 +17,21 @@ function TradeList(props) {
   // these will store mapped arrays as html so they can be used after page loads
   const [buys, setBuys] = useState(<></>);
   const [sells, setSells] = useState(<></>);
-  
-  
-    // when an exchange is made and stored, do a REST call to get all open orders
-    const getOpenOrders = () => {
+
+
+  // when an exchange is made and stored, do a REST call to get all open orders
+  const getOpenOrders = useCallback(
+    () => {
       console.log('dispatching to fetch orders');
       dispatch({ type: 'FETCH_ORDERS' });
+    }, [dispatch]
+  ) 
   
-    }
   // need to set up a listener to listen for messages from the exchange
   // and also grab them when page loads - function below grabs on load
   useEffect(() => {
     getOpenOrders();
-  }, []);
+  }, [getOpenOrders]);
 
   // this watches the store and maps arrays to html when it changes because can't map nothing
   useEffect(() => {
@@ -43,7 +45,7 @@ function TradeList(props) {
         return <SingleTrade key={sell.id} order={sell} />
       }))
     }
-  }, [props.store.ordersReducer.openOrdersInOrder.sells, props.store.ordersReducer.openOrdersInOrder.sells]);
+  }, [props.store.ordersReducer.openOrdersInOrder.sells, props.store.ordersReducer.openOrdersInOrder.buys]);
 
   // need use effect to prevent multiplying connections every time component renders
   useEffect(() => {
@@ -62,14 +64,14 @@ function TradeList(props) {
     return () => socket.off('update')
     // useEffect will depend on socket because the connection will 
     // not be there right when the page loads
-  }, [socket])
+  }, [socket, getOpenOrders])
 
   // map the sell array on top and buy array on bottom
 
   return (
     <div className="TradeList">
       <div className="scrollable boxed">
-      {/* <>{JSON.stringify(props.store.accountReducer)}</> */}
+        {/* <>{JSON.stringify(props.store.accountReducer)}</> */}
         {sells}
         <center><img className="coinbot-image" src={coinbotFilled} alt="coinbot" /><image></image></center>
         {buys}

@@ -36,7 +36,7 @@ function Trade(props) {
   useEffect(() => {
     // getFees()
     dispatch({ type: 'FETCH_FEES' });
-  }, [])
+  }, [dispatch])
 
   // once the account fees load into redux, 
   useEffect(() => {

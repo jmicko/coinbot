@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 import './Status.css'
@@ -14,15 +14,16 @@ function Status(props) {
   const [loopStatus, setLoopStatus] = useState("I count loops");
   const [connection, setConnection] = useState("disconnected");
   const [BTC_USD_price, setBTC_USD_price] = useState("");
-  
-  const socket = useSocket();
-  
-  const getProfits = () => {
-    dispatch({
-      type: 'FETCH_PROFITS'
-    });
-  }
 
+  const socket = useSocket();
+
+  const getProfits = useCallback(
+    () => {
+      dispatch({
+        type: 'FETCH_PROFITS'
+      });
+    }, [dispatch]
+  )
   // need use effect to prevent multiplying connections every time component renders
   useEffect(() => {
     // socket may not exist on page load because it hasn't connected yet
@@ -41,16 +42,16 @@ function Status(props) {
         // console.log(`message:`, message.loopStatus);
       }
     });
-    
+
     // this will remove the listener when component rerenders
     return () => socket.off('update')
     // useEffect will depend on socket because the connection will 
     // not be there right when the page loads
-  }, [socket]);
+  }, [socket, getProfits]);
 
   // to get price of bitcoin updated on dom
   function ticker(data) {
-    publicClient.getProductTicker('BTC-USD',(error, response, data) => {
+    publicClient.getProductTicker('BTC-USD', (error, response, data) => {
       if (error) {
         // handle the error
         console.log(error);
@@ -59,9 +60,9 @@ function Status(props) {
         setConnection('Connected!')
         // save price
         // todo - dispatch to store and give button to use current price in trade-pair
-          setBTC_USD_price(data.price)
-          // console.log('ticker', BTC_USD_price);
-        }
+        setBTC_USD_price(data.price)
+        // console.log('ticker', BTC_USD_price);
+      }
     })
   }
 
