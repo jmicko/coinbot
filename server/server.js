@@ -7,9 +7,7 @@ const options = {
   }
 };
 const io = require("socket.io")(server, options);
-
 require('dotenv').config();
-const bodyParser = require('body-parser');
 
 // Route includes
 const tradeRouter = require('./routes/trade.router');
@@ -18,8 +16,8 @@ const ordersRouter = require('./routes/orders.router');
 
 
 // Body parser middleware
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 
 /* REST Routes */
