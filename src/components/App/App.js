@@ -10,6 +10,7 @@ import { SocketProvider } from "../../contexts/SocketProvider";
 
 // Directory imports
 import Home from '../Home/Home';
+import Login from '../Login/Login';
 
 function App() {
   return (
@@ -20,6 +21,9 @@ function App() {
           <Route
             exact path="/"
             component={Home} />
+          <Route
+            exact path="/login"
+            component={Login} />
         </Router>
       </SocketProvider>
     </div>
