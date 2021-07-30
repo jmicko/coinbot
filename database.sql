@@ -20,7 +20,17 @@ CREATE TABLE IF NOT EXISTS "orders"
     CONSTRAINT orders_pkey PRIMARY KEY (id)
 );
 
-
+CREATE TABLE "user" (
+  "id" SERIAL PRIMARY KEY,
+  "username" VARCHAR (80) UNIQUE NOT NULL,
+  "password" VARCHAR (1000) NOT NULL,
+-- API key and info is not required as it should be deletable for security reasons.
+-- just need to work that into error handling if user tries to call Coinbase api without a key
+-- todo - encryption in db when storing api key stuff
+  "CB-SECRET" VARCHAR (1000),
+  "CB-ACCESS-KEY" VARCHAR (1000),
+  "CB-ACCESS-PASSPHRASE" VARCHAR (1000)
+);
 
 
 -- this may be a way to get profits
