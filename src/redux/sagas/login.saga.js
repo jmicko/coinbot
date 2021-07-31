@@ -22,9 +22,7 @@ function* loginUser(action) {
 
     // after the user has logged in
     // get the user information from the server
-        /* most of this code is from a previous project. Probably don't need user info on client side,
-      but just commenting out for now. todo - delete later if not needed */
-    // yield put({ type: 'FETCH_USER' });
+    yield put({ type: 'FETCH_USER' });
   } catch (error) {
     console.log('Error with user login:', error);
     if (error.response.status === 401) {
@@ -61,7 +59,7 @@ function* registerUser(action) {
 
     // set to 'login' mode so they see the login screen
     // after registration or after they log out
-    yield put({ type: 'SET_TO_LOGIN_MODE' });
+    // yield put({ type: 'SET_TO_LOGIN_MODE' });
   } catch (error) {
     console.log('Error with user registration:', error);
     yield put({ type: 'REGISTRATION_FAILED' });

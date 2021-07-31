@@ -16,12 +16,12 @@ function* fetchUser() {
 
     /* most of this code is from a previous project. Probably don't need user info on client side,
       but just commenting out for now. todo - delete later if not needed */
-    // const response = yield axios.get('/api/user', config);
+    const response = yield axios.get('/api/user', config);
 
     // now that the session has given us a user object
     // with an id and username set the client-side user object to let
     // the client-side code know the user is logged in
-    // yield put({ type: 'SET_USER', payload: response.data });
+    yield put({ type: 'SET_USER', payload: response.data });
   } catch (error) {
     console.log('User get request failed', error);
   }

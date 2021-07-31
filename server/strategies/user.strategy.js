@@ -19,7 +19,11 @@ passport.deserializeUser((id, done) => {
 
       if (user) {
         // user found
-        delete user.password; // remove password so it doesn't get sent
+        // remove password and api cred so it doesn't get sent
+        delete user.password; 
+        delete user.CB_SECRET; 
+        delete user.CB_ACCESS_KEY; 
+        delete user.CB_ACCESS_PASSPHRASE; 
         // done takes an error (null in this case) and a user
         done(null, user);
       } else {

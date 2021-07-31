@@ -27,15 +27,15 @@ CREATE TABLE "user" (
 -- API key and info is not required as it should be deletable for security reasons.
 -- just need to work that into error handling if user tries to call Coinbase api without a key
 -- todo - encryption in db when storing api key stuff
-  "CB-SECRET" VARCHAR (1000),
-  "CB-ACCESS-KEY" VARCHAR (1000),
-  "CB-ACCESS-PASSPHRASE" VARCHAR (1000)
+  "CB_SECRET" VARCHAR (1000),
+  "CB_ACCESS_KEY" VARCHAR (1000),
+  "CB_ACCESS_PASSPHRASE" VARCHAR (1000)
 );
 
 
 -- this will create the required table for connect-pg to store session data
 CREATE TABLE "session" (
-  "sid" varchar NOT NULL COLLATE "default",
+    "sid" varchar NOT NULL COLLATE "default",
 	"sess" json NOT NULL,
 	"expire" timestamp(6) NOT NULL
 )
