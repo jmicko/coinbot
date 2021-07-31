@@ -12,6 +12,7 @@ const sessionMiddleware = require('./modules/session-middleware');
 const passport = require('./strategies/user.strategy');
 
 // Route includes
+const userRouter = require('./routes/user.router');
 const tradeRouter = require('./routes/trade.router');
 const accountRouter = require('./routes/account.router');
 const ordersRouter = require('./routes/orders.router');
@@ -24,6 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(sessionMiddleware);
 
 /* REST Routes */
+app.use('/api/user', userRouter);
 app.use('/api/trade', tradeRouter);
 app.use('/api/account', accountRouter);
 app.use('/api/orders', ordersRouter);
