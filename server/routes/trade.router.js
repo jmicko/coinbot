@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../modules/pool');
+const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient/databaseClient');
 const socketClient = require('../modules/socketClient');
@@ -8,7 +9,7 @@ const toggleCoinbot = require('../modules/robot/toggleCoinbot');
 
 
 // todo - POST route for auto trading
-router.post('/toggle', (req, res) => {
+router.post('/toggle', rejectUnauthenticated, (req, res) => {
   // When this route is hit, it turns on and off the trading loop
   console.log('toggle route');
   toggleCoinbot();
@@ -19,7 +20,7 @@ router.post('/toggle', (req, res) => {
 /**
  * POST route sending trade
  */
-router.post('/', (req, res) => {
+router.post('/', rejectUnauthenticated, (req, res) => {
   // POST route code here
   const order = req.body;
   // tradeDetails const should take in values sent from trade component form
@@ -60,7 +61,7 @@ router.post('/', (req, res) => {
 /**
 * DELETE route
 */
-router.delete('/', (req, res) => {
+router.delete('/', rejectUnauthenticated, (req, res) => {
   // DELETE route code here
   const orderId = req.body.id;
   console.log('in the server trade DELETE route', req.body.id)

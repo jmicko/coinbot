@@ -37,6 +37,8 @@ app.use('/api/orders', ordersRouter);
 
 /* socket.io */
 // this triggers on a new client connection
+/* websocket is being used to alert when something has happened, but currently does not 
+    authenticate, and should not be used to send sensitive data */
 io.on('connection', (socket) => {
   let id = socket.id;
   console.log(`client with id: ${id} connected!`);
