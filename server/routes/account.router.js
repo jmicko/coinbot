@@ -21,6 +21,7 @@ router.get('/fees', (req, res) => {
       res.send(result)
     })
     .catch((error) => {
+      console.log(error.code);
       res.sendStatus(500)
     })
 
