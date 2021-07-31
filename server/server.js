@@ -1,4 +1,5 @@
 const express = require('express');
+require('dotenv').config();
 const app = express();
 const server = require("http").createServer(app);
 const options = {
@@ -9,18 +10,18 @@ const options = {
 const io = require("socket.io")(server, options);
 const sessionMiddleware = require('./modules/session-middleware');
 const passport = require('./strategies/user.strategy');
-require('dotenv').config();
 
 // Route includes
 const tradeRouter = require('./routes/trade.router');
 const accountRouter = require('./routes/account.router');
 const ordersRouter = require('./routes/orders.router');
 
-
 // Body parser middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Passport Session Configuration //
+app.use(sessionMiddleware);
 
 /* REST Routes */
 app.use('/api/trade', tradeRouter);
