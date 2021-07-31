@@ -7,6 +7,8 @@ const options = {
   }
 };
 const io = require("socket.io")(server, options);
+const sessionMiddleware = require('./modules/session-middleware');
+const passport = require('./strategies/user.strategy');
 require('dotenv').config();
 
 // Route includes
