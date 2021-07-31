@@ -3,10 +3,14 @@ const LocalStrategy = require('passport-local').Strategy;
 const encryptLib = require('../modules/encryption');
 const pool = require('../modules/pool');
 
+// explanation of serialization: https://stackoverflow.com/questions/27637609/understanding-passport-serialize-deserialize
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
 
+// If we want to store API keys in the DB instead of .ENV file, maybe need to 
+// adjust pool query to decrypt them before deleting the password from the user object?
+// but password has already been salted/hashed before storing. Can we safely access it before salt/hash?
 passport.deserializeUser((id, done) => {
   pool.query('SELECT * FROM "user" WHERE id = $1', [id])
     .then((result) => {
