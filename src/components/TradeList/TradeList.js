@@ -73,7 +73,7 @@ function TradeList(props) {
       <div className="scrollable boxed">
         {/* <>{JSON.stringify(props.store.accountReducer)}</> */}
         {sells}
-        <center><img className="coinbot-image" src={coinbotFilled} alt="coinbot" /><image></image></center>
+        <center><img className="coinbot-image" src={coinbotFilled} alt="coinbot" /></center>
         {buys}
       </div>
     </div>

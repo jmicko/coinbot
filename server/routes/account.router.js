@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../modules/pool');
+const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const authedClient = require('../modules/authedClient');
-const databaseClient = require('../modules/databaseClient/databaseClient');
+// const databaseClient = require('../modules/databaseClient/databaseClient');
 
 
 /**
@@ -15,12 +16,13 @@ router.post('/', (req, res) => {
 /**
 * GET route to get the fees when the user loads the page
 */
-router.get('/fees', (req, res) => {
+router.get('/fees', rejectUnauthenticated, (req, res) => {
   authedClient.get(['fees'])
     .then((result) => {
       res.send(result)
     })
     .catch((error) => {
+      console.log(error.code);
       res.sendStatus(500)
     })
 
@@ -30,7 +32,7 @@ router.get('/fees', (req, res) => {
 /**
 * GET route to get total profit estimate
 */
-router.get('/profits', (req, res) => {
+router.get('/profits', rejectUnauthenticated, (req, res) => {
   const queryText = `SELECT SUM((("original_sell_price" * "size") - "fill_fees") - (("original_buy_price" * "size") - "fill_fees")) 
   FROM public.orders 
   WHERE "side" = 'sell' AND "settled" = 'true';`;

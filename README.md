@@ -80,14 +80,15 @@ Before you get started, make sure you have the following software installed on y
 Postgresql should be setup and a new database should be created with the name "coinbot". There is a database.sql file that can be used to generate the required tables.
 
 ### .env file
-- Currently, there is no method to store user information. A .env file should be created at the base of the file tree. Copy the following into the file and replace the info inside the quotes with the correct info for your setup. PG info is the username and password used for access to Postgresql. The Coinbase API info can be generated in the API settings on your account profile at public.sandbox.pro.coinbase.com.
+- Currently, there is no method to store user information. A .env file should be created at the base of the file tree. Copy the following into the file and replace the info inside the quotes with the correct info for your setup. PG info is the username and password used for access to Postgres. The Coinbase API info can be generated in the API settings on your account profile at public.sandbox.pro.coinbase.com. Server session secret should be a long string that is not easily guessed. If you do not change it, anyone with this repo will be able to guess it.
 
-    PGUSER='postgresUsernameGoesHere'\
-    PGPASSWORD='postgresPasswordGoesHere'\
-    SANDBOXKEY='keyGoesHere'\
-    SANDBOXPASSWORD='passwordGoesHere'\
+    PGUSER='postgresUsernameGoesHere'
+    PGPASSWORD='postgresPasswordGoesHere'
+    SANDBOXKEY='keyGoesHere'
+    SANDBOXPASSWORD='passwordGoesHere'
     SANDBOXSECRET='secretGoesHere'
-
+    SERVER_SESSION_SECRET='pleaseForTheLoveOfMoneyPutADifferentSecretHere'
+    
 
 ## Available Scripts
 

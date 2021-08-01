@@ -1,4 +1,5 @@
 const express = require('express');
+require('dotenv').config();
 const app = express();
 const server = require("http").createServer(app);
 const options = {
@@ -7,22 +8,28 @@ const options = {
   }
 };
 const io = require("socket.io")(server, options);
-
-require('dotenv').config();
-const bodyParser = require('body-parser');
+const sessionMiddleware = require('./modules/session-middleware');
+const passport = require('./strategies/user.strategy');
 
 // Route includes
+const userRouter = require('./routes/user.router');
 const tradeRouter = require('./routes/trade.router');
 const accountRouter = require('./routes/account.router');
 const ordersRouter = require('./routes/orders.router');
 
-
 // Body parser middleware
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
+// Passport Session Configuration //
+app.use(sessionMiddleware);
+
+// start up passport sessions
+app.use(passport.initialize());
+app.use(passport.session());
 
 /* REST Routes */
+app.use('/api/user', userRouter);
 app.use('/api/trade', tradeRouter);
 app.use('/api/account', accountRouter);
 app.use('/api/orders', ordersRouter);
@@ -30,6 +37,8 @@ app.use('/api/orders', ordersRouter);
 
 /* socket.io */
 // this triggers on a new client connection
+/* websocket is being used to alert when something has happened, but currently does not 
+    authenticate, and should not be used to send sensitive data */
 io.on('connection', (socket) => {
   let id = socket.id;
   console.log(`client with id: ${id} connected!`);
