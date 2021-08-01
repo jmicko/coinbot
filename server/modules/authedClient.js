@@ -7,10 +7,10 @@ const passphrase = process.env.SANDBOXPASSWORD;
 const apiURI = process.env.APIURI || 'https://api-public.sandbox.pro.coinbase.com';
 
 const authedClient = new CoinbasePro.AuthenticatedClient(
-    key,
-    secret,
-    passphrase,
-    apiURI
-  );
+  key,
+  secret,
+  passphrase,
+  apiURI
+);
 
-  module.exports = authedClient;
+module.exports = authedClient;
