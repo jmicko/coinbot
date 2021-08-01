@@ -4,11 +4,13 @@
 
 Coinbot is a Bitcoin trading bot project built for the Coinbase Pro cryptocurrency exchange. 
 
+![Coinbot web interface](./coinbot.png)
+
 The strategy is based on the creation of trade-pair values. A trade-pair is the combination of two precalculated order price positions, a "buy" price and a "sell" price, that are stored in the coinbot's local database. The buy price should always be lower than the sell price, and the difference between the two should cover the cost of exchange fees. The bot keeps track of which "side" (buy or sell) is currently on order on Coinbase. each order is stored locally with the original buy and sell values. When the coinbot detects a trade has settled on the exchange, it flips sides on the trade by creating a new trade on the other side. 
 
-So when a "buy" is settled, another order will immediately be placed as a "sell". The prices of each of these orders are stored as the values of the trade-pair. When a buy order and a sell order each go through from the same trade-pair values, a profit is made. The two transactions that contributed to the profit are the trade-pair. The volume of the trade-pair does not matter so much, as fees are calculated by percentage. A smaller volume allows for greater distribution of trade-pair positions.
+When a "buy" is settled, another order will immediately be placed as a "sell". The prices of each of these orders are stored as the values of the trade-pair. When a buy order and a sell order each go through from the same trade-pair values, a profit is made. The two transactions that contributed to the profit are the trade-pair. The volume of the trade-pair does not matter so much, as fees are calculated by percentage. A smaller volume allows for greater distribution of trade-pair positions.
 
-Placing dozens of trade-pairs at many different price points allows the bot to capture smaller but more frequent profits. The huge price swings that occasionaly make someone rich are notable in their own light, but do not happen frequently at all when compared to the smaller $400 - $3,000 swings that happen on a daily basis. The coinbot does not care, and allows for both of these strategies to work.
+Placing dozens of trade-pairs at many different price points allows the bot to capture smaller but more frequent profits. The huge price swings that occasionally make someone rich are notable in their own light, but do not happen frequently at all when compared to the smaller $400 - $3,000 swings that happen on a daily basis. The coinbot does not care, and allows for both of these strategies to work.
 
 For example: A trade-pair could be set up between the prices of $10,000 and $100,000, and return a huge profit if the price of Bitcoin hits both sides. Or it could be set up between $30,000 and $31,000 for much smaller, but more frequent profits as the price staggers past them. In testing, the latter strategy has shown to be effective.
 
@@ -26,7 +28,7 @@ There are also currently no security features built in to the coinbot. DO NOT ho
 
 ## Advantages
 
-This is a fairly low-risk strategy, as it requires no statistical analisys or market data. There is no risk of guessing trends incorrectly because the coinbot does not guess. It works off of predetermined prices. Profits are made when the price of Bitcoin passes the "buy" and "sell" prices of a trade-pair in that order. If left alone, the coinbot will do this automatically at the set price points as long as the price of bitcoin is hitting them. The coinbot actually benefits from higher volitility and large fast price swings because it increases the chances that the trade-pair values will be hit.
+This is a fairly low-risk strategy, as it requires no statistical analysis or market data. There is no risk of guessing trends incorrectly because the coinbot does not guess. It works off of predetermined prices. Profits are made when the price of Bitcoin passes the "buy" and "sell" prices of a trade-pair in that order. If left alone, the coinbot will do this automatically at the set price points as long as the price of bitcoin is hitting them. The coinbot actually benefits from higher volatility and large fast price swings because it increases the chances that the trade-pair values will be hit.
 
 ## Disadvantages
 
@@ -34,13 +36,11 @@ A notable disadvantage of this strategy is that when the price takes an upward t
 
 It also does not take into account market volumes, or the bird-themed social media accounts of billionaire entrepreneurs. That's not what this project is about. :bird:
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
-
 ## `Features`
 
 ### Web-based Interface
 
-Use and configuration for the coinbot is done from a 
+Use and configuration for the coinbot is done from a react app in the browser. Note that this currently only works on the machine running the server, as websocket is integrated for frontend communication, but not fully set up yet. A workaround currently is to change the ENDPOINT const on line 16 in the SocketProvider.js file to match the ip address of the host computer. Doing this in the master branch doesn't make sense.
 
 ### Create New Trade Pairs
 
@@ -50,32 +50,42 @@ New trade-pair values can be created from the interface. There is a calculator t
 
 There is a big red button on the interface for turning the bot on and off. This makes it easy to pause trading if, say, you just need some time to think.
 
+### Auto Fee Detection
+Coinbot will check the current fees for the connected account and adjust the numbers in the calculator to match. This makes it easier to calculate profits before starting a trade-pair. Fee detection returns the fee exactly as it is reported from Coinbase, which can sometimes be a very long decimal. This is not a rounding issue or a problem with coinbot. This is coming directly from the Coinbase Pro API.
+
+### Total Profit Estimation
+This is somewhat of a work in progress, but there is an estimation of how much profit the bot has generated since it was first run (assuming you don't drop the tables). It is currently based on the limit prices of the trades, not the executed prices. So it may be off just a bit, but it should be close.
+
+### Open Order Book
+A list of all open orders is shown as the main content of the page. This list will update live as the bot makes trades.
+
 ### More to Come
-- Total profit estimation
-- Live status updates from the coinbot
-- List of open orders
-- Order cancelation from interface
-    - This will notably include auto cancellation, where the bot will wait to cancel the trade-pair if it is a sell order. Buy orders will be canceled immediatly. This ensures that a position will only be cancelled after a profit has been made, and helps to prevent losses due to trading fees.
-- Fee adjustment
-    - Currently the coinbot uses the .5% fee of the first tier when calculating fees and profits. This will change so that the coinbot will check what the currently connected account fees are, and modify the calculation appropriately.
+- Safe order cancellation from interface
+    - Currently, cancelling a sell order will potentially result in a profit loss. Adding a safe cancel button to sell orders will tell the bot to wait to cancel the trade-pair until the order goes through. Buy orders will still be canceled immediately. This ensures that a position will only be cancelled after a profit has been made, and helps to prevent losses due to trading fees.
 
 ## `Important notes`
-- In it's current state, there is no option to cancel an order from the Coinbot app. Coinbot does, however, detect if an order has been canceled from the coinbase website. When an order is canceled, Coinbase returns a 404 when looking up the status of the trade. If that happens, Coinbot will delete the trade from it's own database.
+- The coinbot will not detect new trades placed on Coinbase manually from the connected Coinbase account. It will, however, detect orders that were canceled. This is to prevent errors when checking the status of orders that the bot thinks are still open. It is recommended to create a separate profile on Coinbase exclusively for Coinbot to prevent accidental cancellation of the coinbot's trades.
 
-- The coinbot will not detect new trades placed on Coinbase manually from the connected Coinbase account. It is recommended to create a separate profile on Coinbase exclusively for the coinbot to prevent accidental cancellation of the coinbot's trades.
+# `Setup`
 
-## `Setup`
+## Prerequisites
+
+Before you get started, make sure you have the following software installed on your computer:
+
+- [Node.js](https://nodejs.org/en/)
+- [PostrgeSQL](https://www.postgresql.org/)
+- [Nodemon](https://nodemon.io/) - optional, but included in the yarn script
 
 ### Database
-Postgres should be setup and a new database should be created with the name "coinbot". There is a database.sql file that can be used to generate the required tables.
+Postgresql should be setup and a new database should be created with the name "coinbot". There is a database.sql file that can be used to generate the required tables.
 
 ### .env file
-- Currently, there is no method to store user information. A .env file should be created at the base of the file tree. Copy the following into the file and replace the info inside the quotes with the correct info for your setup. PG info is the usernamne and password used for access to Postgres. The Coinbase API info can be generated in the API settings on your account profile at public.sandbox.pro.coinbase.com
+- Currently, there is no method to store user information. A .env file should be created at the base of the file tree. Copy the following into the file and replace the info inside the quotes with the correct info for your setup. PG info is the username and password used for access to Postgresql. The Coinbase API info can be generated in the API settings on your account profile at public.sandbox.pro.coinbase.com.
 
-    PGUSER='postgresUsernameGoesHere'
-    PGPASSWORD='postgresPasswordGoesHere'
-    SANDBOXKEY='keyGoesHere'
-    SANDBOXPASSWORD='passwordGoesHere'
+    PGUSER='postgresUsernameGoesHere'\
+    PGPASSWORD='postgresPasswordGoesHere'\
+    SANDBOXKEY='keyGoesHere'\
+    SANDBOXPASSWORD='passwordGoesHere'\
     SANDBOXSECRET='secretGoesHere'
 
 
@@ -94,12 +104,12 @@ Runs the web app interface in the development mode.\
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
 The page will reload if you make edits.\
-You will also see any lint errors in the console. Currently, the coinbot must be toggled on from the web interface before it can start trading, even if trade-pairs have already been made. So this also must be done for now.
+You will also see any lint errors in the console. Currently, the coinbot must be toggled on from the web interface before it can start trading, even if trade-pairs have already been made. So this also must be done for now. However, once the bot has been toggled on, the browser can safely be closed and Coinbot will continue to run.
 
-### `yarn test`
+<!-- ### `yarn test`
 
 Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information. -->
 
 ### `yarn build`
 
@@ -121,3 +131,12 @@ Instead, it will copy all the configuration files and the transitive dependencie
 
 You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
 
+# Technologies used
+
+- Node.js
+- Express.js
+- Socket.io
+- Postgresql and PG
+- React
+- Redux
+- This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
