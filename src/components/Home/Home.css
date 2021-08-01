@@ -1,18 +1,39 @@
 .Home {
-    display              : grid;
-    /* this is STRICTLY A BUSINESS ROBOT, and the color should reflect that! */
-    grid-template-columns: 0fr min-content 4fr min-content 0fr;
-    gap                  : .4rem;
-    grid-template-rows   : auto min-content 1fr;
-    height               : 100vh;
+  display              : grid;
+  /* this is STRICTLY A BUSINESS ROBOT, and the color should reflect that! */
+  grid-template-columns: 0fr min-content 4fr min-content 0fr;
+  gap                  : .4rem;
+  grid-template-rows   : auto min-content 1fr;
+  height               : 100vh;
 }
 
 .header {
-    grid-column     : 1/6;
+  grid-column     : 1/6;
+  grid-row        : 1;
+  background-color: #000000;
+  text-align      : center;
+  align-items     : center;
+  font-size       : calc(9px + 2vmin);
+  color           : white;
+}
+
+@media (max-width: 800px) {
+  .Home {
+    display              : grid;
+    /* this is STRICTLY A BUSINESS ROBOT, and the color should reflect that! */
+    grid-template-columns: auto auto;
+    gap                  : .4rem;
+    /* grid-template-rows   : auto min-content 1fr; */
+    height               : 100vh;
+  }
+
+  .header {
+    grid-column     : 1/5;
     grid-row        : 1;
-    background-color: #000000;
+    background-color: #803535;
     text-align      : center;
     align-items     : center;
     font-size       : calc(9px + 2vmin);
     color           : white;
+  }
 }

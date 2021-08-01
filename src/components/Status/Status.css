@@ -3,3 +3,12 @@
     grid-row: 3;
     /* display: block; */
 }
+
+@media (max-width: 800px) {
+    .Status {
+        grid-column: 3;
+        grid-row: 3;
+        /* display: block; */
+    }
+
+}

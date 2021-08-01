@@ -10,3 +10,11 @@
     height: 10rem;
     font-size: xx-large;
 }
+
+@media (max-width: 800px) {
+    .ToggleBot {
+        grid-column: 3;
+        grid-row: 2/3;
+        display: block;
+    }
+}
