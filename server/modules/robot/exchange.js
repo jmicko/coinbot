@@ -7,9 +7,9 @@ const robot = require('./robot');
 const sleep = require('./sleep');
 
 
-const exchange = async (ordersToCheck) => {
+const exchange = async (dbOrder) => {
   // brother may I have some loops
-  for (const dbOrder of ordersToCheck) {
+  // for (const dbOrder of ordersToCheck) {
     // the dbOrder object can be used throughout the loop to refer to the old order that may have settled
     // wait for 1/10th of a second  to prevent too many api calls
     await sleep(100)
@@ -87,7 +87,7 @@ const exchange = async (ordersToCheck) => {
           // socket.emit('message', { message: 'big doo doo' });
         }
       })
-  };
+  // };
   return 'complete'
 }
 
