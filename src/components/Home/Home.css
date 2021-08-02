@@ -24,7 +24,7 @@
     grid-template-columns: auto auto;
     gap                  : .4rem;
     /* grid-template-rows   : auto min-content 1fr; */
-    height               : 100vh;
+    /* height               : 100vh; */
   }
 
   .header {

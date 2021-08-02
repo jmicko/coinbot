@@ -10,7 +10,7 @@
         grid-column  : 2 / 4;
         /* overflow-y: auto; */
         display      : block;
-        max-height: 50rem;
+        max-height: 80vh;
     }
 
 }

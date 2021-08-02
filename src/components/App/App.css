@@ -52,6 +52,31 @@ body::-webkit-scrollbar-thumb,
   /* border-radius: 6px; */
   border: 3px solid var(--scrollbarBG);
 }
+@media (max-width: 800px) {
+  body,
+  .scrollable {
+    overflow-y: auto;
+    /* max-height: unset; */
+    scrollbar-color: var(--thumbBG) var(--scrollbarBG);
+  }
+  
+  body::-webkit-scrollbar,
+  .scrollable::-webkit-scrollbar {
+    width: 18px;
+  }
+  
+  body::-webkit-scrollbar-track,
+  .scrollable::-webkit-scrollbar-track {
+    background: var(--scrollbarBG);
+  }
+  
+  body::-webkit-scrollbar-thumb,
+  .scrollable::-webkit-scrollbar-thumb {
+    background-color: var(--thumbBG) ;
+    /* border-radius: 6px; */
+    border: 3px solid var(--scrollbarBG);
+  }
+}
 
 .boxed {
   border: 1px solid black;
