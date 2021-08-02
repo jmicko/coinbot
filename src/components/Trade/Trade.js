@@ -137,24 +137,25 @@ function Trade(props) {
                 <input type="button" className="btn-red" onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 100) / 1000)} value="-0.1"></input>
               </div>
             </div>
-          <input className="btn-send-trade btn-blue" type="submit" name="submit" value="Start New Trade-Pair" />
+            <input className="btn-send-trade btn-blue" type="submit" name="submit" value="Start New Trade-Pair" />
           </div>
 
 
           {/* display some details about the new transaction that is going to be made */}
           <div className="boxed dark">
             <h4 className="title">New position</h4>
+            <p><strong>Per coin:</strong></p>
+            <p className="info">Buy price: <strong>${price}</strong> </p>
+            <p className="info">Sell price <strong>${(Math.round((price * (tradePairRatio + 100))) / 100)}</strong></p>
+            <p className="info">Price margin: <strong>{Math.round(((price * (tradePairRatio + 100) / 100) - price) * 100) / 100}</strong> </p>
+            <p className="info">Volume <strong>{transactionAmount}</strong> </p>
+            <p><strong>Cost at this volume:</strong></p>
             <p className="info"><strong>BUY*:</strong> ${Math.round(price * transactionAmount * 100) / 100}</p>
             <p className="info"><strong>SELL*:</strong>${(Math.round((price * transactionAmount * (tradePairRatio + 100))) / 100)}</p>
             <p className="info"><strong>FEE*:</strong> ${Math.round(price * transactionAmount * (fees * 100)) / 100}</p>
             <p className="info"><strong>PAIR MARGIN*:</strong> ${(Math.round((((price * transactionAmount * (tradePairRatio + 100))) / 100 - (price * transactionAmount)) * 100)) / 100}</p>
             <p className="info"><strong>PAIR PROFIT*:</strong> ${(Math.round((((price * transactionAmount * (tradePairRatio + 100)) / 100) - (price * transactionAmount) - (price * transactionAmount * fees) * 2) * 100)) / 100}</p>
-            <p className="info">
-              This will tell coinbot to start trading {transactionAmount} BTC
-              between the low purchase price of <strong>${price}</strong> and
-              the high sell price of <strong>${(Math.round((price * (tradePairRatio + 100))) / 100)}</strong>.
-              The value in USD for the initial transaction will be about ${((Math.round((price * transactionAmount) * 100)) / 100)}.
-            </p>
+            {/* <p className="info">The value in USD for the initial transaction will be about ${((Math.round((price * transactionAmount) * 100)) / 100)}.</p> */}
             <p className="small info">*Costs, fees, margin, and profit, are estimated and may be different at time of transaction. This is mostly due to rounding issues market conditions.</p>
           </div>
         </form>

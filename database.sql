@@ -1,4 +1,6 @@
 -- DROP TABLE "orders";
+-- DROP TABLE "user";
+-- DROP TABLE "session";
 
 
 CREATE TABLE IF NOT EXISTS "orders"

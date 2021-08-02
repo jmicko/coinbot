@@ -33,7 +33,7 @@ router.get('/fees', rejectUnauthenticated, (req, res) => {
 * GET route to get total profit estimate
 */
 router.get('/profits', rejectUnauthenticated, (req, res) => {
-  const queryText = `SELECT SUM((("original_sell_price" * "size") - "fill_fees") - (("original_buy_price" * "size") - "fill_fees")) 
+  const queryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" * 2)) 
   FROM public.orders 
   WHERE "side" = 'sell' AND "settled" = 'true';`;
   pool.query(queryText)

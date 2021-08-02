@@ -4,3 +4,13 @@
     height: fit-content;
     margin-bottom: .4rem;
 }
+
+@media (max-width: 800px) {
+    .Updates {
+        grid-row: 4;
+        grid-column: 2 / 4;
+        height: fit-content;
+        margin-bottom: .4rem;
+    }
+
+}
