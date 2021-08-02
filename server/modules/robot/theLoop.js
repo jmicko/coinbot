@@ -31,6 +31,7 @@ const theLoop = async () => {
         })
         .then((ordersToCheck) => {
           // send the newly settled orders to the exchange where they will be double checked and flipped
+            // brother may I have some loops
           for (const dbOrder of ordersToCheck) {
             return exchange(dbOrder);
           };

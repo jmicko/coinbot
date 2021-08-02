@@ -8,14 +8,15 @@ const sleep = require('./sleep');
 
 
 const exchange = async (dbOrder) => {
-  // brother may I have some loops
   // for (const dbOrder of ordersToCheck) {
     // the dbOrder object can be used throughout the loop to refer to the old order that may have settled
     // wait for 1/10th of a second  to prevent too many api calls
     await sleep(100)
       .then(() => {
         // need to stop the loop if coinbot is off
-        if (robot.looping) {
+        if (!robot.looping) {
+          return
+        };
           // socketClient.sendCheckerUpdate(dbOrder);
           console.log('at the exchange with trade ID:', dbOrder.id);
           socketClient.emit('message', { message: `at the exchange with trade ID: ${dbOrder.id}` });
@@ -64,7 +65,6 @@ const exchange = async (dbOrder) => {
                   })
               }
             })
-        }
       })
       .catch((error) => {
         if ((error.data !== undefined) && (error.data.message !== undefined)) {
