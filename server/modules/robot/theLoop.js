@@ -13,6 +13,35 @@ const sleep = require('./sleep');
 const theLoop = async () => {
   // currentCheck will be used later for error handling
   let currentCheck = {};
+
+  /* bot does not need to check all open orders.
+  Only highest priced buy, and lowest priced sell.
+  If either of those has not settled, neither will have the next highest buy/lowest sell.
+  No point in processing them.
+  
+  Can eliminate second loop entirely by only checking buy/sell at a time. 
+  Make a toggle that gets flipped at the end of the function to check other side.
+  Aka if it just checked the highest buy, switch to sell, then on next loop it will check highest sell.
+  If a trade has settled, the price is likely moving in that direction, so don't flip the switch. 
+  Keep checking that side in case the price moved a lot in that direction. 
+  
+  this also means no need to get all open orders from coinbase which can be taxing if there are a lot,
+  since we only check one at a time. */
+  
+  // set up side toggle - can be boolean, may as well be buys first since trade-pairs are always buys first
+  let checkingBuys = true;
+
+  // get top 1 of whichever side
+
+  // check order against coinbase
+
+  // flip trade and update if needed...
+
+  // else flip side toggle
+
+  // call the loop again
+
+
   if (!robot.looping) {
     return
   }
