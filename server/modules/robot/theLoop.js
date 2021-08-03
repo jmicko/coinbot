@@ -34,6 +34,7 @@ const theLoop = async () => {
     }
     // if there is an order, check order against coinbase
     if (dbOrder) {
+      await sleep(100);
       cbOrder = await authedClient.getOrder(dbOrder.id);
     }
     if (cbOrder && cbOrder.settled) {
@@ -41,6 +42,7 @@ const theLoop = async () => {
       const tradeDetails = flipTrade(dbOrder);
       console.log(tradeDetails);
       // send new order
+      await sleep(100);
       let pendingTrade = await authedClient.placeOrder(tradeDetails);
       // store new order in db
       await databaseClient.storeTrade(pendingTrade, dbOrder);
@@ -89,7 +91,6 @@ const theLoop = async () => {
     if (robot.looping) {
       // call the loop again
       console.log('start the loop again!');
-      await sleep(100);
       theLoop()
     } else {
       socketClient.emit('update', { loopStatus: 'no more loops :(' });
