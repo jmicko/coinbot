@@ -35,28 +35,28 @@ const theLoop = async () => {
     // if there is an order, check order against coinbase
     if (dbOrder) {
       cbOrder = await authedClient.getOrder(dbOrder.id);
-      if (cbOrder.settled) {
-        // flip trade and update if needed...
-        const tradeDetails = flipTrade(dbOrder);
-        console.log(tradeDetails);
-        // send new order
-        let pendingTrade = await authedClient.placeOrder(tradeDetails);
-        // store new order in db
-        await databaseClient.storeTrade(pendingTrade, dbOrder);
-        // update old order in db
-        const queryText = `UPDATE "orders" SET "settled" = NOT "settled", "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
-        await pool.query(queryText, [
-          cbOrder.done_at,
-          cbOrder.fill_fees,
-          cbOrder.filled_size,
-          cbOrder.executed_value,
-          cbOrder.id
-        ]);
-        socketClient.emit('update', {
-          message: `an exchange was made`,
-          orderUpdate: true
-        });
-      }
+    }
+    if (cbOrder.settled) {
+      // flip trade and update if needed...
+      const tradeDetails = flipTrade(dbOrder);
+      console.log(tradeDetails);
+      // send new order
+      let pendingTrade = await authedClient.placeOrder(tradeDetails);
+      // store new order in db
+      await databaseClient.storeTrade(pendingTrade, dbOrder);
+      // update old order in db
+      const queryText = `UPDATE "orders" SET "settled" = NOT "settled", "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
+      await pool.query(queryText, [
+        cbOrder.done_at,
+        cbOrder.fill_fees,
+        cbOrder.filled_size,
+        cbOrder.executed_value,
+        cbOrder.id
+      ]);
+      socketClient.emit('update', {
+        message: `an exchange was made`,
+        orderUpdate: true
+      });
     } else {
       // ...else flip side toggle
       checkingBuys = !checkingBuys;
