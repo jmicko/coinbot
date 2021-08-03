@@ -15,6 +15,7 @@ let checkingBuys = true;
 const theLoop = async () => {
   // currentCheck will be used later for error handling
   let currentCheck = {};
+  let dbOrder;
 
   /* bot does not need to check all open orders.
   Only highest priced buy, and lowest priced sell.
@@ -38,7 +39,6 @@ const theLoop = async () => {
   try {
 
 
-    let dbOrder;
     // get top 1 of whichever side
     if (checkingBuys) {
       // get highest priced buy
@@ -49,8 +49,6 @@ const theLoop = async () => {
       // console.log('lowSell', trade);
     }
     console.log('highBuy or lowSell', dbOrder.id);
-
-
     // check order against coinbase
     let cbOrder = await authedClient.getOrder(dbOrder.id);
 
@@ -79,20 +77,43 @@ const theLoop = async () => {
         message: `an exchange was made`,
         orderUpdate: true
       });
-    } else { 
+    } else {
       // else flip side toggle
       checkingBuys = !checkingBuys;
     }
 
-    
+
     robot.canToggle = true;
-    
-  } catch (e) {
-    console.error(e);
+
+  } catch (error) {
+    if (error.message) {
+      console.log('error message from exchange', error.message);
+    }
+    if ((error.data !== undefined) && (error.data.message !== undefined)) {
+      console.log('error message, end of loop:', error.data.message);
+      // orders that have been canceled are deleted from coinbase and return a 404.
+      // error handling should delete them so they are not counted toward profits if simply marked settled
+      if (error.data.message === 'NotFound') {
+        console.log('order not found in account. deleting from db', dbOrder);
+        const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+        await pool.query(queryText, [dbOrder.id])
+          .then(() => {
+            console.log('exchange was tossed lmao');
+            socketClient.emit('update', {
+              message: `exchange was tossed out of the ol' databanks`,
+              orderUpdate: true
+            });
+          })
+      }
+    } else {
+      console.log('yousa got a biiiig big problems', error);
+      socket.emit('message', { message: 'big doo doo' });
+    }
   } finally {
     if (robot.looping) {
       // call the loop again
       console.log('start the loop again!');
+      await sleep(100);
       theLoop()
     } else {
       socketClient.emit('update', { loopStatus: 'no more loops :(' });
