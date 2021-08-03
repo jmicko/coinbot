@@ -7,6 +7,7 @@ const orderSubtractor = require('./orderSubtractor');
 const exchange = require('./exchange');
 const sleep = require('./sleep');
 
+let checkingBuys = true;
 
 // This entire function needs to be careful with async coding
 // Needs to wait for confirmation at every step, or it may act on old data and oversell/overbuy.
@@ -27,24 +28,34 @@ const theLoop = async () => {
   
   this also means no need to get all open orders from coinbase which can be taxing if there are a lot,
   since we only check one at a time. */
-  
-  // set up side toggle - can be boolean, may as well be buys first since trade-pairs are always buys first
-  let checkingBuys = true;
 
+  // set up side toggle - can be boolean, may as well be buys first since trade-pairs are always buys first
+  if (!robot.looping) {
+    return
+  }
+
+  let trade;
   // get top 1 of whichever side
+  if (checkingBuys) {
+    // get highest priced buy
+    trade = await databaseClient.getUnsettledTrades('highBuy')
+  } else {
+    // get lowest priced sell
+    trade = await databaseClient.getUnsettledTrades('lowSell')
+    // console.log('lowSell', trade);
+  }
+  console.log('highBuy or lowSell', trade);
+
 
   // check order against coinbase
 
   // flip trade and update if needed...
 
   // else flip side toggle
-
+checkingBuys = !checkingBuys;
   // call the loop again
 
 
-  if (!robot.looping) {
-    return
-  }
   console.log('starting the loop');
   robot.loop++;
   socketClient.emit('update', { loopStatus: `${robot.loop} loop${robot.loop === 1 ? '' : 's'}, brother` });
@@ -72,7 +83,7 @@ const theLoop = async () => {
         .catch(error => {
           if (error.message) {
             console.log('error message from exchange', error.message);
-          } 
+          }
           if ((error.data !== undefined) && (error.data.message !== undefined)) {
             console.log('error message, end of loop:', error.data.message);
             // orders that have been canceled are deleted from coinbase and return a 404.
