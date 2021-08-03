@@ -16,7 +16,7 @@ const theLoop = async () => {
   console.log('starting the loop');
   robot.loop++;
   socketClient.emit('update', { loopStatus: `${robot.loop} loop${robot.loop === 1 ? '' : 's'}, brother` });
-  await sleep(100)
+  await sleep(1000)
     .then(() => {
       return Promise.all([
         // get all open orders from db and from coinbase
@@ -30,29 +30,30 @@ const theLoop = async () => {
           return orderSubtractor(dbOrders, cbOrders);
         })
         .then((ordersToCheck) => {
+          console.log('orders to check::::::::::', ordersToCheck);
           // send the newly settled orders to the exchange where they will be double checked and flipped
-            // brother may I have some loops
+          // brother may I have some loops
           for (const dbOrder of ordersToCheck) {
             return exchange(dbOrder);
           };
         })
-    })
-    .catch(error => {
-      console.log('error in the loop', error);
-      console.error(error);
-    })
-    .finally(() => {
+        .catch(error => {
+          console.log('error in the loop', error);
+          console.error(error);
+        })
+        .finally(() => {
 
-      // after all is done, the loop will call itself.
-      //  always check if coinbot should be running before initiatin lööps
-      if (robot.looping) {
-        console.log('start the loop again!');
-        theLoop()
-      } else {
-        // console.log('no more loops :(');
-        socketClient.emit('update', { loopStatus: 'no more loops :(' });
-      }
-      robot.canToggle = true;
+          // after all is done, the loop will call itself.
+          //  always check if coinbot should be running before initiatin lööps
+          if (robot.looping) {
+            console.log('start the loop again!');
+            theLoop()
+          } else {
+            // console.log('no more loops :(');
+            socketClient.emit('update', { loopStatus: 'no more loops :(' });
+          }
+          robot.canToggle = true;
+        })
     })
 }
 

@@ -2,7 +2,7 @@ const pool = require('../pool');
 
 const getUnsettledTrades = (side) => {
   return new Promise((resolve, reject) => {
-    // console.log('which orders should I get?', side);
+    console.log('which orders should I get?', side);
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
     if (side == 'buy') {
@@ -12,7 +12,7 @@ const getUnsettledTrades = (side) => {
       sqlText = `SELECT * FROM "orders" WHERE "side"='sell' AND "settled"=false 
       ORDER BY "price" DESC;`;
     } else if (side == 'all') {
-      sqlText = `SELECT * FROM "orders" WHERE "settled"=FALSE;`;
+      sqlText = `SELECT * FROM "orders" WHERE "settled"=false;`;
     }
     pool.query(sqlText)
       .then((results) => {
