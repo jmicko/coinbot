@@ -37,7 +37,8 @@ const theLoop = async () => {
   }
 
   try {
-
+    robot.loop++;
+    socketClient.emit('update', { loopStatus: `${robot.loop} loop${robot.loop === 1 ? '' : 's'}, brother` });
 
     // get top 1 of whichever side
     if (checkingBuys) {
