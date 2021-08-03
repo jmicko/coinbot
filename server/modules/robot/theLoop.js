@@ -60,20 +60,38 @@ const theLoop = async () => {
     // flip trade and update if needed...
     if (cbOrder.settled) {
       // flip sides on trade
-      const tradeDetails = flipTrade(dbOrder, cbOrder);
+      const tradeDetails = flipTrade(dbOrder);
       console.log(tradeDetails);
+      // send new order
+      let pendingTrade = await authedClient.placeOrder(tradeDetails);
+      // store new order in db
+      await databaseClient.storeTrade(pendingTrade, dbOrder);
+      // update old order in db
+      const queryText = `UPDATE "orders" SET "settled" = NOT "settled", "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
+      await pool.query(queryText, [
+        cbOrder.done_at,
+        cbOrder.fill_fees,
+        cbOrder.filled_size,
+        cbOrder.executed_value,
+        cbOrder.id
+      ]);
+      socketClient.emit('update', {
+        message: `an exchange was made`,
+        orderUpdate: true
+      });
+    } else { 
+      // else flip side toggle
+      checkingBuys = !checkingBuys;
     }
 
-    // else flip side toggle
-    checkingBuys = !checkingBuys;
-    // call the loop again
-
+    
     robot.canToggle = true;
-
+    
   } catch (e) {
     console.error(e);
   } finally {
     if (robot.looping) {
+      // call the loop again
       console.log('start the loop again!');
       theLoop()
     } else {
