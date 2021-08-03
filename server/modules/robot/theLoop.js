@@ -36,7 +36,7 @@ const theLoop = async () => {
     if (dbOrder) {
       cbOrder = await authedClient.getOrder(dbOrder.id);
     }
-    if (cbOrder.settled) {
+    if (cbOrder && cbOrder.settled) {
       // flip trade and update if needed...
       const tradeDetails = flipTrade(dbOrder);
       console.log(tradeDetails);
