@@ -1,3 +1,4 @@
+const pool = require('../pool');
 const authedClient = require('../authedClient');
 const databaseClient = require('../databaseClient/databaseClient');
 const socketClient = require('../socketClient');
@@ -10,6 +11,9 @@ const sleep = require('./sleep');
 // This entire function needs to be careful with async coding
 // Needs to wait for confirmation at every step, or it may act on old data and oversell/overbuy.
 const theLoop = async () => {
+
+  let currentCheck = {};
+
   if (!robot.looping) {
     return
   }
@@ -34,15 +38,38 @@ const theLoop = async () => {
           // send the newly settled orders to the exchange where they will be double checked and flipped
           // brother may I have some loops
           for (const dbOrder of ordersToCheck) {
+            currentCheck = dbOrder;
+            console.log('----------------------------result of exchange function', currentCheck);
             return exchange(dbOrder);
           };
         })
         .catch(error => {
           console.log('error in the loop', error);
-          console.error(error);
+          if (error.message) {
+            console.log('error message from exchange', error.message);
+          } 
+          if ((error.data !== undefined) && (error.data.message !== undefined)) {
+            console.log('error message, end of loop:', error.data.message);
+            // orders that have been canceled are deleted from coinbase and return a 404.
+            // error handling should delete them so they are not counted toward profits if simply marked settled
+            if (error.data.message === 'NotFound') {
+              console.log('order not found in account. deleting from db', currentCheck);
+              const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+              return pool.query(queryText, [currentCheck.id])
+                .then(() => {
+                  console.log('exchange was tossed lmao');
+                  socketClient.emit('update', {
+                    message: `exchange was tossed out of the ol' databanks`,
+                    orderUpdate: true
+                  });
+                })
+            }
+          } else {
+            console.log('yousa got a biiiig big problems', error);
+            socket.emit('message', { message: 'big doo doo' });
+          }
         })
         .finally(() => {
-
           // after all is done, the loop will call itself.
           //  always check if coinbot should be running before initiatin lööps
           if (robot.looping) {
