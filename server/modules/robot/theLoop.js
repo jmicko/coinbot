@@ -6,6 +6,7 @@ const robot = require('./robot');
 const orderSubtractor = require('./orderSubtractor');
 const exchange = require('./exchange');
 const sleep = require('./sleep');
+const flipTrade = require('./flipTrade');
 
 let checkingBuys = true;
 
@@ -34,91 +35,115 @@ const theLoop = async () => {
     return
   }
 
-  let trade;
-  // get top 1 of whichever side
-  if (checkingBuys) {
-    // get highest priced buy
-    trade = await databaseClient.getUnsettledTrades('highBuy')
-  } else {
-    // get lowest priced sell
-    trade = await databaseClient.getUnsettledTrades('lowSell')
-    // console.log('lowSell', trade);
+  try {
+
+
+    let dbOrder;
+    // get top 1 of whichever side
+    if (checkingBuys) {
+      // get highest priced buy
+      [dbOrder] = await databaseClient.getUnsettledTrades('highBuy');
+    } else {
+      // get lowest priced sell
+      [dbOrder] = await databaseClient.getUnsettledTrades('lowSell');
+      // console.log('lowSell', trade);
+    }
+    console.log('highBuy or lowSell', dbOrder.id);
+
+
+    // check order against coinbase
+    let cbOrder = await authedClient.getOrder(dbOrder.id);
+
+    console.log('order from coinbase either high buy or low sell', cbOrder.settled);
+    console.log('order from database either high buy or low sell', dbOrder.settled);
+
+    // flip trade and update if needed...
+    if (cbOrder.settled) {
+      // flip sides on trade
+      const tradeDetails = flipTrade(dbOrder, cbOrder);
+      console.log(tradeDetails);
+    }
+
+    // else flip side toggle
+    checkingBuys = !checkingBuys;
+    // call the loop again
+
+    robot.canToggle = true;
+
+  } catch (e) {
+    console.error(e);
+  } finally {
+    if (robot.looping) {
+      console.log('start the loop again!');
+      theLoop()
+    } else {
+      socketClient.emit('update', { loopStatus: 'no more loops :(' });
+    }
   }
-  console.log('highBuy or lowSell', trade);
 
-
-  // check order against coinbase
-
-  // flip trade and update if needed...
-
-  // else flip side toggle
-checkingBuys = !checkingBuys;
-  // call the loop again
-
-
-  console.log('starting the loop');
-  robot.loop++;
-  socketClient.emit('update', { loopStatus: `${robot.loop} loop${robot.loop === 1 ? '' : 's'}, brother` });
-  await sleep(1000)
-    .then(() => {
-      return Promise.all([
-        // get all open orders from db and from coinbase
-        databaseClient.getUnsettledTrades('all'),
-        authedClient.getOrders({ status: 'open' })
-      ])
-        .then((results) => {
-          // Promise. all returns an array with an object for each function in the order they were called
-          const dbOrders = results[0], cbOrders = results[1];
-          // subtract coinbase orders from database orders, returning an array of orders that have settled in coinbase since the last loop
-          return orderSubtractor(dbOrders, cbOrders);
-        })
-        .then((ordersToCheck) => {
-          // send the newly settled orders to the exchange where they will be double checked and flipped
-          // brother may I have some loops
-          for (const dbOrder of ordersToCheck) {
-            currentCheck = dbOrder;
-            return exchange(dbOrder);
-          };
-        })
-        .catch(error => {
-          if (error.message) {
-            console.log('error message from exchange', error.message);
-          }
-          if ((error.data !== undefined) && (error.data.message !== undefined)) {
-            console.log('error message, end of loop:', error.data.message);
-            // orders that have been canceled are deleted from coinbase and return a 404.
-            // error handling should delete them so they are not counted toward profits if simply marked settled
-            if (error.data.message === 'NotFound') {
-              console.log('order not found in account. deleting from db', currentCheck);
-              const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-              return pool.query(queryText, [currentCheck.id])
-                .then(() => {
-                  console.log('exchange was tossed lmao');
-                  socketClient.emit('update', {
-                    message: `exchange was tossed out of the ol' databanks`,
-                    orderUpdate: true
-                  });
-                })
-            }
-          } else {
-            console.log('yousa got a biiiig big problems', error);
-            socket.emit('message', { message: 'big doo doo' });
-          }
-        })
-        .finally(() => {
-          // after all is done, the loop will call itself.
-          //  always check if coinbot should be running before initiating lööps
-          if (robot.looping) {
-            console.log('start the loop again!');
-            theLoop()
-          } else {
-            socketClient.emit('update', { loopStatus: 'no more loops :(' });
-          }
-          // lastly, set canToggle to true so the bot can be turned back on if it has been 
-          // turned off since the start of the loop
-          robot.canToggle = true;
-        })
-    })
+  // console.log('starting the loop');
+  // robot.loop++;
+  // socketClient.emit('update', { loopStatus: `${robot.loop} loop${robot.loop === 1 ? '' : 's'}, brother` });
+  // await sleep(1000)
+  //   .then(() => {
+  //     return Promise.all([
+  //       // get all open orders from db and from coinbase
+  //       databaseClient.getUnsettledTrades('all'),
+  //       authedClient.getOrders({ status: 'open' })
+  //     ])
+  //       .then((results) => {
+  //         // Promise. all returns an array with an object for each function in the order they were called
+  //         const dbOrders = results[0], cbOrders = results[1];
+  //         // subtract coinbase orders from database orders, returning an array of orders that have settled in coinbase since the last loop
+  //         return orderSubtractor(dbOrders, cbOrders);
+  //       })
+  //       .then((ordersToCheck) => {
+  //         // send the newly settled orders to the exchange where they will be double checked and flipped
+  //         // brother may I have some loops
+  //         for (const dbOrder of ordersToCheck) {
+  //           currentCheck = dbOrder;
+  //           return exchange(dbOrder);
+  //         };
+  //       })
+  //       .catch(error => {
+  //         if (error.message) {
+  //           console.log('error message from exchange', error.message);
+  //         }
+  //         if ((error.data !== undefined) && (error.data.message !== undefined)) {
+  //           console.log('error message, end of loop:', error.data.message);
+  //           // orders that have been canceled are deleted from coinbase and return a 404.
+  //           // error handling should delete them so they are not counted toward profits if simply marked settled
+  //           if (error.data.message === 'NotFound') {
+  //             console.log('order not found in account. deleting from db', currentCheck);
+  //             const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+  //             return pool.query(queryText, [currentCheck.id])
+  //               .then(() => {
+  //                 console.log('exchange was tossed lmao');
+  //                 socketClient.emit('update', {
+  //                   message: `exchange was tossed out of the ol' databanks`,
+  //                   orderUpdate: true
+  //                 });
+  //               })
+  //           }
+  //         } else {
+  //           console.log('yousa got a biiiig big problems', error);
+  //           socket.emit('message', { message: 'big doo doo' });
+  //         }
+  //       })
+  //       .finally(() => {
+  //         // after all is done, the loop will call itself.
+  //         //  always check if coinbot should be running before initiating lööps
+  //         if (robot.looping) {
+  //           console.log('start the loop again!');
+  //           theLoop()
+  //         } else {
+  //           socketClient.emit('update', { loopStatus: 'no more loops :(' });
+  //         }
+  // // lastly, set canToggle to true so the bot can be turned back on if it has been 
+  // // turned off since the start of the loop
+  // robot.canToggle = true;
+  //       })
+  //   })
 }
 
 
