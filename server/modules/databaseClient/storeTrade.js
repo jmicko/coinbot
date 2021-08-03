@@ -2,7 +2,6 @@ const pool = require('../pool');
 const socketClient = require('../socketClient');
 
 const storeTrade = (newOrder, originalDetails) => {
-  console.log('------inside of storeTrade', newOrder, originalDetails);
   return new Promise((resolve, reject) => {
     // add new order to the database
     const sqlText = `INSERT INTO "orders" 
@@ -35,7 +34,6 @@ const storeTrade = (newOrder, originalDetails) => {
           message: `trade was tossed into the ol' databanks`,
           orderUpdate: true
         });
-        // console.log(`order ${newOrder.id} was successfully stored in db`);
         resolve(success);
       })
       .catch((err) => {

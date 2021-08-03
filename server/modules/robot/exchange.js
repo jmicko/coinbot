@@ -54,39 +54,7 @@ const exchange = async (dbOrder) => {
         message: `an exchange was made`,
         orderUpdate: true
       });
-      return [cbOrder, dbOrder];
     })
-    // .catch(error => {
-      // if (error.message) {
-      //   console.log('error message from exchange', error.message);
-      // } else {
-      //   console.log('houston we have a problem in the loop', error);
-      // }
-      // // })
-      // // .catch((error) => {
-      // if ((error.data !== undefined) && (error.data.message !== undefined)) {
-      //   console.log('error message, end of loop:', error.data.message);
-      //   // orders that have been canceled are deleted from coinbase and return a 404.
-      //   // error handling should delete them so they are not counted toward profits if simply marked settled
-      //   if (error.data.message === 'NotFound') {
-      //     console.log('order not found in account. deleting from db');
-      //     const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-      //     return pool.query(queryText, [dbOrder.id])
-      //       .then(() => {
-      //         console.log('exchange was tossed lmao');
-      //         socketClient.emit('update', {
-      //           message: `exchange was tossed into the ol' databanks`,
-      //           orderUpdate: true
-      //         });
-      //       })
-      //   }
-      // } else {
-      //   console.log('yousa got a biiiig big problems', error);
-      //   // socket.emit('message', { message: 'big doo doo' });
-      // }
-    // })
-  // };
-  // return 'complete'
 }
 
 module.exports = exchange;

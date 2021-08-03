@@ -2,7 +2,6 @@ const pool = require('../pool');
 
 const getUnsettledTrades = (side) => {
   return new Promise((resolve, reject) => {
-    console.log('which orders should I get?', side);
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
     if (side == 'buy') {

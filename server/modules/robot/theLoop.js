@@ -11,9 +11,8 @@ const sleep = require('./sleep');
 // This entire function needs to be careful with async coding
 // Needs to wait for confirmation at every step, or it may act on old data and oversell/overbuy.
 const theLoop = async () => {
-
+  // currentCheck will be used later for error handling
   let currentCheck = {};
-
   if (!robot.looping) {
     return
   }
@@ -34,17 +33,14 @@ const theLoop = async () => {
           return orderSubtractor(dbOrders, cbOrders);
         })
         .then((ordersToCheck) => {
-          console.log('orders to check::::::::::', ordersToCheck);
           // send the newly settled orders to the exchange where they will be double checked and flipped
           // brother may I have some loops
           for (const dbOrder of ordersToCheck) {
             currentCheck = dbOrder;
-            console.log('----------------------------result of exchange function', currentCheck);
             return exchange(dbOrder);
           };
         })
         .catch(error => {
-          console.log('error in the loop', error);
           if (error.message) {
             console.log('error message from exchange', error.message);
           } 
@@ -71,14 +67,15 @@ const theLoop = async () => {
         })
         .finally(() => {
           // after all is done, the loop will call itself.
-          //  always check if coinbot should be running before initiatin lööps
+          //  always check if coinbot should be running before initiating lööps
           if (robot.looping) {
             console.log('start the loop again!');
             theLoop()
           } else {
-            // console.log('no more loops :(');
             socketClient.emit('update', { loopStatus: 'no more loops :(' });
           }
+          // lastly, set canToggle to true so the bot can be turned back on if it has been 
+          // turned off since the start of the loop
           robot.canToggle = true;
         })
     })
