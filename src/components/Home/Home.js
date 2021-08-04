@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import Trade from '../Trade/Trade.js';
-import Updates from '../Updates/Messages.js';
+import Updates from '../Messages/Messages.js';
 import ToggleBot from '../ToggleBot/ToggleBot'
 import TradeList from '../TradeList/TradeList'
 import Status from '../Status/Status'
