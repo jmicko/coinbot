@@ -30,7 +30,6 @@ const theLoop = async () => {
     } else {
       // get lowest priced sell
       [dbOrder] = await databaseClient.getUnsettledTrades('lowSell');
-      // console.log('lowSell', trade);
     }
     // if there is an order, check order against coinbase
     if (dbOrder) {
@@ -40,7 +39,6 @@ const theLoop = async () => {
     if (cbOrder && cbOrder.settled) {
       // flip trade and update if needed...
       const tradeDetails = flipTrade(dbOrder);
-      console.log(tradeDetails);
       // send new order
       await sleep(100);
       let pendingTrade = await authedClient.placeOrder(tradeDetails);

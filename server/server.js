@@ -59,7 +59,7 @@ io.on('connection', (socket) => {
   // relay updates from the loop about trades that are being checked
   socket.on('update', (message) => {
     // socket.broadcast.emit('message', { message: 'welcome!' });
-    console.log(message);
+    // console.log(message);
     socket.broadcast.emit('update', message);
   })
 
@@ -90,7 +90,7 @@ cbWebsocket.cbWebsocket.on('message', data => {
   /* work with data */
   // console.log(data.type);
   // if (data.type === 'l2update') {
-    console.log(data.type);
+    // console.log(data.type);
     cbWebsocket.handleUpdate(data)
   // }
 });

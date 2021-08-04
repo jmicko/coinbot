@@ -13,6 +13,9 @@ const cbWebsocket = new CoinbasePro.WebsocketClient(
 
 const handleUpdate = (data) => {
   // console.log(data);
+  if (data.profile_id && data.type === 'done') {
+    console.log(data);
+  }
 }
 
 module.exports = {
