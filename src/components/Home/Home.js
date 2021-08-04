@@ -10,19 +10,23 @@ import './Home.css'
 
 
 function Home(props) {
-  const [showSettings, setShowSettings] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const clickSettings = () => {
+    setShowSettings(!showSettings);
+  }
 
   return (
     <div className="Home">
       <header className="header">
         <h2>WE USE COINBOT.</h2>
       </header>
-      <ToggleBot />
+      <ToggleBot clickSettings={clickSettings} />
       <Trade />
       <TradeList />
       <Updates />
       <Status />
-      <Settings />
+      <Settings showSettings={showSettings} />
     </div>
   );
 }

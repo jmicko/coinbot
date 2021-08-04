@@ -5,19 +5,26 @@ import './Settings.css'
 
 
 function Home(props) {
+  if (props.showSettings) {
 
-  return (
-    <div className="Settings">
-      <p>Some settings or whatever</p>
-      <p>Some settings or whatever</p>
-      <p>Some settings or whatever</p>
-      <p>Some settings or whatever</p>
-      <p>Some settings or whatever</p>
-      <p>Some settings or whatever</p>
-      <p>Some settings or whatever</p>
-      <p>Some settings or whatever</p>
-    </div>
-  );
+    return (
+      <div className="Settings">
+        <>{JSON.stringify(props)}</>
+        <p>Some settings or whatever</p>
+        <p>Some settings or whatever</p>
+        <p>Some settings or whatever</p>
+        <p>Some settings or whatever</p>
+        <p>Some settings or whatever</p>
+        <p>Some settings or whatever</p>
+        <p>Some settings or whatever</p>
+        <p>Some settings or whatever</p>
+      </div>
+    );
+  } else {
+    return (
+      <></>
+    );
+  }
 }
 
 export default connect()(Home);
