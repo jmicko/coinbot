@@ -34,7 +34,7 @@ function Status(props) {
       // loop status updates get saved to own state
       if (update.loopStatus != null) {
         setLoopStatus(update.loopStatus);
-        getProfits();
+        // getProfits();
       }
       // connection status updates get saved to own state
       if (update.connection != null) {
