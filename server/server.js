@@ -10,6 +10,7 @@ const options = {
 const io = require("socket.io")(server, options);
 const sessionMiddleware = require('./modules/session-middleware');
 const passport = require('./strategies/user.strategy');
+const cbWebsocket = require("./modules/cbWebsocket");
 
 // Route includes
 const userRouter = require('./routes/user.router');
@@ -82,6 +83,28 @@ io.engine.on("connection_error", (err) => {
   console.log(err.context);  // some additional error context
 });
 /* end socket.io */
+
+// Coinbase Websocket stuff
+
+cbWebsocket.cbWebsocket.on('message', data => {
+  /* work with data */
+  // console.log(data.type);
+  if (data.type === 'l2update') {
+    console.log(data.type);
+    cbWebsocket.handleUpdate(data)
+  }
+});
+cbWebsocket.cbWebsocket.on('error', err => {
+  /* handle error */
+  console.log(err);
+});
+cbWebsocket.cbWebsocket.on('close', () => {
+  /* ... */
+  console.log('bye');
+});
+
+// End Coinbase Websocket stuff
+
 
 // Serve static files
 app.use(express.static('build'));
