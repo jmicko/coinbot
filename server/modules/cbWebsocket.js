@@ -12,7 +12,7 @@ const cbWebsocket = new CoinbasePro.WebsocketClient(
 );
 
 const handleUpdate = (data) => {
-  console.log(data);
+  // console.log(data);
 }
 
 module.exports = {

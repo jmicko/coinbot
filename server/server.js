@@ -89,10 +89,10 @@ io.engine.on("connection_error", (err) => {
 cbWebsocket.cbWebsocket.on('message', data => {
   /* work with data */
   // console.log(data.type);
-  if (data.type === 'l2update') {
+  // if (data.type === 'l2update') {
     console.log(data.type);
     cbWebsocket.handleUpdate(data)
-  }
+  // }
 });
 cbWebsocket.cbWebsocket.on('error', err => {
   /* handle error */
