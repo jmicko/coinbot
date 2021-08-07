@@ -21,13 +21,11 @@ const flipTrade = (dbOrder) => {
       tradeDetails.side = "sell"
       tradeDetails.price = dbOrder.original_sell_price;
       socketClient.emit('message', { message: `Flipping sides to SELL on order ${dbOrder.id}` });
-      console.log('selling');
     } else {
       // if it was a sell, buy for less. divide old price
       tradeDetails.side = "buy"
       tradeDetails.price = dbOrder.original_buy_price;
       socketClient.emit('message', { message: `Flipping sides to BUY on order ${dbOrder.id}` });
-      console.log('buying');
     }
     // return the tradeDetails object
     return tradeDetails;

@@ -62,6 +62,7 @@ const theLoop = async () => {
       checkingBuys = !checkingBuys;
     }
   } catch (error) {
+    console.log('!!!!!!!!!!!!!!!!!!!!!!!!');
     if (error.message) {
       console.log('error message from exchange', error.message);
     }
