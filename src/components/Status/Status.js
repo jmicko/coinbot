@@ -25,6 +25,14 @@ function Status(props) {
       });
     }, [dispatch]
   )
+
+  // update profits when a trade is made
+  useEffect(() => {
+        getProfits();
+        // make it depend on the order reducer because that will change when orders change.
+        // profits are most likely to change when orders change, and do not change if they don't
+  }, [props.store.ordersReducer.openOrdersInOrder, getProfits]);
+  
   // need use effect to prevent multiplying connections every time component renders
   useEffect(() => {
     // socket may not exist on page load because it hasn't connected yet
@@ -53,7 +61,6 @@ function Status(props) {
   // get the total number of open orders
   useEffect(() => {
     if (props.store.ordersReducer.openOrdersInOrder.sells !== undefined && props.store.ordersReducer.openOrdersInOrder.buys !== undefined) {
-      console.log(props.store.ordersReducer.openOrdersInOrder.buys.length + props.store.ordersReducer.openOrdersInOrder.sells.length);
       setOpenOrderQuantity(props.store.ordersReducer.openOrdersInOrder.sells.length + props.store.ordersReducer.openOrdersInOrder.buys.length)
     }
   }, [props.store.ordersReducer.openOrdersInOrder.sells, props.store.ordersReducer.openOrdersInOrder.buys]);
