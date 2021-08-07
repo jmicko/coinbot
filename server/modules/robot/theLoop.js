@@ -88,7 +88,7 @@ const theLoop = async () => {
   } finally {
     if (robot.looping) {
       // call the loop again
-      console.log('start the loop again!');
+      // console.log('start the loop again!');
       theLoop()
     } else {
       socketClient.emit('update', { loopStatus: 'no more loops :(' });
