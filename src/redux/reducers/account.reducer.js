@@ -12,32 +12,37 @@ const userReducer = (state = {}, action) => {
   }
 };
 
-
 const feeReducer = (state = {}, action) => {
-    switch (action.type) {
-      case 'SET_FEES':
-        return action.payload;
-      default:
-        return state;
-    }
-  };
+  switch (action.type) {
+    case 'SET_FEES':
+      return action.payload;
+    default:
+      return state;
+  }
+};
 
+const profitsReducer = (state = [{ sum: "0" }], action) => {
+  switch (action.type) {
+    case 'SET_PROFITS':
+      return action.payload;
+    default:
+      return state;
+  }
+};
 
-const profitsReducer = (state = [{sum: "0"}], action) => {
-    switch (action.type) {
-      case 'SET_PROFITS':
-        return action.payload;
-      default:
-        return state;
-    }
-  };
-  
-  // make one object that has keys loginMessage, registrationMessage
-  // these will be on the redux state at:
-  // state.errors.loginMessage and state.errors.registrationMessage
-  export default combineReducers({
-    userReducer,
-    feeReducer,
-    profitsReducer,
-  });
-  
+const accountReducer = (state = [{ available: 0 }], action) => {
+  switch (action.type) {
+    case 'SET_ACCOUNT':
+      console.log(action.payload);
+      return action.payload;
+    default:
+      return state;
+  }
+};
+
+export default combineReducers({
+  userReducer,
+  feeReducer,
+  profitsReducer,
+  accountReducer,
+});

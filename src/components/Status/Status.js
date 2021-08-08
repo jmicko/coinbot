@@ -26,12 +26,21 @@ function Status(props) {
     }, [dispatch]
   )
 
+  const getAccounts = useCallback(
+    () => {
+      dispatch({
+        type: 'FETCH_ACCOUNT'
+      });
+    }, [dispatch]
+  )
+
   // update profits when a trade is made
   useEffect(() => {
         getProfits();
+        getAccounts();
         // make it depend on the order reducer because that will change when orders change.
         // profits are most likely to change when orders change, and do not change if they don't
-  }, [props.store.ordersReducer.openOrdersInOrder, getProfits]);
+  }, [props.store.ordersReducer.openOrdersInOrder, getProfits, getAccounts]);
   
   // need use effect to prevent multiplying connections every time component renders
   useEffect(() => {
@@ -105,6 +114,7 @@ function Status(props) {
       <p className="info"><strong>~~~ The Loop ~~~</strong></p>
       <p className="info">{loopStatus}</p>
       <p className="info"><strong>~~~ Account ~~~</strong></p>
+      <p className="info"><strong>Available Funds</strong><br />${Math.floor(props.store.accountReducer.accountReducer *100)/100}</p>
       <p className="info"><strong>Maker Fee</strong><br />{props.store.accountReducer.feeReducer.maker_fee_rate * 100}%</p>
       <p className="info"><strong>Taker Fee</strong><br />{props.store.accountReducer.feeReducer.taker_fee_rate * 100}%</p>
       <p className="info"><strong>30 Day Volume</strong><br />${props.store.accountReducer.feeReducer.usd_volume}</p>

@@ -22,8 +22,19 @@ function* fetchProfits() {
     }
 }
 
+function* fetchAccounts() {
+    try {
+        console.log('getting profits in saga');
+        const response = yield axios.get(`/api/account/`);
+        yield put({ type: 'SET_ACCOUNT', payload: response.data})
+    } catch (error) {
+        console.log('GET account route has failed', error)
+    }
+}
+
 function* accountSaga() {
     yield takeLatest('FETCH_FEES', fetchFees);
+    yield takeLatest('FETCH_ACCOUNT', fetchAccounts);
     yield takeLatest('FETCH_PROFITS', fetchProfits);
 }
 
