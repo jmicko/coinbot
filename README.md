@@ -54,7 +54,7 @@ There is a big red button on the interface for turning the bot on and off. This 
 Coinbot will check the current fees for the connected account and adjust the numbers in the calculator to match. This makes it easier to calculate profits before starting a trade-pair. Fee detection returns the fee exactly as it is reported from Coinbase, which can sometimes be a very long decimal. This is not a rounding issue or a problem with coinbot. This is coming directly from the Coinbase Pro API.
 
 ### Total Profit Estimation
-This is somewhat of a work in progress, but there is an estimation of how much profit the bot has generated since it was first run (assuming you don't drop the tables). It is currently based on the limit prices of the trades, not the executed prices. So it may be off just a bit, but it should be close.
+This is somewhat of a work in progress, but there is an estimation of how much profit the bot has generated since it was first run (assuming you don't drop the tables). It is currently based on the limit prices of the trades, not the executed prices. It also doubles the fee on the sell trade of each pair, instead of accurately calculating the fees on both the buy and the sell. The trade-pairs are intended to be fairly close together, which means the fees will be almost identical. So the calculation may be off just a bit, but it should be close.
 
 ### Open Order Book
 A list of all open orders is shown as the main content of the page. This list will update live as the bot makes trades.
@@ -62,9 +62,15 @@ A list of all open orders is shown as the main content of the page. This list wi
 ### More to Come
 - Safe order cancellation from interface
     - Currently, cancelling a sell order will potentially result in a profit loss. Adding a safe cancel button to sell orders will tell the bot to wait to cancel the trade-pair until the order goes through. Buy orders will still be canceled immediately. This ensures that a position will only be cancelled after a profit has been made, and helps to prevent losses due to trading fees.
+- Synchronization with Coinbase
+    - Currently if the bot is left off for too long, there is a possibility that some trades will not be checked for a while if they were settled while the bot was off. This could lead to the appearance of unexpected funds in the coinbase accou
 
 ## `Important notes`
-- The coinbot will not detect new trades placed on Coinbase manually from the connected Coinbase account. It will, however, detect orders that were canceled. This is to prevent errors when checking the status of orders that the bot thinks are still open. It is recommended to create a separate profile on Coinbase exclusively for Coinbot to prevent accidental cancellation of the coinbot's trades.
+- The coinbot will not detect any trading action placed on the Coinbase website manually from the connected Coinbase account. Previous versions had a way to detect orders that were canceled, however it was discovered that the coinbase API would occasionally falsely report orders as missing, which would trigger the coinbot to delete them. They could be check twice, but it is unknown where this behavior comes from, so it is unknown how many times Coinbase may falsely report a missing order. For now, orders cannot be deleted on Coinbase and must be deleted from the coinbot interface. Otherwise an error will occur, and the only way to recover from it is to wipe the database, or manually delete the order from the db using a tool such as pgAdmin. It is recommended to create a separate profile on Coinbase exclusively for Coinbot to prevent accidental cancellation of the coinbot's trades.\
+\
+One possible fix for this would be to listen for "cancel" messages with the Coinbase websocket connection, however this would not work if the bot were disconnected or turned off when a cancel message is sent.
+
+- There is a settings button, but nothing inside the settings window actually works. It was in progress when a fix for the randomly dropped orders was put in place, which was seen as high priority and the dysfunctional settings were overlooked.
 
 # `Setup`
 
@@ -82,11 +88,11 @@ Postgresql should be setup and a new database should be created with the name "c
 ### .env file
 - Currently, there is no method to store user information. A .env file should be created at the base of the file tree. Copy the following into the file and replace the info inside the quotes with the correct info for your setup. PG info is the username and password used for access to Postgres. The Coinbase API info can be generated in the API settings on your account profile at public.sandbox.pro.coinbase.com. Server session secret should be a long string that is not easily guessed. If you do not change it, anyone with this repo will be able to guess it.
 
-    PGUSER='postgresUsernameGoesHere'
-    PGPASSWORD='postgresPasswordGoesHere'
-    SANDBOXKEY='keyGoesHere'
-    SANDBOXPASSWORD='passwordGoesHere'
-    SANDBOXSECRET='secretGoesHere'
+    PGUSER='postgresUsernameGoesHere'\
+    PGPASSWORD='postgresPasswordGoesHere'\
+    SANDBOXKEY='keyGoesHere'\
+    SANDBOXPASSWORD='passwordGoesHere'\
+    SANDBOXSECRET='secretGoesHere'\
     SERVER_SESSION_SECRET='pleaseForTheLoveOfMoneyPutADifferentSecretHere'
     
 
