@@ -14,6 +14,7 @@ function Status(props) {
   const [loopStatus, setLoopStatus] = useState("I count loops");
   const [connection, setConnection] = useState("disconnected");
   const [BTC_USD_price, setBTC_USD_price] = useState("");
+  const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
 
   const socket = useSocket();
 
@@ -24,6 +25,14 @@ function Status(props) {
       });
     }, [dispatch]
   )
+
+  // update profits when a trade is made
+  useEffect(() => {
+        getProfits();
+        // make it depend on the order reducer because that will change when orders change.
+        // profits are most likely to change when orders change, and do not change if they don't
+  }, [props.store.ordersReducer.openOrdersInOrder, getProfits]);
+  
   // need use effect to prevent multiplying connections every time component renders
   useEffect(() => {
     // socket may not exist on page load because it hasn't connected yet
@@ -34,7 +43,7 @@ function Status(props) {
       // loop status updates get saved to own state
       if (update.loopStatus != null) {
         setLoopStatus(update.loopStatus);
-        getProfits();
+        // getProfits();
       }
       // connection status updates get saved to own state
       if (update.connection != null) {
@@ -48,6 +57,13 @@ function Status(props) {
     // useEffect will depend on socket because the connection will 
     // not be there right when the page loads
   }, [socket, getProfits]);
+
+  // get the total number of open orders
+  useEffect(() => {
+    if (props.store.ordersReducer.openOrdersInOrder.sells !== undefined && props.store.ordersReducer.openOrdersInOrder.buys !== undefined) {
+      setOpenOrderQuantity(props.store.ordersReducer.openOrdersInOrder.sells.length + props.store.ordersReducer.openOrdersInOrder.buys.length)
+    }
+  }, [props.store.ordersReducer.openOrdersInOrder.sells, props.store.ordersReducer.openOrdersInOrder.buys]);
 
   // to get price of bitcoin updated on dom
   function ticker(data) {
@@ -93,6 +109,7 @@ function Status(props) {
       <p className="info"><strong>Taker Fee</strong><br />{props.store.accountReducer.feeReducer.taker_fee_rate * 100}%</p>
       <p className="info"><strong>30 Day Volume</strong><br />${props.store.accountReducer.feeReducer.usd_volume}</p>
       <p className="info"><strong>Total Profit*</strong><br />${Number(props.store.accountReducer.profitsReducer[0].sum)}</p>
+      <p className="info"><strong>Total Open Orders</strong><br />{openOrderQuantity}</p>
       <p className="small">*Profit calculation is a work in progress, but this should be close</p>
       {/* .store.accountReducer.feeReducer */}
     </div>

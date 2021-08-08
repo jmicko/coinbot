@@ -1,8 +1,8 @@
 import React from 'react';
-import { useDispatch } from 'react-redux';
+import { connect, useDispatch } from 'react-redux';
 import './ToggleBot.css'
 
-function ToggleBot() {
+function ToggleBot(props) {
   const dispatch = useDispatch();
 
   return (
@@ -12,10 +12,10 @@ function ToggleBot() {
         onClick={() => dispatch({ type: 'TOGGLE_BOT' })}>
         TOGGLE BOT
     </button>
-    <button className="btn-logout btn-blue" onClick={() => console.log('settings button clicked')}>Settings</button>
+    <button className="btn-logout btn-blue" onClick={() => {props.clickSettings()}}>Settings</button>
     <button className="btn-logout btn-blue" onClick={() => dispatch({ type: 'LOGOUT' })}>Log Out</button>
     </div>
   )
 }
 
-export default ToggleBot;
+export default connect()(ToggleBot);

@@ -30,7 +30,6 @@ const theLoop = async () => {
     } else {
       // get lowest priced sell
       [dbOrder] = await databaseClient.getUnsettledTrades('lowSell');
-      // console.log('lowSell', trade);
     }
     // if there is an order, check order against coinbase
     if (dbOrder) {
@@ -40,7 +39,6 @@ const theLoop = async () => {
     if (cbOrder && cbOrder.settled) {
       // flip trade and update if needed...
       const tradeDetails = flipTrade(dbOrder);
-      console.log(tradeDetails);
       // send new order
       await sleep(100);
       let pendingTrade = await authedClient.placeOrder(tradeDetails);
@@ -64,23 +62,31 @@ const theLoop = async () => {
       checkingBuys = !checkingBuys;
     }
   } catch (error) {
+    console.log('!!!!!!!!!!!!!!!!!!!!!!!!');
     if (error.message) {
       console.log('error message from exchange', error.message);
     }
-    if ((error.data !== undefined) && (error.data.message !== undefined)) {
+    if (error.data && error.data.message) {
       console.log('error message, end of loop:', error.data.message);
+
+      /* turns out coinbase may randomly return a 404 on an order that has not actually been canceled.
+      this is a problem. Disabling this auto detect feature for now. 
+      implement websocket instead to listen for cancel messages. Maybe can double check here if order is really cancelled,
+      but if Coinbase reports cancelled once for an unknown reason, why not twice? */
+
+
       // orders that have been canceled are deleted from coinbase and return a 404.
       // error handling should delete them so they are not counted toward profits if simply marked settled
       if (error.data.message === 'NotFound') {
-        console.log('order not found in account. deleting from db', dbOrder);
-        const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-        await pool.query(queryText, [dbOrder.id]);
-        // .then(() => {
-        console.log('exchange was tossed lmao');
-        socketClient.emit('update', {
-          message: `exchange was tossed out of the ol' databanks`,
-          orderUpdate: true
-        });
+        console.log('order not found in account. maybe need to delete from db', dbOrder);
+        // const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+        // await pool.query(queryText, [dbOrder.id]);
+        // // .then(() => {
+        // console.log('exchange was tossed lmao');
+        // socketClient.emit('update', {
+        //   message: `exchange was tossed out of the ol' databanks`,
+        //   orderUpdate: true
+        // });
         // })
       }
     } else {
@@ -90,7 +96,7 @@ const theLoop = async () => {
   } finally {
     if (robot.looping) {
       // call the loop again
-      console.log('start the loop again!');
+      // console.log('start the loop again!');
       theLoop()
     } else {
       socketClient.emit('update', { loopStatus: 'no more loops :(' });
