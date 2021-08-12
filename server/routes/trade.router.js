@@ -8,7 +8,7 @@ const socketClient = require('../modules/socketClient');
 const toggleCoinbot = require('../modules/robot/toggleCoinbot');
 
 
-// todo - POST route for auto trading
+// POST route for turning bot on and off
 router.post('/toggle', rejectUnauthenticated, (req, res) => {
   // When this route is hit, it turns on and off the trading loop
   console.log('toggle route');

@@ -11,20 +11,19 @@ function Updates() {
     // socket may not exist on page load because it hasn't connected yet
     if (socket == null) return;
     socket.on('message', message => {
-      setMessages(prevMessages => [...prevMessages, message.message]);
+      setMessages(prevMessages => {
+        // keep max messages down to 3 by checking if more than 2 before adding new message
+        if (prevMessages.length > 2) {
+          prevMessages.shift();
+        }
+        return [...prevMessages, message.message]
+      });
     });
     // this will remove the listener when component rerenders
     return () => socket.off('message')
     // useEffect will depend on socket because the connection will 
     // not be there right when the page loads
   }, [socket]);
-
-  useEffect(() => {
-    // todo - figure out why this is 2 instead of 3. Something about renders
-    if (messages.length > 2) {
-      messages.shift();
-    }
-  }, [messages])
 
   return (
     // show messages on screen

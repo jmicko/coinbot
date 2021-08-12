@@ -11,10 +11,6 @@ const flipTrade = (dbOrder) => {
       size: dbOrder.size, // BTC
       product_id: dbOrder.product_id,
     };
-  
-    // todo - need to store more info in db
-    // need the trade-pair margin instead of calculating new price each time
-  
     // add buy/sell requirement and price
     if (dbOrder.side === "buy") {
       // if it was a buy, sell for more. multiply old price
