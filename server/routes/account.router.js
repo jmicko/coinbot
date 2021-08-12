@@ -7,10 +7,24 @@ const authedClient = require('../modules/authedClient');
 
 
 /**
- * POST route 
+ * GET route to get all accounts info
+ * For now this just wants to return usd account available balance
  */
-router.post('/', (req, res) => {
-
+router.get('/', (req, res) => {
+  authedClient.getAccounts()
+    .then((result) => {
+      return result.forEach(account => {
+        if (account.currency === 'USD') {
+          // console.log('usd is', account.available);
+          res.send(account.available)
+          return account;
+        }
+      });
+    })
+    .catch((error) => {
+      console.log(error.code);
+      res.sendStatus(500)
+    })
 });
 
 /**
