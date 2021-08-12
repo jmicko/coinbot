@@ -31,7 +31,7 @@ function SingleTrade(props) {
   }
 
   // todo - probably need to refactor this thing asap. Should use more useState hooks to make these strings a bit less horrifying
-  // postgres is much better at math using exact 
+  // postgres is much better at math using exact
 
   return (
     <div className={`${props.order.side}`}>
@@ -41,10 +41,6 @@ function SingleTrade(props) {
     }
       <p className="single-trade">
         <strong>
-          {/* {(props.order.side === 'sell')
-            ? 'Sell'
-            : 'Buy'
-          }  */}
           Price: </strong>
         {(props.order.side === 'sell')
           ? Number(props.order.original_sell_price)
