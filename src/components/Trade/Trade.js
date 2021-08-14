@@ -31,8 +31,9 @@ function Trade(props) {
       }
     })
   }
-
-  const getCurrentPrice = () => {
+  
+  const getCurrentPrice = (event) => {
+    event.preventDefault();
     // check if the current price has been stored yet to prevent NaN errors
     if (props.store.statusReducer.tickerReducer.tickerPrice) {
       // round the price to nearest 100
@@ -67,7 +68,7 @@ function Trade(props) {
           <div className="number-inputs">
             {/* input for setting the price/BTC per transaction. Can be adjusted in $500 steps, or manually input */}
             <label htmlFor="transaction_price">
-              Trade price per 1 BTC (in USD): <button className="btn-blue" onClick={(event) => getCurrentPrice()}> Get Current (rounded)</button>
+              Trade price per 1 BTC (in USD): <button className="btn-blue" onClick={(event) => getCurrentPrice(event)}> Get Current (rounded)</button>
             </label>
             <input
               type="number"
@@ -162,9 +163,9 @@ function Trade(props) {
             <p><strong>Cost at this volume:</strong></p>
             <p className="info"><strong>BUY*:</strong> ${Math.round(price * transactionAmount * 100) / 100}</p>
             <p className="info"><strong>SELL*:</strong>${(Math.round((price * transactionAmount * (tradePairRatio + 100))) / 100)}</p>
-            <p className="info"><strong>FEE*:</strong> ${Math.round(price * transactionAmount * (fees * 100)) / 100}</p>
-            <p className="info"><strong>PAIR MARGIN*:</strong> ${(Math.round((((price * transactionAmount * (tradePairRatio + 100))) / 100 - (price * transactionAmount)) * 100)) / 100}</p>
-            <p className="info"><strong>PAIR PROFIT*:</strong> ${(Math.round((((price * transactionAmount * (tradePairRatio + 100)) / 100) - (price * transactionAmount) - (price * transactionAmount * fees) * 2) * 100)) / 100}</p>
+            <p className="info"><strong>FEE*:</strong> ${Math.round(price * transactionAmount * (fees * 10000)) / 10000}</p>
+            <p className="info"><strong>PAIR MARGIN*:</strong> ${(Math.round((((price * transactionAmount * (tradePairRatio + 100))) / 100 - (price * transactionAmount)) * 10000)) / 10000}</p>
+            <p className="info"><strong>PAIR PROFIT*:</strong> ${(Math.round((((price * transactionAmount * (tradePairRatio + 100)) / 100) - (price * transactionAmount) - (price * transactionAmount * fees) * 2) * 10000)) / 10000}</p>
             {/* <p className="info">The value in USD for the initial transaction will be about ${((Math.round((price * transactionAmount) * 100)) / 100)}.</p> */}
             <p className="small info">*Costs, fees, margin, and profit, are estimated and may be different at time of transaction. This is mostly due to rounding issues market conditions.</p>
           </div>
