@@ -21,7 +21,7 @@ const theLoop = async () => {
   }
   // if the robot is busy, call theLoop again and return out of function so no trades are made while another 
   // function is in the db
-  if (robot.busy) {
+  if (robot.busy > 0) {
     // need to wait a bit or call stack size will be exceeded
     setTimeout(() => {
       theLoop();
@@ -105,7 +105,6 @@ const theLoop = async () => {
     } finally {
       if (robot.looping) {
         // call the loop again
-        // console.log('start the loop again!');
         theLoop()
       } else {
         socketClient.emit('update', { loopStatus: 'no more loops :(' });

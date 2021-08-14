@@ -9,7 +9,7 @@ const robot = {
     canToggle : true,
     looping : false,
     loop : 0,
-    busy : false
+    busy : 0
 }
 
 

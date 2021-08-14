@@ -23,15 +23,27 @@ const handleUpdate = (data) => {
 }
 
 const handleFilled = async (order) => {
-  console.log('busy? should be false:', robot.busy);
-  robot.busy = true;
-  console.log('busy? should be true:', robot.busy);
+  console.log('busy?', robot.busy);
+  // add one to busy. This allows pile up of ws handlers. Earlier handlers will not set busy 
+  // to false while later handlers are still busy.
+  // busy will just go down to 0 when not busy
+  robot.busy++;
+  console.log('busy?', robot.busy);
   console.log('just filled:', order);
+
+  // get settled trade from db
+
+  // flip the settled trade
+
+  // send new order to db
+
+
   console.log('waiting 2 sec');
   await sleep(2000);
   console.log('done waiting');
-  robot.busy = false;
-  console.log('busy? should be false:', robot.busy);
+  // subtract one from busy
+  robot.busy--;
+  console.log('busy?', robot.busy);
 }
 
 module.exports = {
