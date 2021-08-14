@@ -8,7 +8,8 @@ const robot = {
     // doesn't call the loop twice. The loop will set it back to true after it finishes a loop
     canToggle : true,
     looping : false,
-    loop : 0
+    loop : 0,
+    busy : false
 }
 
 

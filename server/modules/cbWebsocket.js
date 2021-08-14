@@ -1,4 +1,6 @@
 const CoinbasePro = require('coinbase-pro');
+const robot = require('./robot/robot');
+const sleep = require('./robot/sleep');
 
 const cbWebsocket = new CoinbasePro.WebsocketClient(
   ['BTC-USD'],
@@ -20,8 +22,16 @@ const handleUpdate = (data) => {
   }
 }
 
-const handleFilled = (order) => {
+const handleFilled = async (order) => {
+  console.log('busy? should be false:', robot.busy);
+  robot.busy = true;
+  console.log('busy? should be true:', robot.busy);
   console.log('just filled:', order);
+  console.log('waiting 2 sec');
+  await sleep(2000);
+  console.log('done waiting');
+  robot.busy = false;
+  console.log('busy? should be false:', robot.busy);
 }
 
 module.exports = {
