@@ -1,5 +1,5 @@
 import { combineReducers } from 'redux';
-import tradeReducer from './trade.reducer';
+import statusReducer from './status.reducer';
 import accountReducer from './account.reducer';
 import ordersReducer from './orders.reducer';
 
@@ -11,7 +11,7 @@ import ordersReducer from './orders.reducer';
 // Lets make a bigger object for our store, with the objects from our reducers.
 // This is what we get when we use 'state' inside of 'mapStateToProps'
 const rootReducer = combineReducers({
-  tradeReducer,
+  statusReducer,
   accountReducer,
   ordersReducer,
 });

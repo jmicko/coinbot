@@ -85,7 +85,13 @@ function Status(props) {
         setConnection('Connected!')
         // save price
         // todo - dispatch to store and give button to use current price in trade-pair
-        setBTC_USD_price(data.price)
+        setBTC_USD_price(data.price);
+        dispatch({
+          type: 'SET_TICKER_PRICE',
+          payload: {
+            tickerPrice: data.price
+          }
+        });
         // console.log('ticker', BTC_USD_price);
       }
     })
