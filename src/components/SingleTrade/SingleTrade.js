@@ -13,7 +13,7 @@ function SingleTrade(props) {
     //   return
     // }
     // this formula is ridiculous but hey, at least I didn't inject it right into the html, right?
-    const profit = Math.round((((props.order.original_sell_price * props.order.size - props.order.original_buy_price * props.order.size)) - ((props.store.accountReducer.feeReducer.maker_fee_rate * props.order.original_buy_price * props.order.size)+(props.store.accountReducer.feeReducer.maker_fee_rate * props.order.original_sell_price * props.order.size))) * 100) / 100;
+    const profit = Math.round((((props.order.original_sell_price * props.order.size - props.order.original_buy_price * props.order.size)) - ((props.store.accountReducer.feeReducer.maker_fee_rate * props.order.original_buy_price * props.order.size)+(props.store.accountReducer.feeReducer.maker_fee_rate * props.order.original_sell_price * props.order.size))) * 10000) / 10000;
     setProfit(profit);
   }, [props.store.accountReducer, props.order.original_sell_price, props.order.original_buy_price, props.order.size]);
 
@@ -31,7 +31,7 @@ function SingleTrade(props) {
   }
 
   // todo - probably need to refactor this thing asap. Should use more useState hooks to make these strings a bit less horrifying
-  // postgres is much better at math using exact 
+  // postgres is much better at math using exact
 
   return (
     <div className={`${props.order.side}`}>
@@ -41,10 +41,6 @@ function SingleTrade(props) {
     }
       <p className="single-trade">
         <strong>
-          {/* {(props.order.side === 'sell')
-            ? 'Sell'
-            : 'Buy'
-          }  */}
           Price: </strong>
         {(props.order.side === 'sell')
           ? Number(props.order.original_sell_price)

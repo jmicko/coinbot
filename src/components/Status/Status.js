@@ -13,7 +13,6 @@ function Status(props) {
   const dispatch = useDispatch();
   const [loopStatus, setLoopStatus] = useState("I count loops");
   const [connection, setConnection] = useState("disconnected");
-  const [BTC_USD_price, setBTC_USD_price] = useState("");
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
 
   const socket = useSocket();
@@ -84,8 +83,12 @@ function Status(props) {
       } else {
         setConnection('Connected!')
         // save price
-        // todo - dispatch to store and give button to use current price in trade-pair
-        setBTC_USD_price(data.price)
+        dispatch({
+          type: 'SET_TICKER_PRICE',
+          payload: {
+            tickerPrice: data.price
+          }
+        });
         // console.log('ticker', BTC_USD_price);
       }
     })
@@ -108,7 +111,7 @@ function Status(props) {
       </h3>
       {/* todo - maybe style in some divider lines here or something */}
       <p className="info"><strong>~~~ BTC-USD ~~~</strong></p>
-      <p className="info">${BTC_USD_price}/coin</p>
+      <p className="info">${props.store.statusReducer.tickerReducer.tickerPrice}/coin</p>
       <p className="info"><strong>~~~ Coinbot ~~~</strong></p>
       <p className="info">{connection}</p>
       <p className="info"><strong>~~~ The Loop ~~~</strong></p>
