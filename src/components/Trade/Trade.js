@@ -32,6 +32,16 @@ function Trade(props) {
     })
   }
 
+  const getCurrentPrice = () => {
+    // check if the current price has been stored yet to prevent NaN errors
+    if (props.store.statusReducer.tickerReducer.tickerPrice) {
+      // round the price to nearest 100
+      const roundedPrice = Math.round(props.store.statusReducer.tickerReducer.tickerPrice / 100) * 100;
+      // change input box to reflect rounded value
+      setTransactionPrice(roundedPrice)
+    }
+  }
+
   // when the page loads, get the account fees 
   useEffect(() => {
     // getFees()
@@ -57,7 +67,7 @@ function Trade(props) {
           <div className="number-inputs">
             {/* input for setting the price/BTC per transaction. Can be adjusted in $500 steps, or manually input */}
             <label htmlFor="transaction_price">
-              Trade price per 1 BTC (in USD):
+              Trade price per 1 BTC (in USD): <button className="btn-blue" onClick={(event) => getCurrentPrice()}> Get Current (rounded)</button>
             </label>
             <input
               type="number"
