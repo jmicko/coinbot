@@ -2,6 +2,7 @@ const CoinbasePro = require('coinbase-pro');
 const robot = require('./robot/robot');
 const databaseClient = require('./databaseClient/databaseClient');
 const sleep = require('./robot/sleep');
+const flipTrade = require('./robot/flipTrade');
 
 const cbWebsocket = new CoinbasePro.WebsocketClient(
   ['BTC-USD'],
@@ -33,10 +34,14 @@ const handleFilled = async (cbOrder) => {
   // console.log('just filled:', cbOrder);
 
   // get settled trade from db
-  const dbOrder = await databaseClient.getSingleTrade(cbOrder.order_id);
-  console.log('database order returns:', dbOrder);
-  if (dbOrder[0] && dbOrder[0].id) {
+  const dbOrderRows = await databaseClient.getSingleTrade(cbOrder.order_id);
+  if (dbOrderRows[0] && dbOrderRows[0].id) {
+    const dbOrder = dbOrderRows[0];
+    console.log('database order returns:', dbOrder);
     console.log('there is an order');
+    // flip the trade
+    const tradeDetails = flipTrade(dbOrder)
+    console.log('trade details:', tradeDetails);
   } else {
     // when an order is first placed, it takes time to store in db and may return nothing
     // if that is the case, call this function again
@@ -45,10 +50,6 @@ const handleFilled = async (cbOrder) => {
       handleFilled(cbOrder);
     }, 10);
   }
-  // flip the settled trade
-
-  // send new order to db
-
 
   console.log('waiting 2 sec');
   await sleep(2000);
