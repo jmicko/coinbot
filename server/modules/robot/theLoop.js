@@ -23,10 +23,10 @@ const theLoop = async () => {
   // function is in the db
   if (robot.busy > 0) {
     // need to wait a bit or call stack size will be exceeded
-    setTimeout(() => {
-      theLoop();
-    }, 10);
-    // return;
+    console.log('oh wait no, it is busy');
+    await sleep(100)
+    theLoop();
+    return;
   } else {
     try {
       robot.loop++;
@@ -47,25 +47,36 @@ const theLoop = async () => {
       }
       if (cbOrder && cbOrder.settled) {
         // flip trade and update if needed...
+        console.log('how busy?', robot.busy);
         const tradeDetails = flipTrade(dbOrder);
         // send new order
         await sleep(100);
-        let pendingTrade = await authedClient.placeOrder(tradeDetails);
-        // store new order in db
-        await databaseClient.storeTrade(pendingTrade, dbOrder);
-        // update old order in db
-        const queryText = `UPDATE "orders" SET "settled" = NOT "settled", "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
-        await pool.query(queryText, [
-          cbOrder.done_at,
-          cbOrder.fill_fees,
-          cbOrder.filled_size,
-          cbOrder.executed_value,
-          cbOrder.id
-        ]);
-        socketClient.emit('update', {
-          message: `an exchange was made`,
-          orderUpdate: true
-        });
+        // in order to make sure it doesn't trade after ws starts handling the trade, check busy status
+        // right before sending trade
+        if (robot.busy > 0) {
+          // need to wait a bit or call stack size will be exceeded
+          console.log('wow, it sure is busy');
+          await sleep(100)
+          // this returns out of the try. theLoop is called in the finally, 
+          // so do not call it here or there will be double orders
+          return;
+        }
+          let pendingTrade = await authedClient.placeOrder(tradeDetails);
+          // store new order in db
+          await databaseClient.storeTrade(pendingTrade, dbOrder);
+          // update old order in db
+          const queryText = `UPDATE "orders" SET "settled" = NOT "settled", "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
+          await pool.query(queryText, [
+            cbOrder.done_at,
+            cbOrder.fill_fees,
+            cbOrder.filled_size,
+            cbOrder.executed_value,
+            cbOrder.id
+          ]);
+          socketClient.emit('update', {
+            message: `an exchange was made`,
+            orderUpdate: true
+          });
       } else {
         // ...else flip side toggle
         checkingBuys = !checkingBuys;
