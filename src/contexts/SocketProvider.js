@@ -13,7 +13,11 @@ export function SocketProvider({ children }) {
   const [socket, setSocket] = useState()
   // useEffect to prevent from multiple connections
   useEffect(() => {
-    const ENDPOINT = "http://localhost:5000";
+    // check if on dev server or build, and set endpoint appropriately
+    let ENDPOINT = origin;
+    if (origin === "http://localhost:3000") {
+      ENDPOINT = "http://localhost:5000";
+    }
     const newSocket = io(
       ENDPOINT,
       { transports: ['websocket'] }

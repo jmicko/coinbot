@@ -99,11 +99,13 @@ cbWebsocket.cbWebsocket.on('message', data => {
 });
 cbWebsocket.cbWebsocket.on('error', err => {
   /* handle error */
-  console.log(err);
+  console.log('coinbase websocket error', err);
 });
-cbWebsocket.cbWebsocket.on('close', () => {
+cbWebsocket.cbWebsocket.on('close', (message) => {
   /* ... */
-  console.log('bye');
+  console.log('bye', message);
+  cbWebsocket.cbWebsocket.connect();
+  console.log('attempted to reconnect');
 });
 
 // End Coinbase Websocket stuff

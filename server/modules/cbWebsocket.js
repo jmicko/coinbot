@@ -9,28 +9,34 @@ const flipTrade = require('./robot/flipTrade');
 
 const cbWebsocket = new CoinbasePro.WebsocketClient(
   ['BTC-USD'],
-  'wss://ws-feed-public.sandbox.pro.coinbase.com',
+  // todo - change url to not sandbox once well tested
+  process.env.WS_URL || 'wss://ws-feed-public.sandbox.pro.coinbase.com',
   {
     key: process.env.SANDBOXKEY,
     secret: process.env.SANDBOXSECRET,
     passphrase: process.env.SANDBOXPASSWORD,
+    auto_reconnect: true,
   },
-  { channels: ['full', 'level2'] }
+  { channels: ['user'] }
 );
 
 const handleUpdate = (data) => {
-  // console.log(data);
+  // console.log('heartbeat data', data);
+  // if (data.type != 'heartbeat') {
+  //   console.log('this is not heartbeat data', data);
+  // }
   if (data.profile_id && data.type === 'done') {
     (data.reason === 'filled')
       ? handleFilled(data)
       : (data.reason === 'canceled')
-      ? handleCanceled(data)
-      : console.log('reason from Coinbase websocket feed:', data.reason);
+        ? handleCanceled(data)
+        : console.log('reason from Coinbase websocket feed:', data.reason);
   }
 }
 
 const handleCanceled = async (canceledOrder) => {
-  console.log('this was canceled:', canceledOrder);
+  // console.log('this was canceled:', canceledOrder);
+  console.log('order canceled');
 }
 
 const handleFilled = async (cbOrder) => {
