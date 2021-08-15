@@ -1,7 +1,11 @@
 // const storeTrade = require('./storeTrade');
 // const getUnsettledTrades = require('./getUnsettledTrades');
+const authedClient = require('../authedClient');
 const pool = require('../pool');
+const robot = require('../robot/robot');
+const sleep = require('../robot/sleep');
 const socketClient = require('../socketClient');
+
 
 const storeTrade = (newOrder, originalDetails) => {
   return new Promise((resolve, reject) => {
@@ -98,10 +102,53 @@ const getSingleTrade = (id) => {
   });
 }
 
+
+
+const updateTrade = async (id) => {
+  // grab an order from db that have been handled by ws trading
+  // they will be settled, but need more values
+  try {
+    let sqlText = `SELECT * FROM orders WHERE "settled" AND "executed_value"=0 limit 1;`;
+    let result = await pool.query(sqlText);
+    // todo - stored as array so it can loop through them all and update without calling db as often
+    robot.updateSpool = result.rows;
+    console.log(robot.updateSpool);
+    // make sure there is something to update
+    if (robot.updateSpool.length > 0) {
+      // get an up to date order object from coinbase
+      cbOrder = await authedClient.getOrder(robot.updateSpool[0].id);
+      // console.log(cbOrder);
+      // update the order in the db
+      const queryText = `UPDATE "orders" SET "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
+      await pool.query(queryText, [
+        cbOrder.done_at,
+        cbOrder.fill_fees,
+        cbOrder.filled_size,
+        cbOrder.executed_value,
+        cbOrder.id
+      ]);
+      // tell interface to update so profits can update
+      socketClient.emit('update', {
+        message: `an exchange was made`,
+        orderUpdate: true
+      });
+    } else {
+      console.log('no orders need updating');
+    }
+  } catch (error) {
+    console.log(error);
+  } finally {
+    await sleep(200);
+    updateTrade()
+  }
+};
+
+
 const databaseClient = {
   storeTrade: storeTrade,
   getUnsettledTrades: getUnsettledTrades,
-  getSingleTrade: getSingleTrade
+  getSingleTrade: getSingleTrade,
+  updateTrade: updateTrade
 }
 
 module.exports = databaseClient;

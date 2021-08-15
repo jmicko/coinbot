@@ -17,6 +17,9 @@ const userRouter = require('./routes/user.router');
 const tradeRouter = require('./routes/trade.router');
 const accountRouter = require('./routes/account.router');
 const ordersRouter = require('./routes/orders.router');
+const databaseClient = require('./modules/databaseClient/databaseClient');
+
+databaseClient.updateTrade();
 
 // Body parser middleware
 app.use(express.json());
