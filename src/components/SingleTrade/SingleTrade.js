@@ -36,7 +36,6 @@ function SingleTrade(props) {
   return (
     <div className={`Single-trade ${props.order.side}`}>
       <div className={"overlay"}>
-
         {(deleting === true)
           ? <p className="deleting">Deleting...</p>
           : <button className="btn-red" onClick={() => { deleteOrder() }}>Abandon</button>

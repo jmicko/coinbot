@@ -59,9 +59,12 @@ const theLoop = async () => {
           await sleep(100)
           // this returns out of the try. theLoop is called in the finally, 
           // so do not call it here or there will be double orders
+          // actually it might be returning out of the if? Idk what is heckin goin on here lmao
           return;
-        }
+        } else {
+
           let pendingTrade = await authedClient.placeOrder(tradeDetails);
+          console.log('!!!!!!!!! order placed by the loop');
           // store new order in db
           await databaseClient.storeTrade(pendingTrade, dbOrder);
           // update old order in db
@@ -77,6 +80,7 @@ const theLoop = async () => {
             message: `an exchange was made`,
             orderUpdate: true
           });
+        }
       } else {
         // ...else flip side toggle
         checkingBuys = !checkingBuys;

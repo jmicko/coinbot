@@ -32,8 +32,8 @@ const handleFilled = async (cbOrder) => {
   // to false while later handlers are still busy.
   // busy will just go down to 0 when not busy
   robot.busy++;
-  console.log('busy?', robot.busy);
-  console.log('just filled:', cbOrder);
+  console.log('should be a little more busy?', robot.busy);
+  // console.log('just filled:', cbOrder);
 
   try {
 
@@ -41,14 +41,15 @@ const handleFilled = async (cbOrder) => {
     const dbOrderRows = await databaseClient.getSingleTrade(cbOrder.order_id);
     if (dbOrderRows[0] && dbOrderRows[0].id) {
       const dbOrder = dbOrderRows[0];
-      console.log('database order returns:', dbOrder);
+      // console.log('database order returns:', dbOrder);
       console.log('there is an order');
       // flip the trade
       const tradeDetails = flipTrade(dbOrder)
-      console.log('trade details:', tradeDetails);
+      // console.log('trade details:', tradeDetails);
 
       // send the new trade
       let pendingTrade = await authedClient.placeOrder(tradeDetails);
+      console.log('order placed by ws');
       // store new order in db
       await databaseClient.storeTrade(pendingTrade, dbOrder);
       // update old order in db
@@ -69,7 +70,7 @@ const handleFilled = async (cbOrder) => {
     } else {
       // when an order is first placed, it takes time to store in db and may return nothing
       // if that is the case, call this function again
-      console.log('no order yet');
+      // console.log('no order yet');
       await sleep(10)
       handleFilled(cbOrder);
     }
@@ -86,10 +87,10 @@ const handleFilled = async (cbOrder) => {
 
     // console.log('waiting 2 sec');
     // await sleep(2000);
-    console.log('done');
+    // console.log('done');
     // subtract one from busy
     robot.busy--;
-    console.log('busy?', robot.busy);
+    // console.log('busy?', robot.busy);
   }
 }
 
