@@ -137,7 +137,7 @@ const updateTrade = async (id) => {
       // console.log('no orders need updating');
     // }
   } catch (error) {
-    console.log(error);
+    console.log('error in database client updateTrade', error);
   } finally {
     await sleep(200);
     updateTrade()

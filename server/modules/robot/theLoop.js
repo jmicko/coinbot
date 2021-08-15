@@ -114,7 +114,7 @@ const theLoop = async () => {
           // })
         }
       } else {
-        console.log('yousa got a biiiig big problems', error);
+        console.log('yousa got a biiiig big problems in the loop');
         socketClient.emit('message', { message: 'big doo doo' });
       }
     } finally {

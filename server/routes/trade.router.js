@@ -100,7 +100,7 @@ router.delete('/', rejectUnauthenticated, (req, res) => {
             res.sendStatus(200)
           })
           .catch((error) => {
-            console.log(error);
+            console.log('error in trade.router.js delete route', error);
             res.sendStatus(500)
           })
       } else {

@@ -54,7 +54,7 @@ const handleFilled = async (cbOrder) => {
     if (dbOrderRows[0] && dbOrderRows[0].id) {
       const dbOrder = dbOrderRows[0];
       // console.log('database order returns:', dbOrder);
-      console.log('there is an order');
+      // console.log('there is an order');
       // flip the trade
       const tradeDetails = flipTrade(dbOrder)
       // console.log('trade details:', tradeDetails);
@@ -83,13 +83,15 @@ const handleFilled = async (cbOrder) => {
       // when an order is first placed, it takes time to store in db and may return nothing
       // if that is the case, call this function again
       // console.log('no order yet');
-      await sleep(10)
+      await sleep(100)
       handleFilled(cbOrder);
     }
   } catch (error) {
-    // console.log(error);
-    if (error.statusCode) {
-      console.log('error code with cb websocket', error.statusCode);
+    if (error.response && error.response.statusCode && error.response.statusCode === 429) {
+      console.log('status code in cbWebsocket', error.response.statusCode);
+      console.log('error data with cb websocket', error.data);
+      await sleep(10)
+      handleFilled(cbOrder);
     }
     if (error.statusMessage) {
       console.log('error message with cb websocket', error.statusMessage);
