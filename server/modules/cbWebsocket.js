@@ -76,10 +76,10 @@ const handleFilled = async (cbOrder) => {
   } catch (error) {
     // console.log(error);
     if (error.statusCode) {
-      console.log(error.statusCode);
+      console.log('error code with cb websocket', error.statusCode);
     }
     if (error.statusMessage) {
-      console.log(error.statusMessage);
+      console.log('error message with cb websocket', error.statusMessage);
     }
   } finally {
 

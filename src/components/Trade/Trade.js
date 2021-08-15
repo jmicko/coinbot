@@ -84,11 +84,13 @@ function Trade(props) {
                 <input type="button" className="btn-green" onClick={(event) => setTransactionPrice(Number(price) + 1000)} value="+1000"></input>
                 <input type="button" className="btn-green" onClick={(event) => setTransactionPrice(Number(price) + 100)} value="+100"></input>
                 <input type="button" className="btn-green" onClick={(event) => setTransactionPrice(Number(price) + 10)} value="+10"></input>
+                <input type="button" className="btn-green" onClick={(event) => setTransactionPrice(Number(price) + 1)} value="+1"></input>
               </div>
               <div className="decrease">
                 <input type="button" className="btn-red" onClick={(event) => setTransactionPrice(Number(price) - 1000)} value="-1000"></input>
                 <input type="button" className="btn-red" onClick={(event) => setTransactionPrice(Number(price) - 100)} value="-100"></input>
                 <input type="button" className="btn-red" onClick={(event) => setTransactionPrice(Number(price) - 10)} value="-10"></input>
+                <input type="button" className="btn-red" onClick={(event) => setTransactionPrice(Number(price) - 1)} value="-1"></input>
               </div>
             </div>
           </div>
@@ -141,11 +143,15 @@ function Trade(props) {
               <div className="increase">
                 <input type="button" className="btn-green" onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 + 1000) / 1000)} value="+1"></input>
                 <input type="button" className="btn-green" onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 + 100) / 1000)} value="+0.1"></input>
+                <input type="button" className="btn-green" onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 + 10) / 1000)} value="+0.01"></input>
+                <input type="button" className="btn-green" onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 + 1) / 1000)} value="+0.001"></input>
 
               </div>
               <div className="decrease">
                 <input type="button" className="btn-red" onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 1000) / 1000)} value="-1"></input>
                 <input type="button" className="btn-red" onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 100) / 1000)} value="-0.1"></input>
+                <input type="button" className="btn-red" onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 10) / 1000)} value="-0.01"></input>
+                <input type="button" className="btn-red" onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 1) / 1000)} value="-0.001"></input>
               </div>
             </div>
             <input className="btn-send-trade btn-blue" type="submit" name="submit" value="Start New Trade-Pair" />
