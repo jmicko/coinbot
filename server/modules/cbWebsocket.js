@@ -23,8 +23,14 @@ const handleUpdate = (data) => {
   if (data.profile_id && data.type === 'done') {
     (data.reason === 'filled')
       ? handleFilled(data)
+      : (data.reason === 'canceled')
+      ? handleCanceled(data)
       : console.log('reason from Coinbase websocket feed:', data.reason);
   }
+}
+
+const handleCanceled = async (canceledOrder) => {
+  console.log('this was canceled:', canceledOrder);
 }
 
 const handleFilled = async (cbOrder) => {
