@@ -74,7 +74,13 @@ const handleFilled = async (cbOrder) => {
       handleFilled(cbOrder);
     }
   } catch (error) {
-    console.log(error);
+    // console.log(error);
+    if (error.statusCode) {
+      console.log(error.statusCode);
+    }
+    if (error.statusMessage) {
+      console.log(error.statusMessage);
+    }
   } finally {
 
 

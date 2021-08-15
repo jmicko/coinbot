@@ -112,7 +112,7 @@ const updateTrade = async (id) => {
     let result = await pool.query(sqlText);
     // todo - stored as array so it can loop through them all and update without calling db as often
     robot.updateSpool = result.rows;
-    console.log(robot.updateSpool);
+    // console.log(robot.updateSpool);
     // make sure there is something to update
     if (robot.updateSpool.length > 0) {
       // get an up to date order object from coinbase
@@ -132,9 +132,10 @@ const updateTrade = async (id) => {
         message: `an exchange was made`,
         orderUpdate: true
       });
-    } else {
-      console.log('no orders need updating');
     }
+    // else {
+      // console.log('no orders need updating');
+    // }
   } catch (error) {
     console.log(error);
   } finally {
