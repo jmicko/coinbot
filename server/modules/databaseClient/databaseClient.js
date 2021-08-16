@@ -143,8 +143,8 @@ const updateTrade = async (id) => {
       await sleep(800)
       // updateTrade();
     }
-    if (error.response && error.response.data) {
-      console.log(error.response.data);
+    if (error.data) {
+      console.log(error.data);
     } else {
       console.log('error in database client updateTrade', error);
     }

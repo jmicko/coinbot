@@ -23,7 +23,7 @@ const theLoop = async () => {
   // function is in the db
   if (robot.busy > 0) {
     // need to wait a bit or call stack size will be exceeded
-    console.log('oh wait no, it is busy');
+    // console.log('oh wait no, it is busy');
     await sleep(100)
     theLoop();
     return;
@@ -47,7 +47,7 @@ const theLoop = async () => {
       }
       if (cbOrder && cbOrder.settled) {
         // flip trade and update if needed...
-        console.log('how busy?', robot.busy);
+        // console.log('how busy?', robot.busy);
         const tradeDetails = flipTrade(dbOrder);
         // send new order
         await sleep(100);
@@ -55,7 +55,7 @@ const theLoop = async () => {
         // right before sending trade
         if (robot.busy > 0) {
           // need to wait a bit or call stack size will be exceeded
-          console.log('wow, it sure is busy');
+          // console.log('wow, it sure is busy');
           await sleep(100)
           // this returns out of the try. theLoop is called in the finally, 
           // so do not call it here or there will be double orders
@@ -64,7 +64,7 @@ const theLoop = async () => {
         } else {
 
           let pendingTrade = await authedClient.placeOrder(tradeDetails);
-          console.log('!!!!!!!!! order placed by the loop at price:', tradeDetails.price);
+          console.log('!!!!!!!!! order placed by the loop at price:', Number(tradeDetails.price));
           // store new order in db
           await databaseClient.storeTrade(pendingTrade, dbOrder);
           // update old order in db

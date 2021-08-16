@@ -44,7 +44,7 @@ const handleFilled = async (cbOrder) => {
   // to false while later handlers are still busy.
   // busy will just go down to 0 when not busy
   robot.busy++;
-  console.log('should be a little more busy?', robot.busy);
+  // console.log('should be a little more busy?', robot.busy);
   // console.log('just filled:', cbOrder);
 
   try {
