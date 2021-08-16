@@ -137,7 +137,17 @@ const updateTrade = async (id) => {
       // console.log('no orders need updating');
     // }
   } catch (error) {
-    console.log('error in database client updateTrade', error);
+    if (error.response && error.response.statusCode && error.response.statusCode === 429) {
+      console.log('status code in databaseClient updateTrade', error.response.statusCode);
+      console.log('error data with databaseClient updateTrade', error.data);
+      await sleep(800)
+      // updateTrade();
+    }
+    if (error.response && error.response.data) {
+      console.log(error.response.data);
+    } else {
+      console.log('error in database client updateTrade', error);
+    }
   } finally {
     await sleep(200);
     updateTrade()

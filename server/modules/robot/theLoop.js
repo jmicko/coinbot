@@ -64,7 +64,7 @@ const theLoop = async () => {
         } else {
 
           let pendingTrade = await authedClient.placeOrder(tradeDetails);
-          console.log('!!!!!!!!! order placed by the loop');
+          console.log('!!!!!!!!! order placed by the loop at price:', tradeDetails.price);
           // store new order in db
           await databaseClient.storeTrade(pendingTrade, dbOrder);
           // update old order in db

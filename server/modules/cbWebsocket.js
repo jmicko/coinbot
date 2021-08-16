@@ -61,7 +61,7 @@ const handleFilled = async (cbOrder) => {
 
       // send the new trade
       let pendingTrade = await authedClient.placeOrder(tradeDetails);
-      console.log('order placed by ws');
+      console.log('order placed by ws at price:', tradeDetails.price);
       // store new order in db
       await databaseClient.storeTrade(pendingTrade, dbOrder);
       // update old order in db
