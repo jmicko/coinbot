@@ -87,8 +87,11 @@ const theLoop = async () => {
       }
     } catch (error) {
       console.log('!!!!!!!!!!!!!!!!!!!!!!!!');
-      if (error.message) {
-        console.log('error message from exchange', error.message);
+      if (error.code && error.code === 'ETIMEDOUT') {
+        socketClient.emit('update', {
+          message: `Connection timed out`,
+          orderUpdate: false
+        });
       }
       if (error.data && error.data.message) {
         console.log('error message, end of loop:', error.data.message);

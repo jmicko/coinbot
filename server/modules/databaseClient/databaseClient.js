@@ -148,6 +148,12 @@ const updateTrade = async (id) => {
     } else {
       console.log('error in database client updateTrade', error);
     }
+    if (error.code && error.code === 'ETIMEDOUT') {
+      socketClient.emit('update', {
+        message: `Connection timed out`,
+        orderUpdate: false
+      });
+    }
   } finally {
     await sleep(200);
     updateTrade()
