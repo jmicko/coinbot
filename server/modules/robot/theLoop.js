@@ -86,12 +86,12 @@ const theLoop = async () => {
         checkingBuys = !checkingBuys;
       }
     } catch (error) {
-      console.log('!!!!!!!!!!!!!!!!!!!!!!!!');
       if (error.code && error.code === 'ETIMEDOUT') {
         socketClient.emit('update', {
           message: `Connection timed out`,
           orderUpdate: false
         });
+        console.log('timed out');
       }
       else if (error.data && error.data.message) {
 
