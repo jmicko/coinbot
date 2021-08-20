@@ -17,6 +17,9 @@ const userRouter = require('./routes/user.router');
 const tradeRouter = require('./routes/trade.router');
 const accountRouter = require('./routes/account.router');
 const ordersRouter = require('./routes/orders.router');
+const databaseClient = require('./modules/databaseClient/databaseClient');
+
+databaseClient.updateTrade();
 
 // Body parser middleware
 app.use(express.json());
@@ -52,7 +55,7 @@ io.on('connection', (socket) => {
   // relay updates from the loop about trades that are being checked
   socket.on('message', (message) => {
     // socket.broadcast.emit('message', { message: 'welcome!' });
-    console.log(message.message);
+    // console.log(message.message);
     socket.broadcast.emit('message', message);
   })
 
@@ -76,12 +79,12 @@ io.on('connection', (socket) => {
 });
 
 // handle abnormal disconnects
-io.engine.on("connection_error", (err) => {
-  console.log(err.req);	     // the request object
-  console.log(err.code);     // the error code, for example 1
-  console.log(err.message);  // the error message, for example "Session ID unknown"
-  console.log(err.context);  // some additional error context
-});
+// io.engine.on("connection_error", (err) => {
+//   console.log(err.req);	     // the request object
+//   console.log(err.code);     // the error code, for example 1
+//   console.log(err.message);  // the error message, for example "Session ID unknown"
+//   console.log(err.context);  // some additional error context
+// });
 /* end socket.io */
 
 // Coinbase Websocket stuff
@@ -96,11 +99,13 @@ cbWebsocket.cbWebsocket.on('message', data => {
 });
 cbWebsocket.cbWebsocket.on('error', err => {
   /* handle error */
-  console.log(err);
+  console.log('coinbase websocket error', err);
 });
-cbWebsocket.cbWebsocket.on('close', () => {
+cbWebsocket.cbWebsocket.on('close', (message) => {
   /* ... */
-  console.log('bye');
+  console.log('bye', message);
+  cbWebsocket.cbWebsocket.connect();
+  console.log('attempted to reconnect');
 });
 
 // End Coinbase Websocket stuff

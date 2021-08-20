@@ -25,8 +25,8 @@ function TradeList(props) {
       console.log('dispatching to fetch orders');
       dispatch({ type: 'FETCH_ORDERS' });
     }, [dispatch]
-  ) 
-  
+  )
+
   // need to set up a listener to listen for messages from the exchange
   // and also grab them when page loads - function below grabs on load
   useEffect(() => {

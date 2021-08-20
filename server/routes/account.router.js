@@ -22,7 +22,7 @@ router.get('/', (req, res) => {
       });
     })
     .catch((error) => {
-      console.log(error.code);
+      console.log('error getting accounts:', error.code);
       res.sendStatus(500)
     })
 });
@@ -36,7 +36,7 @@ router.get('/fees', rejectUnauthenticated, (req, res) => {
       res.send(result)
     })
     .catch((error) => {
-      console.log(error.code);
+      console.log('error getting fees:', error.code);
       res.sendStatus(500)
     })
 
@@ -55,7 +55,7 @@ router.get('/profits', rejectUnauthenticated, (req, res) => {
       res.send(result.rows)
     })
     .catch((error) => {
-      console.log('error in profits:', error);
+      console.log('error in profits route:', error);
       res.sendStatus(500)
     })
 
