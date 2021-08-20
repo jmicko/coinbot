@@ -134,7 +134,7 @@ const updateTrade = async (id) => {
       });
     }
     // else {
-      // console.log('no orders need updating');
+    // console.log('no orders need updating');
     // }
   } catch (error) {
     if (error.response && error.response.statusCode && error.response.statusCode === 429) {
@@ -143,16 +143,17 @@ const updateTrade = async (id) => {
       await sleep(800)
       // updateTrade();
     }
-    if (error.data) {
-      console.log(error.data);
-    } else {
-      console.log('error in database client updateTrade', error);
-    }
-    if (error.code && error.code === 'ETIMEDOUT') {
+    else if (error.code && error.code === 'ETIMEDOUT') {
       socketClient.emit('update', {
         message: `Connection timed out`,
         orderUpdate: false
       });
+    }
+    else if (error.data) {
+      console.log('error data from database client updateTrade', error.data);
+    }
+    else {
+      console.log('unknown error in database client updateTrade', error);
     }
   } finally {
     await sleep(200);

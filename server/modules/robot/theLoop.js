@@ -93,8 +93,7 @@ const theLoop = async () => {
           orderUpdate: false
         });
       }
-      if (error.data && error.data.message) {
-        console.log('error message, end of loop:', error.data.message);
+      else if (error.data && error.data.message) {
 
         /* turns out coinbase may randomly return a 404 on an order that has not actually been canceled.
         this is a problem. Disabling this auto detect feature for now. 
@@ -115,9 +114,11 @@ const theLoop = async () => {
           //   orderUpdate: true
           // });
           // })
+        } else {
+          console.log('error message, end of loop:', error.data.message);
         }
       } else {
-        console.log('yousa got a biiiig big problems in the loop');
+        console.log('yousa got a biiiig big problems in the loop', error);
         socketClient.emit('message', { message: 'big doo doo' });
       }
     } finally {

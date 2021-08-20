@@ -40,71 +40,82 @@ const handleCanceled = async (canceledOrder) => {
 }
 
 const handleFilled = async (cbOrder) => {
-  // add one to busy. This allows pile up of ws handlers. Earlier handlers will not set busy 
-  // to false while later handlers are still busy.
-  // busy will just go down to 0 when not busy
-  robot.busy++;
-  // console.log('should be a little more busy?', robot.busy);
-  // console.log('just filled:', cbOrder);
+  // robot.busy shows how many connections have been made to cb. 
+  // stay under 15/s or rate limiting will start returning errors
+  if (robot.busy <= 15) {
 
-  try {
 
-    // get settled trade from db
-    const dbOrderRows = await databaseClient.getSingleTrade(cbOrder.order_id);
-    if (dbOrderRows[0] && dbOrderRows[0].id) {
-      const dbOrder = dbOrderRows[0];
-      // console.log('database order returns:', dbOrder);
-      // console.log('there is an order');
-      // flip the trade
-      const tradeDetails = flipTrade(dbOrder)
-      // console.log('trade details:', tradeDetails);
+    // add one to busy. This allows pile up of ws handlers. Earlier handlers will not set busy 
+    // to false while later handlers are still busy.
+    // busy will just go down to 0 when not busy
+    robot.busy++;
+    // console.log('should be a little more busy?', robot.busy);
+    // console.log('just filled:', cbOrder);
 
-      // send the new trade
-      let pendingTrade = await authedClient.placeOrder(tradeDetails);
-      console.log('order placed by ws at price:', tradeDetails.price);
-      // store new order in db
-      await databaseClient.storeTrade(pendingTrade, dbOrder);
-      // update old order in db
-      // unfortunately ws does not return some wanted data so we will need to manually get it if we want to see profits etc
-      const queryText = `UPDATE "orders" SET "settled" = NOT "settled", "done_at" = $1 WHERE "id"=$2;`;
-      await pool.query(queryText, [
-        cbOrder.time,
-        // cbOrder.fill_fees, // none
-        // cbOrder.filled_size, // none
-        // cbOrder.executed_value, // not really
-        cbOrder.order_id
-      ]);
-      socketClient.emit('update', {
-        message: `an exchange was made`,
-        orderUpdate: true
-      });
+    try {
 
-    } else {
-      // when an order is first placed, it takes time to store in db and may return nothing
-      // if that is the case, call this function again
-      // console.log('no order yet');
-      await sleep(100)
-      handleFilled(cbOrder);
+      // get settled trade from db
+      const dbOrderRows = await databaseClient.getSingleTrade(cbOrder.order_id);
+      if (dbOrderRows[0] && dbOrderRows[0].id) {
+        const dbOrder = dbOrderRows[0];
+        // console.log('database order returns:', dbOrder);
+        // console.log('there is an order');
+        // flip the trade
+        const tradeDetails = flipTrade(dbOrder)
+        // console.log('trade details:', tradeDetails);
+
+        // send the new trade
+        let pendingTrade = await authedClient.placeOrder(tradeDetails);
+        console.log('order placed by ws at price:', tradeDetails.price);
+        // store new order in db
+        await databaseClient.storeTrade(pendingTrade, dbOrder);
+        // update old order in db
+        // unfortunately ws does not return some wanted data so we will need to manually get it if we want to see profits etc
+        const queryText = `UPDATE "orders" SET "settled" = NOT "settled", "done_at" = $1 WHERE "id"=$2;`;
+        await pool.query(queryText, [
+          cbOrder.time,
+          // cbOrder.fill_fees, // none
+          // cbOrder.filled_size, // none
+          // cbOrder.executed_value, // not really
+          cbOrder.order_id
+        ]);
+        socketClient.emit('update', {
+          message: `an exchange was made`,
+          orderUpdate: true
+        });
+
+      } else {
+        // when an order is first placed, it takes time to store in db and may return nothing
+        // if that is the case, call this function again
+        // console.log('no order yet');
+        await sleep(100)
+        handleFilled(cbOrder);
+      }
+    } catch (error) {
+      if (error.response && error.response.statusCode && error.response.statusCode === 429) {
+        console.log('status code in cbWebsocket', error.response.statusCode);
+        console.log('error data with cb websocket', error.data);
+        await sleep(10)
+        handleFilled(cbOrder);
+      }
+      if (error.statusMessage) {
+        console.log('error message with cb websocket', error.statusMessage);
+      }
+    } finally {
+
+
+      // wait for one second so rate limit stays under 15/s
+      // then subtract one from busy to clear up the connection
+      await sleep(1000);
+      robot.busy--;
+      // console.log('busy?', robot.busy);
     }
-  } catch (error) {
-    if (error.response && error.response.statusCode && error.response.statusCode === 429) {
-      console.log('status code in cbWebsocket', error.response.statusCode);
-      console.log('error data with cb websocket', error.data);
-      await sleep(10)
-      handleFilled(cbOrder);
-    }
-    if (error.statusMessage) {
-      console.log('error message with cb websocket', error.statusMessage);
-    }
-  } finally {
-
-
-    // console.log('waiting 2 sec');
-    // await sleep(2000);
-    // console.log('done');
-    // subtract one from busy
-    robot.busy--;
-    // console.log('busy?', robot.busy);
+  }
+  // else triggers if there are too many connections to cb.
+  // wait a short time then trigger the function again.
+  else {
+    await sleep(100)
+    handleFilled(cbOrder);
   }
 }
 
