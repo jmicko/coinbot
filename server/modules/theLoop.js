@@ -38,8 +38,6 @@ const theLoop = async () => {
       }
       // if there is an order, check order against coinbase
       if (dbOrder) {
-        // this sleep is here to avoid rate limiting, but can maybe be taken out now since there is a global rate variable?
-        // it could also be left in to give ws more of a priority
         await robot.sleep(100);
         robot.busy++;
         cbOrder = await authedClient.getOrder(dbOrder.id);
@@ -49,12 +47,9 @@ const theLoop = async () => {
       }
       if (cbOrder && cbOrder.settled) {
         // flip trade and update if needed...
-        // console.log('how busy?', robot.busy);
         const tradeDetails = robot.flipTrade(dbOrder);
         // send new order
         await robot.sleep(100);
-        // in order to make sure it doesn't trade after ws starts handling the trade, check if ws is trading
-        // right before sending trade
         if (robot.wsTrading > 0) {
           // need to wait a bit or call stack size will be exceeded
           console.log('too busy to place the trade', robot.busy);

@@ -38,6 +38,7 @@ const handleCanceled = async (canceledOrder) => {
 }
 
 const handleFilled = async (cbOrder, repeats) => {
+  // cbOrder.isNew = false;
   robot.wsTrading++;
   // robot.busy shows how many connections have been made to cb. 
   // stay under 15/s or rate limiting will start returning errors
@@ -53,6 +54,7 @@ const handleFilled = async (cbOrder, repeats) => {
       const dbOrderRows = await databaseClient.getSingleTrade(cbOrder.order_id);
       if (dbOrderRows[0] && dbOrderRows[0].id) {
         const dbOrder = dbOrderRows[0];
+        robot.addToTradeQueue(dbOrder);
         // console.log('database order returns:', dbOrder);
         // console.log('there is an order');
         // flip the trade
