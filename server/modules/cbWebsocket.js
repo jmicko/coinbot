@@ -2,7 +2,7 @@ const CoinbasePro = require('coinbase-pro');
 const pool = require('./pool');
 const authedClient = require('./authedClient');
 const socketClient = require('./socketClient');
-const robot = require('./robot/robot');
+const robot = require('./robot');
 const databaseClient = require('./databaseClient/databaseClient');
 
 const cbWebsocket = new CoinbasePro.WebsocketClient(

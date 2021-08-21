@@ -5,7 +5,7 @@ const { rejectUnauthenticated, } = require('../modules/authentication-middleware
 const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient/databaseClient');
 const socketClient = require('../modules/socketClient');
-const toggleCoinbot = require('../modules/robot/toggleCoinbot');
+const toggleCoinbot = require('../modules/toggleCoinbot');
 
 
 // POST route for turning bot on and off

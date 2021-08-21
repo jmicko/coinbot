@@ -2,7 +2,7 @@
 // const getUnsettledTrades = require('./getUnsettledTrades');
 const authedClient = require('../authedClient');
 const pool = require('../pool');
-const robot = require('../robot/robot');
+const robot = require('../robot');
 const socketClient = require('../socketClient');
 
 

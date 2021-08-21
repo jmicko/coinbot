@@ -2,7 +2,7 @@ const pool = require('./pool');
 const authedClient = require('./authedClient');
 const databaseClient = require('./databaseClient/databaseClient');
 const socketClient = require('./socketClient');
-const robot = require('./robot/robot');
+const robot = require('./robot');
 
 // set up side toggle - can be boolean, may as well be buys first since trade-pairs are always buys first
 // needs to be outside the loop so it can persist 

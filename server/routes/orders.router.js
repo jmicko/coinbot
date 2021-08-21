@@ -4,7 +4,7 @@ const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient/databaseClient');
-const robot = require('../modules/robot/robot')
+const robot = require('../modules/robot')
 
 
 /**

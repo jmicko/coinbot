@@ -1,5 +1,5 @@
 const robot = require('./robot');
-const theLoop = require('../theLoop');
+const theLoop = require('./theLoop');
 
 // toggle coinbot on and off
 function toggleCoinbot() {

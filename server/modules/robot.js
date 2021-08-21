@@ -1,4 +1,23 @@
-const socketClient = require("../socketClient");
+const socketClient = require("./socketClient");
+
+// toggle coinbot on and off
+function toggleCoinbot() {
+  // toggle coinbot boolean
+  // if the bot should now be trading, it starts the loop
+  if (robot.canToggle) {
+    console.log('it can toggle!');
+    // the /trade/toggle route will set canToggle to false as soon as it is called so that it 
+    // doesn't call the loop twice. The loop will set it back to true after it finishes a loop
+    robot.canToggle = !robot.canToggle;
+    robot.looping = !robot.looping;
+    robot.loop = 0;
+
+    theLoop()
+  } else {
+    console.log('it cannot toggle!', robot.canToggle);
+  }
+}
+
 
 // function for flipping sides on a trade
 // Returns the tradeDetails object needed to send trade to CB
@@ -44,6 +63,7 @@ const robot = {
   updateSpool: [],
   sleep: sleep,
   flipTrade: flipTrade,
+  toggleCoinbot:toggleCoinbot,
 }
 
 
