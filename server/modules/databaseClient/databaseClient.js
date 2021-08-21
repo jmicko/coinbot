@@ -3,7 +3,6 @@
 const authedClient = require('../authedClient');
 const pool = require('../pool');
 const robot = require('../robot/robot');
-const sleep = require('../robot/sleep');
 const socketClient = require('../socketClient');
 
 
@@ -140,7 +139,7 @@ const updateTrade = async (id) => {
     if (error.response && error.response.statusCode && error.response.statusCode === 429) {
       console.log('status code in databaseClient updateTrade', error.response.statusCode);
       console.log('error data with databaseClient updateTrade', error.data);
-      await sleep(800)
+      await robot.sleep(800)
       // updateTrade();
     }
     else if (error.code && error.code === 'ETIMEDOUT') {
@@ -156,7 +155,7 @@ const updateTrade = async (id) => {
       console.log('unknown error in database client updateTrade', error);
     }
   } finally {
-    await sleep(200);
+    await robot.sleep(200);
     updateTrade()
   }
 };

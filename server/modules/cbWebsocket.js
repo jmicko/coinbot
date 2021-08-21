@@ -4,7 +4,6 @@ const authedClient = require('./authedClient');
 const socketClient = require('./socketClient');
 const robot = require('./robot/robot');
 const databaseClient = require('./databaseClient/databaseClient');
-const sleep = require('./robot/sleep');
 const flipTrade = require('./robot/flipTrade');
 
 const cbWebsocket = new CoinbasePro.WebsocketClient(
@@ -88,14 +87,14 @@ const handleFilled = async (cbOrder) => {
         // when an order is first placed, it takes time to store in db and may return nothing
         // if that is the case, call this function again
         // console.log('no order yet');
-        await sleep(100)
+        await robot.sleep(100)
         handleFilled(cbOrder);
       }
     } catch (error) {
       if (error.response && error.response.statusCode && error.response.statusCode === 429) {
         console.log('status code in cbWebsocket', error.response.statusCode);
         console.log('error data with cb websocket', error.data);
-        await sleep(10)
+        await robot.sleep(10)
         handleFilled(cbOrder);
       }
       if (error.statusMessage) {
@@ -106,7 +105,7 @@ const handleFilled = async (cbOrder) => {
 
       // wait for one second so rate limit stays under 15/s
       // then subtract one from busy to clear up the connection
-      await sleep(1000);
+      await robot.sleep(1000);
       robot.busy--;
       // console.log('busy?', robot.busy);
     }
@@ -114,7 +113,7 @@ const handleFilled = async (cbOrder) => {
   // else triggers if there are too many connections to cb.
   // wait a short time then trigger the function again.
   else {
-    await sleep(100)
+    await robot.sleep(100)
     handleFilled(cbOrder);
   }
 }
