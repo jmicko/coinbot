@@ -160,12 +160,27 @@ const updateTrade = async (id) => {
   }
 };
 
+const deleteTrade = async (id) => {
+  try {
+    const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+    await pool.query(queryText, [id]);
+    console.log('exchange was tossed lmao');
+    socketClient.emit('update', {
+      message: `exchange was tossed out of the ol' databanks`,
+      orderUpdate: true
+    });
+  } catch (error) {
+    console.log('problem in deleteTrade function in databaseClient', error);
+  }
+}
+
 
 const databaseClient = {
   storeTrade: storeTrade,
   getUnsettledTrades: getUnsettledTrades,
   getSingleTrade: getSingleTrade,
-  updateTrade: updateTrade
+  updateTrade: updateTrade,
+  deleteTrade: deleteTrade
 }
 
 module.exports = databaseClient;

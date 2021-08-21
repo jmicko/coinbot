@@ -38,20 +38,17 @@ const handleCanceled = async (canceledOrder) => {
 }
 
 const handleFilled = async (cbOrder) => {
+  robot.wsTrading++;
   // robot.busy shows how many connections have been made to cb. 
   // stay under 15/s or rate limiting will start returning errors
   if (robot.busy <= 15) {
-
-
     // add one to busy. This allows pile up of ws handlers. Earlier handlers will not set busy 
     // to false while later handlers are still busy.
     // busy will just go down to 0 when not busy
-    robot.busy++;
-    // console.log('should be a little more busy?', robot.busy);
-    // console.log('just filled:', cbOrder);
-
     try {
-
+    robot.busy++;
+    // console.log('should be  little more busy?', robot.busy);
+    // console.log('just filleda:', cbOrder);
       // get settled trade from db
       const dbOrderRows = await databaseClient.getSingleTrade(cbOrder.order_id);
       if (dbOrderRows[0] && dbOrderRows[0].id) {
@@ -93,6 +90,7 @@ const handleFilled = async (cbOrder) => {
       if (error.response && error.response.statusCode && error.response.statusCode === 429) {
         console.log('status code in cbWebsocket', error.response.statusCode);
         console.log('error data with cb websocket', error.data);
+        console.log('robot busy:', robot.busy);
         await robot.sleep(10)
         handleFilled(cbOrder);
       }
@@ -101,19 +99,22 @@ const handleFilled = async (cbOrder) => {
       }
     } finally {
 
-
+      // tell that the robot is no longer trading
+      robot.wsTrading--;
+      console.log('-----is ws still trading?', robot.wsTrading);
       // wait for one second so rate limit stays under 15/s
       // then subtract one from busy to clear up the connection
       await robot.sleep(1000);
       robot.busy--;
       // console.log('busy?', robot.busy);
     }
-  }
-  // else triggers if there are too many connections to cb.
-  // wait a short time then trigger the function again.
-  else {
+    // else triggers if there are too many connections to cb.
+    // wait a short time then trigger the function again.
+  } else {
     await robot.sleep(100)
     handleFilled(cbOrder);
+    robot.wsTrading--;
+    console.log('-----is ws still trading?', robot.wsTrading);
   }
 }
 

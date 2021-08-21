@@ -6,6 +6,7 @@ const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient');
 const socketClient = require('../modules/socketClient');
 const toggleCoinbot = require('../modules/toggleCoinbot');
+const robot = require('../modules/robot');
 
 
 // POST route for turning bot on and off
@@ -33,6 +34,8 @@ router.post('/', rejectUnauthenticated, (req, res) => {
     product_id: order.product_id,
   };
   console.log(tradeDetails);
+  // add to busy so no rejections from rate limiting
+  robot.busy++;
   // function to send the order with the CB API to CB and place the trade
   authedClient.placeOrder(tradeDetails)
     // after trade is placed, store the returned pending trade values in the database
@@ -55,7 +58,12 @@ router.post('/', rejectUnauthenticated, (req, res) => {
         console.log('new order process failed', error);
         res.sendStatus(500)
       }
-    });
+    })
+    .finally(() => {
+      setTimeout(() => {
+        robot.busy--;
+      }, 1000);
+    })
 });
 
 /**

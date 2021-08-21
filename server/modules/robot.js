@@ -38,6 +38,7 @@ const robot = {
   // doesn't call the loop twice. The loop will set it back to true after it finishes a loop
   canToggle: true,
   looping: false,
+  wsTrading: 0,
   loop: 0,
   busy: 0,
   // store an array of orders that need to be updated after filling

@@ -19,13 +19,14 @@ const theLoop = async () => {
   }
   // if the robot is busy, call theLoop again and return out of function so no trades are made while another 
   // function is in the db
-  if (robot.busy > 0) {
+  if (robot.wsTrading > 0) {
     // need to wait a bit or call stack size will be exceeded
-    // console.log('oh wait no, it is busy');
+    console.log('oh wait no, ws is trading, but is it busy?', robot.busy);
     await robot.sleep(100)
     theLoop();
     return;
-  } else {
+  } else if (robot.busy <= 15) {
+    console.log('ws is not trading, but is it busy?', robot.busy);
     try {
       robot.loop++;
       socketClient.emit('update', { loopStatus: `${robot.loop} loop${robot.loop === 1 ? '' : 's'}, brother` });
@@ -40,8 +41,14 @@ const theLoop = async () => {
       }
       // if there is an order, check order against coinbase
       if (dbOrder) {
+        // this sleep is here to avoid rate limiting, but can maybe be taken out now since there is a global rate variable?
+        // it could also be left in to give ws more of a priority
         await robot.sleep(100);
+        robot.busy++;
         cbOrder = await authedClient.getOrder(dbOrder.id);
+        setTimeout(() => {
+          robot.busy--;
+        }, 1000);
       }
       if (cbOrder && cbOrder.settled) {
         // flip trade and update if needed...
@@ -49,12 +56,13 @@ const theLoop = async () => {
         const tradeDetails = robot.flipTrade(dbOrder);
         // send new order
         await robot.sleep(100);
-        // in order to make sure it doesn't trade after ws starts handling the trade, check busy status
+        // in order to make sure it doesn't trade after ws starts handling the trade, check if ws is trading
         // right before sending trade
-        if (robot.busy > 0) {
+        if (robot.wsTrading > 0) {
           // need to wait a bit or call stack size will be exceeded
-          // console.log('wow, it sure is busy');
-          await robot.sleep(100)
+          console.log('too busy to place the trade', robot.busy);
+          console.log('====but is ws trading?', robot.wsTrading);
+          await robot.sleep(500)
           // this returns out of the try. theLoop is called in the finally, 
           // so do not call it here or there will be double orders
           // actually it might be returning out of the if? Idk what is heckin goin on here lmao
@@ -90,28 +98,13 @@ const theLoop = async () => {
           orderUpdate: false
         });
         console.log('timed out');
-      }
-      else if (error.data && error.data.message) {
-
-        /* turns out coinbase may randomly return a 404 on an order that has not actually been canceled.
-        this is a problem. Disabling this auto detect feature for now. 
-        implement websocket instead to listen for cancel messages. Maybe can double check here if order is really cancelled,
-        but if Coinbase reports cancelled once for an unknown reason, why not twice? */
-
-
-        // orders that have been canceled are deleted from coinbase and return a 404.
+      } else if (error.data && error.data.message) {
+        // orders that have been canceled (or very recently changed) are deleted from coinbase and return a 404.
         // error handling should delete them so they are not counted toward profits if simply marked settled
         if (error.data.message === 'NotFound') {
+          robot.busy--;
           console.log('order not found in account. maybe need to delete from db', dbOrder);
-          // const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-          // await pool.query(queryText, [dbOrder.id]);
-          // // .then(() => {
-          // console.log('exchange was tossed lmao');
-          // socketClient.emit('update', {
-          //   message: `exchange was tossed out of the ol' databanks`,
-          //   orderUpdate: true
-          // });
-          // })
+          // robot.deleteTrade(dbOrder.id);
         } else {
           console.log('error message, end of loop:', error.data.message);
         }
@@ -127,6 +120,11 @@ const theLoop = async () => {
         socketClient.emit('update', { loopStatus: 'no more loops :(' });
       }
       robot.canToggle = true;
+    }
+  } else {
+    if (robot.looping) {
+      // call the loop again
+      theLoop();
     }
   }
 }
