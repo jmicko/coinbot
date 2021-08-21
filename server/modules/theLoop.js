@@ -30,13 +30,10 @@ const theLoop = async () => {
     try {
       robot.loop++;
       socketClient.emit('update', { loopStatus: `${robot.loop} loop${robot.loop === 1 ? '' : 's'}, brother` });
-
       // get top 1 of whichever side
       if (checkingBuys) {
-        // get highest priced buy
         [dbOrder] = await databaseClient.getUnsettledTrades('highBuy');
       } else {
-        // get lowest priced sell
         [dbOrder] = await databaseClient.getUnsettledTrades('lowSell');
       }
       // if there is an order, check order against coinbase
@@ -125,7 +122,10 @@ const theLoop = async () => {
     if (robot.looping) {
       // call the loop again
       theLoop();
+    } else {
+      socketClient.emit('update', { loopStatus: 'no more loops :(' });
     }
+    robot.canToggle = true;
   }
 }
 
