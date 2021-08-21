@@ -40,7 +40,8 @@ const trader = async () => {
       if (tradeQueue[0].isNew) {
         
         console.log('the trade is new!', tradeQueue[0]);
-        
+        // todo - for now, new trades will be sent as normal and we will just unshift them here
+        tradeQueue.shift();
         // if new, send it straight to exchange
       } else {
         // if not new, it was just settled. It needs to be flipped and then sent to exchange

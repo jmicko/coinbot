@@ -12,7 +12,6 @@ const robot = require('../modules/robot');
 // POST route for turning bot on and off
 router.post('/toggle', rejectUnauthenticated, (req, res) => {
   // When this route is hit, it turns on and off the trading loop
-  console.log('toggle route');
   toggleCoinbot();
   res.sendStatus(200);
 })
@@ -28,6 +27,7 @@ router.post('/', rejectUnauthenticated, (req, res) => {
   const tradeDetails = {
     // original_sell_price: order.original_sell_price,
     // original_buy_price: order.price,
+    isNew: true,
     side: order.side,
     price: order.price, // USD
     size: order.size, // BTC
@@ -35,6 +35,7 @@ router.post('/', rejectUnauthenticated, (req, res) => {
   };
   console.log(tradeDetails);
   // add to busy so no rejections from rate limiting
+  robot.addToTradeQueue(tradeDetails);
   robot.busy++;
   // function to send the order with the CB API to CB and place the trade
   authedClient.placeOrder(tradeDetails)
