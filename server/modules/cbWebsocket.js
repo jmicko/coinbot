@@ -25,7 +25,7 @@ const handleUpdate = (data) => {
   // }
   if (data.profile_id && data.type === 'done') {
     (data.reason === 'filled')
-      ? handleFilled(data)
+      ? handleFilled(data, 0)
       : (data.reason === 'canceled')
         ? handleCanceled(data)
         : console.log('reason from Coinbase websocket feed:', data.reason);
@@ -37,7 +37,7 @@ const handleCanceled = async (canceledOrder) => {
   console.log('order canceled', canceledOrder);
 }
 
-const handleFilled = async (cbOrder) => {
+const handleFilled = async (cbOrder, repeats) => {
   robot.wsTrading++;
   // robot.busy shows how many connections have been made to cb. 
   // stay under 15/s or rate limiting will start returning errors
@@ -46,9 +46,9 @@ const handleFilled = async (cbOrder) => {
     // to false while later handlers are still busy.
     // busy will just go down to 0 when not busy
     try {
-    robot.busy++;
-    // console.log('should be  little more busy?', robot.busy);
-    // console.log('just filleda:', cbOrder);
+      robot.busy++;
+      // console.log('should be  little more busy?', robot.busy);
+      // console.log('just filleda:', cbOrder);
       // get settled trade from db
       const dbOrderRows = await databaseClient.getSingleTrade(cbOrder.order_id);
       if (dbOrderRows[0] && dbOrderRows[0].id) {
@@ -82,9 +82,15 @@ const handleFilled = async (cbOrder) => {
       } else {
         // when an order is first placed, it takes time to store in db and may return nothing
         // if that is the case, call this function again
-        // console.log('no order yet');
-        await robot.sleep(100)
-        handleFilled(cbOrder);
+        // however if a random order is filled that was never in the db, this makes an infinite loop
+        // so only repeat this action 10 times then give up because it def is not there
+        repeats++;
+        console.log('repeats', repeats);
+        // wait a little longer with each try
+        await robot.sleep(repeats * 100)
+        if (repeats < 10) {
+          handleFilled(cbOrder, repeats);
+        }
       }
     } catch (error) {
       if (error.response && error.response.statusCode && error.response.statusCode === 429) {
