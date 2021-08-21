@@ -3,7 +3,6 @@ const authedClient = require('../authedClient');
 const databaseClient = require('../databaseClient/databaseClient');
 const socketClient = require('../socketClient');
 const robot = require('./robot');
-const flipTrade = require('./flipTrade');
 
 // set up side toggle - can be boolean, may as well be buys first since trade-pairs are always buys first
 // needs to be outside the loop so it can persist 
@@ -47,7 +46,7 @@ const theLoop = async () => {
       if (cbOrder && cbOrder.settled) {
         // flip trade and update if needed...
         // console.log('how busy?', robot.busy);
-        const tradeDetails = flipTrade(dbOrder);
+        const tradeDetails = robot.flipTrade(dbOrder);
         // send new order
         await robot.sleep(100);
         // in order to make sure it doesn't trade after ws starts handling the trade, check busy status

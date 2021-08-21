@@ -4,7 +4,6 @@ const authedClient = require('./authedClient');
 const socketClient = require('./socketClient');
 const robot = require('./robot/robot');
 const databaseClient = require('./databaseClient/databaseClient');
-const flipTrade = require('./robot/flipTrade');
 
 const cbWebsocket = new CoinbasePro.WebsocketClient(
   ['BTC-USD'],
@@ -60,7 +59,7 @@ const handleFilled = async (cbOrder) => {
         // console.log('database order returns:', dbOrder);
         // console.log('there is an order');
         // flip the trade
-        const tradeDetails = flipTrade(dbOrder)
+        const tradeDetails = robot.flipTrade(dbOrder)
         // console.log('trade details:', tradeDetails);
 
         // send the new trade
