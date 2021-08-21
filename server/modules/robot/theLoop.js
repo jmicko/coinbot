@@ -3,7 +3,6 @@ const authedClient = require('../authedClient');
 const databaseClient = require('../databaseClient/databaseClient');
 const socketClient = require('../socketClient');
 const robot = require('./robot');
-const sleep = require('./sleep');
 const flipTrade = require('./flipTrade');
 
 // set up side toggle - can be boolean, may as well be buys first since trade-pairs are always buys first
@@ -24,7 +23,7 @@ const theLoop = async () => {
   if (robot.busy > 0) {
     // need to wait a bit or call stack size will be exceeded
     // console.log('oh wait no, it is busy');
-    await sleep(100)
+    await robot.sleep(100)
     theLoop();
     return;
   } else {
@@ -42,7 +41,7 @@ const theLoop = async () => {
       }
       // if there is an order, check order against coinbase
       if (dbOrder) {
-        await sleep(100);
+        await robot.sleep(100);
         cbOrder = await authedClient.getOrder(dbOrder.id);
       }
       if (cbOrder && cbOrder.settled) {
@@ -50,13 +49,13 @@ const theLoop = async () => {
         // console.log('how busy?', robot.busy);
         const tradeDetails = flipTrade(dbOrder);
         // send new order
-        await sleep(100);
+        await robot.sleep(100);
         // in order to make sure it doesn't trade after ws starts handling the trade, check busy status
         // right before sending trade
         if (robot.busy > 0) {
           // need to wait a bit or call stack size will be exceeded
           // console.log('wow, it sure is busy');
-          await sleep(100)
+          await robot.sleep(100)
           // this returns out of the try. theLoop is called in the finally, 
           // so do not call it here or there will be double orders
           // actually it might be returning out of the if? Idk what is heckin goin on here lmao

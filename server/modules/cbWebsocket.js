@@ -36,7 +36,7 @@ const handleUpdate = (data) => {
 
 const handleCanceled = async (canceledOrder) => {
   // console.log('this was canceled:', canceledOrder);
-  console.log('order canceled');
+  console.log('order canceled', canceledOrder);
 }
 
 const handleFilled = async (cbOrder) => {
