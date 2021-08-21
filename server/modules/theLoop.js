@@ -1,6 +1,6 @@
 const pool = require('./pool');
 const authedClient = require('./authedClient');
-const databaseClient = require('./databaseClient/databaseClient');
+const databaseClient = require('./databaseClient');
 const socketClient = require('./socketClient');
 const robot = require('./robot');
 
