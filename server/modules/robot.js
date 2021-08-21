@@ -30,21 +30,31 @@ const addToTradeQueue = async (trade) => {
 
 const trader = async () => {
   console.log('trader is trading');
+  try {
 
-  // check if the tradeQueue has any orders in it
-  if (tradeQueue.length > 0) {
-    console.log('there are trades to trade', tradeQueue.length);
+    // check if the tradeQueue has any orders in it
+    if (tradeQueue.length > 0) {
+      console.log('there are trades to trade', tradeQueue.length);
+
+      // if it does, take the first one and see if it is new
+      if (tradeQueue[0].isNew) {
+        
+        console.log('the trade is new!', tradeQueue[0]);
+        
+        // if new, send it straight to exchange
+      } else {
+        // if not new, it was just settled. It needs to be flipped and then sent to exchange
+        console.log('the trade is not new!', tradeQueue[0]);
+        
+      }
+    }
+  } catch (err) {
+    console.log(err);
+  } finally {
+    // call trader function again when done
+    await sleep(1000);
+    trader();
   }
-
-  // if it does, take the first one and see if it is new
-
-  // if new, send it straight to exchange
-
-  // if not new, it was just settled. It needs to be flipped and then sent to exchange
-
-  // call trader function again when done
-  await sleep(1000);
-  trader();
 
 }
 
