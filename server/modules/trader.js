@@ -15,20 +15,20 @@ const trader = async () => {
     // check if there are any api tokens left
     console.log(robot.busy, 'tokens used');
     if (robot.busy <= 15) {
-      // check if the robot.tradeQueue has any orders in it
-      if (robot.tradeQueue.length > 0) {
-        console.log('there are trades to trade', robot.tradeQueue.length);
+      // check if the robot.tradeQueue.current has any orders in it
+      if (robot.tradeQueue.current.length > 0) {
+        console.log('there are trades to trade', robot.tradeQueue.current.length);
         // if it does, take the first one and see if it is new
-        if (robot.tradeQueue[0].isNew) {
-          console.log('the trade is new!', robot.tradeQueue[0]);
+        if (robot.tradeQueue.current[0].isNew) {
+          console.log('the trade is new!', robot.tradeQueue.current[0]);
           // if new, send it straight to exchange
           // todo - send to exchange
           // for now, new trades will be sent as normal from the trade router and we will just unshift them here
-          robot.tradeQueue.shift();
+          robot.tradeQueue.current.shift();
         } else {
           // if not new, it was just settled. It needs to be flipped and then sent to exchange
-          console.log('the trade is not new!', robot.tradeQueue[0]);
-          const dbOrder = robot.tradeQueue[0];
+          console.log('the trade is not new!', robot.tradeQueue.current[0]);
+          const dbOrder = robot.tradeQueue.current[0];
           // we are about to make a connection, so increase busy and connections by 1
           robot.busy++;
           connections++;          
@@ -58,9 +58,9 @@ const trader = async () => {
             message: `an exchange was made`,
             orderUpdate: true
           });
-          // remove the first trade from the tradeQueue. Trades are always added to the end of the array,
+          // remove the first trade from the tradeQueue.current. Trades are always added to the end of the array,
           // so the first one will always be the one we just worked with
-          robot.tradeQueue.shift();
+          robot.tradeQueue.current.shift();
         }
       }
     }
