@@ -34,6 +34,7 @@ const trader = async () => {
           connections++;          
           // get the updated info from cb for settlement values
           const cbOrder = await authedClient.getOrder(dbOrder.id);
+          console.log('cbOrder in trader is:', cbOrder);
           // flip the trade
           const tradeDetails = robot.flipTrade(dbOrder);
           // we are about to make a connection, so increase busy and connections by 1
@@ -46,11 +47,11 @@ const trader = async () => {
           // update old order in db
           const queryText = `UPDATE "orders" SET "settled" = NOT "settled", "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
           await pool.query(queryText, [
-            cbOrder.time,
+            cbOrder.done_at,
             cbOrder.fill_fees,
             cbOrder.filled_size,
             cbOrder.executed_value,
-            cbOrder.order_id
+            cbOrder.id
           ]);
           // tell the frontend that an update was made so the DOM can update
           socketClient.emit('update', {
@@ -76,7 +77,7 @@ const trader = async () => {
     // await sleep(200);
     setTimeout(() => {
       trader();
-    }, 200);
+    }, 2000);
   }
 
 }
