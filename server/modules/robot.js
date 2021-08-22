@@ -1,3 +1,5 @@
+const authedClient = require("./authedClient");
+const pool = require("./pool");
 const socketClient = require("./socketClient");
 
 // holds a list of trades that need to be sent. Any function can add to it by calling addToTradeQueue
@@ -28,36 +30,6 @@ const addToTradeQueue = async (trade) => {
   }
 }
 
-const trader = async () => {
-  console.log('trader is trading');
-  try {
-
-    // check if the tradeQueue has any orders in it
-    if (tradeQueue.length > 0) {
-      console.log('there are trades to trade', tradeQueue.length);
-
-      // if it does, take the first one and see if it is new
-      if (tradeQueue[0].isNew) {
-        
-        console.log('the trade is new!', tradeQueue[0]);
-        // todo - for now, new trades will be sent as normal and we will just unshift them here
-        tradeQueue.shift();
-        // if new, send it straight to exchange
-      } else {
-        // if not new, it was just settled. It needs to be flipped and then sent to exchange
-        console.log('the trade is not new!', tradeQueue[0]);
-        
-      }
-    }
-  } catch (err) {
-    console.log(err);
-  } finally {
-    // call trader function again when done
-    await sleep(1000);
-    trader();
-  }
-
-}
 
 // function for flipping sides on a trade
 // Returns the tradeDetails object needed to send trade to CB
@@ -101,11 +73,8 @@ const robot = {
   wsTrading: 0,
   loop: 0,
   busy: 0,
-  // store an array of orders that need to be updated after filling
-  updateSpool: [],
   sleep: sleep,
   flipTrade: flipTrade,
-  trader: trader,
   tradeQueue: tradeQueue,
   addToTradeQueue: addToTradeQueue,
 }

@@ -5,6 +5,9 @@ const pool = require('./pool');
 const robot = require('./robot');
 const socketClient = require('./socketClient');
 
+// store an array of orders that need to be updated after filling
+let updateSpool = [];
+
 
 const storeTrade = (newOrder, originalDetails) => {
   return new Promise((resolve, reject) => {
@@ -110,12 +113,12 @@ const updateTrade = async (id) => {
     let sqlText = `SELECT * FROM orders WHERE "settled" AND "executed_value"=0 limit 1;`;
     let result = await pool.query(sqlText);
     // todo - stored as array so it can loop through them all and update without calling db as often
-    robot.updateSpool = result.rows;
-    // console.log(robot.updateSpool);
+    updateSpool = result.rows;
+    // console.log(updateSpool);
     // make sure there is something to update
-    if (robot.updateSpool.length > 0) {
+    if (updateSpool.length > 0) {
       // get an up to date order object from coinbase
-      cbOrder = await authedClient.getOrder(robot.updateSpool[0].id);
+      cbOrder = await authedClient.getOrder(updateSpool[0].id);
       // console.log(cbOrder);
       // update the order in the db
       const queryText = `UPDATE "orders" SET "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;

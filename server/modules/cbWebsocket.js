@@ -62,10 +62,10 @@ const handleFilled = async (cbOrder, repeats) => {
         // console.log('trade details:', tradeDetails);
 
         // send the new trade
-        let pendingTrade = await authedClient.placeOrder(tradeDetails);
-        console.log('order placed by ws at price:', tradeDetails.price);
+        // let pendingTrade = await authedClient.placeOrder(tradeDetails);
+        // console.log('order placed by ws at price:', tradeDetails.price);
         // store new order in db
-        await databaseClient.storeTrade(pendingTrade, dbOrder);
+        // await databaseClient.storeTrade(pendingTrade, dbOrder);
         // update old order in db
         // unfortunately ws does not return some wanted data so we will need to manually get it if we want to see profits etc
         const queryText = `UPDATE "orders" SET "settled" = NOT "settled", "done_at" = $1 WHERE "id"=$2;`;

@@ -18,10 +18,11 @@ const tradeRouter = require('./routes/trade.router');
 const accountRouter = require('./routes/account.router');
 const ordersRouter = require('./routes/orders.router');
 const databaseClient = require('./modules/databaseClient');
-const robot = require('./modules/robot');
+
+const trader = require('./modules/trader');
 
 databaseClient.updateTrade();
-robot.trader();
+trader();
 
 // Body parser middleware
 app.use(express.json());
