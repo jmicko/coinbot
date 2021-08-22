@@ -6,17 +6,19 @@ const socketClient = require("./socketClient");
 // recentHistory will hold 1000 trades, and can be used to double check if a trade is being added twice
 // current will be trades that still need to be sent, and will be shifted out when done
 const tradeQueue = {
-  recentHistory:[],
-  current:[]
+  recentHistory: [],
+  current: []
 };
 
 // takes trades that need to be sent and adds them to the tradeQueue if they aren't already there
 const addToTradeQueue = async (trade) => {
+  let result;
   // check if the trade is new
   if (trade.isNew) {
     // if it is new, it comes from the ui. push it into tradeQueue, but not 
     // current because it does not have an id, and there is no risk of duplication 
     tradeQueue.current.push(trade);
+    result = true;
     console.log(tradeQueue);
   } else {
     // if it is not new, it will have an id. See if that id is already in the tradeQueue.recentHistory
@@ -31,7 +33,7 @@ const addToTradeQueue = async (trade) => {
       tradeQueue.recentHistory.push(trade);
       tradeQueue.current.push(trade);
       console.log('the queue looks like this now. history length:',
-       tradeQueue.recentHistory.length, 'current:', tradeQueue.current);
+        tradeQueue.recentHistory.length, 'current:', tradeQueue.current);
     } else {
       console.log('IT IS A DUPLICATE!!!!!!!!!!', trade.id);
     }
@@ -39,6 +41,9 @@ const addToTradeQueue = async (trade) => {
   // finally, check how long the recentHistory is. If it is more than 1000, shift the oldest item out
   if (tradeQueue.recentHistory.length > 1000) {
     tradeQueue.recentHistory.shift();
+  }
+  if (result) {
+    return result;
   }
 }
 

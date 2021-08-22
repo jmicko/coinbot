@@ -21,8 +21,19 @@ const trader = async () => {
         // if it does, take the first one and see if it is new
         if (robot.tradeQueue.current[0].isNew) {
           console.log('the trade is new!', robot.tradeQueue.current[0]);
+          const tradeDetails = robot.tradeQueue.current[0];
+          delete tradeDetails.isNew;
+          console.log('=======trader is sending these trade details:', tradeDetails);
           // if new, send it straight to exchange
-          // todo - send to exchange
+          // we are about to make a connection, so increase busy and connections by 1
+          robot.busy++;
+          connections++;
+          // send to cb
+          let pendingTrade = await authedClient.placeOrder(tradeDetails);
+          console.log('here is the pending trade from the trader', pendingTrade);
+          // store the pending trade in the db
+          let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
+          console.log(`order placed, given to db with reply:`, results.message);
           // for now, new trades will be sent as normal from the trade router and we will just unshift them here
           robot.tradeQueue.current.shift();
         } else {
@@ -31,7 +42,7 @@ const trader = async () => {
           const dbOrder = robot.tradeQueue.current[0];
           // we are about to make a connection, so increase busy and connections by 1
           robot.busy++;
-          connections++;          
+          connections++;
           // get the updated info from cb for settlement values
           const cbOrder = await authedClient.getOrder(dbOrder.id);
           console.log('cbOrder in trader is:', cbOrder);
@@ -65,7 +76,11 @@ const trader = async () => {
       }
     }
   } catch (err) {
-    console.log(err);
+    if(err.data){
+      console.log(err.data);
+    } else {
+      console.log('trader error', err);
+    }
   } finally {
     // when everything is done, take tally of api connections, and set them to expire after one second
     setTimeout(() => {
