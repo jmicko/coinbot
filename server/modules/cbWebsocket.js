@@ -49,7 +49,7 @@ const handleFilled = async (cbOrder, repeats) => {
     try {
       robot.busy++;
       // console.log('should be  little more busy?', robot.busy);
-      // console.log('just filleda:', cbOrder);
+      // console.log('just filled:', cbOrder);
       // get settled trade from db
       const dbOrderRows = await databaseClient.getSingleTrade(cbOrder.order_id);
       if (dbOrderRows[0] && dbOrderRows[0].id) {
@@ -67,7 +67,8 @@ const handleFilled = async (cbOrder, repeats) => {
         // store new order in db
         // await databaseClient.storeTrade(pendingTrade, dbOrder);
         // update old order in db
-        // unfortunately ws does not return some wanted data so we will need to manually get it if we want to see profits etc
+        // unfortunately ws does not return some wanted data 
+        // so we will need to manually get it if we want to see profits etc
         const queryText = `UPDATE "orders" SET "settled" = NOT "settled", "done_at" = $1 WHERE "id"=$2;`;
         await pool.query(queryText, [
           cbOrder.time,
