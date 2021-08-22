@@ -20,7 +20,7 @@ const trader = async () => {
         console.log('there are trades to trade', robot.tradeQueue.current.length);
         // if it does, take the first one and see if it is new
         if (robot.tradeQueue.current[0].isNew) {
-          console.log('the trade is new!', robot.tradeQueue.current[0]);
+          // console.log('the trade is new!', robot.tradeQueue.current[0]);
           const tradeDetails = robot.tradeQueue.current[0];
           delete tradeDetails.isNew;
           console.log('=======trader is sending these trade details:', tradeDetails);

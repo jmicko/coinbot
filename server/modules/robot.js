@@ -19,7 +19,7 @@ const addToTradeQueue = async (trade) => {
     // current because it does not have an id, and there is no risk of duplication 
     tradeQueue.current.push(trade);
     result = true;
-    console.log(tradeQueue);
+    // console.log(tradeQueue);
   } else {
     // if it is not new, it will have an id. See if that id is already in the tradeQueue.recentHistory
     const duplicate = tradeQueue.recentHistory.filter(queuedTrade => {
@@ -32,8 +32,8 @@ const addToTradeQueue = async (trade) => {
     if (duplicate.length <= 0) {
       tradeQueue.recentHistory.push(trade);
       tradeQueue.current.push(trade);
-      console.log('the queue looks like this now. history length:',
-        tradeQueue.recentHistory.length, 'current:', tradeQueue.current);
+      // console.log('the queue looks like this now. history length:',
+      //   tradeQueue.recentHistory.length, 'current:', tradeQueue.current);
     } else {
       console.log('IT IS A DUPLICATE!!!!!!!!!!', trade.id);
     }
