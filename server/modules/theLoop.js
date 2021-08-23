@@ -13,21 +13,13 @@ let checkingBuys = true;
 const theLoop = async () => {
   let dbOrder;
   let cbOrder;
+  let connections = 0;
   // stop the bot if it has been toggled off
   if (!robot.looping) {
     return;
   }
-  // if the robot is busy, call theLoop again and return out of function so no trades are made while another 
-  // function is in the db
-  if (robot.wsTrading > 0) {
-    // need to wait a bit or call stack size will be exceeded
-    console.log('oh wait no, ws is trading, but is it busy?', robot.busy);
-    await robot.sleep(100)
-    theLoop();
-    return;
-  } else if (robot.busy <= 15) {
-    console.log('ws is not trading, but is it busy?', robot.busy);
-    try {
+  try {
+    if (robot.busy <= 5) {
       robot.loop++;
       socketClient.emit('update', { loopStatus: `${robot.loop} loop${robot.loop === 1 ? '' : 's'}, brother` });
       // get top 1 of whichever side
@@ -38,89 +30,61 @@ const theLoop = async () => {
       }
       // if there is an order, check order against coinbase
       if (dbOrder) {
-        await robot.sleep(100);
+        console.log('getting order from cb:', dbOrder);
+        await robot.sleep(300);
         robot.busy++;
+        connections++;
         cbOrder = await authedClient.getOrder(dbOrder.id);
-        setTimeout(() => {
-          robot.busy--;
-        }, 1000);
       }
+      // if it is settled, it need to be flipped and traded
       if (cbOrder && cbOrder.settled) {
-        // flip trade and update if needed...
-        const tradeDetails = robot.flipTrade(dbOrder);
-        // send new order
-        await robot.sleep(100);
-        if (robot.wsTrading > 0) {
-          // need to wait a bit or call stack size will be exceeded
-          console.log('too busy to place the trade', robot.busy);
-          console.log('====but is ws trading?', robot.wsTrading);
-          await robot.sleep(500)
-          // this returns out of the try. theLoop is called in the finally, 
-          // so do not call it here or there will be double orders
-          // actually it might be returning out of the if? Idk what is heckin goin on here lmao
-          return;
-        } else {
-
-          let pendingTrade = await authedClient.placeOrder(tradeDetails);
-          console.log('!!!!!!!!! order placed by the loop at price:', Number(tradeDetails.price));
-          // store new order in db
-          await databaseClient.storeTrade(pendingTrade, dbOrder);
-          // update old order in db
-          const queryText = `UPDATE "orders" SET "settled" = NOT "settled", "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
-          await pool.query(queryText, [
-            cbOrder.done_at,
-            cbOrder.fill_fees,
-            cbOrder.filled_size,
-            cbOrder.executed_value,
-            cbOrder.id
-          ]);
-          socketClient.emit('update', {
-            message: `an exchange was made`,
-            orderUpdate: true
-          });
-        }
+        console.log('the loop is sending this trade to the queue', cbOrder);
+        // send it to the tradeQueue
+        await robot.addToTradeQueue(dbOrder);
       } else {
+        console.log('no trade, switching sides');
         // ...else flip side toggle
         checkingBuys = !checkingBuys;
       }
-    } catch (error) {
-      if (error.code && error.code === 'ETIMEDOUT') {
-        socketClient.emit('update', {
-          message: `Connection timed out`,
-          orderUpdate: false
-        });
-        console.log('timed out');
-      } else if (error.data && error.data.message) {
-        // orders that have been canceled (or very recently changed) are deleted from coinbase and return a 404.
-        // error handling should delete them so they are not counted toward profits if simply marked settled
-        if (error.data.message === 'NotFound') {
-          robot.busy--;
-          console.log('order not found in account. maybe need to delete from db', dbOrder);
-          // robot.deleteTrade(dbOrder.id);
-        } else {
-          console.log('error message, end of loop:', error.data.message);
-        }
+    }
+
+
+    // error handling
+  } catch (error) {
+    if (error.code && error.code === 'ETIMEDOUT') {
+      socketClient.emit('update', {
+        message: `Connection timed out`,
+        connection: 'timeout',
+        orderUpdate: false
+      });
+      console.log('timed out');
+    } else if (error.data && error.data.message) {
+      // orders that have been canceled (or very recently changed) are deleted from coinbase and return a 404.
+      // error handling should delete them so they are not counted toward profits if simply marked settled
+      if (error.data.message === 'NotFound') {
+        console.log('order not found in account. maybe need to delete from db', dbOrder);
+        // robot.deleteTrade(dbOrder.id);
       } else {
-        console.log('yousa got a biiiig big problems in the loop', error);
-        socketClient.emit('message', { message: 'big doo doo' });
+        console.log('error message, end of loop:', error.data.message);
       }
-    } finally {
+    } else {
+      console.log('yousa got a biiiig big problems in the loop', error);
+      socketClient.emit('message', { message: 'big doo doo' });
+    }
+
+
+    // restart the loop
+  } finally {
+    setTimeout(() => {
+      robot.busy -= connections;
       if (robot.looping) {
         // call the loop again
-        theLoop()
+        theLoop();
       } else {
         socketClient.emit('update', { loopStatus: 'no more loops :(' });
       }
       robot.canToggle = true;
-    }
-  } else {
-    if (robot.looping) {
-      // call the loop again
-      theLoop();
-    } else {
-      socketClient.emit('update', { loopStatus: 'no more loops :(' });
-    }
-    robot.canToggle = true;
+    }, 1000);
   }
 }
 

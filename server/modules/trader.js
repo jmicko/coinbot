@@ -1,10 +1,12 @@
 const authedClient = require("./authedClient");
 const databaseClient = require("./databaseClient");
 const pool = require("./pool");
-const { sleep } = require("./robot");
 const robot = require("./robot");
 const socketClient = require("./socketClient");
 
+const newTrade = (trade) => {
+
+}
 
 const trader = async () => {
   // count up how many connections have been made by this instance of the trader. Not all parts of the trader
@@ -21,8 +23,14 @@ const trader = async () => {
         // if it does, take the first one and see if it is new
         if (robot.tradeQueue.current[0].isNew) {
           // console.log('the trade is new!', robot.tradeQueue.current[0]);
-          const tradeDetails = robot.tradeQueue.current[0];
-          delete tradeDetails.isNew;
+          const newOrder = robot.tradeQueue.current[0];
+          const tradeDetails = {
+            side: robot.tradeQueue.current[0].side,
+            price: robot.tradeQueue.current[0].price, // USD
+            size: robot.tradeQueue.current[0].size, // BTC
+            product_id: robot.tradeQueue.current[0].product_id,
+          };
+          // delete tradeDetails.isNew;
           console.log('=======trader is sending these trade details:', tradeDetails);
           // if new, send it straight to exchange
           // we are about to make a connection, so increase busy and connections by 1
@@ -32,10 +40,10 @@ const trader = async () => {
           let pendingTrade = await authedClient.placeOrder(tradeDetails);
           console.log('here is the pending trade from the trader', pendingTrade);
           // store the pending trade in the db
-          let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
+          let results = await databaseClient.storeTrade(pendingTrade, newOrder);
           console.log(`order placed, given to db with reply:`, results.message);
           // for now, new trades will be sent as normal from the trade router and we will just unshift them here
-          robot.tradeQueue.current.shift();
+          await robot.tradeQueue.current.shift();
         } else {
           // if not new, it was just settled. It needs to be flipped and then sent to exchange
           console.log('the trade is not new!', robot.tradeQueue.current[0]);
@@ -92,9 +100,10 @@ const trader = async () => {
     // await sleep(200);
     setTimeout(() => {
       trader();
-    }, 2000);
+    }, 50);
   }
 
 }
+
 
 module.exports = trader;
