@@ -54,7 +54,11 @@ io.on('connection', (socket) => {
   // message to client confirming connection
   socket.emit('message', { message: 'welcome!' });
   socket.emit('message', { message: 'trade a coin or two!' });
-  socket.emit('message', { connection: 'Connected!' });
+  socket.emit('message', {
+    connection: {
+      localWebsocket: true
+    }
+  });
 
   // relay updates from the loop about trades that are being checked
   socket.on('message', (message) => {
@@ -97,8 +101,8 @@ cbWebsocket.cbWebsocket.on('message', data => {
   /* work with data */
   // console.log(data.type);
   // if (data.type === 'l2update') {
-    // console.log(data.type);
-    cbWebsocket.handleUpdate(data)
+  // console.log(data.type);
+  cbWebsocket.handleUpdate(data)
   // }
 });
 cbWebsocket.cbWebsocket.on('error', err => {
