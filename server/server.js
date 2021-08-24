@@ -20,6 +20,7 @@ const ordersRouter = require('./routes/orders.router');
 const databaseClient = require('./modules/databaseClient');
 
 const trader = require('./modules/trader');
+const socketClient = require('./modules/socketClient');
 
 databaseClient.updateTrade();
 trader();
@@ -53,7 +54,7 @@ io.on('connection', (socket) => {
   // message to client confirming connection
   socket.emit('message', { message: 'welcome!' });
   socket.emit('message', { message: 'trade a coin or two!' });
-  socket.emit('update', { connection: 'Connected!' });
+  socket.emit('message', { connection: 'Connected!' });
 
   // relay updates from the loop about trades that are being checked
   socket.on('message', (message) => {
@@ -107,6 +108,10 @@ cbWebsocket.cbWebsocket.on('error', err => {
 cbWebsocket.cbWebsocket.on('close', (message) => {
   /* ... */
   console.log('bye', message);
+  socketClient.emit('message', {
+    message: `cb websocket disconnected`,
+    cbWSConnection: false
+  });
   cbWebsocket.cbWebsocket.connect();
   console.log('attempted to reconnect');
 });

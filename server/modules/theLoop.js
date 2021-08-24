@@ -21,7 +21,7 @@ const theLoop = async () => {
     let connections = 0;
     try {
       robot.loop++;
-      socketClient.emit('update', { loopStatus: `${robot.loop} loop${robot.loop === 1 ? '' : 's'}, brother` });
+      socketClient.emit('message', { loopStatus: `${robot.loop} loop${robot.loop === 1 ? '' : 's'}, brother` });
       // get top 1 of whichever side
       if (checkingBuys) {
         [dbOrder] = await databaseClient.getUnsettledTrades('highBuy');
@@ -49,20 +49,18 @@ const theLoop = async () => {
       }
       // error handling
     } catch (error) {
-      if (error.code && error.code === 'ETIMEDOUT') {
-        socketClient.emit('update', {
+      if (error?.code === 'ETIMEDOUT') {
+        socketClient.emit('message', {
           message: `Connection timed out`,
           connection: 'timeout',
           orderUpdate: false
         });
         console.log('timed out');
-      } else if (error.data && error.data.message) {
         // orders that have been canceled (or very recently changed) are deleted from coinbase and return a 404.
         // error handling should delete them so they are not counted toward profits if simply marked settled
-        if (error.data.message === 'NotFound') {
-          console.log('order not found in account. maybe need to delete from db', dbOrder);
-          // robot.deleteTrade(dbOrder.id);
-        }
+      } else if (error?.data?.message === 'NotFound') {
+        console.log('order not found in account. maybe need to delete from db', dbOrder);
+        // robot.deleteTrade(dbOrder.id);
       } else {
         console.log('yousa got a biiiig big problems in the loop', error);
         socketClient.emit('message', { message: 'big doo doo' });
@@ -79,7 +77,7 @@ const theLoop = async () => {
             theLoop();
           }, 100);
         } else {
-          socketClient.emit('update', { loopStatus: 'no more loops :(' });
+          socketClient.emit('message', { loopStatus: 'no more loops :(' });
         }
         robot.canToggle = true;
       }, 1000);

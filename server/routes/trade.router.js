@@ -53,7 +53,7 @@ router.delete('/', rejectUnauthenticated, (req, res) => {
       const queryText = `DELETE from "orders" WHERE "id"=$1;`;
       pool.query(queryText, [data])
         .then(() => {
-          socketClient.emit('update', {
+          socketClient.emit('message', {
             message: `order was tossed out of ol' databanks`,
             orderUpdate: true
           });
@@ -74,7 +74,7 @@ router.delete('/', rejectUnauthenticated, (req, res) => {
           pool.query(queryText, [orderId])
             .then(() => {
               console.log('exchange was tossed lmao');
-              socketClient.emit('update', {
+              socketClient.emit('message', {
                 message: `exchange was tossed out of the ol' databanks`,
                 orderUpdate: true
               });

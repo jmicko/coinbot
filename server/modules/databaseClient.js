@@ -38,7 +38,7 @@ const storeTrade = (newOrder, originalDetails) => {
           results: results,
           success: true
         }
-        socketClient.emit('update', {
+        socketClient.emit('message', {
           message: `trade was tossed into the ol' databanks`,
           orderUpdate: true
         });
@@ -130,7 +130,7 @@ const updateTrade = async (id) => {
         cbOrder.id
       ]);
       // tell interface to update so profits can update
-      socketClient.emit('update', {
+      socketClient.emit('message', {
         message: `an exchange was made`,
         orderUpdate: true
       });
@@ -146,7 +146,7 @@ const updateTrade = async (id) => {
       // updateTrade();
     }
     else if (error.code && error.code === 'ETIMEDOUT') {
-      socketClient.emit('update', {
+      socketClient.emit('message', {
         message: `Connection timed out`,
         orderUpdate: false
       });
@@ -168,7 +168,7 @@ const deleteTrade = async (id) => {
     const queryText = `DELETE from "orders" WHERE "id"=$1;`;
     await pool.query(queryText, [id]);
     console.log('exchange was tossed lmao');
-    socketClient.emit('update', {
+    socketClient.emit('message', {
       message: `exchange was tossed out of the ol' databanks`,
       orderUpdate: true
     });

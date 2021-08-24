@@ -40,7 +40,7 @@ const addToTradeQueue = async (trade) => {
   }
   // finally, check how long the recentHistory is. If it is more than 1000, shift the oldest item out
   console.log('((((((there are this many items in history', tradeQueue.recentHistory.length);
-  if (tradeQueue.recentHistory.length > 1000) {
+  if (tradeQueue.recentHistory.length > 200) {
     tradeQueue.recentHistory.shift();
   }
   if (result) {

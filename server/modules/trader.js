@@ -9,8 +9,7 @@ const newTrade = async (tradeDetails, newOrder) => {
     let connections = 0;
     try {
       // we are about to make a connection, so increase busy and connections by 1
-      robot.busy++;
-      connections++;
+      robot.busy++ && connections++;
       // send to cb
       let pendingTrade = await authedClient.placeOrder(tradeDetails);
       console.log('here is the pending trade from the trader', pendingTrade);
@@ -18,7 +17,7 @@ const newTrade = async (tradeDetails, newOrder) => {
       let results = await databaseClient.storeTrade(pendingTrade, newOrder);
       console.log(`order placed, given to db with reply:`, results.message);
     } catch (err) {
-      if (err.code && err.code === 'ETIMEDOUT') {
+      if (err?.code === 'ETIMEDOUT') {
         setTimeout(() => {
           newTrade(tradeDetails, newOrder);
         }, 100);
@@ -70,7 +69,7 @@ const settledTrade = async (dbOrder) => {
         cbOrder.id
       ]);
       // tell the frontend that an update was made so the DOM can update
-      socketClient.emit('update', {
+      socketClient.emit('message', {
         message: `an exchange was made`,
         orderUpdate: true
       });

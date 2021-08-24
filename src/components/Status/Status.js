@@ -47,7 +47,7 @@ function Status(props) {
     if (socket == null) return;
 
 
-    socket.on('update', update => {
+    socket.on('message', update => {
       // loop status updates get saved to own state
       if (update.loopStatus != null) {
         setLoopStatus(update.loopStatus);
@@ -61,7 +61,7 @@ function Status(props) {
     });
 
     // this will remove the listener when component rerenders
-    return () => socket.off('update')
+    return () => socket.off('message')
     // useEffect will depend on socket because the connection will 
     // not be there right when the page loads
   }, [socket, getProfits]);
