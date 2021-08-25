@@ -33,7 +33,9 @@ const handleUpdate = (data) => {
 }
 
 const handleCanceled = async (canceledOrder) => {
-  // console.log('this was canceled:', canceledOrder);
+  // send notification as an error to the client
+  // todo - only send this if it was not supposed to be cancelled
+  socketClient.emit('message', { error: `order cancelled ${JSON.stringify(canceledOrder)}` });
   console.log('order canceled', canceledOrder);
 }
 
