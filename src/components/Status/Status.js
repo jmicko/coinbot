@@ -124,7 +124,10 @@ function Status(props) {
       <p className="info">{(cbWebsocket) ? 'CB WS Connected' : 'CB WS Problem'}</p>
       <p className="info">{(connection) ? 'Ticker Connected' : 'Ticker Problem'}</p>
       <p className="info"><strong>~~~ The Loop ~~~</strong></p>
-      <p className="info">{loopStatus} loop{loopStatus === 1 ? '' : 's'}, brother</p>
+      {loopStatus === 0
+        ? <p className="info">no more loops :(</p>
+        : <p className="info">{loopStatus} loop{loopStatus === 1 ? '' : 's'}, brother</p>
+    }
       <p className="info"><strong>~~~ Account ~~~</strong></p>
       <p className="info"><strong>Available Funds</strong><br />${Math.floor(props.store.accountReducer.accountReducer * 100) / 100}</p>
       <p className="info"><strong>Maker Fee</strong><br />{props.store.accountReducer.feeReducer.maker_fee_rate * 100}%</p>

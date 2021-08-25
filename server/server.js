@@ -114,7 +114,7 @@ cbWebsocket.cbWebsocket.on('close', (message) => {
   console.log('bye', message);
   socketClient.emit('message', {
     message: `cb websocket disconnected`,
-    cbWSConnection: false
+    cbWebsocket: false
   });
   cbWebsocket.cbWebsocket.connect();
   console.log('attempted to reconnect');
