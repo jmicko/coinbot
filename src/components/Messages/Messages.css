@@ -1,16 +1,48 @@
-.Updates {
-    grid-row: 4;
-    grid-column: 2 / 5;
-    height: fit-content;
-    margin-bottom: .4rem;
+.Messages {
+  grid-row     : 4;
+  grid-column  : 2 / 5;
+  height       : fit-content;
+  margin-bottom: .4rem;
+}
+
+.message-board {
+  display     : flex;
+  /* flex-flow: column; */
+  width       : 100%;
+}
+
+.errors-section {
+  max-height  : 10rem;
+  min-width: 50%;
+  /* width : 50%; */
+}
+
+.message-section {
+  max-height  : 10rem;
+  min-width: 50%;
+  /* width : 50%; */
 }
 
 @media (max-width: 800px) {
-    .Updates {
-        grid-row: 4;
-        grid-column: 2 / 4;
-        height: fit-content;
-        margin-bottom: .4rem;
-    }
+  .Messages {
+    grid-row     : 4;
+    grid-column  : 2 / 4;
+    height       : fit-content;
+    margin-bottom: .4rem;
+    max-height   : 40rem;
+  }
 
+  .message-board {
+    flex-flow : column;
+  }
+  
+  .errors-section {
+    width: auto;
+    max-height: 15rem;
+  }
+  
+  .message-section {
+    max-height: 15rem;
+    width: auto;
+  }
 }

@@ -62,11 +62,10 @@ const theLoop = async () => {
           // robot.deleteTrade(dbOrder.id);
         } else {
           console.log('yousa got a biiiig big problems in the loop', error);
-          socketClient.emit('message', { message: 'big doo doo' });
+          socketClient.emit('message', { error: 'big doo doo' });
         }
         // restart the loop
       } finally {
-        // setTimeout(() => {
           robot.busy -= connections;
           if (robot.looping) {
             // call the loop again
@@ -78,7 +77,6 @@ const theLoop = async () => {
             robot.loop = 0;
           }
           robot.canToggle = true;
-          // }, 1000);
         }
       } else {
       // wait a little and call the loop again
