@@ -11,13 +11,15 @@ function Updates() {
     // socket may not exist on page load because it hasn't connected yet
     if (socket == null) return;
     socket.on('message', message => {
-      setMessages(prevMessages => {
-        // keep max messages down to 3 by checking if more than 2 before adding new message
-        if (prevMessages.length > 2) {
-          prevMessages.shift();
-        }
-        return [...prevMessages, message.message]
-      });
+      if (message.message) {
+        setMessages(prevMessages => {
+          // keep max messages down to 3 by checking if more than 2 before adding new message
+          if (prevMessages.length > 2) {
+            prevMessages.shift();
+          }
+          return [...prevMessages, message.message]
+        });
+      }
     });
     // this will remove the listener when component rerenders
     return () => socket.off('message')

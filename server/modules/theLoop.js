@@ -21,7 +21,8 @@ const theLoop = async () => {
     let connections = 0;
     try {
       robot.loop++;
-      socketClient.emit('message', { loopStatus: `${robot.loop} loop${robot.loop === 1 ? '' : 's'}, brother` });
+      socketClient.emit('message', { loopStatus: robot.loop });
+      // socketClient.emit('message', { loopStatus: `${robot.loop} loop${robot.loop === 1 ? '' : 's'}, brother` });
       // get top 1 of whichever side
       if (checkingBuys) {
         [dbOrder] = await databaseClient.getUnsettledTrades('highBuy');
@@ -77,7 +78,7 @@ const theLoop = async () => {
             theLoop();
           }, 100);
         } else {
-          socketClient.emit('message', { loopStatus: 'no more loops :(' });
+          socketClient.emit('message', { loopStatus: 0 });
         }
         robot.canToggle = true;
       }, 1000);
