@@ -66,7 +66,7 @@ const theLoop = async () => {
         }
         // restart the loop
       } finally {
-        setTimeout(() => {
+        // setTimeout(() => {
           robot.busy -= connections;
           if (robot.looping) {
             // call the loop again
@@ -75,10 +75,16 @@ const theLoop = async () => {
             }, 100);
           } else {
             socketClient.emit('message', { loopStatus: 0 });
+            robot.loop = 0;
           }
           robot.canToggle = true;
-        }, 1000);
-      }
+          // }, 1000);
+        }
+      } else {
+      // wait a little and call the loop again
+      setTimeout(() => {
+        theLoop();
+      }, 500);
     }
   }
 }
