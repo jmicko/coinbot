@@ -46,6 +46,11 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
 router.delete('/', rejectUnauthenticated, (req, res) => {
   // DELETE route code here
   const orderId = req.body.id;
+  if (robot.cbWebsocketConnection) {
+    res.sendStatus(200);
+    console.log('cb ws will handle the cancelation');
+    return;
+  }
   console.log('in the server trade DELETE route', req.body.id)
   authedClient.cancelOrder(orderId)
     .then(data => {
