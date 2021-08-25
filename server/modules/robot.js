@@ -89,6 +89,7 @@ const robot = {
   canToggle: true,
   looping: false,
   wsTrading: 0,
+  cbWebsocketConnection: false,
   loop: 0,
   busy: 0,
   sleep: sleep,

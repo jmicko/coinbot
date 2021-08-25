@@ -21,6 +21,7 @@ const databaseClient = require('./modules/databaseClient');
 
 const trader = require('./modules/trader');
 const socketClient = require('./modules/socketClient');
+const robot = require('./modules/robot');
 
 databaseClient.updateTrade();
 trader();
@@ -97,7 +98,12 @@ io.on('connection', (socket) => {
 
 // Coinbase Websocket stuff
 
+cbWebsocket.cbWebsocket.on('open', data => {
+  robot.cbWebsocketConnection = true;
+  console.log('cb ws connected!');
+});
 cbWebsocket.cbWebsocket.on('message', data => {
+  // console.log('cb ws connected!');
   /* work with data */
   // console.log(data.type);
   // if (data.type === 'l2update') {
@@ -111,6 +117,7 @@ cbWebsocket.cbWebsocket.on('error', err => {
 });
 cbWebsocket.cbWebsocket.on('close', (message) => {
   /* ... */
+  robot.cbWebsocketConnection = false;
   console.log('bye', message);
   socketClient.emit('message', {
     message: `cb websocket disconnected`,
