@@ -23,20 +23,52 @@ const handleUpdate = (data) => {
   // if (data.type != 'heartbeat') {
   //   console.log('this is not heartbeat data', data);
   // }
-  if (data.profile_id && data.type === 'done') {
+  if (data.profile_id && data.type !== 'heartbeat') {
     (data.reason === 'filled')
       ? handleFilled(data, 0)
       : (data.reason === 'canceled')
         ? handleCanceled(data)
-        : console.log('reason from Coinbase websocket feed:', data.reason);
+        : console.log('reason from Coinbase websocket feed:', data);
   }
 }
 
 const handleCanceled = async (canceledOrder) => {
-  // send notification as an error to the client
-  // todo - only send this if it was not supposed to be cancelled
-  socketClient.emit('message', { error: `order cancelled ${JSON.stringify(canceledOrder)}` });
-  console.log('order canceled', canceledOrder);
+  console.log('cb ws sees a canceled order');
+  try {
+    console.log('order was deleted from cb', canceledOrder);
+    const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+    await pool.query(queryText, [canceledOrder]);
+    console.log('deleted from db as well');
+    // send notification as an error to the client
+    // todo - only send this if it was not supposed to be cancelled
+  } catch (err) {
+    if (err.data && err.data.message) {
+      console.log('err message, trade router DELETE:', err.data.message);
+      // orders that have been canceled are deleted from coinbase and return a 404.
+      // error handling should delete them from db and not worry about coinbase since there is no other way to delete
+      // but also send one last delete message to Coinbase just in case it finds it again, but with no error checking
+      if (err.data.message === 'order not found') {
+        console.log('order not found in account. deleting from db', orderId);
+        const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+        await pool.query(queryText, [orderId])
+        console.log('exchange was tossed lmao');
+        socketClient.emit('message', {
+          message: `exchange was tossed out of the ol' databanks`,
+          orderUpdate: true
+        });
+      }
+    } else {
+      console.log('something failed', err);
+      res.sendStatus(500)
+    }
+  } finally {
+    socketClient.emit('message', {
+      error: `order cancelled ${JSON.stringify(canceledOrder)}`,
+      message: `order was canceled on Coinbase`,
+      orderUpdate: true
+    });
+    console.log('order cancellation handled', canceledOrder);
+  }
 }
 
 const handleFilled = async (cbOrder, repeats) => {
