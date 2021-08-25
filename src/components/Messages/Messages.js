@@ -6,6 +6,7 @@ import './Messages.css'
 function Updates() {
   const socket = useSocket();
   const [messages, setMessages] = useState([]);
+  const [errors, setErrors] = useState([]);
   // need use effect to prevent multiplying connections every time component renders
   useEffect(() => {
     // socket may not exist on page load because it hasn't connected yet
@@ -20,6 +21,15 @@ function Updates() {
           return [...prevMessages, message.message]
         });
       }
+      if (message.error) {
+        setErrors(prevErrors => {
+          // keep max messages down to 3 by checking if more than 2 before adding new message
+          if (prevErrors.length > 2) {
+            prevErrors.shift();
+          }
+          return [...prevErrors, message.error]
+        });
+      }
     });
     // this will remove the listener when component rerenders
     return () => socket.off('message')
@@ -29,13 +39,20 @@ function Updates() {
 
   return (
     // show messages on screen
-    <div className="Updates boxed">
+    <div className="Messages boxed">
       <h3 className="title">Coinbot Message Board:</h3>
-
-      {/* <>{JSON.stringify(messages)}</> */}
-      {messages.map((message, i) => {
-        return <p key={i}>{message}</p>
-      })}
+      <div className="message-section boxed">
+      <h3 className="title">General Messages:</h3>
+        {messages.map((message, i) => {
+          return <p key={i}>{message}</p>
+        })}
+      </div>
+      <div className="errors-section boxed">
+        <h3 className="title">Errors:</h3>
+        {errors.map((error, i) => {
+          return <p key={i}>{error}</p>
+        })}
+      </div>
     </div>
   );
 }
