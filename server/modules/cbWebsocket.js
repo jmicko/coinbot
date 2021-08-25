@@ -37,10 +37,15 @@ const handleCanceled = async (canceledOrder) => {
   try {
     console.log('order was deleted from cb', canceledOrder);
     const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-    await pool.query(queryText, [canceledOrder]);
+    await pool.query(queryText, [canceledOrder.order_id]);
     console.log('deleted from db as well');
     // send notification as an error to the client
     // todo - only send this if it was not supposed to be cancelled
+    socketClient.emit('message', {
+      error: `order cancelled ${JSON.stringify(canceledOrder)}`,
+      message: `order was canceled on Coinbase`,
+      orderUpdate: true
+    });
   } catch (err) {
     if (err.data && err.data.message) {
       console.log('err message, trade router DELETE:', err.data.message);
@@ -62,11 +67,6 @@ const handleCanceled = async (canceledOrder) => {
       res.sendStatus(500)
     }
   } finally {
-    socketClient.emit('message', {
-      error: `order cancelled ${JSON.stringify(canceledOrder)}`,
-      message: `order was canceled on Coinbase`,
-      orderUpdate: true
-    });
     console.log('order cancellation handled', canceledOrder);
   }
 }
