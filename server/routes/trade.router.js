@@ -53,7 +53,7 @@ router.delete('/', rejectUnauthenticated, (req, res) => {
         console.log('cb ws will handle the cancelation');
       })
       .catch((err) => {
-        if (err.data.message === 'order not found') {
+        if (err.data?.message === 'order not found') {
           console.log('order not found in account. deleting from db', orderId);
           const queryText = `DELETE from "orders" WHERE "id"=$1;`;
           pool.query(queryText, [orderId])
