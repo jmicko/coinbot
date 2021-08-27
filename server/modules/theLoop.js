@@ -38,7 +38,12 @@ const theLoop = async () => {
         }
         // if it is settled, it need to be flipped and traded
         if (cbOrder && cbOrder.settled) {
-          console.log('the loop is sending this trade to the queue', cbOrder);
+          console.log('the loop is sending this trade to the queue', {
+            'id': cbOrder.id,
+            'size': cbOrder.size,
+            'price': cbOrder.price,
+            'settled': cbOrder.settled
+          });
           // send it to the tradeQueue
           await robot.addToTradeQueue(dbOrder);
         } else {
@@ -66,25 +71,28 @@ const theLoop = async () => {
         }
         // restart the loop
       } finally {
-          robot.busy -= connections;
-          if (robot.looping) {
-            // call the loop again
-            setTimeout(() => {
-              theLoop();
-            }, 100);
-          } else {
-            socketClient.emit('message', { loopStatus: 0 });
-            robot.loop = 0;
-          }
-          robot.canToggle = true;
+        robot.busy -= connections;
+        if (robot.looping) {
+          // call the loop again
+          setTimeout(() => {
+            theLoop();
+          }, 100);
+        } else {
+          socketClient.emit('message', { loopStatus: 0 });
+          robot.loop = 0;
         }
-      } else {
+        robot.canToggle = true;
+      }
+    } else {
       // wait a little and call the loop again
       setTimeout(() => {
         theLoop();
       }, 500);
+      robot.canToggle = true;
     }
+  } else {
+    robot.canToggle = true;
   }
 }
-  
-  module.exports = theLoop;
+
+module.exports = theLoop;
