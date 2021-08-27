@@ -23,7 +23,7 @@ const trader = require('./modules/trader');
 const socketClient = require('./modules/socketClient');
 const robot = require('./modules/robot');
 
-databaseClient.updateTrade();
+// databaseClient.updateTrade();
 trader();
 
 // Body parser middleware
@@ -123,9 +123,20 @@ cbWebsocket.cbWebsocket.on('close', (message) => {
     message: `cb websocket disconnected`,
     cbWebsocket: false
   });
-  cbWebsocket.cbWebsocket.connect();
-  console.log('attempted to reconnect');
+  reconnect();
 });
+
+function reconnect() {
+  if (robot.cbWebsocketConnection === false) {
+    cbWebsocket.cbWebsocket.connect();
+    console.log('cb ws attempted to reconnect');
+  } else {
+    // wait 15 seconds to outlast timeouts and try again
+    setTimeout(() => {
+      reconnect();
+    }, 15000);
+  }
+}
 
 // End Coinbase Websocket stuff
 
