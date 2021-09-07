@@ -7,6 +7,7 @@ const databaseClient = require('../modules/databaseClient');
 const socketClient = require('../modules/socketClient');
 const toggleCoinbot = require('../modules/toggleCoinbot');
 const robot = require('../modules/robot');
+const { cbWebsocketConnection } = require('../modules/robot');
 
 
 // POST route for turning bot on and off
@@ -43,39 +44,55 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
 /**
 * DELETE route
 */
-router.delete('/', rejectUnauthenticated, (req, res) => {
+router.delete('/', rejectUnauthenticated, async (req, res) => {
   // DELETE route code here
   const orderId = req.body.id;
   if (robot.cbWebsocketConnection) {
-    authedClient.cancelOrder(orderId)
-      .then(() => {
+    console.log('there is a ws connection to cb', robot.cbWebsocketConnection, 'orderId:', orderId);
+    try {
+
+      await authedClient.cancelOrder(orderId)
+      // .then(() => {
         res.sendStatus(200);
-        console.log('cb ws will handle the cancelation');
-      })
-      .catch((err) => {
+        console.log('cb ws will handle the cancellation');
+        // })
+      } catch(err) {
         if (err.data?.message === 'order not found') {
-          console.log('order not found in account. deleting from db', orderId);
-          const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-          pool.query(queryText, [orderId])
-            .then(() => {
-              console.log('exchange was tossed lmao');
-              socketClient.emit('message', {
-                message: `exchange was tossed out of the ol' databanks`,
-                orderUpdate: true
-              });
-              res.sendStatus(200)
-            })
-            .catch((err) => {
-              console.log('error in trade.router.js delete route', err);
-              res.sendStatus(500)
-            })
+          // GET order from cb and check if settled.
+          cbOrder = await authedClient.getOrder(dbOrder.id);
+          // if order is settled, send it to the trader
+          if (cbOrder?.settled) {
+            console.log('DELETE route is sending this trade to the queue', {
+              'id': cbOrder.id,
+              'size': cbOrder.size,
+              'price': cbOrder.price,
+              'settled': cbOrder.settled
+            });
+            // send it to the tradeQueue
+            await robot.addToTradeQueue(dbOrder);
+          } else {
+            console.log('order not found in account. deleting from db', orderId);
+            const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+            pool.query(queryText, [orderId])
+              .then(() => {
+                console.log('exchange was tossed lmao');
+                socketClient.emit('message', {
+                  message: `exchange was tossed out of the ol' databanks`,
+                  orderUpdate: true
+                });
+                res.sendStatus(200)
+              })
+              .catch((err) => {
+                console.log('error in trade.router.js delete route', err);
+                res.sendStatus(500)
+              })
+          }
         } else {
-          console.log('error in the delete route when cb ws is connected:',err);
+          console.log('error in the delete route when cb ws is connected:', err);
         }
-      })
-      .finally(() => {
+      } finally {
         return;
-      })
+      }
   } else {
 
     console.log('in the server trade DELETE route', req.body.id)
