@@ -23,8 +23,14 @@ const trader = require('./modules/trader');
 const socketClient = require('./modules/socketClient');
 const robot = require('./modules/robot');
 
-// databaseClient.updateTrade();
+// start the trader
 trader();
+// sync all trades on start, then set to sync every 5 minutes
+// robot.syncOrders();
+setInterval(() => {
+  robot.syncOrders;
+}, 300000);
+
 
 // Body parser middleware
 app.use(express.json());

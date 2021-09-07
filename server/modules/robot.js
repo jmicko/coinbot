@@ -3,6 +3,8 @@ const databaseClient = require("./databaseClient");
 const pool = require("./pool");
 const socketClient = require("./socketClient");
 
+// let synching = false;
+
 // holds a list of trades that need to be sent. Any function can add to it by calling addToTradeQueue
 // recentHistory will hold 1000 trades, and can be used to double check if a trade is being added twice
 // current will be trades that still need to be sent, and will be shifted out when done
@@ -39,9 +41,9 @@ const addToTradeQueue = async (trade) => {
       console.log('IT IS A DUPLICATE!!!!!!!!!!', trade.id);
     }
   }
-  // finally, check how long the recentHistory is. If it is more than 1000, shift the oldest item out
+  // finally, check how long the recentHistory is. If it is more than maxHistory, shift the oldest item out
   // console.log('((((((there are this many items in history', tradeQueue.recentHistory.length);
-  if (tradeQueue.recentHistory.length > 200) {
+  if (tradeQueue.recentHistory.length > robot.maxHistory) {
     tradeQueue.recentHistory.shift();
   }
   if (result) {
@@ -85,22 +87,49 @@ const sleep = (milliseconds) => {
 }
 
 const syncOrders = async () => {
-  console.log('syncing all orders');
-  try {
-    // get lists of trade to compare which have been settled
-    const results = await Promise.all([
-      // get all open orders from db
-      databaseClient.getUnsettledTrades('all'),
-      authedClient.getOrders({ status: 'open' })
-    ]);
-    // store the lists of orders in the corresponding arrays so they can be compared
-    const dbOrders = results[0];
-    const cbOrders = results[1];
-    // compare the arrays and remove any where the ids match in both
-    const ordersToCheck = orderElimination(dbOrders, cbOrders);
-    console.log(ordersToCheck);
-  } catch (err) {
-    console.log('error from robot.syncOrders', err);
+  if (robot.busy < 10) {
+    let connections = 0;
+    robot.synching = true;
+    console.log('syncing all orders');
+    try {
+      // get lists of trade to compare which have been settled
+      const results = await Promise.all([
+        // get all open orders from db
+        databaseClient.getUnsettledTrades('all'),
+        authedClient.getOrders({ status: 'open' })
+      ]);
+      // store the lists of orders in the corresponding arrays so they can be compared
+      const dbOrders = results[0];
+      const cbOrders = results[1];
+      // compare the arrays and remove any where the ids match in both
+      const ordersToCheck = orderElimination(dbOrders, cbOrders);
+      // change maxHistory limit to account for possibility of dumping a large number of orders 
+      // into the tradeQueue when syncing
+      robot.maxHistory += ordersToCheck.length;
+      socketClient.emit('message', {
+        error: `there were ${ordersToCheck.length} orders that need to be synced`,
+        message: `Synching all orders`,
+      });
+      // console.log(ordersToCheck);
+      console.log('maxHistory length is now:', robot.maxHistory);
+      ordersToCheck.forEach(order => {
+        // console.log(order);
+        // add the order to the tradeQueue
+        addToTradeQueue(order);
+      });
+    } catch (err) {
+      console.log('error from robot.syncOrders', err);
+    } finally {
+      // when everything is done, take tally of api connections, and set them to expire after one second
+      setTimeout(() => {
+        robot.busy -= connections;
+        // console.log('connections used after clearing this trader:', robot.busy);
+      }, 1000);
+    }
+  } else {
+    setTimeout(() => {
+      syncOrders();
+    }, 100);
   }
 }
 
@@ -134,6 +163,8 @@ const robot = {
   tradeQueue: tradeQueue,
   addToTradeQueue: addToTradeQueue,
   syncOrders: syncOrders,
+  synching: false,
+  maxHistory: 200,
 }
 
 

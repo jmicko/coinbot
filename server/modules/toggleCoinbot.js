@@ -29,6 +29,7 @@ function toggleCoinbot() {
     console.log('it cannot toggle!', robot.canToggle);
   }
   // robot.looping = !robot.looping;
+  return;
 }
 
 module.exports = toggleCoinbot;

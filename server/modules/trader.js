@@ -3,6 +3,7 @@ const databaseClient = require("./databaseClient");
 const pool = require("./pool");
 const robot = require("./robot");
 const socketClient = require("./socketClient");
+const toggleCoinbot = require("./toggleCoinbot");
 
 const newTrade = async (tradeDetails, newOrder) => {
   if (robot.busy <= 14) {
@@ -78,6 +79,22 @@ const settledTrade = async (dbOrder) => {
         setTimeout(() => {
           settledTrade(dbOrder);
         }, 100);
+
+      } else if (err?.data?.message === 'Insufficient funds') {
+        console.log('Insufficient funds in settledTrade in trader.js');
+        socketClient.emit('message', {
+          // error: `Insufficient funds`,
+          message: `Insufficient funds`,
+        });
+        setTimeout(() => {
+          settledTrade(dbOrder);
+        }, 100);
+      } else if (err?.response?.statusCode === 404) {
+        console.log('in settledTrade in trader.js --- Not Found!', dbOrder.id);
+        socketClient.emit('message', {
+          // error: `Insufficient funds`,
+          message: `order not found`,
+        });
       } else {
         console.log('error from settledTrade in trader', err);
       }
@@ -106,35 +123,65 @@ const trader = async () => {
       // check if there are any api tokens left
       // console.log(robot.busy, 'tokens used');
       // if (robot.busy <= 15) {
-        // check if the robot.tradeQueue.current has any orders in it
-        if (robot.tradeQueue.current.length > 0) {
-          console.log('there are trades to trade', robot.tradeQueue.current.length);
-          // if it does, take the first one and see if it is new
-          if (robot.tradeQueue.current[0].isNew) {
-            // console.log('the trade is new!', robot.tradeQueue.current[0]);
-            const newOrder = robot.tradeQueue.current[0];
-            const tradeDetails = {
-              side: robot.tradeQueue.current[0].side,
-              price: robot.tradeQueue.current[0].price, // USD
-              size: robot.tradeQueue.current[0].size, // BTC
-              product_id: robot.tradeQueue.current[0].product_id,
-            };
-            // delete tradeDetails.isNew;
-            console.log('=======trader is sending these trade details:', tradeDetails);
-            // if new, send it straight to exchange
-            newTrade(tradeDetails, newOrder);
-            // for now, new trades will be sent as normal from the trade router and we will just unshift them here
-            await robot.tradeQueue.current.shift();
-          } else {
-            // if not new, it was just settled. It needs to be flipped and then sent to exchange
-            // console.log('the trade is not new!', robot.tradeQueue.current[0]);
-            const dbOrder = robot.tradeQueue.current[0];
-            settledTrade(dbOrder);
-            // remove the first trade from the tradeQueue.current. Trades are always added to the end of the array,
-            // so the first one will always be the one we just worked with
-            await robot.tradeQueue.current.shift();
-          }
+      // check if the robot.tradeQueue.current has any orders in it
+      if (robot.tradeQueue.current.length > 0) {
+        console.log('there are trades to trade', robot.tradeQueue.current.length);
+        // if it does, take the first one and see if it is new
+        if (robot.tradeQueue.current[0].isNew) {
+          // console.log('the trade is new!', robot.tradeQueue.current[0]);
+          const newOrder = robot.tradeQueue.current[0];
+          const tradeDetails = {
+            side: robot.tradeQueue.current[0].side,
+            price: robot.tradeQueue.current[0].price, // USD
+            size: robot.tradeQueue.current[0].size, // BTC
+            product_id: robot.tradeQueue.current[0].product_id,
+          };
+          // delete tradeDetails.isNew;
+          console.log('=======trader is sending these trade details:', tradeDetails);
+          // if new, send it straight to exchange
+          newTrade(tradeDetails, newOrder);
+          // for now, new trades will be sent as normal from the trade router and we will just unshift them here
+          await robot.tradeQueue.current.shift();
+        } else {
+          // if not new, it was just settled. It needs to be flipped and then sent to exchange
+          // console.log('the trade is not new!', robot.tradeQueue.current[0]);
+          const dbOrder = robot.tradeQueue.current[0];
+          settledTrade(dbOrder);
+          // remove the first trade from the tradeQueue.current. Trades are always added to the end of the array,
+          // so the first one will always be the one we just worked with
+          await robot.tradeQueue.current.shift();
         }
+      } else {
+        // if there is nothing to do and bot is synching all trades, reset history
+        // console.log('no trades in trader. Paused?', 'sync?', robot.synching);
+        if (robot.synching) {
+          // pause the loop if it is running in order to clear history without problem
+          let pausedLoop = false;
+          if (robot.looping) {
+            socketClient.emit('message', {
+              message: `pausing the loop`,
+            });
+            pausedLoop = true;
+            toggleCoinbot();
+            // wait a second to allow the loop to stop
+            await robot.sleep(1000);
+          }
+          // if there are no trades, set the max history to 200 and clear the recent history array
+          robot.maxHistory = 200;
+          robot.tradeQueue.recentHistory = []
+          if (pausedLoop) {
+            // wait 10 seconds for any ws trades to be handled if they were cleared then restart loop
+            setTimeout(() => {
+              toggleCoinbot();
+              socketClient.emit('message', {
+                message: `unpausing the loop`,
+              });
+            }, 10000);
+          }
+          robot.synching = false;
+
+        }
+      }
       // }
     } catch (err) {
       if (err.data) {
@@ -154,6 +201,9 @@ const trader = async () => {
       setTimeout(() => {
         trader();
       }, 50);
+      // if () {
+
+      // }
     }
 
   } else {
