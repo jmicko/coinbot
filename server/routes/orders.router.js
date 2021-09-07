@@ -34,25 +34,4 @@ router.get('/', rejectUnauthenticated, (req, res) => {
 });
 
 
-
-/**
-* DELETE route
-*/
-router.delete('/', rejectUnauthenticated, (req, res) => {
-  // DELETE route code here
-  console.log('in the server trade DELETE route')
-    .then(data => {
-      console.log('order was deleted successfully');
-      console.log(data);
-    })
-    .catch((error) => {
-      console.log('something failed', error);
-      res.sendStatus(500)
-    });
-
-});
-
-
-
-
 module.exports = router;
