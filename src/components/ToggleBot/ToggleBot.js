@@ -13,6 +13,7 @@ function ToggleBot(props) {
         TOGGLE BOT
     </button>
     <button className="btn-logout btn-blue" onClick={() => {props.clickSettings()}}>Settings</button>
+    <button className="btn-logout btn-blue" onClick={() => dispatch({ type: 'SYNC' })}>Sync All Trades</button>
     <button className="btn-logout btn-blue" onClick={() => dispatch({ type: 'LOGOUT' })}>Log Out</button>
     </div>
   )

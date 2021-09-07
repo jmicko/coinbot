@@ -29,8 +29,15 @@ router.get('/', rejectUnauthenticated, (req, res) => {
     .catch((error) => {
       res.send(500)
     })
+});
 
 
+/**
+* UPDATE route - synchronize all orders with cb
+*/
+router.put('/', rejectUnauthenticated, (req, res) => {
+      console.log('in orders update route');
+      res.sendStatus(200)
 });
 
 

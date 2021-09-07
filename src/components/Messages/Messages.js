@@ -3,7 +3,7 @@ import { useSocket } from "../../contexts/SocketProvider";
 import './Messages.css'
 
 
-function Updates() {
+function Messages() {
   const socket = useSocket();
   const [messages, setMessages] = useState([]);
   const [messagesCount, setMessagesCount] = useState(0);
@@ -70,4 +70,4 @@ function Updates() {
   );
 }
 
-export default Updates;
+export default Messages;

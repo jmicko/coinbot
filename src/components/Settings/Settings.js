@@ -4,7 +4,7 @@ import mapStoreToProps from '../../redux/mapStoreToProps';
 import './Settings.css'
 
 
-function Home(props) {
+function Settings(props) {
   if (props.showSettings) {
 
     return (
@@ -35,4 +35,4 @@ function Home(props) {
   }
 }
 
-export default connect()(Home);
+export default connect()(Settings);
