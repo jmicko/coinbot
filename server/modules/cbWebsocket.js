@@ -72,9 +72,9 @@ const handleCanceled = async (canceledOrder) => {
 }
 
 const handleFilled = async (cbOrder, repeats) => {
-  const dbOrderRows = await databaseClient.getSingleTrade(cbOrder.order_id);
-  if (dbOrderRows[0] && dbOrderRows[0].id) {
-    const dbOrder = dbOrderRows[0];
+  const dbOrder = await databaseClient.getSingleTrade(cbOrder.order_id);
+  if (dbOrder?.id) {
+    // const dbOrder = dbOrder[0];
     robot.addToTradeQueue(dbOrder);
   } else {
     // when an order is first placed, it takes time to store in db and may return nothing

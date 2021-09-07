@@ -94,8 +94,9 @@ const getSingleTrade = (id) => {
     sqlText = `SELECT * FROM "orders" WHERE "id"=$1;`;
     pool.query(sqlText, [id])
       .then((results) => {
+        const [singleTrade] = results.rows;
         // promise returns promise from pool if success
-        resolve(results.rows);
+        resolve(singleTrade);
       })
       .catch((err) => {
         // or promise relays errors from pool to parent
