@@ -1,4 +1,5 @@
 const authedClient = require("./authedClient");
+const databaseClient = require("./databaseClient");
 const pool = require("./pool");
 const socketClient = require("./socketClient");
 
@@ -83,6 +84,42 @@ const sleep = (milliseconds) => {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
+const syncOrders = async () => {
+  console.log('syncing all orders');
+  try {
+    // get lists of trade to compare which have been settled
+    const results = await Promise.all([
+      // get all open orders from db
+      databaseClient.getUnsettledTrades('all'),
+      authedClient.getOrders({ status: 'open' })
+    ]);
+    // store the lists of orders in the corresponding arrays so they can be compared
+    const dbOrders = results[0];
+    const cbOrders = results[1];
+    // compare the arrays and remove any where the ids match in both
+    const ordersToCheck = orderElimination(dbOrders, cbOrders);
+    console.log(ordersToCheck);
+  } catch (err) {
+    console.log('error from robot.syncOrders', err);
+  }
+}
+
+// take in an array and an item to check
+const orderElimination = (dbOrders, cbOrders) => {
+  for (let i = 0; i < cbOrders.length; i++) {
+    // look at each id of coinbase orders
+    const cbOrderID = cbOrders[i].id;
+    // console.log(cbOrderID);
+    // filter out dbOrders of that id
+    dbOrders = dbOrders.filter(id => {
+      return (id.id !== cbOrderID)
+    })
+  }
+  // console.log('======CHECK THESE:', dbOrders);
+  // return a list of orders that are settled on cb, but have not yet been handled by the bot
+  return dbOrders;
+}
+
 const robot = {
   // the /trade/toggle route will set canToggle to false as soon as it is called so that it 
   // doesn't call the loop twice. The loop will set it back to true after it finishes a loop
@@ -96,6 +133,7 @@ const robot = {
   flipTrade: flipTrade,
   tradeQueue: tradeQueue,
   addToTradeQueue: addToTradeQueue,
+  syncOrders: syncOrders,
 }
 
 

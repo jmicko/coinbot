@@ -12,8 +12,18 @@ function* fetchOrders() {
   }
 }
 
+function* syncOrders() {
+  try {
+      const response = yield axios.put(`/api/orders/`);
+      console.log('sync orders response is.....', response);
+  } catch (error) {
+      console.log('PUT orders route has failed', error)
+  }
+}
+
 function* orderSaga() {
     yield takeLatest('FETCH_ORDERS', fetchOrders);
+    yield takeLatest('SYNC_ORDERS', syncOrders);
 }
 
 export default orderSaga;
