@@ -79,7 +79,7 @@ const settledTrade = async (dbOrder) => {
           settledTrade(dbOrder);
         }, 100);
       } else {
-        console.log(err);
+        console.log('error from settledTrade in trader', err);
       }
     } finally {
       setTimeout(() => {

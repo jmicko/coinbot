@@ -59,9 +59,12 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       } catch(err) {
         if (err.data?.message === 'order not found') {
           // GET order from cb and check if settled.
-          cbOrder = await authedClient.getOrder(dbOrder.id);
+          cbOrder = await authedClient.getOrder(orderId);
           // if order is settled, send it to the trader
           if (cbOrder?.settled) {
+            // get all the details from the db
+            const [dbOrder] = await databaseClient.getSingleTrade(orderId);
+            console.log('this is the order you tried to delete but is settled:', dbOrder);
             console.log('DELETE route is sending this trade to the queue', {
               'id': cbOrder.id,
               'size': cbOrder.size,
