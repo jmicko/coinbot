@@ -3,8 +3,8 @@ const router = express.Router();
 const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const authedClient = require('../modules/authedClient');
-const databaseClient = require('../modules/databaseClient/databaseClient');
-const robot = require('../modules/robot/robot')
+const databaseClient = require('../modules/databaseClient');
+const robot = require('../modules/robot')
 
 
 /**
@@ -32,27 +32,6 @@ router.get('/', rejectUnauthenticated, (req, res) => {
 
 
 });
-
-
-
-/**
-* DELETE route
-*/
-router.delete('/', rejectUnauthenticated, (req, res) => {
-  // DELETE route code here
-  console.log('in the server trade DELETE route')
-    .then(data => {
-      console.log('order was deleted successfully');
-      console.log(data);
-    })
-    .catch((error) => {
-      console.log('something failed', error);
-      res.sendStatus(500)
-    });
-
-});
-
-
 
 
 module.exports = router;

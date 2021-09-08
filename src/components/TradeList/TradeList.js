@@ -53,7 +53,7 @@ function TradeList(props) {
     if (socket == null) return;
 
 
-    socket.on('update', update => {
+    socket.on('message', update => {
       // check if the update is an order update, meaning there is something to change on dom
       if (update.orderUpdate != null) {
         // do api call for all open orders
@@ -61,7 +61,7 @@ function TradeList(props) {
       }
     });
     // this will remove the listener when component rerenders
-    return () => socket.off('update')
+    return () => socket.off('message')
     // useEffect will depend on socket because the connection will 
     // not be there right when the page loads
   }, [socket, getOpenOrders])
