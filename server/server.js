@@ -94,12 +94,12 @@ io.on('connection', (socket) => {
 });
 
 // handle abnormal disconnects
-// io.engine.on("connection_error", (err) => {
-//   console.log(err.req);	     // the request object
-//   console.log(err.code);     // the error code, for example 1
-//   console.log(err.message);  // the error message, for example "Session ID unknown"
-//   console.log(err.context);  // some additional error context
-// });
+io.engine.on("connection_error", (err) => {
+  console.log(err.req);	     // the request object
+  console.log(err.code);     // the error code, for example 1
+  console.log(err.message);  // the error message, for example "Session ID unknown"
+  console.log(err.context);  // some additional error context
+});
 /* end socket.io */
 
 // Coinbase Websocket stuff
@@ -125,10 +125,12 @@ cbWebsocket.cbWebsocket.on('close', (message) => {
   /* ... */
   robot.cbWebsocketConnection = false;
   console.log('bye', message);
+  // tell the front end that the connection has been lost
   socketClient.emit('message', {
     message: `cb websocket disconnected`,
     cbWebsocket: false
   });
+  // attempt to reconnect
   reconnect();
 });
 
