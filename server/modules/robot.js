@@ -14,7 +14,7 @@ const tradeQueue = {
 };
 
 // takes trades that need to be sent and adds them to the tradeQueue if they aren't already there
-const addToTradeQueue = async (trade) => {
+async function addToTradeQueue (trade) {
   let result;
   // check if the trade is new
   if (trade.isNew) {
@@ -54,7 +54,7 @@ const addToTradeQueue = async (trade) => {
 
 // function for flipping sides on a trade
 // Returns the tradeDetails object needed to send trade to CB
-const flipTrade = (dbOrder) => {
+function flipTrade (dbOrder) {
   // set up the object to be sent
   const tradeDetails = {
     side: '',
@@ -82,7 +82,7 @@ const flipTrade = (dbOrder) => {
 
 
 // function to pause for x milliseconds in any async function
-const sleep = (milliseconds) => {
+function sleep (milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
@@ -134,7 +134,7 @@ const syncOrders = async () => {
 }
 
 // take in an array and an item to check
-const orderElimination = (dbOrders, cbOrders) => {
+function orderElimination(dbOrders, cbOrders) {
   for (let i = 0; i < cbOrders.length; i++) {
     // look at each id of coinbase orders
     const cbOrderID = cbOrders[i].id;
