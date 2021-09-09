@@ -38,7 +38,7 @@ function Messages() {
           if (prevErrors.length > 199) {
             prevErrors.shift();
           }
-          return [...prevErrors, message.error]
+          return [message.error, ...prevErrors]
         });
       }
     });
