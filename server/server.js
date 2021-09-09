@@ -131,20 +131,20 @@ cbWebsocket.cbWebsocket.on('close', (message) => {
     cbWebsocket: false
   });
   // attempt to reconnect
-  reconnect();
+  cbWebsocket.reconnect();
 });
 
-function reconnect() {
-  if (robot.cbWebsocketConnection === false) {
-    cbWebsocket.cbWebsocket.connect();
-    console.log('cb ws attempted to reconnect');
-  } else {
-    // wait 15 seconds to outlast timeouts and try again
-    setTimeout(() => {
-      reconnect();
-    }, 15000);
-  }
-}
+// function reconnect() {
+//   if (robot.cbWebsocketConnection === false) {
+//     cbWebsocket.cbWebsocket.connect();
+//     console.log('cb ws attempted to reconnect');
+//   } else {
+//     // wait 15 seconds to outlast timeouts and try again
+//     setTimeout(() => {
+//       reconnect();
+//     }, 15000);
+//   }
+// }
 
 // End Coinbase Websocket stuff
 

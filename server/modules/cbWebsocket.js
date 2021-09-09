@@ -18,7 +18,19 @@ const cbWebsocket = new CoinbasePro.WebsocketClient(
   { channels: ['user'] }
 );
 
-const handleUpdate = (data) => {
+function reconnect() {
+  if (robot.cbWebsocketConnection === false) {
+    cbWebsocket.connect();
+    console.log('cb ws attempted to reconnect');
+  } else {
+    // wait 15 seconds to outlast timeouts and try again
+    setTimeout(() => {
+      reconnect();
+    }, 15000);
+  }
+}
+
+function handleUpdate(data) {
   // console.log('heartbeat data', data);
   // if (data.type != 'heartbeat') {
   //   console.log('this is not heartbeat data', data);
@@ -28,11 +40,11 @@ const handleUpdate = (data) => {
       ? handleFilled(data, 0)
       : (data.reason === 'canceled')
         ? handleCanceled(data)
-        : console.log('reason from Coinbase websocket feed:', data);
+        : console.log('type from Coinbase websocket feed:', data.type);
   }
 }
 
-const handleCanceled = async (canceledOrder) => {
+async function handleCanceled(canceledOrder) {
   console.log('cb ws sees a canceled order');
   try {
     console.log('order was deleted from cb', canceledOrder);
@@ -71,7 +83,7 @@ const handleCanceled = async (canceledOrder) => {
   }
 }
 
-const handleFilled = async (cbOrder, repeats) => {
+async function handleFilled(cbOrder, repeats) {
   const dbOrder = await databaseClient.getSingleTrade(cbOrder.order_id);
   if (dbOrder?.id) {
     // const dbOrder = dbOrder[0];
@@ -93,5 +105,6 @@ const handleFilled = async (cbOrder, repeats) => {
 
 module.exports = {
   cbWebsocket,
-  handleUpdate: handleUpdate
+  handleUpdate: handleUpdate,
+  reconnect: reconnect
 };
