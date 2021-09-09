@@ -5,6 +5,8 @@ const socketClient = require('./socketClient');
 const robot = require('./robot');
 const databaseClient = require('./databaseClient');
 
+// CONNECTION SETUP
+
 const cbWebsocket = new CoinbasePro.WebsocketClient(
   ['BTC-USD'],
   // todo - change url to not sandbox once well tested
@@ -18,6 +20,39 @@ const cbWebsocket = new CoinbasePro.WebsocketClient(
   { channels: ['user'] }
 );
 
+cbWebsocket.on('open', data => {
+  robot.cbWebsocketConnection = true;
+  console.log('cb ws connected!');
+});
+
+cbWebsocket.on('message', data => {
+  // console.log('cb ws connected!');
+  /* work with data */
+  // console.log(data.type);
+  // if (data.type === 'l2update') {
+  // console.log(data.type);
+  handleUpdate(data)
+  // }
+});
+
+cbWebsocket.on('error', err => {
+  /* handle error */
+  console.log('coinbase websocket error', err);
+});
+
+cbWebsocket.on('close', (message) => {
+  /* ... */
+  robot.cbWebsocketConnection = false;
+  console.log('bye', message);
+  // tell the front end that the connection has been lost
+  socketClient.emit('message', {
+    message: `cb websocket disconnected`,
+    cbWebsocket: false
+  });
+  // attempt to reconnect
+  cbWebsocket.reconnect();
+});
+
 function reconnect() {
   if (robot.cbWebsocketConnection === false) {
     cbWebsocket.connect();
@@ -29,6 +64,8 @@ function reconnect() {
     }, 15000);
   }
 }
+
+// END OF CONNECTION SETUP
 
 function handleUpdate(data) {
   // console.log('heartbeat data', data);

@@ -102,51 +102,7 @@ io.engine.on("connection_error", (err) => {
 });
 /* end socket.io */
 
-// Coinbase Websocket stuff
 
-cbWebsocket.cbWebsocket.on('open', data => {
-  robot.cbWebsocketConnection = true;
-  console.log('cb ws connected!');
-});
-cbWebsocket.cbWebsocket.on('message', data => {
-  // console.log('cb ws connected!');
-  /* work with data */
-  // console.log(data.type);
-  // if (data.type === 'l2update') {
-  // console.log(data.type);
-  cbWebsocket.handleUpdate(data)
-  // }
-});
-cbWebsocket.cbWebsocket.on('error', err => {
-  /* handle error */
-  console.log('coinbase websocket error', err);
-});
-cbWebsocket.cbWebsocket.on('close', (message) => {
-  /* ... */
-  robot.cbWebsocketConnection = false;
-  console.log('bye', message);
-  // tell the front end that the connection has been lost
-  socketClient.emit('message', {
-    message: `cb websocket disconnected`,
-    cbWebsocket: false
-  });
-  // attempt to reconnect
-  cbWebsocket.reconnect();
-});
-
-// function reconnect() {
-//   if (robot.cbWebsocketConnection === false) {
-//     cbWebsocket.cbWebsocket.connect();
-//     console.log('cb ws attempted to reconnect');
-//   } else {
-//     // wait 15 seconds to outlast timeouts and try again
-//     setTimeout(() => {
-//       reconnect();
-//     }, 15000);
-//   }
-// }
-
-// End Coinbase Websocket stuff
 
 
 // Serve static files
