@@ -50,7 +50,7 @@ cbWebsocket.on('close', (message) => {
     cbWebsocket: false
   });
   // attempt to reconnect
-  cbWebsocket.reconnect();
+  reconnect();
 });
 
 function reconnect() {
@@ -76,25 +76,45 @@ function handleUpdate(data) {
     (data.reason === 'filled')
       ? handleFilled(data, 0)
       : (data.reason === 'canceled')
-        ? handleCanceled(data)
+        ? handleCanceled(data, 0)
         : console.log('type from Coinbase websocket feed:', data.type);
   }
 }
 
-async function handleCanceled(canceledOrder) {
+async function handleCanceled(canceledOrder, repeats) {
   console.log('cb ws sees a canceled order');
   try {
+    // need to check if order is in db before deleting it
+    // websocket is faster and will report orders that are cancelled when placed
+    // coinbot will try to delete from db
+    // then the REST api will come back with the order number and store it, even though it is cancelled
     console.log('order was deleted from cb', canceledOrder);
     const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-    await pool.query(queryText, [canceledOrder.order_id]);
-    console.log('deleted from db as well');
-    // send notification as an error to the client
-    // todo - only send this if it was not supposed to be cancelled
-    socketClient.emit('message', {
-      error: `order cancelled ${JSON.stringify(canceledOrder)}`,
-      message: `order was canceled on Coinbase`,
-      orderUpdate: true
-    });
+    const response = await pool.query(queryText, [canceledOrder.order_id]);
+    console.log('response from cancelling order and deleting from db', response.rowCount);
+    if (response.rowCount === 0) {
+
+      repeats++;
+      // wait a little longer with each try
+      await robot.sleep(repeats * 1000)
+      if (repeats < 5) {
+        handleCanceled(canceledOrder, repeats)
+      } else{
+        console.log('order was not found in db when canceled');
+      }
+
+
+    } else {
+
+      console.log('deleted from db as well');
+      // send notification as an error to the client
+      // todo - only send this if it was not supposed to be cancelled
+      socketClient.emit('message', {
+        error: `order cancelled ${JSON.stringify(canceledOrder)}`,
+        message: `order was canceled on Coinbase`,
+        orderUpdate: true
+      });
+    }
   } catch (err) {
     if (err.data && err.data.message) {
       console.log('err message, trade router DELETE:', err.data.message);

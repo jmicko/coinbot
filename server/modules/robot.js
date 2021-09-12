@@ -102,7 +102,7 @@ const syncOrders = async () => {
       const dbOrders = results[0];
       const cbOrders = results[1];
       // compare the arrays and remove any where the ids match in both
-      const ordersToCheck = orderElimination(dbOrders, cbOrders);
+      const ordersToCheck = await orderElimination(dbOrders, cbOrders);
       // change maxHistory limit to account for possibility of dumping a large number of orders 
       // into the tradeQueue when syncing
       robot.maxHistory += ordersToCheck.length;
