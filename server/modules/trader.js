@@ -1,6 +1,7 @@
 const authedClient = require("./authedClient");
 const databaseClient = require("./databaseClient");
 const pool = require("./pool");
+const { sleep } = require("./robot");
 const robot = require("./robot");
 const socketClient = require("./socketClient");
 const toggleCoinbot = require("./toggleCoinbot");
@@ -95,6 +96,7 @@ const settledTrade = async (dbOrder) => {
           // error: `Insufficient funds`,
           message: `order not found`,
         });
+        handleNotFound(dbOrder.id);
       } else {
         console.log('error from settledTrade in trader', err);
       }
@@ -108,6 +110,47 @@ const settledTrade = async (dbOrder) => {
   } else {
     setTimeout(() => {
       settledTrade(dbOrder);
+    }, 100);
+  }
+}
+
+// if an order is not found when synching, check a few times and then assume cancelled
+async function handleNotFound(id, repeats) {
+  // make sure not too many connections
+  if (robot.busy <= 10) {
+    let connections = 0;
+
+    try {
+      robot.busy++ && connections++;
+      const cbOrder = await authedClient.getOrder(id);
+      console.log(cbOrder);
+    } catch (err) {
+      if (err?.data?.message === 'NotFound') {
+        console.log('order not found in account. maybe need to delete from db', id);
+        // check how many time it has tried. Don't try more than 5 times
+        if (repeats <= 5) {
+          
+          repeats++;
+          await sleep(1000);
+          handleNotFound(id, repeats)
+        } else {
+          // If it has checked five times, it must have been cancelled, so delete it from db
+          databaseClient.deleteTrade(id);
+        }
+      } else {
+        console.log('error from handleNotFound in trader.js', err);
+      }
+    } finally {
+      setTimeout(() => {
+        console.log('total connections used by this new trade trader:', connections, 'connections used:', robot.busy);
+        robot.busy -= connections;
+        console.log('connections used after clearing this trader:', robot.busy);
+      }, 1000);
+    }
+  } else {
+    // call the trader again
+    setTimeout(() => {
+      handleNotFound(id, repeats);
     }, 100);
   }
 }
@@ -143,7 +186,8 @@ const trader = async () => {
           // for now, new trades will be sent as normal from the trade router and we will just unshift them here
           await robot.tradeQueue.current.shift();
         } else {
-          // if not new, it was just settled. It needs to be flipped and then sent to exchange
+          // if not new, it was just settled or may have been cancelled when bot was offline. 
+          // It needs to be flipped and then sent to exchange, or deleted if cancelled 
           // console.log('the trade is not new!', robot.tradeQueue.current[0]);
           const dbOrder = robot.tradeQueue.current[0];
           settledTrade(dbOrder);
