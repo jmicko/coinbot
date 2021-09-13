@@ -3,39 +3,48 @@ import axios from 'axios';
 
 
 function* fetchFees(action) {
-    try {
-        console.log('payload is:', action.payload);
-        const response = yield axios.get(`/api/account/fees`, action.payload);
-        yield put({ type: 'SET_FEES', payload: response.data})
-    } catch (error) {
-        console.log('GET fees route has failed', error)
+  try {
+    console.log('payload is:', action.payload);
+    const response = yield axios.get(`/api/account/fees`, action.payload);
+    yield put({ type: 'SET_FEES', payload: response.data })
+  } catch (error) {
+    console.log('GET fees route has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
     }
+  }
 }
 
 function* fetchProfits() {
-    try {
-        console.log('getting profits in saga');
-        const response = yield axios.get(`/api/account/profits`);
-        yield put({ type: 'SET_PROFITS', payload: response.data})
-    } catch (error) {
-        console.log('GET fees route has failed', error)
+  try {
+    console.log('getting profits in saga');
+    const response = yield axios.get(`/api/account/profits`);
+    yield put({ type: 'SET_PROFITS', payload: response.data })
+  } catch (error) {
+    console.log('GET fees route has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
     }
+  }
 }
 
 function* fetchAccounts() {
-    try {
-        console.log('getting profits in saga');
-        const response = yield axios.get(`/api/account/`);
-        yield put({ type: 'SET_ACCOUNT', payload: response.data})
-    } catch (error) {
-        console.log('GET account route has failed', error)
+  try {
+    console.log('getting profits in saga');
+    const response = yield axios.get(`/api/account/`);
+    yield put({ type: 'SET_ACCOUNT', payload: response.data })
+  } catch (error) {
+    console.log('GET account route has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
     }
+  }
 }
 
 function* accountSaga() {
-    yield takeLatest('FETCH_FEES', fetchFees);
-    yield takeLatest('FETCH_ACCOUNT', fetchAccounts);
-    yield takeLatest('FETCH_PROFITS', fetchProfits);
+  yield takeLatest('FETCH_FEES', fetchFees);
+  yield takeLatest('FETCH_ACCOUNT', fetchAccounts);
+  yield takeLatest('FETCH_PROFITS', fetchProfits);
 }
 
 export default accountSaga;
