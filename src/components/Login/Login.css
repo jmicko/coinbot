@@ -1,0 +1,15 @@
+.Login {
+  background-color: rgb(117, 136, 117);
+  max-width       : 15rem;
+  margin          : 10vh auto;
+  padding         : 1rem;
+}
+
+.login-form {
+  display       : flex;
+  flex-direction: column;
+}
+
+.login-button {
+  margin-top: 2.6rem;
+}

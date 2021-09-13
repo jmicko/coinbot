@@ -31,7 +31,7 @@ function Login(props) {
       console.log('problem: put in your cred');
     }
   }
-  
+
   function registerAccount(event) {
     event.preventDefault();
     console.log('registering new user', username, password);
@@ -52,61 +52,64 @@ function Login(props) {
 
   return (
     <div className="Login">
-      <center>
+      {/* <center> */}
 
-        <h2>Log In</h2>
-        <form onSubmit={register
-          ? registerAccount
-          : loginAccount
-        }>
-          <label htmlFor="username">
-            Username:
-          </label>
-          <input
-            type="text"
-            name="username"
-            // value={Number(price)}
-            required
-            onChange={(event) => setUsername(event.target.value)}
-          />
+      {register
+        ? <h2>Create New</h2>
+        : <h2>Log In</h2>
+      }
+      <form className="login-form" onSubmit={register
+        ? registerAccount
+        : loginAccount
+      }>
+        <label htmlFor="username">
+          Username:
+        </label>
+        <input
+          type="text"
+          name="username"
+          // value={Number(price)}
+          required
+          onChange={(event) => setUsername(event.target.value)}
+        />
 
-          <label htmlFor="password">
-            Password:
-          </label>
-          <input
-            type="password"
-            name="password"
-            required
-            onChange={(event) => setPassword(event.target.value)}
-          />
+        <label htmlFor="password">
+          Password:
+        </label>
+        <input
+          type="password"
+          name="password"
+          required
+          onChange={(event) => setPassword(event.target.value)}
+        />
 
-          {register
-            ? <>
-              <label htmlFor="confirmPassword">
-                Confirm Password:
-              </label>
-              <input
-                type="password"
-                name="confirmPassword"
-                required
-                onChange={(event) => setConfirmPassword(event.target.value)}
-              />
-              <input className="btn-blue" type="submit" name="submit" value="Register" />
-              <br></br>
-              <button className="btn-blue" onClick={() => { setRegister(false) }}>
-                Back to login
-              </button>
-            </>
-            : <>
-              <input className="btn-blue" type="submit" name="submit" value="Log in" />
-              <br></br>
-              <button className="btn-blue" onClick={() => { setRegister(true) }}>
-                Register New
-              </button>
-            </>
-          }
-        </form>
-      </center>
+        {register
+          ? <>
+            <label htmlFor="confirmPassword">
+              Confirm Password:
+            </label>
+            <input
+              type="password"
+              name="confirmPassword"
+              required
+              onChange={(event) => setConfirmPassword(event.target.value)}
+            />
+            <input className="btn-blue" type="submit" name="submit" value="Register" />
+            <br></br>
+            <button className="btn-blue" onClick={() => { setRegister(false) }}>
+              Back to login
+            </button>
+          </>
+          : <>
+            <input className="btn-blue login-button" type="submit" name="submit" value="Log in" />
+            <br></br>
+            <button className="btn-blue" onClick={() => { setRegister(true) }}>
+              Register New
+            </button>
+          </>
+        }
+      </form>
+      {/* </center> */}
     </div>
   );
 }
