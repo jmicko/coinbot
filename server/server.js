@@ -28,7 +28,8 @@ trader();
 // sync all trades on start, then set to sync every 5 minutes
 // robot.syncOrders();
 setInterval(() => {
-  robot.syncOrders;
+  socketClient.emit('message', { message: 'Scheduled sync started' });
+  robot.syncOrders();
 }, 300000);
 
 
