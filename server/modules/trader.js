@@ -6,157 +6,7 @@ const robot = require("./robot");
 const socketClient = require("./socketClient");
 const toggleCoinbot = require("./toggleCoinbot");
 
-const newTrade = async (tradeDetails, newOrder) => {
-  if (robot.busy <= 14) {
-    let connections = 0;
-    try {
-      // we are about to make a connection, so increase busy and connections by 1
-      robot.busy++ && connections++;
-      // send to cb
-      let pendingTrade = await authedClient.placeOrder(tradeDetails);
-      console.log('here is the pending trade from the trader', pendingTrade);
-      // store the pending trade in the db
-      let results = await databaseClient.storeTrade(pendingTrade, newOrder);
-      console.log(`order placed, given to db with reply:`, results.message);
-    } catch (err) {
-      if (err?.code === 'ETIMEDOUT') {
-        setTimeout(() => {
-          newTrade(tradeDetails, newOrder);
-        }, 100);
-      } else {
-        console.log(err);
-      }
-    } finally {
-      setTimeout(() => {
-        console.log('total connections used by this new trade trader:', connections, 'connections used:', robot.busy);
-        robot.busy -= connections;
-        console.log('connections used after clearing this trader:', robot.busy);
-      }, 1000);
-    }
-  } else {
-    setTimeout(() => {
-      newTrade(tradeDetails, newOrder);
-    }, 100);
-  }
-}
-
-const settledTrade = async (dbOrder) => {
-  if (robot.busy <= 13) {
-    let connections = 0;
-    try {
-
-      // we are about to make a connection, so increase busy and connections by 1
-      robot.busy++;
-      connections++;
-      // get the updated info from cb for settlement values
-      const cbOrder = await authedClient.getOrder(dbOrder.id);
-      // console.log('cbOrder in settledTrade is:', cbOrder);
-      // flip the trade
-      const tradeDetails = robot.flipTrade(dbOrder);
-      // we are about to make a connection, so increase busy and connections by 1
-      robot.busy++;
-      connections++;
-      const pendingTrade = await authedClient.placeOrder(tradeDetails);
-
-      console.log('order placed by robot trader at price:', tradeDetails.price);
-      // store new order in db
-      await databaseClient.storeTrade(pendingTrade, dbOrder);
-      // update old order in db
-      const queryText = `UPDATE "orders" SET "settled" = NOT "settled", "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
-      await pool.query(queryText, [
-        cbOrder.done_at,
-        cbOrder.fill_fees,
-        cbOrder.filled_size,
-        cbOrder.executed_value,
-        cbOrder.id
-      ]);
-      // tell the frontend that an update was made so the DOM can update
-      socketClient.emit('message', {
-        message: `an exchange was made`,
-        orderUpdate: true
-      });
-    } catch (err) {
-      if (err.code && err.code === 'ETIMEDOUT') {
-        setTimeout(() => {
-          settledTrade(dbOrder);
-        }, 100);
-
-      } else if (err?.data?.message === 'Insufficient funds') {
-        console.log('Insufficient funds in settledTrade in trader.js');
-        socketClient.emit('message', {
-          // error: `Insufficient funds`,
-          message: `Insufficient funds`,
-        });
-        setTimeout(() => {
-          settledTrade(dbOrder);
-        }, 100);
-      } else if (err?.response?.statusCode === 404) {
-        console.log('in settledTrade in trader.js --- Not Found!', dbOrder.id);
-        socketClient.emit('message', {
-          // error: `Insufficient funds`,
-          message: `order not found`,
-        });
-        handleNotFound(dbOrder.id);
-      } else {
-        console.log('error from settledTrade in trader', err);
-      }
-    } finally {
-      setTimeout(() => {
-        console.log('total connections used by this settled trader:', connections, 'connections used:', robot.busy);
-        robot.busy -= connections;
-        console.log('connections used after clearing this trader:', robot.busy);
-      }, 1000);
-    }
-  } else {
-    setTimeout(() => {
-      settledTrade(dbOrder);
-    }, 100);
-  }
-}
-
-// if an order is not found when synching, check a few times and then assume cancelled
-async function handleNotFound(id, repeats) {
-  // make sure not too many connections
-  if (robot.busy <= 10) {
-    let connections = 0;
-
-    try {
-      robot.busy++ && connections++;
-      const cbOrder = await authedClient.getOrder(id);
-      console.log(cbOrder);
-    } catch (err) {
-      if (err?.data?.message === 'NotFound') {
-        console.log('order not found in account. maybe need to delete from db', id);
-        // check how many time it has tried. Don't try more than 5 times
-        if (repeats <= 5) {
-          
-          repeats++;
-          await sleep(1000);
-          handleNotFound(id, repeats)
-        } else {
-          // If it has checked five times, it must have been cancelled, so delete it from db
-          databaseClient.deleteTrade(id);
-        }
-      } else {
-        console.log('error from handleNotFound in trader.js', err);
-      }
-    } finally {
-      setTimeout(() => {
-        console.log('total connections used by this new trade trader:', connections, 'connections used:', robot.busy);
-        robot.busy -= connections;
-        console.log('connections used after clearing this trader:', robot.busy);
-      }, 1000);
-    }
-  } else {
-    // call the trader again
-    setTimeout(() => {
-      handleNotFound(id, repeats);
-    }, 100);
-  }
-}
-
-
-const trader = async () => {
+async function trader() {
   // count up how many connections have been made by this instance of the trader. Not all parts of the trader
   // will for sure be hit, so in the finally, this variable can be used to remove the total after the needed time
   if (robot.busy < 15) {
@@ -258,6 +108,157 @@ const trader = async () => {
     }, 100);
   }
 }
+
+
+async function newTrade(tradeDetails, newOrder) {
+  if (robot.busy <= 14) {
+    let connections = 0;
+    try {
+      // we are about to make a connection, so increase busy and connections by 1
+      robot.busy++ && connections++;
+      // send to cb
+      let pendingTrade = await authedClient.placeOrder(tradeDetails);
+      console.log('here is the pending trade from the trader', pendingTrade);
+      // store the pending trade in the db
+      let results = await databaseClient.storeTrade(pendingTrade, newOrder);
+      console.log(`order placed, given to db with reply:`, results.message);
+    } catch (err) {
+      if (err?.code === 'ETIMEDOUT') {
+        setTimeout(() => {
+          newTrade(tradeDetails, newOrder);
+        }, 100);
+      } else {
+        console.log(err);
+      }
+    } finally {
+      setTimeout(() => {
+        console.log('total connections used by this new trade trader:', connections, 'connections used:', robot.busy);
+        robot.busy -= connections;
+        console.log('connections used after clearing this trader:', robot.busy);
+      }, 1000);
+    }
+  } else {
+    setTimeout(() => {
+      newTrade(tradeDetails, newOrder);
+    }, 100);
+  }
+}
+
+async function settledTrade(dbOrder) {
+  if (robot.busy <= 13) {
+    let connections = 0;
+    try {
+
+      // we are about to make a connection, so increase busy and connections by 1
+      robot.busy++;
+      connections++;
+      // get the updated info from cb for settlement values
+      const cbOrder = await authedClient.getOrder(dbOrder.id);
+      // console.log('cbOrder in settledTrade is:', cbOrder);
+      // flip the trade
+      const tradeDetails = robot.flipTrade(dbOrder);
+      // we are about to make a connection, so increase busy and connections by 1
+      robot.busy++;
+      connections++;
+      const pendingTrade = await authedClient.placeOrder(tradeDetails);
+
+      console.log('order placed by robot trader at price:', tradeDetails.price);
+      // store new order in db
+      await databaseClient.storeTrade(pendingTrade, dbOrder);
+      // update old order in db
+      const queryText = `UPDATE "orders" SET "settled" = NOT "settled", "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
+      await pool.query(queryText, [
+        cbOrder.done_at,
+        cbOrder.fill_fees,
+        cbOrder.filled_size,
+        cbOrder.executed_value,
+        cbOrder.id
+      ]);
+      // tell the frontend that an update was made so the DOM can update
+      socketClient.emit('message', {
+        message: `an exchange was made`,
+        orderUpdate: true
+      });
+    } catch (err) {
+      if (err.code && err.code === 'ETIMEDOUT') {
+        setTimeout(() => {
+          settledTrade(dbOrder);
+        }, 100);
+
+      } else if (err?.data?.message === 'Insufficient funds') {
+        console.log('Insufficient funds in settledTrade in trader.js');
+        socketClient.emit('message', {
+          // error: `Insufficient funds`,
+          message: `Insufficient funds`,
+        });
+        setTimeout(() => {
+          settledTrade(dbOrder);
+        }, 100);
+      } else if (err?.response?.statusCode === 404) {
+        console.log('in settledTrade in trader.js --- Not Found!', dbOrder.id);
+        socketClient.emit('message', {
+          // error: `Insufficient funds`,
+          message: `order not found`,
+        });
+        handleNotFound(dbOrder.id);
+      } else {
+        console.log('error from settledTrade in trader', err);
+      }
+    } finally {
+      setTimeout(() => {
+        console.log('total connections used by this settled trader:', connections, 'connections used:', robot.busy);
+        robot.busy -= connections;
+        console.log('connections used after clearing this trader:', robot.busy);
+      }, 1000);
+    }
+  } else {
+    setTimeout(() => {
+      settledTrade(dbOrder);
+    }, 100);
+  }
+}
+
+// if an order is not found when synching, check a few times and then assume cancelled
+async function handleNotFound(id, repeats) {
+  // make sure not too many connections
+  if (robot.busy <= 10) {
+    let connections = 0;
+
+    try {
+      robot.busy++ && connections++;
+      const cbOrder = await authedClient.getOrder(id);
+      console.log(cbOrder);
+    } catch (err) {
+      if (err?.data?.message === 'NotFound') {
+        console.log('order not found in account. maybe need to delete from db', id);
+        // check how many time it has tried. Don't try more than 5 times
+        if (repeats <= 5) {
+
+          repeats++;
+          await sleep(1000);
+          handleNotFound(id, repeats)
+        } else {
+          // If it has checked five times, it must have been cancelled, so delete it from db
+          databaseClient.deleteTrade(id);
+        }
+      } else {
+        console.log('error from handleNotFound in trader.js', err);
+      }
+    } finally {
+      setTimeout(() => {
+        console.log('total connections used by this new trade trader:', connections, 'connections used:', robot.busy);
+        robot.busy -= connections;
+        console.log('connections used after clearing this trader:', robot.busy);
+      }, 1000);
+    }
+  } else {
+    // call the trader again
+    setTimeout(() => {
+      handleNotFound(id, repeats);
+    }, 100);
+  }
+}
+
 
 
 module.exports = trader;
