@@ -178,6 +178,7 @@ const trader = async () => {
             price: robot.tradeQueue.current[0].price, // USD
             size: robot.tradeQueue.current[0].size, // BTC
             product_id: robot.tradeQueue.current[0].product_id,
+            stp: 'cn',
           };
           // delete tradeDetails.isNew;
           console.log('=======trader is sending these trade details:', tradeDetails);
