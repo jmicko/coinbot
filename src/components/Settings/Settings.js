@@ -4,7 +4,42 @@ import mapStoreToProps from '../../redux/mapStoreToProps';
 import './Settings.css'
 
 
-function Home(props) {
+
+function Settings(props) {
+  const dispatch = useDispatch();
+
+
+  // delete the order if the abandon button is clicked.
+  // the loop already detects deleted orders, so only need to make a call to coinbase
+  // no need to bother the database if it is busy
+  function deleteAllOrders() {
+    console.log('clicked delete', props.store.ordersReducer.openOrdersInOrder);
+
+    // dispatch a delete for each trade in the trade list. This way 
+    // there is no need for yet anoother route
+
+    props.store.ordersReducer.openOrdersInOrder.sells.forEach(order => {
+      console.log('here is one order to delete', order.id);
+      dispatch({
+        type: 'DELETE_TRADE', payload: {
+          id: order.id,
+        }
+      })
+    });
+
+    props.store.ordersReducer.openOrdersInOrder.buys.forEach(order => {
+      console.log('here is one order to delete', order.id);
+      dispatch({
+        type: 'DELETE_TRADE', payload: {
+          id: order.id,
+        }
+      })
+    });
+
+
+  }
+
+
   if (props.showSettings) {
 
     return (
@@ -20,8 +55,9 @@ function Home(props) {
         </p>
         <button className="btn-blue">REST</button>
         <button className="btn-blue">Websocket</button>
-        <p>Some settings or whatever</p>
-        <p>Some settings or whatever</p>
+        <h4>Delete All Trades</h4>
+        <p>Danger! This button will delete all your positions! Press it carefully!</p>
+        <button className="btn-blue" onClick={() => { deleteAllOrders() }}>Delete All</button>
         <p>Some settings or whatever</p>
         <p>Some settings or whatever</p>
         <p>Some settings or whatever</p>
@@ -35,4 +71,4 @@ function Home(props) {
   }
 }
 
-export default connect()(Home);
+export default connect(mapStoreToProps)(Settings);

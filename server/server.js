@@ -23,8 +23,15 @@ const trader = require('./modules/trader');
 const socketClient = require('./modules/socketClient');
 const robot = require('./modules/robot');
 
-// databaseClient.updateTrade();
+// start the trader
 trader();
+// sync all trades on start, then set to sync every 5 minutes
+// robot.syncOrders();
+setInterval(() => {
+  socketClient.emit('message', { message: 'Scheduled sync started' });
+  robot.syncOrders();
+}, 300000);
+
 
 // Body parser middleware
 app.use(express.json());
@@ -88,57 +95,15 @@ io.on('connection', (socket) => {
 });
 
 // handle abnormal disconnects
-// io.engine.on("connection_error", (err) => {
-//   console.log(err.req);	     // the request object
-//   console.log(err.code);     // the error code, for example 1
-//   console.log(err.message);  // the error message, for example "Session ID unknown"
-//   console.log(err.context);  // some additional error context
-// });
+io.engine.on("connection_error", (err) => {
+  console.log(err.req);	     // the request object
+  console.log(err.code);     // the error code, for example 1
+  console.log(err.message);  // the error message, for example "Session ID unknown"
+  console.log(err.context);  // some additional error context
+});
 /* end socket.io */
 
-// Coinbase Websocket stuff
 
-cbWebsocket.cbWebsocket.on('open', data => {
-  robot.cbWebsocketConnection = true;
-  console.log('cb ws connected!');
-});
-cbWebsocket.cbWebsocket.on('message', data => {
-  // console.log('cb ws connected!');
-  /* work with data */
-  // console.log(data.type);
-  // if (data.type === 'l2update') {
-  // console.log(data.type);
-  cbWebsocket.handleUpdate(data)
-  // }
-});
-cbWebsocket.cbWebsocket.on('error', err => {
-  /* handle error */
-  console.log('coinbase websocket error', err);
-});
-cbWebsocket.cbWebsocket.on('close', (message) => {
-  /* ... */
-  robot.cbWebsocketConnection = false;
-  console.log('bye', message);
-  socketClient.emit('message', {
-    message: `cb websocket disconnected`,
-    cbWebsocket: false
-  });
-  reconnect();
-});
-
-function reconnect() {
-  if (robot.cbWebsocketConnection === false) {
-    cbWebsocket.cbWebsocket.connect();
-    console.log('cb ws attempted to reconnect');
-  } else {
-    // wait 15 seconds to outlast timeouts and try again
-    setTimeout(() => {
-      reconnect();
-    }, 15000);
-  }
-}
-
-// End Coinbase Websocket stuff
 
 
 // Serve static files

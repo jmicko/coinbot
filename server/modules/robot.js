@@ -1,6 +1,9 @@
 const authedClient = require("./authedClient");
+const databaseClient = require("./databaseClient");
 const pool = require("./pool");
 const socketClient = require("./socketClient");
+
+// let synching = false;
 
 // holds a list of trades that need to be sent. Any function can add to it by calling addToTradeQueue
 // recentHistory will hold 1000 trades, and can be used to double check if a trade is being added twice
@@ -11,7 +14,7 @@ const tradeQueue = {
 };
 
 // takes trades that need to be sent and adds them to the tradeQueue if they aren't already there
-const addToTradeQueue = async (trade) => {
+async function addToTradeQueue (trade) {
   let result;
   // check if the trade is new
   if (trade.isNew) {
@@ -38,9 +41,9 @@ const addToTradeQueue = async (trade) => {
       console.log('IT IS A DUPLICATE!!!!!!!!!!', trade.id);
     }
   }
-  // finally, check how long the recentHistory is. If it is more than 1000, shift the oldest item out
+  // finally, check how long the recentHistory is. If it is more than maxHistory, shift the oldest item out
   // console.log('((((((there are this many items in history', tradeQueue.recentHistory.length);
-  if (tradeQueue.recentHistory.length > 200) {
+  if (tradeQueue.recentHistory.length > robot.maxHistory) {
     tradeQueue.recentHistory.shift();
   }
   if (result) {
@@ -51,7 +54,7 @@ const addToTradeQueue = async (trade) => {
 
 // function for flipping sides on a trade
 // Returns the tradeDetails object needed to send trade to CB
-const flipTrade = (dbOrder) => {
+function flipTrade (dbOrder) {
   // set up the object to be sent
   const tradeDetails = {
     side: '',
@@ -79,8 +82,71 @@ const flipTrade = (dbOrder) => {
 
 
 // function to pause for x milliseconds in any async function
-const sleep = (milliseconds) => {
+function sleep (milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
+}
+
+const syncOrders = async () => {
+  if (robot.busy < 10) {
+    let connections = 0;
+    robot.synching = true;
+    console.log('syncing all orders');
+    try {
+      // get lists of trade to compare which have been settled
+      const results = await Promise.all([
+        // get all open orders from db
+        databaseClient.getUnsettledTrades('all'),
+        authedClient.getOrders({ status: 'open' })
+      ]);
+      // store the lists of orders in the corresponding arrays so they can be compared
+      const dbOrders = results[0];
+      const cbOrders = results[1];
+      // compare the arrays and remove any where the ids match in both
+      const ordersToCheck = await orderElimination(dbOrders, cbOrders);
+      // change maxHistory limit to account for possibility of dumping a large number of orders 
+      // into the tradeQueue when syncing
+      robot.maxHistory += ordersToCheck.length;
+      socketClient.emit('message', {
+        error: `there were ${ordersToCheck.length} orders that need to be synced`,
+        message: `Synching all orders`,
+      });
+      // console.log(ordersToCheck);
+      console.log('maxHistory length is now:', robot.maxHistory);
+      ordersToCheck.forEach(order => {
+        // console.log(order);
+        // add the order to the tradeQueue
+        addToTradeQueue(order);
+      });
+    } catch (err) {
+      console.log('error from robot.syncOrders', err);
+    } finally {
+      // when everything is done, take tally of api connections, and set them to expire after one second
+      setTimeout(() => {
+        robot.busy -= connections;
+        // console.log('connections used after clearing this trader:', robot.busy);
+      }, 1000);
+    }
+  } else {
+    setTimeout(() => {
+      syncOrders();
+    }, 100);
+  }
+}
+
+// take in an array and an item to check
+function orderElimination(dbOrders, cbOrders) {
+  for (let i = 0; i < cbOrders.length; i++) {
+    // look at each id of coinbase orders
+    const cbOrderID = cbOrders[i].id;
+    // console.log(cbOrderID);
+    // filter out dbOrders of that id
+    dbOrders = dbOrders.filter(id => {
+      return (id.id !== cbOrderID)
+    })
+  }
+  // console.log('======CHECK THESE:', dbOrders);
+  // return a list of orders that are settled on cb, but have not yet been handled by the bot
+  return dbOrders;
 }
 
 const robot = {
@@ -96,6 +162,9 @@ const robot = {
   flipTrade: flipTrade,
   tradeQueue: tradeQueue,
   addToTradeQueue: addToTradeQueue,
+  syncOrders: syncOrders,
+  synching: false,
+  maxHistory: 200,
 }
 
 

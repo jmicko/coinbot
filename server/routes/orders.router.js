@@ -4,7 +4,7 @@ const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient');
-const robot = require('../modules/robot')
+const robot = require('../modules/robot');
 
 
 /**
@@ -29,8 +29,16 @@ router.get('/', rejectUnauthenticated, (req, res) => {
     .catch((error) => {
       res.send(500)
     })
+});
 
 
+/**
+* UPDATE route - synchronize all orders with cb
+*/
+router.put('/', rejectUnauthenticated, async (req, res) => {
+      console.log('in orders update route');
+      await robot.syncOrders();
+      res.sendStatus(200)
 });
 
 
