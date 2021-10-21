@@ -10,14 +10,6 @@ const robot = require('../modules/robot');
 const { cbWebsocketConnection } = require('../modules/robot');
 
 
-// POST route for turning bot on and off
-router.post('/toggle', rejectUnauthenticated, (req, res) => {
-  // When this route is hit, it turns on and off the trading loop
-  toggleCoinbot();
-  res.sendStatus(200);
-})
-
-
 /**
  * POST route sending trade
  */
