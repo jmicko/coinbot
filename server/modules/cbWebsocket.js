@@ -144,7 +144,10 @@ async function handleFilled(cbOrder, repeats) {
   const dbOrder = await databaseClient.getSingleTrade(cbOrder.order_id);
   if (dbOrder?.id) {
     // const dbOrder = dbOrder[0];
+
+    // changing to just mark as settled in db. Then need to make a loop to find all orders that are settled and not flipped, and flip them
     robot.addToTradeQueue(dbOrder);
+    // settleInDB(dbOrder, cbOrder);
   } else {
     // when an order is first placed, it takes time to store in db and may return nothing
     // if that is the case, call this function again
@@ -158,6 +161,18 @@ async function handleFilled(cbOrder, repeats) {
       handleFilled(cbOrder, repeats);
     }
   }
+}
+
+async function settleInDB(dbOrder, cbOrder) {
+  console.log('this order will be marked as settled in db', dbOrder, cbOrder);
+  const queryText = `UPDATE "orders" SET "settled" = true, "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
+      await pool.query(queryText, [
+        cbOrder.done_at,
+        cbOrder.fill_fees,
+        cbOrder.filled_size,
+        cbOrder.executed_value,
+        cbOrder.order_id
+      ]);
 }
 
 module.exports = {

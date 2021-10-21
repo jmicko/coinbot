@@ -26,11 +26,18 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
     size: order.size, // BTC
     product_id: order.product_id,
   };
+
   console.log('here is the new order to be sent', order);
-  let result = await robot.addToTradeQueue(order);
-  console.log('result of adding new trade to queue', result);
+  let pendingTrade = await authedClient.placeOrder(tradeDetails);
+  console.log('here is the pending trade from the trader', pendingTrade);
+
+  let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
+  console.log(`order placed, given to db with reply:`, results.message);
+
+  // console.log('result of adding new trade to queue', result);
   res.sendStatus(200);
 });
+
 
 /**
 * DELETE route

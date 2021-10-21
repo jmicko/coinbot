@@ -171,7 +171,7 @@ async function settledTrade(dbOrder) {
         cbOrder.fill_fees,
         cbOrder.filled_size,
         cbOrder.executed_value,
-        cbOrder.id
+        cbOrder.order_id
       ]);
       // tell the frontend that an update was made so the DOM can update
       socketClient.emit('message', {

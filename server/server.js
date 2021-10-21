@@ -19,12 +19,9 @@ const accountRouter = require('./routes/account.router');
 const ordersRouter = require('./routes/orders.router');
 const databaseClient = require('./modules/databaseClient');
 
-const trader = require('./modules/trader');
 const socketClient = require('./modules/socketClient');
 const robot = require('./modules/robot');
 
-// start the trader
-trader();
 // sync all trades on start, then set to sync every 5 minutes
 // robot.syncOrders();
 setInterval(() => {
