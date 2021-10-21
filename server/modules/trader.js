@@ -4,7 +4,6 @@ const pool = require("./pool");
 const { sleep } = require("./robot");
 const robot = require("./robot");
 const socketClient = require("./socketClient");
-const toggleCoinbot = require("./toggleCoinbot");
 
 async function trader() {
   // count up how many connections have been made by this instance of the trader. Not all parts of the trader

@@ -5,7 +5,6 @@ const { rejectUnauthenticated, } = require('../modules/authentication-middleware
 const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient');
 const socketClient = require('../modules/socketClient');
-const toggleCoinbot = require('../modules/toggleCoinbot');
 const robot = require('../modules/robot');
 const { cbWebsocketConnection } = require('../modules/robot');
 
