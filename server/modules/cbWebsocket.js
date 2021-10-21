@@ -146,8 +146,8 @@ async function handleFilled(cbOrder, repeats) {
     // const dbOrder = dbOrder[0];
 
     // changing to just mark as settled in db. Then need to make a loop to find all orders that are settled and not flipped, and flip them
-    robot.addToTradeQueue(dbOrder);
-    // settleInDB(dbOrder, cbOrder);
+    // robot.addToTradeQueue(dbOrder);
+    settleInDB(dbOrder, cbOrder);
   } else {
     // when an order is first placed, it takes time to store in db and may return nothing
     // if that is the case, call this function again
