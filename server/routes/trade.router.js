@@ -25,6 +25,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
     price: order.price, // USD
     size: order.size, // BTC
     product_id: order.product_id,
+    stp: 'cn',
   };
 
   console.log('here is the new order to be sent', order);
