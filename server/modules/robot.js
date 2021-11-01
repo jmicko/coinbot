@@ -6,7 +6,6 @@ const socketClient = require("./socketClient");
 // let synching = false;
 
 // better just call this thing theLoop
-
 async function theLoop() {
   // check all trades in db that are both settled and NOT flipped
   sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false;`;
@@ -14,16 +13,18 @@ async function theLoop() {
   const tradeList = await pool.query(sqlText);
   console.log(tradeList.rows[0]);
   // if there is at least one trade...
+  if (tradeList.rows[0]) {
+    // ...take the first trade that needs to be flipped, 
+    let dbOrder = tradeList.rows[0];
+    // ...flip the trade details
+    let tradeDetails = flipTrade(dbOrder);
+    console.log('these are the new trade details', tradeDetails);
+    // ...send the new trade
 
-  // ...take the first trade that needs to be flipped, 
+    // ...store the new trade
 
-  // ...flip the trade details
-
-  // ...send the new trade
-
-  // ...store the new trade
-
-  // ...mark the old trade as flipped
+    // ...mark the old trade as flipped
+  }
 
   // call the loop again
   setTimeout(() => {
