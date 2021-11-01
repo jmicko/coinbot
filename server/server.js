@@ -23,11 +23,11 @@ const socketClient = require('./modules/socketClient');
 const robot = require('./modules/robot');
 
 // sync all trades on start, then set to sync every 5 minutes
-// robot.syncOrders();
+robot.syncOrders();
 setInterval(() => {
   socketClient.emit('message', { message: 'Scheduled sync started' });
   robot.syncOrders();
-}, 300000);
+}, 2000);
 
 
 // Body parser middleware

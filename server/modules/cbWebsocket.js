@@ -31,7 +31,7 @@ cbWebsocket.on('message', data => {
   // console.log(data.type);
   // if (data.type === 'l2update') {
   // console.log(data.type);
-  handleUpdate(data)
+  // handleUpdate(data)
   // }
 });
 
