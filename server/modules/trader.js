@@ -20,21 +20,7 @@ async function trader() {
         console.log('there are trades to trade', robot.tradeQueue.current.length);
         // if it does, take the first one and see if it is new
         if (robot.tradeQueue.current[0].isNew) {
-          // console.log('the trade is new!', robot.tradeQueue.current[0]);
-          const newOrder = robot.tradeQueue.current[0];
-          const tradeDetails = {
-            side: robot.tradeQueue.current[0].side,
-            price: robot.tradeQueue.current[0].price, // USD
-            size: robot.tradeQueue.current[0].size, // BTC
-            product_id: robot.tradeQueue.current[0].product_id,
-            stp: 'cn',
-          };
-          // delete tradeDetails.isNew;
-          console.log('=======trader is sending these trade details:', tradeDetails);
-          // if new, send it straight to exchange
-          newTrade(tradeDetails, newOrder);
-          // for now, new trades will be sent as normal from the trade router and we will just unshift them here
-          await robot.tradeQueue.current.shift();
+          console.log('ERROR, new order was placed into the tradeQueue');
         } else {
           // if not new, it was just settled or may have been cancelled when bot was offline. 
           // It needs to be flipped and then sent to exchange, or deleted if cancelled 

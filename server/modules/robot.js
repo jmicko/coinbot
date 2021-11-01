@@ -94,14 +94,15 @@ const syncOrders = async () => {
     try {
       // get lists of trade to compare which have been settled
       const results = await Promise.all([
-        // get all open orders from db
+        // get all open orders from db and cb
         databaseClient.getUnsettledTrades('all'),
         authedClient.getOrders({ status: 'open' })
       ]);
       // store the lists of orders in the corresponding arrays so they can be compared
       const dbOrders = results[0];
       const cbOrders = results[1];
-      // compare the arrays and remove any where the ids match in both
+      // compare the arrays and remove any where the ids match in both,
+      // leaving a list of orders that are open in the db, but not on cb. Probably settled
       const ordersToCheck = await orderElimination(dbOrders, cbOrders);
       // change maxHistory limit to account for possibility of dumping a large number of orders 
       // into the tradeQueue when syncing
@@ -116,6 +117,10 @@ const syncOrders = async () => {
         // console.log(order);
         // add the order to the tradeQueue
         addToTradeQueue(order);
+
+
+
+        // Actually changing this to mark them as settled in the db
       });
     } catch (err) {
       console.log('error from robot.syncOrders', err);
