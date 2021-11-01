@@ -209,6 +209,10 @@ const syncOrders = async () => {
             const queryText = `DELETE from "orders" WHERE "id"=$1;`;
             const response = await pool.query(queryText, [order.id]);
             console.log('response from cancelling order and deleting from db', response.rowCount);
+            socketClient.emit('message', {
+              message: `exchange was tossed out of the ol' databanks`,
+              orderUpdate: true
+            });
           }
         }
 
