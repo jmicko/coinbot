@@ -100,7 +100,8 @@ io.engine.on("connection_error", (err) => {
 });
 /* end socket.io */
 
-
+// start the loop
+robot.theLoop();
 
 
 // Serve static files

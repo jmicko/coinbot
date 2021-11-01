@@ -10,21 +10,25 @@ const socketClient = require("./socketClient");
 async function theLoop() {
   // check all trades in db that are both settled and NOT flipped
   sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false;`;
-
+  // store the trades in an object
+  const tradeList = await pool.query(sqlText);
+  console.log(tradeList.rows[0]);
   // if there is at least one trade...
 
-    // take the first trade that needs to be flipped, 
+  // ...take the first trade that needs to be flipped, 
 
-      // flip the trade details
+  // ...flip the trade details
 
-      // send the new trade
+  // ...send the new trade
 
-      // store the new trade
+  // ...store the new trade
 
-      // mark the old trade as flipped
+  // ...mark the old trade as flipped
 
   // call the loop again
-
+  setTimeout(() => {
+    theLoop();
+  }, 2000);
 }
 
 // holds a list of trades that need to be sent. Any function can add to it by calling addToTradeQueue
@@ -36,7 +40,7 @@ const tradeQueue = {
 };
 
 // takes trades that need to be sent and adds them to the tradeQueue if they aren't already there
-async function addToTradeQueue (trade) {
+async function addToTradeQueue(trade) {
   let result;
   // check if the trade is new
   if (trade.isNew) {
@@ -76,7 +80,7 @@ async function addToTradeQueue (trade) {
 
 // function for flipping sides on a trade
 // Returns the tradeDetails object needed to send trade to CB
-function flipTrade (dbOrder) {
+function flipTrade(dbOrder) {
   // set up the object to be sent
   const tradeDetails = {
     side: '',
@@ -104,7 +108,7 @@ function flipTrade (dbOrder) {
 
 
 // function to pause for x milliseconds in any async function
-function sleep (milliseconds) {
+function sleep(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
@@ -192,6 +196,7 @@ const robot = {
   syncOrders: syncOrders,
   synching: false,
   maxHistory: 200,
+  theLoop: theLoop,
 }
 
 
