@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS "orders"
     price numeric(32,8),
     size numeric(32,8),
     side character varying COLLATE pg_catalog."default",
-    settled boolean,
+    settled boolean DEFAULT false,
     flipped boolean DEFAULT false,
     product_id character varying COLLATE pg_catalog."default",
     time_in_force character varying COLLATE pg_catalog."default",

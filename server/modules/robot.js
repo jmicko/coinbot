@@ -5,6 +5,28 @@ const socketClient = require("./socketClient");
 
 // let synching = false;
 
+// better just call this thing theLoop
+
+async function theLoop() {
+  // check all trades in db that are both settled and NOT flipped
+  sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false;`;
+
+  // if there is at least one trade...
+
+    // take the first trade that needs to be flipped, 
+
+      // flip the trade details
+
+      // send the new trade
+
+      // store the new trade
+
+      // mark the old trade as flipped
+
+  // call the loop again
+
+}
+
 // holds a list of trades that need to be sent. Any function can add to it by calling addToTradeQueue
 // recentHistory will hold 1000 trades, and can be used to double check if a trade is being added twice
 // current will be trades that still need to be sent, and will be shifted out when done
