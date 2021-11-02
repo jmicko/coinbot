@@ -11,8 +11,8 @@ async function theLoop() {
   sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false;`;
   // store the trades in an object
   const tradeList = await pool.query(sqlText);
-  console.log('here is the trade list', tradeList.rows);
-  console.log('here is the first trade in the list', tradeList.rows[0]);
+  // console.log('here is the trade list', tradeList.rows);
+  // console.log('here is the first trade in the list', tradeList.rows[0]);
   // if there is at least one trade...
   if (tradeList.rows[0]) {
     // ...take the first trade that needs to be flipped, 
@@ -47,7 +47,7 @@ async function theLoop() {
   // call the loop again
   setTimeout(() => {
     theLoop();
-  }, 1000);
+  }, 500);
 }
 
 // function for flipping sides on a trade
