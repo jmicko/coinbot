@@ -42,7 +42,6 @@ async function theLoop() {
       return;
     }
   }
-
   // call the loop again
   setTimeout(() => {
     theLoop();

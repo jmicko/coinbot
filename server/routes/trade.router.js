@@ -15,7 +15,6 @@ const { cbWebsocketConnection } = require('../modules/robot');
 router.post('/', rejectUnauthenticated, async (req, res) => {
   // POST route code here
   const order = req.body;
-  order.isNew = true;
   // tradeDetails const should take in values sent from trade component form
   const tradeDetails = {
     original_sell_price: order.original_sell_price,
@@ -27,15 +26,11 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
     stp: 'cn',
   };
 try {
-
-  console.log('here is the new order to be sent', order);
+  // send the new order with the trade details
   let pendingTrade = await authedClient.placeOrder(tradeDetails);
-  console.log('here is the pending trade and details from the trader', pendingTrade, tradeDetails);
-  
+  // store the new trade in the db. the trade details are also sent to store trade position prices
   let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
-  console.log(`order placed, given to db with reply:`, results.message);
-  
-  // console.log('result of adding new trade to queue', result);
+  // send OK status
   res.sendStatus(200);
 } catch (err) {
   if (err.response.statusCode === 400) {
@@ -43,6 +38,8 @@ try {
   } else {
     console.log('problem in sending trade post route', err);
   }
+  // send internal error status
+  res.sendStatus(500);
 }
 });
 
