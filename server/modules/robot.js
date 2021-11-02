@@ -122,7 +122,7 @@ const syncOrders = async () => {
       ]);
     };
   } catch (err) {
-    if (err.response.statusCode === 404) {
+    if (err.response?.statusCode === 404) {
       console.log('order not found', order);
       // check again to make sure after waiting a second in case things need to settle
       sleep(5000);
@@ -131,7 +131,11 @@ const syncOrders = async () => {
         console.log('here are the full settled order details that maybe need to be deleted', fullSettledDetails);
       } catch (err) {
         if (err.response.statusCode === 404) {
-          console.log('need to delete for sure');
+          if (order.will_cancel) {
+            console.log('need to delete for sure', order);
+          } else {
+            console.log('need to reorder', order);
+          }
           const queryText = `DELETE from "orders" WHERE "id"=$1;`;
           const response = await pool.query(queryText, [order.id]);
           // console.log('response from cancelling order and deleting from db', response.rowCount);
