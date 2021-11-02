@@ -40,12 +40,18 @@ async function theLoop() {
     } catch (err) {
       console.log('error in the loop', err);
       return;
+    } finally {
+      // call the loop again. Wait half second to avoid rate limiting
+      setTimeout(() => {
+        theLoop();
+      }, 500);
     }
+  } else {
+    // call the loop again right away since no connections have been used
+    setTimeout(() => {
+      theLoop();
+    }, 50);
   }
-  // call the loop again
-  setTimeout(() => {
-    theLoop();
-  }, 500);
 }
 
 // function for flipping sides on a trade
