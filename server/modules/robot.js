@@ -204,13 +204,11 @@ function orderElimination(dbOrders, cbOrders) {
   for (let i = 0; i < cbOrders.length; i++) {
     // look at each id of coinbase orders
     const cbOrderID = cbOrders[i].id;
-    // console.log(cbOrderID);
     // filter out dbOrders of that id
     dbOrders = dbOrders.filter(id => {
       return (id.id !== cbOrderID)
     })
   }
-  // console.log('======CHECK THESE:', dbOrders);
   // return a list of orders that are settled on cb, but have not yet been handled by the bot
   return dbOrders;
 }
