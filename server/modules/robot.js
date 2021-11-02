@@ -21,27 +21,26 @@ async function theLoop() {
     let tradeDetails = flipTrade(dbOrder);
     console.log('these are the new trade details', tradeDetails);
     // ...send the new trade
-    let cbOrder = await authedClient.placeOrder(tradeDetails);
-    console.log('this is the new trade', cbOrder);
-    // ...store the new trade
-    let results = await databaseClient.storeTrade(cbOrder, dbOrder);
-    console.log(`order placed, given to db with reply:`, results.message);
-    // ...mark the old trade as flipped
-    console.log();
-    const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
-    let updatedTrade = await pool.query(queryText, [
-      // cbOrder.done_at,
-      // cbOrder.fill_fees,
-      // cbOrder.filled_size,
-      // cbOrder.executed_value,
-      dbOrder.id
-    ]);
-    // console.log('updated trade, and id', updatedTrade, 'id:', dbOrder.id);
-    // tell the frontend that an update was made so the DOM can update
-    socketClient.emit('message', {
-      message: `an exchange was made`,
-      orderUpdate: true
-    });
+    try {
+      let cbOrder = await authedClient.placeOrder(tradeDetails);
+      console.log('this is the new trade', cbOrder);
+      // ...store the new trade
+      let results = await databaseClient.storeTrade(cbOrder, dbOrder);
+      console.log(`order placed, given to db with reply:`, results.message);
+      // ...mark the old trade as flipped
+      console.log();
+      const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
+      let updatedTrade = await pool.query(queryText, [dbOrder.id]);
+      // console.log('updated trade, and id', updatedTrade, 'id:', dbOrder.id);
+      // tell the frontend that an update was made so the DOM can update
+      socketClient.emit('message', {
+        message: `an exchange was made`,
+        orderUpdate: true
+      });
+    } catch (err) {
+      console.log('error in the loop', err);
+      return;
+    }
   }
 
   // call the loop again
