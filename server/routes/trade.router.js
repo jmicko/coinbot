@@ -66,21 +66,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       // error handling should delete them from db and not worry about coinbase since there is no other way to delete
       // but also send one last delete message to Coinbase just in case it finds it again, but with no error checking
       if (error.data.message === 'order not found') {
-        console.log('order not found in account. deleting from db', orderId);
-        const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-        pool.query(queryText, [orderId])
-          .then(() => {
-            console.log('exchange was tossed lmao');
-            socketClient.emit('message', {
-              message: `exchange was tossed out of the ol' databanks`,
-              orderUpdate: true
-            });
-            res.sendStatus(200)
-          })
-          .catch((error) => {
-            console.log('error in trade.router.js delete route', error);
-            res.sendStatus(500)
-          })
+        console.log('order not found in account', orderId);
       }
     } else {
       console.log('something failed', error);
