@@ -134,102 +134,68 @@ function sleep(milliseconds) {
 const syncOrders = async () => {
   // create one order to work with
   let order;
-  if (robot.busy < 10) {
-    let connections = 0;
-    robot.synching = true;
-    console.log('syncing all orders');
-    try {
-      // get lists of trade to compare which have been settled
-      const results = await Promise.all([
-        // get all open orders from db and cb
-        databaseClient.getUnsettledTrades('all'),
-        authedClient.getOrders({ status: 'open' })
+  try {
+    // get lists of trades to compare which have been settled
+    const results = await Promise.all([
+      // get all open orders from db and cb
+      databaseClient.getUnsettledTrades('all'),
+      authedClient.getOrders({ status: 'open' })
+    ]);
+    // store the lists of orders in the corresponding arrays so they can be compared
+    const dbOrders = results[0];
+    const cbOrders = results[1];
+    // compare the arrays and remove any where the ids match in both,
+    // leaving a list of orders that are open in the db, but not on cb. Probably settled
+    const ordersToCheck = await orderElimination(dbOrders, cbOrders);
+    // tell interface how many trades need to be synched
+    socketClient.emit('message', {
+      error: `there were ${ordersToCheck.length} orders that need to be synced`,
+      message: `Synching all orders`,
+    });
+    if (ordersToCheck[0]) {
+      order = ordersToCheck[0]
+      console.log('need to flip this trade', order);
+      // get all the order details from cb
+      let fullSettledDetails = await authedClient.getOrder(order.id);
+      // console.log('here are the full settled order details', fullSettledDetails);
+      // update the order in the db
+      const queryText = `UPDATE "orders" SET "settled" = true, "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
+      let result = await pool.query(queryText, [
+        fullSettledDetails.done_at,
+        fullSettledDetails.fill_fees,
+        fullSettledDetails.filled_size,
+        fullSettledDetails.executed_value,
+        order.id
       ]);
-      // store the lists of orders in the corresponding arrays so they can be compared
-      const dbOrders = results[0];
-      const cbOrders = results[1];
-      // compare the arrays and remove any where the ids match in both,
-      // leaving a list of orders that are open in the db, but not on cb. Probably settled
-      const ordersToCheck = await orderElimination(dbOrders, cbOrders);
-
-
-      // change maxHistory limit to account for possibility of dumping a large number of orders 
-      // into the tradeQueue when syncing
-      robot.maxHistory += ordersToCheck.length;
-      socketClient.emit('message', {
-        error: `there were ${ordersToCheck.length} orders that need to be synced`,
-        message: `Synching all orders`,
-      });
-      // console.log(ordersToCheck);
-      console.log('maxHistory length is now:', robot.maxHistory);
-      // ordersToCheck.forEach(async order => {
-      if (ordersToCheck[0]) {
-
-        order = ordersToCheck[0]
-
-        console.log(order);
-        // add the order to the tradeQueue
-        // addToTradeQueue(order);
-
-        console.log('=======here is the order that was being added to the tradequeue but should be marked as settled instead', order);
-
-
-
-        // Actually changing this to mark them as settled in the db
-
+    };
+  } catch (err) {
+    if (err.response.statusCode === 404) {
+      console.log('order not found', order);
+      // check again to make sure after waiting a second in case things need to settle
+      sleep(1000);
+      try {
         let fullSettledDetails = await authedClient.getOrder(order.id);
-
-        console.log('here are the full settled order details', fullSettledDetails);
-
-        const queryText = `UPDATE "orders" SET "settled" = true, "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
-        let result = await pool.query(queryText, [
-          fullSettledDetails.done_at,
-          fullSettledDetails.fill_fees,
-          fullSettledDetails.filled_size,
-          fullSettledDetails.executed_value,
-          order.id
-        ]);
-        console.log('++++++++result of updating order from cbWebsocket', result);
-
-
-
-      };
-    } catch (err) {
-      if (err.response.statusCode === 404) {
-        console.log('order not found', order);
-        // check again to make sure after waiting a second in case things need to settle
-        sleep(1000);
-        try {
-
-          let fullSettledDetails = await authedClient.getOrder(order.id);
-          console.log('here are the full settled order details that maybe need to be deleted', fullSettledDetails);
-        } catch (err) {
-          if (err.response.statusCode === 404) {
-            console.log('need to delete for sure');
-            const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-            const response = await pool.query(queryText, [order.id]);
-            console.log('response from cancelling order and deleting from db', response.rowCount);
-            socketClient.emit('message', {
-              message: `exchange was tossed out of the ol' databanks`,
-              orderUpdate: true
-            });
-          }
+        console.log('here are the full settled order details that maybe need to be deleted', fullSettledDetails);
+      } catch (err) {
+        if (err.response.statusCode === 404) {
+          console.log('need to delete for sure');
+          const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+          const response = await pool.query(queryText, [order.id]);
+          // console.log('response from cancelling order and deleting from db', response.rowCount);
+          socketClient.emit('message', {
+            message: `exchange was tossed out of the ol' databanks`,
+            orderUpdate: true
+          });
         }
-
-      } else {
-        console.log('error from robot.syncOrders', err);
       }
-    } finally {
-      // when everything is done, take tally of api connections, and set them to expire after one second
-      setTimeout(() => {
-        robot.busy -= connections;
-        // console.log('connections used after clearing this trader:', robot.busy);
-      }, 1000);
+    } else {
+      console.log('error from robot.syncOrders', err);
     }
-  } else {
+  } finally {
+    // when everything is done, call the sync again
     setTimeout(() => {
       syncOrders();
-    }, 100);
+    }, 1000);
   }
 }
 
