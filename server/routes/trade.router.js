@@ -18,7 +18,6 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
   order.isNew = true;
   // tradeDetails const should take in values sent from trade component form
   const tradeDetails = {
-    isNew: true,
     original_sell_price: order.original_sell_price,
     original_buy_price: order.price,
     side: order.side,
@@ -27,16 +26,24 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
     product_id: order.product_id,
     stp: 'cn',
   };
+try {
 
   console.log('here is the new order to be sent', order);
   let pendingTrade = await authedClient.placeOrder(tradeDetails);
-  console.log('here is the pending trade from the trader', pendingTrade);
-
+  console.log('here is the pending trade and details from the trader', pendingTrade, tradeDetails);
+  
   let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
   console.log(`order placed, given to db with reply:`, results.message);
-
+  
   // console.log('result of adding new trade to queue', result);
   res.sendStatus(200);
+} catch (err) {
+  if (err.response.statusCode === 400) {
+    console.log('Insufficient funds!');
+  } else {
+    console.log('problem in sending trade post route', err);
+  }
+}
 });
 
 
@@ -46,71 +53,6 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
 router.delete('/', rejectUnauthenticated, async (req, res) => {
   // DELETE route code here
   const orderId = req.body.id;
-  if (robot.cbWebsocketConnection) {
-    console.log('there is a ws connection to cb', robot.cbWebsocketConnection, 'orderId:', orderId);
-    try {
-
-      await authedClient.cancelOrder(orderId)
-      // .then(() => {
-      res.sendStatus(200);
-      console.log('cb ws will handle the cancellation');
-      // })
-    } catch (err) {
-      if (err.data?.message === 'order not found') {
-        // GET order from cb and check if settled.
-        try {
-          console.log('order was not found when deleted, checking if exists');
-          cbOrder = await authedClient.getOrder(orderId);
-          console.log(cbOrder);
-          // if order is settled, send it to the trader
-          if (cbOrder?.settled) {
-            // get all the details from the db
-            const dbOrder = await databaseClient.getSingleTrade(orderId);
-            console.log('this is the order you tried to delete but is settled:', dbOrder);
-            console.log('DELETE route is sending this trade to the queue', {
-              'id': cbOrder.id,
-              'size': cbOrder.size,
-              'price': cbOrder.price,
-              'settled': cbOrder.settled
-            });
-            // send it to the tradeQueue
-            await robot.addToTradeQueue(dbOrder);
-            socketClient.emit('message', {
-              error: `order was settled, cannot cancel, flipping instead. ${JSON.stringify(dbOrder)}`,
-              message: `order was canceled on Coinbase`,
-              orderUpdate: true
-            });
-            res.sendStatus(200);
-          }
-        } catch (err) {
-          if (err?.response?.statusCode === 404) {
-            console.log('order not found in account. deleting from db', orderId);
-            const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-            pool.query(queryText, [orderId])
-              .then(() => {
-                console.log('exchange was tossed lmao');
-                socketClient.emit('message', {
-                  message: `exchange was tossed out of the ol' databanks`,
-                  orderUpdate: true
-                });
-                res.sendStatus(200)
-              })
-              .catch((err) => {
-                console.log('error in trade.router.js delete route', err);
-                res.sendStatus(500)
-              })
-          } else {
-            console.log(err);
-          }
-        }
-      } else {
-        console.log('error in the delete route when cb ws is connected:', err);
-      }
-    } finally {
-      return;
-    }
-  } else {
-
     console.log('in the server trade DELETE route', req.body.id)
     authedClient.cancelOrder(orderId)
       .then(data => {
@@ -154,7 +96,6 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
           res.sendStatus(500)
         }
       });
-  }
 });
 
 

@@ -50,53 +50,6 @@ async function theLoop() {
   }, 1000);
 }
 
-// holds a list of trades that need to be sent. Any function can add to it by calling addToTradeQueue
-// recentHistory will hold 1000 trades, and can be used to double check if a trade is being added twice
-// current will be trades that still need to be sent, and will be shifted out when done
-const tradeQueue = {
-  recentHistory: [],
-  current: []
-};
-
-// takes trades that need to be sent and adds them to the tradeQueue if they aren't already there
-async function addToTradeQueue(trade) {
-  let result;
-  // check if the trade is new
-  if (trade.isNew) {
-    // if it is new, it comes from the ui. push it into tradeQueue, but not 
-    // current because it does not have an id, and there is no risk of duplication 
-    tradeQueue.current.push(trade);
-    result = true;
-    // console.log(tradeQueue);
-  } else {
-    // if it is not new, it will have an id. See if that id is already in the tradeQueue.recentHistory
-    const duplicate = tradeQueue.recentHistory.filter(queuedTrade => {
-      // console.log(queuedTrade.id);
-      // console.log(trade.id);
-      return queuedTrade.id == trade.id;
-    });
-    console.log('is it a duplicate?', duplicate.length);
-    // if it is not in the tradeQueue.recentHistory, push it in. otherwise ignore it
-    if (duplicate.length <= 0) {
-      tradeQueue.recentHistory.push(trade);
-      tradeQueue.current.push(trade);
-      // console.log('the queue looks like this now. history length:',
-      //   tradeQueue.recentHistory.length, 'current:', tradeQueue.current);
-    } else {
-      console.log('IT IS A DUPLICATE!!!!!!!!!!', trade.id);
-    }
-  }
-  // finally, check how long the recentHistory is. If it is more than maxHistory, shift the oldest item out
-  // console.log('((((((there are this many items in history', tradeQueue.recentHistory.length);
-  if (tradeQueue.recentHistory.length > robot.maxHistory) {
-    tradeQueue.recentHistory.shift();
-  }
-  if (result) {
-    return result;
-  }
-}
-
-
 // function for flipping sides on a trade
 // Returns the tradeDetails object needed to send trade to CB
 function flipTrade(dbOrder) {
@@ -172,7 +125,7 @@ const syncOrders = async () => {
     if (err.response.statusCode === 404) {
       console.log('order not found', order);
       // check again to make sure after waiting a second in case things need to settle
-      sleep(1000);
+      sleep(5000);
       try {
         let fullSettledDetails = await authedClient.getOrder(order.id);
         console.log('here are the full settled order details that maybe need to be deleted', fullSettledDetails);
@@ -224,8 +177,6 @@ const robot = {
   busy: 0,
   sleep: sleep,
   flipTrade: flipTrade,
-  tradeQueue: tradeQueue,
-  addToTradeQueue: addToTradeQueue,
   syncOrders: syncOrders,
   synching: false,
   maxHistory: 200,
