@@ -11,27 +11,20 @@ async function theLoop() {
   sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false;`;
   // store the trades in an object
   const tradeList = await pool.query(sqlText);
-  // console.log('here is the trade list', tradeList.rows);
-  // console.log('here is the first trade in the list', tradeList.rows[0]);
   // if there is at least one trade...
   if (tradeList.rows[0]) {
     // ...take the first trade that needs to be flipped, 
     let dbOrder = tradeList.rows[0];
     // ...flip the trade details
     let tradeDetails = flipTrade(dbOrder);
-    console.log('these are the new trade details', tradeDetails);
     // ...send the new trade
     try {
       let cbOrder = await authedClient.placeOrder(tradeDetails);
-      console.log('this is the new trade', cbOrder);
       // ...store the new trade
       let results = await databaseClient.storeTrade(cbOrder, dbOrder);
-      console.log(`order placed, given to db with reply:`, results.message);
       // ...mark the old trade as flipped
-      console.log();
       const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
       let updatedTrade = await pool.query(queryText, [dbOrder.id]);
-      // console.log('updated trade, and id', updatedTrade, 'id:', dbOrder.id);
       // tell the frontend that an update was made so the DOM can update
       socketClient.emit('message', {
         message: `an exchange was made`,
