@@ -132,17 +132,58 @@ const syncOrders = async () => {
       } catch (err) {
         if (err.response.statusCode === 404) {
           if (order.will_cancel) {
+            // if the order was supposed to be canceled
             console.log('need to delete for sure', order);
+            // delete the trade from the db
+            const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+            const response = await pool.query(queryText, [order.id]);
+            // console.log('response from cancelling order and deleting from db', response.rowCount);
+            socketClient.emit('message', {
+              message: `exchange was tossed out of the ol' databanks`,
+              orderUpdate: true
+            });
+
           } else {
+            // if the order was not supposed to be canceled
             console.log('need to reorder', order);
+
+            // same code from trade post route
+            const tradeDetails = {
+              original_sell_price: order.original_sell_price,
+              original_buy_price: order.original_buy_price,
+              side: order.side,
+              price: order.price, // USD
+              size: order.size, // BTC
+              product_id: order.product_id,
+              stp: 'cn',
+            };
+            try {
+              // send the new order with the trade details
+              let pendingTrade = await authedClient.placeOrder(tradeDetails);
+              // store the new trade in the db. the trade details are also sent to store trade position prices
+              let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
+
+              // delete the old order from the db
+              const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+              const response = await pool.query(queryText, [order.id]);
+              // console.log('response from cancelling order and deleting from db', response.rowCount);
+              socketClient.emit('message', {
+                message: `trade was reordered`,
+                orderUpdate: true
+              });
+
+            } catch (err) {
+              if (err.response.statusCode === 400) {
+                console.log('Insufficient funds!');
+              } else {
+                console.log('problem in the loop reordering trade', err);
+              }
+              // send internal error status
+              res.sendStatus(500);
+            }
+
+
           }
-          const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-          const response = await pool.query(queryText, [order.id]);
-          // console.log('response from cancelling order and deleting from db', response.rowCount);
-          socketClient.emit('message', {
-            message: `exchange was tossed out of the ol' databanks`,
-            orderUpdate: true
-          });
         }
       }
     } else {
