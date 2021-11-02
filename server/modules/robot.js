@@ -32,6 +32,9 @@ async function theLoop() {
       });
     } catch (err) {
       console.log('error in the loop', err);
+      if (error.code && error.code === 'ETIMEDOUT') {
+        console.log('Timed out!!!!!');
+      }
       return;
     } finally {
       // call the loop again. Wait half second to avoid rate limiting
@@ -104,7 +107,7 @@ const syncOrders = async () => {
     });
     if (ordersToCheck[0]) {
       order = ordersToCheck[0]
-      console.log('need to flip this trade', order);
+      console.log('need to flip this trade', order.price);
       // get all the order details from cb
       let fullSettledDetails = await authedClient.getOrder(order.id);
       // console.log('here are the full settled order details', fullSettledDetails);
