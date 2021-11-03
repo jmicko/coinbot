@@ -24,6 +24,7 @@ function Settings(props) {
     return (
       <div className="Settings">
         {/* <>{JSON.stringify(props)}</> */}
+        <button className="btn-logout btn-blue" onClick={() => {props.clickSettings()}}>X</button>
         <h2 className="settings-header">Settings</h2>
         <h4>Connection Method</h4>
         <p>

@@ -26,7 +26,7 @@ function Home(props) {
       <TradeList />
       <Updates />
       <Status />
-      <Settings showSettings={showSettings} />
+      <Settings showSettings={showSettings} clickSettings={clickSettings} />
     </div>
   );
 }
