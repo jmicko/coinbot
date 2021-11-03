@@ -37,8 +37,12 @@ async function theLoop() {
         console.log('synched orders just in case');
       } else if (err.response.statusCode === 400) {
         console.log('Insufficient funds! from the loop');
-        await authedClient.cancelAllOrders();
-        console.log('synched orders just in case');
+        // need to cancel all orders then check funds to make sure there is enough for 
+        // all of them to be replaced, and balance if needed
+
+        
+        // await authedClient.cancelAllOrders();
+        // console.log('synched orders just in case');
       } else {
         console.log('error in the loop', err);
       }
