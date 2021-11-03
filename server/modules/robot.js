@@ -186,6 +186,10 @@ const syncOrders = async () => {
           }
         }
       }
+    } else if (err.code && err.code === 'ESOCKETTIMEDOUT') {
+      console.log('Timed out!!!!!');
+      await authedClient.cancelAllOrders();
+      console.log('synched orders just in case');
     } else {
       console.log('error from robot.syncOrders', err);
     }
