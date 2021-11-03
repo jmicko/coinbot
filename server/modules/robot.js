@@ -118,9 +118,20 @@ const syncOrders = async () => {
     if (ordersToCancel[0]) {
       console.log('these are the extra orders that should be canceled', ordersToCancel);
       // if there are orders, delete them from cb
-      ordersToCancel.forEach(order => {
-        authedClient.cancelOrder(order.id)
+      ordersToCancel.forEach(async order => {
+        // need to wait and double check db before deleting because they take time to store and show up on cb first
+        await sleep(1000);
+        // check if order is in db
+        let doubleCheck = await databaseClient.getSingleTrade(order.id);
+        console.log('checked again for the order in the db', doubleCheck);
+        try {
+          authedClient.cancelOrder(order.id)
+        } catch (err) {
+          console.log('error deleting extra order', err);
+        }
       });
+      // wait for a second to allow cancels to go through so bot doesn't cancel twice
+      await sleep(1000);
     }
 
     // tell interface how many trades need to be synched
