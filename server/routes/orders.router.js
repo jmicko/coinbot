@@ -5,6 +5,7 @@ const { rejectUnauthenticated, } = require('../modules/authentication-middleware
 const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient');
 const robot = require('../modules/robot');
+const socketClient = require("../modules/socketClient");
 
 
 /**
@@ -51,8 +52,13 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
   // set all orders to will_cancel so the loop will just cancel them.
   const queryText = `DELETE from "orders" WHERE "settled" = false;`;
   let result = await pool.query(queryText);
-  // await authedClient.cancelAllOrders();
+  await authedClient.cancelAllOrders();
   console.log('+++++++ EVERYTHING WAS DELETED +++++++');
+  // tell front end to update
+  socketClient.emit('message', {
+    message: `an exchange was made`,
+    orderUpdate: true
+  });
   res.sendStatus(200)
 });
 
