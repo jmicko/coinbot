@@ -27,9 +27,22 @@ function* syncOrders() {
   }
 }
 
+function* deleteAllOrders() {
+  try {
+    const response = yield axios.delete(`/api/orders/`);
+    console.log('delete all orders response is.....', response);
+  } catch (error) {
+    console.log('DELETE all orders route has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 function* orderSaga() {
   yield takeLatest('FETCH_ORDERS', fetchOrders);
   yield takeLatest('SYNC_ORDERS', syncOrders);
+  yield takeLatest('DELETE_ALL_ORDERS', deleteAllOrders);
 }
 
 export default orderSaga;
