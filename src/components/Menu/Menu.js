@@ -8,7 +8,6 @@ function Menu(props) {
   return (
     <div className="Menu">
     <button className="btn-logout btn-blue" onClick={() => {props.clickSettings()}}>Settings</button>
-    <button className="btn-logout btn-blue" onClick={() => dispatch({ type: 'SYNC_ORDERS' })}>Sync All Trades</button>
     <button className="btn-logout btn-blue" onClick={() => dispatch({ type: 'LOGOUT' })}>Log Out</button>
     </div>
   )

@@ -37,7 +37,12 @@ function Settings(props) {
         <h4>Delete All Trades</h4>
         <p>Danger! This button will delete all your positions! Press it carefully!</p>
         <button className="btn-blue" onClick={() => { deleteAllOrders() }}>Delete All</button>
-        <p>Some settings or whatever</p>
+        <h4>Synchronize All Trades</h4>
+        <p>
+          This will delete all open orders from coinbase and replace them based on the trades stored in the
+          database. It can sometimes fix issues that cause repeated errors, and may take a few minutes to complete
+        </p>
+        <button className="btn-logout btn-blue" onClick={() => dispatch({ type: 'SYNC_ORDERS' })}>Sync All Trades</button>
         <p>Some settings or whatever</p>
         <p>Some settings or whatever</p>
         <p>Some settings or whatever</p>
