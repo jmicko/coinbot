@@ -36,10 +36,24 @@ router.get('/', rejectUnauthenticated, (req, res) => {
 * UPDATE route - synchronize all orders with cb
 */
 router.put('/', rejectUnauthenticated, async (req, res) => {
-      console.log('in orders synchronize route');
-      await authedClient.cancelAllOrders();
-      console.log('+++++++synchronization complete+++++++');
-      res.sendStatus(200)
+  console.log('in orders synchronize route');
+  await authedClient.cancelAllOrders();
+  console.log('+++++++ synchronization complete +++++++');
+  res.sendStatus(200)
+});
+
+
+/**
+* DELETE route - Mark all orders as will_cancel
+*/
+router.delete('/', rejectUnauthenticated, async (req, res) => {
+  console.log('in delete all orders route');
+  // set all orders to will_cancel so the loop will just cancel them.
+  const queryText = `DELETE from "orders" WHERE "settled" = false;`;
+  let result = await pool.query(queryText);
+  // await authedClient.cancelAllOrders();
+  console.log('+++++++ EVERYTHING WAS DELETED +++++++');
+  res.sendStatus(200)
 });
 
 
