@@ -42,7 +42,7 @@ async function theLoop() {
       // call the loop again. Wait half second to avoid rate limiting
       setTimeout(() => {
         theLoop();
-      }, 500);
+      }, 300);
     }
   } else {
     // call the loop again right away since no connections have been used
@@ -86,6 +86,7 @@ function sleep(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
+// REST protocol to find orders that have settled on coinbase
 const syncOrders = async () => {
   // create one order to work with
   let order;
@@ -197,7 +198,7 @@ const syncOrders = async () => {
     // when everything is done, call the sync again
     setTimeout(() => {
       syncOrders();
-    }, 1000);
+    }, 300);
   }
 }
 
