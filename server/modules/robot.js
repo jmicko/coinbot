@@ -136,7 +136,7 @@ const syncOrders = async () => {
     if (err.response?.statusCode === 404) {
       console.log('order not found', order.id);
       // check again to make sure after waiting a second in case things need to settle
-      sleep(5000);
+      await sleep(5000);
       try {
         let fullSettledDetails = await authedClient.getOrder(order.id);
         console.log('here are the full settled order details that maybe need to be deleted', fullSettledDetails);
