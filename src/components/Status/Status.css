@@ -1,7 +1,13 @@
 .Status {
-    grid-column: 4;
-    grid-row: 3;
+    grid-column     : 1/6;
+    grid-row        : 1;
     /* display: block; */
+}
+
+.status-ticker {
+    width: fit-content;
+    /* background-color: aqua; */
+    float: left;
 }
 
 @media (max-width: 800px) {
