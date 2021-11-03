@@ -31,7 +31,7 @@ cbWebsocket.on('message', data => {
   // console.log(data.type);
   // if (data.type === 'l2update') {
   // console.log(data.type);
-  handleUpdate(data)
+  // handleUpdate(data)
   // }
 });
 
@@ -143,8 +143,8 @@ async function handleCanceled(canceledOrder, repeats) {
 async function handleFilled(cbOrder, repeats) {
   const dbOrder = await databaseClient.getSingleTrade(cbOrder.order_id);
   if (dbOrder?.id) {
-    // const dbOrder = dbOrder[0];
-    robot.addToTradeQueue(dbOrder);
+    // mark trade as settled in db
+    settleInDB(dbOrder, cbOrder);
   } else {
     // when an order is first placed, it takes time to store in db and may return nothing
     // if that is the case, call this function again
@@ -158,6 +158,21 @@ async function handleFilled(cbOrder, repeats) {
       handleFilled(cbOrder, repeats);
     }
   }
+}
+
+async function settleInDB(dbOrder, cbOrder) {
+  let fullSettledDetails = await authedClient.getOrder(cbOrder.order_id);
+  console.log('here are the full settled order details', fullSettledDetails);
+  console.log('this order will be marked as settled in db', dbOrder, cbOrder);
+  const queryText = `UPDATE "orders" SET "settled" = true, "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
+      let result = await pool.query(queryText, [
+        fullSettledDetails.done_at,
+        fullSettledDetails.fill_fees,
+        fullSettledDetails.filled_size,
+        fullSettledDetails.executed_value,
+        cbOrder.order_id
+      ]);
+      console.log('result of updating order from cbWebsocket', result);
 }
 
 module.exports = {

@@ -5,56 +5,54 @@ const socketClient = require("./socketClient");
 
 // let synching = false;
 
-// holds a list of trades that need to be sent. Any function can add to it by calling addToTradeQueue
-// recentHistory will hold 1000 trades, and can be used to double check if a trade is being added twice
-// current will be trades that still need to be sent, and will be shifted out when done
-const tradeQueue = {
-  recentHistory: [],
-  current: []
-};
-
-// takes trades that need to be sent and adds them to the tradeQueue if they aren't already there
-async function addToTradeQueue (trade) {
-  let result;
-  // check if the trade is new
-  if (trade.isNew) {
-    // if it is new, it comes from the ui. push it into tradeQueue, but not 
-    // current because it does not have an id, and there is no risk of duplication 
-    tradeQueue.current.push(trade);
-    result = true;
-    // console.log(tradeQueue);
-  } else {
-    // if it is not new, it will have an id. See if that id is already in the tradeQueue.recentHistory
-    const duplicate = tradeQueue.recentHistory.filter(queuedTrade => {
-      // console.log(queuedTrade.id);
-      // console.log(trade.id);
-      return queuedTrade.id == trade.id;
-    });
-    console.log('is it a duplicate?', duplicate.length);
-    // if it is not in the tradeQueue.recentHistory, push it in. otherwise ignore it
-    if (duplicate.length <= 0) {
-      tradeQueue.recentHistory.push(trade);
-      tradeQueue.current.push(trade);
-      // console.log('the queue looks like this now. history length:',
-      //   tradeQueue.recentHistory.length, 'current:', tradeQueue.current);
-    } else {
-      console.log('IT IS A DUPLICATE!!!!!!!!!!', trade.id);
+// better just call this thing theLoop
+async function theLoop() {
+  // check all trades in db that are both settled and NOT flipped
+  sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false;`;
+  // store the trades in an object
+  const tradeList = await pool.query(sqlText);
+  // if there is at least one trade...
+  if (tradeList.rows[0]) {
+    // ...take the first trade that needs to be flipped, 
+    let dbOrder = tradeList.rows[0];
+    // ...flip the trade details
+    let tradeDetails = flipTrade(dbOrder);
+    // ...send the new trade
+    try {
+      let cbOrder = await authedClient.placeOrder(tradeDetails);
+      // ...store the new trade
+      let results = await databaseClient.storeTrade(cbOrder, dbOrder);
+      // ...mark the old trade as flipped
+      const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
+      let updatedTrade = await pool.query(queryText, [dbOrder.id]);
+      // tell the frontend that an update was made so the DOM can update
+      socketClient.emit('message', {
+        message: `an exchange was made`,
+        orderUpdate: true
+      });
+    } catch (err) {
+      console.log('error in the loop', err);
+      if (error.code && error.code === 'ETIMEDOUT') {
+        console.log('Timed out!!!!!');
+      }
+      return;
+    } finally {
+      // call the loop again. Wait half second to avoid rate limiting
+      setTimeout(() => {
+        theLoop();
+      }, 500);
     }
-  }
-  // finally, check how long the recentHistory is. If it is more than maxHistory, shift the oldest item out
-  // console.log('((((((there are this many items in history', tradeQueue.recentHistory.length);
-  if (tradeQueue.recentHistory.length > robot.maxHistory) {
-    tradeQueue.recentHistory.shift();
-  }
-  if (result) {
-    return result;
+  } else {
+    // call the loop again right away since no connections have been used
+    setTimeout(() => {
+      theLoop();
+    }, 50);
   }
 }
 
-
 // function for flipping sides on a trade
 // Returns the tradeDetails object needed to send trade to CB
-function flipTrade (dbOrder) {
+function flipTrade(dbOrder) {
   // set up the object to be sent
   const tradeDetails = {
     side: '',
@@ -82,54 +80,120 @@ function flipTrade (dbOrder) {
 
 
 // function to pause for x milliseconds in any async function
-function sleep (milliseconds) {
+function sleep(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
 const syncOrders = async () => {
-  if (robot.busy < 10) {
-    let connections = 0;
-    robot.synching = true;
-    console.log('syncing all orders');
-    try {
-      // get lists of trade to compare which have been settled
-      const results = await Promise.all([
-        // get all open orders from db
-        databaseClient.getUnsettledTrades('all'),
-        authedClient.getOrders({ status: 'open' })
+  // create one order to work with
+  let order;
+  try {
+    // get lists of trades to compare which have been settled
+    const results = await Promise.all([
+      // get all open orders from db and cb
+      databaseClient.getUnsettledTrades('all'),
+      authedClient.getOrders({ status: 'open' })
+    ]);
+    // store the lists of orders in the corresponding arrays so they can be compared
+    const dbOrders = results[0];
+    const cbOrders = results[1];
+    // compare the arrays and remove any where the ids match in both,
+    // leaving a list of orders that are open in the db, but not on cb. Probably settled
+    const ordersToCheck = await orderElimination(dbOrders, cbOrders);
+    // tell interface how many trades need to be synched
+    socketClient.emit('message', {
+      error: `there were ${ordersToCheck.length} orders that need to be synced`,
+      message: `Synching all orders`,
+    });
+    if (ordersToCheck[0]) {
+      order = ordersToCheck[0]
+      console.log('need to flip this trade', order.price);
+      // get all the order details from cb
+      let fullSettledDetails = await authedClient.getOrder(order.id);
+      // console.log('here are the full settled order details', fullSettledDetails);
+      // update the order in the db
+      const queryText = `UPDATE "orders" SET "settled" = true, "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
+      let result = await pool.query(queryText, [
+        fullSettledDetails.done_at,
+        fullSettledDetails.fill_fees,
+        fullSettledDetails.filled_size,
+        fullSettledDetails.executed_value,
+        order.id
       ]);
-      // store the lists of orders in the corresponding arrays so they can be compared
-      const dbOrders = results[0];
-      const cbOrders = results[1];
-      // compare the arrays and remove any where the ids match in both
-      const ordersToCheck = await orderElimination(dbOrders, cbOrders);
-      // change maxHistory limit to account for possibility of dumping a large number of orders 
-      // into the tradeQueue when syncing
-      robot.maxHistory += ordersToCheck.length;
-      socketClient.emit('message', {
-        error: `there were ${ordersToCheck.length} orders that need to be synced`,
-        message: `Synching all orders`,
-      });
-      // console.log(ordersToCheck);
-      console.log('maxHistory length is now:', robot.maxHistory);
-      ordersToCheck.forEach(order => {
-        // console.log(order);
-        // add the order to the tradeQueue
-        addToTradeQueue(order);
-      });
-    } catch (err) {
+    };
+  } catch (err) {
+    if (err.response?.statusCode === 404) {
+      console.log('order not found', order);
+      // check again to make sure after waiting a second in case things need to settle
+      sleep(5000);
+      try {
+        let fullSettledDetails = await authedClient.getOrder(order.id);
+        console.log('here are the full settled order details that maybe need to be deleted', fullSettledDetails);
+      } catch (err) {
+        if (err.response.statusCode === 404) {
+          if (order.will_cancel) {
+            // if the order was supposed to be canceled
+            console.log('need to delete for sure', order);
+            // delete the trade from the db
+            const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+            const response = await pool.query(queryText, [order.id]);
+            // console.log('response from cancelling order and deleting from db', response.rowCount);
+            socketClient.emit('message', {
+              message: `exchange was tossed out of the ol' databanks`,
+              orderUpdate: true
+            });
+
+          } else {
+            // if the order was not supposed to be canceled
+            console.log('need to reorder', order);
+
+            // same code from trade post route
+            const tradeDetails = {
+              original_sell_price: order.original_sell_price,
+              original_buy_price: order.original_buy_price,
+              side: order.side,
+              price: order.price, // USD
+              size: order.size, // BTC
+              product_id: order.product_id,
+              stp: 'cn',
+            };
+            try {
+              // send the new order with the trade details
+              let pendingTrade = await authedClient.placeOrder(tradeDetails);
+              // store the new trade in the db. the trade details are also sent to store trade position prices
+              let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
+
+              // delete the old order from the db
+              const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+              const response = await pool.query(queryText, [order.id]);
+              // console.log('response from cancelling order and deleting from db', response.rowCount);
+              socketClient.emit('message', {
+                message: `trade was reordered`,
+                orderUpdate: true
+              });
+
+            } catch (err) {
+              if (err.response.statusCode === 400) {
+                console.log('Insufficient funds!');
+              } else {
+                console.log('problem in the loop reordering trade', err);
+              }
+              // send internal error status
+              res.sendStatus(500);
+            }
+
+
+          }
+        }
+      }
+    } else {
       console.log('error from robot.syncOrders', err);
-    } finally {
-      // when everything is done, take tally of api connections, and set them to expire after one second
-      setTimeout(() => {
-        robot.busy -= connections;
-        // console.log('connections used after clearing this trader:', robot.busy);
-      }, 1000);
     }
-  } else {
+  } finally {
+    // when everything is done, call the sync again
     setTimeout(() => {
       syncOrders();
-    }, 100);
+    }, 1000);
   }
 }
 
@@ -138,13 +202,11 @@ function orderElimination(dbOrders, cbOrders) {
   for (let i = 0; i < cbOrders.length; i++) {
     // look at each id of coinbase orders
     const cbOrderID = cbOrders[i].id;
-    // console.log(cbOrderID);
     // filter out dbOrders of that id
     dbOrders = dbOrders.filter(id => {
       return (id.id !== cbOrderID)
     })
   }
-  // console.log('======CHECK THESE:', dbOrders);
   // return a list of orders that are settled on cb, but have not yet been handled by the bot
   return dbOrders;
 }
@@ -160,11 +222,10 @@ const robot = {
   busy: 0,
   sleep: sleep,
   flipTrade: flipTrade,
-  tradeQueue: tradeQueue,
-  addToTradeQueue: addToTradeQueue,
   syncOrders: syncOrders,
   synching: false,
   maxHistory: 200,
+  theLoop: theLoop,
 }
 
 

@@ -19,19 +19,11 @@ const accountRouter = require('./routes/account.router');
 const ordersRouter = require('./routes/orders.router');
 const databaseClient = require('./modules/databaseClient');
 
-const trader = require('./modules/trader');
 const socketClient = require('./modules/socketClient');
 const robot = require('./modules/robot');
 
-// start the trader
-trader();
-// sync all trades on start, then set to sync every 5 minutes
-// robot.syncOrders();
-setInterval(() => {
-  socketClient.emit('message', { message: 'Scheduled sync started' });
-  robot.syncOrders();
-}, 300000);
-
+// Start the syncOrders loop
+robot.syncOrders();
 
 // Body parser middleware
 app.use(express.json());
@@ -103,7 +95,8 @@ io.engine.on("connection_error", (err) => {
 });
 /* end socket.io */
 
-
+// start the loop
+robot.theLoop();
 
 
 // Serve static files

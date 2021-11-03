@@ -2,14 +2,15 @@
 -- DROP TABLE "user";
 -- DROP TABLE "session";
 
-
 CREATE TABLE IF NOT EXISTS "orders"
 (
     id character varying COLLATE pg_catalog."default" NOT NULL,
     price numeric(32,8),
     size numeric(32,8),
     side character varying COLLATE pg_catalog."default",
-    settled boolean,
+    settled boolean DEFAULT false,
+    flipped boolean DEFAULT false,
+    will_cancel boolean DEFAULT false,
     product_id character varying COLLATE pg_catalog."default",
     time_in_force character varying COLLATE pg_catalog."default",
     created_at character varying COLLATE pg_catalog."default",
