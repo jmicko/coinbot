@@ -32,7 +32,11 @@ async function theLoop() {
       });
     } catch (err) {
       if (err.code && err.code === 'ETIMEDOUT') {
-        console.log('Timed out!!!!!');
+        console.log('Timed out!!!!! from the loop');
+        await authedClient.cancelAllOrders();
+        console.log('synched orders just in case');
+      } else if (err.response.statusCode === 400) {
+        console.log('Insufficient funds! from the loop');
         await authedClient.cancelAllOrders();
         console.log('synched orders just in case');
       } else {
