@@ -180,8 +180,6 @@ const syncOrders = async () => {
               } else {
                 console.log('problem in the loop reordering trade', err);
               }
-              // send internal error status
-              res.sendStatus(500);
             }
 
 
