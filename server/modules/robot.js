@@ -123,7 +123,7 @@ const syncOrders = async () => {
     };
   } catch (err) {
     if (err.response?.statusCode === 404) {
-      console.log('order not found', order);
+      console.log('order not found', order.id);
       // check again to make sure after waiting a second in case things need to settle
       sleep(5000);
       try {
@@ -145,7 +145,7 @@ const syncOrders = async () => {
 
           } else {
             // if the order was not supposed to be canceled
-            console.log('need to reorder', order);
+            console.log('need to reorder', order.price);
 
             // same code from trade post route
             const tradeDetails = {

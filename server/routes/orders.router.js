@@ -36,8 +36,9 @@ router.get('/', rejectUnauthenticated, (req, res) => {
 * UPDATE route - synchronize all orders with cb
 */
 router.put('/', rejectUnauthenticated, async (req, res) => {
-      console.log('in orders update route');
-      await robot.syncOrders();
+      console.log('in orders synchronize route');
+      await authedClient.cancelAllOrders();
+      console.log('+++++++synchronization complete+++++++');
       res.sendStatus(200)
 });
 
