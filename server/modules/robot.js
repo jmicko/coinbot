@@ -31,11 +31,13 @@ async function theLoop() {
         orderUpdate: true
       });
     } catch (err) {
-      console.log('error in the loop', err);
-      if (error.code && error.code === 'ETIMEDOUT') {
+      if (err.code && err.code === 'ETIMEDOUT') {
         console.log('Timed out!!!!!');
+        await authedClient.cancelAllOrders();
+        console.log('synched orders just in case');
+      } else {
+        console.log('error in the loop', err);
       }
-      return;
     } finally {
       // call the loop again. Wait half second to avoid rate limiting
       setTimeout(() => {

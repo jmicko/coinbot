@@ -35,6 +35,10 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
   } catch (err) {
     if (err.response.statusCode === 400) {
       console.log('Insufficient funds!');
+    } else if (err.code && err.code === 'ETIMEDOUT') {
+      console.log('Timed out!!!!!');
+      await authedClient.cancelAllOrders();
+      console.log('synched orders just in case');
     } else {
       console.log('problem in sending trade post route', err);
     }
