@@ -14,27 +14,7 @@ function Settings(props) {
   // no need to bother the database if it is busy
   function deleteAllOrders() {
     console.log('clicked delete', props.store.ordersReducer.openOrdersInOrder);
-
-    // dispatch a delete for each trade in the trade list. This way 
-    // there is no need for yet anoother route
-
-    props.store.ordersReducer.openOrdersInOrder.sells.forEach(order => {
-      console.log('here is one order to delete', order.id);
-      dispatch({
-        type: 'DELETE_TRADE', payload: {
-          id: order.id,
-        }
-      })
-    });
-
-    props.store.ordersReducer.openOrdersInOrder.buys.forEach(order => {
-      console.log('here is one order to delete', order.id);
-      dispatch({
-        type: 'DELETE_TRADE', payload: {
-          id: order.id,
-        }
-      })
-    });
+    // call the orders delete routez
 
 
   }
