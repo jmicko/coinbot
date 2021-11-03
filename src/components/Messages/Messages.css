@@ -25,7 +25,7 @@
 
 @media (max-width: 800px) {
   .Messages {
-    grid-row     : 4;
+    grid-row     : 6;
     grid-column  : 2 / 4;
     height       : fit-content;
     margin-bottom: .4rem;
