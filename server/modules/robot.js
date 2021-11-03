@@ -40,7 +40,7 @@ async function theLoop() {
         // need to cancel all orders then check funds to make sure there is enough for 
         // all of them to be replaced, and balance if needed
 
-        
+
         // await authedClient.cancelAllOrders();
         // console.log('synched orders just in case');
       } else {
@@ -111,6 +111,18 @@ const syncOrders = async () => {
     // compare the arrays and remove any where the ids match in both,
     // leaving a list of orders that are open in the db, but not on cb. Probably settled
     const ordersToCheck = await orderElimination(dbOrders, cbOrders);
+
+    // also get a list of orders that are open on cb, but not stored in the db. 
+    // these are extra orders and should be canceled???
+    const ordersToCancel = await orderElimination(cbOrders, dbOrders);
+    if (ordersToCancel[0]) {
+      console.log('these are the extra orders that should be canceled', ordersToCancel);
+      // if there are orders, delete them from cb
+      ordersToCancel.forEach(order => {
+        authedClient.cancelOrder(order.id)
+      });
+    }
+
     // tell interface how many trades need to be synched
     socketClient.emit('message', {
       error: `there were ${ordersToCheck.length} orders that need to be synced`,
