@@ -150,8 +150,9 @@ const syncOrders = async () => {
       let fullSettledDetails = await authedClient.getOrder(order.id);
       // console.log('here are the full settled order details', fullSettledDetails);
       // update the order in the db
-      const queryText = `UPDATE "orders" SET "settled" = true, "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
+      const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5 WHERE "id"=$6;`;
       let result = await pool.query(queryText, [
+        fullSettledDetails.settled,
         fullSettledDetails.done_at,
         fullSettledDetails.fill_fees,
         fullSettledDetails.filled_size,
