@@ -1,12 +1,8 @@
-// const storeTrade = require('./storeTrade');
-// const getUnsettledTrades = require('./getUnsettledTrades');
-const authedClient = require('./authedClient');
 const pool = require('./pool');
 const socketClient = require('./socketClient');
 
 // store an array of orders that need to be updated after filling
 let updateSpool = [];
-
 
 const storeTrade = (newOrder, originalDetails) => {
   return new Promise((resolve, reject) => {
@@ -55,19 +51,25 @@ const getUnsettledTrades = (side) => {
   return new Promise((resolve, reject) => {
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
+
     if (side == 'buy') {
+      // gets all unsettled buys, sorted by price
       sqlText = `SELECT * FROM "orders" WHERE "side"='buy' AND "settled"=false 
-        ORDER BY "price" DESC;`;
+      ORDER BY "price" DESC;`;
     } else if (side == 'sell') {
+      // gets all unsettled sells, sorted by price
       sqlText = `SELECT * FROM "orders" WHERE "side"='sell' AND "settled"=false 
-        ORDER BY "price" DESC;`;
+      ORDER BY "price" DESC;`;
     } else if (side == 'all') {
+      // gets all unsettled trades
       sqlText = `SELECT * FROM "orders" WHERE "settled"=false;`;
     } else if (side == 'highBuy') {
+      // gets highest priced buy
       sqlText = `SELECT * FROM "orders" WHERE "side"='buy' AND "settled"=false 
-        ORDER BY "price" DESC
-          LIMIT(1);`;
+      ORDER BY "price" DESC
+      LIMIT(1);`;
     } else if (side == 'lowSell') {
+      // gets lowest priced sell
       sqlText = `SELECT * FROM "orders" WHERE "side"='sell' AND "settled"=false 
         ORDER BY "price" ASC
           LIMIT(1);`;
@@ -89,7 +91,6 @@ const getSingleTrade = (id) => {
   return new Promise((resolve, reject) => {
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
-
     sqlText = `SELECT * FROM "orders" WHERE "id"=$1;`;
     pool.query(sqlText, [id])
       .then((results) => {
