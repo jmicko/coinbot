@@ -6,7 +6,6 @@ const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient');
 const socketClient = require('../modules/socketClient');
 const robot = require('../modules/robot');
-// const { cbWebsocketConnection } = require('../modules/robot');
 
 
 /**

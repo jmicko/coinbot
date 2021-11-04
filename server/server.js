@@ -10,7 +10,6 @@ const options = {
 const io = require("socket.io")(server, options);
 const sessionMiddleware = require('./modules/session-middleware');
 const passport = require('./strategies/user.strategy');
-// const cbWebsocket = require("./modules/cbWebsocket");
 
 // Route includes
 const userRouter = require('./routes/user.router');
