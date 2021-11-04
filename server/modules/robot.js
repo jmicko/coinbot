@@ -219,12 +219,18 @@ const syncOrders = async () => {
 
 
           }
+        } else {
+          console.log('error when looking for not found order in syncOrders', err);
         }
       }
     } else if (err.code && err.code === 'ESOCKETTIMEDOUT') {
       console.log('Timed out!!!!!');
-      await authedClient.cancelAllOrders();
-      console.log('synched orders just in case');
+      try{
+        await authedClient.cancelAllOrders();
+        console.log('synched orders just in case');
+      } catch (err) {
+        console.log('error at end of syncOrders function');
+      }
     } else {
       console.log('error from robot.syncOrders', err);
     }
