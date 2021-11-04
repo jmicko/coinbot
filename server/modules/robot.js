@@ -216,8 +216,6 @@ const syncOrders = async () => {
                 console.log('problem in the loop reordering trade', err);
               }
             }
-
-
           }
         } else {
           console.log('error when looking for not found order in syncOrders', err);
@@ -225,7 +223,7 @@ const syncOrders = async () => {
       }
     } else if (err.code && err.code === 'ESOCKETTIMEDOUT') {
       console.log('Timed out!!!!!');
-      try{
+      try {
         await authedClient.cancelAllOrders();
         console.log('synched orders just in case');
       } catch (err) {
