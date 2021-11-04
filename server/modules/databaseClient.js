@@ -2,7 +2,6 @@
 // const getUnsettledTrades = require('./getUnsettledTrades');
 const authedClient = require('./authedClient');
 const pool = require('./pool');
-const robot = require('./robot');
 const socketClient = require('./socketClient');
 
 // store an array of orders that need to be updated after filling
@@ -105,65 +104,6 @@ const getSingleTrade = (id) => {
   });
 }
 
-
-
-// const updateTrade = async (id) => {
-//   // grab an order from db that have been handled by ws trading
-//   // they will be settled, but need more values
-//   try {
-//     let sqlText = `SELECT * FROM orders WHERE "settled" AND "executed_value"=0 limit 1;`;
-//     let result = await pool.query(sqlText);
-//     // todo - stored as array so it can loop through them all and update without calling db as often
-//     updateSpool = result.rows;
-//     // console.log(updateSpool);
-//     // make sure there is something to update
-//     if (updateSpool.length > 0) {
-//       // get an up to date order object from coinbase
-//       cbOrder = await authedClient.getOrder(updateSpool[0].id);
-//       // console.log(cbOrder);
-//       // update the order in the db
-//       const queryText = `UPDATE "orders" SET "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
-//       await pool.query(queryText, [
-//         cbOrder.done_at,
-//         cbOrder.fill_fees,
-//         cbOrder.filled_size,
-//         cbOrder.executed_value,
-//         cbOrder.id
-//       ]);
-//       // tell interface to update so profits can update
-//       socketClient.emit('message', {
-//         message: `an exchange was made`,
-//         orderUpdate: true
-//       });
-//     }
-//     // else {
-//     // console.log('no orders need updating');
-//     // }
-//   } catch (error) {
-//     if (error.response && error.response.statusCode && error.response.statusCode === 429) {
-//       console.log('status code in databaseClient updateTrade', error.response.statusCode);
-//       console.log('error data with databaseClient updateTrade', error.data);
-//       await robot.sleep(800)
-//       // updateTrade();
-//     }
-//     else if (error.code && error.code === 'ETIMEDOUT') {
-//       socketClient.emit('message', {
-//         message: `Connection timed out`,
-//         orderUpdate: false
-//       });
-//     }
-//     else if (error.data) {
-//       console.log('error data from database client updateTrade', error.data);
-//     }
-//     else {
-//       console.log('unknown error in database client updateTrade', error);
-//     }
-//   } finally {
-//     await robot.sleep(200);
-//     updateTrade()
-//   }
-// };
-
 const deleteTrade = async (id) => {
   try {
     const queryText = `DELETE from "orders" WHERE "id"=$1;`;
@@ -183,7 +123,6 @@ const databaseClient = {
   storeTrade: storeTrade,
   getUnsettledTrades: getUnsettledTrades,
   getSingleTrade: getSingleTrade,
-  // updateTrade: updateTrade,
   deleteTrade: deleteTrade
 }
 

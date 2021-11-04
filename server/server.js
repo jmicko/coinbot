@@ -10,7 +10,7 @@ const options = {
 const io = require("socket.io")(server, options);
 const sessionMiddleware = require('./modules/session-middleware');
 const passport = require('./strategies/user.strategy');
-const cbWebsocket = require("./modules/cbWebsocket");
+// const cbWebsocket = require("./modules/cbWebsocket");
 
 // Route includes
 const userRouter = require('./routes/user.router');
@@ -41,7 +41,6 @@ app.use('/api/user', userRouter);
 app.use('/api/trade', tradeRouter);
 app.use('/api/account', accountRouter);
 app.use('/api/orders', ordersRouter);
-// app.use('/api/bot', tradeRouter);
 
 /* socket.io */
 // this triggers on a new client connection
