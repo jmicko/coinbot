@@ -124,9 +124,10 @@ const syncOrders = async () => {
         // check if order is in db
         try {
           let doubleCheck = await databaseClient.getSingleTrade(order.id);
-          console.log('checked again for the order in the db', doubleCheck);
+          console.log('checked again for the order in the db', doubleCheck.id);
           if (!doubleCheck) {
             // cancel the order
+            console.log('canceling order', order.id);
             authedClient.cancelOrder(order.id)
           }
         } catch (err) {
