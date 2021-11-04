@@ -221,7 +221,7 @@ const syncOrders = async () => {
           console.log('error when looking for not found order in syncOrders', err);
         }
       }
-    } else if (err.code && err.code === 'ESOCKETTIMEDOUT') {
+    } else if (err.code && (err.code === 'ESOCKETTIMEDOUT' || err.code === 'ETIMEDOUT')) {
       console.log('Timed out!!!!!');
       try {
         await authedClient.cancelAllOrders();
