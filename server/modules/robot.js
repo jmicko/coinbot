@@ -31,16 +31,26 @@ async function theLoop() {
         orderUpdate: true
       });
     } catch (err) {
-      console.log('error in the loop', err);
-      if (error.code && error.code === 'ETIMEDOUT') {
-        console.log('Timed out!!!!!');
+      if (err.code && err.code === 'ETIMEDOUT') {
+        console.log('Timed out!!!!! from the loop');
+        await authedClient.cancelAllOrders();
+        console.log('synched orders just in case');
+      } else if (err.response.statusCode === 400) {
+        console.log('Insufficient funds! from the loop');
+        // need to cancel all orders then check funds to make sure there is enough for 
+        // all of them to be replaced, and balance if needed
+
+
+        // await authedClient.cancelAllOrders();
+        // console.log('synched orders just in case');
+      } else {
+        console.log('error in the loop', err);
       }
-      return;
     } finally {
       // call the loop again. Wait half second to avoid rate limiting
       setTimeout(() => {
         theLoop();
-      }, 500);
+      }, 300);
     }
   } else {
     // call the loop again right away since no connections have been used
@@ -84,6 +94,7 @@ function sleep(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
+// REST protocol to find orders that have settled on coinbase
 const syncOrders = async () => {
   // create one order to work with
   let order;
@@ -100,6 +111,32 @@ const syncOrders = async () => {
     // compare the arrays and remove any where the ids match in both,
     // leaving a list of orders that are open in the db, but not on cb. Probably settled
     const ordersToCheck = await orderElimination(dbOrders, cbOrders);
+
+    // also get a list of orders that are open on cb, but not stored in the db. 
+    // these are extra orders and should be canceled???
+    const ordersToCancel = await orderElimination(cbOrders, dbOrders);
+    if (ordersToCancel[0] && ordersToCancel.length < 8) {
+      console.log('these are the extra orders that should be canceled', ordersToCancel);
+      // if there are orders, delete them from cb
+      ordersToCancel.forEach(async order => {
+        // need to wait and double check db before deleting because they take time to store and show up on cb first
+        await sleep(1000);
+        // check if order is in db
+        try {
+          let doubleCheck = await databaseClient.getSingleTrade(order.id);
+          console.log('checked again for the order in the db', doubleCheck);
+          if (!doubleCheck) {
+            // cancel the order
+            authedClient.cancelOrder(order.id)
+          }
+        } catch (err) {
+          console.log('error deleting extra order', err);
+        }
+      });
+      // wait for a second to allow cancels to go through so bot doesn't cancel twice
+      await sleep(1000);
+    }
+
     // tell interface how many trades need to be synched
     socketClient.emit('message', {
       error: `there were ${ordersToCheck.length} orders that need to be synced`,
@@ -123,9 +160,9 @@ const syncOrders = async () => {
     };
   } catch (err) {
     if (err.response?.statusCode === 404) {
-      console.log('order not found', order);
+      console.log('order not found', order.id);
       // check again to make sure after waiting a second in case things need to settle
-      sleep(5000);
+      await sleep(5000);
       try {
         let fullSettledDetails = await authedClient.getOrder(order.id);
         console.log('here are the full settled order details that maybe need to be deleted', fullSettledDetails);
@@ -145,7 +182,7 @@ const syncOrders = async () => {
 
           } else {
             // if the order was not supposed to be canceled
-            console.log('need to reorder', order);
+            console.log('need to reorder', order.price);
 
             // same code from trade post route
             const tradeDetails = {
@@ -178,13 +215,19 @@ const syncOrders = async () => {
               } else {
                 console.log('problem in the loop reordering trade', err);
               }
-              // send internal error status
-              res.sendStatus(500);
             }
-
-
           }
+        } else {
+          console.log('error when looking for not found order in syncOrders', err);
         }
+      }
+    } else if (err.code && err.code === 'ESOCKETTIMEDOUT') {
+      console.log('Timed out!!!!!');
+      try {
+        await authedClient.cancelAllOrders();
+        console.log('synched orders just in case');
+      } catch (err) {
+        console.log('error at end of syncOrders function');
       }
     } else {
       console.log('error from robot.syncOrders', err);
@@ -193,7 +236,7 @@ const syncOrders = async () => {
     // when everything is done, call the sync again
     setTimeout(() => {
       syncOrders();
-    }, 1000);
+    }, 300);
   }
 }
 
@@ -216,8 +259,6 @@ const robot = {
   // doesn't call the loop twice. The loop will set it back to true after it finishes a loop
   canToggle: true,
   looping: false,
-  wsTrading: 0,
-  cbWebsocketConnection: false,
   loop: 0,
   busy: 0,
   sleep: sleep,

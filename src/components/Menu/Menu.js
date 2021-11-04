@@ -1,17 +1,16 @@
 import React from 'react';
 import { connect, useDispatch } from 'react-redux';
-import './ToggleBot.css'
+import './Menu.css'
 
-function ToggleBot(props) {
+function Menu(props) {
   const dispatch = useDispatch();
 
   return (
-    <div className="ToggleBot">
+    <div className="Menu">
     <button className="btn-logout btn-blue" onClick={() => {props.clickSettings()}}>Settings</button>
-    <button className="btn-logout btn-blue" onClick={() => dispatch({ type: 'SYNC_ORDERS' })}>Sync All Trades</button>
     <button className="btn-logout btn-blue" onClick={() => dispatch({ type: 'LOGOUT' })}>Log Out</button>
     </div>
   )
 }
 
-export default connect()(ToggleBot);
+export default connect()(Menu);

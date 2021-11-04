@@ -1,6 +1,6 @@
-.ToggleBot {
+.Menu {
     grid-column: 4;
-    grid-row: 2/3;
+    grid-row: 1/2;
     display: block;
 }
 
@@ -12,9 +12,9 @@
 }
 
 @media (max-width: 800px) {
-    .ToggleBot {
-        grid-column: 3;
-        grid-row: 2/3;
+    .Menu {
+        grid-column: 2;
+        grid-row: 2;
         display: block;
     }
 }

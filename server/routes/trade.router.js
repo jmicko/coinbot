@@ -6,7 +6,6 @@ const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient');
 const socketClient = require('../modules/socketClient');
 const robot = require('../modules/robot');
-const { cbWebsocketConnection } = require('../modules/robot');
 
 
 /**
@@ -35,6 +34,10 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
   } catch (err) {
     if (err.response.statusCode === 400) {
       console.log('Insufficient funds!');
+    } else if (err.code && err.code === 'ETIMEDOUT') {
+      console.log('Timed out!!!!!');
+      await authedClient.cancelAllOrders();
+      console.log('synched orders just in case');
     } else {
       console.log('problem in sending trade post route', err);
     }

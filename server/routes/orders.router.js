@@ -5,6 +5,7 @@ const { rejectUnauthenticated, } = require('../modules/authentication-middleware
 const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient');
 const robot = require('../modules/robot');
+const socketClient = require("../modules/socketClient");
 
 
 /**
@@ -36,9 +37,29 @@ router.get('/', rejectUnauthenticated, (req, res) => {
 * UPDATE route - synchronize all orders with cb
 */
 router.put('/', rejectUnauthenticated, async (req, res) => {
-      console.log('in orders update route');
-      await robot.syncOrders();
-      res.sendStatus(200)
+  console.log('in orders synchronize route');
+  await authedClient.cancelAllOrders();
+  console.log('+++++++ synchronization complete +++++++');
+  res.sendStatus(200)
+});
+
+
+/**
+* DELETE route - Mark all orders as will_cancel
+*/
+router.delete('/', rejectUnauthenticated, async (req, res) => {
+  console.log('in delete all orders route');
+  // set all orders to will_cancel so the loop will just cancel them.
+  const queryText = `DELETE from "orders" WHERE "settled" = false;`;
+  let result = await pool.query(queryText);
+  await authedClient.cancelAllOrders();
+  console.log('+++++++ EVERYTHING WAS DELETED +++++++');
+  // tell front end to update
+  socketClient.emit('message', {
+    message: `an exchange was made`,
+    orderUpdate: true
+  });
+  res.sendStatus(200)
 });
 
 

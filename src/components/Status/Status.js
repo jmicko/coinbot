@@ -113,24 +113,24 @@ function Status(props) {
   return (
 
     <div className="Status boxed fit">
-      <h3 className="title">
+      {/* <h3 className="title">
         Status
-      </h3>
+      </h3> */}
       {/* todo - maybe style in some divider lines here or something */}
-      <p className="info"><strong>~~~ BTC-USD ~~~</strong></p>
-      <p className="info">${props.store.statusReducer.tickerReducer.tickerPrice}/coin</p>
-      <p className="info"><strong>~~~ Coinbot ~~~</strong></p>
-      <p className="info">{(localWebsocket) ? 'Local WS Connected' : 'Local WS Problem'}</p>
-      <p className="info">{(cbWebsocket) ? 'CB WS Connected' : 'CB WS Problem'}</p>
-      <p className="info">{(connection) ? 'Ticker Connected' : 'Ticker Problem'}</p>
-      <p className="info"><strong>~~~ Account ~~~</strong></p>
-      <p className="info"><strong>Available Funds</strong><br />${Math.floor(props.store.accountReducer.accountReducer * 100) / 100}</p>
-      <p className="info"><strong>Maker Fee</strong><br />{props.store.accountReducer.feeReducer.maker_fee_rate * 100}%</p>
-      <p className="info"><strong>Taker Fee</strong><br />{props.store.accountReducer.feeReducer.taker_fee_rate * 100}%</p>
-      <p className="info"><strong>30 Day Volume</strong><br />${props.store.accountReducer.feeReducer.usd_volume}</p>
-      <p className="info"><strong>Total Profit*</strong><br />${Number(props.store.accountReducer.profitsReducer[0].sum)}</p>
-      <p className="info"><strong>Total Open Orders</strong><br />{openOrderQuantity}</p>
-      <p className="small">*Profit calculation is a work in progress, but this should be close</p>
+      <p className="info status-ticker"><strong>~~~ BTC-USD ~~~</strong><br />${props.store.statusReducer.tickerReducer.tickerPrice}/coin</p>
+      {/* <p className="info status-ticker">${props.store.statusReducer.tickerReducer.tickerPrice}/coin</p> */}
+      {/* <p className="info status-ticker"><strong>~~~ Coinbot ~~~</strong></p> */}
+      {/* <p className="info status-ticker">{(localWebsocket) ? 'Local WS Connected' : 'Local WS Problem'}</p>
+      <p className="info status-ticker">{(cbWebsocket) ? 'CB WS Connected' : 'CB WS Problem'}</p>
+      <p className="info status-ticker">{(connection) ? 'Ticker Connected' : 'Ticker Problem'}</p> */}
+      {/* <p className="info status-ticker"><strong>~~~ Account ~~~</strong></p> */}
+      <p className="info status-ticker"><strong>Available Funds</strong><br />${Math.floor(props.store.accountReducer.accountReducer * 100) / 100}</p>
+      <p className="info status-ticker"><strong>Maker Fee</strong><br />{props.store.accountReducer.feeReducer.maker_fee_rate * 100}%</p>
+      <p className="info status-ticker"><strong>Taker Fee</strong><br />{props.store.accountReducer.feeReducer.taker_fee_rate * 100}%</p>
+      <p className="info status-ticker"><strong>30 Day Volume</strong><br />${props.store.accountReducer.feeReducer.usd_volume}</p>
+      <p className="info status-ticker"><strong>Profit Estimate</strong><br />${Number(props.store.accountReducer.profitsReducer[0].sum)}</p>
+      <p className="info status-ticker"><strong>Total Open Orders</strong><br />{openOrderQuantity}</p>
+      {/* <p className="small">*Profit calculation is a work in progress, but this should be close</p> */}
       {/* .store.accountReducer.feeReducer */}
     </div>
   )

@@ -8,6 +8,7 @@
 }
 
 .header {
+  display: none;
   grid-column     : 1/6;
   grid-row        : 1;
   background-color: #000000;
