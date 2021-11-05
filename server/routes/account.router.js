@@ -65,7 +65,7 @@ router.get('/profits', rejectUnauthenticated, (req, res) => {
 /**
 * POST route to store API details
 */
-router.get('/storeApi', rejectUnauthenticated, (req, res) => {
+router.post('/storeApi', rejectUnauthenticated, (req, res) => {
 console.log('here are the api details', req.body);
 
 });

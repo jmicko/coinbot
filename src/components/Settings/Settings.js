@@ -25,11 +25,19 @@ function Settings(props) {
   function submitApi(event) {
     event.preventDefault();
     console.log('api details submitted!');
+    dispatch({
+      type: 'STORE_API',
+      payload: {
+        key: key,
+        passphrase: passphrase,
+        secret: secret
+      }
+    });
 
     // clear the form
-    setKey('');
-    setPassphrase('');
-    setSecret('');
+    // setKey('');
+    // setPassphrase('');
+    // setSecret('');
   }
 
   if (props.showSettings) {

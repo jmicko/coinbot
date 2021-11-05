@@ -44,6 +44,7 @@ function* fetchAccounts() {
 function* storeApi(action) {
   try {
     console.log('storing api');
+
     const response = yield axios.post(`/api/account/storeApi`);
     console.log('response from storing api', response);
     // yield put({ type: 'SET_ACCOUNT', payload: response.data })
