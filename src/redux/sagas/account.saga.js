@@ -41,10 +41,24 @@ function* fetchAccounts() {
   }
 }
 
+function* storeApi(action) {
+  try {
+    console.log('storing api');
+    const response = yield axios.post(`/api/account/storeApi`);
+    // yield put({ type: 'SET_ACCOUNT', payload: response.data })
+  } catch (error) {
+    console.log('post account route storeApi has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 function* accountSaga() {
   yield takeLatest('FETCH_FEES', fetchFees);
   yield takeLatest('FETCH_ACCOUNT', fetchAccounts);
   yield takeLatest('FETCH_PROFITS', fetchProfits);
+  yield takeLatest('STORE_API', storeApi);
 }
 
 export default accountSaga;
