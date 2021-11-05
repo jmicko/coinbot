@@ -65,9 +65,16 @@ router.get('/profits', rejectUnauthenticated, (req, res) => {
 /**
 * POST route to store API details
 */
-router.post('/storeApi', rejectUnauthenticated, (req, res) => {
-console.log('here are the api details', req.body);
-
+router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
+  console.log('here are the api details', req.body);
+  const api = req.body;
+  const queryText = `UPDATE "user" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3;`;
+      let result = await pool.query(queryText, [
+        api.secret,
+        api.key,
+        api.passphrase,
+      ]);
+  res.sendStatus(200);
 });
 
 
