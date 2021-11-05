@@ -45,7 +45,7 @@ function* storeApi(action) {
   try {
     console.log('storing api');
 
-    const response = yield axios.post(`/api/account/storeApi`);
+    const response = yield axios.post(`/api/account/storeApi`, action.payload);
     console.log('response from storing api', response);
     // yield put({ type: 'SET_ACCOUNT', payload: response.data })
   } catch (error) {
