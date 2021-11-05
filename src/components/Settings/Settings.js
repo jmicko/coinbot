@@ -35,9 +35,9 @@ function Settings(props) {
     });
 
     // clear the form
-    // setKey('');
-    // setPassphrase('');
-    // setSecret('');
+    setKey('');
+    setPassphrase('');
+    setSecret('');
   }
 
   if (props.showSettings) {
