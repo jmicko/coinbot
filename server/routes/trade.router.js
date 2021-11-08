@@ -27,6 +27,9 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
   try {
     // send the new order with the trade details
     let pendingTrade = await authedClient.placeOrder(tradeDetails);
+    // wait a second before storing the trade. Sometimes it takes a second for coinbase to register the trade,
+    // even after returning the details. robot.syncOrders will think it settled if it sees it in the db first
+    await robot.sleep(100);
     // store the new trade in the db. the trade details are also sent to store trade position prices
     let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
     // send OK status

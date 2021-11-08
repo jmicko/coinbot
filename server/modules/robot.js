@@ -118,16 +118,17 @@ const syncOrders = async () => {
     if (ordersToCancel[0] && ordersToCancel.length < 8) {
       console.log('these are the extra orders that should be canceled', ordersToCancel);
       // if there are orders, delete them from cb
-      ordersToCancel.forEach(async order => {
+      ordersToCancel.forEach(async orderToCancel => {
         // need to wait and double check db before deleting because they take time to store and show up on cb first
         await sleep(1000);
         // check if order is in db
         try {
-          let doubleCheck = await databaseClient.getSingleTrade(order.id);
-          console.log('checked again for the order in the db', doubleCheck);
+          let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
+          console.log('checked again for the order in the db', doubleCheck.id);
           if (!doubleCheck) {
             // cancel the order
-            authedClient.cancelOrder(order.id)
+            console.log('canceling order', orderToCancel.id);
+            authedClient.cancelOrder(orderToCancel.id)
           }
         } catch (err) {
           console.log('error deleting extra order', err);
@@ -149,8 +150,9 @@ const syncOrders = async () => {
       let fullSettledDetails = await authedClient.getOrder(order.id);
       // console.log('here are the full settled order details', fullSettledDetails);
       // update the order in the db
-      const queryText = `UPDATE "orders" SET "settled" = true, "done_at" = $1, "fill_fees" = $2, "filled_size" = $3, "executed_value" = $4 WHERE "id"=$5;`;
+      const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5 WHERE "id"=$6;`;
       let result = await pool.query(queryText, [
+        fullSettledDetails.settled,
         fullSettledDetails.done_at,
         fullSettledDetails.fill_fees,
         fullSettledDetails.filled_size,
@@ -221,7 +223,7 @@ const syncOrders = async () => {
           console.log('error when looking for not found order in syncOrders', err);
         }
       }
-    } else if (err.code && err.code === 'ESOCKETTIMEDOUT') {
+    } else if (err.code && (err.code === 'ESOCKETTIMEDOUT' || err.code === 'ETIMEDOUT')) {
       console.log('Timed out!!!!!');
       try {
         await authedClient.cancelAllOrders();
