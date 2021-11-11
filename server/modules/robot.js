@@ -169,7 +169,7 @@ const syncOrders = async () => {
         let fullSettledDetails = await authedClient.getOrder(order.id);
         console.log('here are the full settled order details that maybe need to be deleted', fullSettledDetails);
       } catch (err) {
-        if (err.response.statusCode === 404) {
+        if (err.response?.statusCode === 404) {
           if (order.will_cancel) {
             // if the order was supposed to be canceled
             console.log('need to delete for sure', order);
@@ -212,7 +212,7 @@ const syncOrders = async () => {
               });
 
             } catch (err) {
-              if (err.response.statusCode === 400) {
+              if (err.response?.statusCode === 400) {
                 console.log('Insufficient funds!');
               } else {
                 console.log('problem in the loop reordering trade', err);
