@@ -35,7 +35,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
     // send OK status
     res.sendStatus(200);
   } catch (err) {
-    if (err.response.statusCode === 400) {
+    if (err.response?.statusCode === 400) {
       console.log('Insufficient funds!');
     } else if (err.code && err.code === 'ETIMEDOUT') {
       console.log('Timed out!!!!!');
