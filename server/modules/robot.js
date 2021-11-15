@@ -139,10 +139,12 @@ const syncOrders = async () => {
     }
 
     // tell interface how many trades need to be synched
-    socketClient.emit('message', {
-      error: `there were ${ordersToCheck.length} orders that need to be synced`,
-      message: `Synching all orders`,
-    });
+    if (ordersToCheck.length > 0) {
+      socketClient.emit('message', {
+        error: `there were ${ordersToCheck.length} orders that need to be synced`,
+        message: `Synching all orders`,
+      });
+    }
     if (ordersToCheck[0]) {
       order = ordersToCheck[0]
       console.log('need to flip this trade', order.price);
