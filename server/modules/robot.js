@@ -231,6 +231,10 @@ const syncOrders = async () => {
       }
     } else if (err.code && (err.code === 'ESOCKETTIMEDOUT' || err.code === 'ETIMEDOUT')) {
       console.log('Timed out!!!!!');
+      socketClient.emit('message', {
+        error: `Connection timed out, synching all orders to prevent duplicates`,
+        orderUpdate: true
+      });
       try {
         await authedClient.cancelAllOrders();
         console.log('synched orders just in case');
