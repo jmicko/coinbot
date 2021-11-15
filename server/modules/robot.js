@@ -27,7 +27,6 @@ async function theLoop() {
       let updatedTrade = await pool.query(queryText, [dbOrder.id]);
       // tell the frontend that an update was made so the DOM can update
       socketClient.emit('message', {
-        message: `an exchange was made`,
         orderUpdate: true
       });
     } catch (err) {
@@ -37,12 +36,8 @@ async function theLoop() {
         console.log('synched orders just in case');
       } else if (err.response?.statusCode === 400) {
         console.log('Insufficient funds! from the loop');
-        // need to cancel all orders then check funds to make sure there is enough for 
+        // todo - check funds to make sure there is enough for 
         // all of them to be replaced, and balance if needed
-
-
-        // await authedClient.cancelAllOrders();
-        // console.log('synched orders just in case');
       } else {
         console.log('error in the loop', err);
       }
@@ -141,8 +136,7 @@ const syncOrders = async () => {
     // tell interface how many trades need to be synched
     if (ordersToCheck.length > 0) {
       socketClient.emit('message', {
-        error: `there were ${ordersToCheck.length} orders that need to be synced`,
-        message: `Synching all orders`,
+        message: `there are ${ordersToCheck.length} orders that need to be synced`,
       });
     }
     if (ordersToCheck[0]) {

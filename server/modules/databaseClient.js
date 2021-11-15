@@ -34,7 +34,6 @@ const storeTrade = (newOrder, originalDetails) => {
           success: true
         }
         socketClient.emit('message', {
-          message: `trade was tossed into the ol' databanks`,
           orderUpdate: true
         });
         resolve(success);
