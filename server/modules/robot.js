@@ -241,6 +241,9 @@ const syncOrders = async () => {
       console.log('error from robot.syncOrders', err);
     }
   } finally {
+    socketClient.emit('message', {
+      heartbeat: true,
+    });
     // when everything is done, call the sync again
     setTimeout(() => {
       syncOrders();
