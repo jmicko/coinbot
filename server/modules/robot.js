@@ -180,7 +180,7 @@ const syncOrders = async () => {
             const response = await pool.query(queryText, [order.id]);
             // console.log('response from cancelling order and deleting from db', response.rowCount);
             socketClient.emit('message', {
-              message: `exchange was tossed out of the ol' databanks`,
+              error: `exchange was removed from the database`,
               orderUpdate: true
             });
 
@@ -216,6 +216,10 @@ const syncOrders = async () => {
             } catch (err) {
               if (err.response?.statusCode === 400) {
                 console.log('Insufficient funds!');
+                socketClient.emit('message', {
+                  error: `Insufficient funds!`,
+                  orderUpdate: true
+                });
               } else {
                 console.log('problem in the loop reordering trade', err);
               }
