@@ -37,10 +37,17 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
   } catch (err) {
     if (err.response?.statusCode === 400) {
       console.log('Insufficient funds!');
+      socketClient.emit('message', {
+        error: `Insufficient funds!`,
+        orderUpdate: true
+      });
     } else if (err.code && err.code === 'ETIMEDOUT') {
-      console.log('Timed out!!!!!');
+      console.log('Timed out!!!!! Synching orders just in case');
+      socketClient.emit('message', {
+        error: `Connection timed out, synching all orders to prevent duplicates`,
+        orderUpdate: true
+      });
       await authedClient.cancelAllOrders();
-      console.log('synched orders just in case');
     } else {
       console.log('problem in sending trade post route', err);
     }
@@ -72,7 +79,12 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       // error handling should delete them from db and not worry about coinbase since there is no other way to delete
       // but also send one last delete message to Coinbase just in case it finds it again, but with no error checking
       if (error.data.message === 'order not found') {
+        socketClient.emit('message', {
+          error: `Order was not found when delete was requested`,
+          orderUpdate: true
+        });
         console.log('order not found in account', orderId);
+        res.sendStatus(400)
       }
     } else {
       console.log('something failed', error);
