@@ -110,7 +110,7 @@ const deleteTrade = async (id) => {
     await pool.query(queryText, [id]);
     console.log('exchange was tossed lmao');
     socketClient.emit('message', {
-      message: `exchange was tossed out of the ol' databanks`,
+      message: `exchange was removed from the database`,
       orderUpdate: true
     });
   } catch (error) {

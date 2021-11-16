@@ -170,14 +170,7 @@ const syncOrders = async () => {
             // if the order was supposed to be canceled
             console.log('need to delete for sure', order);
             // delete the trade from the db
-            const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-            const response = await pool.query(queryText, [order.id]);
-            // console.log('response from cancelling order and deleting from db', response.rowCount);
-            socketClient.emit('message', {
-              message: `exchange was removed from the database`,
-              orderUpdate: true
-            });
-
+            await databaseClient.deleteTrade(order.id);
           } else {
             // if the order was not supposed to be canceled
             console.log('need to reorder', order.price);
