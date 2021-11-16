@@ -148,7 +148,7 @@ const syncOrders = async () => {
       for (let i = 0; i < ordersToCheck.length; i++) {
         const orderToCheck = ordersToCheck[i];
         order = orderToCheck;
-        console.log('@@@@@@@ setting this trade as settled in the db', orderToCheck);
+        console.log('@@@@@@@ setting this trade as settled in the db', orderToCheck.id, orderToCheck.price);
         // wait between each loop to prevent rate limiting
         await sleep(500);
 
@@ -262,6 +262,23 @@ const syncOrders = async () => {
   }
 }
 
+async function syncEverything() {
+  try {
+    await authedClient.cancelAllOrders();
+    console.log('synching all orders');
+    socketClient.emit('message', {
+      message: `synching everything`,
+      orderUpdate: true
+    });
+  } catch (err) {
+    console.log('error at end of syncEverything function');
+    socketClient.emit('message', {
+      error: `unknown error when trying to sync everything`,
+      orderUpdate: true
+    });
+  }
+}
+
 // take in an array and an item to check
 function orderElimination(dbOrders, cbOrders) {
   for (let i = 0; i < cbOrders.length; i++) {
@@ -289,6 +306,7 @@ const robot = {
   synching: false,
   maxHistory: 200,
   theLoop: theLoop,
+  syncEverything: syncEverything,
 }
 
 
