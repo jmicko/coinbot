@@ -145,9 +145,6 @@ const syncOrders = async () => {
       socketClient.emit('message', {
         message: `there are ${ordersToCheck.length} orders that need to be synced`,
       });
-
-      
-      
       for (let i = 0; i < ordersToCheck.length; i++) {
         const orderToCheck = ordersToCheck[i];
         order = orderToCheck;
@@ -169,32 +166,7 @@ const syncOrders = async () => {
           fullSettledDetails.executed_value,
           orderToCheck.id
         ]);
-
       }
-
-
-
-
-      // order = ordersToCheck[0]
-      // console.log('need to flip this trade', order.price);
-      // // get all the order details from cb
-      // let fullSettledDetails = await authedClient.getOrder(order.id);
-      // // console.log('here are the full settled order details', fullSettledDetails);
-      // // update the order in the db
-      // const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5 WHERE "id"=$6;`;
-      // let result = await pool.query(queryText, [
-      //   fullSettledDetails.settled,
-      //   fullSettledDetails.done_at,
-      //   fullSettledDetails.fill_fees,
-      //   fullSettledDetails.filled_size,
-      //   fullSettledDetails.executed_value,
-      //   order.id
-      // ]);
-
-
-
-
-
     };
   } catch (err) {
     if (err.response?.statusCode === 404) {
