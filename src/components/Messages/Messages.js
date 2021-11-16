@@ -60,7 +60,7 @@ function Messages() {
         <div className="message-section boxed scrollable">
           <h3 className="title">General Messages:</h3>
           {messages.map((message, i) => {
-            return <p key={i}>Msg #{messagesCount - i}: {message.date} <br/> {message.message}</p>
+            return <p key={i}><strong>Msg #{messagesCount - i}: {message.date}</strong> <br/> {message.message}</p>
           })}
         </div>
         <div className="errors-section boxed scrollable">
