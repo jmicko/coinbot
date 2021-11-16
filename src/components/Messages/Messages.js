@@ -22,8 +22,8 @@ function Messages() {
         });
         setMessages(prevMessages => {
           // keep max messages down to 3 by checking if more than 2 before adding new message
-          if (prevMessages.length > 199) {
-            prevMessages.shift();
+          if (prevMessages.length > 999) {
+            prevMessages.pop();
           }
           return [message.message, ...prevMessages]
         });
@@ -35,8 +35,8 @@ function Messages() {
         });
         setErrors(prevErrors => {
           // keep max messages down to 3 by checking if more than 2 before adding new message
-          if (prevErrors.length > 199) {
-            prevErrors.shift();
+          if (prevErrors.length > 999) {
+            prevErrors.pop();
           }
           return [message.error, ...prevErrors]
         });
