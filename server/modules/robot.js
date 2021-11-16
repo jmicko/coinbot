@@ -174,7 +174,7 @@ const syncOrders = async () => {
             const response = await pool.query(queryText, [order.id]);
             // console.log('response from cancelling order and deleting from db', response.rowCount);
             socketClient.emit('message', {
-              error: `exchange was removed from the database`,
+              message: `exchange was removed from the database`,
               orderUpdate: true
             });
 
@@ -203,7 +203,7 @@ const syncOrders = async () => {
               const response = await pool.query(queryText, [order.id]);
               // console.log('response from cancelling order and deleting from db', response.rowCount);
               socketClient.emit('message', {
-                message: `trade was reordered`,
+                error: `trade was reordered`,
                 orderUpdate: true
               });
 
