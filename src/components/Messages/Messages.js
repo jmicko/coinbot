@@ -25,7 +25,11 @@ function Messages() {
           if (prevMessages.length > 999) {
             prevMessages.pop();
           }
-          return [message.message, ...prevMessages]
+          let datedMessage = {
+            date: `${Date()}`,
+            message: `${message.message}`
+          }
+          return [datedMessage, ...prevMessages]
         });
       }
       if (message.error) {
@@ -56,7 +60,7 @@ function Messages() {
         <div className="message-section boxed scrollable">
           <h3 className="title">General Messages:</h3>
           {messages.map((message, i) => {
-            return <p key={i}>Msg #{messagesCount - i}: {message}</p>
+            return <p key={i}>Msg #{messagesCount - i}: {message.date} <br/> {message.message}</p>
           })}
         </div>
         <div className="errors-section boxed scrollable">

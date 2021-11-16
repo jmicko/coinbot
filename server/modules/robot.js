@@ -72,12 +72,12 @@ function flipTrade(dbOrder) {
     // if it was a buy, sell for more. multiply old price
     tradeDetails.side = "sell"
     tradeDetails.price = dbOrder.original_sell_price;
-    socketClient.emit('message', { message: `Selling order ${dbOrder.id} for $${dbOrder.price}` });
+    socketClient.emit('message', { message: `Selling for $${Number(tradeDetails.price)}` });
   } else {
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "buy"
     tradeDetails.price = dbOrder.original_buy_price;
-    socketClient.emit('message', { message: `Flipping sides to BUY on order ${dbOrder.id}` });
+    socketClient.emit('message', { message: `Buying for $${Number(tradeDetails.price)}` });
   }
   // return the tradeDetails object
   return tradeDetails;
@@ -143,7 +143,7 @@ const syncOrders = async () => {
     if (ordersToCheck[0]) {
       // tell interface how many trades need to be synched
       socketClient.emit('message', {
-        message: `there are ${ordersToCheck.length} orders that need to be synced`,
+        message: `There are ${ordersToCheck.length} orders that need to be synced`,
       });
       for (let i = 0; i < ordersToCheck.length; i++) {
         const orderToCheck = ordersToCheck[i];
