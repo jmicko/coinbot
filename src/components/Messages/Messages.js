@@ -42,7 +42,11 @@ function Messages() {
           if (prevErrors.length > 999) {
             prevErrors.pop();
           }
-          return [message.error, ...prevErrors]
+          let datedError = {
+            date: `${Date()}`,
+            error: `${message.error}`
+          }
+          return [datedError, ...prevErrors]
         });
       }
     });
@@ -66,7 +70,7 @@ function Messages() {
         <div className="errors-section boxed scrollable">
           <h3 className="title">Errors:</h3>
           {errors.map((error, i) => {
-            return <p key={i}>Err #{errorCount - i}: {error}</p>
+            return <p key={i}><strong>Err #{errorCount - i}: {error.date}</strong> <br/> {error.error}</p>
           })}
         </div>
       </div>
