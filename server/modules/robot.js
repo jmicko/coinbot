@@ -221,6 +221,10 @@ const syncOrders = async () => {
                 });
               } else {
                 console.log('problem in the loop reordering trade', err);
+                socketClient.emit('message', {
+                  error: `unknown error when reordering trade`,
+                  orderUpdate: true
+                });
               }
             }
           }
@@ -231,16 +235,20 @@ const syncOrders = async () => {
     } else if (err.code && (err.code === 'ESOCKETTIMEDOUT' || err.code === 'ETIMEDOUT')) {
       console.log('Timed out!!!!!');
       socketClient.emit('message', {
-        error: `Connection timed out, synching all orders to prevent duplicates`,
+        error: `Connection timed out, consider synching all orders to prevent duplicates. This will not be done for you.`,
         orderUpdate: true
       });
-      try {
-        await authedClient.cancelAllOrders();
-        console.log('synched orders just in case');
-      } catch (err) {
-        console.log('error at end of syncOrders function');
-      }
+      // try {
+      //   await authedClient.cancelAllOrders();
+      //   console.log('synched orders just in case');
+      // } catch (err) {
+      //   console.log('error at end of syncOrders function');
+      // }
     } else {
+      socketClient.emit('message', {
+        error: `unknown error from syncOrders loop`,
+        orderUpdate: true
+      });
       console.log('error from robot.syncOrders', err);
     }
   } finally {

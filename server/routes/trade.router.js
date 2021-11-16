@@ -44,10 +44,10 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
     } else if (err.code && err.code === 'ETIMEDOUT') {
       console.log('Timed out!!!!! Synching orders just in case');
       socketClient.emit('message', {
-        error: `Connection timed out, synching all orders to prevent duplicates`,
+        error: `Connection timed out, consider synching all orders to prevent duplicates. This will not be done for you.`,
         orderUpdate: true
       });
-      await authedClient.cancelAllOrders();
+      // await authedClient.cancelAllOrders();
     } else {
       console.log('problem in sending trade post route', err);
     }
