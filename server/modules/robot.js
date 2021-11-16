@@ -110,25 +110,30 @@ const syncOrders = async () => {
     // also get a list of orders that are open on cb, but not stored in the db. 
     // these are extra orders and should be canceled???
     const ordersToCancel = await orderElimination(cbOrders, dbOrders);
-    if (ordersToCancel[0] && ordersToCancel.length < 8) {
+    if (ordersToCancel[0]) {
       console.log('these are the extra orders that should be canceled', ordersToCancel);
       // if there are orders, delete them from cb
-      ordersToCancel.forEach(async orderToCancel => {
+      // use a regular for loop so that it waits between each one
+      for (let i = 0; i < ordersToCancel.length; i++) {
+        const orderToCancel = ordersToCancel[i];
+        console.log('ORDER TO CANCEL', orderToCancel.id);
         // need to wait and double check db before deleting because they take time to store and show up on cb first
         await sleep(1000);
         // check if order is in db
         try {
           let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
-          console.log('checked again for the order in the db', doubleCheck.id);
           if (!doubleCheck) {
             // cancel the order
-            console.log('canceling order', orderToCancel.id);
+            console.log('NEW NEW NEW canceling order', orderToCancel.id);
             authedClient.cancelOrder(orderToCancel.id)
+          } else {
+            console.log('checked again for the order in the db', doubleCheck.id);
           }
         } catch (err) {
           console.log('error deleting extra order', err);
         }
-      });
+        
+      }
       // wait for a second to allow cancels to go through so bot doesn't cancel twice
       await sleep(1000);
     }
