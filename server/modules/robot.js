@@ -132,7 +132,9 @@ const syncOrders = async () => {
         } catch (err) {
           console.log('error deleting extra order', err);
         }
-        
+        socketClient.emit('message', {
+          heartbeat: true,
+        });
       }
       // wait for a second to allow cancels to go through so bot doesn't cancel twice
       await sleep(1000);
