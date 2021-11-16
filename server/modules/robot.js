@@ -27,7 +27,6 @@ async function theLoop() {
       let updatedTrade = await pool.query(queryText, [dbOrder.id]);
       // tell the frontend that an update was made so the DOM can update
       socketClient.emit('message', {
-        message: `an exchange was made`,
         orderUpdate: true
       });
     } catch (err) {
@@ -35,14 +34,10 @@ async function theLoop() {
         console.log('Timed out!!!!! from the loop');
         await authedClient.cancelAllOrders();
         console.log('synched orders just in case');
-      } else if (err.response.statusCode === 400) {
+      } else if (err.response?.statusCode === 400) {
         console.log('Insufficient funds! from the loop');
-        // need to cancel all orders then check funds to make sure there is enough for 
+        // todo - check funds to make sure there is enough for 
         // all of them to be replaced, and balance if needed
-
-
-        // await authedClient.cancelAllOrders();
-        // console.log('synched orders just in case');
       } else {
         console.log('error in the loop', err);
       }
@@ -115,35 +110,41 @@ const syncOrders = async () => {
     // also get a list of orders that are open on cb, but not stored in the db. 
     // these are extra orders and should be canceled???
     const ordersToCancel = await orderElimination(cbOrders, dbOrders);
-    if (ordersToCancel[0] && ordersToCancel.length < 8) {
+    if (ordersToCancel[0]) {
       console.log('these are the extra orders that should be canceled', ordersToCancel);
       // if there are orders, delete them from cb
-      ordersToCancel.forEach(async orderToCancel => {
+      // use a regular for loop so that it waits between each one
+      for (let i = 0; i < ordersToCancel.length; i++) {
+        const orderToCancel = ordersToCancel[i];
+        console.log('ORDER TO CANCEL', orderToCancel.id);
         // need to wait and double check db before deleting because they take time to store and show up on cb first
         await sleep(1000);
         // check if order is in db
         try {
           let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
-          console.log('checked again for the order in the db', doubleCheck.id);
           if (!doubleCheck) {
             // cancel the order
-            console.log('canceling order', orderToCancel.id);
+            console.log('NEW NEW NEW canceling order', orderToCancel.id);
             authedClient.cancelOrder(orderToCancel.id)
+          } else {
+            console.log('checked again for the order in the db', doubleCheck.id);
           }
         } catch (err) {
           console.log('error deleting extra order', err);
         }
-      });
+        socketClient.emit('message', {
+          heartbeat: true,
+        });
+      }
       // wait for a second to allow cancels to go through so bot doesn't cancel twice
       await sleep(1000);
     }
 
-    // tell interface how many trades need to be synched
-    socketClient.emit('message', {
-      error: `there were ${ordersToCheck.length} orders that need to be synced`,
-      message: `Synching all orders`,
-    });
     if (ordersToCheck[0]) {
+      // tell interface how many trades need to be synched
+      socketClient.emit('message', {
+        message: `there are ${ordersToCheck.length} orders that need to be synced`,
+      });
       order = ordersToCheck[0]
       console.log('need to flip this trade', order.price);
       // get all the order details from cb
@@ -169,19 +170,12 @@ const syncOrders = async () => {
         let fullSettledDetails = await authedClient.getOrder(order.id);
         console.log('here are the full settled order details that maybe need to be deleted', fullSettledDetails);
       } catch (err) {
-        if (err.response.statusCode === 404) {
+        if (err.response?.statusCode === 404) {
           if (order.will_cancel) {
             // if the order was supposed to be canceled
             console.log('need to delete for sure', order);
             // delete the trade from the db
-            const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-            const response = await pool.query(queryText, [order.id]);
-            // console.log('response from cancelling order and deleting from db', response.rowCount);
-            socketClient.emit('message', {
-              message: `exchange was tossed out of the ol' databanks`,
-              orderUpdate: true
-            });
-
+            await databaseClient.deleteTrade(order.id);
           } else {
             // if the order was not supposed to be canceled
             console.log('need to reorder', order.price);
@@ -207,13 +201,17 @@ const syncOrders = async () => {
               const response = await pool.query(queryText, [order.id]);
               // console.log('response from cancelling order and deleting from db', response.rowCount);
               socketClient.emit('message', {
-                message: `trade was reordered`,
+                error: `trade was reordered`,
                 orderUpdate: true
               });
 
             } catch (err) {
-              if (err.response.statusCode === 400) {
+              if (err.response?.statusCode === 400) {
                 console.log('Insufficient funds!');
+                socketClient.emit('message', {
+                  error: `Insufficient funds!`,
+                  orderUpdate: true
+                });
               } else {
                 console.log('problem in the loop reordering trade', err);
               }
@@ -225,6 +223,10 @@ const syncOrders = async () => {
       }
     } else if (err.code && (err.code === 'ESOCKETTIMEDOUT' || err.code === 'ETIMEDOUT')) {
       console.log('Timed out!!!!!');
+      socketClient.emit('message', {
+        error: `Connection timed out, synching all orders to prevent duplicates`,
+        orderUpdate: true
+      });
       try {
         await authedClient.cancelAllOrders();
         console.log('synched orders just in case');
@@ -235,6 +237,9 @@ const syncOrders = async () => {
       console.log('error from robot.syncOrders', err);
     }
   } finally {
+    socketClient.emit('message', {
+      heartbeat: true,
+    });
     // when everything is done, call the sync again
     setTimeout(() => {
       syncOrders();

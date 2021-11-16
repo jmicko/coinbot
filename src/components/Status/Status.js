@@ -11,10 +11,7 @@ const publicClient = new CoinbasePro.PublicClient();
 
 function Status(props) {
   const dispatch = useDispatch();
-  const [loopStatus, setLoopStatus] = useState("I count loops");
-  const [localWebsocket, setLocalWebsocket] = useState("disconnected");
-  const [cbWebsocket, setCbWebsocket] = useState("disconnected");
-  const [connection, setConnection] = useState(false);
+  const [loopStatus, setLoopStatus] = useState(true);
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
 
   const socket = useSocket();
@@ -48,30 +45,20 @@ function Status(props) {
     // socket may not exist on page load because it hasn't connected yet
     if (socket == null) return;
 
-
     socket.on('message', message => {
-      // loop status updates get saved to own state
-      if (message.loopStatus != null) {
-        setLoopStatus(message.loopStatus);
-        // getProfits();
+      if (message.heartbeat) {
+        setLoopStatus(prevLoopStatus => {
+          // console.log('previous error count', prevErrorCount);
+          return !prevLoopStatus;
+        });
       }
-      message.connection?.localWebsocket
-        ? setLocalWebsocket(message.connection.localWebsocket)
-        : message.connection?.cbWebsocket
-          ? setCbWebsocket(message.cbWebsocket)
-          : console.log('connection message is not right');
-      // connection status updates get saved to own state
-      // if (message.connection != null) {
-      //   setConnection({...message.connection})
-      //   console.log(`++++++++++message:`, message.connection);
-      // }
     });
 
     // this will remove the listener when component rerenders
     return () => socket.off('message')
     // useEffect will depend on socket because the connection will 
     // not be there right when the page loads
-  }, [socket, getProfits]);
+  }, [socket]);
 
   // get the total number of open orders
   useEffect(() => {
@@ -86,9 +73,9 @@ function Status(props) {
       if (error) {
         // handle the error
         console.log(error);
-        setConnection(false)
+        // setConnection(false)
       } else {
-        setConnection(true)
+        // setConnection(true)
         // save price
         dispatch({
           type: 'SET_TICKER_PRICE',
@@ -130,6 +117,7 @@ function Status(props) {
       <p className="info status-ticker"><strong>30 Day Volume</strong><br />${props.store.accountReducer.feeReducer.usd_volume}</p>
       <p className="info status-ticker"><strong>Profit Estimate</strong><br />${Number(props.store.accountReducer.profitsReducer[0].sum)}</p>
       <p className="info status-ticker"><strong>Total Open Orders</strong><br />{openOrderQuantity}</p>
+      <p className="info status-ticker">~~{loopStatus ? <strong>HEARTBEAT</strong> : <strong>heartbeat</strong>}~~</p>
       {/* <p className="small">*Profit calculation is a work in progress, but this should be close</p> */}
       {/* .store.accountReducer.feeReducer */}
     </div>

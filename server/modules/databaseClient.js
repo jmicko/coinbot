@@ -34,7 +34,6 @@ const storeTrade = (newOrder, originalDetails) => {
           success: true
         }
         socketClient.emit('message', {
-          message: `trade was tossed into the ol' databanks`,
           orderUpdate: true
         });
         resolve(success);
@@ -111,7 +110,7 @@ const deleteTrade = async (id) => {
     await pool.query(queryText, [id]);
     console.log('exchange was tossed lmao');
     socketClient.emit('message', {
-      message: `exchange was tossed out of the ol' databanks`,
+      message: `exchange was removed from the database`,
       orderUpdate: true
     });
   } catch (error) {
