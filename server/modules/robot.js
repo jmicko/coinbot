@@ -140,13 +140,11 @@ const syncOrders = async () => {
       await sleep(1000);
     }
 
-    // tell interface how many trades need to be synched
-    if (ordersToCheck.length > 0) {
+    if (ordersToCheck[0]) {
+      // tell interface how many trades need to be synched
       socketClient.emit('message', {
         message: `there are ${ordersToCheck.length} orders that need to be synced`,
       });
-    }
-    if (ordersToCheck[0]) {
       order = ordersToCheck[0]
       console.log('need to flip this trade', order.price);
       // get all the order details from cb
