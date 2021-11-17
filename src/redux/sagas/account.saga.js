@@ -61,7 +61,7 @@ function* factoryReset() {
 
     const response = yield axios.post(`/api/account/factoryReset`);
     console.log('response from factory reset', response);
-    // yield put({ type: 'SET_ACCOUNT', payload: response.data })
+    yield put({ type: 'UNSET_USER' });
   } catch (error) {
     console.log('post account route factoryReset has failed', error);
     if (error.response.status === 403) {
