@@ -125,12 +125,17 @@ const syncOrders = async () => {
           if (!doubleCheck) {
             // cancel the order
             console.log('canceling order', orderToCancel.id);
-            authedClient.cancelOrder(orderToCancel.id)
+            await authedClient.cancelOrder(orderToCancel.id)
           } else {
             console.log('checked again for the order in the db', doubleCheck.id);
           }
         } catch (err) {
-          console.log('error deleting extra order', err);
+          if (err.response?.statusCode === 404) {
+            console.log('order not found when canceling extra order!');
+            i += ordersToCancel.length;
+          } else {
+            console.log('error deleting extra order', err);
+          }
         }
         socketClient.emit('message', {
           heartbeat: true,
