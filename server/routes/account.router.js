@@ -77,6 +77,21 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   res.sendStatus(200);
 });
 
+/**
+* POST route to factory reset the bot
+*/
+router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
+  console.log('factory reset route hit!');
+  // const api = req.body;
+  // const queryText = `UPDATE "user" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3;`;
+  //     let result = await pool.query(queryText, [
+  //       api.secret,
+  //       api.key,
+  //       api.passphrase,
+  //     ]);
+  res.sendStatus(200);
+});
+
 
 
 module.exports = router;
