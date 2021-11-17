@@ -47,10 +47,16 @@ function Trade(props) {
 
   // when the page loads, get the account fees 
   useEffect(() => {
-    // getFees()
     dispatch({ type: 'FETCH_FEES' });
-    getCurrentPrice();
-  }, [dispatch, getCurrentPrice])
+  }, [dispatch])
+
+
+  // when the page loads, get the current price
+  useEffect(() => {
+    if (price === 0) {
+      getCurrentPrice();
+    }
+  }, [getCurrentPrice])
 
   // once the account fees load into redux, 
   useEffect(() => {
