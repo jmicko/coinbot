@@ -9,7 +9,7 @@ function Trade(props) {
   // todo - default price value should automatically start out at the current price
   // of bitcoin, rounded to the closest $100
   const [transactionSide, setTransactionSide] = useState('buy');
-  const [price, setTransactionPrice] = useState(30000);
+  const [price, setTransactionPrice] = useState(0);
   const [transactionAmount, setTransactionAmount] = useState(0.001);
   const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
   const [tradePairRatio, setTradePairRatio] = useState(1.1);
@@ -31,9 +31,11 @@ function Trade(props) {
       }
     })
   }
-  
+
   const getCurrentPrice = (event) => {
-    event.preventDefault();
+    if (event) {
+      event.preventDefault();
+    }
     // check if the current price has been stored yet to prevent NaN errors
     if (props.store.statusReducer.tickerReducer.tickerPrice) {
       // round the price to nearest 100
@@ -47,7 +49,8 @@ function Trade(props) {
   useEffect(() => {
     // getFees()
     dispatch({ type: 'FETCH_FEES' });
-  }, [dispatch])
+    getCurrentPrice();
+  }, [dispatch, getCurrentPrice])
 
   // once the account fees load into redux, 
   useEffect(() => {
