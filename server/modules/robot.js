@@ -72,12 +72,12 @@ function flipTrade(dbOrder) {
     // if it was a buy, sell for more. multiply old price
     tradeDetails.side = "sell"
     tradeDetails.price = dbOrder.original_sell_price;
-    socketClient.emit('message', { message: `Selling order ${dbOrder.id} for $${dbOrder.price}` });
+    socketClient.emit('message', { message: `Selling for $${Number(tradeDetails.price)}` });
   } else {
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "buy"
     tradeDetails.price = dbOrder.original_buy_price;
-    socketClient.emit('message', { message: `Flipping sides to BUY on order ${dbOrder.id}` });
+    socketClient.emit('message', { message: `Buying for $${Number(tradeDetails.price)}` });
   }
   // return the tradeDetails object
   return tradeDetails;
@@ -124,13 +124,18 @@ const syncOrders = async () => {
           let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
           if (!doubleCheck) {
             // cancel the order
-            console.log('NEW NEW NEW canceling order', orderToCancel.id);
-            authedClient.cancelOrder(orderToCancel.id)
+            console.log('canceling order', orderToCancel.id);
+            await authedClient.cancelOrder(orderToCancel.id)
           } else {
             console.log('checked again for the order in the db', doubleCheck.id);
           }
         } catch (err) {
-          console.log('error deleting extra order', err);
+          if (err.response?.statusCode === 404) {
+            console.log('order not found when canceling extra order!');
+            i += ordersToCancel.length;
+          } else {
+            console.log('error deleting extra order', err);
+          }
         }
         socketClient.emit('message', {
           heartbeat: true,
@@ -143,23 +148,30 @@ const syncOrders = async () => {
     if (ordersToCheck[0]) {
       // tell interface how many trades need to be synched
       socketClient.emit('message', {
-        message: `there are ${ordersToCheck.length} orders that need to be synced`,
+        message: `There are ${ordersToCheck.length} orders that need to be synced`,
       });
-      order = ordersToCheck[0]
-      console.log('need to flip this trade', order.price);
-      // get all the order details from cb
-      let fullSettledDetails = await authedClient.getOrder(order.id);
-      // console.log('here are the full settled order details', fullSettledDetails);
-      // update the order in the db
-      const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5 WHERE "id"=$6;`;
-      let result = await pool.query(queryText, [
-        fullSettledDetails.settled,
-        fullSettledDetails.done_at,
-        fullSettledDetails.fill_fees,
-        fullSettledDetails.filled_size,
-        fullSettledDetails.executed_value,
-        order.id
-      ]);
+      for (let i = 0; i < ordersToCheck.length; i++) {
+        const orderToCheck = ordersToCheck[i];
+        order = orderToCheck;
+        console.log('@@@@@@@ setting this trade as settled in the db', orderToCheck.id, orderToCheck.price);
+        // wait between each loop to prevent rate limiting
+        await sleep(500);
+
+        console.log('need to flip this trade', orderToCheck.price);
+        // get all the order details from cb
+        let fullSettledDetails = await authedClient.getOrder(orderToCheck.id);
+        // console.log('here are the full settled order details', fullSettledDetails);
+        // update the order in the db
+        const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5 WHERE "id"=$6;`;
+        let result = await pool.query(queryText, [
+          fullSettledDetails.settled,
+          fullSettledDetails.done_at,
+          fullSettledDetails.fill_fees,
+          fullSettledDetails.filled_size,
+          fullSettledDetails.executed_value,
+          orderToCheck.id
+        ]);
+      }
     };
   } catch (err) {
     if (err.response?.statusCode === 404) {
@@ -214,6 +226,10 @@ const syncOrders = async () => {
                 });
               } else {
                 console.log('problem in the loop reordering trade', err);
+                socketClient.emit('message', {
+                  error: `unknown error when reordering trade`,
+                  orderUpdate: true
+                });
               }
             }
           }
@@ -224,16 +240,20 @@ const syncOrders = async () => {
     } else if (err.code && (err.code === 'ESOCKETTIMEDOUT' || err.code === 'ETIMEDOUT')) {
       console.log('Timed out!!!!!');
       socketClient.emit('message', {
-        error: `Connection timed out, synching all orders to prevent duplicates`,
+        error: `Connection timed out, consider synching all orders to prevent duplicates. This will not be done for you.`,
         orderUpdate: true
       });
-      try {
-        await authedClient.cancelAllOrders();
-        console.log('synched orders just in case');
-      } catch (err) {
-        console.log('error at end of syncOrders function');
-      }
+      // try {
+      //   await authedClient.cancelAllOrders();
+      //   console.log('synched orders just in case');
+      // } catch (err) {
+      //   console.log('error at end of syncOrders function');
+      // }
     } else {
+      socketClient.emit('message', {
+        error: `unknown error from syncOrders loop`,
+        orderUpdate: true
+      });
       console.log('error from robot.syncOrders', err);
     }
   } finally {
@@ -244,6 +264,23 @@ const syncOrders = async () => {
     setTimeout(() => {
       syncOrders();
     }, 300);
+  }
+}
+
+async function syncEverything() {
+  try {
+    await authedClient.cancelAllOrders();
+    console.log('synching all orders');
+    socketClient.emit('message', {
+      message: `synching everything`,
+      orderUpdate: true
+    });
+  } catch (err) {
+    console.log('error at end of syncEverything function');
+    socketClient.emit('message', {
+      error: `unknown error when trying to sync everything`,
+      orderUpdate: true
+    });
   }
 }
 
@@ -274,6 +311,7 @@ const robot = {
   synching: false,
   maxHistory: 200,
   theLoop: theLoop,
+  syncEverything: syncEverything,
 }
 
 

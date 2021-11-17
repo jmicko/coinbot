@@ -93,6 +93,10 @@ io.engine.on("connection_error", (err) => {
 
 // start the loop
 robot.theLoop();
+// synch all orders every 6 hours
+setInterval(() => {
+  robot.syncEverything();
+}, (1000*60*60*6));
 
 
 // Serve static files

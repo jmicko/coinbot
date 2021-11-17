@@ -25,7 +25,11 @@ function Messages() {
           if (prevMessages.length > 999) {
             prevMessages.pop();
           }
-          return [message.message, ...prevMessages]
+          let datedMessage = {
+            date: `${Date()}`,
+            message: `${message.message}`
+          }
+          return [datedMessage, ...prevMessages]
         });
       }
       if (message.error) {
@@ -38,7 +42,11 @@ function Messages() {
           if (prevErrors.length > 999) {
             prevErrors.pop();
           }
-          return [message.error, ...prevErrors]
+          let datedError = {
+            date: `${Date()}`,
+            error: `${message.error}`
+          }
+          return [datedError, ...prevErrors]
         });
       }
     });
@@ -51,18 +59,18 @@ function Messages() {
   return (
     // show messages on screen
     <div className="Messages boxed">
-      <h3 className="title">Coinbot Message Board:</h3>
+      <h3 className="title">Coinbot Message Board</h3>
       <div className="message-board">
         <div className="message-section boxed scrollable">
-          <h3 className="title">General Messages:</h3>
+          <h3 className="title">General Messages</h3>
           {messages.map((message, i) => {
-            return <p key={i}>Msg #{messagesCount - i}: {message}</p>
+            return <p key={i}><strong>Msg #{messagesCount - i} {message.date}</strong> <br/> {message.message}</p>
           })}
         </div>
         <div className="errors-section boxed scrollable">
-          <h3 className="title">Errors:</h3>
+          <h3 className="title">Errors</h3>
           {errors.map((error, i) => {
-            return <p key={i}>Err #{errorCount - i}: {error}</p>
+            return <p key={i}><strong>Err #{errorCount - i} {error.date}</strong> <br/> {error.error}</p>
           })}
         </div>
       </div>

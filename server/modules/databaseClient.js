@@ -92,30 +92,34 @@ const getSingleTrade = (id) => {
     // put sql stuff here, extending the pool promise to the parent function
     sqlText = `SELECT * FROM "orders" WHERE "id"=$1;`;
     pool.query(sqlText, [id])
-      .then((results) => {
-        const [singleTrade] = results.rows;
-        // promise returns promise from pool if success
-        resolve(singleTrade);
-      })
-      .catch((err) => {
-        // or promise relays errors from pool to parent
-        reject(err);
-      })
+    .then((results) => {
+      const [singleTrade] = results.rows;
+      // promise returns promise from pool if success
+      resolve(singleTrade);
+    })
+    .catch((err) => {
+      // or promise relays errors from pool to parent
+      reject(err);
+    })
   });
 }
 
 const deleteTrade = async (id) => {
-  try {
-    const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-    await pool.query(queryText, [id]);
-    console.log('exchange was tossed lmao');
-    socketClient.emit('message', {
-      message: `exchange was removed from the database`,
-      orderUpdate: true
-    });
-  } catch (error) {
-    console.log('problem in deleteTrade function in databaseClient', error);
-  }
+  return new Promise(async (resolve, reject) => {
+    try {
+      const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+      let result = await pool.query(queryText, [id]);
+      console.log('exchange was tossed lmao');
+      socketClient.emit('message', {
+        message: `exchange was removed from the database`,
+        orderUpdate: true
+      });
+      resolve(result);
+    } catch (err) {
+      console.log('problem in deleteTrade function in databaseClient', err);
+      reject(err)
+    }
+  });
 }
 
 

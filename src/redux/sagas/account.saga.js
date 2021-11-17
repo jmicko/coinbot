@@ -47,9 +47,23 @@ function* storeApi(action) {
 
     const response = yield axios.post(`/api/account/storeApi`, action.payload);
     console.log('response from storing api', response);
-    // yield put({ type: 'SET_ACCOUNT', payload: response.data })
   } catch (error) {
     console.log('post account route storeApi has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
+function* factoryReset() {
+  try {
+    console.log('Factory Reset!');
+
+    const response = yield axios.post(`/api/account/factoryReset`);
+    console.log('response from factory reset', response);
+    yield put({ type: 'UNSET_USER' });
+  } catch (error) {
+    console.log('post account route factoryReset has failed', error);
     if (error.response.status === 403) {
       yield put({ type: 'UNSET_USER' });
     }
@@ -61,6 +75,7 @@ function* accountSaga() {
   yield takeLatest('FETCH_ACCOUNT', fetchAccounts);
   yield takeLatest('FETCH_PROFITS', fetchProfits);
   yield takeLatest('STORE_API', storeApi);
+  yield takeLatest('FACTORY_RESET', factoryReset);
 }
 
 export default accountSaga;

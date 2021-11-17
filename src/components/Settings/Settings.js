@@ -92,6 +92,18 @@ function Settings(props) {
           {/* submit button */}
           <input className="btn-store-api btn-blue" type="submit" name="submit" value="Store API details" />
         </form>
+        <h4>Factory Reset</h4>
+        <p>
+          This will delete everything! Use with caution!
+        </p>
+        <p>
+          CAUTION <button
+            className="btn-logout btn-red"
+            onClick={() => dispatch({ type: 'FACTORY_RESET' })}
+          >
+            Factory Reset
+          </button> CAUTION
+        </p>
       </div>
     );
   } else {
