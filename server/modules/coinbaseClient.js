@@ -83,12 +83,9 @@ async function getOpenOrders() {
       // const data      = request.data;
       const method = 'GET';
       const path = "/orders?status=open";
-      const body = (method === 'GET' || !data) ? '' : JSON.stringify(data);
-      const message = timestamp + method + path + body;
+      const message = timestamp + method + path;
       const key = CryptoJS.enc.Base64.parse(secret);
       const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-      // console.log("Message: " + message + " HMAC: " + hash);
-
       return hash;
     }
 
@@ -126,12 +123,9 @@ async function cancelOrder(orderId) {
       // const data      = request.data;
       const method = 'DELETE';
       const path = `/orders/${orderId}`;
-      const body = (method === 'DELETE' || !data) ? '' : JSON.stringify(data);
-      const message = timestamp + method + path + body;
+      const message = timestamp + method + path;
       const key = CryptoJS.enc.Base64.parse(secret);
       const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-      // console.log("Message: " + message + " HMAC: " + hash);
-
       return hash;
     }
 
