@@ -130,7 +130,7 @@ const syncOrders = async () => {
           if (!doubleCheck) {
             // cancel the order
             console.log('canceling order', orderToCancel.id);
-            await authedClient.cancelOrder(orderToCancel.id)
+            await coinbaseClient.cancelOrder(orderToCancel.id)
           } else {
             console.log('checked again for the order in the db', doubleCheck.id);
           }

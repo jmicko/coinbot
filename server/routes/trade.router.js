@@ -6,6 +6,7 @@ const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient');
 const socketClient = require('../modules/socketClient');
 const robot = require('../modules/robot');
+const coinbaseClient = require('../modules/coinbaseClient');
 
 
 /**
@@ -47,7 +48,6 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
         error: `Connection timed out, consider synching all orders to prevent duplicates. This will not be done for you.`,
         orderUpdate: true
       });
-      // await authedClient.cancelAllOrders();
     } else {
       console.log('problem in sending trade post route', err);
     }
@@ -70,7 +70,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
   let result = await pool.query(queryText, [orderId]);
   // send cancelOrder to cb
   try {
-    let result = await authedClient.cancelOrder(orderId);
+    let result = await coinbaseClient.cancelOrder(orderId);
     console.log('order was deleted successfully from cb', result);
     databaseClient.deleteTrade(orderId);
     console.log('order was deleted successfully from database');
