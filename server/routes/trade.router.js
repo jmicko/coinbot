@@ -88,6 +88,15 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
         console.log('order not found in account', orderId);
         res.sendStatus(400)
       }
+    }
+    if (error.response?.status === 404) {
+      databaseClient.deleteTrade(orderId);
+      socketClient.emit('message', {
+        error: `Order was not found when delete was requested`,
+        orderUpdate: true
+      });
+      console.log('order not found in account', orderId);
+      res.sendStatus(400)
     } else {
       console.log('something failed', error);
       res.sendStatus(500)

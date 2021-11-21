@@ -34,8 +34,11 @@ async function theLoop() {
         console.log('Timed out!!!!! from the loop');
         await coinbaseClient.cancelAllOrders();
         console.log('synched orders just in case');
-      } else if (err.response?.statusCode === 400) {
+      } else if (err.response?.status === 400) {
         console.log('Insufficient funds! from the loop');
+        socketClient.emit('message', {
+          error: `Insufficient funds in the loop!`,
+        });
         // todo - check funds to make sure there is enough for 
         // all of them to be replaced, and balance if needed
       } else {
@@ -134,7 +137,7 @@ const syncOrders = async () => {
             console.log('checked again for the order in the db', doubleCheck.id);
           }
         } catch (err) {
-          if (err.response?.statusCode === 404) {
+          if (err.response?.status === 404) {
             console.log('order not found when canceling extra order!');
             i += ordersToCancel.length;
           } else {
@@ -218,13 +221,13 @@ const syncOrders = async () => {
               const response = await pool.query(queryText, [order.id]);
               // console.log('response from cancelling order and deleting from db', response.rowCount);
               socketClient.emit('message', {
-                error: `trade was reordered`,
+                message: `trade was reordered`,
                 orderUpdate: true
               });
 
             } catch (err) {
-              if (err.response?.statusCode === 400) {
-                console.log('Insufficient funds!');
+              if (err.response?.status === 400) {
+                console.log('Insufficient funds when reordering missing trade in the loop!');
                 socketClient.emit('message', {
                   error: `Insufficient funds!`,
                   orderUpdate: true
@@ -248,12 +251,19 @@ const syncOrders = async () => {
         error: `Connection timed out, consider synching all orders to prevent duplicates. This will not be done for you.`,
         orderUpdate: true
       });
+    } else if (err.code === 'ECONNRESET') {
+      console.log('econnreset in syncOrders loop');
+      socketClient.emit('message', {
+        error: `Connection to coinbase server was reset`,
+        orderUpdate: true
+      });
     } else {
       socketClient.emit('message', {
         error: `unknown error from syncOrders loop`,
         orderUpdate: true
       });
       console.log('error from robot.syncOrders', err);
+      // need to handle errors from err.code === 'ECONNRESET'
     }
   } finally {
     socketClient.emit('message', {
