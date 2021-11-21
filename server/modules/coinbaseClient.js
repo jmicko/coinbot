@@ -30,42 +30,45 @@ async function getPassphrase() {
 
 
 async function getAllOrders() {
-  const timestamp = Math.floor(Date.now() / 1000);
-  // // sign the request
-  const secret = await getSecret();
-  const key = await getKey();
-  const passphrase = await getPassphrase();
+  return new Promise(async (resolve, reject) => {
+    const timestamp = Math.floor(Date.now() / 1000);
+    // // sign the request
+    const secret = await getSecret();
+    const key = await getKey();
+    const passphrase = await getPassphrase();
 
-  function computeSignature(request) {
-    // const data      = request.data;
-    const method = 'GET';
-    const path = "/orders";
-    const body = (method === 'GET' || !data) ? '' : JSON.stringify(data);
-    const message = timestamp + method + path + body;
-    const key = CryptoJS.enc.Base64.parse(secret);
-    const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-    // console.log("Message: " + message + " HMAC: " + hash);
+    function computeSignature(request) {
+      // const data      = request.data;
+      const method = 'GET';
+      const path = "/orders";
+      const body = (method === 'GET' || !data) ? '' : JSON.stringify(data);
+      const message = timestamp + method + path + body;
+      const key = CryptoJS.enc.Base64.parse(secret);
+      const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
+      // console.log("Message: " + message + " HMAC: " + hash);
 
-    return hash;
-  }
-
-  const options = {
-    method: 'GET',
-    url: 'https://api-public.sandbox.pro.coinbase.com/orders',
-    headers: {
-      Accept: 'application/json',
-      'cb-access-key': key,
-      'cb-access-passphrase': passphrase,
-      'cb-access-sign': computeSignature(),
-      'cb-access-timestamp': timestamp
+      return hash;
     }
-  };
 
-  axios.request(options).then(function (response) {
-    console.log(response.data);
-  }).catch(function (error) {
-    // console.error(error);
-  });
+    const options = {
+      method: 'GET',
+      url: 'https://api-public.sandbox.pro.coinbase.com/orders',
+      headers: {
+        Accept: 'application/json',
+        'cb-access-key': key,
+        'cb-access-passphrase': passphrase,
+        'cb-access-sign': computeSignature(),
+        'cb-access-timestamp': timestamp
+      }
+    };
+
+    axios.request(options).then(function (response) {
+      resolve(response.data)
+    }).catch(function (error) {
+      // console.error(error);
+      reject(error)
+    });
+  })
 }
 
 
@@ -150,45 +153,6 @@ async function getOrder(orderId) {
   })
 }
 
-async function cancelOrder(orderId) {
-  return new Promise(async (resolve, reject) => {
-    const timestamp = Math.floor(Date.now() / 1000);
-    // // sign the request
-    const secret = await getSecret();
-    const key = await getKey();
-    const passphrase = await getPassphrase();
-
-    function computeSignature(request) {
-      // const data      = request.data;
-      const method = 'DELETE';
-      const path = `/orders/${orderId}`;
-      const message = timestamp + method + path;
-      const key = CryptoJS.enc.Base64.parse(secret);
-      const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-      return hash;
-    }
-
-    const options = {
-      method: 'DELETE',
-      url: `https://api-public.sandbox.pro.coinbase.com/orders/${orderId}`,
-      headers: {
-        Accept: 'application/json',
-        'cb-access-key': key,
-        'cb-access-passphrase': passphrase,
-        'cb-access-sign': computeSignature(),
-        'cb-access-timestamp': timestamp
-      }
-    };
-
-    axios.request(options).then(function (response) {
-      resolve(response.data);
-    }).catch(function (error) {
-      // console.error(error);
-      reject(error);
-    });
-  })
-}
-
 async function placeOrder(data) {
   return new Promise(async (resolve, reject) => {
     const timestamp = Math.floor(Date.now() / 1000);
@@ -232,10 +196,106 @@ async function placeOrder(data) {
   })
 }
 
+async function cancelOrder(orderId) {
+  return new Promise(async (resolve, reject) => {
+    const timestamp = Math.floor(Date.now() / 1000);
+    // // sign the request
+    const secret = await getSecret();
+    const key = await getKey();
+    const passphrase = await getPassphrase();
+
+    function computeSignature(request) {
+      // const data      = request.data;
+      const method = 'DELETE';
+      const path = `/orders/${orderId}`;
+      const message = timestamp + method + path;
+      const key = CryptoJS.enc.Base64.parse(secret);
+      const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
+      return hash;
+    }
+
+    const options = {
+      method: 'DELETE',
+      url: `https://api-public.sandbox.pro.coinbase.com/orders/${orderId}`,
+      headers: {
+        Accept: 'application/json',
+        'cb-access-key': key,
+        'cb-access-passphrase': passphrase,
+        'cb-access-sign': computeSignature(),
+        'cb-access-timestamp': timestamp
+      }
+    };
+
+    axios.request(options).then(function (response) {
+      resolve(response.data);
+    }).catch(function (error) {
+      // console.error(error);
+      reject(error);
+    });
+  })
+}
+
+async function cancelOrders() {
+  return new Promise(async (resolve, reject) => {
+    const timestamp = Math.floor(Date.now() / 1000);
+    // // sign the request
+    const secret = await getSecret();
+    const key = await getKey();
+    const passphrase = await getPassphrase();
+
+    function computeSignature(request) {
+      // const data      = request.data;
+      const method = 'DELETE';
+      const path = `/orders`;
+      const message = timestamp + method + path;
+      const key = CryptoJS.enc.Base64.parse(secret);
+      const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
+      return hash;
+    }
+
+    const options = {
+      method: 'DELETE',
+      url: `https://api-public.sandbox.pro.coinbase.com/orders`,
+      headers: {
+        Accept: 'application/json',
+        'cb-access-key': key,
+        'cb-access-passphrase': passphrase,
+        'cb-access-sign': computeSignature(),
+        'cb-access-timestamp': timestamp
+      }
+    };
+
+    axios.request(options).then(function (response) {
+      resolve(response.data);
+    }).catch(function (error) {
+      // console.error(error);
+      reject(error);
+    });
+  })
+}
+
+async function cancelAllOrders() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      console.log('cancelling all orders!!!!!!!!!!!!!');
+      await cancelOrders();
+      let totalOrders = await getAllOrders();
+      console.log(totalOrders.length);
+      if (totalOrders.length > 0) {
+        await cancelAllOrders();
+      }
+      resolve(true);
+    } catch (err) {
+      reject(err)
+    }
+  })
+}
+
 module.exports = {
   getAllOrders: getAllOrders,
   getOpenOrders: getOpenOrders,
   cancelOrder: cancelOrder,
   placeOrder: placeOrder,
   getOrder: getOrder,
+  cancelAllOrders: cancelAllOrders,
 }

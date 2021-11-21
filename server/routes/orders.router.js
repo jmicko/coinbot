@@ -6,6 +6,7 @@ const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient');
 const robot = require('../modules/robot');
 const socketClient = require("../modules/socketClient");
+const coinbaseClient = require('../modules/coinbaseClient');
 
 
 /**
@@ -38,7 +39,7 @@ router.get('/', rejectUnauthenticated, (req, res) => {
 */
 router.put('/', rejectUnauthenticated, async (req, res) => {
   console.log('in orders synchronize route');
-  await authedClient.cancelAllOrders();
+  await coinbaseClient.cancelAllOrders();
   console.log('+++++++ synchronization complete +++++++');
   res.sendStatus(200)
 });

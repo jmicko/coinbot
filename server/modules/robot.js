@@ -269,7 +269,7 @@ const syncOrders = async () => {
 
 async function syncEverything() {
   try {
-    await authedClient.cancelAllOrders();
+    await coinbaseClient.cancelAllOrders();
     console.log('synching all orders');
     socketClient.emit('message', {
       message: `synching everything`,
