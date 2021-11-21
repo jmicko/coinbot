@@ -67,12 +67,22 @@ router.get('/profits', rejectUnauthenticated, (req, res) => {
 */
 router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   console.log('here are the api details', req.body);
+  function getURI() {
+    if (api.URI === "sandbox") {
+      return "https://api-public.sandbox.pro.coinbase.com";
+    }
+    else {
+      return "https://api.exchange.coinbase.com";
+    }
+  }
   const api = req.body;
-  const queryText = `UPDATE "user" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3;`;
+  const URI = getURI();
+  const queryText = `UPDATE "user" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4;`;
   let result = await pool.query(queryText, [
     api.secret,
     api.key,
     api.passphrase,
+    URI,
   ]);
   res.sendStatus(200);
 });
