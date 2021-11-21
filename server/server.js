@@ -99,7 +99,7 @@ setInterval(() => {
   robot.syncEverything();
 }, (1000*60*60*6));
 
-coinbaseClient.getAllOrders();
+// coinbaseClient.getAllOrders();
 
 
 // Serve static files

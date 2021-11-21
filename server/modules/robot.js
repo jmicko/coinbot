@@ -1,4 +1,5 @@
 const authedClient = require("./authedClient");
+const coinbaseClient = require("./coinbaseClient");
 const databaseClient = require("./databaseClient");
 const pool = require("./pool");
 const socketClient = require("./socketClient");
@@ -98,7 +99,7 @@ const syncOrders = async () => {
     const results = await Promise.all([
       // get all open orders from db and cb
       databaseClient.getUnsettledTrades('all'),
-      authedClient.getOrders({ status: 'open' })
+      coinbaseClient.getOpenOrders()
     ]);
     // store the lists of orders in the corresponding arrays so they can be compared
     const dbOrders = results[0];
