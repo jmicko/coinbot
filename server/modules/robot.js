@@ -115,6 +115,10 @@ const syncOrders = async () => {
       // if there are orders, delete them from cb
       // use a regular for loop so that it waits between each one
       for (let i = 0; i < ordersToCancel.length; i++) {
+        // send heartbeat for each loop
+        socketClient.emit('message', {
+          heartbeat: true,
+        });
         const orderToCancel = ordersToCancel[i];
         console.log('ORDER TO CANCEL', orderToCancel.id);
         // need to wait and double check db before deleting because they take time to store and show up on cb first
@@ -137,9 +141,6 @@ const syncOrders = async () => {
             console.log('error deleting extra order', err);
           }
         }
-        socketClient.emit('message', {
-          heartbeat: true,
-        });
       }
       // wait for a second to allow cancels to go through so bot doesn't cancel twice
       await sleep(1000);
@@ -151,6 +152,10 @@ const syncOrders = async () => {
         message: `There are ${ordersToCheck.length} orders that need to be synced`,
       });
       for (let i = 0; i < ordersToCheck.length; i++) {
+        // send heartbeat for each loop
+        socketClient.emit('message', {
+          heartbeat: true,
+        });
         const orderToCheck = ordersToCheck[i];
         order = orderToCheck;
         console.log('@@@@@@@ setting this trade as settled in the db', orderToCheck.id, orderToCheck.price);
