@@ -75,7 +75,7 @@ function Settings(props) {
             API Passphrase:
           </label>
           <input
-            type="text"
+            type="password"
             name="passphrase"
             value={passphrase}
             required
@@ -85,7 +85,7 @@ function Settings(props) {
             API Secret:
           </label>
           <input
-            type="text"
+            type="password"
             name="secret"
             value={secret}
             required

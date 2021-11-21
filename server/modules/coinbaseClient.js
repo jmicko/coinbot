@@ -29,6 +29,7 @@ async function getAccounts() {
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
+      const API_URI = user.API_URI;
 
       function computeSignature() {
         const method = 'GET';
@@ -41,7 +42,7 @@ async function getAccounts() {
 
       const options = {
         method: 'GET',
-        url: 'https://api-public.sandbox.pro.coinbase.com/accounts',
+        url: `${API_URI}/accounts`,
         headers: {
           Accept: 'application/json',
           'cb-access-key': key,
@@ -71,6 +72,7 @@ async function getFees() {
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
+      const API_URI = user.API_URI;
 
       function computeSignature() {
         const method = 'GET';
@@ -83,7 +85,7 @@ async function getFees() {
 
       const options = {
         method: 'GET',
-        url: 'https://api-public.sandbox.pro.coinbase.com/fees',
+        url: `${API_URI}/fees`,
         headers: {
           Accept: 'application/json',
           'cb-access-key': key,
@@ -113,6 +115,7 @@ async function getAllOrders() {
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
+      const API_URI = user.API_URI;
 
       function computeSignature(request) {
         // const data      = request.data;
@@ -129,7 +132,7 @@ async function getAllOrders() {
 
       const options = {
         method: 'GET',
-        url: 'https://api-public.sandbox.pro.coinbase.com/orders',
+        url: `${API_URI}/orders`,
         headers: {
           Accept: 'application/json',
           'cb-access-key': key,
@@ -163,6 +166,7 @@ async function getOpenOrders() {
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
+      const API_URI = user.API_URI;
 
       function computeSignature(request) {
         // const data      = request.data;
@@ -176,7 +180,7 @@ async function getOpenOrders() {
 
       const options = {
         method: 'GET',
-        url: 'https://api-public.sandbox.pro.coinbase.com/orders?status=open',
+        url: `${API_URI}/orders?status=open`,
         headers: {
           Accept: 'application/json',
           'cb-access-key': key,
@@ -208,6 +212,7 @@ async function getOrder(orderId) {
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
+      const API_URI = user.API_URI;
 
       function computeSignature(request) {
         // const data      = request.data;
@@ -221,7 +226,7 @@ async function getOrder(orderId) {
 
       const options = {
         method: 'GET',
-        url: `https://api-public.sandbox.pro.coinbase.com/orders/${orderId}`,
+        url: `${API_URI}/orders/${orderId}`,
         headers: {
           Accept: 'application/json',
           'cb-access-key': key,
@@ -252,6 +257,7 @@ async function placeOrder(data) {
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
+      const API_URI = user.API_URI;
 
       function computeSignature(request) {
         // const data      = request.data;
@@ -268,7 +274,7 @@ async function placeOrder(data) {
 
       const options = {
         method: 'POST',
-        url: `https://api-public.sandbox.pro.coinbase.com/orders`,
+        url: `${API_URI}/orders`,
         headers: {
           Accept: 'application/json',
           'cb-access-key': key,
@@ -300,6 +306,7 @@ async function cancelOrder(orderId) {
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
+      const API_URI = user.API_URI;
 
       function computeSignature(request) {
         // const data      = request.data;
@@ -312,7 +319,7 @@ async function cancelOrder(orderId) {
       }
       const options = {
         method: 'DELETE',
-        url: `https://api-public.sandbox.pro.coinbase.com/orders/${orderId}`,
+        url: `${API_URI}/orders/${orderId}`,
         headers: {
           Accept: 'application/json',
           'cb-access-key': key,
@@ -342,6 +349,7 @@ async function cancelOrders() {
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
+      const API_URI = user.API_URI;
 
       function computeSignature(request) {
         // const data      = request.data;
@@ -354,7 +362,7 @@ async function cancelOrders() {
       }
       const options = {
         method: 'DELETE',
-        url: `https://api-public.sandbox.pro.coinbase.com/orders`,
+        url: `${API_URI}/orders`,
         headers: {
           Accept: 'application/json',
           'cb-access-key': key,
