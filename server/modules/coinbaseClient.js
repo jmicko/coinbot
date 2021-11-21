@@ -29,6 +29,80 @@ async function getPassphrase() {
 }
 
 
+async function getAccounts() {
+  return new Promise(async (resolve, reject) => {
+    const timestamp = Math.floor(Date.now() / 1000);
+    // // sign the request
+    const secret = await getSecret();
+    const key = await getKey();
+    const passphrase = await getPassphrase();
+
+    function computeSignature() {
+      const method = 'GET';
+      const path = "/accounts";
+      const message = timestamp + method + path;
+      const key = CryptoJS.enc.Base64.parse(secret);
+      const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
+      return hash;
+    }
+
+    const options = {
+      method: 'GET',
+      url: 'https://api-public.sandbox.pro.coinbase.com/accounts',
+      headers: {
+        Accept: 'application/json',
+        'cb-access-key': key,
+        'cb-access-passphrase': passphrase,
+        'cb-access-sign': computeSignature(),
+        'cb-access-timestamp': timestamp
+      }
+    };
+
+    axios.request(options).then(function (response) {
+      resolve(response.data)
+    }).catch(function (error) {
+      reject(error)
+    });
+  })
+}
+
+async function getFees() {
+  return new Promise(async (resolve, reject) => {
+    const timestamp = Math.floor(Date.now() / 1000);
+    // // sign the request
+    const secret = await getSecret();
+    const key = await getKey();
+    const passphrase = await getPassphrase();
+
+    function computeSignature() {
+      const method = 'GET';
+      const path = "/fees";
+      const message = timestamp + method + path;
+      const key = CryptoJS.enc.Base64.parse(secret);
+      const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
+      return hash;
+    }
+
+    const options = {
+      method: 'GET',
+      url: 'https://api-public.sandbox.pro.coinbase.com/fees',
+      headers: {
+        Accept: 'application/json',
+        'cb-access-key': key,
+        'cb-access-passphrase': passphrase,
+        'cb-access-sign': computeSignature(),
+        'cb-access-timestamp': timestamp
+      }
+    };
+
+    axios.request(options).then(function (response) {
+      resolve(response.data)
+    }).catch(function (error) {
+      reject(error)
+    });
+  })
+}
+
 async function getAllOrders() {
   return new Promise(async (resolve, reject) => {
     const timestamp = Math.floor(Date.now() / 1000);
@@ -298,4 +372,6 @@ module.exports = {
   placeOrder: placeOrder,
   getOrder: getOrder,
   cancelAllOrders: cancelAllOrders,
+  getFees: getFees,
+  getAccounts: getAccounts,
 }

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
-const authedClient = require('../modules/authedClient');
+const coinbaseClient = require('../modules/coinbaseClient');
 // const databaseClient = require('../modules/databaseClient/databaseClient');
 
 
@@ -11,7 +11,7 @@ const authedClient = require('../modules/authedClient');
  * For now this just wants to return usd account available balance
  */
 router.get('/', (req, res) => {
-  authedClient.getAccounts()
+  coinbaseClient.getAccounts()
     .then((result) => {
       return result.forEach(account => {
         if (account.currency === 'USD') {
@@ -31,7 +31,7 @@ router.get('/', (req, res) => {
 * GET route to get the fees when the user loads the page
 */
 router.get('/fees', rejectUnauthenticated, (req, res) => {
-  authedClient.get(['fees'])
+  coinbaseClient.getFees()
     .then((result) => {
       res.send(result)
     })
