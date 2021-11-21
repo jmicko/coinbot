@@ -105,7 +105,7 @@ async function getOpenOrders() {
     };
 
     axios.request(options).then(function (response) {
-      console.log(response.data.length);
+      // console.log(response.data.length);
       resolve(response.data);
     }).catch(function (error) {
       console.error(error);
