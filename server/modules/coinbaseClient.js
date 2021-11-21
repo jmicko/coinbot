@@ -5,37 +5,23 @@ const pool = require('./pool');
 
 
 
-async function getSecret() {
+async function getUser() {
   sqlText = `SELECT * FROM "user";`;
   let result = await pool.query(sqlText);
-  const secret = result.rows[0].CB_SECRET;
+  const user = result.rows[0];
   // console.log('THE RESULT IS', result.rows[0]);
-  // console.log('THE SECRET IS', secret);
-  return secret;
+  // console.log('THE user IS', user);
+  return user;
 }
-async function getKey() {
-  sqlText = `SELECT * FROM "user";`;
-  let result = await pool.query(sqlText);
-  const key = result.rows[0].CB_ACCESS_KEY;
-  // console.log('THE KEY IS', key);
-  return key;
-}
-async function getPassphrase() {
-  sqlText = `SELECT * FROM "user";`;
-  let result = await pool.query(sqlText);
-  const passphrase = result.rows[0].CB_ACCESS_PASSPHRASE;
-  // console.log('THE PASSPHRASE IS', passphrase);
-  return passphrase;
-}
-
 
 async function getAccounts() {
   return new Promise(async (resolve, reject) => {
     const timestamp = Math.floor(Date.now() / 1000);
     // // sign the request
-    const secret = await getSecret();
-    const key = await getKey();
-    const passphrase = await getPassphrase();
+    const user = await getUser();
+    const secret = user.CB_SECRET;
+    const key = user.CB_ACCESS_KEY;
+    const passphrase = user.CB_ACCESS_PASSPHRASE;
 
     function computeSignature() {
       const method = 'GET';
@@ -70,9 +56,10 @@ async function getFees() {
   return new Promise(async (resolve, reject) => {
     const timestamp = Math.floor(Date.now() / 1000);
     // // sign the request
-    const secret = await getSecret();
-    const key = await getKey();
-    const passphrase = await getPassphrase();
+    const user = await getUser();
+    const secret = user.CB_SECRET;
+    const key = user.CB_ACCESS_KEY;
+    const passphrase = user.CB_ACCESS_PASSPHRASE;
 
     function computeSignature() {
       const method = 'GET';
@@ -107,9 +94,10 @@ async function getAllOrders() {
   return new Promise(async (resolve, reject) => {
     const timestamp = Math.floor(Date.now() / 1000);
     // // sign the request
-    const secret = await getSecret();
-    const key = await getKey();
-    const passphrase = await getPassphrase();
+    const user = await getUser();
+    const secret = user.CB_SECRET;
+    const key = user.CB_ACCESS_KEY;
+    const passphrase = user.CB_ACCESS_PASSPHRASE;
 
     function computeSignature(request) {
       // const data      = request.data;
@@ -152,9 +140,10 @@ async function getOpenOrders() {
   return new Promise(async (resolve, reject) => {
     const timestamp = Math.floor(Date.now() / 1000);
     // // sign the request
-    const secret = await getSecret();
-    const key = await getKey();
-    const passphrase = await getPassphrase();
+    const user = await getUser();
+    const secret = user.CB_SECRET;
+    const key = user.CB_ACCESS_KEY;
+    const passphrase = user.CB_ACCESS_PASSPHRASE;
 
     function computeSignature(request) {
       // const data      = request.data;
@@ -192,9 +181,10 @@ async function getOrder(orderId) {
   return new Promise(async (resolve, reject) => {
     const timestamp = Math.floor(Date.now() / 1000);
     // // sign the request
-    const secret = await getSecret();
-    const key = await getKey();
-    const passphrase = await getPassphrase();
+    const user = await getUser();
+    const secret = user.CB_SECRET;
+    const key = user.CB_ACCESS_KEY;
+    const passphrase = user.CB_ACCESS_PASSPHRASE;
 
     function computeSignature(request) {
       // const data      = request.data;
@@ -231,9 +221,10 @@ async function placeOrder(data) {
   return new Promise(async (resolve, reject) => {
     const timestamp = Math.floor(Date.now() / 1000);
     // // sign the request
-    const secret = await getSecret();
-    const key = await getKey();
-    const passphrase = await getPassphrase();
+    const user = await getUser();
+    const secret = user.CB_SECRET;
+    const key = user.CB_ACCESS_KEY;
+    const passphrase = user.CB_ACCESS_PASSPHRASE;
 
     function computeSignature(request) {
       // const data      = request.data;
@@ -274,9 +265,10 @@ async function cancelOrder(orderId) {
   return new Promise(async (resolve, reject) => {
     const timestamp = Math.floor(Date.now() / 1000);
     // // sign the request
-    const secret = await getSecret();
-    const key = await getKey();
-    const passphrase = await getPassphrase();
+    const user = await getUser();
+    const secret = user.CB_SECRET;
+    const key = user.CB_ACCESS_KEY;
+    const passphrase = user.CB_ACCESS_PASSPHRASE;
 
     function computeSignature(request) {
       // const data      = request.data;
@@ -313,9 +305,10 @@ async function cancelOrders() {
   return new Promise(async (resolve, reject) => {
     const timestamp = Math.floor(Date.now() / 1000);
     // // sign the request
-    const secret = await getSecret();
-    const key = await getKey();
-    const passphrase = await getPassphrase();
+    const user = await getUser();
+    const secret = user.CB_SECRET;
+    const key = user.CB_ACCESS_KEY;
+    const passphrase = user.CB_ACCESS_PASSPHRASE;
 
     function computeSignature(request) {
       // const data      = request.data;
