@@ -111,7 +111,8 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
     "password" VARCHAR (1000) NOT NULL,
     "CB_SECRET" VARCHAR (1000),
     "CB_ACCESS_KEY" VARCHAR (1000),
-    "CB_ACCESS_PASSPHRASE" VARCHAR (1000)
+    "CB_ACCESS_PASSPHRASE" VARCHAR (1000),
+    "API_URI" VARCHAR (1000)
   );
   CREATE TABLE "session" (
       "sid" varchar NOT NULL COLLATE "default",

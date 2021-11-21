@@ -32,7 +32,8 @@ CREATE TABLE "user" (
 -- todo - encryption in db when storing api key stuff
   "CB_SECRET" VARCHAR (1000),
   "CB_ACCESS_KEY" VARCHAR (1000),
-  "CB_ACCESS_PASSPHRASE" VARCHAR (1000)
+  "CB_ACCESS_PASSPHRASE" VARCHAR (1000),
+  "API_URI" VARCHAR (1000)
 );
 
 
