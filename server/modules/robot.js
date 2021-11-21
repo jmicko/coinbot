@@ -20,7 +20,7 @@ async function theLoop() {
     let tradeDetails = flipTrade(dbOrder);
     // ...send the new trade
     try {
-      let cbOrder = await authedClient.placeOrder(tradeDetails);
+      let cbOrder = await coinbaseClient.placeOrder(tradeDetails);
       // ...store the new trade
       let results = await databaseClient.storeTrade(cbOrder, dbOrder);
       // ...mark the old trade as flipped
@@ -165,7 +165,7 @@ const syncOrders = async () => {
 
         console.log('need to flip this trade', orderToCheck.price);
         // get all the order details from cb
-        let fullSettledDetails = await authedClient.getOrder(orderToCheck.id);
+        let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id);
         // console.log('here are the full settled order details', fullSettledDetails);
         // update the order in the db
         const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5 WHERE "id"=$6;`;
@@ -180,15 +180,15 @@ const syncOrders = async () => {
       }
     };
   } catch (err) {
-    if (err.response?.statusCode === 404) {
+    if (err.response?.status === 404) {
       console.log('order not found', order.id);
       // check again to make sure after waiting a second in case things need to settle
       await sleep(5000);
       try {
-        let fullSettledDetails = await authedClient.getOrder(order.id);
+        let fullSettledDetails = await coinbaseClient.getOrder(order.id);
         console.log('here are the full settled order details that maybe need to be deleted', fullSettledDetails);
       } catch (err) {
-        if (err.response?.statusCode === 404) {
+        if (err.response?.status === 404) {
           if (order.will_cancel) {
             // if the order was supposed to be canceled
             console.log('need to delete for sure', order);
@@ -210,7 +210,7 @@ const syncOrders = async () => {
             };
             try {
               // send the new order with the trade details
-              let pendingTrade = await authedClient.placeOrder(tradeDetails);
+              let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
               // store the new trade in the db. the trade details are also sent to store trade position prices
               let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
 
@@ -249,12 +249,6 @@ const syncOrders = async () => {
         error: `Connection timed out, consider synching all orders to prevent duplicates. This will not be done for you.`,
         orderUpdate: true
       });
-      // try {
-      //   await authedClient.cancelAllOrders();
-      //   console.log('synched orders just in case');
-      // } catch (err) {
-      //   console.log('error at end of syncOrders function');
-      // }
     } else {
       socketClient.emit('message', {
         error: `unknown error from syncOrders loop`,

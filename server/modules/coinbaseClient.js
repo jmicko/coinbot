@@ -64,7 +64,7 @@ async function getAllOrders() {
   axios.request(options).then(function (response) {
     console.log(response.data);
   }).catch(function (error) {
-    console.error(error);
+    // console.error(error);
   });
 }
 
@@ -105,7 +105,46 @@ async function getOpenOrders() {
       // console.log(response.data.length);
       resolve(response.data);
     }).catch(function (error) {
-      console.error(error);
+      // console.error(error);
+      reject(error);
+    });
+  })
+}
+
+async function getOrder(orderId) {
+  return new Promise(async (resolve, reject) => {
+    const timestamp = Math.floor(Date.now() / 1000);
+    // // sign the request
+    const secret = await getSecret();
+    const key = await getKey();
+    const passphrase = await getPassphrase();
+
+    function computeSignature(request) {
+      // const data      = request.data;
+      const method = 'GET';
+      const path = `/orders/${orderId}`;
+      const message = timestamp + method + path;
+      const key = CryptoJS.enc.Base64.parse(secret);
+      const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
+      return hash;
+    }
+
+    const options = {
+      method: 'GET',
+      url: `https://api-public.sandbox.pro.coinbase.com/orders/${orderId}`,
+      headers: {
+        Accept: 'application/json',
+        'cb-access-key': key,
+        'cb-access-passphrase': passphrase,
+        'cb-access-sign': computeSignature(),
+        'cb-access-timestamp': timestamp
+      }
+    };
+
+    axios.request(options).then(function (response) {
+      resolve(response.data);
+    }).catch(function (error) {
+      // console.error(error);
       reject(error);
     });
   })
@@ -144,7 +183,7 @@ async function cancelOrder(orderId) {
     axios.request(options).then(function (response) {
       resolve(response.data);
     }).catch(function (error) {
-      console.error(error);
+      // console.error(error);
       reject(error);
     });
   })
@@ -162,7 +201,7 @@ async function placeOrder(data) {
       // const data      = request.data;
       const method = 'POST';
       const path = `/orders`;
-      const body = (method === 'GET' || !data) ? '' : JSON.stringify(data);
+      const body = JSON.stringify(data);
       const message = timestamp + method + path + body;
       const key = CryptoJS.enc.Base64.parse(secret);
       const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
@@ -170,8 +209,6 @@ async function placeOrder(data) {
 
       return hash;
     }
-
-    console.log('data is', data);
 
     const options = {
       method: 'POST',
@@ -189,7 +226,7 @@ async function placeOrder(data) {
     axios.request(options).then(function (response) {
       resolve(response.data);
     }).catch(function (error) {
-      console.error(error);
+      // console.error(error);
       reject(error);
     });
   })
@@ -200,4 +237,5 @@ module.exports = {
   getOpenOrders: getOpenOrders,
   cancelOrder: cancelOrder,
   placeOrder: placeOrder,
+  getOrder: getOrder,
 }
