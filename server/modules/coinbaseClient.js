@@ -156,8 +156,54 @@ async function cancelOrder(orderId) {
   })
 }
 
+async function placeOrder(data) {
+  return new Promise(async (resolve, reject) => {
+    const timestamp = Math.floor(Date.now() / 1000);
+    // // sign the request
+    const secret = await getSecret();
+    const key = await getKey();
+    const passphrase = await getPassphrase();
+
+    function computeSignature(request) {
+      // const data      = request.data;
+      const method = 'POST';
+      const path = `/orders`;
+      const body = (method === 'GET' || !data) ? '' : JSON.stringify(data);
+      const message = timestamp + method + path + body;
+      const key = CryptoJS.enc.Base64.parse(secret);
+      const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
+      // console.log("Message: " + message + " HMAC: " + hash);
+
+      return hash;
+    }
+
+    console.log('data is', data);
+
+    const options = {
+      method: 'POST',
+      url: `https://api-public.sandbox.pro.coinbase.com/orders`,
+      headers: {
+        Accept: 'application/json',
+        'cb-access-key': key,
+        'cb-access-passphrase': passphrase,
+        'cb-access-sign': computeSignature(),
+        'cb-access-timestamp': timestamp
+      },
+      data: data
+    };
+
+    axios.request(options).then(function (response) {
+      resolve(response.data);
+    }).catch(function (error) {
+      console.error(error);
+      reject(error);
+    });
+  })
+}
+
 module.exports = {
   getAllOrders: getAllOrders,
   getOpenOrders: getOpenOrders,
   cancelOrder: cancelOrder,
+  placeOrder: placeOrder,
 }
