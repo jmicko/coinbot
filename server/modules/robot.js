@@ -296,43 +296,29 @@ async function cancelMultipleOrders(ordersArray) {
           // resolve(response);
         } else {
           console.log('checked again for the order in the db', doubleCheck.id);
-          // resolve({
-          //   message: "Order was found and not canceled",
-          //   orderFound: true
-          // })
         }
       } catch (err) {
         if (err.response?.status === 404) {
           console.log('order not found when canceling extra order!');
-          // todo - why cancel out of the loop if one order is not found?
-          // maybe in case cancel all was hit so it refreshes the loop array
+          // if not found, cancel all orders may have been done, so get out of the loop
+          // new array will be made on next loop
           i += ordersArray.length;
+        } else if (err.response?.status === 401 || err.response?.status === 502) {
+          console.log('connection issue in cancel orders loop. Probably nothing to worry about');
+          socketClient.emit('message', {
+            error: `Connection issue in cancel orders loop. Probably nothing to worry about unless it keeps repeating.`,
+            orderUpdate: true
+          });
         } else {
           reject(err)
         }
-        // if (err.response?.status === 401) {
-        //   console.log('unauthorized');
-        //   socketClient.emit('message', {
-        //     error: `Unauthorized request. Probably expired timestamp.`,
-        //     orderUpdate: true
-        //   });
-        // } else if (err.response?.status === 502) {
-        //   console.log('bad gateway');
-        //   socketClient.emit('message', {
-        //     error: `Bad gateway. Probably not a problem unless it keeps repeating.`,
-        //     orderUpdate: true
-        //   });
-        // } else {
-        //   console.log('error deleting extra order', err);
-        // }
       }
     } //end for loop
+    // if all goes well, resolve promise with success message
     resolve({
       message: "Extra orders were canceled",
       ordersCanceled: true
     })
-
-
   });
 }
 
