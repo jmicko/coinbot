@@ -140,6 +140,18 @@ const syncOrders = async () => {
           if (err.response?.status === 404) {
             console.log('order not found when canceling extra order!');
             i += ordersToCancel.length;
+          } else if (err.response?.status === 401) {
+            console.log('unauthorized');
+            socketClient.emit('message', {
+              error: `Unauthorized request. Probably expired timestamp.`,
+              orderUpdate: true
+            });
+          } else if (err.response?.status === 502) {
+            console.log('bad gateway');
+            socketClient.emit('message', {
+              error: `Bad gateway. Probably not a problem unless it keeps repeating.`,
+              orderUpdate: true
+            });
           } else {
             console.log('error deleting extra order', err);
           }
@@ -232,6 +244,18 @@ const syncOrders = async () => {
                   error: `Insufficient funds!`,
                   orderUpdate: true
                 });
+              } else if (err.response?.status === 401) {
+                console.log('unauthorized');
+                socketClient.emit('message', {
+                  error: `Unauthorized request. Probably expired timestamp.`,
+                  orderUpdate: true
+                });
+              } else if (err.response?.status === 502) {
+                console.log('bad gateway');
+                socketClient.emit('message', {
+                  error: `Bad gateway. Probably not a problem unless it keeps repeating.`,
+                  orderUpdate: true
+                });
               } else {
                 console.log('problem in the loop reordering trade', err);
                 socketClient.emit('message', {
@@ -255,6 +279,18 @@ const syncOrders = async () => {
       console.log('econnreset in syncOrders loop');
       socketClient.emit('message', {
         error: `Connection to coinbase server was reset`,
+        orderUpdate: true
+      });
+    } else if (err.response?.status === 401) {
+      console.log('unauthorized');
+      socketClient.emit('message', {
+        error: `Unauthorized request. Probably expired timestamp.`,
+        orderUpdate: true
+      });
+    } else if (err.response?.status === 502) {
+      console.log('bad gateway');
+      socketClient.emit('message', {
+        error: `Bad gateway. Probably not a problem unless it keeps repeating.`,
         orderUpdate: true
       });
     } else {
