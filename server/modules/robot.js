@@ -114,7 +114,7 @@ const syncOrders = async () => {
     // these are extra orders and should be canceled???
     const ordersToCancel = await orderElimination(cbOrders, dbOrders);
     if (ordersToCancel[0]) {
-      console.log('these are the extra orders that should be canceled', ordersToCancel);
+      console.log(`there are ${ordersToCancel.length} extra orders that should be canceled`);
       // if there are orders, delete them from cb
       // use a regular for loop so that it waits between each one
       for (let i = 0; i < ordersToCancel.length; i++) {
