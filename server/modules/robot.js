@@ -130,6 +130,20 @@ const syncOrders = async () => {
     await sleep(1000);
     // }
 
+    // now flip all the orders that need to be flipped
+    try {
+      let result = await flipMultipleOrders(ordersToCheck);
+      if (result.ordersFlipped) {
+        console.log(result.message);
+      }
+    } catch(err) {
+      console.log('Error flipping all settled orders', err);
+    }
+
+
+
+
+
     if (ordersToCheck[0]) {
       // tell interface how many trades need to be synched
       socketClient.emit('message', {
@@ -281,9 +295,26 @@ const syncOrders = async () => {
   }
 }
 
+async function flipMultipleOrders(ordersArray) {
+  return new Promise(async (resolve, reject) => {
+    if (ordersArray.length > 0) {
+      console.log(`There are ${ordersArray.length} settled orders that should be flipped`);
+      
+    }
+
+
+
+    // if all goes well, resolve promise with success message
+    resolve({
+      message: "All settled orders were flipped successfully",
+      ordersFlipped: true
+    })
+  })
+}
+
 async function cancelMultipleOrders(ordersArray) {
   return new Promise(async (resolve, reject) => {
-    if (ordersArray[0]) {
+    if (ordersArray.length > 0) {
       console.log(`There are ${ordersArray.length} extra orders that should be canceled`);
       // need to wait and double check db before deleting because they take time to store and show up on cb first
       // only need to wait once because as the loop runs nothing will be added to it. Only wait for most recent order
@@ -319,6 +350,8 @@ async function cancelMultipleOrders(ordersArray) {
             reject(err)
           }
         }
+        // wait to prevent rate limiting
+        await sleep(100);
       } //end for loop
       // if all goes well, resolve promise with success message
       resolve({
