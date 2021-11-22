@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
-const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient');
 const socketClient = require('../modules/socketClient');
 const robot = require('../modules/robot');
+const coinbaseClient = require('../modules/coinbaseClient');
 
 
 /**
@@ -26,7 +26,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
   };
   try {
     // send the new order with the trade details
-    let pendingTrade = await authedClient.placeOrder(tradeDetails);
+    let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
     // wait a second before storing the trade. Sometimes it takes a second for coinbase to register the trade,
     // even after returning the details. robot.syncOrders will think it settled if it sees it in the db first
     await robot.sleep(100);
@@ -35,7 +35,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
     // send OK status
     res.sendStatus(200);
   } catch (err) {
-    if (err.response?.statusCode === 400) {
+    if (err.response?.status === 400) {
       console.log('Insufficient funds!');
       socketClient.emit('message', {
         error: `Insufficient funds!`,
@@ -47,7 +47,6 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
         error: `Connection timed out, consider synching all orders to prevent duplicates. This will not be done for you.`,
         orderUpdate: true
       });
-      // await authedClient.cancelAllOrders();
     } else {
       console.log('problem in sending trade post route', err);
     }
@@ -70,7 +69,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
   let result = await pool.query(queryText, [orderId]);
   // send cancelOrder to cb
   try {
-    let result = await authedClient.cancelOrder(orderId);
+    let result = await coinbaseClient.cancelOrder(orderId);
     console.log('order was deleted successfully from cb', result);
     databaseClient.deleteTrade(orderId);
     console.log('order was deleted successfully from database');
@@ -89,6 +88,15 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
         console.log('order not found in account', orderId);
         res.sendStatus(400)
       }
+    }
+    if (error.response?.status === 404) {
+      databaseClient.deleteTrade(orderId);
+      socketClient.emit('message', {
+        error: `Order was not found when delete was requested`,
+        orderUpdate: true
+      });
+      console.log('order not found in account', orderId);
+      res.sendStatus(400)
     } else {
       console.log('something failed', error);
       res.sendStatus(500)

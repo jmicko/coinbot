@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
-const authedClient = require('../modules/authedClient');
+const coinbaseClient = require('../modules/coinbaseClient');
 // const databaseClient = require('../modules/databaseClient/databaseClient');
 
 
@@ -11,7 +11,7 @@ const authedClient = require('../modules/authedClient');
  * For now this just wants to return usd account available balance
  */
 router.get('/', (req, res) => {
-  authedClient.getAccounts()
+  coinbaseClient.getAccounts()
     .then((result) => {
       return result.forEach(account => {
         if (account.currency === 'USD') {
@@ -22,7 +22,7 @@ router.get('/', (req, res) => {
       });
     })
     .catch((error) => {
-      console.log('error getting accounts:', error.code);
+      console.log('error getting accounts:', error);
       res.sendStatus(500)
     })
 });
@@ -31,12 +31,12 @@ router.get('/', (req, res) => {
 * GET route to get the fees when the user loads the page
 */
 router.get('/fees', rejectUnauthenticated, (req, res) => {
-  authedClient.get(['fees'])
+  coinbaseClient.getFees()
     .then((result) => {
       res.send(result)
     })
     .catch((error) => {
-      console.log('error getting fees:', error.code);
+      console.log('error getting fees:', error);
       res.sendStatus(500)
     })
 
@@ -67,12 +67,22 @@ router.get('/profits', rejectUnauthenticated, (req, res) => {
 */
 router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   console.log('here are the api details', req.body);
+  function getURI() {
+    if (api.URI === "sandbox") {
+      return "https://api-public.sandbox.pro.coinbase.com";
+    }
+    else {
+      return "https://api.exchange.coinbase.com";
+    }
+  }
   const api = req.body;
-  const queryText = `UPDATE "user" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3;`;
+  const URI = getURI();
+  const queryText = `UPDATE "user" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4;`;
   let result = await pool.query(queryText, [
     api.secret,
     api.key,
     api.passphrase,
+    URI,
   ]);
   res.sendStatus(200);
 });
@@ -111,7 +121,8 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
     "password" VARCHAR (1000) NOT NULL,
     "CB_SECRET" VARCHAR (1000),
     "CB_ACCESS_KEY" VARCHAR (1000),
-    "CB_ACCESS_PASSPHRASE" VARCHAR (1000)
+    "CB_ACCESS_PASSPHRASE" VARCHAR (1000),
+    "API_URI" VARCHAR (1000)
   );
   CREATE TABLE "session" (
       "sid" varchar NOT NULL COLLATE "default",

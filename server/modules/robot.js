@@ -1,4 +1,4 @@
-const authedClient = require("./authedClient");
+const coinbaseClient = require("./coinbaseClient");
 const databaseClient = require("./databaseClient");
 const pool = require("./pool");
 const socketClient = require("./socketClient");
@@ -19,7 +19,7 @@ async function theLoop() {
     let tradeDetails = flipTrade(dbOrder);
     // ...send the new trade
     try {
-      let cbOrder = await authedClient.placeOrder(tradeDetails);
+      let cbOrder = await coinbaseClient.placeOrder(tradeDetails);
       // ...store the new trade
       let results = await databaseClient.storeTrade(cbOrder, dbOrder);
       // ...mark the old trade as flipped
@@ -32,10 +32,13 @@ async function theLoop() {
     } catch (err) {
       if (err.code && err.code === 'ETIMEDOUT') {
         console.log('Timed out!!!!! from the loop');
-        await authedClient.cancelAllOrders();
+        await coinbaseClient.cancelAllOrders();
         console.log('synched orders just in case');
-      } else if (err.response?.statusCode === 400) {
+      } else if (err.response?.status === 400) {
         console.log('Insufficient funds! from the loop');
+        socketClient.emit('message', {
+          error: `Insufficient funds in the loop!`,
+        });
         // todo - check funds to make sure there is enough for 
         // all of them to be replaced, and balance if needed
       } else {
@@ -98,7 +101,7 @@ const syncOrders = async () => {
     const results = await Promise.all([
       // get all open orders from db and cb
       databaseClient.getUnsettledTrades('all'),
-      authedClient.getOrders({ status: 'open' })
+      coinbaseClient.getOpenOrders()
     ]);
     // store the lists of orders in the corresponding arrays so they can be compared
     const dbOrders = results[0];
@@ -115,6 +118,10 @@ const syncOrders = async () => {
       // if there are orders, delete them from cb
       // use a regular for loop so that it waits between each one
       for (let i = 0; i < ordersToCancel.length; i++) {
+        // send heartbeat for each loop
+        socketClient.emit('message', {
+          heartbeat: true,
+        });
         const orderToCancel = ordersToCancel[i];
         console.log('ORDER TO CANCEL', orderToCancel.id);
         // need to wait and double check db before deleting because they take time to store and show up on cb first
@@ -125,21 +132,30 @@ const syncOrders = async () => {
           if (!doubleCheck) {
             // cancel the order
             console.log('canceling order', orderToCancel.id);
-            await authedClient.cancelOrder(orderToCancel.id)
+            await coinbaseClient.cancelOrder(orderToCancel.id)
           } else {
             console.log('checked again for the order in the db', doubleCheck.id);
           }
         } catch (err) {
-          if (err.response?.statusCode === 404) {
+          if (err.response?.status === 404) {
             console.log('order not found when canceling extra order!');
             i += ordersToCancel.length;
+          } else if (err.response?.status === 401) {
+            console.log('unauthorized');
+            socketClient.emit('message', {
+              error: `Unauthorized request. Probably expired timestamp.`,
+              orderUpdate: true
+            });
+          } else if (err.response?.status === 502) {
+            console.log('bad gateway');
+            socketClient.emit('message', {
+              error: `Bad gateway. Probably not a problem unless it keeps repeating.`,
+              orderUpdate: true
+            });
           } else {
             console.log('error deleting extra order', err);
           }
         }
-        socketClient.emit('message', {
-          heartbeat: true,
-        });
       }
       // wait for a second to allow cancels to go through so bot doesn't cancel twice
       await sleep(1000);
@@ -151,6 +167,10 @@ const syncOrders = async () => {
         message: `There are ${ordersToCheck.length} orders that need to be synced`,
       });
       for (let i = 0; i < ordersToCheck.length; i++) {
+        // send heartbeat for each loop
+        socketClient.emit('message', {
+          heartbeat: true,
+        });
         const orderToCheck = ordersToCheck[i];
         order = orderToCheck;
         console.log('@@@@@@@ setting this trade as settled in the db', orderToCheck.id, orderToCheck.price);
@@ -159,7 +179,7 @@ const syncOrders = async () => {
 
         console.log('need to flip this trade', orderToCheck.price);
         // get all the order details from cb
-        let fullSettledDetails = await authedClient.getOrder(orderToCheck.id);
+        let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id);
         // console.log('here are the full settled order details', fullSettledDetails);
         // update the order in the db
         const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5 WHERE "id"=$6;`;
@@ -174,15 +194,15 @@ const syncOrders = async () => {
       }
     };
   } catch (err) {
-    if (err.response?.statusCode === 404) {
+    if (err.response?.status === 404) {
       console.log('order not found', order.id);
       // check again to make sure after waiting a second in case things need to settle
       await sleep(5000);
       try {
-        let fullSettledDetails = await authedClient.getOrder(order.id);
+        let fullSettledDetails = await coinbaseClient.getOrder(order.id);
         console.log('here are the full settled order details that maybe need to be deleted', fullSettledDetails);
       } catch (err) {
-        if (err.response?.statusCode === 404) {
+        if (err.response?.status === 404) {
           if (order.will_cancel) {
             // if the order was supposed to be canceled
             console.log('need to delete for sure', order);
@@ -204,7 +224,7 @@ const syncOrders = async () => {
             };
             try {
               // send the new order with the trade details
-              let pendingTrade = await authedClient.placeOrder(tradeDetails);
+              let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
               // store the new trade in the db. the trade details are also sent to store trade position prices
               let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
 
@@ -213,15 +233,27 @@ const syncOrders = async () => {
               const response = await pool.query(queryText, [order.id]);
               // console.log('response from cancelling order and deleting from db', response.rowCount);
               socketClient.emit('message', {
-                error: `trade was reordered`,
+                message: `trade was reordered`,
                 orderUpdate: true
               });
 
             } catch (err) {
-              if (err.response?.statusCode === 400) {
-                console.log('Insufficient funds!');
+              if (err.response?.status === 400) {
+                console.log('Insufficient funds when reordering missing trade in the loop!');
                 socketClient.emit('message', {
                   error: `Insufficient funds!`,
+                  orderUpdate: true
+                });
+              } else if (err.response?.status === 401) {
+                console.log('unauthorized');
+                socketClient.emit('message', {
+                  error: `Unauthorized request. Probably expired timestamp.`,
+                  orderUpdate: true
+                });
+              } else if (err.response?.status === 502) {
+                console.log('bad gateway');
+                socketClient.emit('message', {
+                  error: `Bad gateway. Probably not a problem unless it keeps repeating.`,
                   orderUpdate: true
                 });
               } else {
@@ -243,18 +275,31 @@ const syncOrders = async () => {
         error: `Connection timed out, consider synching all orders to prevent duplicates. This will not be done for you.`,
         orderUpdate: true
       });
-      // try {
-      //   await authedClient.cancelAllOrders();
-      //   console.log('synched orders just in case');
-      // } catch (err) {
-      //   console.log('error at end of syncOrders function');
-      // }
+    } else if (err.code === 'ECONNRESET') {
+      console.log('econnreset in syncOrders loop');
+      socketClient.emit('message', {
+        error: `Connection to coinbase server was reset`,
+        orderUpdate: true
+      });
+    } else if (err.response?.status === 401) {
+      console.log('unauthorized');
+      socketClient.emit('message', {
+        error: `Unauthorized request. Probably expired timestamp.`,
+        orderUpdate: true
+      });
+    } else if (err.response?.status === 502) {
+      console.log('bad gateway');
+      socketClient.emit('message', {
+        error: `Bad gateway. Probably not a problem unless it keeps repeating.`,
+        orderUpdate: true
+      });
     } else {
       socketClient.emit('message', {
         error: `unknown error from syncOrders loop`,
         orderUpdate: true
       });
       console.log('error from robot.syncOrders', err);
+      // need to handle errors from err.code === 'ECONNRESET'
     }
   } finally {
     socketClient.emit('message', {
@@ -269,7 +314,7 @@ const syncOrders = async () => {
 
 async function syncEverything() {
   try {
-    await authedClient.cancelAllOrders();
+    await coinbaseClient.cancelAllOrders();
     console.log('synching all orders');
     socketClient.emit('message', {
       message: `synching everything`,

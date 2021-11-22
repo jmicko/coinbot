@@ -16,7 +16,7 @@ For example: A trade-pair could be set up between the prices of $10,000 and $100
 
 But again, the coinbot does not care. Nor do the developers. 
 
-However, a higher amount of open trades does increase the amount of processing done by the bot. The effects of this are unknown, but this is not a high-speed bot on a Wall Street exchange. It was made for a slow and unreliable home internet connection. On that note, one of the developers uses a satellite connection (Starlink) and a Raspberry Pi. It hasn't been an issue. The bot keeps local copies of the trades it makes, places limit orders, and does not rely on the ability to react quickly to incoming market data. If the internet connection is cut off, the limit orders will still go through on Coinbase, and the will simply check and react to them later when the internet is restored.
+However, a higher amount of open trades does increase the amount of processing done by the bot. The effects of this are unknown, but this is not a high-speed bot on a Wall Street exchange. It was made for a slow and unreliable home internet connection. On that note, one of the developers uses a satellite connection (Starlink) and a Raspberry Pi. It hasn't been an issue. The bot keeps local copies of the trades it makes, places limit orders, and does not rely on the ability to react quickly to incoming market data. If the internet connection is cut off, the limit orders will still go through on Coinbase, and the bot will simply check and react to them later when the internet is restored.
 
 ## `DISCLAIMER`
 
@@ -24,7 +24,7 @@ This is an experimental bot. It requires a connection to a Coinbase Pro account,
 
 You trade at your own risk.
 
-There are also currently no security features built in to the coinbot. DO NOT host it in the cloud or on any device that can be accessed from the internet, from the intranet, or by anyone who you do not want to be able access it.
+There are also currently no security features built in to the coinbot other than basic password protection. Hosting in the cloud or on any device that can be accessed from the internet, from the intranet, or by anyone who you do not want to be able access it is not recommended.
 
 ## Advantages
 
@@ -32,7 +32,7 @@ This is a fairly low-risk strategy, as it requires no statistical analysis or ma
 
 ## Disadvantages
 
-A notable disadvantage of this strategy is that when the price takes an upward trend, the coinbot will sell at a fixed price regardless. This slows down the potential rate of profits compared to strategies that attempt to calculate the tops of market curves. 
+A notable disadvantage of this strategy is that when the price takes an upward trend, the coinbot will sell at a fixed price regardless. This slows down the potential rate of profits compared to strategies that attempt to calculate the tops and bottoms of market curves. 
 
 It also does not take into account market volumes, or the bird-themed social media accounts of billionaire entrepreneurs. That's not what this project is about. :bird:
 
@@ -40,15 +40,11 @@ It also does not take into account market volumes, or the bird-themed social med
 
 ### Web-based Interface
 
-Use and configuration for the coinbot is done from a react app in the browser. Note that this currently only works on the machine running the server, as websocket is integrated for frontend communication, but not fully set up yet. A workaround currently is to change the ENDPOINT const on line 16 in the SocketProvider.js file to match the ip address of the host computer. Doing this in the master branch doesn't make sense.
+Use and configuration for the coinbot is done from a react app in the browser. This included user registration, and api settings which can be input from the settings menu.
 
 ### Create New Trade Pairs
 
-New trade-pair values can be created from the interface. There is a calculator to determine both sides of the trade-pair, and estimate fees and profits. Note that these are an estimation, and nothing is guaranteed on the behalf of the developers.
-
-### Toggle Bot Button
-
-There is a big red button on the interface for turning the bot on and off. This makes it easy to pause trading if, say, you just need some time to think.
+New trade-pair values can be created from the interface. There is a calculator to determine both sides of the trade-pair, and estimate fees and profits. Note that these are an estimation, and nothing is guaranteed.
 
 ### Auto Fee Detection
 Coinbot will check the current fees for the connected account and adjust the numbers in the calculator to match. This makes it easier to calculate profits before starting a trade-pair. Fee detection returns the fee exactly as it is reported from Coinbase, which can sometimes be a very long decimal. This is not a rounding issue or a problem with coinbot. This is coming directly from the Coinbase Pro API.
@@ -62,15 +58,9 @@ A list of all open orders is shown as the main content of the page. This list wi
 ### More to Come
 - Safe order cancellation from interface
     - Currently, cancelling a sell order will potentially result in a profit loss. Adding a safe cancel button to sell orders will tell the bot to wait to cancel the trade-pair until the order goes through. Buy orders will still be canceled immediately. This ensures that a position will only be cancelled after a profit has been made, and helps to prevent losses due to trading fees.
-- Synchronization with Coinbase
-    - Currently if the bot is left off for too long, there is a possibility that some trades will not be checked for a while if they were settled while the bot was off. This could lead to the appearance of unexpected funds in the coinbase accou
 
 ## `Important notes`
-- The coinbot will not detect any trading action placed on the Coinbase website manually from the connected Coinbase account. Previous versions had a way to detect orders that were canceled, however it was discovered that the coinbase API would occasionally falsely report orders as missing, which would trigger the coinbot to delete them. They could be check twice, but it is unknown where this behavior comes from, so it is unknown how many times Coinbase may falsely report a missing order. For now, orders cannot be deleted on Coinbase and must be deleted from the coinbot interface. Otherwise an error will occur, and the only way to recover from it is to wipe the database, or manually delete the order from the db using a tool such as pgAdmin. It is recommended to create a separate profile on Coinbase exclusively for Coinbot to prevent accidental cancellation of the coinbot's trades.\
-\
-One possible fix for this would be to listen for "cancel" messages with the Coinbase websocket connection, however this would not work if the bot were disconnected or turned off when a cancel message is sent.
-
-- There is a settings button, but nothing inside the settings window actually works. It was in progress when a fix for the randomly dropped orders was put in place, which was seen as high priority and the dysfunctional settings were overlooked.
+- The coinbot will detect any trading action placed on the Coinbase website manually from the connected Coinbase account, and cancel those orders. Orders cannot be placed or deleted on Coinbase. That must be done from the coinbot interface. It is recommended to create a separate profile on Coinbase exclusively for Coinbot or you will not be able to do anything on your own.
 
 # `Setup`
 
@@ -86,13 +76,10 @@ Before you get started, make sure you have the following software installed on y
 Postgresql should be setup and a new database should be created with the name "coinbot". There is a database.sql file that can be used to generate the required tables.
 
 ### .env file
-- Currently, there is no method to store user information. A .env file should be created at the base of the file tree. Copy the following into the file and replace the info inside the quotes with the correct info for your setup. PG info is the username and password used for access to Postgres. The Coinbase API info can be generated in the API settings on your account profile at public.sandbox.pro.coinbase.com. Server session secret should be a long string that is not easily guessed. If you do not change it, anyone with this repo will be able to guess it.
+- A .env file should be created at the base of the file tree. Copy the following into the file and replace the info inside the quotes with the correct info for your setup. PG info is the username and password used for access to Postgres. Server session secret should be a long string that is not easily guessed. If you do not change it, anyone with this repo will be able to guess it.
 
     PGUSER='postgresUsernameGoesHere'\
     PGPASSWORD='postgresPasswordGoesHere'\
-    SANDBOXKEY='keyGoesHere'\
-    SANDBOXPASSWORD='passwordGoesHere'\
-    SANDBOXSECRET='secretGoesHere'\
     SERVER_SESSION_SECRET='pleaseForTheLoveOfMoneyPutADifferentSecretHere'
     
 

@@ -18,6 +18,7 @@ const accountRouter = require('./routes/account.router');
 const ordersRouter = require('./routes/orders.router');
 
 const robot = require('./modules/robot');
+const coinbaseClient = require('./modules/coinbaseClient');
 
 // Start the syncOrders loop
 robot.syncOrders();
@@ -97,6 +98,8 @@ robot.theLoop();
 setInterval(() => {
   robot.syncEverything();
 }, (1000*60*60*6));
+
+// coinbaseClient.getAllOrders();
 
 
 // Serve static files

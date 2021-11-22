@@ -11,6 +11,7 @@ function Settings(props) {
   const [key, setKey] = useState('');
   const [passphrase, setPassphrase] = useState('');
   const [secret, setSecret] = useState('');
+  const [URI, setURI] = useState('sandbox');
 
 
   // delete the order if the abandon button is clicked.
@@ -30,7 +31,8 @@ function Settings(props) {
       payload: {
         key: key,
         passphrase: passphrase,
-        secret: secret
+        secret: secret,
+        URI: URI
       }
     });
 
@@ -73,7 +75,7 @@ function Settings(props) {
             API Passphrase:
           </label>
           <input
-            type="text"
+            type="password"
             name="passphrase"
             value={passphrase}
             required
@@ -83,12 +85,31 @@ function Settings(props) {
             API Secret:
           </label>
           <input
-            type="text"
+            type="password"
             name="secret"
             value={secret}
             required
             onChange={(event) => setSecret(event.target.value)}
           />
+          <label htmlFor="URI">
+            Real money or sandbox? 
+          </label>
+          {(URI === "real")
+            ? <button className="btn-green" onClick={(event) => {event.preventDefault(); setURI("sandbox") }}>Real Money API</button>
+            : <button className="btn-green" onClick={(event) => {event.preventDefault(); setURI("real") }}>Sandbox API</button>
+          }
+          {/* <label htmlFor="sandbox">
+            URI:
+          </label>
+          <input
+            type="button"
+            name="sandbox"
+            value={URI}
+            required
+            onClick={(event) => setURI("sandbox")}
+          /> */}
+          <br />
+          <br />
           {/* submit button */}
           <input className="btn-store-api btn-blue" type="submit" name="submit" value="Store API details" />
         </form>

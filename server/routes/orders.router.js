@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
-const authedClient = require('../modules/authedClient');
 const databaseClient = require('../modules/databaseClient');
 const robot = require('../modules/robot');
 const socketClient = require("../modules/socketClient");
+const coinbaseClient = require('../modules/coinbaseClient');
 
 
 /**
@@ -38,7 +38,7 @@ router.get('/', rejectUnauthenticated, (req, res) => {
 */
 router.put('/', rejectUnauthenticated, async (req, res) => {
   console.log('in orders synchronize route');
-  await authedClient.cancelAllOrders();
+  await coinbaseClient.cancelAllOrders();
   console.log('+++++++ synchronization complete +++++++');
   res.sendStatus(200)
 });
@@ -52,7 +52,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
   // set all orders to will_cancel so the loop will just cancel them.
   const queryText = `DELETE from "orders" WHERE "settled" = false;`;
   let result = await pool.query(queryText);
-  await authedClient.cancelAllOrders();
+  await coinbaseClient.cancelAllOrders();
   console.log('+++++++ EVERYTHING WAS DELETED +++++++');
   // tell front end to update
   socketClient.emit('message', {
