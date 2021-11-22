@@ -114,48 +114,11 @@ const syncOrders = async () => {
     // these are extra orders and should be canceled???
     const ordersToCancel = await orderElimination(cbOrders, dbOrders);
     if (ordersToCancel[0]) {
-      console.log(`there are ${ordersToCancel.length} extra orders that should be canceled`);
-      // if there are orders, delete them from cb
-      // use a regular for loop so that it waits between each one
-      for (let i = 0; i < ordersToCancel.length; i++) {
-        // send heartbeat for each loop
-        socketClient.emit('message', {
-          heartbeat: true,
-        });
-        const orderToCancel = ordersToCancel[i];
-        console.log('ORDER TO CANCEL', orderToCancel.id);
-        // need to wait and double check db before deleting because they take time to store and show up on cb first
-        await sleep(1000);
-        // check if order is in db
-        try {
-          let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
-          if (!doubleCheck) {
-            // cancel the order
-            console.log('canceling order', orderToCancel.id);
-            await coinbaseClient.cancelOrder(orderToCancel.id)
-          } else {
-            console.log('checked again for the order in the db', doubleCheck.id);
-          }
-        } catch (err) {
-          if (err.response?.status === 404) {
-            console.log('order not found when canceling extra order!');
-            i += ordersToCancel.length;
-          } else if (err.response?.status === 401) {
-            console.log('unauthorized');
-            socketClient.emit('message', {
-              error: `Unauthorized request. Probably expired timestamp.`,
-              orderUpdate: true
-            });
-          } else if (err.response?.status === 502) {
-            console.log('bad gateway');
-            socketClient.emit('message', {
-              error: `Bad gateway. Probably not a problem unless it keeps repeating.`,
-              orderUpdate: true
-            });
-          } else {
-            console.log('error deleting extra order', err);
-          }
-        }
+      try {
+        let result = await cancelMultipleOrders(ordersToCancel);
+        console.log(result);
+      } catch (err) {
+        console.log('error deleting extra order', err);
       }
       // wait for a second to allow cancels to go through so bot doesn't cancel twice
       await sleep(1000);
@@ -310,6 +273,67 @@ const syncOrders = async () => {
       syncOrders();
     }, 300);
   }
+}
+
+async function cancelMultipleOrders(ordersArray) {
+  return new Promise(async (resolve, reject) => {
+    console.log(`There are ${ordersArray.length} extra orders that should be canceled`);
+
+    // need to wait and double check db before deleting because they take time to store and show up on cb first
+    // only need to wait once because as the loop runs nothing will be added to it. Only wait for most recent order
+    await sleep(1000);
+
+    for (let i = 0; i < ordersArray.length; i++) {
+      const orderToCancel = ordersArray[i];
+      console.log('Order to cancel', orderToCancel.id);
+      try {
+        // check to make sure it really isn't in the db
+        let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
+        if (!doubleCheck) {
+          // cancel the order if nothing comes back from db
+          console.log('canceling order', orderToCancel.id);
+          let response = await coinbaseClient.cancelOrder(orderToCancel.id);
+          // resolve(response);
+        } else {
+          console.log('checked again for the order in the db', doubleCheck.id);
+          // resolve({
+          //   message: "Order was found and not canceled",
+          //   orderFound: true
+          // })
+        }
+      } catch (err) {
+        if (err.response?.status === 404) {
+          console.log('order not found when canceling extra order!');
+          // todo - why cancel out of the loop if one order is not found?
+          // maybe in case cancel all was hit so it refreshes the loop array
+          i += ordersArray.length;
+        } else {
+          reject(err)
+        }
+        // if (err.response?.status === 401) {
+        //   console.log('unauthorized');
+        //   socketClient.emit('message', {
+        //     error: `Unauthorized request. Probably expired timestamp.`,
+        //     orderUpdate: true
+        //   });
+        // } else if (err.response?.status === 502) {
+        //   console.log('bad gateway');
+        //   socketClient.emit('message', {
+        //     error: `Bad gateway. Probably not a problem unless it keeps repeating.`,
+        //     orderUpdate: true
+        //   });
+        // } else {
+        //   console.log('error deleting extra order', err);
+        // }
+      }
+    } //end for loop
+    resolve({
+      message: "Extra orders were canceled",
+      ordersCanceled: true
+    })
+
+
+  });
 }
 
 async function syncEverything() {
