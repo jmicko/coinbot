@@ -94,7 +94,6 @@ function sleep(milliseconds) {
 
 // REST protocol to find orders that have settled on coinbase
 const syncOrders = async () => {
-  console.log('start syncOrders function');
   // create one order to work with
   // let order;
   try {
@@ -116,7 +115,6 @@ const syncOrders = async () => {
     const ordersToCancel = await orderElimination(cbOrders, dbOrders);
     // if (ordersToCancel[0]) {
     try {
-      console.log('starting cancel loop');
       let result = await cancelMultipleOrders(ordersToCancel);
       if (result.ordersCanceled) {
         console.log(result.message);
@@ -134,7 +132,6 @@ const syncOrders = async () => {
 
     // now flip all the orders that need to be flipped
     try {
-      console.log('starting settle loop');
       let result = await settleMultipleOrders(ordersToCheck);
       if (result.ordersFlipped) {
         console.log(result.message);
@@ -142,14 +139,12 @@ const syncOrders = async () => {
     } catch (err) {
       console.log('Error flipping all settled orders', err);
     }
-    console.log('emitting message');
     socketClient.emit('message', {
       heartbeat: true,
     });
   } catch (err) {
     console.log('error at end of syncOrders', err);
   } finally {
-    console.log('looping syncOrders again');
     // when everything is done, call the sync again
     setTimeout(() => {
       syncOrders();
@@ -182,6 +177,7 @@ async function settleMultipleOrders(ordersArray) {
 
           console.log('need to flip this trade', orderToCheck.price);
           // get all the order details from cb
+          await sleep(100); // avoid rate limiting
           let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id);
           // console.log('here are the full settled order details', fullSettledDetails);
           // update the order in the db
