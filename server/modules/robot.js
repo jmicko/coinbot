@@ -113,16 +113,22 @@ const syncOrders = async () => {
     // also get a list of orders that are open on cb, but not stored in the db. 
     // these are extra orders and should be canceled???
     const ordersToCancel = await orderElimination(cbOrders, dbOrders);
-    if (ordersToCancel[0]) {
-      try {
-        let result = await cancelMultipleOrders(ordersToCancel);
-        console.log(result);
-      } catch (err) {
-        console.log('error deleting extra order', err);
+    // if (ordersToCancel[0]) {
+    try {
+      let result = await cancelMultipleOrders(ordersToCancel);
+      if (result.ordersCanceled) {
+        console.log(result.message);
+        socketClient.emit('message', {
+          error: `Extra orders were found and canceled`,
+          orderUpdate: true
+        });
       }
-      // wait for a second to allow cancels to go through so bot doesn't cancel twice
-      await sleep(1000);
+    } catch (err) {
+      console.log('error deleting extra order', err);
     }
+    // wait for a second to allow cancels to go through so bot doesn't cancel twice
+    await sleep(1000);
+    // }
 
     if (ordersToCheck[0]) {
       // tell interface how many trades need to be synched
@@ -277,48 +283,54 @@ const syncOrders = async () => {
 
 async function cancelMultipleOrders(ordersArray) {
   return new Promise(async (resolve, reject) => {
-    console.log(`There are ${ordersArray.length} extra orders that should be canceled`);
+    if (ordersArray[0]) {
+      console.log(`There are ${ordersArray.length} extra orders that should be canceled`);
+      // need to wait and double check db before deleting because they take time to store and show up on cb first
+      // only need to wait once because as the loop runs nothing will be added to it. Only wait for most recent order
+      await sleep(1000);
 
-    // need to wait and double check db before deleting because they take time to store and show up on cb first
-    // only need to wait once because as the loop runs nothing will be added to it. Only wait for most recent order
-    await sleep(1000);
-
-    for (let i = 0; i < ordersArray.length; i++) {
-      const orderToCancel = ordersArray[i];
-      console.log('Order to cancel', orderToCancel.id);
-      try {
-        // check to make sure it really isn't in the db
-        let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
-        if (!doubleCheck) {
-          // cancel the order if nothing comes back from db
-          console.log('canceling order', orderToCancel.id);
-          let response = await coinbaseClient.cancelOrder(orderToCancel.id);
-          // resolve(response);
-        } else {
-          console.log('checked again for the order in the db', doubleCheck.id);
+      for (let i = 0; i < ordersArray.length; i++) {
+        const orderToCancel = ordersArray[i];
+        // console.log('Order to cancel', orderToCancel.id);
+        try {
+          // check to make sure it really isn't in the db
+          let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
+          if (!doubleCheck) {
+            // cancel the order if nothing comes back from db
+            console.log('canceling order', orderToCancel.id, 'at price', orderToCancel.price);
+            let response = await coinbaseClient.cancelOrder(orderToCancel.id);
+            // resolve(response);
+          } else {
+            console.log('checked again for the order in the db', doubleCheck.id);
+          }
+        } catch (err) {
+          if (err.response?.status === 404) {
+            console.log('order not found when canceling extra order!');
+            // if not found, cancel all orders may have been done, so get out of the loop
+            // new array will be made on next loop
+            i += ordersArray.length;
+          } else if (err.response?.status === 401 || err.response?.status === 502) {
+            console.log('connection issue in cancel orders loop. Probably nothing to worry about');
+            socketClient.emit('message', {
+              error: `Connection issue in cancel orders loop. Probably nothing to worry about unless it keeps repeating.`,
+              orderUpdate: true
+            });
+          } else {
+            reject(err)
+          }
         }
-      } catch (err) {
-        if (err.response?.status === 404) {
-          console.log('order not found when canceling extra order!');
-          // if not found, cancel all orders may have been done, so get out of the loop
-          // new array will be made on next loop
-          i += ordersArray.length;
-        } else if (err.response?.status === 401 || err.response?.status === 502) {
-          console.log('connection issue in cancel orders loop. Probably nothing to worry about');
-          socketClient.emit('message', {
-            error: `Connection issue in cancel orders loop. Probably nothing to worry about unless it keeps repeating.`,
-            orderUpdate: true
-          });
-        } else {
-          reject(err)
-        }
-      }
-    } //end for loop
-    // if all goes well, resolve promise with success message
-    resolve({
-      message: "Extra orders were canceled",
-      ordersCanceled: true
-    })
+      } //end for loop
+      // if all goes well, resolve promise with success message
+      resolve({
+        message: "Extra orders were canceled",
+        ordersCanceled: true
+      })
+    } else {
+      resolve({
+        message: "No orders to cancel",
+        ordersCanceled: false
+      })
+    }
   });
 }
 
