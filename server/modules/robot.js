@@ -94,8 +94,9 @@ function sleep(milliseconds) {
 
 // REST protocol to find orders that have settled on coinbase
 const syncOrders = async () => {
+  console.log('start syncOrders function');
   // create one order to work with
-  let order;
+  // let order;
   try {
     // get lists of trades to compare which have been settled
     const results = await Promise.all([
@@ -115,6 +116,7 @@ const syncOrders = async () => {
     const ordersToCancel = await orderElimination(cbOrders, dbOrders);
     // if (ordersToCancel[0]) {
     try {
+      console.log('starting cancel loop');
       let result = await cancelMultipleOrders(ordersToCancel);
       if (result.ordersCanceled) {
         console.log(result.message);
@@ -132,6 +134,7 @@ const syncOrders = async () => {
 
     // now flip all the orders that need to be flipped
     try {
+      console.log('starting settle loop');
       let result = await settleMultipleOrders(ordersToCheck);
       if (result.ordersFlipped) {
         console.log(result.message);
@@ -139,163 +142,14 @@ const syncOrders = async () => {
     } catch (err) {
       console.log('Error flipping all settled orders', err);
     }
-
-
-
-
-
-    // if (ordersToCheck[0]) {
-    //   // tell interface how many trades need to be synched
-    //   socketClient.emit('message', {
-    //     message: `There are ${ordersToCheck.length} orders that need to be synced`,
-    //   });
-    //   for (let i = 0; i < ordersToCheck.length; i++) {
-    //     // send heartbeat for each loop
-    //     socketClient.emit('message', {
-    //       heartbeat: true,
-    //     });
-    //     const orderToCheck = ordersToCheck[i];
-    //     order = orderToCheck;
-    //     console.log('@@@@@@@ setting this trade as settled in the db', orderToCheck.id, orderToCheck.price);
-    //     // wait between each loop to prevent rate limiting
-    //     await sleep(500);
-
-    //     console.log('need to flip this trade', orderToCheck.price);
-    //     // get all the order details from cb
-    //     let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id);
-    //     // console.log('here are the full settled order details', fullSettledDetails);
-    //     // update the order in the db
-    //     const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5 WHERE "id"=$6;`;
-    //     let result = await pool.query(queryText, [
-    //       fullSettledDetails.settled,
-    //       fullSettledDetails.done_at,
-    //       fullSettledDetails.fill_fees,
-    //       fullSettledDetails.filled_size,
-    //       fullSettledDetails.executed_value,
-    //       orderToCheck.id
-    //     ]);
-    //   }
-    // };
-
-
-
-
-
-  } catch (err) {
-
-
-    // if (err.response?.status === 404) {
-    //   console.log('order not found', order.id);
-    //   // check again to make sure after waiting a second in case things need to settle
-    //   await sleep(5000);
-    //   try {
-    //     let fullSettledDetails = await coinbaseClient.getOrder(order.id);
-    //     console.log('here are the full settled order details that maybe need to be deleted', fullSettledDetails);
-    //   } catch (err) {
-    //     if (err.response?.status === 404) {
-    //       if (order.will_cancel) {
-    //         // if the order was supposed to be canceled
-    //         console.log('need to delete for sure', order);
-    //         // delete the trade from the db
-    //         await databaseClient.deleteTrade(order.id);
-    //       } else {
-    //         // if the order was not supposed to be canceled
-    //         console.log('need to reorder', order.price);
-
-    //         // same code from trade post route
-    //         const tradeDetails = {
-    //           original_sell_price: order.original_sell_price,
-    //           original_buy_price: order.original_buy_price,
-    //           side: order.side,
-    //           price: order.price, // USD
-    //           size: order.size, // BTC
-    //           product_id: order.product_id,
-    //           stp: 'cn',
-    //         };
-    //         try {
-    //           // send the new order with the trade details
-    //           let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
-    //           // store the new trade in the db. the trade details are also sent to store trade position prices
-    //           let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
-
-    //           // delete the old order from the db
-    //           const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-    //           const response = await pool.query(queryText, [order.id]);
-    //           // console.log('response from cancelling order and deleting from db', response.rowCount);
-    //           socketClient.emit('message', {
-    //             message: `trade was reordered`,
-    //             orderUpdate: true
-    //           });
-
-    //         } catch (err) {
-    //           if (err.response?.status === 400) {
-    //             console.log('Insufficient funds when reordering missing trade in the loop!');
-    //             socketClient.emit('message', {
-    //               error: `Insufficient funds!`,
-    //               orderUpdate: true
-    //             });
-    //           } else if (err.response?.status === 401) {
-    //             console.log('unauthorized');
-    //             socketClient.emit('message', {
-    //               error: `Unauthorized request. Probably expired timestamp.`,
-    //               orderUpdate: true
-    //             });
-    //           } else if (err.response?.status === 502) {
-    //             console.log('bad gateway');
-    //             socketClient.emit('message', {
-    //               error: `Bad gateway. Probably not a problem unless it keeps repeating.`,
-    //               orderUpdate: true
-    //             });
-    //           } else {
-    //             console.log('problem in the loop reordering trade', err);
-    //             socketClient.emit('message', {
-    //               error: `unknown error when reordering trade`,
-    //               orderUpdate: true
-    //             });
-    //           }
-    //         }
-    //       }
-    //     } else {
-    //       console.log('error when looking for not found order in syncOrders', err);
-    //     }
-    //   }
-    // } else 
-    if (err.code && (err.code === 'ESOCKETTIMEDOUT' || err.code === 'ETIMEDOUT')) {
-      console.log('Timed out!!!!!');
-      socketClient.emit('message', {
-        error: `Connection timed out, consider synching all orders to prevent duplicates. This will not be done for you.`,
-        orderUpdate: true
-      });
-    } else if (err.code === 'ECONNRESET') {
-      console.log('econnreset in syncOrders loop');
-      socketClient.emit('message', {
-        error: `Connection to coinbase server was reset`,
-        orderUpdate: true
-      });
-    } else if (err.response?.status === 401) {
-      console.log('unauthorized');
-      socketClient.emit('message', {
-        error: `Unauthorized request. Probably expired timestamp.`,
-        orderUpdate: true
-      });
-    } else if (err.response?.status === 502) {
-      console.log('bad gateway');
-      socketClient.emit('message', {
-        error: `Bad gateway. Probably not a problem unless it keeps repeating.`,
-        orderUpdate: true
-      });
-    } else {
-      socketClient.emit('message', {
-        error: `unknown error from syncOrders loop`,
-        orderUpdate: true
-      });
-      console.log('error from robot.syncOrders', err);
-      // need to handle errors from err.code === 'ECONNRESET'
-    }
-  } finally {
+    console.log('emitting message');
     socketClient.emit('message', {
       heartbeat: true,
     });
+  } catch (err) {
+    console.log('error at end of syncOrders', err);
+  } finally {
+    console.log('looping syncOrders again');
     // when everything is done, call the sync again
     setTimeout(() => {
       syncOrders();
@@ -368,9 +222,14 @@ async function settleMultipleOrders(ordersArray) {
       // if all goes well, resolve promise with success message
       resolve({
         message: "All settled orders were flipped successfully",
-        ordersFlipped: true
-      })
+        ordersSettled: true
+      });
     }
+    // if no orders to settle, resolve
+    resolve({
+      message: "No orders to settle",
+      ordersSettled: false
+    });
   })
 }
 
