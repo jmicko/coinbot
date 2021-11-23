@@ -116,10 +116,10 @@ const syncOrders = async () => {
     // if (ordersToCancel[0]) {
     try {
       let result = await cancelMultipleOrders(ordersToCancel);
-      if (result.ordersCanceled) {
+      if (result.ordersCanceled && (result.quantity > 0)) {
         console.log(result.message);
         socketClient.emit('message', {
-          error: `Extra orders were found and canceled`,
+          error: `${result.quantity} Extra orders were found and canceled`,
           orderUpdate: true
         });
       }
@@ -137,13 +137,17 @@ const syncOrders = async () => {
         console.log(result.message);
       }
     } catch (err) {
-      console.log('Error flipping all settled orders', err);
+      console.log('Error settling all settled orders', err);
     }
     socketClient.emit('message', {
       heartbeat: true,
     });
   } catch (err) {
-    console.log('error at end of syncOrders', err);
+    if (err.code === 'ECONNRESET') {
+      console.log('Connection reset by Coinbase server');
+    } else{
+      console.log('error at end of syncOrders', err);
+    }
   } finally {
     // when everything is done, call the sync again
     setTimeout(() => {
@@ -159,7 +163,6 @@ async function settleMultipleOrders(ordersArray) {
       socketClient.emit('message', {
         message: `There are ${ordersArray.length} orders that need to be synced`,
       });
-
       // loop over the array and flip each trade
       for (let i = 0; i < ordersArray.length; i++) {
         const orderToCheck = ordersArray[i];
@@ -167,15 +170,10 @@ async function settleMultipleOrders(ordersArray) {
         socketClient.emit('message', {
           heartbeat: true,
         });
-
         try {
-
-
-          console.log('@@@@@@@ setting this trade as settled in the db', orderToCheck.id, orderToCheck.price);
           // wait between each loop to prevent rate limiting
           await sleep(500);
-
-          console.log('need to flip this trade', orderToCheck.price);
+          console.log('@@@@@@@ setting this trade as settled in the db', orderToCheck.id, orderToCheck.price);
           // get all the order details from cb
           await sleep(100); // avoid rate limiting
           let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id);
@@ -210,10 +208,12 @@ async function settleMultipleOrders(ordersArray) {
               }
             } // end reorder
           } // end not found
+          else {
+            console.log('error in settleMultipleOrders loop');
+            reject(err);
+          }
         } // end catch
       } // end for loop
-
-
 
       // if all goes well, resolve promise with success message
       resolve({
@@ -283,6 +283,9 @@ async function cancelMultipleOrders(ordersArray) {
       // only need to wait once because as the loop runs nothing will be added to it. Only wait for most recent order
       await sleep(1000);
 
+      // set variable to track how many orders were actually canceled
+      let quantity = 0;
+
       for (let i = 0; i < ordersArray.length; i++) {
         const orderToCancel = ordersArray[i];
         // console.log('Order to cancel', orderToCancel.id);
@@ -293,15 +296,16 @@ async function cancelMultipleOrders(ordersArray) {
             // cancel the order if nothing comes back from db
             console.log('canceling order', orderToCancel.id, 'at price', orderToCancel.price);
             await coinbaseClient.cancelOrder(orderToCancel.id);
+            quantity++;
           } else {
-            console.log('checked again for the order in the db', doubleCheck.id);
+            console.log('checked again for the order in the db', doubleCheck.id, doubleCheck.price);
           }
         } catch (err) {
           if (err.response?.status === 404) {
             console.log('order not found when canceling extra order!');
             // if not found, cancel all orders may have been done, so get out of the loop
             // new array will be made on next loop
-            i += ordersArray.length;
+            i += ordersArray.length; // don't use break because need current loop iteration to finish
           } else if (err.response?.status === 401 || err.response?.status === 502) {
             console.log('connection issue in cancel orders loop. Probably nothing to worry about');
             socketClient.emit('message', {
@@ -319,7 +323,8 @@ async function cancelMultipleOrders(ordersArray) {
       // if all goes well, resolve promise with success message
       resolve({
         message: "Extra orders were canceled",
-        ordersCanceled: true
+        ordersCanceled: true,
+        quantity: quantity
       })
     } else {
       resolve({
