@@ -173,11 +173,10 @@ async function settleMultipleOrders(ordersArray) {
         try {
           // wait between each loop to prevent rate limiting
           await sleep(500);
-          console.log('@@@@@@@ setting this trade as settled in the db', orderToCheck.id, orderToCheck.price);
           // get all the order details from cb
           await sleep(100); // avoid rate limiting
           let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id);
-          // console.log('here are the full settled order details', fullSettledDetails);
+          console.log('@@@@@@@ setting this trade as settled in the db', orderToCheck.id, orderToCheck.price);
           // update the order in the db
           const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5 WHERE "id"=$6;`;
           await pool.query(queryText, [
@@ -201,7 +200,7 @@ async function settleMultipleOrders(ordersArray) {
             else {
               console.log('need to reorder', orderToCheck.price);
               try {
-
+                
                 await reorder(orderToCheck);
               } catch (err) {
                 console.log('error reordering trade', err);
@@ -209,8 +208,9 @@ async function settleMultipleOrders(ordersArray) {
             } // end reorder
           } // end not found
           else {
-            console.log('error in settleMultipleOrders loop');
-            reject(err);
+            console.log('error in settleMultipleOrders loop', err);
+            // reject(err);
+            // break; // don't continue looping after promise rejection or api calls will be used up
           }
         } // end catch
       } // end for loop
