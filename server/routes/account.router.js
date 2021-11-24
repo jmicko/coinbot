@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const coinbaseClient = require('../modules/coinbaseClient');
+const socketClient = require('../modules/socketClient');
 // const databaseClient = require('../modules/databaseClient/databaseClient');
 
 
@@ -21,8 +22,16 @@ router.get('/', (req, res) => {
         }
       });
     })
-    .catch((error) => {
-      console.log('error getting accounts:', error);
+    .catch((err) => {
+      if (err.response.status === 500) {
+        console.log('internal server error from coinbase');
+        socketClient.emit('message', {
+          error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
+          orderUpdate: true
+        });
+      } else {
+        console.log('error getting accounts:', error);
+      }
       res.sendStatus(500)
     })
 });

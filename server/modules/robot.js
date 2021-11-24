@@ -137,18 +137,32 @@ const syncOrders = async () => {
         console.log(result.message);
       }
     } catch (err) {
-      console.log('Error settling all settled orders', err);
+      if (err.response.status === 500) {
+        console.log('internal server error from coinbase');
+        socketClient.emit('message', {
+          error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
+          orderUpdate: true
+        });
+      } else {
+        console.log('Error settling all settled orders', err);
+      }
     }
-    socketClient.emit('message', {
-      heartbeat: true,
-    });
   } catch (err) {
     if (err.code === 'ECONNRESET') {
       console.log('Connection reset by Coinbase server');
-    } else{
+    } else if (err.response.status === 500) {
+      console.log('internal server error from coinbase');
+      socketClient.emit('message', {
+        error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
+        orderUpdate: true
+      });
+    } else {
       console.log('error at end of syncOrders', err);
     }
   } finally {
+    socketClient.emit('message', {
+      heartbeat: true,
+    });
     // when everything is done, call the sync again
     setTimeout(() => {
       syncOrders();
@@ -200,7 +214,7 @@ async function settleMultipleOrders(ordersArray) {
             else {
               console.log('need to reorder', orderToCheck.price);
               try {
-                
+
                 await reorder(orderToCheck);
               } catch (err) {
                 console.log('error reordering trade', err);
