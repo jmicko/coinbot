@@ -94,10 +94,10 @@ io.engine.on("connection_error", (err) => {
 
 // start the loop
 robot.theLoop();
-// synch all orders every 6 hours
+// synch all orders every 24 hours
 setInterval(() => {
   robot.syncEverything();
-}, (1000*60*60*6));
+}, (1000*60*60*24));
 
 // coinbaseClient.getAllOrders();
 
