@@ -23,7 +23,7 @@ router.get('/', (req, res) => {
       });
     })
     .catch((err) => {
-      if (err.response.status === 500) {
+      if (err.response?.status === 500) {
         console.log('internal server error from coinbase');
         socketClient.emit('message', {
           error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
