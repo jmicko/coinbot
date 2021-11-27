@@ -161,7 +161,6 @@ async function syncOrders() {
       console.log('error at end of syncOrders', err);
     }
   } finally {
-    console.log('finally of syncOrders');
     socketClient.emit('message', {
       heartbeat: true,
     });
