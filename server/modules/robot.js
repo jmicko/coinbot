@@ -109,7 +109,7 @@ async function syncOrders() {
     // compare the arrays and remove any where the ids match in both,
     // leaving a list of orders that are open in the db, but not on cb. Probably settled
     const ordersToCheck = await orderElimination(dbOrders, cbOrders);
-    
+
     // also get a list of orders that are open on cb, but not stored in the db. 
     // these are extra orders and should be canceled???
     const ordersToCancel = await orderElimination(cbOrders, dbOrders);
@@ -129,7 +129,7 @@ async function syncOrders() {
     // wait for a second to allow cancels to go through so bot doesn't cancel twice
     await sleep(1000);
     // }
-    
+
     // now flip all the orders that need to be flipped
     try {
       let result = await settleMultipleOrders(ordersToCheck);
@@ -137,7 +137,7 @@ async function syncOrders() {
         console.log(result.message);
       }
     } catch (err) {
-      if (err.response.status === 500) {
+      if (err.response?.status === 500) {
         console.log('internal server error from coinbase');
         socketClient.emit('message', {
           error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
@@ -151,7 +151,7 @@ async function syncOrders() {
     console.log('catch of syncOrders');
     if (err.code === 'ECONNRESET') {
       console.log('Connection reset by Coinbase server');
-    } else if (err.response.status === 500) {
+    } else if (err.response?.status === 500) {
       console.log('internal server error from coinbase');
       socketClient.emit('message', {
         error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
@@ -215,7 +215,6 @@ async function settleMultipleOrders(ordersArray) {
             else {
               console.log('need to reorder', orderToCheck.price);
               try {
-
                 await reorder(orderToCheck);
               } catch (err) {
                 console.log('error reordering trade', err);
@@ -224,8 +223,6 @@ async function settleMultipleOrders(ordersArray) {
           } // end not found
           else {
             console.log('error in settleMultipleOrders loop', err);
-            // reject(err);
-            // break; // don't continue looping after promise rejection or api calls will be used up
           }
         } // end catch
       } // end for loop
@@ -282,8 +279,8 @@ async function reorder(orderToReorder) {
         });
         reject('Insufficient funds')
       }
-        console.log('error in reorder function in robot.js');
-        reject(err)
+      console.log('error in reorder function in robot.js');
+      reject(err)
     }
   });
 }
