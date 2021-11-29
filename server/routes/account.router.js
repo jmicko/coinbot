@@ -30,7 +30,7 @@ router.get('/', (req, res) => {
           orderUpdate: true
         });
       } else {
-        console.log('error getting accounts:', error);
+        console.log('error getting accounts:', err);
       }
       res.sendStatus(500)
     })
