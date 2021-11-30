@@ -48,6 +48,7 @@ function Settings(props) {
       <div className="Settings">
         <button className="btn-logout btn-red" onClick={() => { props.clickSettings() }}>X</button>
         <h2 className="settings-header">Settings</h2>
+        <p>hello {props.store.accountReducer.userReducer.username}!</p>
         <h4>Delete All Trades</h4>
         <p>Danger! This button will delete all your positions! Press it carefully!</p>
         <button className="btn-blue" onClick={() => { deleteAllOrders() }}>Delete All</button>
@@ -92,11 +93,11 @@ function Settings(props) {
             onChange={(event) => setSecret(event.target.value)}
           />
           <label htmlFor="URI">
-            Real money or sandbox? 
+            Real money or sandbox?
           </label>
           {(URI === "real")
-            ? <button className="btn-green" onClick={(event) => {event.preventDefault(); setURI("sandbox") }}>Real Money API</button>
-            : <button className="btn-green" onClick={(event) => {event.preventDefault(); setURI("real") }}>Sandbox API</button>
+            ? <button className="btn-green" onClick={(event) => { event.preventDefault(); setURI("sandbox") }}>Real Money API</button>
+            : <button className="btn-green" onClick={(event) => { event.preventDefault(); setURI("real") }}>Sandbox API</button>
           }
           {/* <label htmlFor="sandbox">
             URI:
@@ -113,18 +114,24 @@ function Settings(props) {
           {/* submit button */}
           <input className="btn-store-api btn-blue" type="submit" name="submit" value="Store API details" />
         </form>
-        <h4>Factory Reset</h4>
-        <p>
-          This will delete everything! Use with caution!
-        </p>
-        <p>
-          CAUTION <button
-            className="btn-logout btn-red"
-            onClick={() => dispatch({ type: 'FACTORY_RESET' })}
-          >
-            Factory Reset
-          </button> CAUTION
-        </p>
+        {(true)
+        // {(props.store.accountReducer.userReducer.admin)
+          ? <>
+            <h4>Factory Reset</h4>
+            <p>
+              This will delete everything! Use with caution!
+            </p>
+            <p>
+              CAUTION <button
+                className="btn-logout btn-red"
+                onClick={() => dispatch({ type: 'FACTORY_RESET' })}
+              >
+                Factory Reset
+              </button> CAUTION
+            </p>
+          </>
+          : <></>
+        }
       </div>
     );
   } else {

@@ -90,34 +90,6 @@ const getUnsettledTrades = (side, username) => {
           // or promise relays errors from pool to parent
           reject(err);
         })
-    } else if (side == 'highBuy') {
-      // gets highest priced buy
-      sqlText = `SELECT * FROM "orders" WHERE "side"='buy' AND "settled"=false 
-      ORDER BY "price" DESC
-      LIMIT(1);`;
-      pool.query(sqlText)
-        .then((results) => {
-          // promise returns promise from pool if success
-          resolve(results.rows);
-        })
-        .catch((err) => {
-          // or promise relays errors from pool to parent
-          reject(err);
-        })
-    } else if (side == 'lowSell') {
-      // gets lowest priced sell
-      sqlText = `SELECT * FROM "orders" WHERE "side"='sell' AND "settled"=false 
-        ORDER BY "price" ASC
-          LIMIT(1);`;
-      pool.query(sqlText)
-        .then((results) => {
-          // promise returns promise from pool if success
-          resolve(results.rows);
-        })
-        .catch((err) => {
-          // or promise relays errors from pool to parent
-          reject(err);
-        })
     }
   });
 }

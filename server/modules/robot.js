@@ -258,7 +258,6 @@ async function settleMultipleOrders(ordersArray, username) {
 
 async function reorder(orderToReorder) {
   return new Promise(async (resolve, reject) => {
-    console.log('NEEDD TO REORDER', orderToReorder);
     const tradeDetails = {
       original_sell_price: orderToReorder.original_sell_price,
       original_buy_price: orderToReorder.original_buy_price,
