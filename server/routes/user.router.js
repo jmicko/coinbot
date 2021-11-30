@@ -7,6 +7,19 @@ const userStrategy = require('../strategies/user.strategy');
 
 const router = express.Router();
 
+// function to check if there are any users
+async function anyAdmins() {
+  return new Promise(async (resolve, reject) => {
+    const queryText = `SELECT count(*) FROM "user" WHERE "admin"=true;`;
+    try {
+      let result = await pool.query(queryText);
+      resolve(result.rows[0].count)
+    } catch (err) {
+      console.log('problem getting number of admins', err);
+    }
+  })
+}
+
 // Handles Ajax request for user information if user is authenticated
 router.get('/', rejectUnauthenticated, (req, res) => {
   // Send back user object from the session (previously queried from the database)
@@ -19,16 +32,19 @@ router.get('/', rejectUnauthenticated, (req, res) => {
 router.post('/register', userCount, async (req, res, next) => {
   const username = req.body.username;
   const password = encryptLib.encryptPassword(req.body.password);
-try {
+  try {
+    let adminCount = await anyAdmins();
+    console.log('THERE ARE THIS MANY ADMINS!!!!!', adminCount);
 
-  const queryText = `INSERT INTO "user" (username, password)
+
+    const queryText = `INSERT INTO "user" (username, password)
   VALUES ($1, $2) RETURNING id`;
-  pool.query(queryText, [username, password])
-  .then(() => res.sendStatus(201))
-} catch (err) {
-      console.log('User registration failed: ', err);
-      res.sendStatus(500);
-    };
+    pool.query(queryText, [username, password])
+      .then(() => res.sendStatus(201))
+  } catch (err) {
+    console.log('User registration failed: ', err);
+    res.sendStatus(500);
+  };
 });
 
 // Handles login form authenticate/login POST

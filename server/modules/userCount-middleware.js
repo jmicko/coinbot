@@ -5,7 +5,7 @@ const userCount = (req, res, next) => {
   const queryText = `SELECT count(*) FROM "user" WHERE "active"=false;`;
   pool.query(queryText)
     .then((result) => {
-      if (result && result.rows && (result.rows[0].count < 1)) {
+      if (result && result.rows && (result.rows[0].count < 2)) {
         console.log('number of users:', result.rows[0].count);
         next();
       } else {
