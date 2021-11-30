@@ -3,7 +3,19 @@ const databaseClient = require("./databaseClient");
 const pool = require("./pool");
 const socketClient = require("./socketClient");
 
-// let synching = false;
+// start a sync loop for each active user
+async function startSync() {
+  console.log('starting sync loop');
+  // get all users from the db
+  const sqlText = `SELECT * FROM "user";`
+  const result = await pool.query(sqlText);
+  const userlist = result.rows;
+  // console.log(userlist);
+  userlist.forEach(user => {
+    console.log(user.username);
+    syncOrders(user.username);
+  });
+}
 
 // better just call this thing theLoop
 async function theLoop() {
@@ -16,7 +28,7 @@ async function theLoop() {
     // ...take the first trade that needs to be flipped, 
     let dbOrder = tradeList.rows[0];
     // ...flip the trade details
-    console.log('dbOrder is', dbOrder);
+    // console.log('dbOrder is', dbOrder);
     let tradeDetails = flipTrade(dbOrder);
     // ...send the new trade
     try {
@@ -70,6 +82,7 @@ function flipTrade(dbOrder) {
     size: dbOrder.size, // BTC
     product_id: dbOrder.product_id,
     stp: 'cn',
+    user: dbOrder.user,
   };
   // add buy/sell requirement and price
   if (dbOrder.side === "buy") {
@@ -94,7 +107,7 @@ function sleep(milliseconds) {
 }
 
 // REST protocol to find orders that have settled on coinbase
-async function syncOrders() {
+async function syncOrders(username) {
   // create one order to work with
   // let order;
   try {
@@ -102,7 +115,7 @@ async function syncOrders() {
     const results = await Promise.all([
       // get all open orders from db and cb
       databaseClient.getUnsettledTrades('all'),
-      coinbaseClient.getOpenOrders()
+      coinbaseClient.getOpenOrders(username)
     ]);
     // store the lists of orders in the corresponding arrays so they can be compared
     const dbOrders = results[0];
@@ -133,7 +146,7 @@ async function syncOrders() {
 
     // now flip all the orders that need to be flipped
     try {
-      let result = await settleMultipleOrders(ordersToCheck);
+      let result = await settleMultipleOrders(ordersToCheck, username);
       if (result.ordersFlipped) {
         console.log(result.message);
       }
@@ -167,12 +180,12 @@ async function syncOrders() {
     });
     // when everything is done, call the sync again
     setTimeout(() => {
-      syncOrders();
+      syncOrders(username);
     }, 300);
   }
 }
 
-async function settleMultipleOrders(ordersArray) {
+async function settleMultipleOrders(ordersArray, username) {
   return new Promise(async (resolve, reject) => {
     if (ordersArray.length > 0) {
       console.log(`There are ${ordersArray.length} settled orders that should be flipped`);
@@ -191,7 +204,7 @@ async function settleMultipleOrders(ordersArray) {
           await sleep(500);
           // get all the order details from cb
           await sleep(100); // avoid rate limiting
-          let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id);
+          let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, username);
           console.log('setting this trade as settled in the db', orderToCheck.id, orderToCheck.price);
           // update the order in the db
           const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5 WHERE "id"=$6;`;
@@ -216,7 +229,7 @@ async function settleMultipleOrders(ordersArray) {
             else {
               console.log('need to reorder', orderToCheck.price);
               try {
-                await reorder(orderToCheck);
+                await reorder(orderToCheck, username);
               } catch (err) {
                 console.log('error reordering trade', err);
               }
@@ -245,6 +258,7 @@ async function settleMultipleOrders(ordersArray) {
 
 async function reorder(orderToReorder) {
   return new Promise(async (resolve, reject) => {
+    console.log('NEEDD TO REORDER', orderToReorder);
     const tradeDetails = {
       original_sell_price: orderToReorder.original_sell_price,
       original_buy_price: orderToReorder.original_buy_price,
@@ -253,6 +267,7 @@ async function reorder(orderToReorder) {
       size: orderToReorder.size, // BTC
       product_id: orderToReorder.product_id,
       stp: 'cn',
+      user: orderToReorder.user,
     };
     try {
       // send the new order with the trade details
@@ -391,6 +406,7 @@ const robot = {
   maxHistory: 200,
   theLoop: theLoop,
   syncEverything: syncEverything,
+  startSync: startSync,
 }
 
 

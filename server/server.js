@@ -21,7 +21,7 @@ const robot = require('./modules/robot');
 const coinbaseClient = require('./modules/coinbaseClient');
 
 // Start the syncOrders loop
-robot.syncOrders();
+robot.startSync();
 
 // Body parser middleware
 app.use(express.json());

@@ -12,7 +12,7 @@ async function getUser(username) {
       let result = await pool.query(sqlText, [username]);
       const user = result.rows[0];
       // console.log('THE RESULT IS', result.rows[0]);
-      console.log('THE user IS', user);
+      // console.log('THE user IS', user);
       resolve(user);
     } catch (err) {
       reject(err);
@@ -227,13 +227,13 @@ async function getOrder(orderId, username) {
   });
 }
 
-async function placeOrder(data, username) {
+async function placeOrder(data) {
   return new Promise(async (resolve, reject) => {
     try {
-
+      console.log('THE DATA IS', data);
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await getUser(username);
+      const user = await getUser(data.user);
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
