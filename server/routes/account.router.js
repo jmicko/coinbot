@@ -77,6 +77,7 @@ router.get('/profits', rejectUnauthenticated, (req, res) => {
 * POST route to store API details
 */
 router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
+  const user = req.user.username;
   console.log('here are the api details', req.body);
   function getURI() {
     if (api.URI === "sandbox") {
@@ -88,14 +89,22 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   }
   const api = req.body;
   const URI = getURI();
-  const queryText = `UPDATE "user" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4;`;
-  let result = await pool.query(queryText, [
-    api.secret,
-    api.key,
-    api.passphrase,
-    URI,
-  ]);
-  res.sendStatus(200);
+  const queryText = `UPDATE "user" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4
+  WHERE "username"=$5;`;
+  try {
+
+    let result = await pool.query(queryText, [
+      api.secret,
+      api.key,
+      api.passphrase,
+      URI,
+      user,
+    ]);
+    res.sendStatus(200);
+  } catch (err) {
+    console.log('problem updating api details', err);
+    res.sendStatus(500);
+  }
 });
 
 /**
