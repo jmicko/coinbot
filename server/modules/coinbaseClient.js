@@ -94,12 +94,8 @@ async function getFees() {
           'cb-access-timestamp': timestamp
         }
       };
-
-      axios.request(options).then(function (response) {
-        resolve(response.data)
-      }).catch(function (error) {
-        reject(error)
-      });
+      let response = await axios.request(options);
+      resolve(response.data);
     } catch (err) {
       reject(err);
     }
@@ -125,11 +121,8 @@ async function getAllOrders() {
         const message = timestamp + method + path + body;
         const key = CryptoJS.enc.Base64.parse(secret);
         const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-        // console.log("Message: " + message + " HMAC: " + hash);
-
         return hash;
       }
-
       const options = {
         method: 'GET',
         url: `${API_URI}/orders`,
@@ -142,12 +135,8 @@ async function getAllOrders() {
         }
       };
 
-      axios.request(options).then(function (response) {
-        resolve(response.data)
-      }).catch(function (error) {
-        // console.error(error);
-        reject(error)
-      });
+      let response = await axios.request(options);
+      resolve(response.data);
     } catch (err) {
       reject(err)
     }
@@ -190,13 +179,8 @@ async function getOpenOrders() {
         }
       };
 
-      axios.request(options).then(function (response) {
-        // console.log(response.data.length);
-        resolve(response.data);
-      }).catch(function (error) {
-        // console.error(error);
-        reject(error);
-      });
+      let response = await axios.request(options);
+      resolve(response.data);
     } catch (err) {
       reject(err);
     }
@@ -235,12 +219,8 @@ async function getOrder(orderId) {
           'cb-access-timestamp': timestamp
         }
       };
-      axios.request(options).then(function (response) {
-        resolve(response.data);
-      }).catch(function (error) {
-        // console.error(error);
-        reject(error);
-      });
+      let response = await axios.request(options);
+      resolve(response.data);
     } catch (err) {
       reject(err);
     }
@@ -267,8 +247,6 @@ async function placeOrder(data) {
         const message = timestamp + method + path + body;
         const key = CryptoJS.enc.Base64.parse(secret);
         const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-        // console.log("Message: " + message + " HMAC: " + hash);
-
         return hash;
       }
 
@@ -284,13 +262,8 @@ async function placeOrder(data) {
         },
         data: data
       };
-
-      axios.request(options).then(function (response) {
-        resolve(response.data);
-      }).catch(function (error) {
-        // console.error(error);
-        reject(error);
-      });
+      let response = await axios.request(options);
+      resolve(response.data);
     } catch (err) {
       reject(err);
     }
@@ -328,12 +301,8 @@ async function cancelOrder(orderId) {
           'cb-access-timestamp': timestamp
         }
       };
-      axios.request(options).then(function (response) {
-        resolve(response.data);
-      }).catch(function (error) {
-        // console.error(error);
-        reject(error);
-      });
+      let response = await axios.request(options);
+      resolve(response.data);
     } catch (err) {
       reject(err);
     }
@@ -371,12 +340,9 @@ async function cancelOrders() {
           'cb-access-timestamp': timestamp
         }
       };
-      axios.request(options).then(function (response) {
-        resolve(response.data);
-      }).catch(function (error) {
-        // console.error(error);
-        reject(error);
-      });
+
+      let response = await axios.request(options);
+      resolve(response.data);
     } catch (err) {
       reject(err);
     }

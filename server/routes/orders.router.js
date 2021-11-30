@@ -49,16 +49,20 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
 */
 router.delete('/', rejectUnauthenticated, async (req, res) => {
   console.log('in delete all orders route');
-  // set all orders to will_cancel so the loop will just cancel them.
-  const queryText = `DELETE from "orders" WHERE "settled" = false;`;
-  let result = await pool.query(queryText);
-  await coinbaseClient.cancelAllOrders();
-  console.log('+++++++ EVERYTHING WAS DELETED +++++++');
-  // tell front end to update
-  socketClient.emit('message', {
-    message: `an exchange was made`,
-    orderUpdate: true
-  });
+  try {
+    // delete from db first
+    const queryText = `DELETE from "orders" WHERE "settled" = false;`;
+    await pool.query(queryText);
+    // delete all orders from coinbase
+    await coinbaseClient.cancelAllOrders();
+    console.log('+++++++ EVERYTHING WAS DELETED +++++++');
+    // tell front end to update
+    socketClient.emit('message', {
+      orderUpdate: true
+    });
+  } catch (err) {
+    console.log(err);
+  }
   res.sendStatus(200)
 });
 
