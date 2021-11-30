@@ -110,6 +110,7 @@ function sleep(milliseconds) {
 async function syncOrders(userID) {
   try {
     const user = await databaseClient.getUser(userID);
+    console.log('starting the loop for user id', userID);
     // get lists of trades to compare which have been settled
     const results = await Promise.all([
       // get all open orders from db and cb

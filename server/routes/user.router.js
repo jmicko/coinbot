@@ -63,17 +63,18 @@ router.post('/register', userCount, async (req, res, next) => {
       let queryText = `INSERT INTO "user" (username, password)
         VALUES ($1, $2) RETURNING id`;
       let result = await pool.query(queryText, [username, password]);
-      console.log('here is the new user id', result);
+      const userID = result.rows[0].id;
+      console.log('here is the new user id', result.rows[0].id);
       // start a sync loop for the new user
-      // robot.syncOrders()
+      robot.syncOrders(userID)
     } else {
       let queryText = `INSERT INTO "user" (username, password, admin, active, approved)
       VALUES ($1, $2, true, true, true) RETURNING id`;
       let result = await pool.query(queryText, [username, password]);
-      console.log(result);
-      console.log('here is the new user id', result);
+      const userID = result.rows[0].id;
+      console.log('here is the new user id', result.rows[0].id);
       // start a sync loop for the new user
-      // robot.syncOrders()
+      robot.syncOrders(userID)
     }
 
     res.sendStatus(201);
