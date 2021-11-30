@@ -129,7 +129,7 @@ async function syncOrders(username) {
     const ordersToCancel = await orderElimination(cbOrders, dbOrders);
     // if (ordersToCancel[0]) {
     try {
-      let result = await cancelMultipleOrders(ordersToCancel);
+      let result = await cancelMultipleOrders(ordersToCancel, username);
       if (result.ordersCanceled && (result.quantity > 0)) {
         console.log(result.message);
         socketClient.emit('message', {
@@ -303,7 +303,7 @@ async function reorder(orderToReorder) {
 
 
 
-async function cancelMultipleOrders(ordersArray) {
+async function cancelMultipleOrders(ordersArray, username) {
   return new Promise(async (resolve, reject) => {
     if (ordersArray.length > 0) {
       console.log(`There are ${ordersArray.length} extra orders that should be canceled`);
@@ -316,13 +316,14 @@ async function cancelMultipleOrders(ordersArray) {
 
       for (let i = 0; i < ordersArray.length; i++) {
         const orderToCancel = ordersArray[i];
+        console.log(orderToCancel);
         try {
           // check to make sure it really isn't in the db
           let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
           if (!doubleCheck) {
             // cancel the order if nothing comes back from db
             console.log('canceling order', orderToCancel.id, 'at price', orderToCancel.price);
-            await coinbaseClient.cancelOrder(orderToCancel.id);
+            await coinbaseClient.cancelOrder(orderToCancel.id, username);
             quantity++;
           } else {
             console.log('checked again for the order in the db', doubleCheck.id, doubleCheck.price);

@@ -230,7 +230,7 @@ async function getOrder(orderId, username) {
 async function placeOrder(data) {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log('THE DATA IS', data);
+      // console.log('THE DATA IS', data);
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
       const user = await getUser(data.user);
