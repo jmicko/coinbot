@@ -52,11 +52,11 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
 */
 router.delete('/', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
-  console.log('in delete all orders route');
+  console.log('in delete all orders route', userID);
   try {
     // delete from db first
-    const queryText = `DELETE from "orders" WHERE "settled" = false;`;
-    await pool.query(queryText);
+    const queryText = `DELETE from "orders" WHERE "settled" = false AND "userID"=$1;`;
+    await pool.query(queryText, [userID]);
     // delete all orders from coinbase
     await coinbaseClient.cancelAllOrders(userID);
     console.log('+++++++ EVERYTHING WAS DELETED +++++++');
