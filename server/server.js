@@ -99,8 +99,6 @@ setInterval(() => {
   robot.syncEverything();
 }, (1000*60*60*24));
 
-// coinbaseClient.getAllOrders();
-
 
 // Serve static files
 app.use(express.static('build'));

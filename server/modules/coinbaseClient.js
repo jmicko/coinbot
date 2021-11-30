@@ -5,14 +5,14 @@ const pool = require('./pool');
 
 
 
-async function getUser() {
+async function getUser(username) {
   return new Promise(async (resolve, reject) => {
     try {
-      sqlText = `SELECT * FROM "user";`;
-      let result = await pool.query(sqlText);
+      sqlText = `SELECT * FROM "user" WHERE "username"=$1;`;
+      let result = await pool.query(sqlText, [username]);
       const user = result.rows[0];
       // console.log('THE RESULT IS', result.rows[0]);
-      // console.log('THE user IS', user);
+      console.log('THE user IS', user);
       resolve(user);
     } catch (err) {
       reject(err);
@@ -20,12 +20,12 @@ async function getUser() {
   })
 }
 
-async function getAccounts() {
+async function getAccounts(username) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await getUser();
+      const user = await getUser(username);
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
@@ -63,12 +63,12 @@ async function getAccounts() {
   })
 }
 
-async function getFees() {
+async function getFees(username) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await getUser();
+      const user = await getUser(username);
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
@@ -102,12 +102,12 @@ async function getFees() {
   })
 }
 
-async function getAllOrders() {
+async function getAllOrders(username) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await getUser();
+      const user = await getUser(username);
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
@@ -146,12 +146,12 @@ async function getAllOrders() {
 
 
 
-async function getOpenOrders() {
+async function getOpenOrders(username) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await getUser();
+      const user = await getUser(username);
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
@@ -187,12 +187,12 @@ async function getOpenOrders() {
   });
 }
 
-async function getOrder(orderId) {
+async function getOrder(orderId, username) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await getUser();
+      const user = await getUser(username);
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
@@ -227,13 +227,13 @@ async function getOrder(orderId) {
   });
 }
 
-async function placeOrder(data) {
+async function placeOrder(data, username) {
   return new Promise(async (resolve, reject) => {
     try {
 
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await getUser();
+      const user = await getUser(username);
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
@@ -270,12 +270,12 @@ async function placeOrder(data) {
   });
 }
 
-async function cancelOrder(orderId) {
+async function cancelOrder(orderId, username) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await getUser();
+      const user = await getUser(username);
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
@@ -309,12 +309,12 @@ async function cancelOrder(orderId) {
   })
 }
 
-async function cancelOrders() {
+async function cancelOrders(username) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await getUser();
+      const user = await getUser(username);
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
@@ -349,15 +349,15 @@ async function cancelOrders() {
   });
 }
 
-async function cancelAllOrders() {
+async function cancelAllOrders(username) {
   return new Promise(async (resolve, reject) => {
     try {
       console.log('cancelling all orders!!!!!!!!!!!!!');
-      await cancelOrders();
-      let totalOrders = await getAllOrders();
+      await cancelOrders(username);
+      let totalOrders = await getAllOrders(username);
       console.log(totalOrders.length);
       if (totalOrders.length > 0) {
-        await cancelAllOrders();
+        await cancelAllOrders(username);
       }
       resolve(true);
     } catch (err) {

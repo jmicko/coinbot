@@ -12,7 +12,8 @@ const socketClient = require('../modules/socketClient');
  * For now this just wants to return usd account available balance
  */
 router.get('/', (req, res) => {
-  coinbaseClient.getAccounts()
+  const user = req.user.username;
+  coinbaseClient.getAccounts(user)
     .then((result) => {
       return result.forEach(account => {
         if (account.currency === 'USD') {
@@ -40,7 +41,8 @@ router.get('/', (req, res) => {
 * GET route to get the fees when the user loads the page
 */
 router.get('/fees', rejectUnauthenticated, (req, res) => {
-  coinbaseClient.getFees()
+  const user = req.user.username;
+  coinbaseClient.getFees(user)
     .then((result) => {
       res.send(result)
     })
