@@ -63,7 +63,7 @@ function Settings(props) {
 
         {(props.store.accountReducer.userReducer.admin)
           ? <div>
-            <h4>Approve New Users</h4>
+            <h4>Manage Users</h4>
             {JSON.stringify(props.store.usersReducer.allUsersReducer)}
           </div>
           : <></>
