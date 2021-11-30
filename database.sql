@@ -30,6 +30,7 @@ CREATE TABLE "user" (
   "password" VARCHAR (1000) NOT NULL,
   "active" boolean DEFAULT false,
   "admin" boolean DEFAULT false,
+  "approved" boolean DEFAULT false,
 
   "CB_SECRET" VARCHAR (1000),
   "CB_ACCESS_KEY" VARCHAR (1000),

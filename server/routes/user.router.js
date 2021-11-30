@@ -42,8 +42,8 @@ router.post('/register', userCount, async (req, res, next) => {
       let result = await pool.query(queryText, [username, password]);
       console.log(result);
     } else {
-      let queryText = `INSERT INTO "user" (username, password, admin)
-        VALUES ($1, $2, true) RETURNING id`;
+      let queryText = `INSERT INTO "user" (username, password, admin, active, approved)
+        VALUES ($1, $2, true, true, true) RETURNING id`;
       let result = await pool.query(queryText, [username, password]);
       console.log(result);
     }

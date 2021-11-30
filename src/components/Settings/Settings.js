@@ -114,8 +114,7 @@ function Settings(props) {
           {/* submit button */}
           <input className="btn-store-api btn-blue" type="submit" name="submit" value="Store API details" />
         </form>
-        {(true)
-        // {(props.store.accountReducer.userReducer.admin)
+        {(props.store.accountReducer.userReducer.admin)
           ? <>
             <h4>Factory Reset</h4>
             <p>

@@ -315,7 +315,6 @@ async function cancelMultipleOrders(ordersArray, username) {
 
       for (let i = 0; i < ordersArray.length; i++) {
         const orderToCancel = ordersArray[i];
-        console.log(orderToCancel);
         try {
           // check to make sure it really isn't in the db
           let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
