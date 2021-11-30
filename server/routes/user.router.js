@@ -4,6 +4,7 @@ const { userCount } = require('../modules/userCount-middleware');
 const encryptLib = require('../modules/encryption');
 const pool = require('../modules/pool');
 const userStrategy = require('../strategies/user.strategy');
+const robot = require('../modules/robot');
 
 const router = express.Router();
 
@@ -62,13 +63,19 @@ router.post('/register', userCount, async (req, res, next) => {
       let queryText = `INSERT INTO "user" (username, password)
         VALUES ($1, $2) RETURNING id`;
       let result = await pool.query(queryText, [username, password]);
-      console.log(result);
+      console.log('here is the new user id', result);
+      // start a sync loop for the new user
+      // robot.syncOrders()
     } else {
       let queryText = `INSERT INTO "user" (username, password, admin, active, approved)
-        VALUES ($1, $2, true, true, true) RETURNING id`;
+      VALUES ($1, $2, true, true, true) RETURNING id`;
       let result = await pool.query(queryText, [username, password]);
       console.log(result);
+      console.log('here is the new user id', result);
+      // start a sync loop for the new user
+      // robot.syncOrders()
     }
+
     res.sendStatus(201);
   } catch (err) {
     console.log('User registration failed: ', err);
