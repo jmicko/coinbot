@@ -21,7 +21,7 @@ const robot = require('./modules/robot');
 const coinbaseClient = require('./modules/coinbaseClient');
 
 // Start the syncOrders loop
-robot.syncOrders();
+robot.startSync();
 
 // Body parser middleware
 app.use(express.json());
@@ -95,11 +95,9 @@ io.engine.on("connection_error", (err) => {
 // start the loop
 robot.theLoop();
 // synch all orders every 24 hours
-setInterval(() => {
-  robot.syncEverything();
-}, (1000*60*60*24));
-
-// coinbaseClient.getAllOrders();
+// setInterval(() => {
+//   robot.syncEverything();
+// }, (1000*60*60*24));
 
 
 // Serve static files

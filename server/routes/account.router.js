@@ -12,7 +12,8 @@ const socketClient = require('../modules/socketClient');
  * For now this just wants to return usd account available balance
  */
 router.get('/', (req, res) => {
-  coinbaseClient.getAccounts()
+  const userID = req.user.id;
+  coinbaseClient.getAccounts(userID)
     .then((result) => {
       return result.forEach(account => {
         if (account.currency === 'USD') {
@@ -40,7 +41,8 @@ router.get('/', (req, res) => {
 * GET route to get the fees when the user loads the page
 */
 router.get('/fees', rejectUnauthenticated, (req, res) => {
-  coinbaseClient.getFees()
+  const userID = req.user.id;
+  coinbaseClient.getFees(userID)
     .then((result) => {
       res.send(result)
     })
@@ -56,25 +58,27 @@ router.get('/fees', rejectUnauthenticated, (req, res) => {
 * GET route to get total profit estimate
 */
 router.get('/profits', rejectUnauthenticated, (req, res) => {
+  const userID = req.user.id;
+  // console.log('getting profits for', userID);
   const queryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" * 2)) 
   FROM public.orders 
-  WHERE "side" = 'sell' AND "settled" = 'true';`;
-  pool.query(queryText)
+  WHERE "side" = 'sell' AND "settled" = 'true' AND "userID" = $1;`;
+  pool.query(queryText, [userID])
     .then((result) => {
+      // console.log('here are the profits', result.rows[0].sum);
       res.send(result.rows)
     })
     .catch((error) => {
       console.log('error in profits route:', error);
       res.sendStatus(500)
     })
-
-
 });
 
 /**
 * POST route to store API details
 */
 router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
+  const userID = req.user.id;
   console.log('here are the api details', req.body);
   function getURI() {
     if (api.URI === "sandbox") {
@@ -86,14 +90,22 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   }
   const api = req.body;
   const URI = getURI();
-  const queryText = `UPDATE "user" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4;`;
-  let result = await pool.query(queryText, [
-    api.secret,
-    api.key,
-    api.passphrase,
-    URI,
-  ]);
-  res.sendStatus(200);
+  const queryText = `UPDATE "user" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4, "active" = true
+  WHERE "id"=$5;`;
+  try {
+
+    let result = await pool.query(queryText, [
+      api.secret,
+      api.key,
+      api.passphrase,
+      URI,
+      userID,
+    ]);
+    res.sendStatus(200);
+  } catch (err) {
+    console.log('problem updating api details', err);
+    res.sendStatus(500);
+  }
 });
 
 /**
@@ -101,49 +113,59 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
 */
 router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
   console.log('factory reset route hit!');
-  const queryText = `DROP TABLE "orders";
-  DROP TABLE "user";
-  DROP TABLE "session";
-  CREATE TABLE IF NOT EXISTS "orders"
-  (
-      id character varying COLLATE pg_catalog."default" NOT NULL,
-      price numeric(32,8),
-      size numeric(32,8),
-      side character varying COLLATE pg_catalog."default",
-      settled boolean DEFAULT false,
-      flipped boolean DEFAULT false,
-      will_cancel boolean DEFAULT false,
-      product_id character varying COLLATE pg_catalog."default",
-      time_in_force character varying COLLATE pg_catalog."default",
-      created_at character varying COLLATE pg_catalog."default",
-      done_at character varying COLLATE pg_catalog."default",
-      fill_fees numeric(32,16),
-      filled_size numeric(32,8),
-      executed_value numeric(32,16),
-      original_buy_price numeric(32,16),
-      original_sell_price numeric(32,16),
-      CONSTRAINT orders_pkey PRIMARY KEY (id)
-  );
-  CREATE TABLE "user" (
-    "id" SERIAL PRIMARY KEY,
-    "username" VARCHAR (80) UNIQUE NOT NULL,
-    "password" VARCHAR (1000) NOT NULL,
-    "CB_SECRET" VARCHAR (1000),
-    "CB_ACCESS_KEY" VARCHAR (1000),
-    "CB_ACCESS_PASSPHRASE" VARCHAR (1000),
-    "API_URI" VARCHAR (1000)
-  );
-  CREATE TABLE "session" (
-      "sid" varchar NOT NULL COLLATE "default",
-    "sess" json NOT NULL,
-    "expire" timestamp(6) NOT NULL
-  )
-  WITH (OIDS=FALSE);
-  ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
-  CREATE INDEX "IDX_session_expire" ON "session" ("expire");`;
-  let result = await pool.query(queryText);
-  console.log('factory reset db call', result);
-  res.sendStatus(200);
+  console.log(req.user.admin);
+  if (req.user.admin) {
+    const queryText = `DROP TABLE "orders";
+    DROP TABLE "user";
+    DROP TABLE "session";
+    CREATE TABLE IF NOT EXISTS "orders"
+    (
+          id character varying COLLATE pg_catalog."default" NOT NULL,
+          "userID" character varying COLLATE pg_catalog."default",
+          price numeric(32,8),
+          size numeric(32,8),
+          side character varying COLLATE pg_catalog."default",
+          settled boolean DEFAULT false,
+          flipped boolean DEFAULT false,
+          will_cancel boolean DEFAULT false,
+          product_id character varying COLLATE pg_catalog."default",
+          time_in_force character varying COLLATE pg_catalog."default",
+          created_at character varying COLLATE pg_catalog."default",
+          done_at character varying COLLATE pg_catalog."default",
+          fill_fees numeric(32,16),
+          filled_size numeric(32,8),
+          executed_value numeric(32,16),
+          original_buy_price numeric(32,16),
+          original_sell_price numeric(32,16),
+          CONSTRAINT orders_pkey PRIMARY KEY (id)
+      );
+      CREATE TABLE "user" (
+          "id" SERIAL PRIMARY KEY,
+          "username" VARCHAR (80) UNIQUE NOT NULL,
+          "password" VARCHAR (1000) NOT NULL,
+          "admin" boolean DEFAULT false,
+          "approved" boolean DEFAULT false,
+          "active" boolean DEFAULT false,
+          "CB_SECRET" VARCHAR (1000),
+          "CB_ACCESS_KEY" VARCHAR (1000),
+          "CB_ACCESS_PASSPHRASE" VARCHAR (1000),
+          "API_URI" VARCHAR (1000)
+        );
+        CREATE TABLE "session" (
+              "sid" varchar NOT NULL COLLATE "default",
+            "sess" json NOT NULL,
+            "expire" timestamp(6) NOT NULL
+          )
+          WITH (OIDS=FALSE);
+          ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
+          CREATE INDEX "IDX_session_expire" ON "session" ("expire");`;
+    let result = await pool.query(queryText);
+    console.log('factory reset db call');
+    res.sendStatus(200);
+  } else {
+    console.log(`you can't do that because you are not admin!`);
+    res.sendStatus(403)
+  }
 });
 
 

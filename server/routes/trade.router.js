@@ -13,6 +13,8 @@ const coinbaseClient = require('../modules/coinbaseClient');
  */
 router.post('/', rejectUnauthenticated, async (req, res) => {
   // POST route code here
+  const userID = req.user.id;
+  console.log('user is', userID);
   const order = req.body;
   // tradeDetails const should take in values sent from trade component form
   const tradeDetails = {
@@ -23,6 +25,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
     size: order.size, // BTC
     product_id: order.product_id,
     stp: 'cn',
+    userID: userID,
   };
   try {
     // send the new order with the trade details
@@ -61,6 +64,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
 */
 router.delete('/', rejectUnauthenticated, async (req, res) => {
   // DELETE route code here
+  const userID = req.user.id;
   const orderId = req.body.id;
   console.log('in the server trade DELETE route', req.body.id)
 
@@ -69,7 +73,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
   let result = await pool.query(queryText, [orderId]);
   // send cancelOrder to cb
   try {
-    let result = await coinbaseClient.cancelOrder(orderId);
+    let result = await coinbaseClient.cancelOrder(orderId, userID);
     console.log('order was deleted successfully from cb', result);
     databaseClient.deleteTrade(orderId);
     console.log('order was deleted successfully from database');

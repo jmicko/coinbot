@@ -3,7 +3,19 @@ const databaseClient = require("./databaseClient");
 const pool = require("./pool");
 const socketClient = require("./socketClient");
 
-// let synching = false;
+// start a sync loop for each active user
+async function startSync() {
+  console.log('starting sync loop');
+  // get all users from the db
+  const sqlText = `SELECT * FROM "user";`
+  const result = await pool.query(sqlText);
+  const userlist = result.rows;
+  // console.log(userlist);
+  userlist.forEach(user => {
+    console.log(user.id);
+    syncOrders(user.id);
+  });
+}
 
 // better just call this thing theLoop
 async function theLoop() {
@@ -16,6 +28,7 @@ async function theLoop() {
     // ...take the first trade that needs to be flipped, 
     let dbOrder = tradeList.rows[0];
     // ...flip the trade details
+    // console.log('dbOrder is', dbOrder);
     let tradeDetails = flipTrade(dbOrder);
     // ...send the new trade
     try {
@@ -69,6 +82,7 @@ function flipTrade(dbOrder) {
     size: dbOrder.size, // BTC
     product_id: dbOrder.product_id,
     stp: 'cn',
+    userID: dbOrder.userID,
   };
   // add buy/sell requirement and price
   if (dbOrder.side === "buy") {
@@ -93,62 +107,67 @@ function sleep(milliseconds) {
 }
 
 // REST protocol to find orders that have settled on coinbase
-async function syncOrders() {
-  // create one order to work with
-  // let order;
+async function syncOrders(userID) {
   try {
-    // get lists of trades to compare which have been settled
-    const results = await Promise.all([
-      // get all open orders from db and cb
-      databaseClient.getUnsettledTrades('all'),
-      coinbaseClient.getOpenOrders()
-    ]);
-    // store the lists of orders in the corresponding arrays so they can be compared
-    const dbOrders = results[0];
-    const cbOrders = results[1];
-    // compare the arrays and remove any where the ids match in both,
-    // leaving a list of orders that are open in the db, but not on cb. Probably settled
-    const ordersToCheck = await orderElimination(dbOrders, cbOrders);
+    const user = await databaseClient.getUser(userID);
+    if (user.active) {
 
-    // also get a list of orders that are open on cb, but not stored in the db. 
-    // these are extra orders and should be canceled???
-    const ordersToCancel = await orderElimination(cbOrders, dbOrders);
-    // if (ordersToCancel[0]) {
-    try {
-      let result = await cancelMultipleOrders(ordersToCancel);
-      if (result.ordersCanceled && (result.quantity > 0)) {
-        console.log(result.message);
-        socketClient.emit('message', {
-          error: `${result.quantity} Extra orders were found and canceled`,
-          orderUpdate: true
-        });
-      }
-    } catch (err) {
-      console.log('error deleting extra order', err);
-    }
-    // wait for a second to allow cancels to go through so bot doesn't cancel twice
-    await sleep(1000);
-    // }
+      console.log('starting the loop for user id', user.id, user.active);
+      // get lists of trades to compare which have been settled
+      const results = await Promise.all([
+        // get all open orders from db and cb
+        databaseClient.getUnsettledTrades('all', userID),
+        coinbaseClient.getOpenOrders(userID)
+      ]);
+      // store the lists of orders in the corresponding arrays so they can be compared
+      const dbOrders = results[0];
+      const cbOrders = results[1];
+      // compare the arrays and remove any where the ids match in both,
+      // leaving a list of orders that are open in the db, but not on cb. Probably settled
+      const ordersToCheck = await orderElimination(dbOrders, cbOrders);
 
-    // now flip all the orders that need to be flipped
-    try {
-      let result = await settleMultipleOrders(ordersToCheck);
-      if (result.ordersFlipped) {
-        console.log(result.message);
+      // also get a list of orders that are open on cb, but not stored in the db. 
+      // these are extra orders and should be canceled???
+      const ordersToCancel = await orderElimination(cbOrders, dbOrders);
+      // if (ordersToCancel[0]) {
+      try {
+        let result = await cancelMultipleOrders(ordersToCancel, userID);
+        if (result.ordersCanceled && (result.quantity > 0)) {
+          console.log(result.message);
+          socketClient.emit('message', {
+            error: `${result.quantity} Extra orders were found and canceled`,
+            orderUpdate: true
+          });
+        }
+      } catch (err) {
+        console.log('error deleting extra order', err);
       }
-    } catch (err) {
-      if (err.response?.status === 500) {
-        console.log('internal server error from coinbase');
-        socketClient.emit('message', {
-          error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
-          orderUpdate: true
-        });
-      } else {
-        console.log('Error settling all settled orders', err);
+      // wait for a second to allow cancels to go through so bot doesn't cancel twice
+      await sleep(1000);
+      // }
+
+      // now flip all the orders that need to be flipped
+      try {
+        let result = await settleMultipleOrders(ordersToCheck, userID);
+        if (result.ordersFlipped) {
+          console.log(result.message);
+        }
+      } catch (err) {
+        if (err.response?.status === 500) {
+          console.log('internal server error from coinbase');
+          socketClient.emit('message', {
+            error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
+            orderUpdate: true
+          });
+        } else {
+          console.log('Error settling all settled orders', err);
+        }
       }
+    } else {
+      console.log('user is not active', user.id);
     }
   } catch (err) {
-    console.log('catch of syncOrders');
+    // console.log('catch of syncOrders');
     if (err.code === 'ECONNRESET') {
       console.log('Connection reset by Coinbase server');
     } else if (err.response?.status === 500) {
@@ -158,7 +177,7 @@ async function syncOrders() {
         orderUpdate: true
       });
     } else {
-      console.log('error at end of syncOrders', err);
+      // console.log('error at end of syncOrders', err);
     }
   } finally {
     socketClient.emit('message', {
@@ -166,12 +185,12 @@ async function syncOrders() {
     });
     // when everything is done, call the sync again
     setTimeout(() => {
-      syncOrders();
+      syncOrders(userID);
     }, 300);
   }
 }
 
-async function settleMultipleOrders(ordersArray) {
+async function settleMultipleOrders(ordersArray, userID) {
   return new Promise(async (resolve, reject) => {
     if (ordersArray.length > 0) {
       console.log(`There are ${ordersArray.length} settled orders that should be flipped`);
@@ -190,7 +209,7 @@ async function settleMultipleOrders(ordersArray) {
           await sleep(500);
           // get all the order details from cb
           await sleep(100); // avoid rate limiting
-          let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id);
+          let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID);
           console.log('setting this trade as settled in the db', orderToCheck.id, orderToCheck.price);
           // update the order in the db
           const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5 WHERE "id"=$6;`;
@@ -215,7 +234,7 @@ async function settleMultipleOrders(ordersArray) {
             else {
               console.log('need to reorder', orderToCheck.price);
               try {
-                await reorder(orderToCheck);
+                await reorder(orderToCheck, userID);
               } catch (err) {
                 console.log('error reordering trade', err);
               }
@@ -252,6 +271,7 @@ async function reorder(orderToReorder) {
       size: orderToReorder.size, // BTC
       product_id: orderToReorder.product_id,
       stp: 'cn',
+      userID: orderToReorder.userID,
     };
     try {
       // send the new order with the trade details
@@ -287,7 +307,7 @@ async function reorder(orderToReorder) {
 
 
 
-async function cancelMultipleOrders(ordersArray) {
+async function cancelMultipleOrders(ordersArray, userID) {
   return new Promise(async (resolve, reject) => {
     if (ordersArray.length > 0) {
       console.log(`There are ${ordersArray.length} extra orders that should be canceled`);
@@ -306,7 +326,7 @@ async function cancelMultipleOrders(ordersArray) {
           if (!doubleCheck) {
             // cancel the order if nothing comes back from db
             console.log('canceling order', orderToCancel.id, 'at price', orderToCancel.price);
-            await coinbaseClient.cancelOrder(orderToCancel.id);
+            await coinbaseClient.cancelOrder(orderToCancel.id, userID);
             quantity++;
           } else {
             console.log('checked again for the order in the db', doubleCheck.id, doubleCheck.price);
@@ -390,6 +410,7 @@ const robot = {
   maxHistory: 200,
   theLoop: theLoop,
   syncEverything: syncEverything,
+  startSync: startSync,
 }
 
 

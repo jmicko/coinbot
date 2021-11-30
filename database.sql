@@ -5,6 +5,7 @@
 CREATE TABLE IF NOT EXISTS "orders"
 (
     id character varying COLLATE pg_catalog."default" NOT NULL,
+    "userID" character varying COLLATE pg_catalog."default",
     price numeric(32,8),
     size numeric(32,8),
     side character varying COLLATE pg_catalog."default",
@@ -27,9 +28,10 @@ CREATE TABLE "user" (
   "id" SERIAL PRIMARY KEY,
   "username" VARCHAR (80) UNIQUE NOT NULL,
   "password" VARCHAR (1000) NOT NULL,
--- API key and info is not required as it should be deletable for security reasons.
--- just need to work that into error handling if user tries to call Coinbase api without a key
--- todo - encryption in db when storing api key stuff
+  "active" boolean DEFAULT false,
+  "admin" boolean DEFAULT false,
+  "approved" boolean DEFAULT false,
+
   "CB_SECRET" VARCHAR (1000),
   "CB_ACCESS_KEY" VARCHAR (1000),
   "CB_ACCESS_PASSPHRASE" VARCHAR (1000),
