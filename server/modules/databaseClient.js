@@ -80,8 +80,8 @@ const getUnsettledTrades = (side, username) => {
         })
     } else if (side == 'all') {
       // gets all unsettled trades
-      sqlText = `SELECT * FROM "orders" WHERE "settled"=false;`;
-      pool.query(sqlText)
+      sqlText = `SELECT * FROM "orders" WHERE "settled"=false AND "user"=$1;`;
+      pool.query(sqlText, [username])
         .then((results) => {
           // promise returns promise from pool if success
           resolve(results.rows);
