@@ -131,12 +131,28 @@ const deleteTrade = async (id) => {
   });
 }
 
+async function getUser(username) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      sqlText = `SELECT * FROM "user" WHERE "username"=$1;`;
+      let result = await pool.query(sqlText, [username]);
+      const user = result.rows[0];
+      // console.log('THE RESULT IS', result.rows[0]);
+      // console.log('THE user IS', user);
+      resolve(user);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 
 const databaseClient = {
   storeTrade: storeTrade,
   getUnsettledTrades: getUnsettledTrades,
   getSingleTrade: getSingleTrade,
-  deleteTrade: deleteTrade
+  deleteTrade: deleteTrade,
+  getUser: getUser
 }
 
 module.exports = databaseClient;

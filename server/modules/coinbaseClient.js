@@ -2,30 +2,15 @@ const CryptoJS = require("crypto-js");
 const axios = require("axios").default;
 const crypto = require('crypto');
 const pool = require('./pool');
+const databaseClient = require("./databaseClient");
 
-
-
-async function getUser(username) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      sqlText = `SELECT * FROM "user" WHERE "username"=$1;`;
-      let result = await pool.query(sqlText, [username]);
-      const user = result.rows[0];
-      // console.log('THE RESULT IS', result.rows[0]);
-      // console.log('THE user IS', user);
-      resolve(user);
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
 
 async function getAccounts(username) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await getUser(username);
+      const user = await databaseClient.getUser(username);
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
@@ -68,7 +53,7 @@ async function getFees(username) {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await getUser(username);
+      const user = await databaseClient.getUser(username);
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
@@ -107,7 +92,7 @@ async function getAllOrders(username) {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await getUser(username);
+      const user = await databaseClient.getUser(username);
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
@@ -151,7 +136,7 @@ async function getOpenOrders(username) {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await getUser(username);
+      const user = await databaseClient.getUser(username);
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
@@ -192,7 +177,7 @@ async function getOrder(orderId, username) {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await getUser(username);
+      const user = await databaseClient.getUser(username);
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
@@ -233,7 +218,7 @@ async function placeOrder(data) {
       // console.log('THE DATA IS', data);
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await getUser(data.user);
+      const user = await databaseClient.getUser(data.user);
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
@@ -275,7 +260,7 @@ async function cancelOrder(orderId, username) {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await getUser(username);
+      const user = await databaseClient.getUser(username);
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
@@ -314,7 +299,7 @@ async function cancelOrders(username) {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await getUser(username);
+      const user = await databaseClient.getUser(username);
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;
