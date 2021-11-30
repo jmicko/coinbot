@@ -110,56 +110,61 @@ function sleep(milliseconds) {
 async function syncOrders(userID) {
   try {
     const user = await databaseClient.getUser(userID);
-    console.log('starting the loop for user id', userID);
-    // get lists of trades to compare which have been settled
-    const results = await Promise.all([
-      // get all open orders from db and cb
-      databaseClient.getUnsettledTrades('all', userID),
-      coinbaseClient.getOpenOrders(userID)
-    ]);
-    // store the lists of orders in the corresponding arrays so they can be compared
-    const dbOrders = results[0];
-    const cbOrders = results[1];
-    // compare the arrays and remove any where the ids match in both,
-    // leaving a list of orders that are open in the db, but not on cb. Probably settled
-    const ordersToCheck = await orderElimination(dbOrders, cbOrders);
+    if (user.active) {
 
-    // also get a list of orders that are open on cb, but not stored in the db. 
-    // these are extra orders and should be canceled???
-    const ordersToCancel = await orderElimination(cbOrders, dbOrders);
-    // if (ordersToCancel[0]) {
-    try {
-      let result = await cancelMultipleOrders(ordersToCancel, userID);
-      if (result.ordersCanceled && (result.quantity > 0)) {
-        console.log(result.message);
-        socketClient.emit('message', {
-          error: `${result.quantity} Extra orders were found and canceled`,
-          orderUpdate: true
-        });
-      }
-    } catch (err) {
-      console.log('error deleting extra order', err);
-    }
-    // wait for a second to allow cancels to go through so bot doesn't cancel twice
-    await sleep(1000);
-    // }
+      console.log('starting the loop for user id', user.id, user.active);
+      // get lists of trades to compare which have been settled
+      const results = await Promise.all([
+        // get all open orders from db and cb
+        databaseClient.getUnsettledTrades('all', userID),
+        coinbaseClient.getOpenOrders(userID)
+      ]);
+      // store the lists of orders in the corresponding arrays so they can be compared
+      const dbOrders = results[0];
+      const cbOrders = results[1];
+      // compare the arrays and remove any where the ids match in both,
+      // leaving a list of orders that are open in the db, but not on cb. Probably settled
+      const ordersToCheck = await orderElimination(dbOrders, cbOrders);
 
-    // now flip all the orders that need to be flipped
-    try {
-      let result = await settleMultipleOrders(ordersToCheck, userID);
-      if (result.ordersFlipped) {
-        console.log(result.message);
+      // also get a list of orders that are open on cb, but not stored in the db. 
+      // these are extra orders and should be canceled???
+      const ordersToCancel = await orderElimination(cbOrders, dbOrders);
+      // if (ordersToCancel[0]) {
+      try {
+        let result = await cancelMultipleOrders(ordersToCancel, userID);
+        if (result.ordersCanceled && (result.quantity > 0)) {
+          console.log(result.message);
+          socketClient.emit('message', {
+            error: `${result.quantity} Extra orders were found and canceled`,
+            orderUpdate: true
+          });
+        }
+      } catch (err) {
+        console.log('error deleting extra order', err);
       }
-    } catch (err) {
-      if (err.response?.status === 500) {
-        console.log('internal server error from coinbase');
-        socketClient.emit('message', {
-          error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
-          orderUpdate: true
-        });
-      } else {
-        console.log('Error settling all settled orders', err);
+      // wait for a second to allow cancels to go through so bot doesn't cancel twice
+      await sleep(1000);
+      // }
+
+      // now flip all the orders that need to be flipped
+      try {
+        let result = await settleMultipleOrders(ordersToCheck, userID);
+        if (result.ordersFlipped) {
+          console.log(result.message);
+        }
+      } catch (err) {
+        if (err.response?.status === 500) {
+          console.log('internal server error from coinbase');
+          socketClient.emit('message', {
+            error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
+            orderUpdate: true
+          });
+        } else {
+          console.log('Error settling all settled orders', err);
+        }
       }
+    } else {
+      console.log('user is not active', user.id);
     }
   } catch (err) {
     // console.log('catch of syncOrders');
