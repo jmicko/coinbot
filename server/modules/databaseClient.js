@@ -47,7 +47,7 @@ const storeTrade = (newOrder, originalDetails) => {
 }
 
 
-const getUnsettledTrades = (side, username) => {
+const getUnsettledTrades = (side, userID) => {
   return new Promise((resolve, reject) => {
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
@@ -56,7 +56,7 @@ const getUnsettledTrades = (side, username) => {
       // gets all unsettled buys, sorted by price
       sqlText = `SELECT * FROM "orders" WHERE "side"='buy' AND "settled"=false AND "user"=$1
       ORDER BY "price" DESC;`;
-      pool.query(sqlText, [username])
+      pool.query(sqlText, [userID])
         .then((results) => {
           // promise returns promise from pool if success
           resolve(results.rows);
@@ -69,7 +69,7 @@ const getUnsettledTrades = (side, username) => {
       // gets all unsettled sells, sorted by price
       sqlText = `SELECT * FROM "orders" WHERE "side"='sell' AND "settled"=false AND "user"=$1
       ORDER BY "price" DESC;`;
-      pool.query(sqlText, [username])
+      pool.query(sqlText, [userID])
         .then((results) => {
           // promise returns promise from pool if success
           resolve(results.rows);
@@ -81,7 +81,7 @@ const getUnsettledTrades = (side, username) => {
     } else if (side == 'all') {
       // gets all unsettled trades
       sqlText = `SELECT * FROM "orders" WHERE "settled"=false AND "user"=$1;`;
-      pool.query(sqlText, [username])
+      pool.query(sqlText, [userID])
         .then((results) => {
           // promise returns promise from pool if success
           resolve(results.rows);
@@ -131,11 +131,11 @@ const deleteTrade = async (id) => {
   });
 }
 
-async function getUser(username) {
+async function getUser(userID) {
   return new Promise(async (resolve, reject) => {
     try {
-      sqlText = `SELECT * FROM "user" WHERE "username"=$1;`;
-      let result = await pool.query(sqlText, [username]);
+      sqlText = `SELECT * FROM "user" WHERE "id"=$1;`;
+      let result = await pool.query(sqlText, [userID]);
       const user = result.rows[0];
       // console.log('THE RESULT IS', result.rows[0]);
       // console.log('THE user IS', user);

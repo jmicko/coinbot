@@ -12,7 +12,7 @@ const socketClient = require('../modules/socketClient');
  * For now this just wants to return usd account available balance
  */
 router.get('/', (req, res) => {
-  const user = req.user.username;
+  const user = req.user.id;
   coinbaseClient.getAccounts(user)
     .then((result) => {
       return result.forEach(account => {
@@ -41,7 +41,7 @@ router.get('/', (req, res) => {
 * GET route to get the fees when the user loads the page
 */
 router.get('/fees', rejectUnauthenticated, (req, res) => {
-  const user = req.user.username;
+  const user = req.user.id;
   coinbaseClient.getFees(user)
     .then((result) => {
       res.send(result)
@@ -77,7 +77,7 @@ router.get('/profits', rejectUnauthenticated, (req, res) => {
 * POST route to store API details
 */
 router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
-  const user = req.user.username;
+  const userID = req.user.id;
   console.log('here are the api details', req.body);
   function getURI() {
     if (api.URI === "sandbox") {
@@ -90,7 +90,7 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   const api = req.body;
   const URI = getURI();
   const queryText = `UPDATE "user" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4
-  WHERE "username"=$5;`;
+  WHERE "id"=$5;`;
   try {
 
     let result = await pool.query(queryText, [
@@ -98,7 +98,7 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
       api.key,
       api.passphrase,
       URI,
-      user,
+      userID,
     ]);
     res.sendStatus(200);
   } catch (err) {
