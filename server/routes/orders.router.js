@@ -12,13 +12,13 @@ const coinbaseClient = require('../modules/coinbaseClient');
 * GET route - get all orders
 */
 router.get('/', rejectUnauthenticated, (req, res) => {
-  const user = req.user.username;
-  // console.log('getting all orders for...', user);
+  const userID = req.user.id;
+  console.log('getting all orders for...', userID);
   // ask db for an array of buys and an array of sells
   return Promise.all([
     // get all open orders from db and from coinbase
-    databaseClient.getUnsettledTrades('buy', user),
-    databaseClient.getUnsettledTrades('sell', user),
+    databaseClient.getUnsettledTrades('buy', userID),
+    databaseClient.getUnsettledTrades('sell', userID),
   ])
     .then((result) => {
       const buys = result[0], sells = result[1];
@@ -26,7 +26,7 @@ router.get('/', rejectUnauthenticated, (req, res) => {
         sells: sells,
         buys: buys
       }
-      // console.log(buys);
+      // console.log('here are all the open orders', openOrdersInOrder);
       res.send(openOrdersInOrder)
     })
     .catch((error) => {
@@ -39,9 +39,9 @@ router.get('/', rejectUnauthenticated, (req, res) => {
 * UPDATE route - synchronize all orders with cb
 */
 router.put('/', rejectUnauthenticated, async (req, res) => {
-  const user = req.user.username;
+  const userID = req.user.id;
   console.log('in orders synchronize route');
-  await coinbaseClient.cancelAllOrders(user);
+  await coinbaseClient.cancelAllOrders(userID);
   console.log('+++++++ synchronization complete +++++++');
   res.sendStatus(200)
 });
@@ -51,14 +51,14 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
 * DELETE route - Mark all orders as will_cancel
 */
 router.delete('/', rejectUnauthenticated, async (req, res) => {
-  const user = req.user.username;
+  const userID = req.user.id;
   console.log('in delete all orders route');
   try {
     // delete from db first
     const queryText = `DELETE from "orders" WHERE "settled" = false;`;
     await pool.query(queryText);
     // delete all orders from coinbase
-    await coinbaseClient.cancelAllOrders(user);
+    await coinbaseClient.cancelAllOrders(userID);
     console.log('+++++++ EVERYTHING WAS DELETED +++++++');
     // tell front end to update
     socketClient.emit('message', {

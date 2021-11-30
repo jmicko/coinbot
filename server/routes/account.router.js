@@ -12,8 +12,8 @@ const socketClient = require('../modules/socketClient');
  * For now this just wants to return usd account available balance
  */
 router.get('/', (req, res) => {
-  const user = req.user.id;
-  coinbaseClient.getAccounts(user)
+  const userID = req.user.id;
+  coinbaseClient.getAccounts(userID)
     .then((result) => {
       return result.forEach(account => {
         if (account.currency === 'USD') {
@@ -41,8 +41,8 @@ router.get('/', (req, res) => {
 * GET route to get the fees when the user loads the page
 */
 router.get('/fees', rejectUnauthenticated, (req, res) => {
-  const user = req.user.id;
-  coinbaseClient.getFees(user)
+  const userID = req.user.id;
+  coinbaseClient.getFees(userID)
     .then((result) => {
       res.send(result)
     })
@@ -58,19 +58,20 @@ router.get('/fees', rejectUnauthenticated, (req, res) => {
 * GET route to get total profit estimate
 */
 router.get('/profits', rejectUnauthenticated, (req, res) => {
+  const userID = req.user.id;
+  // console.log('getting profits for', userID);
   const queryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" * 2)) 
   FROM public.orders 
-  WHERE "side" = 'sell' AND "settled" = 'true';`;
-  pool.query(queryText)
+  WHERE "side" = 'sell' AND "settled" = 'true' AND "userID" = $1;`;
+  pool.query(queryText, [userID])
     .then((result) => {
+      // console.log('here are the profits', result.rows[0].sum);
       res.send(result.rows)
     })
     .catch((error) => {
       console.log('error in profits route:', error);
       res.sendStatus(500)
     })
-
-
 });
 
 /**
@@ -120,7 +121,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
     CREATE TABLE IF NOT EXISTS "orders"
     (
           id character varying COLLATE pg_catalog."default" NOT NULL,
-          "user" character varying COLLATE pg_catalog."default",
+          "userID" character varying COLLATE pg_catalog."default",
           price numeric(32,8),
           size numeric(32,8),
           side character varying COLLATE pg_catalog."default",

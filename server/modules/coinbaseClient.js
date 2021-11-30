@@ -218,7 +218,7 @@ async function placeOrder(data) {
       // console.log('THE DATA IS', data);
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await databaseClient.getUser(data.user);
+      const user = await databaseClient.getUser(data.userID);
       const secret = user.CB_SECRET;
       const key = user.CB_ACCESS_KEY;
       const passphrase = user.CB_ACCESS_PASSPHRASE;

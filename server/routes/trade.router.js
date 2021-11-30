@@ -13,8 +13,8 @@ const coinbaseClient = require('../modules/coinbaseClient');
  */
 router.post('/', rejectUnauthenticated, async (req, res) => {
   // POST route code here
-  const user = req.user.username;
-  console.log('user is', user);
+  const userID = req.user.id;
+  console.log('user is', userID);
   const order = req.body;
   // tradeDetails const should take in values sent from trade component form
   const tradeDetails = {
@@ -25,7 +25,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
     size: order.size, // BTC
     product_id: order.product_id,
     stp: 'cn',
-    user: user,
+    userID: userID,
   };
   try {
     // send the new order with the trade details

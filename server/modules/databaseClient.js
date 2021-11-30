@@ -8,12 +8,12 @@ const storeTrade = (newOrder, originalDetails) => {
   return new Promise((resolve, reject) => {
     // add new order to the database
     const sqlText = `INSERT INTO "orders" 
-      ("id", "user", "price", "size", "side", "settled", "product_id", "time_in_force", 
+      ("id", "userID", "price", "size", "side", "settled", "product_id", "time_in_force", 
       "created_at", "done_at", "fill_fees", "filled_size", "executed_value", "original_buy_price", "original_sell_price") 
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15);`;
     pool.query(sqlText, [
       newOrder.id,
-      originalDetails.user,
+      originalDetails.userID,
       newOrder.price,
       newOrder.size,
       newOrder.side,
@@ -54,7 +54,7 @@ const getUnsettledTrades = (side, userID) => {
 
     if (side == 'buy') {
       // gets all unsettled buys, sorted by price
-      sqlText = `SELECT * FROM "orders" WHERE "side"='buy' AND "settled"=false AND "user"=$1
+      sqlText = `SELECT * FROM "orders" WHERE "side"='buy' AND "settled"=false AND "userID"=$1
       ORDER BY "price" DESC;`;
       pool.query(sqlText, [userID])
         .then((results) => {
@@ -67,7 +67,7 @@ const getUnsettledTrades = (side, userID) => {
         })
     } else if (side == 'sell') {
       // gets all unsettled sells, sorted by price
-      sqlText = `SELECT * FROM "orders" WHERE "side"='sell' AND "settled"=false AND "user"=$1
+      sqlText = `SELECT * FROM "orders" WHERE "side"='sell' AND "settled"=false AND "userID"=$1
       ORDER BY "price" DESC;`;
       pool.query(sqlText, [userID])
         .then((results) => {
@@ -80,7 +80,7 @@ const getUnsettledTrades = (side, userID) => {
         })
     } else if (side == 'all') {
       // gets all unsettled trades
-      sqlText = `SELECT * FROM "orders" WHERE "settled"=false AND "user"=$1;`;
+      sqlText = `SELECT * FROM "orders" WHERE "settled"=false AND "userID"=$1;`;
       pool.query(sqlText, [userID])
         .then((results) => {
           // promise returns promise from pool if success

@@ -82,7 +82,7 @@ function flipTrade(dbOrder) {
     size: dbOrder.size, // BTC
     product_id: dbOrder.product_id,
     stp: 'cn',
-    user: dbOrder.user,
+    userID: dbOrder.userID,
   };
   // add buy/sell requirement and price
   if (dbOrder.side === "buy") {
@@ -265,7 +265,7 @@ async function reorder(orderToReorder) {
       size: orderToReorder.size, // BTC
       product_id: orderToReorder.product_id,
       stp: 'cn',
-      user: orderToReorder.user,
+      userID: orderToReorder.userID,
     };
     try {
       // send the new order with the trade details
