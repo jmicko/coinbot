@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 import './Settings.css'
@@ -12,6 +12,17 @@ function Settings(props) {
   const [passphrase, setPassphrase] = useState('');
   const [secret, setSecret] = useState('');
   const [URI, setURI] = useState('sandbox');
+
+  const getUsers = useCallback(
+    () => {
+      console.log('getting users');
+      dispatch({type: 'FETCH_USERS'})
+    }, [dispatch]
+  )
+
+  useEffect(() => {
+    getUsers();
+  }, []);
 
 
   // delete the order if the abandon button is clicked.
@@ -49,6 +60,15 @@ function Settings(props) {
         <button className="btn-logout btn-red" onClick={() => { props.clickSettings() }}>X</button>
         <h2 className="settings-header">Settings</h2>
         <p>hello {props.store.accountReducer.userReducer.username}!</p>
+
+        {(props.store.accountReducer.userReducer.admin)
+          ? <div>
+            <h4>Approve New Users</h4>
+            {JSON.stringify(props.store.usersReducer.allUsersReducer)}
+          </div>
+          : <></>
+        }
+
         <h4>Delete All Trades</h4>
         <p>Danger! This button will delete all your positions! Press it carefully!</p>
         <button className="btn-blue" onClick={() => { deleteAllOrders() }}>Delete All</button>
@@ -99,16 +119,6 @@ function Settings(props) {
             ? <button className="btn-green" onClick={(event) => { event.preventDefault(); setURI("sandbox") }}>Real Money API</button>
             : <button className="btn-green" onClick={(event) => { event.preventDefault(); setURI("real") }}>Sandbox API</button>
           }
-          {/* <label htmlFor="sandbox">
-            URI:
-          </label>
-          <input
-            type="button"
-            name="sandbox"
-            value={URI}
-            required
-            onClick={(event) => setURI("sandbox")}
-          /> */}
           <br />
           <br />
           {/* submit button */}

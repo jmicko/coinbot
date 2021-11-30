@@ -2,6 +2,7 @@ import { combineReducers } from 'redux';
 import statusReducer from './status.reducer';
 import accountReducer from './account.reducer';
 import ordersReducer from './orders.reducer';
+import usersReducer from './users.reducer';
 
 
 // rootReducer is the primary reducer for our entire project
@@ -14,6 +15,7 @@ const rootReducer = combineReducers({
   statusReducer,
   accountReducer,
   ordersReducer,
+  usersReducer,
 });
 
 export default rootReducer;

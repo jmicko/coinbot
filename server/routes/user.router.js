@@ -21,6 +21,28 @@ async function anyAdmins() {
 }
 
 // Handles Ajax request for user information if user is authenticated
+router.get('/all', rejectUnauthenticated, async (req, res) => {
+  console.log('get all users route was hit!!!!!!!!');
+  const isAdmin = req.user.admin;
+  console.log('are you admin?', isAdmin);
+  if (isAdmin) {
+    try{
+      const queryText = `SELECT "username", "active", "approved" FROM "user";`;
+      let result = await pool.query(queryText);
+      let userList = result.rows
+      console.log('sending list of users', userList);
+      res.send(userList);
+    } catch(err){
+      console.log('error sending list of users to admin', err);
+      res.sendStatus(500)
+    }
+    
+  } else {
+    res.sendStatus(403)
+  }
+});
+
+// Handles Ajax request for user information if user is authenticated
 router.get('/', rejectUnauthenticated, (req, res) => {
   // Send back user object from the session (previously queried from the database)
   res.send(req.user);
