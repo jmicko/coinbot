@@ -16,6 +16,7 @@ async function theLoop() {
     // ...take the first trade that needs to be flipped, 
     let dbOrder = tradeList.rows[0];
     // ...flip the trade details
+    console.log('dbOrder is', dbOrder);
     let tradeDetails = flipTrade(dbOrder);
     // ...send the new trade
     try {

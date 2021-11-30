@@ -13,8 +13,8 @@ const coinbaseClient = require('../modules/coinbaseClient');
  */
 router.post('/', rejectUnauthenticated, async (req, res) => {
   // POST route code here
-  console.log('user is', req.user);
-  const user = req.user;
+  const user = req.user.username;
+  console.log('user is', user);
   const order = req.body;
   // tradeDetails const should take in values sent from trade component form
   const tradeDetails = {
@@ -25,6 +25,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
     size: order.size, // BTC
     product_id: order.product_id,
     stp: 'cn',
+    user: user,
   };
   try {
     // send the new order with the trade details
@@ -33,7 +34,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
     // even after returning the details. robot.syncOrders will think it settled if it sees it in the db first
     await robot.sleep(100);
     // store the new trade in the db. the trade details are also sent to store trade position prices
-    let results = await databaseClient.storeTrade(pendingTrade, tradeDetails, user.username);
+    let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
     // send OK status
     res.sendStatus(200);
   } catch (err) {
