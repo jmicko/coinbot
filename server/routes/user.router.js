@@ -36,11 +36,18 @@ router.post('/register', userCount, async (req, res, next) => {
     let adminCount = await anyAdmins();
     console.log('THERE ARE THIS MANY ADMINS!!!!!', adminCount);
 
-
-    const queryText = `INSERT INTO "user" (username, password)
-  VALUES ($1, $2) RETURNING id`;
-    pool.query(queryText, [username, password])
-      .then(() => res.sendStatus(201))
+    if (adminCount > 0) {
+      let queryText = `INSERT INTO "user" (username, password)
+        VALUES ($1, $2) RETURNING id`;
+      let result = await pool.query(queryText, [username, password]);
+      console.log(result);
+    } else {
+      let queryText = `INSERT INTO "user" (username, password, admin)
+        VALUES ($1, $2, true) RETURNING id`;
+      let result = await pool.query(queryText, [username, password]);
+      console.log(result);
+    }
+    res.sendStatus(201);
   } catch (err) {
     console.log('User registration failed: ', err);
     res.sendStatus(500);
