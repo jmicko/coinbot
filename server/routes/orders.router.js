@@ -37,8 +37,9 @@ router.get('/', rejectUnauthenticated, (req, res) => {
 * UPDATE route - synchronize all orders with cb
 */
 router.put('/', rejectUnauthenticated, async (req, res) => {
+  const user = req.user.username;
   console.log('in orders synchronize route');
-  await coinbaseClient.cancelAllOrders();
+  await coinbaseClient.cancelAllOrders(user);
   console.log('+++++++ synchronization complete +++++++');
   res.sendStatus(200)
 });
@@ -48,13 +49,14 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
 * DELETE route - Mark all orders as will_cancel
 */
 router.delete('/', rejectUnauthenticated, async (req, res) => {
+  const user = req.user.username;
   console.log('in delete all orders route');
   try {
     // delete from db first
     const queryText = `DELETE from "orders" WHERE "settled" = false;`;
     await pool.query(queryText);
     // delete all orders from coinbase
-    await coinbaseClient.cancelAllOrders();
+    await coinbaseClient.cancelAllOrders(user);
     console.log('+++++++ EVERYTHING WAS DELETED +++++++');
     // tell front end to update
     socketClient.emit('message', {
