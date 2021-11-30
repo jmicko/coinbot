@@ -148,7 +148,7 @@ async function syncOrders() {
       }
     }
   } catch (err) {
-    console.log('catch of syncOrders');
+    // console.log('catch of syncOrders');
     if (err.code === 'ECONNRESET') {
       console.log('Connection reset by Coinbase server');
     } else if (err.response?.status === 500) {
@@ -158,7 +158,7 @@ async function syncOrders() {
         orderUpdate: true
       });
     } else {
-      console.log('error at end of syncOrders', err);
+      // console.log('error at end of syncOrders', err);
     }
   } finally {
     socketClient.emit('message', {
