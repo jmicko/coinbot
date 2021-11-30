@@ -128,6 +128,8 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
     "id" SERIAL PRIMARY KEY,
     "username" VARCHAR (80) UNIQUE NOT NULL,
     "password" VARCHAR (1000) NOT NULL,
+    "active" boolean DEFAULT false,
+    "admin" boolean DEFAULT false,
     "CB_SECRET" VARCHAR (1000),
     "CB_ACCESS_KEY" VARCHAR (1000),
     "CB_ACCESS_PASSPHRASE" VARCHAR (1000),
