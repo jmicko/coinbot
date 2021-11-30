@@ -107,6 +107,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
   CREATE TABLE IF NOT EXISTS "orders"
   (
       id character varying COLLATE pg_catalog."default" NOT NULL,
+      "user" character varying COLLATE pg_catalog."default",
       price numeric(32,8),
       size numeric(32,8),
       side character varying COLLATE pg_catalog."default",
