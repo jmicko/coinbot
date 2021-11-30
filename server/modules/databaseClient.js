@@ -4,15 +4,16 @@ const socketClient = require('./socketClient');
 // store an array of orders that need to be updated after filling
 let updateSpool = [];
 
-const storeTrade = (newOrder, originalDetails) => {
+const storeTrade = (newOrder, originalDetails, username) => {
   return new Promise((resolve, reject) => {
     // add new order to the database
     const sqlText = `INSERT INTO "orders" 
-      ("id", "price", "size", "side", "settled", "product_id", "time_in_force", 
+      ("id", "user", "price", "size", "side", "settled", "product_id", "time_in_force", 
       "created_at", "done_at", "fill_fees", "filled_size", "executed_value", "original_buy_price", "original_sell_price") 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);`;
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15);`;
     pool.query(sqlText, [
       newOrder.id,
+      username,
       newOrder.price,
       newOrder.size,
       newOrder.side,
