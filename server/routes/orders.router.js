@@ -12,11 +12,13 @@ const coinbaseClient = require('../modules/coinbaseClient');
 * GET route - get all orders
 */
 router.get('/', rejectUnauthenticated, (req, res) => {
+  const user = req.user.username;
+  console.log('getting all orders for...', user);
   // ask db for an array of buys and an array of sells
   return Promise.all([
     // get all open orders from db and from coinbase
-    databaseClient.getUnsettledTrades('buy'),
-    databaseClient.getUnsettledTrades('sell'),
+    databaseClient.getUnsettledTrades('buy', user),
+    databaseClient.getUnsettledTrades('sell', user),
   ])
     .then((result) => {
       const buys = result[0], sells = result[1];

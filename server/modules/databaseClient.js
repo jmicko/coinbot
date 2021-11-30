@@ -47,42 +47,78 @@ const storeTrade = (newOrder, originalDetails) => {
 }
 
 
-const getUnsettledTrades = (side) => {
+const getUnsettledTrades = (side, username) => {
   return new Promise((resolve, reject) => {
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
 
     if (side == 'buy') {
       // gets all unsettled buys, sorted by price
-      sqlText = `SELECT * FROM "orders" WHERE "side"='buy' AND "settled"=false 
+      sqlText = `SELECT * FROM "orders" WHERE "side"='buy' AND "settled"=false AND "user"=$1
       ORDER BY "price" DESC;`;
+      pool.query(sqlText, [username])
+        .then((results) => {
+          // promise returns promise from pool if success
+          resolve(results.rows);
+        })
+        .catch((err) => {
+          // or promise relays errors from pool to parent
+          reject(err);
+        })
     } else if (side == 'sell') {
       // gets all unsettled sells, sorted by price
-      sqlText = `SELECT * FROM "orders" WHERE "side"='sell' AND "settled"=false 
+      sqlText = `SELECT * FROM "orders" WHERE "side"='sell' AND "settled"=false AND "user"=$1
       ORDER BY "price" DESC;`;
+      pool.query(sqlText, [username])
+        .then((results) => {
+          // promise returns promise from pool if success
+          resolve(results.rows);
+        })
+        .catch((err) => {
+          // or promise relays errors from pool to parent
+          reject(err);
+        })
     } else if (side == 'all') {
       // gets all unsettled trades
       sqlText = `SELECT * FROM "orders" WHERE "settled"=false;`;
+      pool.query(sqlText)
+        .then((results) => {
+          // promise returns promise from pool if success
+          resolve(results.rows);
+        })
+        .catch((err) => {
+          // or promise relays errors from pool to parent
+          reject(err);
+        })
     } else if (side == 'highBuy') {
       // gets highest priced buy
       sqlText = `SELECT * FROM "orders" WHERE "side"='buy' AND "settled"=false 
       ORDER BY "price" DESC
       LIMIT(1);`;
+      pool.query(sqlText)
+        .then((results) => {
+          // promise returns promise from pool if success
+          resolve(results.rows);
+        })
+        .catch((err) => {
+          // or promise relays errors from pool to parent
+          reject(err);
+        })
     } else if (side == 'lowSell') {
       // gets lowest priced sell
       sqlText = `SELECT * FROM "orders" WHERE "side"='sell' AND "settled"=false 
         ORDER BY "price" ASC
           LIMIT(1);`;
+      pool.query(sqlText)
+        .then((results) => {
+          // promise returns promise from pool if success
+          resolve(results.rows);
+        })
+        .catch((err) => {
+          // or promise relays errors from pool to parent
+          reject(err);
+        })
     }
-    pool.query(sqlText)
-      .then((results) => {
-        // promise returns promise from pool if success
-        resolve(results.rows);
-      })
-      .catch((err) => {
-        // or promise relays errors from pool to parent
-        reject(err);
-      })
   });
 }
 
@@ -93,15 +129,15 @@ const getSingleTrade = (id) => {
     // put sql stuff here, extending the pool promise to the parent function
     sqlText = `SELECT * FROM "orders" WHERE "id"=$1;`;
     pool.query(sqlText, [id])
-    .then((results) => {
-      const [singleTrade] = results.rows;
-      // promise returns promise from pool if success
-      resolve(singleTrade);
-    })
-    .catch((err) => {
-      // or promise relays errors from pool to parent
-      reject(err);
-    })
+      .then((results) => {
+        const [singleTrade] = results.rows;
+        // promise returns promise from pool if success
+        resolve(singleTrade);
+      })
+      .catch((err) => {
+        // or promise relays errors from pool to parent
+        reject(err);
+      })
   });
 }
 
