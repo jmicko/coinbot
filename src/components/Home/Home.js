@@ -6,7 +6,9 @@ import Menu from '../Menu/Menu'
 import TradeList from '../TradeList/TradeList'
 import Status from '../Status/Status'
 import Settings from '../Settings/Settings'
+import mapStoreToProps from '../../redux/mapStoreToProps';
 import './Home.css'
+import NotApproved from '../NotApproved/NotApproved.js';
 
 
 function Home(props) {
@@ -23,7 +25,10 @@ function Home(props) {
       </header>
       <Menu clickSettings={clickSettings} />
       <Trade />
-      <TradeList />
+      {(props.store.accountReducer.userReducer.approved)
+        ? <TradeList />
+        : <NotApproved />
+      }
       <Updates />
       <Status />
       <Settings showSettings={showSettings} clickSettings={clickSettings} />
@@ -31,4 +36,4 @@ function Home(props) {
   );
 }
 
-export default connect()(Home);
+export default connect(mapStoreToProps)(Home);
