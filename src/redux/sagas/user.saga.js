@@ -76,10 +76,34 @@ function* deleteUser(action) {
   }
 }
 
+function* approveUser(action) {
+  try {
+    const config = {
+      headers: { 'Content-Type': 'application/json' },
+      withCredentials: true,
+      data: action.payload
+    };
+    console.log('approving user');
+    // the config includes credentials which
+    // allow the server session to recognize the user
+    // If a user is logged in, this will return their information
+    // from the server session (req.user)
+    const response = yield axios.put('/api/user/approve', config);
+    // now that the session has given us a user object
+    // with an id and username set the client-side user object to let
+    // the client-side code know the user is logged in
+    console.log('the approve user response is', response);
+    yield put({ type: 'FETCH_USERS'});
+  } catch (error) {
+    console.log('User get request failed', error);
+  }
+}
+
 function* userSaga() {
   yield takeLatest('FETCH_USER', fetchUser);
   yield takeLatest('FETCH_USERS', fetchUsers);
   yield takeLatest('DELETE_USER', deleteUser);
+  yield takeLatest('APPROVE_USER', approveUser);
 }
 
 export default userSaga;

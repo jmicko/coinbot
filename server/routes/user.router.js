@@ -101,6 +101,29 @@ router.post('/logout', (req, res) => {
 });
 
 /**
+* PUT route - Approve a single user. Only admin can do this
+*/
+router.put('/approve', rejectUnauthenticated, async (req, res) => {
+  try {
+    const isAdmin = req.user.admin;
+    if (isAdmin) {
+      console.log('you are admin');
+      const userToApprove = req.body.data.id;
+      console.log('in approve user route', userToApprove);
+      const queryText = `UPDATE "user" SET "approved" = true WHERE "id" = $1;`;
+      await pool.query(queryText, [userToApprove]);
+      res.sendStatus(200);
+    } else {
+      console.log('you are NOT admin');
+      res.sendStatus(403);
+    }
+  } catch (err) {
+    console.log(err);
+    res.sendStatus(500);
+  }
+});
+
+/**
 * DELETE route - Delete a single user. Only admin can do this
 */
 router.delete('/', rejectUnauthenticated, async (req, res) => {

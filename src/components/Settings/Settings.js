@@ -68,7 +68,7 @@ function Settings(props) {
             {props.store.usersReducer.allUsersReducer.map((user) => {
               return <SingleUser key={user.id} user={user} />
             })}
-            {/* {JSON.stringify(props.store.usersReducer.allUsersReducer)} */}
+            {JSON.stringify(props.store.usersReducer.allUsersReducer)}
           </div>
           : <></>
         }
