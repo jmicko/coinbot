@@ -28,7 +28,7 @@ router.get('/all', rejectUnauthenticated, async (req, res) => {
   console.log('are you admin?', isAdmin);
   if (isAdmin) {
     try{
-      const queryText = `SELECT "username", "active", "approved" FROM "user";`;
+      const queryText = `SELECT "id", "username", "active", "approved" FROM "user";`;
       let result = await pool.query(queryText);
       let userList = result.rows
       console.log('sending list of users', userList);
@@ -98,6 +98,24 @@ router.post('/logout', (req, res) => {
   // Use passport's built-in method to log out the user
   req.logout();
   res.sendStatus(200);
+});
+
+/**
+* DELETE route - Delete a single user. Only admin can do this
+*/
+router.delete('/', rejectUnauthenticated, async (req, res) => {
+  try {
+    const userID = req.user.id;
+    console.log('in delete user route', req.body);
+    // delete from db first
+    // const queryText = `DELETE from "orders" WHERE "settled" = false AND "userID"=$1;`;
+    // await pool.query(queryText, [userID]);
+    // delete all orders from coinbase
+    // await coinbaseClient.cancelAllOrders(userID);
+  } catch (err) {
+    console.log(err);
+  }
+  res.sendStatus(200)
 });
 
 module.exports = router;

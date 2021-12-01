@@ -8,7 +8,7 @@ function SingleUser(props) {
   const [deleting, setDeleting] = useState(false);
 
   function deleteUser() {
-    console.log('clicked delete');
+    console.log('clicked delete', props.user.id);
     setDeleting(true)
     dispatch({
       type: 'DELETE_USER', payload: {

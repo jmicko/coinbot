@@ -112,7 +112,7 @@ async function syncOrders(userID) {
     const user = await databaseClient.getUser(userID);
     if (user.active) {
 
-      console.log('starting the loop for user id', user.id, user.active);
+      // console.log('starting the loop for user id', user.id, user.active);
       // get lists of trades to compare which have been settled
       const results = await Promise.all([
         // get all open orders from db and cb
@@ -164,7 +164,7 @@ async function syncOrders(userID) {
         }
       }
     } else {
-      console.log('user is not active', user.id);
+      // console.log('user is not active', user.id);
     }
   } catch (err) {
     // console.log('catch of syncOrders');
