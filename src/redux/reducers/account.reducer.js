@@ -16,6 +16,8 @@ const feeReducer = (state = {}, action) => {
   switch (action.type) {
     case 'SET_FEES':
       return action.payload;
+    case 'UNSET_FEES':
+      return {};
     default:
       return state;
   }
@@ -25,6 +27,8 @@ const profitsReducer = (state = [{ sum: "0" }], action) => {
   switch (action.type) {
     case 'SET_PROFITS':
       return action.payload;
+    case 'UNSET_PROFITS':
+      return [{ sum: "0" }];
     default:
       return state;
   }
@@ -33,8 +37,9 @@ const profitsReducer = (state = [{ sum: "0" }], action) => {
 const accountReducer = (state = [{ available: 0 }], action) => {
   switch (action.type) {
     case 'SET_ACCOUNT':
-      console.log(action.payload);
       return action.payload;
+    case 'UNSET_ACCOUNT':
+      return [{ available: 0 }];
     default:
       return state;
   }
