@@ -31,6 +31,8 @@ CREATE TABLE "user" (
   "active" boolean DEFAULT false,
   "admin" boolean DEFAULT false,
   "approved" boolean DEFAULT false,
+  "paused" boolean DEFAULT false,
+  "will_delete" boolean DEFAULT false,
 
   "CB_SECRET" VARCHAR (1000),
   "CB_ACCESS_KEY" VARCHAR (1000),
