@@ -105,16 +105,22 @@ router.post('/logout', (req, res) => {
 */
 router.delete('/', rejectUnauthenticated, async (req, res) => {
   try {
-    const userID = req.user.id;
-    const userToDelete = req.body.id;
-    console.log('in delete user route', req.body);
-    // delete from db first
-    const queryText = `DELETE from "user" WHERE "id" = $1;`;
-    await pool.query(queryText, [userToDelete]);
-    res.sendStatus(200)
+    const isAdmin = req.user.admin;
+    if (isAdmin) {
+      console.log('you are admin');
+      const userToDelete = req.body.id;
+      console.log('in delete user route', req.body);
+      // delete from db first
+      const queryText = `DELETE from "user" WHERE "id" = $1;`;
+      await pool.query(queryText, [userToDelete]);
+      res.sendStatus(200);
+    } else {
+      console.log('you are NOT admin');
+      res.sendStatus(403);
+    }
   } catch (err) {
     console.log(err);
-    res.sendStatus(500)
+    res.sendStatus(500);
   }
 });
 
