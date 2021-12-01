@@ -12,6 +12,8 @@ const socketClient = require('../modules/socketClient');
  * For now this just wants to return usd account available balance
  */
 router.get('/', (req, res) => {
+  const user = req.user;
+  console.log('THE USER IS', user);
   const userID = req.user.id;
   coinbaseClient.getAccounts(userID)
     .then((result) => {
