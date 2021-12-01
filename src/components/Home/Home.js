@@ -9,6 +9,7 @@ import Settings from '../Settings/Settings'
 import mapStoreToProps from '../../redux/mapStoreToProps';
 import './Home.css'
 import NotApproved from '../NotApproved/NotApproved.js';
+import NotActive from '../NotActive/NotActive.js';
 
 
 function Home(props) {
@@ -24,7 +25,11 @@ function Home(props) {
         <h2>WE USE COINBOT.</h2>
       </header>
       <Menu clickSettings={clickSettings} />
-      <Trade />
+      
+      {(props.store.accountReducer.userReducer.active)
+        ? <Trade />
+        : <NotActive />
+      }
       {(props.store.accountReducer.userReducer.approved)
         ? <TradeList />
         : <NotApproved />
