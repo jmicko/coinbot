@@ -14,7 +14,7 @@ const coinbaseClient = require('../modules/coinbaseClient');
 router.post('/', rejectUnauthenticated, async (req, res) => {
   // POST route code here
   const user = req.user;
-  if (user.active) {
+  if (user.active && user.approved) {
     const userID = req.user.id;
     console.log('user is', userID);
     const order = req.body;
