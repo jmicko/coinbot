@@ -165,6 +165,7 @@ async function syncOrders(userID) {
       }
     } else {
       // console.log('user is not active', user.id);
+      await sleep(1000);
     }
   } catch (err) {
     // console.log('catch of syncOrders');
