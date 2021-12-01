@@ -1,0 +1,6 @@
+.delete button{
+  float        : right;
+  margin       : 0;
+  padding      : .2rem;
+  /* text-align: center; */
+}

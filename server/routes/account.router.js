@@ -12,45 +12,56 @@ const socketClient = require('../modules/socketClient');
  * For now this just wants to return usd account available balance
  */
 router.get('/', (req, res) => {
+  const user = req.user;
+  console.log('THE USER IS', user);
   const userID = req.user.id;
-  coinbaseClient.getAccounts(userID)
-    .then((result) => {
-      return result.forEach(account => {
-        if (account.currency === 'USD') {
-          // console.log('usd is', account.available);
-          res.send(account.available)
-          return account;
-        }
-      });
-    })
-    .catch((err) => {
-      if (err.response?.status === 500) {
-        console.log('internal server error from coinbase');
-        socketClient.emit('message', {
-          error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
-          orderUpdate: true
+  if (user.active) {
+
+    coinbaseClient.getAccounts(userID)
+      .then((result) => {
+        return result.forEach(account => {
+          if (account.currency === 'USD') {
+            // console.log('usd is', account.available);
+            res.send(account.available)
+            return account;
+          }
         });
-      } else {
-        console.log('error getting accounts:', err);
-      }
-      res.sendStatus(500)
-    })
+      })
+      .catch((err) => {
+        if (err.response?.status === 500) {
+          console.log('internal server error from coinbase');
+          socketClient.emit('message', {
+            error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
+            orderUpdate: true
+          });
+        } else {
+          console.log('error getting accounts:', err);
+        }
+        res.sendStatus(500)
+      })
+  } else {
+    res.sendStatus(404)
+  }
 });
 
 /**
 * GET route to get the fees when the user loads the page
 */
 router.get('/fees', rejectUnauthenticated, (req, res) => {
+  const user = req.user;
   const userID = req.user.id;
-  coinbaseClient.getFees(userID)
-    .then((result) => {
-      res.send(result)
-    })
-    .catch((error) => {
-      console.log('error getting fees:', error);
-      res.sendStatus(500)
-    })
-
+  if (user.active) {
+    coinbaseClient.getFees(userID)
+      .then((result) => {
+        res.send(result)
+      })
+      .catch((error) => {
+        console.log('error getting fees:', error);
+        res.sendStatus(500)
+      })
+  } else {
+    res.sendStatus(404)
+  }
 
 });
 

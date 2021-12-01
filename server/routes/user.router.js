@@ -28,7 +28,7 @@ router.get('/all', rejectUnauthenticated, async (req, res) => {
   console.log('are you admin?', isAdmin);
   if (isAdmin) {
     try{
-      const queryText = `SELECT "username", "active", "approved" FROM "user";`;
+      const queryText = `SELECT "id", "username", "active", "approved" FROM "user";`;
       let result = await pool.query(queryText);
       let userList = result.rows
       console.log('sending list of users', userList);
@@ -68,8 +68,8 @@ router.post('/register', userCount, async (req, res, next) => {
       // start a sync loop for the new user
       robot.syncOrders(userID)
     } else {
-      let queryText = `INSERT INTO "user" (username, password, admin, active, approved)
-      VALUES ($1, $2, true, true, true) RETURNING id`;
+      let queryText = `INSERT INTO "user" (username, password, admin, approved)
+      VALUES ($1, $2, true, true) RETURNING id`;
       let result = await pool.query(queryText, [username, password]);
       const userID = result.rows[0].id;
       console.log('here is the new user id', result.rows[0].id);
@@ -98,6 +98,53 @@ router.post('/logout', (req, res) => {
   // Use passport's built-in method to log out the user
   req.logout();
   res.sendStatus(200);
+});
+
+/**
+* PUT route - Approve a single user. Only admin can do this
+*/
+router.put('/approve', rejectUnauthenticated, async (req, res) => {
+  try {
+    const isAdmin = req.user.admin;
+    if (isAdmin) {
+      console.log('you are admin');
+      const userToApprove = req.body.data.id;
+      console.log('in approve user route', userToApprove);
+      const queryText = `UPDATE "user" SET "approved" = true WHERE "id" = $1;`;
+      await pool.query(queryText, [userToApprove]);
+      res.sendStatus(200);
+    } else {
+      console.log('you are NOT admin');
+      res.sendStatus(403);
+    }
+  } catch (err) {
+    console.log(err);
+    res.sendStatus(500);
+  }
+});
+
+/**
+* DELETE route - Delete a single user. Only admin can do this
+*/
+router.delete('/', rejectUnauthenticated, async (req, res) => {
+  try {
+    const isAdmin = req.user.admin;
+    if (isAdmin) {
+      console.log('you are admin');
+      const userToDelete = req.body.id;
+      console.log('in delete user route', req.body);
+      // delete from db first
+      const queryText = `DELETE from "user" WHERE "id" = $1;`;
+      await pool.query(queryText, [userToDelete]);
+      res.sendStatus(200);
+    } else {
+      console.log('you are NOT admin');
+      res.sendStatus(403);
+    }
+  } catch (err) {
+    console.log(err);
+    res.sendStatus(500);
+  }
 });
 
 module.exports = router;

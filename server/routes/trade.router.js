@@ -13,48 +13,54 @@ const coinbaseClient = require('../modules/coinbaseClient');
  */
 router.post('/', rejectUnauthenticated, async (req, res) => {
   // POST route code here
-  const userID = req.user.id;
-  console.log('user is', userID);
-  const order = req.body;
-  // tradeDetails const should take in values sent from trade component form
-  const tradeDetails = {
-    original_sell_price: order.original_sell_price,
-    original_buy_price: order.price,
-    side: order.side,
-    price: order.price, // USD
-    size: order.size, // BTC
-    product_id: order.product_id,
-    stp: 'cn',
-    userID: userID,
-  };
-  try {
-    // send the new order with the trade details
-    let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
-    // wait a second before storing the trade. Sometimes it takes a second for coinbase to register the trade,
-    // even after returning the details. robot.syncOrders will think it settled if it sees it in the db first
-    await robot.sleep(100);
-    // store the new trade in the db. the trade details are also sent to store trade position prices
-    let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
-    // send OK status
-    res.sendStatus(200);
-  } catch (err) {
-    if (err.response?.status === 400) {
-      console.log('Insufficient funds!');
-      socketClient.emit('message', {
-        error: `Insufficient funds!`,
-        orderUpdate: true
-      });
-    } else if (err.code && err.code === 'ETIMEDOUT') {
-      console.log('Timed out!!!!! Synching orders just in case');
-      socketClient.emit('message', {
-        error: `Connection timed out, consider synching all orders to prevent duplicates. This will not be done for you.`,
-        orderUpdate: true
-      });
-    } else {
-      console.log('problem in sending trade post route', err);
+  const user = req.user;
+  if (user.active && user.approved) {
+    const userID = req.user.id;
+    console.log('user is', userID);
+    const order = req.body;
+    // tradeDetails const should take in values sent from trade component form
+    const tradeDetails = {
+      original_sell_price: order.original_sell_price,
+      original_buy_price: order.price,
+      side: order.side,
+      price: order.price, // USD
+      size: order.size, // BTC
+      product_id: order.product_id,
+      stp: 'cn',
+      userID: userID,
+    };
+    try {
+      // send the new order with the trade details
+      let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
+      // wait a second before storing the trade. Sometimes it takes a second for coinbase to register the trade,
+      // even after returning the details. robot.syncOrders will think it settled if it sees it in the db first
+      await robot.sleep(100);
+      // store the new trade in the db. the trade details are also sent to store trade position prices
+      let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
+      // send OK status
+      res.sendStatus(200);
+    } catch (err) {
+      if (err.response?.status === 400) {
+        console.log('Insufficient funds!');
+        socketClient.emit('message', {
+          error: `Insufficient funds!`,
+          orderUpdate: true
+        });
+      } else if (err.code && err.code === 'ETIMEDOUT') {
+        console.log('Timed out!!!!! Synching orders just in case');
+        socketClient.emit('message', {
+          error: `Connection timed out, consider synching all orders to prevent duplicates. This will not be done for you.`,
+          orderUpdate: true
+        });
+      } else {
+        console.log('problem in sending trade post route', err);
+      }
+      // send internal error status
+      res.sendStatus(500);
     }
-    // send internal error status
-    res.sendStatus(500);
+  } else {
+    console.log('user is not active and cannot trade!');
+    res.sendStatus(404)
   }
 });
 

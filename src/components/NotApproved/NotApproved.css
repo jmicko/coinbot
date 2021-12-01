@@ -1,0 +1,16 @@
+.NotApproved {
+    grid-row     : 2 / 4;
+    grid-column  : 3 / 5;
+    /* overflow-y: auto; */
+    display      : block;
+}
+@media (max-width: 800px) {
+    .NotApproved {
+        grid-row     : 4;
+        grid-column  : 2 / 3;
+        /* overflow-y: auto; */
+        display      : block;
+        max-height: 80vh;
+    }
+
+}
