@@ -13,9 +13,9 @@ const socketClient = require('../modules/socketClient');
  */
 router.get('/', (req, res) => {
   const user = req.user;
-  // console.log('THE USER IS', user);
+  console.log('THE USER IS', user);
   const userID = req.user.id;
-  if (user.approved) {
+  if (user.active) {
 
     coinbaseClient.getAccounts(userID)
       .then((result) => {
@@ -50,7 +50,7 @@ router.get('/', (req, res) => {
 router.get('/fees', rejectUnauthenticated, (req, res) => {
   const user = req.user;
   const userID = req.user.id;
-  if (user.approved) {
+  if (user.active) {
     coinbaseClient.getFees(userID)
       .then((result) => {
         res.send(result)
