@@ -69,8 +69,8 @@ function* deleteUser(action) {
     // now that the session has given us a user object
     // with an id and username set the client-side user object to let
     // the client-side code know the user is logged in
-    console.log('the users are', response);
-    // yield put({ type: 'SET_ALL_USERS', payload: response.data });
+    console.log('the delete user response is', response);
+    yield put({ type: 'FETCH_USERS'});
   } catch (error) {
     console.log('User get request failed', error);
   }

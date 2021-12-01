@@ -106,16 +106,16 @@ router.post('/logout', (req, res) => {
 router.delete('/', rejectUnauthenticated, async (req, res) => {
   try {
     const userID = req.user.id;
+    const userToDelete = req.body.id;
     console.log('in delete user route', req.body);
     // delete from db first
-    // const queryText = `DELETE from "orders" WHERE "settled" = false AND "userID"=$1;`;
-    // await pool.query(queryText, [userID]);
-    // delete all orders from coinbase
-    // await coinbaseClient.cancelAllOrders(userID);
+    const queryText = `DELETE from "user" WHERE "id" = $1;`;
+    await pool.query(queryText, [userToDelete]);
+    res.sendStatus(200)
   } catch (err) {
     console.log(err);
+    res.sendStatus(500)
   }
-  res.sendStatus(200)
 });
 
 module.exports = router;
