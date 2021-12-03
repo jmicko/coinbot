@@ -13,7 +13,7 @@ const socketClient = require('../modules/socketClient');
  */
 router.get('/', (req, res) => {
   const user = req.user;
-  console.log('THE USER IS', user);
+  // console.log('THE USER IS', user);
   const userID = req.user.id;
   if (user.active) {
 

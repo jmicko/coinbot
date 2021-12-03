@@ -26,7 +26,7 @@ function App(props) {
   return (
     <div className="App">
       {/* all components wrapped inside the socket provider will have access to the same socket */}
-      <SocketProvider>
+      {/* <SocketProvider> */}
         <Router>
           <Switch>
             <Route
@@ -41,7 +41,7 @@ function App(props) {
               component={Login} />
           </Switch>
         </Router>
-      </SocketProvider>
+      {/* </SocketProvider> */}
     </div>
   );
 }
