@@ -7,7 +7,7 @@ const socketClient = require("./socketClient");
 async function startSync() {
   console.log('starting sync loop');
   // get all users from the db
-  const sqlText = `SELECT * FROM "user";`
+  const sqlText = `SELECT "id" FROM "user";`
   const result = await pool.query(sqlText);
   const userlist = result.rows;
   // console.log(userlist);
@@ -39,8 +39,10 @@ async function theLoop() {
       const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
       let updatedTrade = await pool.query(queryText, [dbOrder.id]);
       // tell the frontend that an update was made so the DOM can update
+      console.log('HERE IS A POSSIBLE WAY TO GET A USER ID', dbOrder);
       socketClient.emit('message', {
-        orderUpdate: true
+        orderUpdate: true,
+        userID: Number(dbOrder.userID)
       });
     } catch (err) {
       if (err.code && err.code === 'ETIMEDOUT') {
@@ -51,6 +53,7 @@ async function theLoop() {
         console.log('Insufficient funds! from the loop');
         socketClient.emit('message', {
           error: `Insufficient funds in the loop!`,
+          userID: Number(dbOrder.userID)
         });
         // todo - check funds to make sure there is enough for 
         // all of them to be replaced, and balance if needed
@@ -85,16 +88,23 @@ function flipTrade(dbOrder) {
     userID: dbOrder.userID,
   };
   // add buy/sell requirement and price
+  console.log('in flipTrade userID', dbOrder.userID);
   if (dbOrder.side === "buy") {
     // if it was a buy, sell for more. multiply old price
     tradeDetails.side = "sell"
     tradeDetails.price = dbOrder.original_sell_price;
-    socketClient.emit('message', { message: `Selling for $${Number(tradeDetails.price)}` });
+    socketClient.emit('message', {
+      message: `Selling for $${Number(tradeDetails.price)}`,
+      userID: Number(dbOrder.userID)
+    });
   } else {
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "buy"
     tradeDetails.price = dbOrder.original_buy_price;
-    socketClient.emit('message', { message: `Buying for $${Number(tradeDetails.price)}` });
+    socketClient.emit('message', {
+      message: `Buying for $${Number(tradeDetails.price)}`,
+      userID: Number(dbOrder.userID)
+    });
   }
   // return the tradeDetails object
   return tradeDetails;
@@ -135,8 +145,9 @@ async function syncOrders(userID) {
         if (result.ordersCanceled && (result.quantity > 0)) {
           console.log(result.message);
           socketClient.emit('message', {
-            error: `${result.quantity} Extra orders were found and canceled`,
-            orderUpdate: true
+            error: `${result.quantity} Extra orders were found and canceled for user ${userID}`,
+            orderUpdate: true,
+            userID: Number(userID)
           });
         }
       } catch (err) {
@@ -157,7 +168,8 @@ async function syncOrders(userID) {
           console.log('internal server error from coinbase');
           socketClient.emit('message', {
             error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
-            orderUpdate: true
+            orderUpdate: true,
+            userID: Number(userID)
           });
         } else {
           console.log('Error settling all settled orders', err);
@@ -175,7 +187,8 @@ async function syncOrders(userID) {
       console.log('internal server error from coinbase');
       socketClient.emit('message', {
         error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
-        orderUpdate: true
+        orderUpdate: true,
+        userID: Number(userID)
       });
     } else {
       // console.log('error at end of syncOrders', err);
@@ -183,6 +196,7 @@ async function syncOrders(userID) {
   } finally {
     socketClient.emit('message', {
       heartbeat: true,
+      userID: Number(userID)
     });
     // when everything is done, call the sync again
     setTimeout(() => {
@@ -194,9 +208,10 @@ async function syncOrders(userID) {
 async function settleMultipleOrders(ordersArray, userID) {
   return new Promise(async (resolve, reject) => {
     if (ordersArray.length > 0) {
-      console.log(`There are ${ordersArray.length} settled orders that should be flipped`);
+      console.log(`User ${userID} has ${ordersArray.length} settled orders that should be flipped`);
       socketClient.emit('message', {
         message: `There are ${ordersArray.length} orders that need to be synced`,
+        userID: Number(userID)
       });
       // loop over the array and flip each trade
       for (let i = 0; i < ordersArray.length; i++) {
@@ -204,6 +219,7 @@ async function settleMultipleOrders(ordersArray, userID) {
         // send heartbeat for each loop
         socketClient.emit('message', {
           heartbeat: true,
+          userID: Number(userID)
         });
         try {
           // wait between each loop to prevent rate limiting
@@ -285,7 +301,8 @@ async function reorder(orderToReorder) {
       await pool.query(queryText, [orderToReorder.id]);
       socketClient.emit('message', {
         message: `trade was reordered`,
-        orderUpdate: true
+        orderUpdate: true,
+        userID: Number(orderToReorder.userID)
       });
       resolve({
         results: results,
@@ -296,7 +313,8 @@ async function reorder(orderToReorder) {
         console.log('Insufficient funds when reordering missing trade in the loop!');
         socketClient.emit('message', {
           error: `Insufficient funds!`,
-          orderUpdate: true
+          orderUpdate: true,
+          userID: Number(orderToReorder.userID)
         });
         reject('Insufficient funds')
       }
@@ -342,7 +360,8 @@ async function cancelMultipleOrders(ordersArray, userID) {
             console.log('connection issue in cancel orders loop. Probably nothing to worry about');
             socketClient.emit('message', {
               error: `Connection issue in cancel orders loop. Probably nothing to worry about unless it keeps repeating.`,
-              orderUpdate: true
+              orderUpdate: true,
+              userID: Number(userID)
             });
           } else {
             console.log('unknown error in cancelMultipleOrders for loop', err);
