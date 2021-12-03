@@ -46,7 +46,7 @@ function Status(props) {
     if (socket == null) return;
 
     socket.on('message', message => {
-      if (message.heartbeat) {
+      if (message.heartbeat && message.userID === props.store.accountReducer.userReducer.id) {
         setLoopStatus(prevLoopStatus => {
           // console.log('previous error count', prevErrorCount);
           return !prevLoopStatus;
@@ -92,7 +92,7 @@ function Status(props) {
   useEffect(() => {
     const interval = setInterval(() => {
       ticker();
-    }, 500);
+    }, 1000);
     // need to clear on return or it will make dozens of calls per second
     return () => clearInterval(interval);
   }, []);

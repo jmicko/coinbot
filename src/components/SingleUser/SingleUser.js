@@ -47,6 +47,9 @@ function SingleUser(props) {
         {/* User details */}
         <p className="single-trade-text">
           <strong>
+            ID: </strong>
+          {props.user.id}
+          ~ <strong>
             Username: </strong>
           {props.user.username}
           ~ <strong>Active: </strong>
