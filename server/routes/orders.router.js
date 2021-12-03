@@ -13,7 +13,7 @@ const coinbaseClient = require('../modules/coinbaseClient');
 */
 router.get('/', rejectUnauthenticated, (req, res) => {
   const userID = req.user.id;
-  console.log('getting all orders for...', userID);
+  // console.log('getting all orders for...', userID);
   // ask db for an array of buys and an array of sells
   return Promise.all([
     // get all open orders from db and from coinbase

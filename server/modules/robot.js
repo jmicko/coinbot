@@ -12,7 +12,7 @@ async function startSync() {
   const userlist = result.rows;
   // console.log(userlist);
   userlist.forEach(user => {
-    console.log(user.id);
+    // console.log(user.id);
     syncOrders(user.id);
   });
 }
@@ -282,7 +282,7 @@ async function reorder(orderToReorder) {
 
       // delete the old order from the db
       const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-      const response = await pool.query(queryText, [orderToReorder.id]);
+      await pool.query(queryText, [orderToReorder.id]);
       socketClient.emit('message', {
         message: `trade was reordered`,
         orderUpdate: true
