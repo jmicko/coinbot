@@ -39,7 +39,6 @@ async function theLoop() {
       const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
       let updatedTrade = await pool.query(queryText, [dbOrder.id]);
       // tell the frontend that an update was made so the DOM can update
-      console.log('HERE IS A POSSIBLE WAY TO GET A USER ID', dbOrder);
       socketClient.emit('message', {
         orderUpdate: true,
         userID: Number(dbOrder.userID)
