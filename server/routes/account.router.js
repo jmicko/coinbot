@@ -89,11 +89,11 @@ router.get('/profits', rejectUnauthenticated, (req, res) => {
 * PUT route to change status of reinvestment
 */
 router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
-  const userID = req.user.id;
+  const user = req.user;
   try {
-    console.log('in the REINVEST ROUTE');
-    // const queryText = ``;
-    // let result = await pool.query(queryText, []);
+    console.log('in the REINVEST ROUTE', user);
+    const queryText = `UPDATE "user" SET "reinvest" = $1`;
+    let result = await pool.query(queryText, [!user.reinvest]);
     res.sendStatus(200);
   } catch (err) {
     console.log('problem in REINVEST ROUTE', err);
