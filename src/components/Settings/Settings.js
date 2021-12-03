@@ -28,6 +28,16 @@ function Settings(props) {
     getUsers();
   }, []);
 
+  // make sure ratio is within percentage range
+  useEffect(() => {
+    if (reinvest_ratio > 100) {
+      setReinvest_ratio(100)
+    }
+    if (reinvest_ratio < 0) {
+      setReinvest_ratio(0)
+    }
+  }, [reinvest_ratio]);
+
 
   // delete the order if the abandon button is clicked.
   // the loop already detects deleted orders, so only need to make a call to coinbase
@@ -62,7 +72,16 @@ function Settings(props) {
     console.log('api details submitted!');
     dispatch({
       type: 'REINVEST',
+    });
+  }
+
+  function reinvestRatio(event) {
+    // event.preventDefault();
+    console.log('api details submitted!');
+    dispatch({
+      type: 'REINVEST_RATIO',
       payload: {
+        reinvest_ratio: reinvest_ratio
       }
     });
   }
@@ -88,10 +107,28 @@ function Settings(props) {
 
         <h4>Reinvestment</h4>
         <p>Coinbot can try to reinvest your profits</p>
-        <p>{JSON.stringify(props.store.accountReducer.userReducer.reinvest)}</p>
         {(props.store.accountReducer.userReducer.reinvest)
-        ?<button className="btn-blue" onClick={() => { reinvest() }}>Turn off</button>
-        :<button className="btn-blue" onClick={() => { reinvest() }}>Turn on</button>
+          ? <button className="btn-blue" onClick={() => { reinvest() }}>Turn off</button>
+          : <button className="btn-blue" onClick={() => { reinvest() }}>Turn on</button>
+        }
+        {props.store.accountReducer.userReducer.reinvest &&
+          <>
+            <p>Current reinvestment ratio: {props.store.accountReducer.userReducer.reinvest_ratio}%</p>
+            <label htmlFor="reinvest_ratio">
+              Set Ratio:
+            </label>
+            <input
+              type="number"
+              name="reinvest_ratio"
+              value={reinvest_ratio}
+              step={10}
+              max={100}
+              required
+              onChange={(event) => setReinvest_ratio(event.target.value)}
+            />
+            <br />
+            <button className="btn-blue" onClick={() => { reinvestRatio() }}>Save reinvestment ratio</button>
+          </>
         }
 
         <h4>Delete All Trades</h4>

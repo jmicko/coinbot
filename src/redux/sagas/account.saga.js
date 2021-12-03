@@ -69,6 +69,20 @@ function* reinvest(action) {
   }
 }
 
+function* reinvestRatio(action) {
+  try {
+    console.log('storing reinvest ratio');
+    const response = yield axios.put(`/api/account/reinvestRatio`, action.payload);
+    console.log('response from reinvest ratio', response);
+    yield put({ type: 'FETCH_USER' });
+  } catch (error) {
+    console.log('put account route reinvest ratio has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 function* factoryReset() {
   try {
     console.log('Factory Reset!');
@@ -90,6 +104,7 @@ function* accountSaga() {
   yield takeLatest('FETCH_PROFITS', fetchProfits);
   yield takeLatest('STORE_API', storeApi);
   yield takeLatest('REINVEST', reinvest);
+  yield takeLatest('REINVEST_RATIO', reinvestRatio);
   yield takeLatest('FACTORY_RESET', factoryReset);
 }
 
