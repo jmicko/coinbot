@@ -46,7 +46,7 @@ function Status(props) {
     if (socket == null) return;
 
     socket.on('message', message => {
-      if (message.heartbeat) {
+      if (message.heartbeat && message.userID === props.store.accountReducer.userReducer.id) {
         setLoopStatus(prevLoopStatus => {
           // console.log('previous error count', prevErrorCount);
           return !prevLoopStatus;
