@@ -92,7 +92,7 @@ function Status(props) {
   useEffect(() => {
     const interval = setInterval(() => {
       ticker();
-    }, 5000);
+    }, 1000);
     // need to clear on return or it will make dozens of calls per second
     return () => clearInterval(interval);
   }, []);
