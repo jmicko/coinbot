@@ -106,7 +106,9 @@ function Settings(props) {
         }
 
         <h4>Reinvestment</h4>
-        <p>Coinbot can try to reinvest your profits</p>
+        <p>Coinbot can try to reinvest your profits for you. Be aware that this may not
+          work if the profit is too small.
+        </p>
         {(props.store.accountReducer.userReducer.reinvest)
           ? <button className="btn-blue" onClick={() => { reinvest() }}>Turn off</button>
           : <button className="btn-blue" onClick={() => { reinvest() }}>Turn on</button>

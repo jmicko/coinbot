@@ -27,9 +27,11 @@ async function theLoop() {
   if (tradeList.rows[0]) {
     // ...take the first trade that needs to be flipped, 
     let dbOrder = tradeList.rows[0];
+    // get the user of the trade
+    let user = await databaseClient.getUser(dbOrder.userID);
     // ...flip the trade details
     // console.log('dbOrder is', dbOrder);
-    let tradeDetails = flipTrade(dbOrder);
+    let tradeDetails = flipTrade(dbOrder, user);
     // ...send the new trade
     try {
       let cbOrder = await coinbaseClient.placeOrder(tradeDetails);
@@ -75,7 +77,8 @@ async function theLoop() {
 
 // function for flipping sides on a trade
 // Returns the tradeDetails object needed to send trade to CB
-function flipTrade(dbOrder) {
+function flipTrade(dbOrder, user) {
+  const reinvestRatio = user.reinvest_ratio / 100;
   console.log('here is the order to flip', dbOrder);
   // set up the object to be sent
   const tradeDetails = {
@@ -89,7 +92,20 @@ function flipTrade(dbOrder) {
     userID: dbOrder.userID,
   };
   // add buy/sell requirement and price
-  console.log('in flipTrade userID', dbOrder.userID);
+  console.log('in flipTrade user reinvest_ratio', reinvestRatio);
+
+  let orderSize = Number(dbOrder.size);
+
+  let margin = (dbOrder.original_sell_price - dbOrder.original_buy_price)
+  let grossProfit = Number(margin * dbOrder.size)
+  let profit = Number(grossProfit - (dbOrder.fill_fees * 2))
+  let profitBTC = Number(Math.floor((profit / dbOrder.price) * reinvestRatio * 100000000) / 100000000)
+  console.log(orderSize, profitBTC);
+  let newSize = Math.floor((orderSize + profitBTC) * 100000000) / 100000000;
+  console.log('new size is', newSize);
+  // console.log('PROFIT', profit);
+  // console.log('PROFIT in btc', profitBTC);
+  // console.log('NEW SIZE', newSize);
   if (dbOrder.side === "buy") {
     // if it was a buy, sell for more. multiply old price
     tradeDetails.side = "sell"
@@ -99,6 +115,11 @@ function flipTrade(dbOrder) {
       userID: Number(dbOrder.userID)
     });
   } else {
+    console.log('check for reinvest', user.reinvest);
+    if (user.reinvest) {
+      console.log('changing size!!!!!!!', newSize);
+      tradeDetails.size = newSize
+    }
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "buy"
     tradeDetails.price = dbOrder.original_buy_price;
