@@ -76,12 +76,14 @@ async function theLoop() {
 // function for flipping sides on a trade
 // Returns the tradeDetails object needed to send trade to CB
 function flipTrade(dbOrder) {
+  console.log('here is the order to flip', dbOrder);
   // set up the object to be sent
   const tradeDetails = {
     side: '',
     price: '', // USD
     // when flipping a trade, size and product will always be the same
     size: dbOrder.size, // BTC
+    trade_pair_ratio: dbOrder.trade_pair_ratio,
     product_id: dbOrder.product_id,
     stp: 'cn',
     userID: dbOrder.userID,

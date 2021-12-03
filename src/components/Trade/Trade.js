@@ -28,7 +28,7 @@ function Trade(props) {
         price: price,
         size: transactionAmount,
         product_id: transactionProduct,
-        tradePairRatio: tradePairRatio
+        trade_pair_ratio: tradePairRatio
       }
     })
   }

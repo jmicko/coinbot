@@ -90,7 +90,6 @@ router.get('/profits', rejectUnauthenticated, (req, res) => {
 */
 router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
-  console.log('here are the api details', req.body);
   function getURI() {
     if (api.URI === "sandbox") {
       return "https://api-public.sandbox.pro.coinbase.com";
@@ -135,7 +134,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
           "userID" character varying COLLATE pg_catalog."default",
           price numeric(32,8),
           size numeric(32,8),
-          pair_ratio numeric(32,8),
+          trade_pair_ratio numeric(32,8),
           side character varying COLLATE pg_catalog."default",
           settled boolean DEFAULT false,
           flipped boolean DEFAULT false,
