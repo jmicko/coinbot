@@ -60,6 +60,7 @@ function* reinvest(action) {
     console.log('storing reinvest');
     const response = yield axios.put(`/api/account/reinvest`, action.payload);
     console.log('response from reinvest', response);
+    yield put({ type: 'FETCH_USER' });
   } catch (error) {
     console.log('put account route reinvest has failed', error);
     if (error.response.status === 403) {
