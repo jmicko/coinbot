@@ -13,6 +13,7 @@ function Settings(props) {
   const [passphrase, setPassphrase] = useState('');
   const [secret, setSecret] = useState('');
   const [URI, setURI] = useState('sandbox');
+  const [reinvest_ratio, setReinvest_ratio] = useState(0);
 
   const getUsers = useCallback(
     () => {
@@ -56,6 +57,16 @@ function Settings(props) {
     setSecret('');
   }
 
+  function reinvest(event) {
+    // event.preventDefault();
+    console.log('api details submitted!');
+    dispatch({
+      type: 'REINVEST',
+      payload: {
+      }
+    });
+  }
+
   if (props.showSettings) {
 
     return (
@@ -73,6 +84,14 @@ function Settings(props) {
             {/* {JSON.stringify(props.store.usersReducer.allUsersReducer)} */}
           </div>
           : <></>
+        }
+
+        <h4>Reinvestment</h4>
+        <p>Coinbot can try to reinvest your profits</p>
+        <p>{JSON.stringify(props.store.accountReducer.userReducer.reinvest)}</p>
+        {(props.store.accountReducer.userReducer.reinvest)
+        ?<button className="btn-blue" onClick={() => { reinvest() }}>Turn off</button>
+        :<button className="btn-blue" onClick={() => { reinvest() }}>Turn on</button>
         }
 
         <h4>Delete All Trades</h4>

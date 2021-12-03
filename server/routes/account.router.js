@@ -86,6 +86,22 @@ router.get('/profits', rejectUnauthenticated, (req, res) => {
 });
 
 /**
+* PUT route to change status of reinvestment
+*/
+router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
+  const userID = req.user.id;
+  try {
+    console.log('in the REINVEST ROUTE');
+    // const queryText = ``;
+    // let result = await pool.query(queryText, []);
+    res.sendStatus(200);
+  } catch (err) {
+    console.log('problem in REINVEST ROUTE', err);
+    res.sendStatus(500);
+  }
+});
+
+/**
 * POST route to store API details
 */
 router.post('/storeApi', rejectUnauthenticated, async (req, res) => {

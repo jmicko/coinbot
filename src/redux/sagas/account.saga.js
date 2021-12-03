@@ -55,6 +55,19 @@ function* storeApi(action) {
   }
 }
 
+function* reinvest(action) {
+  try {
+    console.log('storing reinvest');
+    const response = yield axios.put(`/api/account/reinvest`, action.payload);
+    console.log('response from reinvest', response);
+  } catch (error) {
+    console.log('put account route reinvest has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 function* factoryReset() {
   try {
     console.log('Factory Reset!');
@@ -75,6 +88,7 @@ function* accountSaga() {
   yield takeLatest('FETCH_ACCOUNT', fetchAccounts);
   yield takeLatest('FETCH_PROFITS', fetchProfits);
   yield takeLatest('STORE_API', storeApi);
+  yield takeLatest('REINVEST', reinvest);
   yield takeLatest('FACTORY_RESET', factoryReset);
 }
 
