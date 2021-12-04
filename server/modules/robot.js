@@ -354,15 +354,15 @@ async function reorder(orderToReorder) {
   return new Promise(async (resolve, reject) => {
     try {
       // console.log('2222222222 id is ', orderToReorder.id);
-      let cancelling = await databaseClient.checkIfCancelling(orderToReorder.id);
-      console.log('cancelling?:', cancelling);
       await sleep(1000);
       console.log('looking again for the order before reordering', orderToReorder.will_cancel);
       let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID);
       console.log('did it find the order?', fullSettledDetails);
     } catch (err) {
       console.log('did not find the order', err.response?.status);
-      if (err.response?.status === 404) {
+      let cancelling = await databaseClient.checkIfCancelling(orderToReorder.id);
+      console.log('cancelling?:', cancelling);
+      if ((err.response?.status === 404) && (!cancelling)) {
         try {
           const tradeDetails = {
             original_sell_price: orderToReorder.original_sell_price,
