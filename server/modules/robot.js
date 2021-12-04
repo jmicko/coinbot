@@ -121,12 +121,12 @@ async function syncOrders(userID) {
 
 async function deleteMarkedOrders(userID) {
   return new Promise(async (resolve, reject) => {
-    console.log('deleting orders marked for cancelation');
+    // console.log('deleting orders marked for cancelation');
     try {
       const queryText = `DELETE from "orders" WHERE "will_cancel"=true AND "userID"=$1;`;
       let result = await pool.query(queryText, [userID]);
-      console.log('orders marked for cancel were deleted from db', result.rowCount);
       if (result.rowCount > 0) {
+        console.log('orders marked for cancel were deleted from db', result.rowCount);
         socketClient.emit('message', {
           message: `orders marked for cancel were deleted from db`,
           orderUpdate: true,
@@ -353,12 +353,15 @@ async function settleMultipleOrders(ordersArray, userID) {
 async function reorder(orderToReorder) {
   return new Promise(async (resolve, reject) => {
     try {
-      await sleep(5000);
-      console.log('looking again for the order before reordering');
+      // console.log('2222222222 id is ', orderToReorder.id);
+      let cancelling = await databaseClient.checkIfCancelling(orderToReorder.id);
+      console.log('cancelling?:', cancelling);
+      await sleep(1000);
+      console.log('looking again for the order before reordering', orderToReorder.will_cancel);
       let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID);
       console.log('did it find the order?', fullSettledDetails);
     } catch (err) {
-      console.log('found an error', err.response?.status);
+      console.log('did not find the order', err.response?.status);
       if (err.response?.status === 404) {
         try {
           const tradeDetails = {
