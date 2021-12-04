@@ -93,7 +93,7 @@ io.engine.on("connection_error", (err) => {
 /* end socket.io */
 
 // start the loop
-robot.theLoop();
+// robot.theLoop();
 // synch all orders every 24 hours
 // setInterval(() => {
 //   robot.syncEverything();

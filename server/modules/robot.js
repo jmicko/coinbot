@@ -18,61 +18,69 @@ async function startSync() {
 }
 
 // better just call this thing theLoop
-async function theLoop() {
-  // check all trades in db that are both settled and NOT flipped
-  sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false;`;
-  // store the trades in an object
-  const tradeList = await pool.query(sqlText);
-  // if there is at least one trade...
-  if (tradeList.rows[0]) {
-    // ...take the first trade that needs to be flipped, 
-    let dbOrder = tradeList.rows[0];
-    // get the user of the trade
-    let user = await databaseClient.getUser(dbOrder.userID);
-    // ...flip the trade details
-    // console.log('dbOrder is', dbOrder);
-    let tradeDetails = flipTrade(dbOrder, user);
-    // ...send the new trade
-    try {
-      let cbOrder = await coinbaseClient.placeOrder(tradeDetails);
-      // ...store the new trade
-      let results = await databaseClient.storeTrade(cbOrder, dbOrder);
-      // ...mark the old trade as flipped
-      const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
-      let updatedTrade = await pool.query(queryText, [dbOrder.id]);
-      // tell the frontend that an update was made so the DOM can update
-      socketClient.emit('message', {
-        orderUpdate: true,
-        userID: Number(dbOrder.userID)
-      });
-    } catch (err) {
-      if (err.code && err.code === 'ETIMEDOUT') {
-        console.log('Timed out!!!!! from the loop');
-        // await coinbaseClient.cancelAllOrders();
-        console.log('maybe need to sync orders just in case');
-      } else if (err.response?.status === 400) {
-        console.log('Insufficient funds! from the loop');
+async function theLoop(userID) {
+  return new Promise(async (resolve, reject) => {
+    // check all trades in db that are both settled and NOT flipped
+    sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false AND "userID"=$1;`;
+    // store the trades in an object
+    const result = await pool.query(sqlText, [userID]);
+    const tradeList = result.rows;
+    // if there is at least one trade...
+    if (tradeList[0]) {
+      // ...take the first trade that needs to be flipped, 
+      let dbOrder = tradeList[0];
+      // get the user of the trade
+      let user = await databaseClient.getUser(dbOrder.userID);
+      // ...flip the trade details
+      // console.log('dbOrder is', dbOrder);
+      let tradeDetails = flipTrade(dbOrder, user);
+      // ...send the new trade
+      try {
+        let cbOrder = await coinbaseClient.placeOrder(tradeDetails);
+        // ...store the new trade
+        let results = await databaseClient.storeTrade(cbOrder, dbOrder);
+        // ...mark the old trade as flipped
+        const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
+        let updatedTrade = await pool.query(queryText, [dbOrder.id]);
+        // tell the frontend that an update was made so the DOM can update
         socketClient.emit('message', {
-          error: `Insufficient funds in the loop!`,
+          orderUpdate: true,
           userID: Number(dbOrder.userID)
         });
-        // todo - check funds to make sure there is enough for 
-        // all of them to be replaced, and balance if needed
-      } else {
-        console.log('error in the loop', err);
+      } catch (err) {
+        if (err.code && err.code === 'ETIMEDOUT') {
+          console.log('Timed out!!!!! from the loop');
+          // await coinbaseClient.cancelAllOrders();
+          console.log('maybe need to sync orders just in case');
+        } else if (err.response?.status === 400) {
+          console.log('Insufficient funds! from the loop');
+          socketClient.emit('message', {
+            error: `Insufficient funds in the loop!`,
+            userID: Number(dbOrder.userID)
+          });
+          // todo - check funds to make sure there is enough for 
+          // all of them to be replaced, and balance if needed
+        } else {
+          console.log('error in the loop', err);
+          reject(err);
+        }
+      } finally {
+        // call the loop again. Wait half second to avoid rate limiting
+        // setTimeout(() => {
+        //   theLoop();
+        // }, 300);
+        console.log('theLoop is finished and had trades to flip');
+        resolve();
       }
-    } finally {
-      // call the loop again. Wait half second to avoid rate limiting
-      setTimeout(() => {
-        theLoop();
-      }, 300);
+    } else {
+      // call the loop again right away since no connections have been used
+      // setTimeout(() => {
+      //   theLoop();
+      // }, 100);
+      console.log('theLoop is finished and DID NOT HAVE trades to flip');
+      resolve();
     }
-  } else {
-    // call the loop again right away since no connections have been used
-    setTimeout(() => {
-      theLoop();
-    }, 100);
-  }
+  });
 }
 
 // function for flipping sides on a trade
@@ -197,6 +205,8 @@ async function syncOrders(userID) {
           console.log('Error settling all settled orders', err);
         }
       }
+      // call theLoop to flip all trades for that user
+      await theLoop(userID);
     } else {
       // console.log('user is not active', user.id);
       await sleep(1000);
@@ -302,47 +312,58 @@ async function settleMultipleOrders(ordersArray, userID) {
 
 async function reorder(orderToReorder) {
   return new Promise(async (resolve, reject) => {
-    const tradeDetails = {
-      original_sell_price: orderToReorder.original_sell_price,
-      original_buy_price: orderToReorder.original_buy_price,
-      side: orderToReorder.side,
-      price: orderToReorder.price, // USD
-      size: orderToReorder.size, // BTC
-      product_id: orderToReorder.product_id,
-      stp: 'cn',
-      userID: orderToReorder.userID,
-    };
     try {
-      // send the new order with the trade details
-      let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
-      // store the new trade in the db. the trade details are also sent to store trade position prices
-      let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
-
-      // delete the old order from the db
-      const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-      await pool.query(queryText, [orderToReorder.id]);
-      socketClient.emit('message', {
-        message: `trade was reordered`,
-        orderUpdate: true,
-        userID: Number(orderToReorder.userID)
-      });
-      resolve({
-        results: results,
-        reordered: true
-      })
+      await sleep(5000);
+      console.trace('looking again for the order before reordering');
+      let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID);
+      console.log('did it find the order?', fullSettledDetails);
     } catch (err) {
-      if (err.response?.status === 400) {
-        console.log('Insufficient funds when reordering missing trade in the loop!');
-        socketClient.emit('message', {
-          error: `Insufficient funds!`,
-          orderUpdate: true,
-          userID: Number(orderToReorder.userID)
-        });
-        reject('Insufficient funds')
+      console.trace('found an error', err.response?.status);
+      if (err.response?.status === 404) {
+        try {
+          const tradeDetails = {
+            original_sell_price: orderToReorder.original_sell_price,
+            original_buy_price: orderToReorder.original_buy_price,
+            side: orderToReorder.side,
+            price: orderToReorder.price, // USD
+            size: orderToReorder.size, // BTC
+            product_id: orderToReorder.product_id,
+            stp: 'cn',
+            userID: orderToReorder.userID,
+          };
+          // send the new order with the trade details
+          let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
+          // store the new trade in the db. the trade details are also sent to store trade position prices
+          let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
+
+          // delete the old order from the db
+          const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+          await pool.query(queryText, [orderToReorder.id]);
+          socketClient.emit('message', {
+            message: `trade was reordered`,
+            orderUpdate: true,
+            userID: Number(orderToReorder.userID)
+          });
+          resolve({
+            results: results,
+            reordered: true
+          })
+        } catch (err) {
+          if (err.response?.status === 400) {
+            console.log('Insufficient funds when reordering missing trade in the loop!');
+            socketClient.emit('message', {
+              error: `Insufficient funds!`,
+              orderUpdate: true,
+              userID: Number(orderToReorder.userID)
+            });
+            reject('Insufficient funds')
+          }
+          console.log('error in reorder function in robot.js');
+          reject(err)
+        }
       }
-      console.log('error in reorder function in robot.js');
-      reject(err)
     }
+    resolve();
   });
 }
 
