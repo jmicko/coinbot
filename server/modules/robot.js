@@ -17,69 +17,167 @@ async function startSync() {
   });
 }
 
-// better just call this thing theLoop
-async function theLoop(userID) {
+// REST protocol to find orders that have settled on coinbase
+async function syncOrders(userID) {
+  try {
+    const user = await databaseClient.getUser(userID);
+    if (user.active && user.approved) {
+
+      // console.log('starting the loop for user id', user.id, user.active);
+      // get lists of trades to compare which have been settled
+      const results = await Promise.all([
+        // get all open orders from db and cb
+        databaseClient.getUnsettledTrades('all', userID),
+        coinbaseClient.getOpenOrders(userID)
+      ]);
+      // store the lists of orders in the corresponding arrays so they can be compared
+      const dbOrders = results[0];
+      const cbOrders = results[1];
+      // compare the arrays and remove any where the ids match in both,
+      // leaving a list of orders that are open in the db, but not on cb. Probably settled
+      const ordersToCheck = await orderElimination(dbOrders, cbOrders);
+
+      // also get a list of orders that are open on cb, but not stored in the db. 
+      // these are extra orders and should be canceled???
+      const ordersToCancel = await orderElimination(cbOrders, dbOrders);
+      // if (ordersToCancel[0]) {
+      try {
+        let result = await cancelMultipleOrders(ordersToCancel, userID);
+        if (result.ordersCanceled && (result.quantity > 0)) {
+          console.log(result.message);
+          socketClient.emit('message', {
+            error: `${result.quantity} Extra orders were found and canceled for user ${userID}`,
+            orderUpdate: true,
+            userID: Number(userID)
+          });
+        }
+      } catch (err) {
+        console.log('error deleting extra order', err);
+      }
+      // wait for a second to allow cancels to go through so bot doesn't cancel twice
+      await sleep(1000);
+      // }
+
+      // now flip all the orders that need to be flipped
+      try {
+        let result = await settleMultipleOrders(ordersToCheck, userID);
+        if (result.ordersFlipped) {
+          console.log(result.message);
+        }
+      } catch (err) {
+        if (err.response?.status === 500) {
+          console.log('internal server error from coinbase');
+          socketClient.emit('message', {
+            error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
+            orderUpdate: true,
+            userID: Number(userID)
+          });
+        } else {
+          console.log('Error settling all settled orders', err);
+        }
+      }
+      // call processOrders to flip all trades for that user
+      await processOrders(userID);
+    } else {
+      // console.log('user is not active', user.id);
+      await sleep(1000);
+    }
+  } catch (err) {
+    // console.log('catch of syncOrders');
+    if (err.code === 'ECONNRESET') {
+      console.log('Connection reset by Coinbase server');
+    } else if (err.response?.status === 500) {
+      console.log('internal server error from coinbase');
+      socketClient.emit('message', {
+        error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
+        orderUpdate: true,
+        userID: Number(userID)
+      });
+    } else {
+      // console.log('error at end of syncOrders', err);
+    }
+  } finally {
+    socketClient.emit('message', {
+      heartbeat: true,
+      userID: Number(userID)
+    });
+    // when everything is done, call the sync again
+    setTimeout(() => {
+      syncOrders(userID);
+    }, 300);
+  }
+}
+
+// process orders that have been settled
+async function processOrders(userID) {
   return new Promise(async (resolve, reject) => {
     // check all trades in db that are both settled and NOT flipped
-    sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false AND "userID"=$1;`;
+    sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
     // store the trades in an object
     const result = await pool.query(sqlText, [userID]);
     const tradeList = result.rows;
     // if there is at least one trade...
-    if (tradeList[0]) {
-      // ...take the first trade that needs to be flipped, 
-      let dbOrder = tradeList[0];
-      // get the user of the trade
-      let user = await databaseClient.getUser(dbOrder.userID);
-      // ...flip the trade details
-      // console.log('dbOrder is', dbOrder);
-      let tradeDetails = flipTrade(dbOrder, user);
-      // ...send the new trade
-      try {
-        let cbOrder = await coinbaseClient.placeOrder(tradeDetails);
-        // ...store the new trade
-        let results = await databaseClient.storeTrade(cbOrder, dbOrder);
-        // ...mark the old trade as flipped
-        const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
-        let updatedTrade = await pool.query(queryText, [dbOrder.id]);
-        // tell the frontend that an update was made so the DOM can update
-        socketClient.emit('message', {
-          orderUpdate: true,
-          userID: Number(dbOrder.userID)
-        });
-      } catch (err) {
-        if (err.code && err.code === 'ETIMEDOUT') {
-          console.log('Timed out!!!!! from the loop');
-          // await coinbaseClient.cancelAllOrders();
-          console.log('maybe need to sync orders just in case');
-        } else if (err.response?.status === 400) {
-          console.log('Insufficient funds! from the loop');
+    console.log(`there are ${tradeList.length} trades to process`);
+    if (tradeList.length > 0) {
+      // loop through all the settled orders and flip them
+      for (let i = 0; i < tradeList.length; i++) {
+        // ...take the first trade that needs to be flipped, 
+        let dbOrder = tradeList[i];
+        // get the user of the trade
+        let user = await databaseClient.getUser(dbOrder.userID);
+        // ...flip the trade details
+        // console.log('dbOrder is', dbOrder);
+        let tradeDetails = flipTrade(dbOrder, user);
+        // ...send the new trade
+        try {
+          let cbOrder = await coinbaseClient.placeOrder(tradeDetails);
+          // ...store the new trade
+          let results = await databaseClient.storeTrade(cbOrder, dbOrder);
+          // ...mark the old trade as flipped
+          const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
+          let updatedTrade = await pool.query(queryText, [dbOrder.id]);
+          // tell the frontend that an update was made so the DOM can update
           socketClient.emit('message', {
-            error: `Insufficient funds in the loop!`,
+            orderUpdate: true,
             userID: Number(dbOrder.userID)
           });
-          // todo - check funds to make sure there is enough for 
-          // all of them to be replaced, and balance if needed
-        } else {
-          console.log('error in the loop', err);
-          reject(err);
+        } catch (err) {
+          if (err.code && err.code === 'ETIMEDOUT') {
+            console.log('Timed out!!!!! from the loop');
+            // await coinbaseClient.cancelAllOrders();
+            console.log('maybe need to sync orders just in case');
+          } else if (err.response?.status === 400) {
+            console.log('Insufficient funds! from the loop');
+            socketClient.emit('message', {
+              error: `Insufficient funds in the loop!`,
+              userID: Number(dbOrder.userID)
+            });
+            // todo - check funds to make sure there is enough for 
+            // all of them to be replaced, and balance if needed
+          } else {
+            console.log('error in the loop', err);
+            // reject(err);
+          }
+        } finally {
+          // call the loop again. Wait half second to avoid rate limiting
+          // setTimeout(() => {
+          //   processOrders();
+          // }, 300);
+          console.log('processOrders is finished and had trades to flip');
+          // resolve();
         }
-      } finally {
-        // call the loop again. Wait half second to avoid rate limiting
-        // setTimeout(() => {
-        //   theLoop();
-        // }, 300);
-        console.log('theLoop is finished and had trades to flip');
-        resolve();
+        // avoid rate limiting
+        await sleep(100)
       }
     } else {
       // call the loop again right away since no connections have been used
       // setTimeout(() => {
-      //   theLoop();
+      //   processOrders();
       // }, 100);
-      console.log('theLoop is finished and DID NOT HAVE trades to flip');
+      console.log('processOrders is finished and DID NOT HAVE trades to flip');
       resolve();
     }
+    resolve();
   });
 }
 
@@ -144,97 +242,6 @@ function flipTrade(dbOrder, user) {
 // function to pause for x milliseconds in any async function
 function sleep(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
-}
-
-// REST protocol to find orders that have settled on coinbase
-async function syncOrders(userID) {
-  try {
-    const user = await databaseClient.getUser(userID);
-    if (user.active && user.approved) {
-
-      // console.log('starting the loop for user id', user.id, user.active);
-      // get lists of trades to compare which have been settled
-      const results = await Promise.all([
-        // get all open orders from db and cb
-        databaseClient.getUnsettledTrades('all', userID),
-        coinbaseClient.getOpenOrders(userID)
-      ]);
-      // store the lists of orders in the corresponding arrays so they can be compared
-      const dbOrders = results[0];
-      const cbOrders = results[1];
-      // compare the arrays and remove any where the ids match in both,
-      // leaving a list of orders that are open in the db, but not on cb. Probably settled
-      const ordersToCheck = await orderElimination(dbOrders, cbOrders);
-
-      // also get a list of orders that are open on cb, but not stored in the db. 
-      // these are extra orders and should be canceled???
-      const ordersToCancel = await orderElimination(cbOrders, dbOrders);
-      // if (ordersToCancel[0]) {
-      try {
-        let result = await cancelMultipleOrders(ordersToCancel, userID);
-        if (result.ordersCanceled && (result.quantity > 0)) {
-          console.log(result.message);
-          socketClient.emit('message', {
-            error: `${result.quantity} Extra orders were found and canceled for user ${userID}`,
-            orderUpdate: true,
-            userID: Number(userID)
-          });
-        }
-      } catch (err) {
-        console.log('error deleting extra order', err);
-      }
-      // wait for a second to allow cancels to go through so bot doesn't cancel twice
-      await sleep(1000);
-      // }
-
-      // now flip all the orders that need to be flipped
-      try {
-        let result = await settleMultipleOrders(ordersToCheck, userID);
-        if (result.ordersFlipped) {
-          console.log(result.message);
-        }
-      } catch (err) {
-        if (err.response?.status === 500) {
-          console.log('internal server error from coinbase');
-          socketClient.emit('message', {
-            error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
-            orderUpdate: true,
-            userID: Number(userID)
-          });
-        } else {
-          console.log('Error settling all settled orders', err);
-        }
-      }
-      // call theLoop to flip all trades for that user
-      await theLoop(userID);
-    } else {
-      // console.log('user is not active', user.id);
-      await sleep(1000);
-    }
-  } catch (err) {
-    // console.log('catch of syncOrders');
-    if (err.code === 'ECONNRESET') {
-      console.log('Connection reset by Coinbase server');
-    } else if (err.response?.status === 500) {
-      console.log('internal server error from coinbase');
-      socketClient.emit('message', {
-        error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
-        orderUpdate: true,
-        userID: Number(userID)
-      });
-    } else {
-      // console.log('error at end of syncOrders', err);
-    }
-  } finally {
-    socketClient.emit('message', {
-      heartbeat: true,
-      userID: Number(userID)
-    });
-    // when everything is done, call the sync again
-    setTimeout(() => {
-      syncOrders(userID);
-    }, 300);
-  }
 }
 
 async function settleMultipleOrders(ordersArray, userID) {
@@ -314,11 +321,11 @@ async function reorder(orderToReorder) {
   return new Promise(async (resolve, reject) => {
     try {
       await sleep(5000);
-      console.trace('looking again for the order before reordering');
+      console.log('looking again for the order before reordering');
       let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID);
       console.log('did it find the order?', fullSettledDetails);
     } catch (err) {
-      console.trace('found an error', err.response?.status);
+      console.log('found an error', err.response?.status);
       if (err.response?.status === 404) {
         try {
           const tradeDetails = {
@@ -471,7 +478,7 @@ const robot = {
   syncOrders: syncOrders,
   synching: false,
   maxHistory: 200,
-  theLoop: theLoop,
+  processOrders: processOrders,
   syncEverything: syncEverything,
   startSync: startSync,
 }
