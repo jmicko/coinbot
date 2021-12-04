@@ -106,7 +106,7 @@ function Settings(props) {
         }
 
         <h4>Reinvestment</h4>
-        <p>Coinbot can try to reinvest your profits for you. Be aware that this may not
+        <p>EXPERIMENTAL FEATURE. Coinbot can try to reinvest your profits for you. Be aware that this may not
           work if the profit is too small.
         </p>
         {(props.store.accountReducer.userReducer.reinvest)
