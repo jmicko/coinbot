@@ -55,7 +55,7 @@ const getUnsettledTrades = (side, userID) => {
 
     if (side == 'buy') {
       // gets all unsettled buys, sorted by price
-      sqlText = `SELECT * FROM "orders" WHERE "side"='buy' AND "settled"=false AND "userID"=$1
+      sqlText = `SELECT * FROM "orders" WHERE "side"='buy' AND "settled"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" DESC;`;
       pool.query(sqlText, [userID])
         .then((results) => {
@@ -68,7 +68,7 @@ const getUnsettledTrades = (side, userID) => {
         })
     } else if (side == 'sell') {
       // gets all unsettled sells, sorted by price
-      sqlText = `SELECT * FROM "orders" WHERE "side"='sell' AND "settled"=false AND "userID"=$1
+      sqlText = `SELECT * FROM "orders" WHERE "side"='sell' AND "settled"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" DESC;`;
       pool.query(sqlText, [userID])
         .then((results) => {

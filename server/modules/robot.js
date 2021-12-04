@@ -23,6 +23,8 @@ async function syncOrders(userID) {
     const user = await databaseClient.getUser(userID);
     if (user.active && user.approved) {
 
+      // *** GET ORDERS THAT NEED PROCESSING ***
+
       // console.log('starting the loop for user id', user.id, user.active);
       // get lists of trades to compare which have been settled
       const results = await Promise.all([
@@ -40,7 +42,9 @@ async function syncOrders(userID) {
       // also get a list of orders that are open on cb, but not stored in the db. 
       // these are extra orders and should be canceled???
       const ordersToCancel = await orderElimination(cbOrders, dbOrders);
-      // if (ordersToCancel[0]) {
+
+
+      // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
       try {
         let result = await cancelMultipleOrders(ordersToCancel, userID);
         if (result.ordersCanceled && (result.quantity > 0)) {
@@ -58,7 +62,8 @@ async function syncOrders(userID) {
       await sleep(1000);
       // }
 
-      // now flip all the orders that need to be flipped
+
+      // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
       try {
         let result = await settleMultipleOrders(ordersToCheck, userID);
         if (result.ordersFlipped) {
@@ -76,10 +81,16 @@ async function syncOrders(userID) {
           console.log('Error settling all settled orders', err);
         }
       }
-      // call processOrders to flip all trades for that user
+
+
+      // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
       await processOrders(userID);
+
+      // DELETE ALL ORDERS MARKED FOR DELETE
+      await deleteMarkedOrders(userID);
+
     } else {
-      // console.log('user is not active', user.id);
+      // if the user is not active, loop every 1 second
       await sleep(1000);
     }
   } catch (err) {
@@ -94,7 +105,7 @@ async function syncOrders(userID) {
         userID: Number(userID)
       });
     } else {
-      // console.log('error at end of syncOrders', err);
+      console.log('unknown error at end of syncOrders');
     }
   } finally {
     socketClient.emit('message', {
@@ -106,6 +117,28 @@ async function syncOrders(userID) {
       syncOrders(userID);
     }, 300);
   }
+}
+
+async function deleteMarkedOrders(userID) {
+  return new Promise(async (resolve, reject) => {
+    console.log('deleting orders marked for cancelation');
+    try {
+      const queryText = `DELETE from "orders" WHERE "will_cancel"=true AND "userID"=$1;`;
+      let result = await pool.query(queryText, [userID]);
+      console.log('orders marked for cancel were deleted from db', result.rowCount);
+      if (result.rowCount > 0) {
+        socketClient.emit('message', {
+          message: `orders marked for cancel were deleted from db`,
+          orderUpdate: true,
+          userID: Number(userID)
+        });
+      }
+      resolve(result);
+    } catch (err) {
+      console.log('problem in deleteMarkedOrders function in robot', err);
+      reject(err)
+    }
+  });
 }
 
 // process orders that have been settled

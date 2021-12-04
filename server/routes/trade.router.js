@@ -76,14 +76,14 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
   console.log('in the server trade DELETE route', req.body.id)
 
   // mark as canceled in db
+  try {
   const queryText = `UPDATE "orders" SET "will_cancel" = true WHERE "id"=$1;`;
   let result = await pool.query(queryText, [orderId]);
   // send cancelOrder to cb
-  try {
-    let result = await coinbaseClient.cancelOrder(orderId, userID);
-    console.log('order was deleted successfully from cb', result);
-    databaseClient.deleteTrade(orderId);
-    console.log('order was deleted successfully from database');
+    // let result = await coinbaseClient.cancelOrder(orderId, userID);
+    // console.log('order was deleted successfully from cb', result);
+    // databaseClient.deleteTrade(orderId);
+    console.log('order was marked for deletion in database');
     res.sendStatus(200)
   } catch (error) {
     if (error.data?.message) {
@@ -109,7 +109,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       console.log('order not found in account', orderId);
       res.sendStatus(400)
     } else {
-      console.log('something failed', error);
+      console.log('something failed in the delete trade route', error);
       res.sendStatus(500)
     }
   };
