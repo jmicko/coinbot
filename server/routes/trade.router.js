@@ -28,6 +28,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       product_id: order.product_id,
       stp: 'cn',
       userID: userID,
+      trade_pair_ratio: order.trade_pair_ratio
     };
     try {
       // send the new order with the trade details

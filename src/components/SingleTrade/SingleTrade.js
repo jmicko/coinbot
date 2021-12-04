@@ -44,19 +44,19 @@ function SingleTrade(props) {
           <strong>
             Price: </strong>
           {(props.order.side === 'sell')
-            ? Number(props.order.original_sell_price)
-            : Number(props.order.original_buy_price)
+            ? Number(props.order.original_sell_price).toFixed(2)
+            : Number(props.order.original_buy_price).toFixed(2)
           } ~ <strong>
             {(props.order.side === 'sell')
               ? 'Bought at:'
               : 'Sells for:'
             } </strong>
           {(props.order.side === 'sell')
-            ? Number(props.order.original_buy_price)
-            : Number(props.order.original_sell_price)
-          } ~ <strong>Size </strong>{Number(props.order.size)} ~
-          <strong>Value</strong> ${Math.round((props.order.price * props.order.size) * 100) / 100} ~
-          <strong> Pair Profitability</strong> ${profit}
+            ? Number(props.order.original_buy_price).toFixed(2)
+            : Number(props.order.original_sell_price).toFixed(2)
+          } ~ <strong>Size </strong>{Number(props.order.size).toFixed(8)} ~
+          <strong>Value</strong> ${(Math.round((props.order.price * props.order.size) * 100) / 100).toFixed(2)} ~
+          <strong> Pair Profitability</strong> ${profit.toFixed(8)}
         </p>
       </div>
     </div>

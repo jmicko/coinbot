@@ -86,11 +86,42 @@ router.get('/profits', rejectUnauthenticated, (req, res) => {
 });
 
 /**
+* PUT route to change status of reinvestment
+*/
+router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
+  const user = req.user;
+  try {
+    console.log('in the REINVEST ROUTE', user, req.body);
+    const queryText = `UPDATE "user" SET "reinvest" = $1`;
+    let result = await pool.query(queryText, [!user.reinvest]);
+    res.sendStatus(200);
+  } catch (err) {
+    console.log('problem in REINVEST ROUTE', err);
+    res.sendStatus(500);
+  }
+});
+
+/**
+* PUT route to change status of reinvestment ratio
+*/
+router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
+  const user = req.user;
+  try {
+    console.log('in the REINVEST RATIO ROUTE', user, req.body);
+    const queryText = `UPDATE "user" SET "reinvest_ratio" = $1`;
+    await pool.query(queryText, [req.body.reinvest_ratio]);
+    res.sendStatus(200);
+  } catch (err) {
+    console.log('problem in REINVEST ROUTE', err);
+    res.sendStatus(500);
+  }
+});
+
+/**
 * POST route to store API details
 */
 router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
-  console.log('here are the api details', req.body);
   function getURI() {
     if (api.URI === "sandbox") {
       return "https://api-public.sandbox.pro.coinbase.com";
@@ -135,6 +166,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
           "userID" character varying COLLATE pg_catalog."default",
           price numeric(32,8),
           size numeric(32,8),
+          trade_pair_ratio numeric(32,8),
           side character varying COLLATE pg_catalog."default",
           settled boolean DEFAULT false,
           flipped boolean DEFAULT false,

@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS "orders"
     "userID" character varying COLLATE pg_catalog."default",
     price numeric(32,8),
     size numeric(32,8),
+    trade_pair_ratio numeric(32,8),
     side character varying COLLATE pg_catalog."default",
     settled boolean DEFAULT false,
     flipped boolean DEFAULT false,
