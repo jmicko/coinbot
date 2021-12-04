@@ -163,17 +163,23 @@ async function processOrders(userID) {
         let tradeDetails = flipTrade(dbOrder, user);
         // ...send the new trade
         try {
-          let cbOrder = await coinbaseClient.placeOrder(tradeDetails);
-          // ...store the new trade
-          let results = await databaseClient.storeTrade(cbOrder, dbOrder);
-          // ...mark the old trade as flipped
-          const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
-          let updatedTrade = await pool.query(queryText, [dbOrder.id]);
-          // tell the frontend that an update was made so the DOM can update
-          socketClient.emit('message', {
-            orderUpdate: true,
-            userID: Number(dbOrder.userID)
-          });
+          let cancelling = await databaseClient.checkIfCancelling(dbOrder.id);
+          if (!cancelling) {
+            console.log('cancelling in processOrders?:', cancelling);
+
+
+            let cbOrder = await coinbaseClient.placeOrder(tradeDetails);
+            // ...store the new trade
+            await databaseClient.storeTrade(cbOrder, dbOrder);
+            // ...mark the old trade as flipped
+            const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
+            let updatedTrade = await pool.query(queryText, [dbOrder.id]);
+            // tell the frontend that an update was made so the DOM can update
+            socketClient.emit('message', {
+              orderUpdate: true,
+              userID: Number(dbOrder.userID)
+            });
+          }
         } catch (err) {
           if (err.code && err.code === 'ETIMEDOUT') {
             console.log('Timed out!!!!! from the loop');
