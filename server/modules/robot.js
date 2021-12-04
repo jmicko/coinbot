@@ -100,7 +100,7 @@ function flipTrade(dbOrder, user) {
   let grossProfit = Number(margin * dbOrder.size)
   let profit = Number(grossProfit - (dbOrder.fill_fees * 2))
   let profitBTC = Number(Math.floor((profit / dbOrder.price) * reinvestRatio * 100000000) / 100000000)
-  console.log(orderSize, profitBTC);
+  console.log('order size and profit in btc', orderSize, 'fixed', (profitBTC).toFixed(8), 'string', profitBTC.toString());
   let newSize = Math.floor((orderSize + profitBTC) * 100000000) / 100000000;
   console.log('new size is', newSize);
   // console.log('PROFIT', profit);
@@ -118,7 +118,7 @@ function flipTrade(dbOrder, user) {
     console.log('check for reinvest', user.reinvest);
     if (user.reinvest) {
       console.log('changing size!!!!!!!', newSize);
-      tradeDetails.size = newSize
+      tradeDetails.size = newSize.toFixed(8);
     }
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "buy"
