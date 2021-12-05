@@ -19,7 +19,11 @@ function Trade(props) {
   function submitTransaction(event) {
     event.preventDefault();
     // calculate flipped price
-    let original_sell_price = (Math.round((price * (Number(tradePairRatio) + 100))) / 100)
+    let original_sell_price = (Math.round((price * (Number(tradePairRatio) + 100))) / 100);
+    let type = false;
+    if (props.store.statusReducer.tickerReducer.tickerPrice < price) {
+      type = 'market';
+    }
     dispatch({
       type: 'START_TRADE', payload: {
         original_sell_price: original_sell_price,
@@ -28,7 +32,8 @@ function Trade(props) {
         price: price,
         size: transactionAmount,
         product_id: transactionProduct,
-        trade_pair_ratio: tradePairRatio
+        trade_pair_ratio: tradePairRatio,
+        type: type
       }
     })
   }

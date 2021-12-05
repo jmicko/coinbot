@@ -305,7 +305,10 @@ async function settleMultipleOrders(ordersArray, userID) {
           // get all the order details from cb
           await sleep(100); // avoid rate limiting
           let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID);
-          console.log('setting this trade as settled in the db', orderToCheck.id, orderToCheck.price);
+          console.log('1111111111111 setting this trade as settled in the db', orderToCheck.id, orderToCheck.price, fullSettledDetails);
+          if (fullSettledDetails.size !== fullSettledDetails.filled_size) {
+            console.log('!!!!!!!!!!!!!!! the order was not fully settled!');
+          }
           // update the order in the db
           const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5 WHERE "id"=$6;`;
           await pool.query(queryText, [
@@ -359,9 +362,16 @@ async function settleMultipleOrders(ordersArray, userID) {
 async function reorder(orderToReorder) {
   return new Promise(async (resolve, reject) => {
     try {
+      const userID = orderToReorder.userID;
       // console.log('2222222222 id is ', orderToReorder.id);
       await sleep(1000);
-      console.log('looking again for the order before reordering', orderToReorder.will_cancel);
+      console.log('looking again for the order before reordering', orderToReorder.userID);
+
+
+      // let success = await coinbaseClient.repeatedCheck(orderToReorder, userID, 0);
+      // console.log('was the order found by repeatedChecker?', success);
+
+
       let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID);
       console.log('did it find the order?', fullSettledDetails);
     } catch (err) {
