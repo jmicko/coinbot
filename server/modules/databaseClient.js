@@ -55,7 +55,7 @@ const getUnsettledTrades = (side, userID) => {
 
     if (side == 'buy') {
       // gets all unsettled buys, sorted by price
-      sqlText = `SELECT * FROM "orders" WHERE "side"='buy' AND "settled"=false AND "userID"=$1
+      sqlText = `SELECT * FROM "orders" WHERE "side"='buy' AND "settled"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" DESC;`;
       pool.query(sqlText, [userID])
         .then((results) => {
@@ -68,7 +68,7 @@ const getUnsettledTrades = (side, userID) => {
         })
     } else if (side == 'sell') {
       // gets all unsettled sells, sorted by price
-      sqlText = `SELECT * FROM "orders" WHERE "side"='sell' AND "settled"=false AND "userID"=$1
+      sqlText = `SELECT * FROM "orders" WHERE "side"='sell' AND "settled"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" DESC;`;
       pool.query(sqlText, [userID])
         .then((results) => {
@@ -114,6 +114,24 @@ const getSingleTrade = (id) => {
   });
 }
 
+const checkIfCancelling = async (id) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      console.log('2222222222 id is ', id);
+      let sqlText;
+      // put sql stuff here, extending the pool promise to the parent function
+      sqlText = `SELECT * FROM "orders" WHERE "id"=$1;`;
+      let result = await pool.query(sqlText, [id]);
+      const singleTrade = result.rows[0];
+      // promise returns promise from pool if success
+      resolve(singleTrade.will_cancel);
+    } catch (err) {
+      // or promise relays errors from pool to parent
+      reject(err);
+    }
+  });
+}
+
 const deleteTrade = async (id) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -153,7 +171,8 @@ const databaseClient = {
   getUnsettledTrades: getUnsettledTrades,
   getSingleTrade: getSingleTrade,
   deleteTrade: deleteTrade,
-  getUser: getUser
+  getUser: getUser,
+  checkIfCancelling: checkIfCancelling
 }
 
 module.exports = databaseClient;
