@@ -41,7 +41,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
 
       // check if order went through
       await robot.sleep(1000);
-      let success = await robot.repeatedCheck(pendingTrade, userID, 0);
+      let success = await coinbaseClient.repeatedCheck(pendingTrade, userID, 0);
       console.log('did the order go through?', success);
       // send OK status
       res.sendStatus(200);

@@ -4,6 +4,9 @@ const crypto = require('crypto');
 const pool = require('./pool');
 const databaseClient = require("./databaseClient");
 
+function sleep(milliseconds) {
+  return new Promise(resolve => setTimeout(resolve, milliseconds))
+}
 
 async function getAccounts(userID) {
   return new Promise(async (resolve, reject) => {
@@ -351,6 +354,29 @@ async function cancelAllOrders(userID) {
   })
 }
 
+async function repeatedCheck(order, userID, tries) {
+  return new Promise(async (resolve, reject) => {
+    // repeats 10 times
+    if (tries < 10) {
+      await sleep(tries * 100)
+      tries++;
+      console.log('checking times:', tries);
+      // check if the order is in coinbase
+      try {
+        let cbOrder = await getOrder(order.id, userID);
+        console.log('order from coinbase', cbOrder);
+        resolve(true);
+      } catch (err) {
+        console.log('error checking coinbase for order');
+        repeatedCheck(order, userID, tries);
+      }
+    } else { // if it has already repeated, give up
+      console.log('done checking again');
+      resolve(false);
+    }
+  });
+}
+
 module.exports = {
   getAllOrders: getAllOrders,
   getOpenOrders: getOpenOrders,
@@ -360,4 +386,5 @@ module.exports = {
   cancelAllOrders: cancelAllOrders,
   getFees: getFees,
   getAccounts: getAccounts,
+  repeatedCheck: repeatedCheck,
 }
