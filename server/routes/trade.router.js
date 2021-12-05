@@ -38,6 +38,11 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       await robot.sleep(100);
       // store the new trade in the db. the trade details are also sent to store trade position prices
       await databaseClient.storeTrade(pendingTrade, tradeDetails);
+
+      // check if order went through
+      await robot.sleep(1000);
+      let success = await robot.repeatedCheck(pendingTrade, userID, 0);
+      console.log('did the order go through?', success);
       // send OK status
       res.sendStatus(200);
     } catch (err) {

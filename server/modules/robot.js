@@ -150,7 +150,7 @@ async function processOrders(userID) {
     const result = await pool.query(sqlText, [userID]);
     const tradeList = result.rows;
     // if there is at least one trade...
-    console.log(`there are ${tradeList.length} trades to process`);
+    // console.log(`there are ${tradeList.length} trades to process`);
     if (tradeList.length > 0) {
       // loop through all the settled orders and flip them
       for (let i = 0; i < tradeList.length; i++) {
@@ -213,7 +213,7 @@ async function processOrders(userID) {
       // setTimeout(() => {
       //   processOrders();
       // }, 100);
-      console.log('processOrders is finished and DID NOT HAVE trades to flip');
+      // console.log('processOrders is finished and DID NOT HAVE trades to flip');
       resolve();
     }
     resolve();
@@ -510,6 +510,29 @@ function orderElimination(dbOrders, cbOrders) {
   return dbOrders;
 }
 
+async function repeatedCheck(order, userID, tries) {
+  return new Promise(async (resolve, reject) => {
+    // repeats 10 times
+    if (tries < 10) {
+      await sleep(tries * 100)
+      tries++;
+      console.log('checking times:', tries);
+      // check if the order is in coinbase
+      try {
+        let cbOrder = await coinbaseClient.getOrder(order.id, userID);
+        console.log('order from coinbase', cbOrder);
+        resolve(true);
+      } catch (err) {
+        console.log('error checking coinbase for order');
+        repeatedCheck(order, userID, tries);
+      }
+    } else { // if it has already repeated, give up
+      console.log('done checking again');
+      resolve(false);
+    }
+  });
+}
+
 const robot = {
   // the /trade/toggle route will set canToggle to false as soon as it is called so that it 
   // doesn't call the loop twice. The loop will set it back to true after it finishes a loop
@@ -525,6 +548,7 @@ const robot = {
   processOrders: processOrders,
   syncEverything: syncEverything,
   startSync: startSync,
+  repeatedCheck: repeatedCheck,
 }
 
 
