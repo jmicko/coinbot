@@ -30,6 +30,10 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       userID: userID,
       trade_pair_ratio: order.trade_pair_ratio
     };
+    if (order.type) {
+      tradeDetails.type = 'market';
+      delete tradeDetails.price;
+    }
     try {
       // send the new order with the trade details
       let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
@@ -43,6 +47,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       await robot.sleep(1000);
       let success = await coinbaseClient.repeatedCheck(pendingTrade, userID, 0);
       console.log('did the order go through?', success);
+      
       // send OK status
       res.sendStatus(200);
     } catch (err) {
