@@ -224,7 +224,7 @@ async function processOrders(userID) {
 // Returns the tradeDetails object needed to send trade to CB
 function flipTrade(dbOrder, user) {
   const reinvestRatio = user.reinvest_ratio / 100;
-  // console.log('here is the order to flip', dbOrder);
+  console.log('here is the order to flip', dbOrder);
   // set up the object to be sent
   const tradeDetails = {
     side: '',
@@ -377,6 +377,7 @@ async function reorder(orderToReorder) {
             price: orderToReorder.price, // USD
             size: orderToReorder.size, // BTC
             product_id: orderToReorder.product_id,
+            trade_pair_ratio: orderToReorder.trade_pair_ratio,
             stp: 'cn',
             userID: orderToReorder.userID,
           };
