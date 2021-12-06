@@ -22,7 +22,6 @@ async function syncOrders(userID) {
   let user;
   try {
     user = await databaseClient.getUser(userID);
-    console.log('HERE ARE THE RESULTS OF GETTING USER', user);
     if (user?.active && user?.approved) {
 
       // *** GET ORDERS THAT NEED PROCESSING ***
@@ -114,10 +113,9 @@ async function syncOrders(userID) {
       heartbeat: true,
       userID: Number(userID)
     });
-    // when everything is done, call the sync again
+    // when everything is done, call the sync again if the user still exists
 
     if (user) {
-      console.log('user is THERE');
       setTimeout(() => {
         syncOrders(userID);
       }, 300);
@@ -232,7 +230,7 @@ async function processOrders(userID) {
 // Returns the tradeDetails object needed to send trade to CB
 function flipTrade(dbOrder, user) {
   const reinvestRatio = user.reinvest_ratio / 100;
-  console.log('here is the order to flip', dbOrder);
+  // console.log('here is the order to flip', dbOrder);
   // set up the object to be sent
   const tradeDetails = {
     side: '',
