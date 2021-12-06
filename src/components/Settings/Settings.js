@@ -67,6 +67,14 @@ function Settings(props) {
     setSecret('');
   }
 
+  function resetProfit(event) {
+    // event.preventDefault();
+    console.log('resetting profit!');
+    dispatch({
+      type: 'RESET_PROFIT',
+    });
+  }
+
   function reinvest(event) {
     // event.preventDefault();
     console.log('api details submitted!');
@@ -136,6 +144,10 @@ function Settings(props) {
         <h4>Delete All Trades</h4>
         <p>Danger! This button will delete all your positions! Press it carefully!</p>
         <button className="btn-blue" onClick={() => { deleteAllOrders() }}>Delete All</button>
+        {/* RESET PROFIT */}
+        <h4>Reset Profit</h4>
+        <p>This will start the profit calculation back at $0</p>
+        <button className="btn-blue" onClick={() => { resetProfit() }}>Reset Profit</button>
         <h4>Synchronize All Trades</h4>
         <p>
           This will delete all open orders from coinbase and replace them based on the trades stored in the
@@ -200,6 +212,12 @@ function Settings(props) {
                 onClick={() => dispatch({ type: 'FACTORY_RESET' })}
               >
                 Factory Reset
+              </button> CAUTION
+              CAUTION <button
+                className="btn-logout btn-red"
+                onClick={() => dispatch({ type: 'ORDERS_RESET' })}
+              >
+                Reset Orders Table
               </button> CAUTION
             </p>
           </>

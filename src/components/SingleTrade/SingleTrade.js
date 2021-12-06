@@ -30,6 +30,8 @@ function SingleTrade(props) {
     })
   }
 
+  let createdAt = new Date(props.order.created_at);
+
   // todo - probably need to refactor this thing asap. Should use more useState hooks to make these strings a bit less horrifying
   // postgres is much better at math using exact
 
@@ -56,7 +58,8 @@ function SingleTrade(props) {
             : Number(props.order.original_sell_price).toFixed(2)
           } ~ <strong>Size </strong>{Number(props.order.size).toFixed(8)} ~
           <strong>Value</strong> ${(Math.round((props.order.price * props.order.size) * 100) / 100).toFixed(2)} ~
-          <strong> Pair Profitability</strong> ${profit.toFixed(8)}
+          <strong> Pair Profit</strong> ${profit.toFixed(8)}
+          {/* <strong> Time</strong> ${createdAt.toLocaleString('en-US', { timeZone: 'UTC' })} */}
         </p>
       </div>
     </div>

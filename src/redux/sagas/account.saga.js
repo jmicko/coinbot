@@ -55,6 +55,20 @@ function* storeApi(action) {
   }
 }
 
+function* resetProfit(action) {
+  try {
+    console.log('reset profit saga');
+    const response = yield axios.post(`/api/account/resetProfit`, action.payload);
+    console.log('response from reinvest', response);
+    yield put({ type: 'FETCH_PROFITS' });
+  } catch (error) {
+    console.log('put account route resetProfit has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 function* reinvest(action) {
   try {
     console.log('storing reinvest');
@@ -98,14 +112,31 @@ function* factoryReset() {
   }
 }
 
+function* ordersReset() {
+  try {
+    console.log('Orders Reset!');
+
+    const response = yield axios.post(`/api/account/ordersReset`);
+    console.log('response from factory reset', response);
+    yield put({ type: 'FETCH_ORDERS' });
+  } catch (error) {
+    console.log('post account route factoryReset has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 function* accountSaga() {
   yield takeLatest('FETCH_FEES', fetchFees);
   yield takeLatest('FETCH_ACCOUNT', fetchAccounts);
   yield takeLatest('FETCH_PROFITS', fetchProfits);
   yield takeLatest('STORE_API', storeApi);
+  yield takeLatest('RESET_PROFIT', resetProfit);
   yield takeLatest('REINVEST', reinvest);
   yield takeLatest('REINVEST_RATIO', reinvestRatio);
   yield takeLatest('FACTORY_RESET', factoryReset);
+  yield takeLatest('ORDERS_RESET', ordersReset);
 }
 
 export default accountSaga;

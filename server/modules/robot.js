@@ -19,9 +19,10 @@ async function startSync() {
 
 // REST protocol to find orders that have settled on coinbase
 async function syncOrders(userID) {
+  let user;
   try {
-    const user = await databaseClient.getUser(userID);
-    if (user.active && user.approved) {
+    user = await databaseClient.getUser(userID);
+    if (user?.active && user?.approved) {
 
       // *** GET ORDERS THAT NEED PROCESSING ***
 
@@ -105,17 +106,22 @@ async function syncOrders(userID) {
         userID: Number(userID)
       });
     } else {
-      console.log('unknown error at end of syncOrders');
+      console.log('unknown error at end of syncOrders', err);
     }
   } finally {
     socketClient.emit('message', {
       heartbeat: true,
       userID: Number(userID)
     });
-    // when everything is done, call the sync again
-    setTimeout(() => {
-      syncOrders(userID);
-    }, 300);
+    // when everything is done, call the sync again if the user still exists
+
+    if (user) {
+      setTimeout(() => {
+        syncOrders(userID);
+      }, 300);
+    } else {
+      console.log('user is NOT THERE');
+    }
   }
 }
 
@@ -150,7 +156,7 @@ async function processOrders(userID) {
     const result = await pool.query(sqlText, [userID]);
     const tradeList = result.rows;
     // if there is at least one trade...
-    console.log(`there are ${tradeList.length} trades to process`);
+    // console.log(`there are ${tradeList.length} trades to process`);
     if (tradeList.length > 0) {
       // loop through all the settled orders and flip them
       for (let i = 0; i < tradeList.length; i++) {
@@ -213,7 +219,7 @@ async function processOrders(userID) {
       // setTimeout(() => {
       //   processOrders();
       // }, 100);
-      console.log('processOrders is finished and DID NOT HAVE trades to flip');
+      // console.log('processOrders is finished and DID NOT HAVE trades to flip');
       resolve();
     }
     resolve();
@@ -224,7 +230,7 @@ async function processOrders(userID) {
 // Returns the tradeDetails object needed to send trade to CB
 function flipTrade(dbOrder, user) {
   const reinvestRatio = user.reinvest_ratio / 100;
-  console.log('here is the order to flip', dbOrder);
+  // console.log('here is the order to flip', dbOrder);
   // set up the object to be sent
   const tradeDetails = {
     side: '',
@@ -237,7 +243,7 @@ function flipTrade(dbOrder, user) {
     userID: dbOrder.userID,
   };
   // add buy/sell requirement and price
-  console.log('in flipTrade user reinvest_ratio', reinvestRatio);
+  // console.log('in flipTrade user reinvest_ratio', reinvestRatio);
 
   let orderSize = Number(dbOrder.size);
 
@@ -245,9 +251,9 @@ function flipTrade(dbOrder, user) {
   let grossProfit = Number(margin * dbOrder.size)
   let profit = Number(grossProfit - (dbOrder.fill_fees * 2))
   let profitBTC = Number(Math.floor((profit / dbOrder.price) * reinvestRatio * 100000000) / 100000000)
-  console.log('order size and profit in btc', orderSize, 'fixed', (profitBTC).toFixed(8), 'string', profitBTC.toString());
+  // console.log('order size and profit in btc', orderSize, 'fixed', (profitBTC).toFixed(8), 'string', profitBTC.toString());
   let newSize = Math.floor((orderSize + profitBTC) * 100000000) / 100000000;
-  console.log('new size is', newSize);
+  // console.log('new size is', newSize);
   // console.log('PROFIT', profit);
   // console.log('PROFIT in btc', profitBTC);
   // console.log('NEW SIZE', newSize);
@@ -260,9 +266,9 @@ function flipTrade(dbOrder, user) {
       userID: Number(dbOrder.userID)
     });
   } else {
-    console.log('check for reinvest', user.reinvest);
+    // console.log('check for reinvest', user.reinvest);
     if (user.reinvest) {
-      console.log('changing size!!!!!!!', newSize);
+      // console.log('changing size!!!!!!!', newSize);
       tradeDetails.size = newSize.toFixed(8);
     }
     // if it was a sell, buy for less. divide old price
@@ -305,7 +311,10 @@ async function settleMultipleOrders(ordersArray, userID) {
           // get all the order details from cb
           await sleep(100); // avoid rate limiting
           let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID);
-          console.log('setting this trade as settled in the db', orderToCheck.id, orderToCheck.price);
+          console.log('1111111111111 setting this trade as settled in the db', orderToCheck.id, orderToCheck.price, fullSettledDetails);
+          if (fullSettledDetails.size !== fullSettledDetails.filled_size) {
+            console.log('!!!!!!!!!!!!!!! the order was not fully settled!');
+          }
           // update the order in the db
           const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5 WHERE "id"=$6;`;
           await pool.query(queryText, [
@@ -359,9 +368,16 @@ async function settleMultipleOrders(ordersArray, userID) {
 async function reorder(orderToReorder) {
   return new Promise(async (resolve, reject) => {
     try {
+      const userID = orderToReorder.userID;
       // console.log('2222222222 id is ', orderToReorder.id);
       await sleep(1000);
-      console.log('looking again for the order before reordering', orderToReorder.will_cancel);
+      console.log('looking again for the order before reordering', orderToReorder.userID);
+
+
+      // let success = await coinbaseClient.repeatedCheck(orderToReorder, userID, 0);
+      // console.log('was the order found by repeatedChecker?', success);
+
+
       let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID);
       console.log('did it find the order?', fullSettledDetails);
     } catch (err) {
@@ -377,6 +393,7 @@ async function reorder(orderToReorder) {
             price: orderToReorder.price, // USD
             size: orderToReorder.size, // BTC
             product_id: orderToReorder.product_id,
+            trade_pair_ratio: orderToReorder.trade_pair_ratio,
             stp: 'cn',
             userID: orderToReorder.userID,
           };
@@ -420,14 +437,14 @@ async function reorder(orderToReorder) {
 
 async function cancelMultipleOrders(ordersArray, userID) {
   return new Promise(async (resolve, reject) => {
+    // set variable to track how many orders were actually canceled
+    let quantity = 0;
     if (ordersArray.length > 0) {
-      console.log(`There are ${ordersArray.length} extra orders that should be canceled`);
+      console.log(`There are ${ordersArray.length} extra orders that may need to be canceled`);
       // need to wait and double check db before deleting because they take time to store and show up on cb first
       // only need to wait once because as the loop runs nothing will be added to it. Only wait for most recent order
-      await sleep(1000);
+      await sleep(2000);
 
-      // set variable to track how many orders were actually canceled
-      let quantity = 0;
 
       for (let i = 0; i < ordersArray.length; i++) {
         const orderToCancel = ordersArray[i];
@@ -464,14 +481,15 @@ async function cancelMultipleOrders(ordersArray, userID) {
       } //end for loop
       // if all goes well, resolve promise with success message
       resolve({
-        message: "Extra orders were canceled",
+        message: `${quantity} Extra orders were canceled`,
         ordersCanceled: true,
         quantity: quantity
       })
     } else {
       resolve({
         message: "No orders to cancel",
-        ordersCanceled: false
+        ordersCanceled: false,
+        quantity: quantity
       })
     }
   });
@@ -507,6 +525,8 @@ function orderElimination(dbOrders, cbOrders) {
   // return a list of orders that are settled on cb, but have not yet been handled by the bot
   return dbOrders;
 }
+
+
 
 const robot = {
   // the /trade/toggle route will set canToggle to false as soon as it is called so that it 

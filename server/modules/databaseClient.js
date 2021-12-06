@@ -117,7 +117,7 @@ const getSingleTrade = (id) => {
 const checkIfCancelling = async (id) => {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log('2222222222 id is ', id);
+      // console.log('checking if cancelled ', id);
       let sqlText;
       // put sql stuff here, extending the pool promise to the parent function
       sqlText = `SELECT * FROM "orders" WHERE "id"=$1;`;

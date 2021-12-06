@@ -73,7 +73,7 @@ router.get('/profits', rejectUnauthenticated, (req, res) => {
   // console.log('getting profits for', userID);
   const queryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" * 2)) 
   FROM public.orders 
-  WHERE "side" = 'sell' AND "settled" = 'true' AND "userID" = $1;`;
+  WHERE "side" = 'sell' AND "settled" = 'true' AND "include_in_profit" = 'true' AND "userID" = $1;`;
   pool.query(queryText, [userID])
     .then((result) => {
       // console.log('here are the profits', result.rows[0].sum);
@@ -118,6 +118,22 @@ router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
+* POST route to reset profits
+*/
+router.post('/resetProfit', rejectUnauthenticated, async (req, res) => {
+  console.log('RESETTING PROFIT!!!!!!!!!!!!!!!!!!!!!!!!!');
+  const userID = req.user.id;
+  const queryText = `UPDATE "orders" SET "include_in_profit" = false WHERE "userID"=$1 AND "settled"=true;`;
+  try {
+    await pool.query(queryText, [userID]);
+    res.sendStatus(200);
+  } catch (err) {
+    console.log('problem resetting profit', err);
+    res.sendStatus(500);
+  }
+});
+
+/**
 * POST route to store API details
 */
 router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
@@ -153,6 +169,48 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
 /**
 * POST route to factory reset the bot
 */
+router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
+  console.log('order reset route hit!');
+  console.log(req.user.admin);
+  if (req.user.admin) {
+    const queryText = `DROP TABLE "orders";
+    CREATE TABLE IF NOT EXISTS "orders"
+    (
+          id character varying COLLATE pg_catalog."default" NOT NULL,
+          "userID" character varying COLLATE pg_catalog."default",
+          price numeric(32,8),
+          size numeric(32,8),
+          trade_pair_ratio numeric(32,8),
+          side character varying COLLATE pg_catalog."default",
+          pending boolean DEFAULT true,
+          settled boolean DEFAULT false,
+          flipped boolean DEFAULT false,
+          will_cancel boolean DEFAULT false,
+          include_in_profit boolean DEFAULT true,
+          product_id character varying COLLATE pg_catalog."default",
+          time_in_force character varying COLLATE pg_catalog."default",
+          created_at timestamp,
+          done_at timestamp,
+          done_reason character varying COLLATE pg_catalog."default",
+          fill_fees numeric(32,16),
+          filled_size numeric(32,8),
+          executed_value numeric(32,16),
+          original_buy_price numeric(32,16),
+          original_sell_price numeric(32,16),
+          CONSTRAINT orders_pkey PRIMARY KEY (id)
+      );`;
+    let result = await pool.query(queryText);
+    console.log('factory reset db call');
+    res.sendStatus(200);
+  } else {
+    console.log(`you can't do that because you are not admin!`);
+    res.sendStatus(403)
+  }
+});
+
+/**
+* POST route to factory reset the bot
+*/
 router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
   console.log('factory reset route hit!');
   console.log(req.user.admin);
@@ -168,13 +226,16 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
           size numeric(32,8),
           trade_pair_ratio numeric(32,8),
           side character varying COLLATE pg_catalog."default",
+          pending boolean DEFAULT true,
           settled boolean DEFAULT false,
           flipped boolean DEFAULT false,
           will_cancel boolean DEFAULT false,
+          include_in_profit boolean DEFAULT true,
           product_id character varying COLLATE pg_catalog."default",
           time_in_force character varying COLLATE pg_catalog."default",
-          created_at character varying COLLATE pg_catalog."default",
-          done_at character varying COLLATE pg_catalog."default",
+          created_at timestamp,
+          done_at timestamp,
+          done_reason character varying COLLATE pg_catalog."default",
           fill_fees numeric(32,16),
           filled_size numeric(32,8),
           executed_value numeric(32,16),
@@ -193,6 +254,8 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
           "will_delete" boolean DEFAULT false,
           "reinvest" boolean DEFAULT false,
           "reinvest_ratio" integer DEFAULT 0,
+          "profit_reset" timestamp,
+          "joined_at" timestamp,
           "CB_SECRET" VARCHAR (1000),
           "CB_ACCESS_KEY" VARCHAR (1000),
           "CB_ACCESS_PASSPHRASE" VARCHAR (1000),
