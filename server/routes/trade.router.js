@@ -43,13 +43,13 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       // store the new trade in the db. the trade details are also sent to store trade position prices
       await databaseClient.storeTrade(pendingTrade, tradeDetails);
 
+      // send OK status
+      res.sendStatus(200);
+
       // check if order went through
       await robot.sleep(1000);
       let success = await coinbaseClient.repeatedCheck(pendingTrade, userID, 0);
       console.log('did the order go through?', success);
-      
-      // send OK status
-      res.sendStatus(200);
     } catch (err) {
       if (err.response?.status === 400) {
         console.log('Insufficient funds!');
@@ -87,9 +87,9 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
 
   // mark as canceled in db
   try {
-  const queryText = `UPDATE "orders" SET "will_cancel" = true WHERE "id"=$1;`;
-  let result = await pool.query(queryText, [orderId]);
-  // send cancelOrder to cb
+    const queryText = `UPDATE "orders" SET "will_cancel" = true WHERE "id"=$1;`;
+    let result = await pool.query(queryText, [orderId]);
+    // send cancelOrder to cb
     // let result = await coinbaseClient.cancelOrder(orderId, userID);
     // console.log('order was deleted successfully from cb', result);
     // databaseClient.deleteTrade(orderId);
