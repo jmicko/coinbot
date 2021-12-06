@@ -19,9 +19,11 @@ async function startSync() {
 
 // REST protocol to find orders that have settled on coinbase
 async function syncOrders(userID) {
+  let user;
   try {
-    const user = await databaseClient.getUser(userID);
-    if (user.active && user.approved) {
+    user = await databaseClient.getUser(userID);
+    console.log('HERE ARE THE RESULTS OF GETTING USER', user);
+    if (user?.active && user?.approved) {
 
       // *** GET ORDERS THAT NEED PROCESSING ***
 
@@ -105,7 +107,7 @@ async function syncOrders(userID) {
         userID: Number(userID)
       });
     } else {
-      console.log('unknown error at end of syncOrders');
+      console.log('unknown error at end of syncOrders', err);
     }
   } finally {
     socketClient.emit('message', {
@@ -113,9 +115,15 @@ async function syncOrders(userID) {
       userID: Number(userID)
     });
     // when everything is done, call the sync again
-    setTimeout(() => {
-      syncOrders(userID);
-    }, 300);
+
+    if (user) {
+      console.log('user is THERE');
+      setTimeout(() => {
+        syncOrders(userID);
+      }, 300);
+    } else {
+      console.log('user is NOT THERE');
+    }
   }
 }
 
