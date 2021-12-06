@@ -252,6 +252,8 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
           "will_delete" boolean DEFAULT false,
           "reinvest" boolean DEFAULT false,
           "reinvest_ratio" integer DEFAULT 0,
+          "profit_reset" timestamp,
+          "joined_at" timestamp,
           "CB_SECRET" VARCHAR (1000),
           "CB_ACCESS_KEY" VARCHAR (1000),
           "CB_ACCESS_PASSPHRASE" VARCHAR (1000),
