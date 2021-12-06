@@ -1,16 +1,24 @@
 import React from 'react';
 import { connect, useDispatch } from 'react-redux';
+import mapStoreToProps from '../../redux/mapStoreToProps';
 import './Menu.css'
 
 function Menu(props) {
   const dispatch = useDispatch();
 
   return (
-    <div className="Menu">
-    <button className="btn-logout btn-blue" onClick={() => {props.clickSettings()}}>Settings</button>
-    <button className="btn-logout btn-blue" onClick={() => dispatch({ type: 'LOGOUT' })}>Log Out</button>
+
+    <div className="Menu dark">
+      <center>
+        <p className="greeting">Hello {props.store.accountReducer.userReducer.username}!</p>
+      </center>
+      <div className="menu-buttons">
+        <button className="btn-logout btn-blue" onClick={() => { props.clickSettings() }}>Settings</button>
+        <button className="btn-logout btn-blue" onClick={() => dispatch({ type: 'LOGOUT' })}>Log Out</button>
+      </div>
     </div>
+
   )
 }
 
-export default connect()(Menu);
+export default connect(mapStoreToProps)(Menu);

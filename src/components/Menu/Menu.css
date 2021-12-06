@@ -1,20 +1,34 @@
 .Menu {
-    grid-column: 4;
-    grid-row: 1/2;
-    display: block;
+    grid-column      : 4;
+    grid-row         : 1/2;
+    /* display       : block; */
+    /* display       : flex; */
+    /* flex-direction: row; */
+    width            : max-content;
+}
+
+.greeting {
+    margin: auto 1rem;
+}
+
+.menu-buttons {
+    margin: auto 1rem;
 }
 
 .toggle {
     background-color: #b34053;
-    width: 10rem;
-    height: 10rem;
-    font-size: xx-large;
+    width           : 10rem;
+    height          : 10rem;
+    font-size       : xx-large;
 }
 
 @media (max-width: 800px) {
     .Menu {
-        grid-column: 2;
-        grid-row: 2;
-        display: block;
+        grid-column   : 2;
+        grid-row      : 2;
+        /* display    : block; */
+        display       : flex;
+        flex-direction: row;
+        margin: auto 0 auto auto;
     }
 }
