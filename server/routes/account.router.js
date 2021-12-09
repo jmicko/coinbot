@@ -34,6 +34,13 @@ router.get('/', (req, res) => {
             error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
             orderUpdate: true
           });
+        } else if (err.response?.status === 401) {
+          console.log('Invalid API key');
+          socketClient.emit('message', {
+            error: `Invalid API key!`,
+            orderUpdate: false,
+            userID: Number(userID)
+          });
         } else {
           console.log('error getting accounts:', err);
         }
@@ -150,9 +157,19 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   const URI = getURI();
   const queryText = `UPDATE "user" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4, "active" = true
   WHERE "id"=$5;`;
+  const secondQueryText = `INSERT INTO "user_api" ("CB_SECRET", "CB_ACCESS_KEY", "CB_ACCESS_PASSPHRASE", "API_URI", "userID")
+  VALUES ($1, $2, $3, $4, $5);`;
   try {
 
     let result = await pool.query(queryText, [
+      api.secret,
+      api.key,
+      api.passphrase,
+      URI,
+      userID,
+    ]);
+
+    let secondResult = await pool.query(secondQueryText, [
       api.secret,
       api.key,
       api.passphrase,
