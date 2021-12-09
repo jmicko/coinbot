@@ -75,7 +75,7 @@ router.post('/register', userCount, async (req, res, next) => {
       // create entry in user_settings table
       let thirdQueryText = `INSERT INTO "user_settings" ("userID")
       VALUES ($1);`;
-      let thirdResult = await pool.query(secondQueryText, [userID]);
+      let thirdResult = await pool.query(thirdQueryText, [userID]);
       
       // start a sync loop for the new user
       robot.syncOrders(userID);
@@ -95,7 +95,7 @@ router.post('/register', userCount, async (req, res, next) => {
       // create entry in user_settings table
       let thirdQueryText = `INSERT INTO "user_settings" ("userID")
       VALUES ($1);`;
-      let thirdResult = await pool.query(secondQueryText, [userID]);
+      let thirdResult = await pool.query(thirdQueryText, [userID]);
       
       // start a sync loop for the new user
       robot.syncOrders(userID);

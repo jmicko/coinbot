@@ -157,8 +157,8 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   const URI = getURI();
   const queryText = `UPDATE "user" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4, "active" = true
   WHERE "id"=$5;`;
-  const secondQueryText = `INSERT INTO "user_api" ("CB_SECRET", "CB_ACCESS_KEY", "CB_ACCESS_PASSPHRASE", "API_URI", "userID")
-  VALUES ($1, $2, $3, $4, $5);`;
+  const secondQueryText = `UPDATE "user_api" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4
+  WHERE "userID"=$5;`;
   try {
 
     let result = await pool.query(queryText, [
@@ -195,6 +195,7 @@ router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
     (
       id character varying COLLATE pg_catalog."default" NOT NULL,
       "userID" character varying COLLATE pg_catalog."default",
+      "API_ID" character varying,
       price numeric(32,8),
       size numeric(32,8),
       trade_pair_ratio numeric(32,8),
@@ -240,6 +241,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
     DROP TABLE IF EXISTS "bot_settings";
     CREATE TABLE IF NOT EXISTS "user_api"
     (
+      "API_ID" SERIAL PRIMARY KEY,
       "userID" character varying COLLATE pg_catalog."default",
       "CB_SECRET" VARCHAR (1000),
       "CB_ACCESS_KEY" VARCHAR (1000),
@@ -262,6 +264,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
     (
       id character varying COLLATE pg_catalog."default" NOT NULL,
       "userID" character varying COLLATE pg_catalog."default",
+      "API_ID" character varying,
       price numeric(32,8),
       size numeric(32,8),
       trade_pair_ratio numeric(32,8),

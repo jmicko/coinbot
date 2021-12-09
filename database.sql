@@ -7,6 +7,7 @@
 
 CREATE TABLE IF NOT EXISTS "user_api"
 (
+  "API_ID" SERIAL PRIMARY KEY,
   "userID" character varying COLLATE pg_catalog."default",
   "CB_SECRET" VARCHAR (1000),
   "CB_ACCESS_KEY" VARCHAR (1000),
@@ -32,6 +33,7 @@ CREATE TABLE IF NOT EXISTS "orders"
 (
   id character varying COLLATE pg_catalog."default" NOT NULL,
   "userID" character varying COLLATE pg_catalog."default",
+  "API_ID" character varying,
   price numeric(32,8),
   size numeric(32,8),
   trade_pair_ratio numeric(32,8),
