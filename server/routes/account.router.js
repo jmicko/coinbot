@@ -155,27 +155,23 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   }
   const api = req.body;
   const URI = getURI();
-  const queryText = `UPDATE "user" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4, "active" = true
-  WHERE "id"=$5;`;
-  const secondQueryText = `UPDATE "user_api" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4
+  const userAPIQueryText = `UPDATE "user_api" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4
   WHERE "userID"=$5;`;
+  const queryText = `UPDATE "user" SET "active" = true
+  WHERE "id"=$1;`;
   try {
-
-    let result = await pool.query(queryText, [
+    // store the api
+    let userAPIResult = await pool.query(userAPIQueryText, [
       api.secret,
       api.key,
       api.passphrase,
       URI,
       userID,
     ]);
+    
+    // set the account as active
+    let result = await pool.query(queryText, [userID]);
 
-    let secondResult = await pool.query(secondQueryText, [
-      api.secret,
-      api.key,
-      api.passphrase,
-      URI,
-      userID,
-    ]);
     res.sendStatus(200);
   } catch (err) {
     console.log('problem updating api details', err);
@@ -298,11 +294,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       "reinvest" boolean DEFAULT false,
       "reinvest_ratio" integer DEFAULT 0,
       "profit_reset" timestamp,
-      "joined_at" timestamp,
-      "CB_SECRET" VARCHAR (1000),
-      "CB_ACCESS_KEY" VARCHAR (1000),
-      "CB_ACCESS_PASSPHRASE" VARCHAR (1000),
-      "API_URI" VARCHAR (1000)
+      "joined_at" timestamp
     );
     -- this will create the required table for connect-pg to store session data
     CREATE TABLE IF NOT EXISTS "session" (

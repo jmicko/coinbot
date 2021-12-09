@@ -68,11 +68,7 @@ CREATE TABLE IF NOT EXISTS "user" (
   "reinvest" boolean DEFAULT false,
   "reinvest_ratio" integer DEFAULT 0,
   "profit_reset" timestamp,
-  "joined_at" timestamp,
-  "CB_SECRET" VARCHAR (1000),
-  "CB_ACCESS_KEY" VARCHAR (1000),
-  "CB_ACCESS_PASSPHRASE" VARCHAR (1000),
-  "API_URI" VARCHAR (1000)
+  "joined_at" timestamp
 );
 
 -- this will create the required table for connect-pg to store session data
