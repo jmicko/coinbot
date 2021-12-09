@@ -13,11 +13,12 @@ async function getAccounts(userID) {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await databaseClient.getUser(userID);
-      const secret = user.CB_SECRET;
-      const key = user.CB_ACCESS_KEY;
-      const passphrase = user.CB_ACCESS_PASSPHRASE;
-      const API_URI = user.API_URI;
+      const userAPI = await databaseClient.getUserAPI(userID);
+      // console.log('this is the userAPI!!!!!!!', userAPI);
+      const secret = userAPI.CB_SECRET;
+      const key = userAPI.CB_ACCESS_KEY;
+      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
+      const API_URI = userAPI.API_URI;
 
       function computeSignature() {
         const method = 'GET';
@@ -56,11 +57,11 @@ async function getFees(userID) {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await databaseClient.getUser(userID);
-      const secret = user.CB_SECRET;
-      const key = user.CB_ACCESS_KEY;
-      const passphrase = user.CB_ACCESS_PASSPHRASE;
-      const API_URI = user.API_URI;
+      const userAPI = await databaseClient.getUserAPI(userID);
+      const secret = userAPI.CB_SECRET;
+      const key = userAPI.CB_ACCESS_KEY;
+      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
+      const API_URI = userAPI.API_URI;
 
       function computeSignature() {
         const method = 'GET';
@@ -95,11 +96,11 @@ async function getAllOrders(userID) {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await databaseClient.getUser(userID);
-      const secret = user.CB_SECRET;
-      const key = user.CB_ACCESS_KEY;
-      const passphrase = user.CB_ACCESS_PASSPHRASE;
-      const API_URI = user.API_URI;
+      const userAPI = await databaseClient.getUserAPI(userID);
+      const secret = userAPI.CB_SECRET;
+      const key = userAPI.CB_ACCESS_KEY;
+      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
+      const API_URI = userAPI.API_URI;
 
       function computeSignature(request) {
         // const data      = request.data;
@@ -139,11 +140,11 @@ async function getOpenOrders(userID) {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await databaseClient.getUser(userID);
-      const secret = user.CB_SECRET;
-      const key = user.CB_ACCESS_KEY;
-      const passphrase = user.CB_ACCESS_PASSPHRASE;
-      const API_URI = user.API_URI;
+      const userAPI = await databaseClient.getUserAPI(userID);
+      const secret = userAPI.CB_SECRET;
+      const key = userAPI.CB_ACCESS_KEY;
+      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
+      const API_URI = userAPI.API_URI;
 
       function computeSignature(request) {
         // const data      = request.data;
@@ -180,11 +181,11 @@ async function getOrder(orderId, userID) {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await databaseClient.getUser(userID);
-      const secret = user.CB_SECRET;
-      const key = user.CB_ACCESS_KEY;
-      const passphrase = user.CB_ACCESS_PASSPHRASE;
-      const API_URI = user.API_URI;
+      const userAPI = await databaseClient.getUserAPI(userID);
+      const secret = userAPI.CB_SECRET;
+      const key = userAPI.CB_ACCESS_KEY;
+      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
+      const API_URI = userAPI.API_URI;
 
       function computeSignature(request) {
         // const data      = request.data;
@@ -221,11 +222,11 @@ async function placeOrder(data) {
       // console.log('THE DATA IS', data);
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await databaseClient.getUser(data.userID);
-      const secret = user.CB_SECRET;
-      const key = user.CB_ACCESS_KEY;
-      const passphrase = user.CB_ACCESS_PASSPHRASE;
-      const API_URI = user.API_URI;
+      const userAPI = await databaseClient.getUserAPI(data.userID);
+      const secret = userAPI.CB_SECRET;
+      const key = userAPI.CB_ACCESS_KEY;
+      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
+      const API_URI = userAPI.API_URI;
 
       function computeSignature(request) {
         // const data      = request.data;
@@ -263,11 +264,11 @@ async function cancelOrder(orderId, userID) {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await databaseClient.getUser(userID);
-      const secret = user.CB_SECRET;
-      const key = user.CB_ACCESS_KEY;
-      const passphrase = user.CB_ACCESS_PASSPHRASE;
-      const API_URI = user.API_URI;
+      const userAPI = await databaseClient.getUserAPI(userID);
+      const secret = userAPI.CB_SECRET;
+      const key = userAPI.CB_ACCESS_KEY;
+      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
+      const API_URI = userAPI.API_URI;
 
       function computeSignature(request) {
         // const data      = request.data;
@@ -302,11 +303,11 @@ async function cancelOrders(userID) {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const user = await databaseClient.getUser(userID);
-      const secret = user.CB_SECRET;
-      const key = user.CB_ACCESS_KEY;
-      const passphrase = user.CB_ACCESS_PASSPHRASE;
-      const API_URI = user.API_URI;
+      const userAPI = await databaseClient.getUserAPI(userID);
+      const secret = userAPI.CB_SECRET;
+      const key = userAPI.CB_ACCESS_KEY;
+      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
+      const API_URI = userAPI.API_URI;
 
       function computeSignature(request) {
         // const data      = request.data;

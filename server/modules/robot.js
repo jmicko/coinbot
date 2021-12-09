@@ -105,6 +105,13 @@ async function syncOrders(userID) {
         orderUpdate: true,
         userID: Number(userID)
       });
+    } else if (err.response?.status === 401) {
+      console.log('Invalid API key');
+      socketClient.emit('message', {
+        error: `Invalid API key!`,
+        orderUpdate: false,
+        userID: Number(userID)
+      });
     } else {
       console.log('unknown error at end of syncOrders', err);
     }

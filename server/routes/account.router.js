@@ -34,6 +34,13 @@ router.get('/', (req, res) => {
             error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
             orderUpdate: true
           });
+        } else if (err.response?.status === 401) {
+          console.log('Invalid API key');
+          socketClient.emit('message', {
+            error: `Invalid API key!`,
+            orderUpdate: false,
+            userID: Number(userID)
+          });
         } else {
           console.log('error getting accounts:', err);
         }
@@ -148,17 +155,23 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   }
   const api = req.body;
   const URI = getURI();
-  const queryText = `UPDATE "user" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4, "active" = true
-  WHERE "id"=$5;`;
+  const userAPIQueryText = `UPDATE "user_api" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4
+  WHERE "userID"=$5;`;
+  const queryText = `UPDATE "user" SET "active" = true
+  WHERE "id"=$1;`;
   try {
-
-    let result = await pool.query(queryText, [
+    // store the api
+    let userAPIResult = await pool.query(userAPIQueryText, [
       api.secret,
       api.key,
       api.passphrase,
       URI,
       userID,
     ]);
+    
+    // set the account as active
+    let result = await pool.query(queryText, [userID]);
+
     res.sendStatus(200);
   } catch (err) {
     console.log('problem updating api details', err);
@@ -173,32 +186,33 @@ router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
   console.log('order reset route hit!');
   console.log(req.user.admin);
   if (req.user.admin) {
-    const queryText = `DROP TABLE "orders";
+    const queryText = `DROP TABLE IF EXISTS "orders";
     CREATE TABLE IF NOT EXISTS "orders"
     (
-          id character varying COLLATE pg_catalog."default" NOT NULL,
-          "userID" character varying COLLATE pg_catalog."default",
-          price numeric(32,8),
-          size numeric(32,8),
-          trade_pair_ratio numeric(32,8),
-          side character varying COLLATE pg_catalog."default",
-          pending boolean DEFAULT true,
-          settled boolean DEFAULT false,
-          flipped boolean DEFAULT false,
-          will_cancel boolean DEFAULT false,
-          include_in_profit boolean DEFAULT true,
-          product_id character varying COLLATE pg_catalog."default",
-          time_in_force character varying COLLATE pg_catalog."default",
-          created_at timestamp,
-          done_at timestamp,
-          done_reason character varying COLLATE pg_catalog."default",
-          fill_fees numeric(32,16),
-          filled_size numeric(32,8),
-          executed_value numeric(32,16),
-          original_buy_price numeric(32,16),
-          original_sell_price numeric(32,16),
-          CONSTRAINT orders_pkey PRIMARY KEY (id)
-      );`;
+      id character varying COLLATE pg_catalog."default" NOT NULL,
+      "userID" character varying COLLATE pg_catalog."default",
+      "API_ID" character varying,
+      price numeric(32,8),
+      size numeric(32,8),
+      trade_pair_ratio numeric(32,8),
+      side character varying COLLATE pg_catalog."default",
+      pending boolean DEFAULT true,
+      settled boolean DEFAULT false,
+      flipped boolean DEFAULT false,
+      will_cancel boolean DEFAULT false,
+      include_in_profit boolean DEFAULT true,
+      product_id character varying COLLATE pg_catalog."default",
+      time_in_force character varying COLLATE pg_catalog."default",
+      created_at timestamp,
+      done_at timestamp,
+      done_reason character varying COLLATE pg_catalog."default",
+      fill_fees numeric(32,16),
+      filled_size numeric(32,8),
+      executed_value numeric(32,16),
+      original_buy_price numeric(32,16),
+      original_sell_price numeric(32,16),
+      CONSTRAINT orders_pkey PRIMARY KEY (id)
+    );`;
     let result = await pool.query(queryText);
     console.log('factory reset db call');
     res.sendStatus(200);
@@ -215,60 +229,82 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
   console.log('factory reset route hit!');
   console.log(req.user.admin);
   if (req.user.admin) {
-    const queryText = `DROP TABLE "orders";
-    DROP TABLE "user";
-    DROP TABLE "session";
+    const queryText = `DROP TABLE IF EXISTS "orders";
+    DROP TABLE IF EXISTS "user";
+    DROP TABLE IF EXISTS "session";
+    DROP TABLE IF EXISTS "user_api";
+    DROP TABLE IF EXISTS "user_settings";
+    DROP TABLE IF EXISTS "bot_settings";
+    CREATE TABLE IF NOT EXISTS "user_api"
+    (
+      "API_ID" SERIAL PRIMARY KEY,
+      "userID" character varying COLLATE pg_catalog."default",
+      "CB_SECRET" VARCHAR (1000),
+      "CB_ACCESS_KEY" VARCHAR (1000),
+      "CB_ACCESS_PASSPHRASE" VARCHAR (1000),
+      "API_URI" VARCHAR (1000)
+    );
+    CREATE TABLE IF NOT EXISTS "user_settings"
+    (
+      "userID" character varying COLLATE pg_catalog."default",
+      "paused" boolean DEFAULT false,
+      "reinvest" boolean DEFAULT false,
+      "reinvest_ratio" integer DEFAULT 0,
+      "profit_reset" timestamp
+    );
+    CREATE TABLE IF NOT EXISTS "bot_settings"
+    (
+      "loop_speed" integer DEFAULT 100
+    );
     CREATE TABLE IF NOT EXISTS "orders"
     (
-          id character varying COLLATE pg_catalog."default" NOT NULL,
-          "userID" character varying COLLATE pg_catalog."default",
-          price numeric(32,8),
-          size numeric(32,8),
-          trade_pair_ratio numeric(32,8),
-          side character varying COLLATE pg_catalog."default",
-          pending boolean DEFAULT true,
-          settled boolean DEFAULT false,
-          flipped boolean DEFAULT false,
-          will_cancel boolean DEFAULT false,
-          include_in_profit boolean DEFAULT true,
-          product_id character varying COLLATE pg_catalog."default",
-          time_in_force character varying COLLATE pg_catalog."default",
-          created_at timestamp,
-          done_at timestamp,
-          done_reason character varying COLLATE pg_catalog."default",
-          fill_fees numeric(32,16),
-          filled_size numeric(32,8),
-          executed_value numeric(32,16),
-          original_buy_price numeric(32,16),
-          original_sell_price numeric(32,16),
-          CONSTRAINT orders_pkey PRIMARY KEY (id)
-      );
-      CREATE TABLE "user" (
-          "id" SERIAL PRIMARY KEY,
-          "username" VARCHAR (80) UNIQUE NOT NULL,
-          "password" VARCHAR (1000) NOT NULL,
-          "active" boolean DEFAULT false,
-          "admin" boolean DEFAULT false,
-          "approved" boolean DEFAULT false,
-          "paused" boolean DEFAULT false,
-          "will_delete" boolean DEFAULT false,
-          "reinvest" boolean DEFAULT false,
-          "reinvest_ratio" integer DEFAULT 0,
-          "profit_reset" timestamp,
-          "joined_at" timestamp,
-          "CB_SECRET" VARCHAR (1000),
-          "CB_ACCESS_KEY" VARCHAR (1000),
-          "CB_ACCESS_PASSPHRASE" VARCHAR (1000),
-          "API_URI" VARCHAR (1000)
-        );
-        CREATE TABLE "session" (
-              "sid" varchar NOT NULL COLLATE "default",
-            "sess" json NOT NULL,
-            "expire" timestamp(6) NOT NULL
-          )
-          WITH (OIDS=FALSE);
-          ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
-          CREATE INDEX "IDX_session_expire" ON "session" ("expire");`;
+      id character varying COLLATE pg_catalog."default" NOT NULL,
+      "userID" character varying COLLATE pg_catalog."default",
+      "API_ID" character varying,
+      price numeric(32,8),
+      size numeric(32,8),
+      trade_pair_ratio numeric(32,8),
+      side character varying COLLATE pg_catalog."default",
+      pending boolean DEFAULT true,
+      settled boolean DEFAULT false,
+      flipped boolean DEFAULT false,
+      will_cancel boolean DEFAULT false,
+      include_in_profit boolean DEFAULT true,
+      product_id character varying COLLATE pg_catalog."default",
+      time_in_force character varying COLLATE pg_catalog."default",
+      created_at timestamp,
+      done_at timestamp,
+      done_reason character varying COLLATE pg_catalog."default",
+      fill_fees numeric(32,16),
+      filled_size numeric(32,8),
+      executed_value numeric(32,16),
+      original_buy_price numeric(32,16),
+      original_sell_price numeric(32,16),
+      CONSTRAINT orders_pkey PRIMARY KEY (id)
+    );
+    CREATE TABLE IF NOT EXISTS "user" (
+      "id" SERIAL PRIMARY KEY,
+      "username" VARCHAR (80) UNIQUE NOT NULL,
+      "password" VARCHAR (1000) NOT NULL,
+      "active" boolean DEFAULT false,
+      "admin" boolean DEFAULT false,
+      "approved" boolean DEFAULT false,
+      "paused" boolean DEFAULT false,
+      "will_delete" boolean DEFAULT false,
+      "reinvest" boolean DEFAULT false,
+      "reinvest_ratio" integer DEFAULT 0,
+      "profit_reset" timestamp,
+      "joined_at" timestamp
+    );
+    -- this will create the required table for connect-pg to store session data
+    CREATE TABLE IF NOT EXISTS "session" (
+      "sid" varchar NOT NULL COLLATE "default",
+      "sess" json NOT NULL,
+      "expire" timestamp(6) NOT NULL
+    )
+    WITH (OIDS=FALSE);
+    ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
+    CREATE INDEX "IDX_session_expire" ON "session" ("expire");`;
     let result = await pool.query(queryText);
     console.log('factory reset db call');
     res.sendStatus(200);
