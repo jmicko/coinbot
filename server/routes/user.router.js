@@ -60,32 +60,47 @@ router.post('/register', userCount, async (req, res, next) => {
     console.log('THERE ARE THIS MANY ADMINS!!!!!', adminCount);
 
     if (adminCount > 0) {
+      // create the user
       let queryText = `INSERT INTO "user" (username, password)
       VALUES ($1, $2) RETURNING id;`;
       let result = await pool.query(queryText, [username, password]);
       const userID = result.rows[0].id;
       console.log('here is the new user id', userID);
       
+      // create entry in api table
       let secondQueryText = `INSERT INTO "user_api" ("userID")
       VALUES ($1);`;
       let secondResult = await pool.query(secondQueryText, [userID]);
       
+      // create entry in user_settings table
+      let thirdQueryText = `INSERT INTO "user_settings" ("userID")
+      VALUES ($1);`;
+      let thirdResult = await pool.query(secondQueryText, [userID]);
+      
       // start a sync loop for the new user
-      robot.syncOrders(userID)
+      robot.syncOrders(userID);
     } else {
+      // create the user
       let queryText = `INSERT INTO "user" (username, password, admin, approved)
       VALUES ($1, $2, true, true) RETURNING id`;
       let result = await pool.query(queryText, [username, password]);
       const userID = result.rows[0].id;
       console.log('here is the new user id', userID);
-
+      
+      // create entry in api table
       let secondQueryText = `INSERT INTO "user_api" ("userID")
       VALUES ($1);`;
       let secondResult = await pool.query(secondQueryText, [userID]);
+      
+      // create entry in user_settings table
+      let thirdQueryText = `INSERT INTO "user_settings" ("userID")
+      VALUES ($1);`;
+      let thirdResult = await pool.query(secondQueryText, [userID]);
+      
       // start a sync loop for the new user
-      robot.syncOrders(userID)
+      robot.syncOrders(userID);
     }
-
+    
     res.sendStatus(201);
   } catch (err) {
     console.log('User registration failed: ', err);
