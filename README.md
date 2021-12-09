@@ -55,6 +55,12 @@ This is somewhat of a work in progress, but there is an estimation of how much p
 ### Open Order Book
 A list of all open orders is shown as the main content of the page. This list will update live as the bot makes trades.
 
+### Profit reinvestment
+Users can set a percentage of profits from each trade-pair that will be automatically reinvested back into the pair.
+
+### Multi-user authentication
+The bot can handle multiple users at once. The first user created will be the admin and can approve and manage the other users.
+
 ### More to Come
 - Safe order cancellation from interface
     - Currently, cancelling a sell order will potentially result in a profit loss. Adding a safe cancel button to sell orders will tell the bot to wait to cancel the trade-pair until the order goes through. Buy orders will still be canceled immediately. This ensures that a position will only be cancelled after a profit has been made, and helps to prevent losses due to trading fees.
