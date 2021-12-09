@@ -61,10 +61,15 @@ router.post('/register', userCount, async (req, res, next) => {
 
     if (adminCount > 0) {
       let queryText = `INSERT INTO "user" (username, password)
-        VALUES ($1, $2) RETURNING id`;
+      VALUES ($1, $2) RETURNING id;`;
       let result = await pool.query(queryText, [username, password]);
       const userID = result.rows[0].id;
-      console.log('here is the new user id', result.rows[0].id);
+      console.log('here is the new user id', userID);
+      
+      let secondQueryText = `INSERT INTO "user_api" ("userID")
+      VALUES ($1);`;
+      let secondResult = await pool.query(secondQueryText, [userID]);
+      
       // start a sync loop for the new user
       robot.syncOrders(userID)
     } else {
@@ -72,7 +77,11 @@ router.post('/register', userCount, async (req, res, next) => {
       VALUES ($1, $2, true, true) RETURNING id`;
       let result = await pool.query(queryText, [username, password]);
       const userID = result.rows[0].id;
-      console.log('here is the new user id', result.rows[0].id);
+      console.log('here is the new user id', userID);
+
+      let secondQueryText = `INSERT INTO "user_api" ("userID")
+      VALUES ($1);`;
+      let secondResult = await pool.query(secondQueryText, [userID]);
       // start a sync loop for the new user
       robot.syncOrders(userID)
     }
