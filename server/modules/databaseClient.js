@@ -165,6 +165,21 @@ async function getUser(userID) {
   })
 }
 
+async function getUserAPI(userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      sqlText = `SELECT * FROM "user_api" WHERE "userID"=$1;`;
+      let result = await pool.query(sqlText, [userID]);
+      const userAPI = result.rows[0];
+      // console.log('THE RESULT IS', result.rows[0]);
+      // console.log('THE user IS', user);
+      resolve(userAPI);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 
 const databaseClient = {
   storeTrade: storeTrade,
@@ -172,7 +187,8 @@ const databaseClient = {
   getSingleTrade: getSingleTrade,
   deleteTrade: deleteTrade,
   getUser: getUser,
-  checkIfCancelling: checkIfCancelling
+  checkIfCancelling: checkIfCancelling,
+  getUserAPI: getUserAPI
 }
 
 module.exports = databaseClient;
