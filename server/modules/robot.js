@@ -21,8 +21,8 @@ async function startSync() {
 async function syncOrders(userID) {
   let user;
   try {
-    user = await databaseClient.getUser(userID);
-    if (user?.active && user?.approved) {
+    user = await databaseClient.getUserAndSettings(userID);
+    if (user?.active && user?.approved && !user.paused) {
 
       // *** GET ORDERS THAT NEED PROCESSING ***
 

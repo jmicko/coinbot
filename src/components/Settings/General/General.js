@@ -53,7 +53,10 @@ function General(props) {
         <p>General Settings Page</p>
       </center>
       <h4>Pause</h4>
-      <p>{JSON.stringify(props.store.accountReducer.userReducer.paused)}</p>
+      <p>
+        Pauses the bot. Trades will stay in place, but the bot will not check on them or flip them. If they are cancelled on Coinbase, the bot will not notice until it is unpaused.
+        Be careful not to trade funds away manually while the bot is paused, or there might be an insufficient funds error.
+      </p>
       {(props.store.accountReducer.userReducer.paused)
         ? <button className="btn-blue" onClick={() => { pause() }}>Unpause</button>
         : <button className="btn-blue" onClick={() => { pause() }}>Pause</button>
