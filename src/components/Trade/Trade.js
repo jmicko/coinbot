@@ -126,15 +126,15 @@ function Trade(props) {
             />
             <div className="increment-buttons">
               <div className="increase">
-                <input type="button" className="btn-green" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 1000 + 100) / 1000)} value="+.100"></input>
-                <input type="button" className="btn-green" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 1000 + 10) / 1000)} value="+.010"></input>
-                <input type="button" className="btn-green" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 1000 + 1) / 1000)} value="+.001"></input>
+                <input type="button" className="btn-green" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 10000 + 1000) / 10000)} value="+.100"></input>
+                <input type="button" className="btn-green" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 10000 + 100) / 10000)} value="+.010"></input>
+                <input type="button" className="btn-green" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 10000 + 10) / 10000)} value="+.001"></input>
                 <input type="button" className="btn-green" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 10000 + 1) / 10000)} value="+.0001"></input>
               </div>
               <div className="decrease">
-                <input type="button" className="btn-red" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 1000 - 100) / 1000)} value="-.100"></input>
-                <input type="button" className="btn-red" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 1000 - 10) / 1000)} value="-.010"></input>
-                <input type="button" className="btn-red" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 1000 - 1) / 1000)} value="-.001"></input>
+                <input type="button" className="btn-red" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 10000 - 1000) / 10000)} value="-.100"></input>
+                <input type="button" className="btn-red" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 10000 - 100) / 10000)} value="-.010"></input>
+                <input type="button" className="btn-red" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 10000 - 10) / 10000)} value="-.001"></input>
                 <input type="button" className="btn-red" onClick={(event) => setTransactionAmount(Math.round(Number(transactionAmount) * 10000 - 1) / 10000)} value="-.0001"></input>
               </div>
             </div>
