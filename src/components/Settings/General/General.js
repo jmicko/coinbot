@@ -52,6 +52,7 @@ function General(props) {
       <center>
         <p>General Settings Page</p>
       </center>
+      <div className="divider" />
       <h4>Pause</h4>
       <p>
         Pauses the bot. Trades will stay in place, but the bot will not check on them or flip them. If they are cancelled on Coinbase, the bot will not notice until it is unpaused.
@@ -61,6 +62,7 @@ function General(props) {
         ? <button className="btn-blue" onClick={() => { pause() }}>Unpause</button>
         : <button className="btn-blue" onClick={() => { pause() }}>Pause</button>
       }
+      <div className="divider" />
       <h4>Reinvestment</h4>
       <p>EXPERIMENTAL FEATURE. Coinbot can try to reinvest your profits for you. Be aware that this may not
         work if the profit is too small.
@@ -86,6 +88,7 @@ function General(props) {
           />
           <br />
           <button className="btn-blue" onClick={() => { reinvestRatio() }}>Save reinvestment ratio</button>
+          <div className="divider" />
         </>
       }
     </div>

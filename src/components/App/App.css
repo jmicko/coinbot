@@ -86,9 +86,12 @@ body::-webkit-scrollbar-thumb,
   height: fit-content;
 }
 
-/* .tall {
-  height: 100%;
-} */
+.divider {
+  background-color: black;
+  height: 1px;
+  width: 100%;
+  margin-top: 1rem;
+}
 
 .dark {
   background-color: darkgrey;

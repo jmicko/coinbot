@@ -6,7 +6,7 @@ import './API.css'
 
 function API(props) {
   const dispatch = useDispatch();
-  
+
   const [key, setKey] = useState('');
   const [passphrase, setPassphrase] = useState('');
   const [secret, setSecret] = useState('');
@@ -36,51 +36,53 @@ function API(props) {
       <center>
         <p>API Settings Page</p>
       </center>
+      <div className="divider" />
       <h4>API</h4>
-        <p>Paste your API key, passphrase, and secret from Coinbase here</p>
-        {/* form for entering api details */}
-        <form className="api-form" onSubmit={submitApi} >
-          <label htmlFor="key">
-            API Key:
-          </label>
-          <input
-            type="text"
-            name="key"
-            value={key}
-            required
-            onChange={(event) => setKey(event.target.value)}
-          />
-          <label htmlFor="passphrase">
-            API Passphrase:
-          </label>
-          <input
-            type="password"
-            name="passphrase"
-            value={passphrase}
-            required
-            onChange={(event) => setPassphrase(event.target.value)}
-          />
-          <label htmlFor="secret">
-            API Secret:
-          </label>
-          <input
-            type="password"
-            name="secret"
-            value={secret}
-            required
-            onChange={(event) => setSecret(event.target.value)}
-          />
-          <label htmlFor="URI">
-            Real money or sandbox?
-          </label>
-          {(URI === "real")
-            ? <button className="btn-green" onClick={(event) => { event.preventDefault(); setURI("sandbox") }}>Real Money API</button>
-            : <button className="btn-green" onClick={(event) => { event.preventDefault(); setURI("real") }}>Sandbox API</button>
-          }
-          <br />
-          <br />
-          <input className="btn-store-api btn-blue" type="submit" name="submit" value="Store API details" />
-        </form>
+      <p>Paste your API key, passphrase, and secret from Coinbase here</p>
+      {/* form for entering api details */}
+      <form className="api-form" onSubmit={submitApi} >
+        <label htmlFor="key">
+          API Key:
+        </label>
+        <input
+          type="text"
+          name="key"
+          value={key}
+          required
+          onChange={(event) => setKey(event.target.value)}
+        />
+        <label htmlFor="passphrase">
+          API Passphrase:
+        </label>
+        <input
+          type="password"
+          name="passphrase"
+          value={passphrase}
+          required
+          onChange={(event) => setPassphrase(event.target.value)}
+        />
+        <label htmlFor="secret">
+          API Secret:
+        </label>
+        <input
+          type="password"
+          name="secret"
+          value={secret}
+          required
+          onChange={(event) => setSecret(event.target.value)}
+        />
+        <label htmlFor="URI">
+          Real money or sandbox?
+        </label>
+        {(URI === "real")
+          ? <button className="btn-green" onClick={(event) => { event.preventDefault(); setURI("sandbox") }}>Real Money API</button>
+          : <button className="btn-green" onClick={(event) => { event.preventDefault(); setURI("real") }}>Sandbox API</button>
+        }
+        <br />
+        <br />
+        <input className="btn-store-api btn-blue" type="submit" name="submit" value="Store API details" />
+      </form>
+      <div className="divider" />
     </div>
   );
 }

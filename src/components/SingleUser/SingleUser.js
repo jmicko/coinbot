@@ -54,8 +54,8 @@ function SingleUser(props) {
           {props.user.username}
           ~ <strong>Active: </strong>
           {JSON.stringify(props.user.active)}
-          ~ <strong>Approved: </strong>{ }
-          {JSON.stringify(props.user.approved)}
+          {/* ~ <strong>Approved: </strong>{ }
+          {JSON.stringify(props.user.approved)} */}
         </p>
       </div>
     </div>

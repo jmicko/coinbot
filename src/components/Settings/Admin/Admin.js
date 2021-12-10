@@ -26,6 +26,7 @@ function Admin(props) {
       <center>
         <p>Admin Settings Page</p>
       </center>
+      <div className="divider" />
       {(props.store.accountReducer.userReducer.admin)
         ? <div>
           <h4>Manage Users</h4>
@@ -36,11 +37,14 @@ function Admin(props) {
         </div>
         : <></>
       }
+      <div className="divider" />
       {(props.store.accountReducer.userReducer.admin)
         ? <>
           <h4>Factory Reset</h4>
           <p>
             This will delete everything! Use with caution!
+            Do not depend on being able to press this button after a git pull as a way to reset the database.
+            You may not be able to log back in after the pull.
           </p>
           <p>
             CAUTION <button
@@ -49,6 +53,12 @@ function Admin(props) {
             >
               Factory Reset
             </button> CAUTION
+          </p>
+
+<p>
+  This button will only reset the orders table. This will clear the orders for ALL USERS! If you mean to just clear your own, do that in the "Reset" tab
+</p>
+          <p>
             CAUTION <button
               className="btn-logout btn-red"
               onClick={() => dispatch({ type: 'ORDERS_RESET' })}
@@ -59,6 +69,7 @@ function Admin(props) {
         </>
         : <></>
       }
+      <div className="divider" />
     </div>
   );
 }
