@@ -108,8 +108,20 @@ body::-webkit-scrollbar-thumb,
   box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
 }
 
+.btn-nav.selected {
+  color: black;
+  font-size: larger;
+  background-color: #ffffff;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
 .btn-nav:hover {
   background-color: #615d5d;
+}
+
+.btn-nav.selected:hover {
+  background-color: #ffffff;
 }
 
 .btn-nav:focus {
@@ -117,6 +129,13 @@ body::-webkit-scrollbar-thumb,
   outline         : none;
   /* change color when focused to resolve accesibility concerns */
   background-color: #7e6f67d3;
+}
+
+.btn-nav.selected:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accesibility concerns */
+  background-color: #ffffff;
 }
 
 .btn-red {

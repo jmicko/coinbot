@@ -49,9 +49,9 @@ function General(props) {
 
   return (
     <div className="General">
-      <center>
+      {/* <center>
         <p>General Settings Page</p>
-      </center>
+      </center> */}
       <div className="divider" />
       <h4>Pause</h4>
       <p>

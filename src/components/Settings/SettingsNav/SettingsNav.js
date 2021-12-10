@@ -9,10 +9,10 @@ function SettingsNav(props) {
   return (
     <div className="SettingsNav">
       <center>
-        <button className="btn-nav" onClick={() => { props.setSettingsPage('general') }}>General</button>
-        <button className="btn-nav" onClick={() => { props.setSettingsPage('api') }}>API</button>
-        <button className="btn-nav" onClick={() => { props.setSettingsPage('reset') }}>Reset</button>
-        {props.store.accountReducer.userReducer.admin && <button className="btn-nav" onClick={() => { props.setSettingsPage('admin') }}>Admin</button>}
+        <button className = {`btn-nav ${props.settingsPage === "general" && "selected"}`} onClick={() => { props.setSettingsPage('general') }}>General</button>
+        <button className={`btn-nav ${props.settingsPage === "api" && "selected"}`} onClick={() => { props.setSettingsPage('api') }}>API</button>
+        <button className={`btn-nav ${props.settingsPage === "reset" && "selected"}`} onClick={() => { props.setSettingsPage('reset') }}>Reset</button>
+        {props.store.accountReducer.userReducer.admin && <button className={`btn-nav ${props.settingsPage === "admin" && "selected"}`} onClick={() => { props.setSettingsPage('admin') }}>Admin</button>}
       </center>
     </div>
   );
