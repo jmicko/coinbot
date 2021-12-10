@@ -26,9 +26,9 @@ function Reset(props) {
 
   return (
     <div className="Reset">
-      <center>
+      {/* <center>
         <p>Reset Settings Page</p>
-      </center>
+      </center> */}
       <div className="divider" />
       <h4>Delete All Trades</h4>
       <p>Danger! This button will delete all your positions! Press it carefully!</p>

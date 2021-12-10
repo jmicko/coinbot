@@ -23,9 +23,9 @@ function Admin(props) {
 
   return (
     <div className="Admin">
-      <center>
+      {/* <center>
         <p>Admin Settings Page</p>
-      </center>
+      </center> */}
       <div className="divider" />
       {(props.store.accountReducer.userReducer.admin)
         ? <div>

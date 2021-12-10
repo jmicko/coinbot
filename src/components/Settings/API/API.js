@@ -33,9 +33,9 @@ function API(props) {
 
   return (
     <div className="API">
-      <center>
+      {/* <center>
         <p>API Settings Page</p>
-      </center>
+      </center> */}
       <div className="divider" />
       <h4>API</h4>
       <p>Paste your API key, passphrase, and secret from Coinbase here</p>
