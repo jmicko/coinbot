@@ -108,7 +108,7 @@ async function syncOrders(userID) {
     } else if (err.response?.status === 401) {
       console.log('Invalid API key');
       socketClient.emit('message', {
-        error: `Invalid API key!`,
+        error: `Invalid API key end of syncOrders!`,
         orderUpdate: false,
         userID: Number(userID)
       });
