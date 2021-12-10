@@ -3,6 +3,7 @@ import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 import SingleUser from '../SingleUser/SingleUser'
 import './Settings.css'
+import SettingsNav from './SettingsNav/SettingsNav';
 
 
 
@@ -100,7 +101,7 @@ function Settings(props) {
       <div className="Settings">
         <button className="btn-logout btn-red" onClick={() => { props.clickSettings() }}>X</button>
         <h2 className="settings-header">Settings</h2>
-        <p>hello {props.store.accountReducer.userReducer.username}!</p>
+      <SettingsNav />
 
         {(props.store.accountReducer.userReducer.admin)
           ? <div>
