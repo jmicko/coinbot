@@ -59,8 +59,8 @@ function General(props) {
         Be careful not to trade funds away manually while the bot is paused, or there might be an insufficient funds error.
       </p>
       {(props.store.accountReducer.userReducer.paused)
-        ? <button className="btn-blue" onClick={() => { pause() }}>Unpause</button>
-        : <button className="btn-blue" onClick={() => { pause() }}>Pause</button>
+        ? <button className="btn-blue medium" onClick={() => { pause() }}>Unpause</button>
+        : <button className="btn-blue medium" onClick={() => { pause() }}>Pause</button>
       }
       <div className="divider" />
       <h4>Reinvestment</h4>
@@ -68,8 +68,8 @@ function General(props) {
         work if the profit is too small.
       </p>
       {(props.store.accountReducer.userReducer.reinvest)
-        ? <button className="btn-blue" onClick={() => { reinvest() }}>Turn off</button>
-        : <button className="btn-blue" onClick={() => { reinvest() }}>Turn on</button>
+        ? <button className="btn-blue medium" onClick={() => { reinvest() }}>Turn off</button>
+        : <button className="btn-blue medium" onClick={() => { reinvest() }}>Turn on</button>
       }
       {props.store.accountReducer.userReducer.reinvest &&
         <>
@@ -87,7 +87,7 @@ function General(props) {
             onChange={(event) => setReinvest_ratio(event.target.value)}
           />
           <br />
-          <button className="btn-blue" onClick={() => { reinvestRatio() }}>Save reinvestment ratio</button>
+          <button className="btn-blue medium" onClick={() => { reinvestRatio() }}>Save reinvestment ratio</button>
           <div className="divider" />
         </>
       }

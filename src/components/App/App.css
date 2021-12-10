@@ -100,9 +100,13 @@ body::-webkit-scrollbar-thumb,
 
 /* === BUTTONS === */
 
+button.medium{
+  font-size:medium;
+}
+
 .btn-nav {
   color: white;
-  font-size: larger;
+  font-size:larger;
   background-color: #363535;
   font-family     : inherit;
   box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
@@ -110,7 +114,6 @@ body::-webkit-scrollbar-thumb,
 
 .btn-nav.selected {
   color: black;
-  font-size: larger;
   background-color: #ffffff;
   font-family     : inherit;
   box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
