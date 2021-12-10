@@ -63,11 +63,7 @@ CREATE TABLE IF NOT EXISTS "user" (
   "active" boolean DEFAULT false,
   "admin" boolean DEFAULT false,
   "approved" boolean DEFAULT false,
-  "paused" boolean DEFAULT false,
   "will_delete" boolean DEFAULT false,
-  "reinvest" boolean DEFAULT false,
-  "reinvest_ratio" integer DEFAULT 0,
-  "profit_reset" timestamp,
   "joined_at" timestamp
 );
 
