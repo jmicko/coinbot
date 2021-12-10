@@ -47,6 +47,7 @@ function* storeApi(action) {
 
     const response = yield axios.post(`/api/account/storeApi`, action.payload);
     console.log('response from storing api', response);
+    yield put({ type: 'FETCH_USER' });
   } catch (error) {
     console.log('post account route storeApi has failed', error);
     if (error.response.status === 403) {
