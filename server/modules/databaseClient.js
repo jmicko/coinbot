@@ -165,6 +165,23 @@ async function getUser(userID) {
   })
 }
 
+async function getUserAndSettings(userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      sqlText = `SELECT * 
+      FROM "user" JOIN "user_settings" ON ("user"."id" = "user_settings"."userID")
+      WHERE id = $1;`;
+      let result = await pool.query(sqlText, [userID]);
+      const user = result.rows[0];
+      // console.log('THE RESULT IS', result.rows[0]);
+      // console.log('THE user IS', user);
+      resolve(user);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 async function getUserAPI(userID) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -187,6 +204,7 @@ const databaseClient = {
   getSingleTrade: getSingleTrade,
   deleteTrade: deleteTrade,
   getUser: getUser,
+  getUserAndSettings: getUserAndSettings,
   checkIfCancelling: checkIfCancelling,
   getUserAPI: getUserAPI
 }
