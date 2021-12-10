@@ -378,6 +378,45 @@ async function repeatedCheck(order, userID, tries) {
   });
 }
 
+async function testAPI(secret, key, passphrase, API_URI) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const timestamp = Math.floor(Date.now() / 1000);
+      // // sign the request
+      // const userAPI = await databaseClient.getUserAPI(userID);
+      // const secret = userAPI.CB_SECRET;
+      // const key = userAPI.CB_ACCESS_KEY;
+      // const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
+      // const API_URI = userAPI.API_URI;
+
+      function computeSignature() {
+        const method = 'GET';
+        const path = "/fees";
+        const message = timestamp + method + path;
+        const key = CryptoJS.enc.Base64.parse(secret);
+        const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
+        return hash;
+      }
+
+      const options = {
+        method: 'GET',
+        url: `${API_URI}/fees`,
+        headers: {
+          Accept: 'application/json',
+          'cb-access-key': key,
+          'cb-access-passphrase': passphrase,
+          'cb-access-sign': computeSignature(),
+          'cb-access-timestamp': timestamp
+        }
+      };
+      let response = await axios.request(options);
+      resolve(response.data);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 module.exports = {
   getAllOrders: getAllOrders,
   getOpenOrders: getOpenOrders,
@@ -388,4 +427,5 @@ module.exports = {
   getFees: getFees,
   getAccounts: getAccounts,
   repeatedCheck: repeatedCheck,
+  testAPI: testAPI,
 }

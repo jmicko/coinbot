@@ -160,6 +160,8 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   const queryText = `UPDATE "user" SET "active" = true
   WHERE "id"=$1;`;
   try {
+    // check if the api works first
+    await coinbaseClient.testAPI(api.secret, api.key, api.passphrase, URI)
     // store the api
     let userAPIResult = await pool.query(userAPIQueryText, [
       api.secret,
@@ -168,14 +170,24 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
       URI,
       userID,
     ]);
-    
+
     // set the account as active
     let result = await pool.query(queryText, [userID]);
 
     res.sendStatus(200);
   } catch (err) {
-    console.log('problem updating api details', err);
-    res.sendStatus(500);
+    if (err.response?.status === 401) {
+      console.log('Invalid API key');
+      socketClient.emit('message', {
+        error: `Invalid API key was entered!`,
+        orderUpdate: false,
+        userID: Number(userID)
+      });
+      res.sendStatus(500);
+    } else {
+      console.log('problem updating api details', err);
+      res.sendStatus(500);
+    }
   }
 });
 
