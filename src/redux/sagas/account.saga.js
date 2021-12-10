@@ -70,6 +70,20 @@ function* resetProfit(action) {
   }
 }
 
+function* pause(action) {
+  try {
+    console.log('sending pause');
+    const response = yield axios.put(`/api/account/pause`, action.payload);
+    console.log('response from pause', response);
+    yield put({ type: 'FETCH_USER' });
+  } catch (error) {
+    console.log('put account route pause has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 function* reinvest(action) {
   try {
     console.log('storing reinvest');
@@ -134,6 +148,7 @@ function* accountSaga() {
   yield takeLatest('FETCH_PROFITS', fetchProfits);
   yield takeLatest('STORE_API', storeApi);
   yield takeLatest('RESET_PROFIT', resetProfit);
+  yield takeLatest('PAUSE', pause);
   yield takeLatest('REINVEST', reinvest);
   yield takeLatest('REINVEST_RATIO', reinvestRatio);
   yield takeLatest('FACTORY_RESET', factoryReset);

@@ -93,6 +93,22 @@ router.get('/profits', rejectUnauthenticated, (req, res) => {
 });
 
 /**
+* PUT route to change status of pause
+*/
+router.put('/pause', rejectUnauthenticated, async (req, res) => {
+  const user = req.user;
+  try {
+    console.log('in the PAUSE ROUTE', user, req.body);
+    const queryText = `UPDATE "user_settings" SET "paused" = $1`;
+    let result = await pool.query(queryText, [!user.paused]);
+    res.sendStatus(200);
+  } catch (err) {
+    console.log('problem in REINVEST ROUTE', err);
+    res.sendStatus(500);
+  }
+});
+
+/**
 * PUT route to change status of reinvestment
 */
 router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
