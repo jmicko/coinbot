@@ -99,8 +99,8 @@ router.put('/pause', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
     // console.log('in the PAUSE ROUTE', user, req.body);
-    const queryText = `UPDATE "user_settings" SET "paused" = $1`;
-    let result = await pool.query(queryText, [!user.paused]);
+    const queryText = `UPDATE "user_settings" SET "paused" = $1 WHERE "userID" = $2`;
+    let result = await pool.query(queryText, [!user.paused, user.id]);
     res.sendStatus(200);
   } catch (err) {
     console.log('problem in PAUSE ROUTE', err);
