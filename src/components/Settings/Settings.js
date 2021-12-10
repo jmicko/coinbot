@@ -18,7 +18,7 @@ function Settings(props) {
       <div className="Settings">
         <button className="btn-logout btn-red" onClick={() => { props.clickSettings() }}>X</button>
         <h2 className="settings-header">Settings</h2>
-        <SettingsNav setSettingsPage={setSettingsPage} />
+        <SettingsNav setSettingsPage={setSettingsPage} settingsPage={settingsPage} />
         {
           {
             'general': <General />,
