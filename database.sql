@@ -8,7 +8,7 @@
 CREATE TABLE IF NOT EXISTS "user_api"
 (
   "API_ID" SERIAL PRIMARY KEY,
-  "userID" character varying COLLATE pg_catalog."default",
+  "userID" integer,
   "CB_SECRET" VARCHAR (1000),
   "CB_ACCESS_KEY" VARCHAR (1000),
   "CB_ACCESS_PASSPHRASE" VARCHAR (1000),
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS "user_api"
 
 CREATE TABLE IF NOT EXISTS "user_settings"
 (
-  "userID" character varying COLLATE pg_catalog."default",
+  "userID" integer,
   "paused" boolean DEFAULT false,
   "reinvest" boolean DEFAULT false,
   "reinvest_ratio" integer DEFAULT 0,
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS "bot_settings"
 CREATE TABLE IF NOT EXISTS "orders"
 (
   id character varying COLLATE pg_catalog."default" NOT NULL,
-  "userID" character varying COLLATE pg_catalog."default",
+  "userID" integer,
   "API_ID" character varying,
   price numeric(32,8),
   size numeric(32,8),

@@ -99,7 +99,7 @@ router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
     console.log('in the REINVEST ROUTE', user, req.body);
-    const queryText = `UPDATE "user" SET "reinvest" = $1`;
+    const queryText = `UPDATE "user_settings" SET "reinvest" = $1`;
     let result = await pool.query(queryText, [!user.reinvest]);
     res.sendStatus(200);
   } catch (err) {
@@ -115,7 +115,7 @@ router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
     console.log('in the REINVEST RATIO ROUTE', user, req.body);
-    const queryText = `UPDATE "user" SET "reinvest_ratio" = $1`;
+    const queryText = `UPDATE "user_settings" SET "reinvest_ratio" = $1`;
     await pool.query(queryText, [req.body.reinvest_ratio]);
     res.sendStatus(200);
   } catch (err) {
@@ -238,28 +238,31 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
     CREATE TABLE IF NOT EXISTS "user_api"
     (
       "API_ID" SERIAL PRIMARY KEY,
-      "userID" character varying COLLATE pg_catalog."default",
+      "userID" integer,
       "CB_SECRET" VARCHAR (1000),
       "CB_ACCESS_KEY" VARCHAR (1000),
       "CB_ACCESS_PASSPHRASE" VARCHAR (1000),
       "API_URI" VARCHAR (1000)
     );
+
     CREATE TABLE IF NOT EXISTS "user_settings"
     (
-      "userID" character varying COLLATE pg_catalog."default",
+      "userID" integer,
       "paused" boolean DEFAULT false,
       "reinvest" boolean DEFAULT false,
       "reinvest_ratio" integer DEFAULT 0,
       "profit_reset" timestamp
     );
+
     CREATE TABLE IF NOT EXISTS "bot_settings"
     (
       "loop_speed" integer DEFAULT 100
     );
+
     CREATE TABLE IF NOT EXISTS "orders"
     (
       id character varying COLLATE pg_catalog."default" NOT NULL,
-      "userID" character varying COLLATE pg_catalog."default",
+      "userID" integer,
       "API_ID" character varying,
       price numeric(32,8),
       size numeric(32,8),
@@ -282,6 +285,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       original_sell_price numeric(32,16),
       CONSTRAINT orders_pkey PRIMARY KEY (id)
     );
+
     CREATE TABLE IF NOT EXISTS "user" (
       "id" SERIAL PRIMARY KEY,
       "username" VARCHAR (80) UNIQUE NOT NULL,
@@ -296,6 +300,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       "profit_reset" timestamp,
       "joined_at" timestamp
     );
+
     -- this will create the required table for connect-pg to store session data
     CREATE TABLE IF NOT EXISTS "session" (
       "sid" varchar NOT NULL COLLATE "default",

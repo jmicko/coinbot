@@ -12,18 +12,17 @@ passport.serializeUser((user, done) => {
 // adjust pool query to decrypt them before deleting the password from the user object?
 // but password has already been salted/hashed before storing. Can we safely access it before salt/hash?
 passport.deserializeUser((id, done) => {
-  pool.query('SELECT * FROM "user" WHERE id = $1', [id])
+  pool.query(`SELECT * 
+  FROM "user" JOIN "user_settings" ON ("user"."id" = "user_settings"."userID")
+  WHERE id = $1;`, [id])
     .then((result) => {
       // Handle Errors
       const user = result && result.rows && result.rows[0];
 
       if (user) {
         // user found
-        // remove password and api cred so it doesn't get sent
-        delete user.password; 
-        delete user.CB_SECRET; 
-        delete user.CB_ACCESS_KEY; 
-        delete user.CB_ACCESS_PASSPHRASE; 
+        // remove password so it doesn't get sent
+        delete user.password;
         // done takes an error (null in this case) and a user
         done(null, user);
       } else {
