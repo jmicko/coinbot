@@ -97,6 +97,25 @@ body::-webkit-scrollbar-thumb,
 
 /* === BUTTONS === */
 
+.btn-nav {
+  color: white;
+  font-size: larger;
+  background-color: #363535;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-nav:hover {
+  background-color: #615d5d;
+}
+
+.btn-nav:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accesibility concerns */
+  background-color: #7e6f67d3;
+}
+
 .btn-red {
   background-color: #ec4141;
   font-family     : inherit;
