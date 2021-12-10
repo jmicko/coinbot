@@ -9,7 +9,7 @@
   height: fit-content;
   width: fit-content;
   max-width: 50rem;
-  margin: auto;
+  margin: 0 auto;
   padding: 1rem;
   border-radius: .25rem;
 }
