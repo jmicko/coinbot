@@ -98,12 +98,12 @@ router.get('/profits', rejectUnauthenticated, (req, res) => {
 router.put('/pause', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
-    console.log('in the PAUSE ROUTE', user, req.body);
+    // console.log('in the PAUSE ROUTE', user, req.body);
     const queryText = `UPDATE "user_settings" SET "paused" = $1`;
     let result = await pool.query(queryText, [!user.paused]);
     res.sendStatus(200);
   } catch (err) {
-    console.log('problem in REINVEST ROUTE', err);
+    console.log('problem in PAUSE ROUTE', err);
     res.sendStatus(500);
   }
 });
@@ -114,7 +114,7 @@ router.put('/pause', rejectUnauthenticated, async (req, res) => {
 router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
-    console.log('in the REINVEST ROUTE', user, req.body);
+    // console.log('in the REINVEST ROUTE', user, req.body);
     const queryText = `UPDATE "user_settings" SET "reinvest" = $1`;
     let result = await pool.query(queryText, [!user.reinvest]);
     res.sendStatus(200);
@@ -130,7 +130,7 @@ router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
 router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
-    console.log('in the REINVEST RATIO ROUTE', user, req.body);
+    // console.log('in the REINVEST RATIO ROUTE', user, req.body);
     const queryText = `UPDATE "user_settings" SET "reinvest_ratio" = $1`;
     await pool.query(queryText, [req.body.reinvest_ratio]);
     res.sendStatus(200);
@@ -144,7 +144,7 @@ router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
 * POST route to reset profits
 */
 router.post('/resetProfit', rejectUnauthenticated, async (req, res) => {
-  console.log('RESETTING PROFIT!!!!!!!!!!!!!!!!!!!!!!!!!');
+  // console.log('RESETTING PROFIT!!!!!!!!!!!!!!!!!!!!!!!!!');
   const userID = req.user.id;
   const queryText = `UPDATE "orders" SET "include_in_profit" = false WHERE "userID"=$1 AND "settled"=true;`;
   try {
