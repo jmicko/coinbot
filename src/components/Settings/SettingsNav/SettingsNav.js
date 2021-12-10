@@ -12,7 +12,7 @@ function SettingsNav(props) {
         <button onClick={() => { props.setSettingsPage('general') }}>General</button>
         <button onClick={() => { props.setSettingsPage('api') }}>API</button>
         <button onClick={() => { props.setSettingsPage('reset') }}>Reset</button>
-        <button onClick={() => { props.setSettingsPage('admin') }}>Admin</button>
+        {props.store.accountReducer.userReducer.admin && <button onClick={() => { props.setSettingsPage('admin') }}>Admin</button>}
       </center>
     </div>
   );
