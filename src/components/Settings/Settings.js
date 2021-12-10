@@ -2,6 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 import SingleUser from '../SingleUser/SingleUser'
+import Admin from './Admin/Admin';
+import API from './API/API';
+import General from './General/General';
+import Reset from './Reset/Reset';
 import './Settings.css'
 import SettingsNav from './SettingsNav/SettingsNav';
 
@@ -15,6 +19,7 @@ function Settings(props) {
   const [secret, setSecret] = useState('');
   const [URI, setURI] = useState('sandbox');
   const [reinvest_ratio, setReinvest_ratio] = useState(0);
+  const [settingsPage, setSettingsPage] = useState('general');
 
   const getUsers = useCallback(
     () => {
@@ -101,7 +106,15 @@ function Settings(props) {
       <div className="Settings">
         <button className="btn-logout btn-red" onClick={() => { props.clickSettings() }}>X</button>
         <h2 className="settings-header">Settings</h2>
-      <SettingsNav />
+        <SettingsNav setSettingsPage={setSettingsPage}/>
+        {
+          {
+            'general': <General />,
+            'api': <API />,
+            'reset': <Reset />,
+            'admin': <Admin />
+          }[settingsPage]
+        }
 
         {(props.store.accountReducer.userReducer.admin)
           ? <div>
