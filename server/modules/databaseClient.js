@@ -124,7 +124,7 @@ const checkIfCancelling = async (id) => {
       let result = await pool.query(sqlText, [id]);
       const singleTrade = result.rows[0];
       // promise returns promise from pool if success
-      resolve(singleTrade.will_cancel);
+      resolve(singleTrade?.will_cancel);
     } catch (err) {
       // or promise relays errors from pool to parent
       reject(err);
