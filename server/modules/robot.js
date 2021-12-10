@@ -170,7 +170,7 @@ async function processOrders(userID) {
         // ...take the first trade that needs to be flipped, 
         let dbOrder = tradeList[i];
         // get the user of the trade
-        let user = await databaseClient.getUser(dbOrder.userID);
+        let user = await databaseClient.getUserAndSettings(dbOrder.userID);
         // ...flip the trade details
         // console.log('dbOrder is', dbOrder);
         let tradeDetails = flipTrade(dbOrder, user);
