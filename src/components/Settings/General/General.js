@@ -6,7 +6,7 @@ import './General.css'
 
 function General(props) {
   const dispatch = useDispatch();
-  
+
   const [reinvest_ratio, setReinvest_ratio] = useState(0);
 
   // make sure ratio is within percentage range
@@ -18,6 +18,14 @@ function General(props) {
       setReinvest_ratio(0)
     }
   }, [reinvest_ratio]);
+
+  function pause(event) {
+    // event.preventDefault();
+    console.log('Pausing the bot!');
+    dispatch({
+      type: 'PAUSE',
+    });
+  }
 
   function reinvest(event) {
     // event.preventDefault();
@@ -44,33 +52,39 @@ function General(props) {
       <center>
         <p>General Settings Page</p>
       </center>
+      <h4>Pause</h4>
+      <p>{JSON.stringify(props.store.accountReducer.userReducer.paused)}</p>
+      {(props.store.accountReducer.userReducer.paused)
+        ? <button className="btn-blue" onClick={() => { pause() }}>Unpause</button>
+        : <button className="btn-blue" onClick={() => { pause() }}>Pause</button>
+      }
       <h4>Reinvestment</h4>
-        <p>EXPERIMENTAL FEATURE. Coinbot can try to reinvest your profits for you. Be aware that this may not
-          work if the profit is too small.
-        </p>
-        {(props.store.accountReducer.userReducer.reinvest)
-          ? <button className="btn-blue" onClick={() => { reinvest() }}>Turn off</button>
-          : <button className="btn-blue" onClick={() => { reinvest() }}>Turn on</button>
-        }
-        {props.store.accountReducer.userReducer.reinvest &&
-          <>
-            <p>Current reinvestment ratio: {props.store.accountReducer.userReducer.reinvest_ratio}%</p>
-            <label htmlFor="reinvest_ratio">
-              Set Ratio:
-            </label>
-            <input
-              type="number"
-              name="reinvest_ratio"
-              value={reinvest_ratio}
-              step={10}
-              max={100}
-              required
-              onChange={(event) => setReinvest_ratio(event.target.value)}
-            />
-            <br />
-            <button className="btn-blue" onClick={() => { reinvestRatio() }}>Save reinvestment ratio</button>
-          </>
-        }
+      <p>EXPERIMENTAL FEATURE. Coinbot can try to reinvest your profits for you. Be aware that this may not
+        work if the profit is too small.
+      </p>
+      {(props.store.accountReducer.userReducer.reinvest)
+        ? <button className="btn-blue" onClick={() => { reinvest() }}>Turn off</button>
+        : <button className="btn-blue" onClick={() => { reinvest() }}>Turn on</button>
+      }
+      {props.store.accountReducer.userReducer.reinvest &&
+        <>
+          <p>Current reinvestment ratio: {props.store.accountReducer.userReducer.reinvest_ratio}%</p>
+          <label htmlFor="reinvest_ratio">
+            Set Ratio:
+          </label>
+          <input
+            type="number"
+            name="reinvest_ratio"
+            value={reinvest_ratio}
+            step={10}
+            max={100}
+            required
+            onChange={(event) => setReinvest_ratio(event.target.value)}
+          />
+          <br />
+          <button className="btn-blue" onClick={() => { reinvestRatio() }}>Save reinvestment ratio</button>
+        </>
+      }
     </div>
   );
 }
