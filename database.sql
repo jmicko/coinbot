@@ -1,9 +1,9 @@
--- DROP TABLE IF EXISTS "orders";
--- DROP TABLE IF EXISTS "user";
--- DROP TABLE IF EXISTS "session";
--- DROP TABLE IF EXISTS "user_api";
--- DROP TABLE IF EXISTS "user_settings";
--- DROP TABLE IF EXISTS "bot_settings";
+DROP TABLE IF EXISTS "orders";
+DROP TABLE IF EXISTS "user";
+DROP TABLE IF EXISTS "session";
+DROP TABLE IF EXISTS "user_api";
+DROP TABLE IF EXISTS "user_settings";
+DROP TABLE IF EXISTS "bot_settings";
 
 CREATE TABLE IF NOT EXISTS "user_api"
 (
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS "user_settings"
 (
   "userID" integer,
   "paused" boolean DEFAULT false,
-  "theme" character varying DEFAULT "original",
+  "theme" character varying DEFAULT 'original',
   "reinvest" boolean DEFAULT false,
   "reinvest_ratio" integer DEFAULT 0,
   "profit_reset" timestamp
