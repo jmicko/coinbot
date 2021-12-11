@@ -100,9 +100,6 @@ function Status(props) {
   return (
 
     <div className="Status boxed fit">
-      {/* <h3 className="title">
-        Status
-      </h3> */}
       {/* todo - maybe style in some divider lines here or something */}
       <p className="info status-ticker"><strong>~~~ BTC-USD ~~~</strong><br />${props.store.statusReducer.tickerReducer.tickerPrice}/coin</p>
       {/* <p className="info status-ticker">${props.store.statusReducer.tickerReducer.tickerPrice}/coin</p> */}

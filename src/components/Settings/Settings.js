@@ -15,16 +15,16 @@ function Settings(props) {
 
   if (props.showSettings) {
     return (
-      <div className="Settings">
-        <button className="btn-logout btn-red" onClick={() => { props.clickSettings() }}>X</button>
+      <div className={`Settings ${props.theme}`}>
+        <button className={`btn-logout btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={() => { props.clickSettings() }}>X</button>
         <h2 className="settings-header">Settings</h2>
         <SettingsNav setSettingsPage={setSettingsPage} settingsPage={settingsPage} />
         {
           {
-            'general': <General />,
-            'api': <API />,
-            'reset': <Reset />,
-            'admin': <Admin />
+            'general': <General theme={props.theme} />,
+            'api': <API theme={props.theme} />,
+            'reset': <Reset theme={props.theme} />,
+            'admin': <Admin theme={props.theme} />
           }[settingsPage]
         }
       </div>

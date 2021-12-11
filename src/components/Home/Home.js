@@ -16,33 +16,41 @@ import { SocketProvider } from '../../contexts/SocketProvider.js';
 function Home(props) {
   const dispatch = useDispatch();
   const [showSettings, setShowSettings] = useState(false);
+  const [theme, setTheme] = useState('original');
 
   const clickSettings = () => {
     setShowSettings(!showSettings);
     if (props.store.accountReducer.userReducer.admin) {
-      dispatch({ type: 'FETCH_USERS' })
+      dispatch({ type: 'FETCH_USERS' });
     }
   }
 
+  useEffect(() => {
+    if (props.store.accountReducer.userReducer.theme) {
+      setTheme(props.store.accountReducer.userReducer.theme);
+    }
+  }, [props.store.accountReducer.userReducer.theme])
+
+
   return (
-    <div className="Home">
-      <header className="header">
+    <div className={`Home ${theme}`}>
+      {/* <header className="header">
         <h2>WE USE COINBOT.</h2>
-      </header>
+      </header> */}
       <SocketProvider>
-        <Menu clickSettings={clickSettings} />
+        <Menu clickSettings={clickSettings} theme={theme} />
 
         {(props.store.accountReducer.userReducer.active)
-          ? <Trade />
-          : <NotActive />
+          ? <Trade theme={theme} />
+          : <NotActive theme={theme} />
         }
         {(props.store.accountReducer.userReducer.approved)
-          ? <TradeList />
-          : <NotApproved />
+          ? <TradeList theme={theme} />
+          : <NotApproved theme={theme} />
         }
-        <Updates />
-        <Status />
-        <Settings showSettings={showSettings} clickSettings={clickSettings} />
+        <Updates theme={theme} />
+        <Status theme={theme} />
+        <Settings showSettings={showSettings} clickSettings={clickSettings} theme={theme} />
       </SocketProvider>
     </div>
   );

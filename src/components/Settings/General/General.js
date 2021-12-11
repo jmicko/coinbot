@@ -46,6 +46,18 @@ function General(props) {
     });
   }
 
+  function setTheme(theme) {
+    // event.preventDefault();
+    console.log('setting the theme!');
+    dispatch({
+      type: 'SET_THEME',
+      payload: {
+        theme: theme
+      }
+    });
+  }
+
+
 
   return (
     <div className="General">
@@ -53,14 +65,22 @@ function General(props) {
         <p>General Settings Page</p>
       </center> */}
       <div className="divider" />
+
+      {/* THEME */}
+      <h4>Theme</h4>
+        <button className="btn-blue medium" onClick={() => { setTheme("original") }}>Original</button>
+        <button className={`btn-blue medium darkTheme`} onClick={() => { setTheme("darkTheme") }}>Dark</button>
+      <div className="divider" />
+
+      {/* PAUSE */}
       <h4>Pause</h4>
       <p>
         Pauses the bot. Trades will stay in place, but the bot will not check on them or flip them. If they are cancelled on Coinbase, the bot will not notice until it is unpaused.
         Be careful not to trade funds away manually while the bot is paused, or there might be an insufficient funds error.
       </p>
       {(props.store.accountReducer.userReducer.paused)
-        ? <button className="btn-blue" onClick={() => { pause() }}>Unpause</button>
-        : <button className="btn-blue" onClick={() => { pause() }}>Pause</button>
+        ? <button className={`btn-blue medium ${props.theme}`} onClick={() => { pause() }}>Unpause</button>
+        : <button className={`btn-blue medium ${props.theme}`} onClick={() => { pause() }}>Pause</button>
       }
       <div className="divider" />
       <h4>Reinvestment</h4>
@@ -68,8 +88,8 @@ function General(props) {
         work if the profit is too small.
       </p>
       {(props.store.accountReducer.userReducer.reinvest)
-        ? <button className="btn-blue" onClick={() => { reinvest() }}>Turn off</button>
-        : <button className="btn-blue" onClick={() => { reinvest() }}>Turn on</button>
+        ? <button className={`btn-blue medium ${props.theme}`} onClick={() => { reinvest() }}>Turn off</button>
+        : <button className={`btn-blue medium ${props.theme}`} onClick={() => { reinvest() }}>Turn on</button>
       }
       {props.store.accountReducer.userReducer.reinvest &&
         <>
@@ -87,7 +107,7 @@ function General(props) {
             onChange={(event) => setReinvest_ratio(event.target.value)}
           />
           <br />
-          <button className="btn-blue" onClick={() => { reinvestRatio() }}>Save reinvestment ratio</button>
+          <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { reinvestRatio() }}>Save reinvestment ratio</button>
           <div className="divider" />
         </>
       }

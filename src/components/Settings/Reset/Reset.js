@@ -32,14 +32,14 @@ function Reset(props) {
       <div className="divider" />
       <h4>Delete All Trades</h4>
       <p>Danger! This button will delete all your positions! Press it carefully!</p>
-      <button className="btn-blue" onClick={() => { deleteAllOrders() }}>Delete All</button>
+      <button className={`btn-red medium ${props.theme}`} onClick={() => { deleteAllOrders() }}>Delete All</button>
 
 
       {/* RESET PROFIT */}
       <div className="divider" />
       <h4>Reset Profit</h4>
       <p>This will start the profit calculation back at $0</p>
-      <button className="btn-blue" onClick={() => { resetProfit() }}>Reset Profit</button>
+      <button className={`btn-blue medium ${props.theme}`} onClick={() => { resetProfit() }}>Reset Profit</button>
 
       {/* SYNC ALL TRADES */}
       <div className="divider" />
@@ -48,7 +48,7 @@ function Reset(props) {
         This will delete all open orders from coinbase and replace them based on the trades stored in the
         database. It can sometimes fix issues that cause repeated errors, and may take a few minutes to complete
       </p>
-      <button className="btn-logout btn-blue" onClick={() => dispatch({ type: 'SYNC_ORDERS' })}>Sync All Trades</button>
+      <button className={`btn-blue medium ${props.theme}`} onClick={() => dispatch({ type: 'SYNC_ORDERS' })}>Sync All Trades</button>
       <div className="divider" />
     </div>
   );

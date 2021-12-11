@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS "user_settings"
 (
   "userID" integer,
   "paused" boolean DEFAULT false,
+  "theme" character varying DEFAULT "original",
   "reinvest" boolean DEFAULT false,
   "reinvest_ratio" integer DEFAULT 0,
   "profit_reset" timestamp

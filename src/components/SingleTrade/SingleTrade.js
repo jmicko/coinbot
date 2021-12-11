@@ -36,13 +36,14 @@ function SingleTrade(props) {
   // postgres is much better at math using exact
 
   return (
-    <div className={`Single-trade ${props.order.side}`}>
+    <div className={`Single-trade ${props.order.side} ${props.store.accountReducer.userReducer.theme}`}>
       <div className={"overlay"}>
         {(deleting === true)
           ? <p className="deleting">Deleting...</p>
-          : <button className="btn-red" onClick={() => { deleteOrder() }}>Abandon</button>
+          : <button className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={() => { deleteOrder() }}>Abandon</button>
         }
         <p className="single-trade-text">
+          {/* {JSON.stringify(props.store.accountReducer.userReducer.theme)} */}
           <strong>
             Price: </strong>
           {(props.order.side === 'sell')

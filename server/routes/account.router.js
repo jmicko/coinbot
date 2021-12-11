@@ -109,6 +109,22 @@ router.put('/pause', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
+* PUT route to change theme
+*/
+router.put('/theme', rejectUnauthenticated, async (req, res) => {
+  const user = req.user;
+  try {
+    console.log('in the THEME ROUTE', user.username, req.body.theme);
+    const queryText = `UPDATE "user_settings" SET "theme" = $1`;
+    await pool.query(queryText, [req.body.theme]);
+    res.sendStatus(200);
+  } catch (err) {
+    console.log('problem in THEME ROUTE', err);
+    res.sendStatus(500);
+  }
+});
+
+/**
 * PUT route to change status of reinvestment
 */
 router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
@@ -277,6 +293,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
     (
       "userID" integer,
       "paused" boolean DEFAULT false,
+      "theme" character varying DEFAULT 'original',
       "reinvest" boolean DEFAULT false,
       "reinvest_ratio" integer DEFAULT 0,
       "profit_reset" timestamp
