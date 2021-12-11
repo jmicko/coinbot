@@ -12,8 +12,21 @@ body {
   font-family     : 'Syne Mono', monospace;
 }
 
+body.darkTheme {
+  background-color: #313131;
+  color: white;
+  font-family     : 'Syne Mono', monospace;
+}
+
 .title {
   background-color: rgb(98, 127, 128);
+  margin          : 0;
+  text-align      : center;
+  border-bottom   : 1px solid black;
+}
+
+.title.darkTheme {
+  background-color: rgb(51, 59, 59);
   margin          : 0;
   text-align      : center;
   border-bottom   : 1px solid black;
@@ -98,6 +111,11 @@ body::-webkit-scrollbar-thumb,
   border: none;
 }
 
+.dark.darkTheme {
+  background-color: rgb(99, 99, 99);
+  border: none;
+}
+
 /* === BUTTONS === */
 
 button.medium{
@@ -130,19 +148,26 @@ button.medium{
 .btn-nav:focus {
   /* remove annoying rounded blue outline when button is focused */
   outline         : none;
-  /* change color when focused to resolve accesibility concerns */
+  /* change color when focused to resolve accessibility concerns */
   background-color: #7e6f67d3;
 }
 
 .btn-nav.selected:focus {
   /* remove annoying rounded blue outline when button is focused */
   outline         : none;
-  /* change color when focused to resolve accesibility concerns */
+  /* change color when focused to resolve accessibility concerns */
   background-color: #ffffff;
 }
 
 .btn-red {
   background-color: #ec4141;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-red.darkTheme {
+  background-color: #7c3434;
+  color: #ffffff;
   font-family     : inherit;
   box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
 }
@@ -154,11 +179,18 @@ button.medium{
 .btn-red:focus {
   /* remove annoying rounded blue outline when button is focused */
   outline         : none;
-  /* change color when focused to resolve accesibility concerns */
+  /* change color when focused to resolve accessibility concerns */
   background-color: #b8718c81;
 }
 
 .btn-green {
+  background-color: rgb(109, 145, 108);
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-green.darkTheme {
+  color: #ffffff;
   background-color: rgb(109, 145, 108);
   font-family     : inherit;
   box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
@@ -171,12 +203,19 @@ button.medium{
 .btn-green:focus {
   /* remove annoying rounded blue outline when button is focused */
   outline         : none;
-  /* change color when focused to resolve accesibility concerns */
+  /* change color when focused to resolve accessibility concerns */
   background-color: rgba(128, 177, 159, 0.596);
 }
 
 .btn-blue {
   background-color: rgb(108, 123, 145);
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-blue.darkTheme {
+  color: #ffffff;
+  background-color: rgb(48, 55, 66);
   font-family     : inherit;
   box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
 }
@@ -188,7 +227,7 @@ button.medium{
 .btn-blue:focus {
   /* remove annoying rounded blue outline when button is focused */
   outline         : none;
-  /* change color when focused to resolve accesibility concerns */
+  /* change color when focused to resolve accessibility concerns */
   background-color: #7773b398;
 }
 
