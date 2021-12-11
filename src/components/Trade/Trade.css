@@ -27,24 +27,6 @@
 
 /* === INPUTS === */
 
-input {
-  background      : rgb(209, 202, 192);
-  /* color        : rgb(209, 202, 192); */
-  background-color: rgb(209, 202, 192);
-  font-family     : inherit;
-  /* width        : 100%; */
-  /* margin       : 0% .2%; */
-}
-
-input.darkTheme {
-  /* background      : rgb(240, 235, 229); */
-  /* color        : rgb(209, 202, 192); */
-  background-color: rgb(136, 136, 136);
-  font-family     : inherit;
-  /* width        : 100%; */
-  /* margin       : 0% .2%; */
-}
-
 .number-inputs {
   /* margin: .4rem 0 .4rem auto; */
   display       : flex;
