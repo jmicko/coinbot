@@ -46,6 +46,18 @@ function General(props) {
     });
   }
 
+  function setTheme(theme) {
+    // event.preventDefault();
+    console.log('setting the theme!');
+    dispatch({
+      type: 'SET_THEME',
+      payload: {
+        theme: theme
+      }
+    });
+  }
+
+
 
   return (
     <div className="General">
@@ -53,6 +65,14 @@ function General(props) {
         <p>General Settings Page</p>
       </center> */}
       <div className="divider" />
+
+      {/* THEME */}
+      <h4>Theme</h4>
+        <button className="btn-blue medium" onClick={() => { setTheme("original") }}>Original</button>
+        <button className="btn-blue medium" onClick={() => { setTheme("darkTheme") }}>Dark</button>
+      <div className="divider" />
+
+      {/* PAUSE */}
       <h4>Pause</h4>
       <p>
         Pauses the bot. Trades will stay in place, but the bot will not check on them or flip them. If they are cancelled on Coinbase, the bot will not notice until it is unpaused.

@@ -84,6 +84,20 @@ function* pause(action) {
   }
 }
 
+function* setTheme(action) {
+  try {
+    console.log('storing reinvest ratio');
+    const response = yield axios.put(`/api/account/theme`, action.payload);
+    console.log('response from set theme', response);
+    yield put({ type: 'FETCH_USER' });
+  } catch (error) {
+    console.log('put account route reinvest ratio has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 function* reinvest(action) {
   try {
     console.log('storing reinvest');
@@ -149,6 +163,7 @@ function* accountSaga() {
   yield takeLatest('STORE_API', storeApi);
   yield takeLatest('RESET_PROFIT', resetProfit);
   yield takeLatest('PAUSE', pause);
+  yield takeLatest('SET_THEME', setTheme);
   yield takeLatest('REINVEST', reinvest);
   yield takeLatest('REINVEST_RATIO', reinvestRatio);
   yield takeLatest('FACTORY_RESET', factoryReset);
