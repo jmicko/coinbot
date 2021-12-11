@@ -107,7 +107,7 @@ function General(props) {
             onChange={(event) => setReinvest_ratio(event.target.value)}
           />
           <br />
-          <button className={`btn-blue medium ${props.theme}`} onClick={() => { reinvestRatio() }}>Save reinvestment ratio</button>
+          <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { reinvestRatio() }}>Save reinvestment ratio</button>
           <div className="divider" />
         </>
       }
