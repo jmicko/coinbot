@@ -81,7 +81,7 @@ function API(props) {
         }
         <br />
         <br />
-        <input className="btn-store-api btn-blue" type="submit" name="submit" value="Store API details" />
+        <input className={`btn-store-api btn-blue ${props.theme}`} type="submit" name="submit" value="Store API details" />
       </form>
       <div className="divider" />
     </div>

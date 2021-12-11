@@ -83,7 +83,7 @@ function Trade(props) {
           <div className="number-inputs">
             {/* input for setting the price/BTC per transaction. Can be adjusted in $500 steps, or manually input */}
             <label htmlFor="transaction_price">
-              Trade price per 1 BTC (in USD): <button className="btn-blue" onClick={(event) => getCurrentPrice(event)}> Get Current (rounded)</button>
+              Trade price per 1 BTC (in USD): <button className={`btn-blue ${props.theme}`} onClick={(event) => getCurrentPrice(event)}> Get Current (rounded)</button>
             </label>
             <input
               className={props.store.accountReducer.userReducer.theme}
@@ -172,7 +172,7 @@ function Trade(props) {
                 <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 1) / 1000)} value="-0.001"></input>
               </div>
             </div>
-            <input className="btn-send-trade btn-blue" type="submit" name="submit" value="Start New Trade-Pair" />
+            <input className={`btn-send-trade btn-blue ${props.theme}`} type="submit" name="submit" value="Start New Trade-Pair" />
           </div>
 
 

@@ -13,8 +13,8 @@ function Menu(props) {
         <p className="greeting">Hello {props.store.accountReducer.userReducer.username}!</p>
       </center>
       <div className="menu-buttons">
-        <button className="btn-logout btn-blue" onClick={() => { props.clickSettings() }}>Settings</button>
-        <button className="btn-logout btn-blue" onClick={() => dispatch({ type: 'LOGOUT' })}>Log Out</button>
+        <button className={`btn-blue btn-logout ${props.theme}`} onClick={() => { props.clickSettings() }}>Settings</button>
+        <button className={`btn-blue btn-logout ${props.theme}`} onClick={() => dispatch({ type: 'LOGOUT' })}>Log Out</button>
       </div>
     </div>
 
