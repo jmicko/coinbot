@@ -5,6 +5,13 @@
   gap                  : .4rem;
   grid-template-rows   : auto min-content 1fr;
   height               : 100vh;
+  background-color: #c7c7b1;
+  color: #000000;
+}
+
+.Home.darkTheme {
+  background-color: #313131;
+  color: #ffffff;
 }
 
 .header {

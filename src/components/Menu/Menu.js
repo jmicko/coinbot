@@ -8,7 +8,7 @@ function Menu(props) {
 
   return (
 
-    <div className="Menu dark">
+    <div className={`Menu dark ${props.store.accountReducer.userReducer.theme}`}>
       <center>
         <p className="greeting">Hello {props.store.accountReducer.userReducer.username}!</p>
       </center>

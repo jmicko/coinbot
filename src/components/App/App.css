@@ -8,11 +8,24 @@ html {
 }
 
 body {
-  background-color: #c7c7b1;
-  font-family     : 'Syne Mono', monospace;
+  /* background-color: #c7c7b1; */
+  background-color: #313131;
+  /* font-family     : 'Syne Mono', monospace; */
 }
 
-body.darkTheme {
+/* .body.darkTheme { */
+  /* color: white; */
+  /* font-family     : 'Syne Mono', monospace; */
+/* } */
+
+.App {
+  /* height: 100vh; */
+  background-color: #c7c7b1;
+  font-family     : 'Syne Mono', monospace;
+  /* background-color: #313131; */
+}
+
+.App.darkTheme {
   background-color: #313131;
   color: white;
   font-family     : 'Syne Mono', monospace;
@@ -176,6 +189,10 @@ button.medium{
   background-color: lightcoral;
 }
 
+.btn-red.darkTheme:hover {
+  background-color: rgb(151, 80, 80);
+}
+
 .btn-red:focus {
   /* remove annoying rounded blue outline when button is focused */
   outline         : none;
@@ -191,7 +208,7 @@ button.medium{
 
 .btn-green.darkTheme {
   color: #ffffff;
-  background-color: rgb(109, 145, 108);
+  background-color: rgb(84, 109, 83);
   font-family     : inherit;
   box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
 }

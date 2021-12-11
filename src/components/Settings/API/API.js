@@ -45,6 +45,7 @@ function API(props) {
           API Key:
         </label>
         <input
+          // className={props.theme}
           type="text"
           name="key"
           value={key}
@@ -75,8 +76,8 @@ function API(props) {
           Real money or sandbox?
         </label>
         {(URI === "real")
-          ? <button className="btn-green" onClick={(event) => { event.preventDefault(); setURI("sandbox") }}>Real Money API</button>
-          : <button className="btn-green" onClick={(event) => { event.preventDefault(); setURI("real") }}>Sandbox API</button>
+          ? <button className={`btn-green ${props.theme}`} onClick={(event) => { event.preventDefault(); setURI("sandbox") }}>Real Money API</button>
+          : <button className={`btn-green ${props.theme}`} onClick={(event) => { event.preventDefault(); setURI("real") }}>Sandbox API</button>
         }
         <br />
         <br />

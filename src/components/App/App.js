@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
 import {
   HashRouter as Router,
@@ -16,6 +16,7 @@ import Login from '../Login/Login';
 
 function App(props) {
   const dispatch = useDispatch();
+  
 
   useEffect(() => {
     dispatch({ type: 'FETCH_USER' });
@@ -23,10 +24,14 @@ function App(props) {
   }, [dispatch])
 
 
+
+
   return (
-    <div className="App">
+    <div className={`App darkTheme`}>
       {/* all components wrapped inside the socket provider will have access to the same socket */}
       {/* <SocketProvider> */}
+      <div>
+
         <Router>
           <Switch>
             <Route
@@ -34,13 +39,14 @@ function App(props) {
               component={props.store.accountReducer.userReducer.id
                 ? Home
                 : Login}
-              // component={Home} 
-              />
+            // component={Home} 
+            />
             <Route
               exact path="/login"
               component={Login} />
           </Switch>
         </Router>
+      </div>
       {/* </SocketProvider> */}
     </div>
   );
