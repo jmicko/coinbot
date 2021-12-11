@@ -67,13 +67,13 @@ function Messages(props) {
     <div className="Messages boxed">
       <h3 className={`title ${props.theme}`}>Coinbot Message Board</h3>
       <div className="message-board">
-        <div className="message-section boxed scrollable">
+        <div className="message-section scrollable">
           <h3 className={`title ${props.theme}`}>General Messages</h3>
           {messages.map((message, i) => {
             return <p key={i}><strong>Msg #{messagesCount - i} {message.date}</strong> <br /> {message.message}</p>
           })}
         </div>
-        <div className="errors-section boxed scrollable">
+        <div className="errors-section scrollable">
           <h3 className={`title ${props.theme}`}>Errors</h3>
           {errors.map((error, i) => {
             return <p key={i}><strong>Err #{errorCount - i} {error.date}</strong> <br /> {error.error}</p>
