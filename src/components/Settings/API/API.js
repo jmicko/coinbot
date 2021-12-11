@@ -73,15 +73,16 @@ function API(props) {
           onChange={(event) => setSecret(event.target.value)}
         />
         <label htmlFor="URI">
-          Real money or sandbox?
+          Real money or sandbox? 
         </label>
         {(URI === "real")
-          ? <button className={`btn-green ${props.theme}`} onClick={(event) => { event.preventDefault(); setURI("sandbox") }}>Real Money API</button>
-          : <button className={`btn-green ${props.theme}`} onClick={(event) => { event.preventDefault(); setURI("real") }}>Sandbox API</button>
+          ? <button className={`btn-green btn-sandbox-api medium ${props.theme}`} onClick={(event) => { event.preventDefault(); setURI("sandbox") }}>Real Money API</button>
+          : <button className={`btn-green btn-sandbox-api medium ${props.theme}`} onClick={(event) => { event.preventDefault(); setURI("real") }}>Sandbox API</button>
         }
+        (click to change)
         <br />
         <br />
-        <input className={`btn-store-api btn-blue ${props.theme}`} type="submit" name="submit" value="Store API details" />
+        <input className={`btn-store-api btn-blue medium ${props.theme}`} type="submit" name="submit" value="Store API details" />
       </form>
       <div className="divider" />
     </div>
