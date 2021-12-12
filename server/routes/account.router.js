@@ -93,6 +93,26 @@ router.get('/profits', rejectUnauthenticated, (req, res) => {
 });
 
 /**
+* GET route to export xlsx history of orders
+*/
+router.get('/exportXlsx', rejectUnauthenticated, (req, res) => {
+  const userID = req.user.id;
+  console.log('exporting xlsx for', userID);
+  // const queryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" * 2)) 
+  // FROM public.orders 
+  // WHERE "side" = 'sell' AND "settled" = 'true' AND "include_in_profit" = 'true' AND "userID" = $1;`;
+  // pool.query(queryText, [userID])
+  //   .then((result) => {
+  //     // console.log('here are the profits', result.rows[0].sum);
+  //     res.send(result.rows)
+  //   })
+  //   .catch((error) => {
+  //     console.log('error in profits route:', error);
+      res.sendStatus(200)
+  //   })
+});
+
+/**
 * PUT route to change status of pause
 */
 router.put('/pause', rejectUnauthenticated, async (req, res) => {
