@@ -4,6 +4,7 @@ const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const coinbaseClient = require('../modules/coinbaseClient');
 const socketClient = require('../modules/socketClient');
+const xlsx = require('json-as-xlsx');
 // const databaseClient = require('../modules/databaseClient/databaseClient');
 
 
@@ -95,26 +96,79 @@ router.get('/profits', rejectUnauthenticated, (req, res) => {
 /**
 * GET route to export xlsx history of orders
 */
-router.get('/exportXlsx', rejectUnauthenticated, (req, res) => {
+router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   console.log('exporting xlsx for', userID);
-  // const queryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" * 2)) 
-  // FROM public.orders 
-  // WHERE "side" = 'sell' AND "settled" = 'true' AND "include_in_profit" = 'true' AND "userID" = $1;`;
-  // pool.query(queryText, [userID])
-  //   .then((result) => {
-  //     // console.log('here are the profits', result.rows[0].sum);
-  //     res.send(result.rows)
-  //   })
-  //   .catch((error) => {
-  //     console.log('error in profits route:', error);
-      res.sendStatus(200)
-  //   })
+
+  try {
+    let sqlText = `SELECT * FROM "orders" WHERE "userID"=$1;`;
+
+    let result = await pool.query(sqlText, [userID]);
+    const allOrders = result.rows;
+    // console.log(allOrders);
+
+
+    const data = [
+      {
+        sheet: 'Orders',
+        columns: [
+          { label: 'ID', value: 'id' },
+          { label: 'Price', value: 'price' },
+          { label: 'Size', value: 'size' },
+          { label: 'Trade pair ratio', value: 'trade_pair_ratio' },
+          { label: 'Side', value: 'side' },
+          { label: 'Settled', value: 'settled' },
+          { label: 'Flipped', value: 'flipped' },
+          { label: 'Include in profit', value: 'include_in_profit' },
+          { label: 'Product', value: 'product_id' },
+          { label: 'Created at', value: 'created_at' },
+          { label: 'Done at', value: 'done_at' },
+          { label: 'Done reason', value: 'done_reason' },
+          { label: 'Fill fees', value: 'fill_fees' },
+          { label: 'Filled size', value: 'filled_size' },
+          { label: 'Executed value', value: 'executed_value' },
+          { label: 'Original buy price', value: 'original_buy_price' },
+          { label: 'Original sell price', value: 'original_sell_price' }
+        ],
+        content: allOrders
+        // [
+        //   { name: 'Monserrat', age: 21, more: { phone: '11111111' } },
+        //   { name: 'Luis', age: 22, more: { phone: '12345678' } }
+        // ]
+      },
+      // second sheet here
+      // {
+      //   sheet: 'Pets',
+      //   columns: [
+      //     { label: 'Name', value: 'name' },
+      //     { label: 'Age', value: 'age' }
+      //   ],
+      //   content: [
+      //     { name: 'Malteada', age: 4, more: { phone: '99999999' } },
+      //     { name: 'Picadillo', age: 1, more: { phone: '87654321' } }
+      //   ]
+      // }
+    ]
+
+    const settings = {
+      writeOptions: {
+        type: 'buffer',
+        bookType: 'xlsx'
+      }
+    }
+
+
+    // const buffer = xlsx(data, settings)
+    res.status(200).send(data);
+    // res.send(200, {data})
+  } catch (err) {
+    console.log('problem getting all orders');
+  }
 });
 
 /**
-* PUT route to change status of pause
-*/
+ * PUT route to change status of pause
+ */
 router.put('/pause', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
