@@ -39,6 +39,7 @@ function Reset(props) {
       <div className="divider" />
       <h4>Reset Profit</h4>
       <p>This will start the profit calculation back at $0</p>
+      <p>Last reset at: {new Date(props.store.accountReducer.userReducer.profit_reset).toLocaleString('en-US')}</p>
       <button className={`btn-blue medium ${props.theme}`} onClick={() => { resetProfit() }}>Reset Profit</button>
 
       {/* SYNC ALL TRADES */}
