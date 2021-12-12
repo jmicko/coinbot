@@ -1,5 +1,7 @@
 import { put, takeLatest } from 'redux-saga/effects';
 import axios from 'axios';
+import xlsx from 'json-as-xlsx'
+
 
 
 function* fetchFees(action) {
@@ -147,8 +149,27 @@ function* ordersReset() {
     console.log('Orders Reset!');
 
     const response = yield axios.post(`/api/account/ordersReset`);
-    console.log('response from factory reset', response);
+    
+    
+    console.log('response from factory reset', response.data);
     yield put({ type: 'FETCH_ORDERS' });
+  } catch (error) {
+    console.log('post account route factoryReset has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
+function* exportXlsx() {
+  try {
+    console.log('Orders exporting!!!!!!!!!!!');
+    
+    const response = yield axios.get(`/api/account/exportXlsx`);
+
+    const data = response.data
+    console.log('response from EXPORT ORDERS', data);
+    yield put({ type: 'SET_XLSX', payload: response })
   } catch (error) {
     console.log('post account route factoryReset has failed', error);
     if (error.response.status === 403) {
@@ -169,6 +190,7 @@ function* accountSaga() {
   yield takeLatest('REINVEST_RATIO', reinvestRatio);
   yield takeLatest('FACTORY_RESET', factoryReset);
   yield takeLatest('ORDERS_RESET', ordersReset);
+  yield takeLatest('EXPORT_XLSX', exportXlsx);
 }
 
 export default accountSaga;

@@ -45,9 +45,21 @@ const accountReducer = (state = [{ available: 0 }], action) => {
   }
 };
 
+const xlsxReducer = (state = [], action) => {
+  switch (action.type) {
+    case 'SET_XLSX':
+      return action.payload;
+    case 'UNSET_XLSX':
+      return [];
+    default:
+      return state;
+  }
+};
+
 export default combineReducers({
   userReducer,
   feeReducer,
   profitsReducer,
   accountReducer,
+  xlsxReducer,
 });

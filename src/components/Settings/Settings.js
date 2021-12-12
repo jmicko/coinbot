@@ -5,6 +5,7 @@ import Admin from './Admin/Admin';
 import API from './API/API';
 import General from './General/General';
 import Reset from './Reset/Reset';
+import History from './History/History';
 import './Settings.css'
 import SettingsNav from './SettingsNav/SettingsNav';
 
@@ -22,6 +23,7 @@ function Settings(props) {
         {
           {
             'general': <General theme={props.theme} />,
+            'history': <History theme={props.theme} />,
             'api': <API theme={props.theme} />,
             'reset': <Reset theme={props.theme} />,
             'admin': <Admin theme={props.theme} />

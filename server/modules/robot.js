@@ -323,13 +323,14 @@ async function settleMultipleOrders(ordersArray, userID) {
             console.log('!!!!!!!!!!!!!!! the order was not fully settled!');
           }
           // update the order in the db
-          const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5 WHERE "id"=$6;`;
+          const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
           await pool.query(queryText, [
             fullSettledDetails.settled,
             fullSettledDetails.done_at,
             fullSettledDetails.fill_fees,
             fullSettledDetails.filled_size,
             fullSettledDetails.executed_value,
+            fullSettledDetails.done_reason,
             orderToCheck.id
           ]);
         } catch (err) {
