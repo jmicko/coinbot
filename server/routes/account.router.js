@@ -160,11 +160,15 @@ router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
 * POST route to reset profits
 */
 router.post('/resetProfit', rejectUnauthenticated, async (req, res) => {
-  // console.log('RESETTING PROFIT!!!!!!!!!!!!!!!!!!!!!!!!!');
+  const profit_reset = new Date();
+  console.log('RESETTING PROFIT!!!!!!!!!!!!!!!!!!!!!!!!!', profit_reset.toLocaleString('en-US'));
+  console.log('RESETTING PROFIT!!!!!!!!!!!!!!!!!!!!!!!!!', profit_reset);
   const userID = req.user.id;
   const queryText = `UPDATE "orders" SET "include_in_profit" = false WHERE "userID"=$1 AND "settled"=true;`;
+  const timeQuery = `UPDATE "user_settings" SET "profit_reset" = $1 WHERE "userID" = $2;`
   try {
     await pool.query(queryText, [userID]);
+    await pool.query(timeQuery, [profit_reset, userID]);
     res.sendStatus(200);
   } catch (err) {
     console.log('problem resetting profit', err);

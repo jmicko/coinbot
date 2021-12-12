@@ -62,6 +62,7 @@ function* resetProfit(action) {
     const response = yield axios.post(`/api/account/resetProfit`, action.payload);
     console.log('response from reinvest', response);
     yield put({ type: 'FETCH_PROFITS' });
+    yield put({ type: 'FETCH_USER' });
   } catch (error) {
     console.log('put account route resetProfit has failed', error);
     if (error.response.status === 403) {

@@ -60,7 +60,7 @@ function SingleTrade(props) {
           } ~ <strong>Size </strong>{Number(props.order.size).toFixed(8)} ~
           <strong>Value</strong> ${(Math.round((props.order.price * props.order.size) * 100) / 100).toFixed(2)} ~
           <strong> Pair Profit</strong> ${profit.toFixed(8)}
-          {/* <strong> Time</strong> ${createdAt.toLocaleString('en-US', { timeZone: 'UTC' })} */}
+          <strong> Time</strong> ${createdAt.toLocaleString('en-US', { timeZone: 'UTC' })}
         </p>
       </div>
     </div>
