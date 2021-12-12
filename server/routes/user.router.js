@@ -57,13 +57,14 @@ router.post('/register', userCount, async (req, res, next) => {
   const password = encryptLib.encryptPassword(req.body.password);
   try {
     let adminCount = await anyAdmins();
+    const joined_at = new Date();
     console.log('THERE ARE THIS MANY ADMINS!!!!!', adminCount);
 
     if (adminCount > 0) {
       // create the user
-      let queryText = `INSERT INTO "user" (username, password)
-      VALUES ($1, $2) RETURNING id;`;
-      let result = await pool.query(queryText, [username, password]);
+      let queryText = `INSERT INTO "user" (username, password, joined_at)
+      VALUES ($1, $2, $3) RETURNING id;`;
+      let result = await pool.query(queryText, [username, password, joined_at]);
       const userID = result.rows[0].id;
       console.log('here is the new user id', userID);
       
@@ -81,9 +82,9 @@ router.post('/register', userCount, async (req, res, next) => {
       robot.syncOrders(userID);
     } else {
       // create the user
-      let queryText = `INSERT INTO "user" (username, password, admin, approved)
-      VALUES ($1, $2, true, true) RETURNING id`;
-      let result = await pool.query(queryText, [username, password]);
+      let queryText = `INSERT INTO "user" (username, password, admin, approved, joined_at)
+      VALUES ($1, $2, true, true, $3) RETURNING id`;
+      let result = await pool.query(queryText, [username, password, joined_at]);
       const userID = result.rows[0].id;
       console.log('here is the new user id', userID);
       
