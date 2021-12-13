@@ -9,9 +9,9 @@ const coinbaseClient = require('../modules/coinbaseClient');
 
 
 /**
- * POST route updating bot speed
+ * PUT route updating bot speed
  */
-router.post('/loopSpeed', rejectUnauthenticated, async (req, res) => {
+router.put('/loopSpeed', rejectUnauthenticated, async (req, res) => {
   // POST route code here
   const user = req.user;
   if (user.admin) {
