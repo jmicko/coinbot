@@ -9,6 +9,32 @@ const coinbaseClient = require('../modules/coinbaseClient');
 
 
 /**
+ * GET route getting all settings
+ */
+router.get('/', rejectUnauthenticated, async (req, res) => {
+  // POST route code here
+  const user = req.user;
+  if (user.admin) {
+    console.log('GET all settings route hit!');
+    try {
+
+      const queryText = `SELECT * FROM "bot_settings";`;
+
+      const results = await pool.query(queryText);
+      console.log('results of GET ALL SETTINGS', results.rows[0]);
+
+      res.send(results.rows[0]);
+    } catch (err) {
+      console.log('error with loop speed route', err);
+      res.sendStatus(500);
+    }
+  } else {
+    console.log('user is not admin!');
+    res.sendStatus(403)
+  }
+});
+
+/**
  * PUT route updating bot speed
  */
 router.put('/loopSpeed', rejectUnauthenticated, async (req, res) => {

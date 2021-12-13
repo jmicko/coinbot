@@ -18,6 +18,15 @@ function Admin(props) {
     }, [dispatch]
   )
 
+  const getAllSettings = useCallback(
+    () => {
+      console.log('getting all settings');
+      if (props.store.accountReducer.userReducer.admin) {
+        dispatch({ type: 'FETCH_SETTINGS' })
+      }
+    }, [dispatch]
+  )
+
   function sendLoopSpeed() {
     dispatch({
       type: 'SEND_LOOP_SPEED',
@@ -28,7 +37,13 @@ function Admin(props) {
   }
 
   useEffect(() => {
+    setLoopSpeed(props.store.settingsReducer.allSettingsReducer.loop_speed);
+
+  }, [props.store.settingsReducer.allSettingsReducer.loop_speed]);
+
+  useEffect(() => {
     getUsers();
+    getAllSettings();
   }, []);
 
   return (
@@ -43,17 +58,17 @@ function Admin(props) {
           {props.store.usersReducer.allUsersReducer.map((user) => {
             return <SingleUser key={user.id} user={user} />
           })}
-          {/* {JSON.stringify(props.store.usersReducer.allUsersReducer)} */}
         </div>
         : <></>
       }
       <div className="divider" />
       <h4>Set Loop Speed</h4>
+      {/* {JSON.stringify(props.store.settingsReducer.allSettingsReducer.loop_speed)} */}
       <p>
         This will adjust the speed of the loop. You may want to slow it down to use fewer resources and handle more users.
         Higher numbers are slower. 1 is the fastest, and the speed is a multiplier. So 4 is 4x slower than 1 for example.
       </p>
-      {/* <p>Current loop speed: {props.store}%</p> */}
+      <p>Current loop speed: {props.store.settingsReducer.allSettingsReducer.loop_speed}</p>
       <label htmlFor="loopSpeed">
         Set speed:
       </label>
