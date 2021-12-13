@@ -7,6 +7,7 @@ import './Admin.css'
 
 function Admin(props) {
   const dispatch = useDispatch();
+  const [loopSpeed, setLoopSpeed] = useState(1);
 
   const getUsers = useCallback(
     () => {
@@ -16,6 +17,15 @@ function Admin(props) {
       }
     }, [dispatch]
   )
+
+  function sendLoopSpeed() {
+    dispatch({
+      type: 'SEND_LOOP_SPEED',
+      payload: {
+        loopSpeed: loopSpeed
+      }
+    })
+  }
 
   useEffect(() => {
     getUsers();
@@ -38,6 +48,29 @@ function Admin(props) {
         : <></>
       }
       <div className="divider" />
+      <h4>Set Loop Speed</h4>
+      <p>
+        This will adjust the speed of the loop. You may want to slow it down to use fewer resources and handle more users.
+        Higher numbers are slower. 1 is the fastest, and the speed is a multiplier. So 4 is 4x slower than 1 for example.
+      </p>
+      {/* <p>Current loop speed: {props.store}%</p> */}
+      <label htmlFor="loopSpeed">
+        Set speed:
+      </label>
+      <input
+        type="number"
+        name="loopSpeed"
+        value={loopSpeed}
+        step={1}
+        max={100}
+        min={1}
+        required
+        onChange={(event) => setLoopSpeed(Number(event.target.value))}
+      />
+      <br />
+      <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendLoopSpeed() }}>Save speed</button>
+
+      <div className="divider" />
       {(props.store.accountReducer.userReducer.admin)
         ? <>
           <h4>Factory Reset</h4>
@@ -55,9 +88,9 @@ function Admin(props) {
             </button> CAUTION
           </p>
 
-<p>
-  This button will only reset the orders table. This will clear the orders for ALL USERS! If you mean to just clear your own, do that in the "Reset" tab
-</p>
+          <p>
+            This button will only reset the orders table. This will clear the orders for ALL USERS! If you mean to just clear your own, do that in the "Reset" tab
+          </p>
           <p>
             CAUTION <button
               className="btn-logout btn-red"

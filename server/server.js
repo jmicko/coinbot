@@ -16,6 +16,7 @@ const userRouter = require('./routes/user.router');
 const tradeRouter = require('./routes/trade.router');
 const accountRouter = require('./routes/account.router');
 const ordersRouter = require('./routes/orders.router');
+const settingsRouter = require('./routes/settings.router');
 
 const robot = require('./modules/robot');
 const coinbaseClient = require('./modules/coinbaseClient');
@@ -39,6 +40,7 @@ app.use('/api/user', userRouter);
 app.use('/api/trade', tradeRouter);
 app.use('/api/account', accountRouter);
 app.use('/api/orders', ordersRouter);
+app.use('/api/settings', settingsRouter);
 
 /* socket.io */
 // this triggers on a new client connection

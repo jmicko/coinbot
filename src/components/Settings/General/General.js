@@ -83,6 +83,8 @@ function General(props) {
         : <button className={`btn-blue medium ${props.theme}`} onClick={() => { pause() }}>Pause</button>
       }
       <div className="divider" />
+
+      {/* REINVEST */}
       <h4>Reinvestment</h4>
       <p>EXPERIMENTAL FEATURE. Coinbot can try to reinvest your profits for you. Be aware that this may not
         work if the profit is too small.

@@ -29,6 +29,9 @@ CREATE TABLE IF NOT EXISTS "bot_settings"
 (
   "loop_speed" integer DEFAULT 100
 );
+INSERT INTO "bot_settings" 
+  ("loop_speed")
+  VALUES ($1);
 
 CREATE TABLE IF NOT EXISTS "orders"
 (

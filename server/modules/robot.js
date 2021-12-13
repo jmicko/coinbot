@@ -123,9 +123,15 @@ async function syncOrders(userID) {
     // when everything is done, call the sync again if the user still exists
 
     if (user) {
+      // get the loop speed
+      sqlText = `SELECT "loop_speed" FROM "bot_settings";`;
+      const result = await pool.query(sqlText);
+      const loopSpeed = result.rows[0].loop_speed;
+      console.log('here is the loop speed', loopSpeed);
+
       setTimeout(() => {
         syncOrders(userID);
-      }, 300);
+      }, (loopSpeed * 100));
     } else {
       console.log('user is NOT THERE');
     }
