@@ -62,7 +62,7 @@ function Admin(props) {
         name="loopSpeed"
         value={loopSpeed}
         step={1}
-        max={30}
+        max={100}
         min={1}
         required
         onChange={(event) => setLoopSpeed(Number(event.target.value))}
