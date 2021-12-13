@@ -19,6 +19,10 @@ function General(props) {
     }
   }, [reinvest_ratio]);
 
+  useEffect(() => {
+    setReinvest_ratio(props.store.accountReducer.userReducer.reinvest_ratio)
+  }, [props.store.accountReducer.userReducer.reinvest_ratio])
+
   function pause(event) {
     // event.preventDefault();
     console.log('Pausing the bot!');
