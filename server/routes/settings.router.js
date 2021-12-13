@@ -15,7 +15,7 @@ router.put('/loopSpeed', rejectUnauthenticated, async (req, res) => {
   // POST route code here
   const user = req.user;
   const loopSpeed = req.body.loopSpeed;
-  if (user.admin) {
+  if (user.admin && loopSpeed <= 100 && loopSpeed >= 1) {
     console.log('loop speed route hit! SPEED:', loopSpeed);
     try {
 
