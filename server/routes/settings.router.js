@@ -14,8 +14,20 @@ const coinbaseClient = require('../modules/coinbaseClient');
 router.put('/loopSpeed', rejectUnauthenticated, async (req, res) => {
   // POST route code here
   const user = req.user;
+  const loopSpeed = req.body.loopSpeed;
   if (user.admin) {
-    console.log('loop speed route hit!');
+    console.log('loop speed route hit! SPEED:', loopSpeed);
+    try {
+
+      const queryText = `UPDATE "bot_settings" SET "loop_speed" = $1;`;
+
+      await pool.query(queryText, [loopSpeed]);
+
+      res.sendStatus(200);
+    } catch (err) {
+      console.log('error with loop speed route', err);
+      res.sendStatus(500);
+    }
   } else {
     console.log('user is not admin!');
     res.sendStatus(403)

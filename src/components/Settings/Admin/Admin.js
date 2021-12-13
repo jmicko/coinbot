@@ -18,9 +18,12 @@ function Admin(props) {
     }, [dispatch]
   )
 
-  function sendLoopSpeed(params) {
+  function sendLoopSpeed() {
     dispatch({
-      type: 'SEND_LOOP_SPEED'
+      type: 'SEND_LOOP_SPEED',
+      payload: {
+        loopSpeed: loopSpeed
+      }
     })
   }
 
@@ -51,22 +54,22 @@ function Admin(props) {
         Higher numbers are slower. 1 is the fastest, and the speed is a multiplier. So 4 is 4x slower than 1 for example.
       </p>
       {/* <p>Current loop speed: {props.store}%</p> */}
-          <label htmlFor="loopSpeed">
-            Set speed:
-          </label>
-          <input
-            type="number"
-            name="loopSpeed"
-            value={loopSpeed}
-            step={1}
-            max={30}
-            min={1}
-            required
-            onChange={(event) => setLoopSpeed(event.target.value)}
-          />
-          <br />
-          <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendLoopSpeed() }}>Save speed</button>
-          
+      <label htmlFor="loopSpeed">
+        Set speed:
+      </label>
+      <input
+        type="number"
+        name="loopSpeed"
+        value={loopSpeed}
+        step={1}
+        max={30}
+        min={1}
+        required
+        onChange={(event) => setLoopSpeed(Number(event.target.value))}
+      />
+      <br />
+      <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendLoopSpeed() }}>Save speed</button>
+
       <div className="divider" />
       {(props.store.accountReducer.userReducer.admin)
         ? <>

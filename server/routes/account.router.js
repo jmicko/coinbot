@@ -382,6 +382,10 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       "loop_speed" integer DEFAULT 100
     );
 
+    INSERT INTO "bot_settings" 
+      ("loop_speed")
+      VALUES (1);
+
     CREATE TABLE IF NOT EXISTS "orders"
     (
       id character varying COLLATE pg_catalog."default" NOT NULL,
