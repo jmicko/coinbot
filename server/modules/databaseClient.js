@@ -41,7 +41,6 @@ const storeTrade = (newOrder, originalDetails) => {
         resolve(success);
       })
       .catch((err) => {
-        console.log('problem storing order in db', err);
         reject(err);
       });
   });
@@ -117,7 +116,6 @@ const getSingleTrade = (id) => {
 const checkIfCancelling = async (id) => {
   return new Promise(async (resolve, reject) => {
     try {
-      // console.log('checking if cancelled ', id);
       let sqlText;
       // put sql stuff here, extending the pool promise to the parent function
       sqlText = `SELECT * FROM "orders" WHERE "id"=$1;`;
@@ -137,14 +135,12 @@ const deleteTrade = async (id) => {
     try {
       const queryText = `DELETE from "orders" WHERE "id"=$1;`;
       let result = await pool.query(queryText, [id]);
-      console.log('exchange was tossed lmao');
       socketClient.emit('message', {
         message: `exchange was removed from the database`,
         orderUpdate: true
       });
       resolve(result);
     } catch (err) {
-      console.log('problem in deleteTrade function in databaseClient', err);
       reject(err)
     }
   });
@@ -156,8 +152,6 @@ async function getUser(userID) {
       sqlText = `SELECT * FROM "user" WHERE "id"=$1;`;
       let result = await pool.query(sqlText, [userID]);
       const user = result.rows[0];
-      // console.log('THE RESULT IS', result.rows[0]);
-      // console.log('THE user IS', user);
       resolve(user);
     } catch (err) {
       reject(err);
@@ -173,8 +167,6 @@ async function getUserAndSettings(userID) {
       WHERE id = $1;`;
       let result = await pool.query(sqlText, [userID]);
       const user = result.rows[0];
-      // console.log('THE RESULT IS', result.rows[0]);
-      // console.log('THE user IS', user);
       resolve(user);
     } catch (err) {
       reject(err);
@@ -188,8 +180,6 @@ async function getUserAPI(userID) {
       sqlText = `SELECT * FROM "user_api" WHERE "userID"=$1;`;
       let result = await pool.query(sqlText, [userID]);
       const userAPI = result.rows[0];
-      // console.log('THE RESULT IS', result.rows[0]);
-      // console.log('THE user IS', user);
       resolve(userAPI);
     } catch (err) {
       reject(err);
