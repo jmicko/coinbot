@@ -77,24 +77,48 @@ function Trade(props) {
       event.preventDefault();
     }
     setAmountTypeIsUSD(type);
+    if (type === true) {
+      setTransactionAmountUSD(Math.round(price * transactionAmountBTC * 100) / 100)
+    }
   }
 
   function handleTransactionAmount(amount) {
     if (amountTypeIsUSD) {
       setTransactionAmountUSD(amount)
+      // setTransactionAmountBTC(Math.floor(price / amount * 1000) / 1000)
+      const convertedAmount = Number((amount / price) * 100000000) / 100000000;
+      setTransactionAmountBTC(convertedAmount);
     }
     if (!amountTypeIsUSD) {
+      // setTransactionAmountBTC(Math.floor(amount *100000000) / 100000000)
       setTransactionAmountBTC(amount)
+      setTransactionAmountUSD(Math.round(price * amount * 100) / 100)
     }
   }
 
   // function to set amount in BTC if USD inputs are being used
   useEffect(() => {
     if (amountTypeIsUSD) {
-      const convertedAmount = Number((transactionAmountUSD / price)*100000000)/100000000;
-      setTransactionAmountBTC(convertedAmount);
+      const convertedAmount = Number((transactionAmountUSD / price) * 100000000) / 100000000;
+      setTransactionAmountBTC(Math.floor(convertedAmount *100000000) / 100000000);
     }
-  }, [transactionAmountUSD, amountTypeIsUSD, price])
+    if (!amountTypeIsUSD) {
+      setTransactionAmountBTC(Math.floor(transactionAmountBTC * 1000) / 1000)
+      // setTransactionAmountUSD(Math.round(price * transactionAmountBTC * 100) / 100)
+    }
+  }, [price])
+
+  // // function to set value in volume input when currency is changed
+  // useEffect(() => {
+  //   if (!amountTypeIsUSD) {
+  //     const convertedAmount = Number((transactionAmountUSD / price) * 100000000) / 100000000;
+  //     setTransactionAmountBTC(Math.floor(convertedAmount *100000000) / 100000000);
+  //   }
+  //   if (amountTypeIsUSD) {
+  //     // setTransactionAmountBTC(Math.floor(transactionAmountBTC * 1000) / 1000)
+  //     setTransactionAmountUSD(Math.round(price * transactionAmountBTC * 100) / 100)
+  //   }
+  // }, [amountTypeIsUSD])
 
   return (
     <div className="Trade" >
@@ -138,68 +162,70 @@ function Trade(props) {
           </div>
 
           {/* INPUT FOR AMOUNT IN BTC */}
-          <div className="number-inputs">
-            {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
-            <label htmlFor="transaction_amount">
-              Trade amount (in BTC):
-            <button className={`btn-blue ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => amountTypeHandler(event, true)}>Switch</button>
-            </label>
-            <input
-              className={props.store.accountReducer.userReducer.theme}
-              type="number"
-              name="transaction_amount"
-              value={Number(transactionAmountBTC)}
-              // step={0.001}
-              required
-              onChange={(event) => setTransactionAmountBTC(event.target.value)}
-            />
-            <div className="increment-buttons">
-              <div className="increase">
-                <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 1000) / 10000)} value="+.100"></input>
-                <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 100) / 10000)} value="+.010"></input>
-                <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 10) / 10000)} value="+.001"></input>
-                <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 1) / 10000)} value="+.0001"></input>
-              </div>
-              <div className="decrease">
-                <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 1000) / 10000)} value="-.100"></input>
-                <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 100) / 10000)} value="-.010"></input>
-                <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 10) / 10000)} value="-.001"></input>
-                <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 1) / 10000)} value="-.0001"></input>
+          {!amountTypeIsUSD
+            ? <div className="number-inputs">
+              {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
+              <label htmlFor="transaction_amount">
+                Trade amount (in BTC):
+                <button className={`btn-blue ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => amountTypeHandler(event, true)}>Switch</button>
+              </label>
+              <input
+                className={props.store.accountReducer.userReducer.theme}
+                type="number"
+                name="transaction_amount"
+                value={Number(transactionAmountBTC)}
+                // step={0.001}
+                required
+                onChange={(event) => handleTransactionAmount(event.target.value)}
+              />
+              <div className="increment-buttons">
+                <div className="increase">
+                  <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 1000) / 10000)} value="+.100"></input>
+                  <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 100) / 10000)} value="+.010"></input>
+                  <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 10) / 10000)} value="+.001"></input>
+                  <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 1) / 10000)} value="+.0001"></input>
+                </div>
+                <div className="decrease">
+                  <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 1000) / 10000)} value="-.100"></input>
+                  <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 100) / 10000)} value="-.010"></input>
+                  <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 10) / 10000)} value="-.001"></input>
+                  <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 1) / 10000)} value="-.0001"></input>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* INPUT FOR AMOUNT IN USD */}
-          <div className="number-inputs">
-            {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
-            <label htmlFor="transaction_amount">
-              Trade amount (in USD):
-            <button className={`btn-blue ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => amountTypeHandler(event, false)}>Switch</button>
-            </label>
-            <input
-              className={props.store.accountReducer.userReducer.theme}
-              type="number"
-              name="transaction_amount"
-              value={Number(transactionAmountUSD)}
-              // step={0.001}
-              required
-              onChange={(event) => setTransactionAmountBTC(event.target.value)}
-            />
-            <div className="increment-buttons">
-              <div className="increase">
-                <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 10000000) / 10000)} value="+1000"></input>
-                <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 1000000) / 10000)} value="+100"></input>
-                <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 100000) / 10000)} value="+10"></input>
-                <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 10000) / 10000)} value="+1"></input>
-              </div>
-              <div className="decrease">
-                <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 10000000) / 10000)} value="-1000"></input>
-                <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 1000000) / 10000)} value="-100"></input>
-                <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 100000) / 10000)} value="-10"></input>
-                <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 10000) / 10000)} value="-1"></input>
+            /* INPUT FOR AMOUNT IN USD */
+            : <div className="number-inputs">
+              {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
+              <label htmlFor="transaction_amount">
+                Trade amount (in USD):
+                <button className={`btn-blue ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => amountTypeHandler(event, false)}>Switch</button>
+              </label>
+              <input
+                className={props.store.accountReducer.userReducer.theme}
+                type="number"
+                name="transaction_amount"
+                value={Number(transactionAmountUSD)}
+                // step={0.001}
+                required
+                onChange={(event) => handleTransactionAmount(event.target.value)}
+              />
+              <div className="increment-buttons">
+                <div className="increase">
+                  <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 10000000) / 10000)} value="+1000"></input>
+                  <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 1000000) / 10000)} value="+100"></input>
+                  <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 100000) / 10000)} value="+10"></input>
+                  <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 10000) / 10000)} value="+1"></input>
+                </div>
+                <div className="decrease">
+                  <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 10000000) / 10000)} value="-1000"></input>
+                  <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 1000000) / 10000)} value="-100"></input>
+                  <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 100000) / 10000)} value="-10"></input>
+                  <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 10000) / 10000)} value="-1"></input>
+                </div>
               </div>
             </div>
-          </div>
+          }
 
 
           <div className="number-inputs">
