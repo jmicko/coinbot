@@ -113,23 +113,11 @@ function Trade(props) {
     }
   }, [price])
 
-  // // function to set value in volume input when currency is changed
-  // useEffect(() => {
-  //   if (!amountTypeIsUSD) {
-  //     const convertedAmount = Number((transactionAmountUSD / price) * 100000000) / 100000000;
-  //     setTransactionAmountBTC(Math.floor(convertedAmount *100000000) / 100000000);
-  //   }
-  //   if (amountTypeIsUSD) {
-  //     // setTransactionAmountBTC(Math.floor(transactionAmountBTC * 1000) / 1000)
-  //     setTransactionAmountUSD(Math.round(price * transactionAmountBTC * 100) / 100)
-  //   }
-  // }, [amountTypeIsUSD])
 
   return (
     <div className="Trade" >
       <div className="scrollable boxed">
         <h3 className={`title ${props.theme}`}>New Trade-Pair</h3>
-        <p>{JSON.stringify(amountTypeIsUSD)}</p>
         {/* form with a single input. Input takes a price point at which 
           to make a trade */}
         <form className="new-trade-form" onSubmit={submitTransaction} >
@@ -285,7 +273,6 @@ function Trade(props) {
           </div>
         </form>
       </div>
-      {/* <div className="spacer" > jgdsf</div> */}
     </div>
   );
 }
