@@ -14,7 +14,6 @@ async function getAccounts(userID) {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
       const userAPI = await databaseClient.getUserAPI(userID);
-      // console.log('this is the userAPI!!!!!!!', userAPI);
       const secret = userAPI.CB_SECRET;
       const key = userAPI.CB_ACCESS_KEY;
       const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
@@ -219,7 +218,6 @@ async function getOrder(orderId, userID) {
 async function placeOrder(data) {
   return new Promise(async (resolve, reject) => {
     try {
-      // console.log('THE DATA IS', data);
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
       const userAPI = await databaseClient.getUserAPI(data.userID);
@@ -341,10 +339,8 @@ async function cancelOrders(userID) {
 async function cancelAllOrders(userID) {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log('cancelling all orders!!!!!!!!!!!!!');
       await cancelOrders(userID);
       let totalOrders = await getAllOrders(userID);
-      console.log(totalOrders.length);
       if (totalOrders.length > 0) {
         await cancelAllOrders(userID);
       }
@@ -361,18 +357,18 @@ async function repeatedCheck(order, userID, tries) {
     if (tries < 10) {
       await sleep(tries * 100)
       tries++;
-      console.log('checking times:', tries);
+      // console.log('checking times:', tries);
       // check if the order is in coinbase
       try {
         let cbOrder = await getOrder(order.id, userID);
-        console.log('order from coinbase', cbOrder);
+        // console.log('order from coinbase', cbOrder);
         resolve(true);
       } catch (err) {
         console.log('error checking coinbase for order');
         repeatedCheck(order, userID, tries);
       }
     } else { // if it has already repeated, give up
-      console.log('done checking again');
+      // console.log('done checking again');
       resolve(false);
     }
   });

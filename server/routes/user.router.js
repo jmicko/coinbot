@@ -31,7 +31,6 @@ router.get('/all', rejectUnauthenticated, async (req, res) => {
       const queryText = `SELECT "id", "username", "active", "approved" FROM "user";`;
       let result = await pool.query(queryText);
       let userList = result.rows
-      console.log('sending list of users', userList);
       res.send(userList);
     } catch(err){
       console.log('error sending list of users to admin', err);
@@ -66,7 +65,6 @@ router.post('/register', userCount, async (req, res, next) => {
       VALUES ($1, $2, $3) RETURNING id;`;
       let result = await pool.query(queryText, [username, password, joined_at]);
       const userID = result.rows[0].id;
-      console.log('here is the new user id', userID);
       
       // create entry in api table
       let secondQueryText = `INSERT INTO "user_api" ("userID")
@@ -86,7 +84,6 @@ router.post('/register', userCount, async (req, res, next) => {
       VALUES ($1, $2, true, true, $3) RETURNING id`;
       let result = await pool.query(queryText, [username, password, joined_at]);
       const userID = result.rows[0].id;
-      console.log('here is the new user id', userID);
       
       // create entry in api table
       let secondQueryText = `INSERT INTO "user_api" ("userID")
