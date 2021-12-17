@@ -78,7 +78,9 @@ function Trade(props) {
     }
     setAmountTypeIsUSD(type);
     if (type === true) {
-      setTransactionAmountUSD(Math.round(price * transactionAmountBTC * 100) / 100)
+      setTransactionAmountUSD(Math.round(price * transactionAmountBTC))
+    } else {
+      setTransactionAmountBTC(Math.floor(transactionAmountBTC * 10000) / 10000)
     }
   }
 
@@ -86,7 +88,7 @@ function Trade(props) {
     if (amountTypeIsUSD) {
       setTransactionAmountUSD(amount)
       // setTransactionAmountBTC(Math.floor(price / amount * 1000) / 1000)
-      const convertedAmount = Number((amount / price) * 100000000) / 100000000;
+      const convertedAmount = Number(Math.floor((amount / price) * 100000000)) / 100000000;
       setTransactionAmountBTC(convertedAmount);
     }
     if (!amountTypeIsUSD) {
