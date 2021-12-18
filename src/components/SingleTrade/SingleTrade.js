@@ -51,8 +51,8 @@ function SingleTrade(props) {
             : Number(props.order.original_buy_price).toFixed(2)
           } ~ <strong>
             {(props.order.side === 'sell')
-              ? 'Bought at:'
-              : 'Sells for:'
+              ? 'Buys:'
+              : 'Sells:'
             } </strong>
           {(props.order.side === 'sell')
             ? Number(props.order.original_buy_price).toFixed(2)
@@ -60,7 +60,7 @@ function SingleTrade(props) {
           } ~ <strong>Size </strong>{Number(props.order.size).toFixed(8)} ~
           <strong>Value</strong> ${(Math.round((props.order.price * props.order.size) * 100) / 100).toFixed(2)} ~
           <strong> Pair Profit</strong> ${profit.toFixed(8)}
-          <strong> Time</strong> ${createdAt.toLocaleString('en-US', { timeZone: 'UTC' })}
+          <strong> Time</strong> {new Date(props.order.created_at).toLocaleString('en-US')}
         </p>
       </div>
     </div>

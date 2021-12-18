@@ -97,7 +97,7 @@ function Trade(props) {
     if (!amountTypeIsUSD) {
       // setTransactionAmountBTC(Math.floor(amount *100000000) / 100000000)
       setTransactionAmountBTC(amount)
-      setTransactionAmountUSD(Math.round(price * amount * 100) / 100)
+      setTransactionAmountUSD(Number(Math.round(price * amount * 100) / 100))
     }
   }
 
@@ -108,7 +108,7 @@ function Trade(props) {
       setTransactionAmountBTC(Math.floor(convertedAmount *100000000) / 100000000);
     }
     if (!amountTypeIsUSD) {
-      setTransactionAmountBTC(Math.floor(transactionAmountBTC * 1000) / 1000)
+      setTransactionAmountBTC(Math.floor(transactionAmountBTC * 10000) / 10000)
       // setTransactionAmountUSD(Math.round(price * transactionAmountBTC * 100) / 100)
     }
   }, [price])
