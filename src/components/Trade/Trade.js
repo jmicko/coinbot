@@ -23,7 +23,7 @@ function Trade(props) {
     // calculate flipped price
     let original_sell_price = (Math.round((price * (Number(tradePairRatio) + 100))) / 100);
     let type = false;
-    if (props.store.statusReducer.tickerReducer.tickerPrice < price) {
+    if (props.priceTicker < price) {
       type = 'market';
     }
     dispatch({
@@ -45,9 +45,9 @@ function Trade(props) {
       event.preventDefault();
     }
     // check if the current price has been stored yet to prevent NaN errors
-    if (props.store.statusReducer.tickerReducer.tickerPrice) {
+    if (props.priceTicker) {
       // round the price to nearest 100
-      const roundedPrice = Math.round(props.store.statusReducer.tickerReducer.tickerPrice / 100) * 100;
+      const roundedPrice = Math.round(props.priceTicker / 100) * 100;
       // change input box to reflect rounded value
       setTransactionPrice(roundedPrice)
     }

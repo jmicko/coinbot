@@ -38,9 +38,9 @@ function Home(props) {
     const options = {
       method: 'GET',
       url: 'https://api.exchange.coinbase.com/products/BTC-USD/ticker',
-      headers: {Accept: 'application/json'}
+      headers: { Accept: 'application/json' }
     };
-    
+
     axios.request(options).then(function (response) {
       // console.log(response.data);
       setPriceTicker(response.data.price)
@@ -66,9 +66,10 @@ function Home(props) {
       </header> */}
       <SocketProvider>
         <Menu clickSettings={clickSettings} theme={theme} />
+        {/* <p>{JSON.stringify(props.store.accountReducer.userReducer)}</p> */}
 
         {(props.store.accountReducer.userReducer.active)
-          ? <Trade theme={theme} />
+          ? <Trade theme={theme} priceTicker={priceTicker} />
           : <NotActive theme={theme} />
         }
         {(props.store.accountReducer.userReducer.approved)
