@@ -22,6 +22,7 @@ function* loopSpeed(action) {
     console.log('setting bot speed');
     const response = yield axios.put(`/api/settings/loopSpeed`, action.payload);
     console.log('response from loopSpeed', response);
+    yield put({ type: 'FETCH_SETTINGS', payload: response.data })
   } catch (error) {
     console.log('setting bot speed has failed', error);
     if (error.response.status === 403) {
