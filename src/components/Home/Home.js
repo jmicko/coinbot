@@ -11,6 +11,7 @@ import './Home.css'
 import NotApproved from '../NotApproved/NotApproved.js';
 import NotActive from '../NotActive/NotActive.js';
 import { SocketProvider } from '../../contexts/SocketProvider.js';
+import axios from 'axios';
 
 
 function Home(props) {
@@ -31,6 +32,31 @@ function Home(props) {
       setTheme(props.store.accountReducer.userReducer.theme);
     }
   }, [props.store.accountReducer.userReducer.theme])
+
+  // to get price of bitcoin updated on dom
+  function ticker(data) {
+    const options = {
+      method: 'GET',
+      url: 'https://api.exchange.coinbase.com/products/BTC-USD/ticker',
+      headers: {Accept: 'application/json'}
+    };
+    
+    axios.request(options).then(function (response) {
+      // console.log(response.data);
+      setPriceTicker(response.data.price)
+    }).catch(function (error) {
+      console.error(error);
+    });
+  }
+
+  // calls the ticker at regular intervals
+  useEffect(() => {
+    const interval = setInterval(() => {
+      ticker();
+    }, 1000);
+    // need to clear on return or it will make dozens of calls per second
+    return () => clearInterval(interval);
+  }, []);
 
 
   return (
