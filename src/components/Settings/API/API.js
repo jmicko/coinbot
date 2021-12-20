@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../../redux/mapStoreToProps';
 import './API.css'
@@ -33,9 +33,6 @@ function API(props) {
 
   return (
     <div className="API">
-      {/* <center>
-        <p>API Settings Page</p>
-      </center> */}
       <div className="divider" />
       <h4>API</h4>
       <p>Paste your API key, passphrase, and secret from Coinbase here</p>
@@ -45,7 +42,6 @@ function API(props) {
           API Key:
         </label>
         <input
-          // className={props.theme}
           type="text"
           name="key"
           value={key}
@@ -73,7 +69,7 @@ function API(props) {
           onChange={(event) => setSecret(event.target.value)}
         />
         <label htmlFor="URI">
-          Real money or sandbox? 
+          Real money or sandbox?
         </label>
         {(URI === "real")
           ? <button className={`btn-green btn-sandbox-api medium ${props.theme}`} onClick={(event) => { event.preventDefault(); setURI("sandbox") }}>Real Money API</button>

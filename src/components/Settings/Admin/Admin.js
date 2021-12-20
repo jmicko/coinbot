@@ -15,7 +15,7 @@ function Admin(props) {
       if (props.store.accountReducer.userReducer.admin) {
         dispatch({ type: 'FETCH_USERS' })
       }
-    }, [dispatch]
+    }, [dispatch, props.store.accountReducer.userReducer.admin]
   )
 
   const getAllSettings = useCallback(
@@ -24,7 +24,7 @@ function Admin(props) {
       if (props.store.accountReducer.userReducer.admin) {
         dispatch({ type: 'FETCH_SETTINGS' })
       }
-    }, [dispatch]
+    }, [dispatch, props.store.accountReducer.userReducer.admin]
   )
 
   function sendLoopSpeed() {
@@ -36,15 +36,21 @@ function Admin(props) {
     })
   }
 
+  function handleLoopSpeedChange(speed) {
+    setLoopSpeed(speed);
+  }
+
   useEffect(() => {
-    setLoopSpeed(props.store.settingsReducer.allSettingsReducer.loop_speed);
+    if (props.store.settingsReducer.allSettingsReducer.loop_speed) {
+      handleLoopSpeedChange(props.store.settingsReducer.allSettingsReducer.loop_speed);
+    }
 
   }, [props.store.settingsReducer.allSettingsReducer.loop_speed]);
 
   useEffect(() => {
     getUsers();
     getAllSettings();
-  }, []);
+  }, [getUsers, getAllSettings]);
 
   return (
     <div className="Admin">
@@ -80,7 +86,7 @@ function Admin(props) {
         max={100}
         min={1}
         required
-        onChange={(event) => setLoopSpeed(Number(event.target.value))}
+        onChange={(event) => handleLoopSpeedChange(Number(event.target.value))}
       />
       <br />
       <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendLoopSpeed() }}>Save speed</button>

@@ -11,12 +11,14 @@ import './Home.css'
 import NotApproved from '../NotApproved/NotApproved.js';
 import NotActive from '../NotActive/NotActive.js';
 import { SocketProvider } from '../../contexts/SocketProvider.js';
+import axios from 'axios';
 
 
 function Home(props) {
   const dispatch = useDispatch();
   const [showSettings, setShowSettings] = useState(false);
   const [theme, setTheme] = useState('original');
+  const [priceTicker, setPriceTicker] = useState(0);
 
   const clickSettings = () => {
     setShowSettings(!showSettings);
@@ -31,6 +33,31 @@ function Home(props) {
     }
   }, [props.store.accountReducer.userReducer.theme])
 
+  // to get price of bitcoin updated on dom
+  function ticker(data) {
+    const options = {
+      method: 'GET',
+      url: 'https://api.exchange.coinbase.com/products/BTC-USD/ticker',
+      headers: { Accept: 'application/json' }
+    };
+
+    axios.request(options).then(function (response) {
+      // console.log(response.data);
+      setPriceTicker(response.data.price)
+    }).catch(function (error) {
+      console.error(error);
+    });
+  }
+
+  // calls the ticker at regular intervals
+  useEffect(() => {
+    const interval = setInterval(() => {
+      ticker();
+    }, 1000);
+    // need to clear on return or it will make dozens of calls per second
+    return () => clearInterval(interval);
+  }, []);
+
 
   return (
     <div className={`Home ${theme}`}>
@@ -39,9 +66,10 @@ function Home(props) {
       </header> */}
       <SocketProvider>
         <Menu clickSettings={clickSettings} theme={theme} />
+        {/* <p>{JSON.stringify(props.store.accountReducer.userReducer)}</p> */}
 
         {(props.store.accountReducer.userReducer.active)
-          ? <Trade theme={theme} />
+          ? <Trade theme={theme} priceTicker={priceTicker} />
           : <NotActive theme={theme} />
         }
         {(props.store.accountReducer.userReducer.approved)
@@ -49,7 +77,7 @@ function Home(props) {
           : <NotApproved theme={theme} />
         }
         <Updates theme={theme} />
-        <Status theme={theme} />
+        <Status theme={theme} priceTicker={priceTicker} />
         <Settings showSettings={showSettings} clickSettings={clickSettings} theme={theme} />
       </SocketProvider>
     </div>

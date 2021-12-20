@@ -30,8 +30,6 @@ function SingleTrade(props) {
     })
   }
 
-  let createdAt = new Date(props.order.created_at);
-
   // todo - probably need to refactor this thing asap. Should use more useState hooks to make these strings a bit less horrifying
   // postgres is much better at math using exact
 
