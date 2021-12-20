@@ -3,10 +3,6 @@ import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 import './Status.css'
 import { useSocket } from "../../contexts/SocketProvider";
-import CoinbasePro from 'coinbase-pro';
-// add coinbase public client on the front end because it requires no auth, easier to set up,
-// and makes client make those calls so less done on the server => easier to process the loop
-const publicClient = new CoinbasePro.PublicClient();
 
 
 function Status(props) {
@@ -67,35 +63,6 @@ function Status(props) {
     }
   }, [props.store.ordersReducer.openOrdersInOrder.sells, props.store.ordersReducer.openOrdersInOrder.buys]);
 
-  // // to get price of bitcoin updated on dom
-  // function ticker(data) {
-  //   publicClient.getProductTicker('BTC-USD', (error, response, data) => {
-  //     if (error) {
-  //       // handle the error
-  //       console.log(error);
-  //       // setConnection(false)
-  //     } else {
-  //       // setConnection(true)
-  //       // save price
-  //       dispatch({
-  //         type: 'SET_TICKER_PRICE',
-  //         payload: {
-  //           tickerPrice: data.price
-  //         }
-  //       });
-  //       // console.log('ticker', BTC_USD_price);
-  //     }
-  //   })
-  // }
-
-  // // calls the ticker at regular intervals
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     ticker();
-  //   }, 1000);
-  //   // need to clear on return or it will make dozens of calls per second
-  //   return () => clearInterval(interval);
-  // }, []);
 
   return (
 
