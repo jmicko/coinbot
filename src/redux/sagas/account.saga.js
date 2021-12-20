@@ -1,6 +1,5 @@
 import { put, takeLatest } from 'redux-saga/effects';
 import axios from 'axios';
-import xlsx from 'json-as-xlsx'
 
 
 
@@ -147,10 +146,7 @@ function* factoryReset() {
 function* ordersReset() {
   try {
     console.log('Orders Reset!');
-
     const response = yield axios.post(`/api/account/ordersReset`);
-    
-    
     console.log('response from factory reset', response.data);
     yield put({ type: 'FETCH_ORDERS' });
   } catch (error) {

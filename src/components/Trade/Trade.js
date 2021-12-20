@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 import './Trade.css';
@@ -40,18 +40,20 @@ function Trade(props) {
     })
   }
 
-  const getCurrentPrice = (event) => {
-    if (event) {
-      event.preventDefault();
-    }
-    // check if the current price has been stored yet to prevent NaN errors
-    if (props.priceTicker) {
-      // round the price to nearest 100
-      const roundedPrice = Math.round(props.priceTicker / 100) * 100;
-      // change input box to reflect rounded value
-      setTransactionPrice(roundedPrice)
-    }
-  }
+  const getCurrentPrice = useCallback(
+    (event) => {
+      if (event) {
+        event.preventDefault();
+      }
+      // check if the current price has been stored yet to prevent NaN errors
+      if (props.priceTicker) {
+        // round the price to nearest 100
+        const roundedPrice = Math.round(props.priceTicker / 100) * 100;
+        // change input box to reflect rounded value
+        setTransactionPrice(roundedPrice)
+      }
+    }, [setTransactionPrice, props.priceTicker]
+  )
 
   // when the page loads, get the account fees 
   useEffect(() => {
@@ -64,7 +66,7 @@ function Trade(props) {
     if (price === 0) {
       getCurrentPrice();
     }
-  }, [getCurrentPrice])
+  }, [getCurrentPrice, price])
 
   // once the account fees load into redux, 
   useEffect(() => {
@@ -105,7 +107,7 @@ function Trade(props) {
   useEffect(() => {
     if (amountTypeIsUSD) {
       const convertedAmount = Number((transactionAmountUSD / price) * 100000000) / 100000000;
-      setTransactionAmountBTC(Math.floor(convertedAmount *100000000) / 100000000);
+      setTransactionAmountBTC(Math.floor(convertedAmount * 100000000) / 100000000);
     }
     if (!amountTypeIsUSD) {
       setTransactionAmountBTC(Math.floor(transactionAmountBTC * 10000) / 10000)

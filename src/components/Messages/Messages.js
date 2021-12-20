@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { connect, useDispatch } from 'react-redux';
+import { connect } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 import { useSocket } from "../../contexts/SocketProvider";
 import './Messages.css'
@@ -17,9 +17,9 @@ function Messages(props) {
     // socket may not exist on page load because it hasn't connected yet
     if (socket == null) return;
     socket.on('message', message => {
-      console.log('HERE IS THE WHOLE MESSAGE', message);
+      // console.log('HERE IS THE WHOLE MESSAGE', message);
       if (message.userID === props.store.accountReducer.userReducer.id) {
-        console.log('HERE IS THE USER ID FROM THE MESSAGE', message.userID);
+        // console.log('HERE IS THE USER ID FROM THE MESSAGE', message.userID);
         if (message.message) {
           setMessagesCount(prevMessagesCount => {
             console.log('previous error count', prevMessagesCount);
@@ -60,7 +60,7 @@ function Messages(props) {
     return () => socket.off('message')
     // useEffect will depend on socket because the connection will 
     // not be there right when the page loads
-  }, [socket]);
+  }, [socket, props.store.accountReducer.userReducer.id]);
 
   return (
     // show messages on screen

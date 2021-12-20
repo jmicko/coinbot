@@ -54,7 +54,7 @@ function Status(props) {
     return () => socket.off('message')
     // useEffect will depend on socket because the connection will 
     // not be there right when the page loads
-  }, [socket]);
+  }, [socket, props.store.accountReducer.userReducer.id]);
 
   // get the total number of open orders
   useEffect(() => {
