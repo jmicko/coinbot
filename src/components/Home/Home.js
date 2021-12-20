@@ -17,6 +17,7 @@ function Home(props) {
   const dispatch = useDispatch();
   const [showSettings, setShowSettings] = useState(false);
   const [theme, setTheme] = useState('original');
+  const [priceTicker, setPriceTicker] = useState(0);
 
   const clickSettings = () => {
     setShowSettings(!showSettings);
@@ -49,7 +50,7 @@ function Home(props) {
           : <NotApproved theme={theme} />
         }
         <Updates theme={theme} />
-        <Status theme={theme} />
+        <Status theme={theme} priceTicker={priceTicker} />
         <Settings showSettings={showSettings} clickSettings={clickSettings} theme={theme} />
       </SocketProvider>
     </div>
