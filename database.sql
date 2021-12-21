@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS "bot_settings"
 );
 INSERT INTO "bot_settings" 
   ("loop_speed")
-  VALUES ($1);
+  VALUES (1);
 
 CREATE TABLE IF NOT EXISTS "orders"
 (
