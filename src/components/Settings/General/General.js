@@ -34,15 +34,15 @@ function General(props) {
 
   function reinvest(event) {
     // event.preventDefault();
-    console.log('api details submitted!');
+    console.log('reinvest sent!');
     dispatch({
       type: 'REINVEST',
     });
   }
 
   function reinvestRatio(event) {
-    // event.preventDefault();
-    console.log('api details submitted!');
+    event.preventDefault();
+    console.log('reinvest ratio submitted!');
     dispatch({
       type: 'REINVEST_RATIO',
       payload: {
@@ -52,10 +52,10 @@ function General(props) {
   }
 
   function bulkPairRatio(event) {
-    // event.preventDefault();
-    console.log('api details submitted!');
+    event.preventDefault();
+    console.log('bulk ratio sent!');
     dispatch({
-      type: 'BULK_PAIR_RATIO',
+      type: 'SET_BULK_PAIR_RATIO',
       payload: {
         bulk_pair_ratio: bulk_pair_ratio
       }
@@ -125,7 +125,7 @@ function General(props) {
             onChange={(event) => setReinvest_ratio(event.target.value)}
           />
           <br />
-          <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { reinvestRatio() }}>Save reinvestment ratio</button>
+          <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { reinvestRatio(event) }}>Save reinvestment ratio</button>
           <div className="divider" />
         </>
       }
@@ -150,7 +150,7 @@ function General(props) {
             onChange={(event) => setBulk_pair_ratio(event.target.value)}
           />
           <br />
-          <button className={`btn-blue btn-bulk-pair-ratio medium ${props.theme}`} onClick={() => { bulkPairRatio() }}>Set all trades to new ratio</button>
+          <button className={`btn-blue btn-bulk-pair-ratio medium ${props.theme}`} onClick={(event) => { bulkPairRatio(event) }}>Set all trades to new ratio</button>
           <div className="divider" />
         </>
       

@@ -60,6 +60,27 @@ router.put('/loopSpeed', rejectUnauthenticated, async (req, res) => {
   }
 });
 
+/**
+ * PUT route bulk updating trade pair ratio
+ */
+router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
+  // POST route code here
+  const user = req.user;
+  const bulk_pair_ratio = req.body.bulk_pair_ratio;
+  console.log('bulk updating trade pair ratio route hit!', bulk_pair_ratio);
+  try {
+
+    // const queryText = `UPDATE "bot_settings" SET "loop_speed" = $1;`;
+
+    // await pool.query(queryText, [loopSpeed]);
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.log('error with loop speed route', err);
+    res.sendStatus(500);
+  }
+});
+
 
 
 module.exports = router;
