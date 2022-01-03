@@ -8,6 +8,7 @@ function General(props) {
   const dispatch = useDispatch();
 
   const [reinvest_ratio, setReinvest_ratio] = useState(0);
+  const [bulk_pair_ratio, setBulk_pair_ratio] = useState(1.1);
 
   // make sure ratio is within percentage range
   useEffect(() => {
@@ -46,6 +47,17 @@ function General(props) {
       type: 'REINVEST_RATIO',
       payload: {
         reinvest_ratio: reinvest_ratio
+      }
+    });
+  }
+
+  function bulkPairRatio(event) {
+    // event.preventDefault();
+    console.log('api details submitted!');
+    dispatch({
+      type: 'BULK_PAIR_RATIO',
+      payload: {
+        bulk_pair_ratio: bulk_pair_ratio
       }
     });
   }
@@ -117,6 +129,31 @@ function General(props) {
           <div className="divider" />
         </>
       }
+
+      {/* BULK PERCENTAGE CHANGE */}
+      <h4>Bulk Percentage Change</h4>
+      <p>
+        This will change the trade pair ratio for ALL trades to a uniform percentage. This can be useful for when your fees change due to trade volume and you want to change the ratio accordingly.
+      </p>
+        <>
+          <label htmlFor="bulk_pair_ratio">
+            New Ratio:
+          </label>
+          <input
+            type="number"
+            name="bulk_pair_ratio"
+            value={bulk_pair_ratio}
+            step={.1}
+            max={100}
+            min={0}
+            required
+            onChange={(event) => setBulk_pair_ratio(event.target.value)}
+          />
+          <br />
+          <button className={`btn-blue btn-bulk-pair-ratio medium ${props.theme}`} onClick={() => { bulkPairRatio() }}>Set all trades to new ratio</button>
+          <div className="divider" />
+        </>
+      
     </div>
   );
 }
