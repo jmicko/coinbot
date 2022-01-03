@@ -84,7 +84,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
 
     // update original sell price after ratio is set
     const updateOGSellPriceQueryText = `UPDATE orders
-    SET original_sell_price = ((original_buy_price * ("trade_pair_ratio" + 100)) / 100)
+    SET original_sell_price = ROUND(((original_buy_price * ("trade_pair_ratio" + 100)) / 100), 2)
     WHERE "settled" = false AND "userID" = $1;`
 
     await pool.query(updateOGSellPriceQueryText, [
@@ -93,7 +93,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
 
     // need to update the current price on all sells after changing numbers on all trades
     const updateSellsPriceQueryText = `UPDATE orders
-    SET "price" = ("original_buy_price" * (1 + ("trade_pair_ratio" / 100)))
+    SET "price" = "original_sell_price"
     WHERE "side" = 'sell' AND "userID" = $1;`;
 
     await pool.query(updateSellsPriceQueryText, [
