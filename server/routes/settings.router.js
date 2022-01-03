@@ -71,23 +71,34 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
   console.log('bulk updating trade pair ratio route hit!', bulk_pair_ratio);
   try {
 
+    const newbulk_pair_ratio = Number(bulk_pair_ratio);
+
     const updateTradesQueryText = `UPDATE orders
-    SET "trade_pair_ratio" = $1, "original_sell_price" = (("original_buy_price" * ($2 + 100)) / 100)
-    WHERE "settled" = false AND "userID" = $3;`
+    SET "trade_pair_ratio" = $1
+    WHERE "settled" = false AND "userID" = $2;`
 
     await pool.query(updateTradesQueryText, [
       bulk_pair_ratio,
-      bulk_pair_ratio,
+      user.id
+    ]);
+
+    // update original sell price after ratio is set
+    const updateOGSellPriceQueryText = `UPDATE orders
+    SET original_sell_price = ((original_buy_price * ("trade_pair_ratio" + 100)) / 100)
+    WHERE "settled" = false AND "userID" = $1;`
+
+    await pool.query(updateOGSellPriceQueryText, [
       user.id
     ]);
 
     // need to update the current price on all sells after changing numbers on all trades
     const updateSellsPriceQueryText = `UPDATE orders
-    SET "price" = ("original_buy_price" * (1 + ($1 / 100)))
-    WHERE "side" = 'sell';`;
+    SET "price" = ("original_buy_price" * (1 + ("trade_pair_ratio" / 100)))
+    WHERE "side" = 'sell' AND "userID" = $1;`;
 
     await pool.query(updateSellsPriceQueryText, [
-      bulk_pair_ratio
+
+      user.id
     ]);
 
     // Now cancel all trades so they can be reordered with the new numbers
@@ -96,7 +107,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
 
     res.sendStatus(200);
   } catch (err) {
-    console.log('error with loop speed route', err);
+    console.log('error with bulk updating trade pair ratio route', err);
     res.sendStatus(500);
   }
 });

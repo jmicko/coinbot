@@ -36,7 +36,7 @@ function* bulkPairRatio(action) {
     console.log('bulk setting pair ratio saga');
     const response = yield axios.put(`/api/settings/bulkPairRatio`, action.payload);
     console.log('response from bulkPairRatio', response);
-    // yield put({ type: 'FETCH_SETTINGS', payload: response.data })
+    yield put({ type: 'FETCH_ORDERS', payload: response.data })
   } catch (error) {
     console.log('setting bot speed has failed', error);
     if (error.response.status === 403) {

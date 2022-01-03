@@ -147,7 +147,7 @@ function General(props) {
             max={100}
             min={0}
             required
-            onChange={(event) => setBulk_pair_ratio(event.target.value)}
+            onChange={(event) => setBulk_pair_ratio(Number(event.target.value))}
           />
           <br />
           <button className={`btn-blue btn-bulk-pair-ratio medium ${props.theme}`} onClick={(event) => { bulkPairRatio(event) }}>Set all trades to new ratio</button>
