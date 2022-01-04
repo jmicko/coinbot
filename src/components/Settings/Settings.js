@@ -24,7 +24,7 @@ function Settings(props) {
           {
             'general': <General theme={props.theme} />,
             'history': <History theme={props.theme} />,
-            'api': <API theme={props.theme} />,
+            // 'api': <API theme={props.theme} />,
             'reset': <Reset theme={props.theme} />,
             'admin': <Admin theme={props.theme} />
           }[settingsPage]
