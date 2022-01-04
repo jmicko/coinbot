@@ -47,6 +47,15 @@ input {
 
 /* === BUTTONS === */
 
+.btn-store-api{
+  font-size: medium;
+  margin: .2rem .6rem 2rem;
+}
+
+.btn-sandbox-api{
+  margin: .2rem .6rem;
+}
+
 .increment-buttons {
   margin: .1rem auto;
   width : max-content;
