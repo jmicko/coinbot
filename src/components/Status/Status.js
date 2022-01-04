@@ -76,8 +76,8 @@ function Status(props) {
       <p className="info status-ticker">{(connection) ? 'Ticker Connected' : 'Ticker Problem'}</p> */}
       {/* <p className="info status-ticker"><strong>~~~ Account ~~~</strong></p> */}
       <p className="info status-ticker"><strong>Available Funds</strong><br />${Math.floor(props.store.accountReducer.accountReducer * 100) / 100}</p>
-      <p className="info status-ticker"><strong>Maker Fee</strong><br />{props.store.accountReducer.feeReducer.maker_fee_rate * 100}%</p>
-      <p className="info status-ticker"><strong>Taker Fee</strong><br />{props.store.accountReducer.feeReducer.taker_fee_rate * 100}%</p>
+      <p className="info status-ticker"><strong>Maker Fee</strong><br />{Number((props.store.accountReducer.feeReducer.maker_fee_rate * 100).toFixed(2))}%</p>
+      <p className="info status-ticker"><strong>Taker Fee</strong><br />{Number((props.store.accountReducer.feeReducer.taker_fee_rate * 100).toFixed(2))}%</p>
       <p className="info status-ticker"><strong>30 Day Volume</strong><br />${props.store.accountReducer.feeReducer.usd_volume}</p>
       <p className="info status-ticker"><strong>Profit Estimate</strong><br />${Number(props.store.accountReducer.profitsReducer[0].sum)}</p>
       <p className="info status-ticker"><strong>Total Open Orders</strong><br />{openOrderQuantity}</p>
