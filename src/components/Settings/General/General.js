@@ -102,7 +102,7 @@ function General(props) {
 
       {/* REINVEST */}
       <h4>Reinvestment</h4>
-      <p>EXPERIMENTAL FEATURE. Coinbot can try to reinvest your profits for you. Be aware that this may not
+      <p>Coinbot can try to reinvest your profits for you. Be aware that this may not
         work if the profit is too small.
       </p>
       {(props.store.accountReducer.userReducer.reinvest)
@@ -133,7 +133,7 @@ function General(props) {
       {/* BULK PERCENTAGE CHANGE */}
       <h4>Bulk Percentage Change</h4>
       <p>
-        This will change the trade pair ratio for ALL trades to a uniform percentage. This can be useful for when your fees change due to trade volume and you want to change the ratio accordingly.
+        EXPERIMENTAL FEATURE. This will change the trade pair ratio for ALL trades to a uniform percentage. This can be useful for when your fees change due to trade volume and you want to change the ratio accordingly.
       </p>
         <>
           <label htmlFor="bulk_pair_ratio">

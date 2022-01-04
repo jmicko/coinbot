@@ -64,15 +64,10 @@ router.put('/loopSpeed', rejectUnauthenticated, async (req, res) => {
  * PUT route bulk updating trade pair ratio
  */
 router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
-  // POST route code here
   const user = req.user;
-  // console.log("user is", user);
   const bulk_pair_ratio = req.body.bulk_pair_ratio;
-  console.log('bulk updating trade pair ratio route hit!', bulk_pair_ratio);
   try {
-
-    const newbulk_pair_ratio = Number(bulk_pair_ratio);
-
+    // update the trade-pair ratio for all trades for that user
     const updateTradesQueryText = `UPDATE orders
     SET "trade_pair_ratio" = $1
     WHERE "settled" = false AND "userID" = $2;`
@@ -84,7 +79,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
 
     // update original sell price after ratio is set
     const updateOGSellPriceQueryText = `UPDATE orders
-    SET original_sell_price = ROUND(((original_buy_price * ("trade_pair_ratio" + 100)) / 100), 2)
+    SET "original_sell_price" = ROUND(((original_buy_price * ("trade_pair_ratio" + 100)) / 100), 2)
     WHERE "settled" = false AND "userID" = $1;`
 
     await pool.query(updateOGSellPriceQueryText, [
@@ -97,13 +92,11 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
     WHERE "side" = 'sell' AND "userID" = $1;`;
 
     await pool.query(updateSellsPriceQueryText, [
-
       user.id
     ]);
 
     // Now cancel all trades so they can be reordered with the new numbers
-
-    coinbaseClient.cancelAllOrders(user.id);
+    await coinbaseClient.cancelAllOrders(user.id);
 
     res.sendStatus(200);
   } catch (err) {
