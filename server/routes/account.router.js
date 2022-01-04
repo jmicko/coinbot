@@ -189,8 +189,8 @@ router.put('/theme', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
     console.log('in the THEME ROUTE', user.username, req.body.theme);
-    const queryText = `UPDATE "user_settings" SET "theme" = $1`;
-    await pool.query(queryText, [req.body.theme]);
+    const queryText = `UPDATE "user_settings" SET "theme" = $1 WHERE "userID" = $2`;
+    await pool.query(queryText, [req.body.theme, user.id]);
     res.sendStatus(200);
   } catch (err) {
     console.log('problem in THEME ROUTE', err);
