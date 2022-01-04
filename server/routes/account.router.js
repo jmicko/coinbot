@@ -364,7 +364,8 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       "CB_SECRET" VARCHAR (1000),
       "CB_ACCESS_KEY" VARCHAR (1000),
       "CB_ACCESS_PASSPHRASE" VARCHAR (1000),
-      "API_URI" VARCHAR (1000)
+      "API_URI" VARCHAR (1000),
+      "bot_type" VARCHAR NOT NULL DEFAULT 'grid'
     );
 
     CREATE TABLE IF NOT EXISTS "user_settings"
