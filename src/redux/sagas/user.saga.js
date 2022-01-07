@@ -55,8 +55,9 @@ function* deleteUser(action) {
 
     console.log('the delete user response is', response);
     if (action.payload.fromAdmin) {
-      
       yield put({ type: 'FETCH_USERS'});
+    } else {
+      yield put({ type: 'UNSET_USER' });
     }
   } catch (error) {
     console.log('User get request failed', error);

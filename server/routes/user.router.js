@@ -27,16 +27,16 @@ router.get('/all', rejectUnauthenticated, async (req, res) => {
   const isAdmin = req.user.admin;
   console.log('are you admin?', isAdmin);
   if (isAdmin) {
-    try{
+    try {
       const queryText = `SELECT "id", "username", "active", "approved" FROM "user";`;
       let result = await pool.query(queryText);
       let userList = result.rows
       res.send(userList);
-    } catch(err){
+    } catch (err) {
       console.log('error sending list of users to admin', err);
       res.sendStatus(500)
     }
-    
+
   } else {
     res.sendStatus(403)
   }
@@ -65,17 +65,17 @@ router.post('/register', userCount, async (req, res, next) => {
       VALUES ($1, $2, $3) RETURNING id;`;
       let result = await pool.query(queryText, [username, password, joined_at]);
       const userID = result.rows[0].id;
-      
+
       // create entry in api table
       let secondQueryText = `INSERT INTO "user_api" ("userID")
       VALUES ($1);`;
       let secondResult = await pool.query(secondQueryText, [userID]);
-      
+
       // create entry in user_settings table
       let thirdQueryText = `INSERT INTO "user_settings" ("userID")
       VALUES ($1);`;
       let thirdResult = await pool.query(thirdQueryText, [userID]);
-      
+
       // start a sync loop for the new user
       robot.syncOrders(userID);
     } else {
@@ -84,21 +84,21 @@ router.post('/register', userCount, async (req, res, next) => {
       VALUES ($1, $2, true, true, $3) RETURNING id`;
       let result = await pool.query(queryText, [username, password, joined_at]);
       const userID = result.rows[0].id;
-      
+
       // create entry in api table
       let secondQueryText = `INSERT INTO "user_api" ("userID")
       VALUES ($1);`;
       let secondResult = await pool.query(secondQueryText, [userID]);
-      
+
       // create entry in user_settings table
       let thirdQueryText = `INSERT INTO "user_settings" ("userID")
       VALUES ($1);`;
       let thirdResult = await pool.query(thirdQueryText, [userID]);
-      
+
       // start a sync loop for the new user
       robot.syncOrders(userID);
     }
-    
+
     res.sendStatus(201);
   } catch (err) {
     console.log('User registration failed: ', err);
@@ -158,24 +158,46 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       // delete from user table first
       const userQueryText = `DELETE from "user" WHERE "id" = $1;`;
       await pool.query(userQueryText, [userToDelete]);
-      
+
       // delete from API table 
       const apiQueryText = `DELETE from "user_api" WHERE "userID" = $1;`;
       await pool.query(apiQueryText, [userToDelete]);
-      
+
       // delete from orders table 
       const ordersQueryText = `DELETE from "orders" WHERE "userID" = $1;`;
       await pool.query(ordersQueryText, [userToDelete]);
-      
+
       // delete from user settings table 
       const userSettingsQueryText = `DELETE from "user_settings" WHERE "userID" = $1;`;
       await pool.query(userSettingsQueryText, [userToDelete]);
 
       res.sendStatus(200);
     } else {
-      console.log('you are NOT admin');
+      const userID = req.body.id;
+      const userToDelete = req.body.id;
+      console.log('you are NOT admin', userID, "delete", userToDelete);
       // check to make sure the user ID that was sent is the same as the user requesting the delete
-      // delete the user
+      if (userID === userToDelete) {
+        // delete the user
+        console.log('deleting user', userID);
+
+        // delete from user table first
+        const userQueryText = `DELETE from "user" WHERE "id" = $1;`;
+        await pool.query(userQueryText, [userToDelete]);
+
+        // delete from API table 
+        const apiQueryText = `DELETE from "user_api" WHERE "userID" = $1;`;
+        await pool.query(apiQueryText, [userToDelete]);
+
+        // delete from orders table 
+        const ordersQueryText = `DELETE from "orders" WHERE "userID" = $1;`;
+        await pool.query(ordersQueryText, [userToDelete]);
+
+        // delete from user settings table 
+        const userSettingsQueryText = `DELETE from "user_settings" WHERE "userID" = $1;`;
+        await pool.query(userSettingsQueryText, [userToDelete]);
+
+      }
       res.sendStatus(200);
     }
   } catch (err) {
