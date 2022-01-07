@@ -14,6 +14,7 @@ function SingleUser(props) {
     dispatch({
       type: 'DELETE_USER', payload: {
         id: props.user.id,
+        fromAdmin: true
       }
     })
   }
