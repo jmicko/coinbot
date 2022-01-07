@@ -150,11 +150,11 @@ router.put('/approve', rejectUnauthenticated, async (req, res) => {
 */
 router.delete('/', rejectUnauthenticated, async (req, res) => {
   try {
+    console.log('in delete user route');
     const isAdmin = req.user.admin;
     if (isAdmin) {
       console.log('you are admin');
       const userToDelete = req.body.id;
-      console.log('in delete user route', req.body);
       // delete from user table first
       const userQueryText = `DELETE from "user" WHERE "id" = $1;`;
       await pool.query(userQueryText, [userToDelete]);
@@ -175,13 +175,11 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
     } else {
       const userID = req.body.id;
       const userToDelete = req.body.id;
-      console.log('you are NOT admin', userID, "delete", userToDelete);
+      console.log('you are NOT admin');
       // check to make sure the user ID that was sent is the same as the user requesting the delete
       if (userID === userToDelete) {
-        // delete the user
-        console.log('deleting user', userID);
 
-        // delete from user table first
+        // delete from user table
         const userQueryText = `DELETE from "user" WHERE "id" = $1;`;
         await pool.query(userQueryText, [userToDelete]);
 
