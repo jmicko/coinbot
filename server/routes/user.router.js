@@ -174,7 +174,9 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       res.sendStatus(200);
     } else {
       console.log('you are NOT admin');
-      res.sendStatus(403);
+      // check to make sure the user ID that was sent is the same as the user requesting the delete
+      // delete the user
+      res.sendStatus(200);
     }
   } catch (err) {
     console.log(err);

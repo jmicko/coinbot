@@ -24,11 +24,27 @@ function Reset(props) {
     });
   }
 
+  function deleteUser() {
+    console.log('clicked delete', props.store.accountReducer.userReducer.id);
+    // setDeleting(true)
+    dispatch({
+      type: 'DELETE_USER', payload: {
+        id: props.store.accountReducer.userReducer.id,
+      }
+    })
+  }
+
   return (
     <div className="Reset">
       {/* <center>
         <p>Reset Settings Page</p>
       </center> */}
+      <div className="divider" />
+      <h4>Delete Account</h4>
+      <p>{JSON.stringify(props.store.accountReducer.userReducer.id)}</p>
+      <p>Danger! This button will instantly and permanently delete your account and all user data including trades! Press it carefully!</p>
+      <button className={`btn-red medium ${props.theme}`} onClick={() => { deleteUser() }}>Delete Account</button>
+
       <div className="divider" />
       <h4>Delete All Trades</h4>
       <p>Danger! This button will delete all your positions! Press it carefully!</p>
