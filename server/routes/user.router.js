@@ -155,9 +155,22 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       console.log('you are admin');
       const userToDelete = req.body.id;
       console.log('in delete user route', req.body);
-      // delete from db first
-      const queryText = `DELETE from "user" WHERE "id" = $1;`;
-      await pool.query(queryText, [userToDelete]);
+      // delete from user table first
+      const userQueryText = `DELETE from "user" WHERE "id" = $1;`;
+      await pool.query(userQueryText, [userToDelete]);
+      
+      // delete from API table 
+      const apiQueryText = `DELETE from "user_api" WHERE "userID" = $1;`;
+      await pool.query(apiQueryText, [userToDelete]);
+      
+      // delete from orders table 
+      const ordersQueryText = `DELETE from "orders" WHERE "userID" = $1;`;
+      await pool.query(ordersQueryText, [userToDelete]);
+      
+      // delete from user settings table 
+      const userSettingsQueryText = `DELETE from "user_settings" WHERE "userID" = $1;`;
+      await pool.query(userSettingsQueryText, [userToDelete]);
+
       res.sendStatus(200);
     } else {
       console.log('you are NOT admin');
