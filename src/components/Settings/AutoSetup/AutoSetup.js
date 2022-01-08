@@ -52,10 +52,15 @@ function AutoSetup(props) {
       <div className="divider" />
       <h4>Auto Setup</h4>
       <p>
-        Enter the parameters you want and the bot will keep placing trades for you based on those parameters until you run out of cash.
+        Enter the parameters you want and the bot will keep placing trades for you based on
+        those parameters until you run out of cash, or until you have 1000 trade-pairs.
         This is much easier than manually placing dozens of trades if they are following a basic pattern.
       </p>
+      <p>
+        Please be aware that placing over 1000 trade-pairs will greatly slow down the bot and may decrease profits.
+      </p>
 
+      <div className="divider" />
       <form className='auto-setup-form' onSubmit={submitAutoSetup}>
 
         {/* STARTING VALUE */}
