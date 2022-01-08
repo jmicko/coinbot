@@ -14,6 +14,19 @@ function* startTrade(action) {
   }
 }
 
+function* autoSetup(action) {
+  try {
+    console.log('payload is:', action.payload);
+    const response = yield axios.post(`/api/trade/autoSetup`, action.payload);
+    console.log('response is.....', response);
+  } catch (error) {
+    console.log('POST order route has failed', error)
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 function* deleteTrade(action) {
   try {
     console.log('payload is...', action.payload);
@@ -29,6 +42,7 @@ function* deleteTrade(action) {
 
 function* tradeSaga() {
   yield takeLatest('START_TRADE', startTrade);
+  yield takeLatest('AUTO_SETUP', autoSetup);
   yield takeLatest('DELETE_TRADE', deleteTrade);
 }
 

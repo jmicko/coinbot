@@ -10,11 +10,41 @@ function AutoSetup(props) {
   const [startingValue, setStartingValue] = useState(1000);
   const [increment, setIncrement] = useState(100);
   const [size, setSize] = useState(10);
+  const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
+  const [tradePairRatio, setTradePairRatio] = useState(1.1);
+  // const [keepTrading, setKeepTrading] = useState(false);
 
 
   function submitAutoSetup(event) {
     event.preventDefault();
     console.log('automatically setting up bot');
+    // setKeepTrading(true);
+    autoTrader();
+  }
+
+  function autoTrader() {
+    let availableFunds = props.store.accountReducer.accountReducer;
+    console.log('here is the current available funds', availableFunds);
+
+    dispatch({
+      type: 'AUTO_SETUP', payload: {
+        startingValue: startingValue,
+        increment: increment,
+        trade_pair_ratio: tradePairRatio,
+        size: size,
+        product_id: transactionProduct,
+        // type: type
+      }
+    })
+
+    // if there is enough cash left to keep setting up pairs, call the function again
+    // if (availableFunds > size) {
+    //   console.log('there is enough money');
+    //   setTimeout(() => {
+    //     autoTrader();
+    //   }, 2000);
+    // }
+
   }
 
   return (
@@ -31,41 +61,59 @@ function AutoSetup(props) {
         {/* STARTING VALUE */}
         <p>What dollar amount to start at?</p>
         <label htmlFor='startingValue'>
-          Starting Value
+          Starting Value:
+          <br />
+          <input
+            name='startingValue'
+            type='number'
+            value={startingValue}
+            required
+            onChange={(event) => setStartingValue(event.target.value)}
+          />
         </label>
-        <input
-          name='startingValue'
-          type='number'
-          value={startingValue}
-          required
-          onChange={(event) => setStartingValue(event.target.value)}
-        />
 
         {/* INCREMENT */}
         <p>What dollar amount to increment by?</p>
         <label htmlFor='increment'>
-          Increment
+          Increment:
+          <br />
+          <input
+            name='increment'
+            type='number'
+            value={increment}
+            required
+            onChange={(event) => setIncrement(event.target.value)}
+          />
         </label>
-        <input
-          name='increment'
-          type='number'
-          value={increment}
-          required
-          onChange={(event) => setIncrement(event.target.value)}
-        />
+
+        {/* RATIO */}
+        <p>What is the trade-pair ratio (how much each BUY should increase in price before selling)?</p>
+        <label htmlFor='ratio'>
+          Trade-pair ratio:
+          <br />
+          <input
+            name='ratio'
+            type='number'
+            value={tradePairRatio}
+            required
+            onChange={(event) => setTradePairRatio(event.target.value)}
+          />
+        </label>
 
         {/* SIZE */}
         <p>What size in USD should each trade-pair be?</p>
         <label htmlFor='size'>
-          Size in USD
+          Size in USD:
+          <br />
+          <input
+            name='size'
+            type='number'
+            value={size}
+            required
+            onChange={(event) => setSize(event.target.value)}
+          />
         </label>
-        <input
-          name='size'
-          type='number'
-          value={size}
-          required
-          onChange={(event) => setSize(event.target.value)}
-        />
+
         {/* SUBMIT */}
         <br />
         <br />
