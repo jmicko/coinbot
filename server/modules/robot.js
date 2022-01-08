@@ -506,11 +506,16 @@ function orderElimination(dbOrders, cbOrders) {
 
 // auto setup trades until run out of money
 async function autoSetup(user, parameters) {
-  console.log('in autoSetup function', user, parameters);
+  // stop bot from adding more trades if over 1000 already placed
+  let totalOrders = await databaseClient.getUnsettledTrades('all', user.id);
+  if (totalOrders.length >= 1000) {
+    return;
+  }
+  // console.log('in autoSetup function', user, parameters);
 
   // get the BTC size from the entered USD size
   const convertedAmount = Number(Math.floor((parameters.size / parameters.startingValue) * 100000000)) / 100000000;
-  console.log(convertedAmount);
+  // console.log(convertedAmount);
 
   // calculate original sell price
   let original_sell_price = (Math.round((parameters.startingValue * (Number(parameters.trade_pair_ratio) + 100))) / 100);
@@ -526,13 +531,13 @@ async function autoSetup(user, parameters) {
     userID: user.id,
     trade_pair_ratio: parameters.trade_pair_ratio
   };
-  console.log('trade details', tradeDetails);
+  // console.log('trade details', tradeDetails);
 
   // send the order through
   try {
     // send the new order with the trade details
     let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
-    console.log('pending trade', pendingTrade);
+    // console.log('pending trade', pendingTrade);
     // wait a second before storing the trade. Sometimes it takes a second for coinbase to register the trade,
     // even after returning the details. robot.syncOrders will think it settled if it sees it in the db first
     await robot.sleep(100);
@@ -557,7 +562,7 @@ async function autoSetup(user, parameters) {
       product_id: parameters.product_id // done
     }
 
-    console.log('new parameters', newParameters);
+    // console.log('new parameters', newParameters);
 
     // call the function again with the new parameters
     setTimeout(() => {
@@ -572,7 +577,7 @@ async function autoSetup(user, parameters) {
         orderUpdate: true
       });
     } else if (err.code && err.code === 'ETIMEDOUT') {
-      console.log('Timed out!!!!! Synching orders just in case');
+      console.log('Timed out!!!!!');
       socketClient.emit('message', {
         error: `Connection timed out, consider synching all orders to prevent duplicates. This will not be done for you.`,
         orderUpdate: true
