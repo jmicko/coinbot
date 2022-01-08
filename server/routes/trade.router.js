@@ -80,10 +80,11 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
  * POST route for auto setup
  */
 router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
-  console.log('in auto setup route!', req.body);
+  console.log('in auto setup route!');
   // POST route code here
-  // const user = req.user;
-  // if (user.active && user.approved) {
+  const user = req.user;
+  if (user.active && user.approved) {
+    robot.autoSetup(user, req.body)
   //   const userID = req.user.id;
   //   console.log('user is', userID);
   //   const order = req.body;
@@ -139,10 +140,10 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
   //     // send internal error status
   //     res.sendStatus(500);
   //   }
-  // } else {
-  //   console.log('user is not active and cannot trade!');
-  //   res.sendStatus(404)
-  // }
+  } else {
+    console.log('user is not active and cannot trade!');
+    res.sendStatus(404)
+  }
 });
 
 

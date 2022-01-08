@@ -504,6 +504,14 @@ function orderElimination(dbOrders, cbOrders) {
 }
 
 
+// auto setup trades until run out of money
+function autoSetup(user, parameters) {
+  console.log('in autoSetup function', user, parameters);
+  // get the BTC size from the entered USD size
+  const convertedAmount = Number(Math.floor((parameters.size / parameters.startingValue) * 100000000)) / 100000000;
+  console.log(convertedAmount);
+}
+
 
 const robot = {
   // the /trade/toggle route will set canToggle to false as soon as it is called so that it 
@@ -520,6 +528,7 @@ const robot = {
   processOrders: processOrders,
   syncEverything: syncEverything,
   startSync: startSync,
+  autoSetup: autoSetup,
 }
 
 
