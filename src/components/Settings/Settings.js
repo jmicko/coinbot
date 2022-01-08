@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { connect } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 import Admin from './Admin/Admin';
-import API from './API/API';
+import AutoSetup from './AutoSetup/AutoSetup';
 import General from './General/General';
 import Reset from './Reset/Reset';
 import History from './History/History';
@@ -24,7 +24,7 @@ function Settings(props) {
           {
             'general': <General theme={props.theme} />,
             'history': <History theme={props.theme} />,
-            // 'api': <API theme={props.theme} />,
+            'autoSetup': <AutoSetup theme={props.theme} />,
             'reset': <Reset theme={props.theme} />,
             'admin': <Admin theme={props.theme} />
           }[settingsPage]

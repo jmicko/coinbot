@@ -76,6 +76,22 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
   }
 });
 
+/**
+ * POST route for auto setup
+ */
+router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
+  console.log('in auto setup route!');
+  // POST route code here
+  const user = req.user;
+  if (user.active && user.approved) {
+    robot.autoSetup(user, req.body)
+    res.sendStatus(200);
+  } else {
+    console.log('user is not active and cannot trade!');
+    res.sendStatus(404)
+  }
+});
+
 
 /**
 * DELETE route

@@ -504,6 +504,90 @@ function orderElimination(dbOrders, cbOrders) {
 }
 
 
+// auto setup trades until run out of money
+async function autoSetup(user, parameters) {
+  // stop bot from adding more trades if over 1000 already placed
+  let totalOrders = await databaseClient.getUnsettledTrades('all', user.id);
+  if (totalOrders.length >= 1000) {
+    return;
+  }
+  // console.log('in autoSetup function', user, parameters);
+
+  // get the BTC size from the entered USD size
+  const convertedAmount = Number(Math.floor((parameters.size / parameters.startingValue) * 100000000)) / 100000000;
+  // console.log(convertedAmount);
+
+  // calculate original sell price
+  let original_sell_price = (Math.round((parameters.startingValue * (Number(parameters.trade_pair_ratio) + 100))) / 100);
+
+  const tradeDetails = {
+    original_sell_price: original_sell_price, //done
+    original_buy_price: parameters.startingValue, //done
+    side: "buy", //done
+    price: parameters.startingValue, // USD done
+    size: convertedAmount, // BTC done
+    product_id: parameters.product_id, //done
+    stp: 'cn',
+    userID: user.id,
+    trade_pair_ratio: parameters.trade_pair_ratio
+  };
+  // console.log('trade details', tradeDetails);
+
+  // send the order through
+  try {
+    // send the new order with the trade details
+    let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
+    // console.log('pending trade', pendingTrade);
+    // wait a second before storing the trade. Sometimes it takes a second for coinbase to register the trade,
+    // even after returning the details. robot.syncOrders will think it settled if it sees it in the db first
+    await robot.sleep(100);
+    // store the new trade in the db. the trade details are also sent to store trade position prices
+    await databaseClient.storeTrade(pendingTrade, tradeDetails);
+
+    // check if order went through
+    await robot.sleep(1000);
+    // let success = await coinbaseClient.repeatedCheck(pendingTrade, user.id, 0);
+    // console.log('did the order go through?', success);
+
+
+    // create new parameters 
+
+    const newStartingValue = (Number(parameters.startingValue) + Number(parameters.increment));
+
+    const newParameters = {
+      startingValue: newStartingValue, // done
+      increment: parameters.increment, // done
+      trade_pair_ratio: parameters.trade_pair_ratio, // done
+      size: parameters.size, // done
+      product_id: parameters.product_id // done
+    }
+
+    // console.log('new parameters', newParameters);
+
+    // call the function again with the new parameters
+    setTimeout(() => {
+      autoSetup(user, newParameters);
+    }, 100);
+
+  } catch (err) {
+    if (err.response?.status === 400) {
+      console.log('Insufficient funds!');
+      socketClient.emit('message', {
+        error: `Insufficient funds!`,
+        orderUpdate: true
+      });
+    } else if (err.code && err.code === 'ETIMEDOUT') {
+      console.log('Timed out!!!!!');
+      socketClient.emit('message', {
+        error: `Connection timed out, consider synching all orders to prevent duplicates. This will not be done for you.`,
+        orderUpdate: true
+      });
+    } else {
+      console.log('problem in autoSetup', err);
+    }
+  }
+}
+
 
 const robot = {
   // the /trade/toggle route will set canToggle to false as soon as it is called so that it 
@@ -520,6 +604,7 @@ const robot = {
   processOrders: processOrders,
   syncEverything: syncEverything,
   startSync: startSync,
+  autoSetup: autoSetup,
 }
 
 
