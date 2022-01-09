@@ -108,6 +108,7 @@ function AutoSetup(props) {
               name='startingValue'
               type='number'
               value={startingValue}
+              step={1000}
               required
               onChange={(event) => setStartingValue(Number(event.target.value))}
             />
@@ -122,6 +123,7 @@ function AutoSetup(props) {
               name='increment'
               type='number'
               value={increment}
+              step={10}
               required
               onChange={(event) => setIncrement(Number(event.target.value))}
             />
@@ -136,6 +138,7 @@ function AutoSetup(props) {
               name='ratio'
               type='number'
               value={tradePairRatio}
+              step={.1}
               required
               onChange={(event) => setTradePairRatio(Number(event.target.value))}
             />
@@ -150,6 +153,8 @@ function AutoSetup(props) {
               name='size'
               type='number'
               value={size}
+              step={5}
+              min={1}
               required
               onChange={(event) => setSize(Number(event.target.value))}
             />
