@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../../redux/mapStoreToProps';
 import './AutoSetup.css'
@@ -12,7 +12,41 @@ function AutoSetup(props) {
   const [size, setSize] = useState(10);
   const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
   const [tradePairRatio, setTradePairRatio] = useState(1.1);
+  const [setupResults, setSetupResults] = useState(1);
   // const [keepTrading, setKeepTrading] = useState(false);
+
+
+  useEffect(() => {
+    if (size) {
+
+      calculateResults();
+    }
+    // return () => {
+    //   cleanup
+    // }
+  }, [startingValue, increment, size])
+
+
+
+  function calculateResults() {
+    let availableFunds = props.store.accountReducer.accountReducer;
+    let startingPrice = startingValue;
+    let finalPrice = startingPrice;
+    setSetupResults(startingValue)
+
+    while (size <= availableFunds) {
+      // each loop needs to buy BTC with the USD size
+      // this will lower the value of available funds by the size
+      availableFunds -= size;
+      // then it will increase the final price by the increment value
+      finalPrice += increment;
+    }
+
+
+    setSetupResults(finalPrice)
+
+
+  }
 
 
   function submitAutoSetup(event) {
@@ -61,69 +95,92 @@ function AutoSetup(props) {
       </p>
 
       <div className="divider" />
-      <form className='auto-setup-form' onSubmit={submitAutoSetup}>
+      <div className='auto-setup-form-and-results'>
 
-        {/* STARTING VALUE */}
-        <p>What dollar amount to start at?</p>
-        <label htmlFor='startingValue'>
-          Starting Value:
+        <form className='auto-setup-form' onSubmit={submitAutoSetup}>
+
+          {/* STARTING VALUE */}
+          <p>What dollar amount to start at?</p>
+          <label htmlFor='startingValue'>
+            Starting Value:
+            <br />
+            <input
+              name='startingValue'
+              type='number'
+              value={startingValue}
+              step={1000}
+              required
+              onChange={(event) => setStartingValue(Number(event.target.value))}
+            />
+          </label>
+
+          {/* INCREMENT */}
+          <p>What dollar amount to increment by?</p>
+          <label htmlFor='increment'>
+            Increment:
+            <br />
+            <input
+              name='increment'
+              type='number'
+              value={increment}
+              step={10}
+              required
+              onChange={(event) => setIncrement(Number(event.target.value))}
+            />
+          </label>
+
+          {/* RATIO */}
+          <p>What is the trade-pair ratio (how much each BUY should increase in price before selling)?</p>
+          <label htmlFor='ratio'>
+            Trade-pair ratio:
+            <br />
+            <input
+              name='ratio'
+              type='number'
+              value={tradePairRatio}
+              step={.1}
+              required
+              onChange={(event) => setTradePairRatio(Number(event.target.value))}
+            />
+          </label>
+
+          {/* SIZE */}
+          <p>What size in USD should each trade-pair be?</p>
+          <label htmlFor='size'>
+            Size in USD:
+            <br />
+            <input
+              name='size'
+              type='number'
+              value={size}
+              step={5}
+              min={1}
+              required
+              onChange={(event) => setSize(Number(event.target.value))}
+            />
+          </label>
+
+          {/* SUBMIT */}
           <br />
-          <input
-            name='startingValue'
-            type='number'
-            value={startingValue}
-            required
-            onChange={(event) => setStartingValue(event.target.value)}
-          />
-        </label>
-
-        {/* INCREMENT */}
-        <p>What dollar amount to increment by?</p>
-        <label htmlFor='increment'>
-          Increment:
           <br />
-          <input
-            name='increment'
-            type='number'
-            value={increment}
-            required
-            onChange={(event) => setIncrement(event.target.value)}
-          />
-        </label>
+          <input className={`btn-store-api btn-blue medium ${props.theme}`} type="submit" name="submit" value="Start Trading" />
+        </form>
 
-        {/* RATIO */}
-        <p>What is the trade-pair ratio (how much each BUY should increase in price before selling)?</p>
-        <label htmlFor='ratio'>
-          Trade-pair ratio:
-          <br />
-          <input
-            name='ratio'
-            type='number'
-            value={tradePairRatio}
-            required
-            onChange={(event) => setTradePairRatio(event.target.value)}
-          />
-        </label>
+        <div className='auto-setup-results'>
+          <p>
+            The price of the last trade-pair will be close to:
+          </p>
+          <p>
+            <strong>{setupResults}</strong>
+          </p>
+          <p>
+            This will likely be higher if trades are placed higher than the current price of BTC, as they
+            will cost less. It can also change if the price of BTC moves up or down significantly while the 
+            trades are being set up.
+          </p>
 
-        {/* SIZE */}
-        <p>What size in USD should each trade-pair be?</p>
-        <label htmlFor='size'>
-          Size in USD:
-          <br />
-          <input
-            name='size'
-            type='number'
-            value={size}
-            required
-            onChange={(event) => setSize(event.target.value)}
-          />
-        </label>
-
-        {/* SUBMIT */}
-        <br />
-        <br />
-        <input className={`btn-store-api btn-blue medium ${props.theme}`} type="submit" name="submit" value="Start Trading" />
-      </form>
+        </div>
+      </div>
 
       <div className="divider" />
     </div>
