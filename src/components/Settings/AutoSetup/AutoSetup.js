@@ -163,10 +163,15 @@ function AutoSetup(props) {
 
         <div className='auto-setup-results'>
           <p>
-            Setup Results
+            The price of the last trade-pair will be close to:
           </p>
           <p>
-            {setupResults}
+            <strong>{setupResults}</strong>
+          </p>
+          <p>
+            This will likely be higher if trades are placed higher than the current price of BTC, as they
+            will cost less. It can also change if the price of BTC moves up or down significantly while the 
+            trades are being set up.
           </p>
 
         </div>
