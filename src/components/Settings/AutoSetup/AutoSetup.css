@@ -1,7 +1,13 @@
-/* .btn-store-api{
-  font-size: medium;
+.auto-setup-results {
+  /* float: right; */
+  width: 50%;
 }
 
-.btn-sandbox-api{
-  margin: .2rem .6rem;
-} */
+.auto-setup-form {
+  /* float: left; */
+  /* width: 50%; */
+}
+
+.auto-setup-form-and-results{
+  display: flex;
+}
