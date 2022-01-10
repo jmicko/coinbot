@@ -24,7 +24,7 @@ function Settings(props) {
           {
             'general': <General theme={props.theme} />,
             'history': <History theme={props.theme} />,
-            'autoSetup': <AutoSetup theme={props.theme} />,
+            'autoSetup': <AutoSetup theme={props.theme} priceTicker={props.priceTicker} />,
             'reset': <Reset theme={props.theme} />,
             'admin': <Admin theme={props.theme} />
           }[settingsPage]

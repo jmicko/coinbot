@@ -78,7 +78,7 @@ function Home(props) {
         }
         <Updates theme={theme} />
         <Status theme={theme} priceTicker={priceTicker} />
-        <Settings showSettings={showSettings} clickSettings={clickSettings} theme={theme} />
+        <Settings showSettings={showSettings} clickSettings={clickSettings} theme={theme} priceTicker={priceTicker} />
       </SocketProvider>
     </div>
   );

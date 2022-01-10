@@ -13,18 +13,16 @@ function AutoSetup(props) {
   const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
   const [tradePairRatio, setTradePairRatio] = useState(1.1);
   const [setupResults, setSetupResults] = useState(1);
+  const [autoTradeStarted, setAutoTradeStarted] = useState(false);
+  
   // const [keepTrading, setKeepTrading] = useState(false);
 
 
   useEffect(() => {
     if (size) {
-
       calculateResults();
     }
-    // return () => {
-    //   cleanup
-    // }
-  }, [startingValue, increment, size])
+  }, [startingValue, increment, size, props.priceTicker])
 
 
 
@@ -32,14 +30,25 @@ function AutoSetup(props) {
     let availableFunds = props.store.accountReducer.accountReducer;
     let startingPrice = startingValue;
     let finalPrice = startingPrice;
+    let tradingPrice = props.priceTicker;
+    let count = 0;
     setSetupResults(startingValue)
 
-    while (size <= availableFunds) {
+    while ((size <= availableFunds) && (count <= 1000)) {
+      let actualSize = size;
+
+      if (finalPrice >= tradingPrice) {
+        let BTCSize = size / finalPrice;
+        let actualUSDSize = tradingPrice * BTCSize;
+        actualSize = actualUSDSize;
+      }
+
       // each loop needs to buy BTC with the USD size
       // this will lower the value of available funds by the size
-      availableFunds -= size;
+      availableFunds -= actualSize;
       // then it will increase the final price by the increment value
       finalPrice += increment;
+      count++;
     }
 
 
@@ -51,6 +60,7 @@ function AutoSetup(props) {
 
   function submitAutoSetup(event) {
     event.preventDefault();
+    setAutoTradeStarted(true);
     console.log('automatically setting up bot');
     // setKeepTrading(true);
     autoTrader();
@@ -161,7 +171,10 @@ function AutoSetup(props) {
           {/* SUBMIT */}
           <br />
           <br />
-          <input className={`btn-store-api btn-blue medium ${props.theme}`} type="submit" name="submit" value="Start Trading" />
+          {!autoTradeStarted 
+          ? <input className={`btn-store-api btn-blue medium ${props.theme}`} type="submit" name="submit" value="Start Trading" />
+          : <p>Auto setup started!</p>
+          }
         </form>
 
         <div className='auto-setup-results'>
