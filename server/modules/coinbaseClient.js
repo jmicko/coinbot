@@ -148,7 +148,7 @@ async function getOpenOrders(userID) {
       function computeSignature(request) {
         // const data      = request.data;
         const method = 'GET';
-        const path = "/orders?status=open";
+        const path = "/orders?status=open&sortedBy=created_at&sorting=desc";
         const message = timestamp + method + path;
         const key = CryptoJS.enc.Base64.parse(secret);
         const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
@@ -157,7 +157,49 @@ async function getOpenOrders(userID) {
 
       const options = {
         method: 'GET',
-        url: `${API_URI}/orders?status=open`,
+        url: `${API_URI}/orders?status=open&sortedBy=created_at&sorting=desc`,
+        headers: {
+          Accept: 'application/json',
+          'cb-access-key': key,
+          'cb-access-passphrase': passphrase,
+          'cb-access-sign': computeSignature(),
+          'cb-access-timestamp': timestamp
+        }
+      };
+
+      let response = await axios.request(options);
+      resolve(response.data);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+
+async function getOpenOrdersBeforeDate(userID, date) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const timestamp = Math.floor(Date.now() / 1000);
+      // // sign the request
+      const userAPI = await databaseClient.getUserAPI(userID);
+      const secret = userAPI.CB_SECRET;
+      const key = userAPI.CB_ACCESS_KEY;
+      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
+      const API_URI = userAPI.API_URI;
+
+      function computeSignature(request) {
+        // const data      = request.data;
+        const method = 'GET';
+        const path = `/orders?status=open&sortedBy=created_at&sorting=desc&end_date=${date}`;
+        const message = timestamp + method + path;
+        const key = CryptoJS.enc.Base64.parse(secret);
+        const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
+        return hash;
+      }
+
+      const options = {
+        method: 'GET',
+        url: `${API_URI}/orders?status=open&sortedBy=created_at&sorting=desc&end_date=${date}`,
         headers: {
           Accept: 'application/json',
           'cb-access-key': key,
@@ -424,4 +466,5 @@ module.exports = {
   getAccounts: getAccounts,
   repeatedCheck: repeatedCheck,
   testAPI: testAPI,
+  getOpenOrdersBeforeDate: getOpenOrdersBeforeDate,
 }

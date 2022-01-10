@@ -32,6 +32,19 @@ async function syncOrders(userID) {
       // store the lists of orders in the corresponding arrays so they can be compared
       const dbOrders = results[0];
       const cbOrders = results[1];
+
+      // CHECK IF THERE ARE 1000 OPEN ORDERS AND GET MORE FROM CB IF NEEDED
+
+      console.log('this is the newest and oldest order from cb', cbOrders[0], cbOrders[cbOrders.length - 1]);
+
+      const oldestDate = cbOrders[cbOrders.length - 1].created_at;
+
+      
+      const olderOrders = await coinbaseClient.getOpenOrdersBeforeDate(userID, oldestDate);
+      
+      console.log(olderOrders);
+
+
       // compare the arrays and remove any where the ids match in both,
       // leaving a list of orders that are open in the db, but not on cb. Probably settled
       const ordersToCheck = await orderElimination(dbOrders, cbOrders);
