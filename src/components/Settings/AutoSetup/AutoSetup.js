@@ -151,6 +151,7 @@ function AutoSetup(props) {
               name='size'
               type='number'
               value={size}
+              step={.01}
               min={1}
               required
               onChange={(event) => setSize(Number(event.target.value))}
