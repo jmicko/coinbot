@@ -32,7 +32,7 @@ function SingleTrade(props) {
 
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
   const numberWithCommas = (x) => {
-    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
   }
 
   // todo - probably need to refactor this thing asap. Should use more useState hooks to make these strings a bit less horrifying

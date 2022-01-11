@@ -30,7 +30,7 @@ function Status(props) {
 
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
   const numberWithCommas = (x) => {
-    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
   }
 
   // update profits when a trade is made
@@ -80,7 +80,7 @@ function Status(props) {
       <p className="info status-ticker"><strong>Maker Fee</strong><br />{Number((props.store.accountReducer.feeReducer.maker_fee_rate * 100).toFixed(2))}%</p>
       <p className="info status-ticker"><strong>Taker Fee</strong><br />{Number((props.store.accountReducer.feeReducer.taker_fee_rate * 100).toFixed(2))}%</p>
       <p className="info status-ticker"><strong>30 Day Volume</strong><br />${numberWithCommas(props.store.accountReducer.feeReducer.usd_volume)}</p>
-      <p className="info status-ticker"><strong>Profit Estimate</strong><br />${numberWithCommas(Number(props.store.accountReducer.profitsReducer[0].sum).toFixed(2))}</p>
+      <p className="info status-ticker"><strong>Profit Estimate</strong><br />${numberWithCommas(Number(props.store.accountReducer.profitsReducer[0].sum))}</p>
       <p className="info status-ticker"><strong>Total Open Orders</strong><br />{numberWithCommas(openOrderQuantity)}</p>
       <p className="info status-ticker">~~{loopStatus ? <strong>HEARTBEAT</strong> : <strong>heartbeat</strong>}~~</p>
     </div>
