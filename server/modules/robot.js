@@ -34,16 +34,30 @@ async function syncOrders(userID) {
       const cbOrders = results[1];
 
       // CHECK IF THERE ARE 1000 OPEN ORDERS AND GET MORE FROM CB IF NEEDED
+      if (cbOrders.length >= 1000) {
+        
+        
+        // console.log('this is the newest and oldest order from cb', cbOrders[0], cbOrders[cbOrders.length - 1]);
+        
+        const oldestDate = cbOrders[cbOrders.length - 1].created_at;
+        
+        
+        const olderOrders = await coinbaseClient.getOpenOrdersBeforeDate(userID, oldestDate);
+        
+        // console.log(olderOrders);
+        
+        
+        // compare the arrays and remove any where the ids match in both,
+        // leaving a list of orders that are older than the initial 1000 orders from cb
+        const olderOrdersRemovedDuplicates = await orderElimination(olderOrders, cbOrders);
+        // console.log('after removing duplicates', olderOrdersRemovedDuplicates);
 
-      console.log('this is the newest and oldest order from cb', cbOrders[0], cbOrders[cbOrders.length - 1]);
-
-      const oldestDate = cbOrders[cbOrders.length - 1].created_at;
-
+        // put the older orders into the coinbase orders array
+        olderOrdersRemovedDuplicates.forEach(oldOrder => {
+          cbOrders.push(oldOrder);
+        });
+      }
       
-      const olderOrders = await coinbaseClient.getOpenOrdersBeforeDate(userID, oldestDate);
-      
-      console.log(olderOrders);
-
 
       // compare the arrays and remove any where the ids match in both,
       // leaving a list of orders that are open in the db, but not on cb. Probably settled
@@ -519,9 +533,10 @@ function orderElimination(dbOrders, cbOrders) {
 
 // auto setup trades until run out of money
 async function autoSetup(user, parameters) {
-  // stop bot from adding more trades if over 1000 already placed
+  // stop bot from adding more trades if over 1999 already placed
   let totalOrders = await databaseClient.getUnsettledTrades('all', user.id);
-  if (totalOrders.length >= 1000) {
+  if (totalOrders.length >= 1999) {
+    console.log('more than 1999 unsettled orders');
     return;
   }
   // console.log('in autoSetup function', user, parameters);
@@ -557,11 +572,7 @@ async function autoSetup(user, parameters) {
     // store the new trade in the db. the trade details are also sent to store trade position prices
     await databaseClient.storeTrade(pendingTrade, tradeDetails);
 
-    // check if order went through
     await robot.sleep(1000);
-    // let success = await coinbaseClient.repeatedCheck(pendingTrade, user.id, 0);
-    // console.log('did the order go through?', success);
-
 
     // create new parameters 
 
@@ -575,7 +586,6 @@ async function autoSetup(user, parameters) {
       product_id: parameters.product_id // done
     }
 
-    // console.log('new parameters', newParameters);
 
     // call the function again with the new parameters
     setTimeout(() => {
@@ -584,7 +594,7 @@ async function autoSetup(user, parameters) {
 
   } catch (err) {
     if (err.response?.status === 400) {
-      console.log('Insufficient funds!');
+      console.log(err, 'Insufficient funds!');
       socketClient.emit('message', {
         error: `Insufficient funds!`,
         orderUpdate: true
