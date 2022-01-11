@@ -15,7 +15,7 @@ function AutoSetup(props) {
   const [setupResults, setSetupResults] = useState(1);
   const [autoTradeStarted, setAutoTradeStarted] = useState(false);
   const [totalTrades, setTotalTrades] = useState(false);
-  
+
   // const [keepTrading, setKeepTrading] = useState(false);
 
 
@@ -25,7 +25,10 @@ function AutoSetup(props) {
     }
   }, [startingValue, increment, size, props.priceTicker])
 
-
+  // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
+  const numberWithCommas = (x) => {
+    return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
+  }
 
   function calculateResults() {
     let availableFunds = props.store.accountReducer.accountReducer;
@@ -43,7 +46,6 @@ function AutoSetup(props) {
         let actualUSDSize = tradingPrice * BTCSize;
         actualSize = actualUSDSize;
       }
-
       // each loop needs to buy BTC with the USD size
       // this will lower the value of available funds by the size
       availableFunds -= actualSize;
@@ -64,7 +66,6 @@ function AutoSetup(props) {
     event.preventDefault();
     setAutoTradeStarted(true);
     console.log('automatically setting up bot');
-    // setKeepTrading(true);
     autoTrader();
   }
 
@@ -79,18 +80,8 @@ function AutoSetup(props) {
         trade_pair_ratio: tradePairRatio,
         size: size,
         product_id: transactionProduct,
-        // type: type
       }
     })
-
-    // if there is enough cash left to keep setting up pairs, call the function again
-    // if (availableFunds > size) {
-    //   console.log('there is enough money');
-    //   setTimeout(() => {
-    //     autoTrader();
-    //   }, 2000);
-    // }
-
   }
 
   return (
@@ -99,11 +90,11 @@ function AutoSetup(props) {
       <h4>Auto Setup</h4>
       <p>
         Enter the parameters you want and the bot will keep placing trades for you based on
-        those parameters until you run out of cash, or until you have 1999 trade-pairs.
+        those parameters until you run out of cash, or until you have 1,999 trade-pairs.
         This is much easier than manually placing dozens of trades if they are following a basic pattern.
       </p>
       <p>
-        Please be aware that placing over 1999 trade-pairs will greatly slow down the bot and may decrease profits.
+        Please be aware that placing over 1,999 trade-pairs will greatly slow down the bot and may decrease profits.
       </p>
 
       <div className="divider" />
@@ -173,9 +164,9 @@ function AutoSetup(props) {
           {/* SUBMIT */}
           <br />
           <br />
-          {!autoTradeStarted 
-          ? <input className={`btn-store-api btn-blue medium ${props.theme}`} type="submit" name="submit" value="Start Trading" />
-          : <p>Auto setup started!</p>
+          {!autoTradeStarted
+            ? <input className={`btn-store-api btn-blue medium ${props.theme}`} type="submit" name="submit" value="Start Trading" />
+            : <p>Auto setup started!</p>
           }
         </form>
 
@@ -184,21 +175,21 @@ function AutoSetup(props) {
             The price of the last trade-pair will be close to:
           </p>
           <p>
-            <strong>{setupResults}</strong>
+            <strong>{numberWithCommas(setupResults)}</strong>
           </p>
           <p>
             This will likely be higher if trades are placed higher than the current price of BTC, as they
-            will cost less. It can also change if the price of BTC moves up or down significantly while the 
+            will cost less. It can also change if the price of BTC moves up or down significantly while the
             trades are being set up.
           </p>
           <p>
             Approximate number of trades the setup process will create:
           </p>
           <p>
-            <strong>{totalTrades}</strong>
+            <strong>{numberWithCommas(totalTrades)}</strong>
           </p>
           <p>
-            However, it will try to stop before there are more than 1999 trades placed. Latency may cause it to 
+            However, it will try to stop before there are more than 1,999 trades placed. Latency may cause it to
             create more, and you may need to delete a few in order to optimize speed.
           </p>
 
