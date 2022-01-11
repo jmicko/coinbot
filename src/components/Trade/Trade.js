@@ -18,6 +18,11 @@ function Trade(props) {
   const [amountTypeIsUSD, setAmountTypeIsUSD] = useState(false);
   const dispatch = useDispatch();
 
+  // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
+  const numberWithCommas = (x) => {
+    return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
+  }
+
   function submitTransaction(event) {
     event.preventDefault();
     // calculate flipped price
@@ -260,16 +265,16 @@ function Trade(props) {
           <div className={`boxed dark ${props.store.accountReducer.userReducer.theme}`}>
             <h4 className={`title ${props.theme}`}>New position</h4>
             <p><strong>Per coin:</strong></p>
-            <p className="info">Buy price: <strong>${price}</strong> </p>
-            <p className="info">Sell price <strong>${(Math.round((price * (tradePairRatio + 100))) / 100)}</strong></p>
-            <p className="info">Price margin: <strong>{Math.round(((price * (tradePairRatio + 100) / 100) - price) * 100) / 100}</strong> </p>
+            <p className="info">Buy price: <strong>${numberWithCommas(price)}</strong> </p>
+            <p className="info">Sell price <strong>${numberWithCommas(Math.round((price * (tradePairRatio + 100))) / 100)}</strong></p>
+            <p className="info">Price margin: <strong>{numberWithCommas(Math.round(((price * (tradePairRatio + 100) / 100) - price) * 100) / 100)}</strong> </p>
             <p className="info">Volume <strong>{transactionAmountBTC}</strong> </p>
             <p><strong>Cost at this volume:</strong></p>
-            <p className="info"><strong>BUY*:</strong> ${Math.round(price * transactionAmountBTC * 100) / 100}</p>
-            <p className="info"><strong>SELL*:</strong>${(Math.round((price * transactionAmountBTC * (tradePairRatio + 100))) / 100)}</p>
+            <p className="info"><strong>BUY*:</strong> ${numberWithCommas(Math.round(price * transactionAmountBTC * 100) / 100)}</p>
+            <p className="info"><strong>SELL*:</strong>${numberWithCommas(Math.round((price * transactionAmountBTC * (tradePairRatio + 100))) / 100)}</p>
             <p className="info"><strong>FEE*:</strong> ${Math.round(price * transactionAmountBTC * (fees * 10000)) / 10000}</p>
-            <p className="info"><strong>PAIR MARGIN*:</strong> ${(Math.round((((price * transactionAmountBTC * (tradePairRatio + 100))) / 100 - (price * transactionAmountBTC)) * 10000)) / 10000}</p>
-            <p className="info"><strong>PAIR PROFIT*:</strong> ${(Math.round((((price * transactionAmountBTC * (tradePairRatio + 100)) / 100) - (price * transactionAmountBTC) - (price * transactionAmountBTC * fees) * 2) * 10000)) / 10000}</p>
+            <p className="info"><strong>PAIR MARGIN*:</strong> ${numberWithCommas((Math.round((((price * transactionAmountBTC * (tradePairRatio + 100))) / 100 - (price * transactionAmountBTC)) * 10000)) / 10000)}</p>
+            <p className="info"><strong>PAIR PROFIT*:</strong> ${numberWithCommas((Math.round((((price * transactionAmountBTC * (tradePairRatio + 100)) / 100) - (price * transactionAmountBTC) - (price * transactionAmountBTC * fees) * 2) * 10000)) / 10000)}</p>
             {/* <p className="info">The value in USD for the initial transaction will be about ${((Math.round((price * transactionAmountBTC) * 100)) / 100)}.</p> */}
             <p className="small info">*Costs, fees, margin, and profit, are estimated and may be different at time of transaction. This is mostly due to rounding issues market conditions.</p>
           </div>

@@ -30,6 +30,11 @@ function SingleTrade(props) {
     })
   }
 
+  // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
+  const numberWithCommas = (x) => {
+    return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
+  }
+
   // todo - probably need to refactor this thing asap. Should use more useState hooks to make these strings a bit less horrifying
   // postgres is much better at math using exact
 
@@ -45,20 +50,20 @@ function SingleTrade(props) {
           <strong>
             Price: </strong>
           {(props.order.side === 'sell')
-            ? Number(props.order.original_sell_price).toFixed(2)
-            : Number(props.order.original_buy_price).toFixed(2)
-          } ~ <strong>
+            ? numberWithCommas(Number(props.order.original_sell_price).toFixed(2))
+            : numberWithCommas(Number(props.order.original_buy_price).toFixed(2))
+          } <strong>
             {(props.order.side === 'sell')
-              ? 'Buys:'
-              : 'Sells:'
+              ? '~Buys:'
+              : '~Sells:'
             } </strong>
           {(props.order.side === 'sell')
-            ? Number(props.order.original_buy_price).toFixed(2)
-            : Number(props.order.original_sell_price).toFixed(2)
-          } ~ <strong>Size </strong>{Number(props.order.size).toFixed(8)} ~
-          <strong>Value</strong> ${(Math.round((props.order.price * props.order.size) * 100) / 100).toFixed(2)} ~
-          <strong> Pair Profit</strong> ${profit.toFixed(8)}
-          <strong> Time</strong> {new Date(props.order.created_at).toLocaleString('en-US')}
+            ? numberWithCommas(Number(props.order.original_buy_price).toFixed(2))
+            : numberWithCommas(Number(props.order.original_sell_price).toFixed(2))
+          } ~<strong>Size </strong>{Number(props.order.size).toFixed(8)} ~
+          <strong>Value</strong> ${numberWithCommas((Math.round((props.order.price * props.order.size) * 100) / 100).toFixed(2))} ~
+          <strong>Pair Profit</strong> ${profit.toFixed(8)}
+          <strong> ~Time</strong> {new Date(props.order.created_at).toLocaleString('en-US')}
         </p>
       </div>
     </div>

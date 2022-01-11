@@ -12,12 +12,12 @@ const userReducer = (state = {}, action) => {
   }
 };
 
-const feeReducer = (state = {}, action) => {
+const feeReducer = (state = { usd_volume: 0, maker_fee_rate: 0, taker_fee_rate: 0 }, action) => {
   switch (action.type) {
     case 'SET_FEES':
       return action.payload;
     case 'UNSET_FEES':
-      return {};
+      return { usd_volume: 0, maker_fee_rate: 0, taker_fee_rate: 0 };
     default:
       return state;
   }
@@ -34,12 +34,12 @@ const profitsReducer = (state = [{ sum: "0" }], action) => {
   }
 };
 
-const accountReducer = (state = [{ available: 0 }], action) => {
+const accountReducer = (state = 0, action) => {
   switch (action.type) {
     case 'SET_ACCOUNT':
       return action.payload;
     case 'UNSET_ACCOUNT':
-      return [{ available: 0 }];
+      return 0;
     default:
       return state;
   }
