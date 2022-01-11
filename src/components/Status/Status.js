@@ -69,12 +69,6 @@ function Status(props) {
     <div className="Status boxed fit">
       {/* todo - maybe style in some divider lines here or something */}
       <p className="info status-ticker"><strong>~~~ BTC-USD ~~~</strong><br />${props.priceTicker}/coin</p>
-      {/* <p className="info status-ticker">${props.store.statusReducer.tickerReducer.tickerPrice}/coin</p> */}
-      {/* <p className="info status-ticker"><strong>~~~ Coinbot ~~~</strong></p> */}
-      {/* <p className="info status-ticker">{(localWebsocket) ? 'Local WS Connected' : 'Local WS Problem'}</p>
-      <p className="info status-ticker">{(cbWebsocket) ? 'CB WS Connected' : 'CB WS Problem'}</p>
-      <p className="info status-ticker">{(connection) ? 'Ticker Connected' : 'Ticker Problem'}</p> */}
-      {/* <p className="info status-ticker"><strong>~~~ Account ~~~</strong></p> */}
       <p className="info status-ticker"><strong>Available Funds</strong><br />${Math.floor(props.store.accountReducer.accountReducer * 100) / 100}</p>
       <p className="info status-ticker"><strong>Maker Fee</strong><br />{Number((props.store.accountReducer.feeReducer.maker_fee_rate * 100).toFixed(2))}%</p>
       <p className="info status-ticker"><strong>Taker Fee</strong><br />{Number((props.store.accountReducer.feeReducer.taker_fee_rate * 100).toFixed(2))}%</p>
@@ -82,8 +76,6 @@ function Status(props) {
       <p className="info status-ticker"><strong>Profit Estimate</strong><br />${Number(props.store.accountReducer.profitsReducer[0].sum)}</p>
       <p className="info status-ticker"><strong>Total Open Orders</strong><br />{openOrderQuantity}</p>
       <p className="info status-ticker">~~{loopStatus ? <strong>HEARTBEAT</strong> : <strong>heartbeat</strong>}~~</p>
-      {/* <p className="small">*Profit calculation is a work in progress, but this should be close</p> */}
-      {/* .store.accountReducer.feeReducer */}
     </div>
   )
 }

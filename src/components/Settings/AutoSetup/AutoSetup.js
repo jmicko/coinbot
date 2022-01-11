@@ -14,6 +14,7 @@ function AutoSetup(props) {
   const [tradePairRatio, setTradePairRatio] = useState(1.1);
   const [setupResults, setSetupResults] = useState(1);
   const [autoTradeStarted, setAutoTradeStarted] = useState(false);
+  const [totalTrades, setTotalTrades] = useState(false);
   
   // const [keepTrading, setKeepTrading] = useState(false);
 
@@ -34,7 +35,7 @@ function AutoSetup(props) {
     let count = 0;
     setSetupResults(startingValue)
 
-    while ((size <= availableFunds) && (count <= 1000)) {
+    while ((size <= availableFunds) && (count < 1999)) {
       let actualSize = size;
 
       if (finalPrice >= tradingPrice) {
@@ -52,7 +53,8 @@ function AutoSetup(props) {
     }
 
 
-    setSetupResults(finalPrice)
+    setSetupResults(finalPrice);
+    setTotalTrades(count);
 
 
   }
@@ -97,11 +99,11 @@ function AutoSetup(props) {
       <h4>Auto Setup</h4>
       <p>
         Enter the parameters you want and the bot will keep placing trades for you based on
-        those parameters until you run out of cash, or until you have 1000 trade-pairs.
+        those parameters until you run out of cash, or until you have 1999 trade-pairs.
         This is much easier than manually placing dozens of trades if they are following a basic pattern.
       </p>
       <p>
-        Please be aware that placing over 1000 trade-pairs will greatly slow down the bot and may decrease profits.
+        Please be aware that placing over 1999 trade-pairs will greatly slow down the bot and may decrease profits.
       </p>
 
       <div className="divider" />
@@ -188,6 +190,16 @@ function AutoSetup(props) {
             This will likely be higher if trades are placed higher than the current price of BTC, as they
             will cost less. It can also change if the price of BTC moves up or down significantly while the 
             trades are being set up.
+          </p>
+          <p>
+            Approximate number of trades the setup process will create:
+          </p>
+          <p>
+            <strong>{totalTrades}</strong>
+          </p>
+          <p>
+            However, it will try to stop before there are more than 1999 trades placed. Latency may cause it to 
+            create more, and you may need to delete a few in order to optimize speed.
           </p>
 
         </div>

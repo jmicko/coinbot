@@ -226,7 +226,7 @@ function Trade(props) {
           <div className="number-inputs">
             {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
             <label htmlFor="trade-pair-ratio">
-              Trade pair ratio (percent):
+              Trade pair percent increase:
             </label>
             <input
               className={props.store.accountReducer.userReducer.theme}
