@@ -33,30 +33,48 @@ async function syncOrders(userID) {
       const dbOrders = results[0];
       const cbOrders = results[1];
 
-      // CHECK IF THERE ARE 1000 OPEN ORDERS AND GET MORE FROM CB IF NEEDED
-      if (cbOrders.length >= 1000) {
-        
-        
+      const getMoreOrders = async () => {
         // console.log('this is the newest and oldest order from cb', cbOrders[0], cbOrders[cbOrders.length - 1]);
         
         const oldestDate = cbOrders[cbOrders.length - 1].created_at;
-        
 
+        console.log('previous oldest date', cbOrders[cbOrders.length - 1].created_at);
+        
+        
         await sleep(100); // avoid rate limit
         const olderOrders = await coinbaseClient.getOpenOrdersBeforeDate(userID, oldestDate);
         
-        // console.log(olderOrders);
+        console.log(olderOrders.length);
         
         
         // compare the arrays and remove any where the ids match in both,
         // leaving a list of orders that are older than the initial 1000 orders from cb
         const olderOrdersRemovedDuplicates = await orderElimination(olderOrders, cbOrders);
         // console.log('after removing duplicates', olderOrdersRemovedDuplicates);
-
+        
+        console.log('cbOrders length', cbOrders.length);
+        
         // put the older orders into the coinbase orders array
         olderOrdersRemovedDuplicates.forEach(oldOrder => {
           cbOrders.push(oldOrder);
         });
+        
+        // check if the function needs to be called again
+        console.log('olderOrders length', olderOrders.length);
+        
+        if (olderOrders.length >= 1000) {
+          console.log('need to get more orders another time!!!!');
+          
+          console.log('new oldest date', cbOrders[cbOrders.length - 1].created_at);
+          await getMoreOrders();
+        }
+        
+        console.log('cbOrders length after getting more orders', cbOrders.length);
+      }
+      
+      // CHECK IF THERE ARE 1000 OPEN ORDERS AND GET MORE FROM CB IF NEEDED
+      if (cbOrders.length >= 1000) {
+        await getMoreOrders();
       }
       
 
