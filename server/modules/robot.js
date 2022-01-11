@@ -41,7 +41,8 @@ async function syncOrders(userID) {
         
         const oldestDate = cbOrders[cbOrders.length - 1].created_at;
         
-        
+
+        await sleep(100); // avoid rate limit
         const olderOrders = await coinbaseClient.getOpenOrdersBeforeDate(userID, oldestDate);
         
         // console.log(olderOrders);
