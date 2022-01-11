@@ -594,7 +594,7 @@ async function autoSetup(user, parameters) {
 
   } catch (err) {
     if (err.response?.status === 400) {
-      console.log(err, 'Insufficient funds!');
+      console.log('Insufficient funds! Or too small order or some similar problem');
       socketClient.emit('message', {
         error: `Insufficient funds!`,
         orderUpdate: true
