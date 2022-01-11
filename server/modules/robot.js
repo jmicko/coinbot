@@ -31,7 +31,7 @@ async function syncOrders(userID) {
       ]);
       // store the lists of orders in the corresponding arrays so they can be compared
       const dbOrders = results[0];
-      const cbOrders = results[1];
+      let cbOrders = results[1];
 
       const getMoreOrders = async () => {
         // console.log('this is the newest and oldest order from cb', cbOrders[0], cbOrders[cbOrders.length - 1]);
@@ -55,9 +55,12 @@ async function syncOrders(userID) {
         console.log('cbOrders length', cbOrders.length);
         
         // put the older orders into the coinbase orders array
-        olderOrdersRemovedDuplicates.forEach(oldOrder => {
-          cbOrders.push(oldOrder);
-        });
+        // olderOrdersRemovedDuplicates.forEach(oldOrder => {
+        //   cbOrders.push(oldOrder);
+        // });
+
+        // ACTUALLY, might be better to concat
+        cbOrders = cbOrders.concat(olderOrdersRemovedDuplicates);
         
         // check if the function needs to be called again
         console.log('olderOrders length', olderOrders.length);
@@ -553,11 +556,11 @@ function orderElimination(dbOrders, cbOrders) {
 // auto setup trades until run out of money
 async function autoSetup(user, parameters) {
   // stop bot from adding more trades if over 1999 already placed
-  let totalOrders = await databaseClient.getUnsettledTrades('all', user.id);
-  if (totalOrders.length >= 1999) {
-    console.log('more than 1999 unsettled orders');
-    return;
-  }
+  // let totalOrders = await databaseClient.getUnsettledTrades('all', user.id);
+  // if (totalOrders.length >= 1999) {
+  //   console.log('more than 1999 unsettled orders');
+  //   return;
+  // }
   // console.log('in autoSetup function', user, parameters);
 
   // get the BTC size from the entered USD size
