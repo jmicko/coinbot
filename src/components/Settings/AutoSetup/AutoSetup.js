@@ -35,7 +35,7 @@ function AutoSetup(props) {
     let count = 0;
     setSetupResults(startingValue)
 
-    while ((size <= availableFunds) && (count <= 1999)) {
+    while ((size <= availableFunds) && (count < 1999)) {
       let actualSize = size;
 
       if (finalPrice >= tradingPrice) {
