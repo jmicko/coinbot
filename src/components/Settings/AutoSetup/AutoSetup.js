@@ -14,6 +14,7 @@ function AutoSetup(props) {
   const [tradePairRatio, setTradePairRatio] = useState(1.1);
   const [setupResults, setSetupResults] = useState(1);
   const [autoTradeStarted, setAutoTradeStarted] = useState(false);
+  const [totalTrades, setTotalTrades] = useState(false);
   
   // const [keepTrading, setKeepTrading] = useState(false);
 
@@ -52,7 +53,8 @@ function AutoSetup(props) {
     }
 
 
-    setSetupResults(finalPrice)
+    setSetupResults(finalPrice);
+    setTotalTrades(count);
 
 
   }
@@ -188,6 +190,16 @@ function AutoSetup(props) {
             This will likely be higher if trades are placed higher than the current price of BTC, as they
             will cost less. It can also change if the price of BTC moves up or down significantly while the 
             trades are being set up.
+          </p>
+          <p>
+            Approximate number of trades the setup process will create:
+          </p>
+          <p>
+            <strong>{totalTrades}</strong>
+          </p>
+          <p>
+            However, it will try to stop before there are more than 1999 trades placed. Latency may cause it to 
+            create more, and you may need to delete a few in order to optimize speed.
           </p>
 
         </div>
