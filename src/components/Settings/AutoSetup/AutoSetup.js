@@ -38,7 +38,7 @@ function AutoSetup(props) {
     let count = 0;
     setSetupResults(startingValue)
 
-    while ((size <= availableFunds) && (count < 1999)) {
+    while ((size <= availableFunds) && (count < 10000)) {
       let actualSize = size;
 
       if (finalPrice >= tradingPrice) {
@@ -90,11 +90,11 @@ function AutoSetup(props) {
       <h4>Auto Setup</h4>
       <p>
         Enter the parameters you want and the bot will keep placing trades for you based on
-        those parameters until you run out of cash, or until you have 1,999 trade-pairs.
+        those parameters until you run out of cash, or until you have 10,000 trade-pairs.
         This is much easier than manually placing dozens of trades if they are following a basic pattern.
       </p>
       <p>
-        Please be aware that placing over 1,999 trade-pairs will greatly slow down the bot and may decrease profits.
+        Please be aware that the bot will slow down slightly with every 999 trades.
       </p>
 
       <div className="divider" />
@@ -189,8 +189,8 @@ function AutoSetup(props) {
             <strong>{numberWithCommas(totalTrades)}</strong>
           </p>
           <p>
-            However, it will try to stop before there are more than 1,999 trades placed. Latency may cause it to
-            create more, and you may need to delete a few in order to optimize speed.
+            However, there is a total limit of 10,000 trades placed per user. Latency may cause it to
+            create more, in which case you got lucky.
           </p>
 
         </div>
