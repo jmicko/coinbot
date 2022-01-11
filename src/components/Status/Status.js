@@ -9,29 +9,29 @@ function Status(props) {
   const dispatch = useDispatch();
   const [loopStatus, setLoopStatus] = useState(true);
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
-  
+
   const socket = useSocket();
-  
+
   const getProfits = useCallback(
     () => {
       dispatch({
         type: 'FETCH_PROFITS'
       });
     }, [dispatch]
-    )
-    
-    const getAccounts = useCallback(
-      () => {
-        dispatch({
-          type: 'FETCH_ACCOUNT'
-        });
-      }, [dispatch]
-      )
-      
-        // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
-        const numberWithCommas = (x) => {
-          return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        }
+  )
+
+  const getAccounts = useCallback(
+    () => {
+      dispatch({
+        type: 'FETCH_ACCOUNT'
+      });
+    }, [dispatch]
+  )
+
+  // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
+  const numberWithCommas = (x) => {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
 
   // update profits when a trade is made
   useEffect(() => {
