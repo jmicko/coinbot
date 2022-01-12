@@ -17,9 +17,14 @@ async function startSync() {
 // REST protocol to find orders that have settled on coinbase
 async function syncOrders(userID) {
   let user;
+  let botSettings;
   try {
+    botSettings = await databaseClient.getBotSettings();
     user = await databaseClient.getUserAndSettings(userID);
-    if (user?.active && user?.approved && !user.paused) {
+    console.log('bot settings', botSettings, userID);
+    
+    if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
+      console.log('bot is running', botSettings);
 
       // *** GET ORDERS THAT NEED PROCESSING ***
 
