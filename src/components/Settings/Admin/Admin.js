@@ -36,6 +36,15 @@ function Admin(props) {
     })
   }
 
+  function toggleMaintenance() {
+    dispatch({
+      type: 'TOGGLE_MAINTENANCE',
+      // payload: {
+      //   loopSpeed: loopSpeed
+      // }
+    })
+  }
+
   function handleLoopSpeedChange(speed) {
     setLoopSpeed(speed);
   }
@@ -68,6 +77,9 @@ function Admin(props) {
         : <></>
       }
       <div className="divider" />
+
+      {/* SET LOOP SPEED */}
+
       <h4>Set Loop Speed</h4>
       {/* {JSON.stringify(props.store.settingsReducer.allSettingsReducer.loop_speed)} */}
       <p>
@@ -89,7 +101,18 @@ function Admin(props) {
         onChange={(event) => handleLoopSpeedChange(Number(event.target.value))}
       />
       <br />
+      <br />
       <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendLoopSpeed() }}>Save speed</button>
+
+      <div className="divider" />
+
+      {/* TOGGLE MAINTENANCE */}
+
+      <h4>Toggle Maintenance Mode</h4>
+      <p>
+        This essentially pauses all user loops. Can be useful when migrating the bot to another server for example.
+      </p>
+      <button className={`btn-red btn-reinvest medium ${props.theme}`} onClick={() => { toggleMaintenance() }}>Turn on</button>
 
       <div className="divider" />
       {(props.store.accountReducer.userReducer.admin)

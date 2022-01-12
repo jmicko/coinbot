@@ -61,6 +61,28 @@ router.put('/loopSpeed', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
+ * PUT route toggling maintenance mode
+ */
+router.put('/toggleMaintenance', rejectUnauthenticated, async (req, res) => {
+  // POST route code here
+  const user = req.user;
+  if (user.admin) {
+    console.log('toggleMaintenance route hit!');
+    try {
+      await databaseClient.toggleMaintenance();
+
+      res.sendStatus(200);
+    } catch (err) {
+      console.log('error with toggleMaintenance route', err);
+      res.sendStatus(500);
+    }
+  } else {
+    console.log('user is not admin!');
+    res.sendStatus(403)
+  }
+});
+
+/**
  * PUT route bulk updating trade pair ratio
  */
 router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
