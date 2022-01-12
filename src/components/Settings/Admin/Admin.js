@@ -81,7 +81,6 @@ function Admin(props) {
       {/* SET LOOP SPEED */}
 
       <h4>Set Loop Speed</h4>
-      {/* {JSON.stringify(props.store.settingsReducer.allSettingsReducer.loop_speed)} */}
       <p>
         This will adjust the speed of the loop. You may want to slow it down to use fewer resources and handle more users.
         Higher numbers are slower. 1 is the fastest, and the speed is a multiplier. So 4 is 4x slower than 1 for example.
@@ -109,10 +108,22 @@ function Admin(props) {
       {/* TOGGLE MAINTENANCE */}
 
       <h4>Toggle Maintenance Mode</h4>
+      {/* {JSON.stringify(props.store.settingsReducer.allSettingsReducer.maintenance)} */}
       <p>
         This essentially pauses all user loops. Can be useful when migrating the bot to another server for example.
       </p>
-      <button className={`btn-red btn-reinvest medium ${props.theme}`} onClick={() => { toggleMaintenance() }}>Turn on</button>
+      {props.store.settingsReducer.allSettingsReducer.maintenance
+        ?
+        <p>Maintenance mode is currently ON</p>
+        :
+        <p>Maintenance mode is currently OFF</p>
+      }
+      {props.store.settingsReducer.allSettingsReducer.maintenance
+        ?
+        <button className={`btn-green btn-reinvest medium ${props.theme}`} onClick={() => { toggleMaintenance() }}>Turn off</button>
+        :
+        <button className={`btn-red btn-reinvest medium ${props.theme}`} onClick={() => { toggleMaintenance() }}>Turn on</button>
+      }
 
       <div className="divider" />
       {(props.store.accountReducer.userReducer.admin)

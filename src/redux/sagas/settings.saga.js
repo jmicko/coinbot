@@ -36,7 +36,7 @@ function* toggleMaintenance(action) {
     console.log('toggling maintenance');
     const response = yield axios.put(`/api/settings/toggleMaintenance`, action.payload);
     console.log('response from toggleMaintenance', response);
-    // yield put({ type: 'FETCH_SETTINGS', payload: response.data })
+    yield put({ type: 'FETCH_SETTINGS', payload: response.data })
   } catch (error) {
     console.log('setting bot speed has failed', error);
     if (error.response.status === 403) {
