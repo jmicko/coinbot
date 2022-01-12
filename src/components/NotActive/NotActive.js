@@ -10,7 +10,7 @@ function NotActive(props) {
   const [key, setKey] = useState('');
   const [passphrase, setPassphrase] = useState('');
   const [secret, setSecret] = useState('');
-  const [URI, setURI] = useState('sandbox');
+  const [URI, setURI] = useState('real');
 
   function submitApi(event) {
     event.preventDefault();
