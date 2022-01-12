@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS "user_settings"
 
 CREATE TABLE IF NOT EXISTS "bot_settings"
 (
-  "loop_speed" integer DEFAULT 100
+  "loop_speed" integer DEFAULT 1,
+  "maintenance" boolean DEFAULT false
 );
 INSERT INTO "bot_settings" 
   ("loop_speed")

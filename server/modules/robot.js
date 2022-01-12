@@ -17,9 +17,12 @@ async function startSync() {
 // REST protocol to find orders that have settled on coinbase
 async function syncOrders(userID) {
   let user;
+  let botSettings;
   try {
+    botSettings = await databaseClient.getBotSettings();
     user = await databaseClient.getUserAndSettings(userID);
-    if (user?.active && user?.approved && !user.paused) {
+    
+    if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
 
       // *** GET ORDERS THAT NEED PROCESSING ***
 
@@ -165,15 +168,10 @@ async function syncOrders(userID) {
       userID: Number(userID)
     });
     // when everything is done, call the sync again if the user still exists
-
     if (user) {
-      // get the loop speed
-      sqlText = `SELECT "loop_speed" FROM "bot_settings";`;
-      const result = await pool.query(sqlText);
-      const loopSpeed = result.rows[0].loop_speed;
       setTimeout(() => {
         syncOrders(userID);
-      }, (loopSpeed * 100));
+      }, (botSettings.loopSpeed * 100));
     } else {
       console.log('user is NOT THERE, stopping loop for user');
     }

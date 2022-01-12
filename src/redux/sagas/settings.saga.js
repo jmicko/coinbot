@@ -31,6 +31,20 @@ function* loopSpeed(action) {
   }
 }
 
+function* toggleMaintenance(action) {
+  try {
+    console.log('toggling maintenance');
+    const response = yield axios.put(`/api/settings/toggleMaintenance`, action.payload);
+    console.log('response from toggleMaintenance', response);
+    yield put({ type: 'FETCH_SETTINGS', payload: response.data })
+  } catch (error) {
+    console.log('setting bot speed has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 function* bulkPairRatio(action) {
   try {
     console.log('bulk setting pair ratio saga');
@@ -50,6 +64,7 @@ function* settingsSaga() {
   yield takeLatest('FETCH_SETTINGS', getAllSettings);
   yield takeLatest('SEND_LOOP_SPEED', loopSpeed);
   yield takeLatest('SET_BULK_PAIR_RATIO', bulkPairRatio);
+  yield takeLatest('TOGGLE_MAINTENANCE', toggleMaintenance);
 }
 
 export default settingsSaga;

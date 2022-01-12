@@ -188,6 +188,32 @@ async function getUserAPI(userID) {
 }
 
 
+async function getBotSettings() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      sqlText = `SELECT * FROM "bot_settings";`;
+      let result = await pool.query(sqlText);
+      const settings = result.rows[0];
+      resolve(settings);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+async function toggleMaintenance() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `UPDATE "bot_settings" SET "maintenance" = NOT "maintenance";`;
+      await pool.query(sqlText);
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+
 const databaseClient = {
   storeTrade: storeTrade,
   getUnsettledTrades: getUnsettledTrades,
@@ -196,7 +222,9 @@ const databaseClient = {
   getUser: getUser,
   getUserAndSettings: getUserAndSettings,
   checkIfCancelling: checkIfCancelling,
-  getUserAPI: getUserAPI
+  getUserAPI: getUserAPI,
+  getBotSettings: getBotSettings,
+  toggleMaintenance: toggleMaintenance
 }
 
 module.exports = databaseClient;
