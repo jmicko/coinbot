@@ -375,8 +375,16 @@ async function reorder(orderToReorder) {
   return new Promise(async (resolve, reject) => {
     try {
       const userID = orderToReorder.userID;
-      await sleep(1000);
-      console.log('looking again for the order before reordering', orderToReorder.userID);
+      console.log('looking again for the order before reordering', orderToReorder);
+      let upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.id);
+      console.log('order in db up to date', upToDateDbOrder.reorder);
+
+      // if the order is marked for reordering, it was deleted already and there is no need to wait to double check
+      if (upToDateDbOrder.reorder) {
+        console.log('for sure need to reorder');
+      } else {
+        await sleep(1000);
+      }
 
       // todo - for some reason the promise never resolves when called here
       // let success = await coinbaseClient.repeatedCheck(orderToReorder, userID, 0);
