@@ -119,8 +119,8 @@ async function syncOrders(userID) {
       await deleteMarkedOrders(userID);
 
     } else {
-      // if the user is not active, loop every 1 second
-      await sleep(1000);
+      // if the user is not active or is paused, loop every 5 seconds
+      await sleep(5000);
     }
   } catch (err) {
     if (err.code === 'ECONNRESET') {
@@ -227,8 +227,6 @@ async function processOrders(userID) {
           } else {
             console.log('unknown error in processOrders', err);
           }
-        } finally {
-          console.log('processOrders is finished and had trades to flip');
         }
         // avoid rate limiting
         await sleep(100)
