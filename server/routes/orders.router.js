@@ -41,6 +41,7 @@ router.get('/', rejectUnauthenticated, (req, res) => {
 router.put('/', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   console.log('in orders synchronize route');
+  await databaseClient.setReorder();
   await coinbaseClient.cancelAllOrders(userID);
   console.log('+++++++ synchronization complete +++++++');
   res.sendStatus(200)
