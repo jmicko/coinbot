@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS "orders"
   settled boolean DEFAULT false,
   flipped boolean DEFAULT false,
   will_cancel boolean DEFAULT false,
+  reorder boolean DEFAULT false,
   include_in_profit boolean DEFAULT true,
   product_id character varying COLLATE pg_catalog."default",
   time_in_force character varying COLLATE pg_catalog."default",

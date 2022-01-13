@@ -312,7 +312,7 @@ router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
     CREATE TABLE IF NOT EXISTS "orders"
     (
       id character varying COLLATE pg_catalog."default" NOT NULL,
-      "userID" character varying COLLATE pg_catalog."default",
+      "userID" integer,
       "API_ID" character varying,
       price numeric(32,8),
       size numeric(32,8),
@@ -322,6 +322,7 @@ router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
       settled boolean DEFAULT false,
       flipped boolean DEFAULT false,
       will_cancel boolean DEFAULT false,
+      reorder boolean DEFAULT false,
       include_in_profit boolean DEFAULT true,
       product_id character varying COLLATE pg_catalog."default",
       time_in_force character varying COLLATE pg_catalog."default",
@@ -380,9 +381,9 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
 
     CREATE TABLE IF NOT EXISTS "bot_settings"
     (
-      "loop_speed" integer DEFAULT 100
+      "loop_speed" integer DEFAULT 1,
+      "maintenance" boolean DEFAULT false
     );
-
     INSERT INTO "bot_settings" 
       ("loop_speed")
       VALUES (1);
@@ -400,6 +401,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       settled boolean DEFAULT false,
       flipped boolean DEFAULT false,
       will_cancel boolean DEFAULT false,
+      reorder boolean DEFAULT false,
       include_in_profit boolean DEFAULT true,
       product_id character varying COLLATE pg_catalog."default",
       time_in_force character varying COLLATE pg_catalog."default",
