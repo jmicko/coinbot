@@ -15,7 +15,7 @@ function Trade(props) {
   const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
   const [tradePairRatio, setTradePairRatio] = useState(1.1);
   const [fees, setFees] = useState(0.005);
-  const [amountTypeIsUSD, setAmountTypeIsUSD] = useState(false);
+  const [amountTypeIsUSD, setAmountTypeIsUSD] = useState(true);
   const dispatch = useDispatch();
 
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
@@ -150,13 +150,13 @@ function Trade(props) {
                 <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => setTransactionPrice(Number(price) + 10000)} value="+10000"></input>
                 <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => setTransactionPrice(Number(price) + 1000)} value="+1000"></input>
                 <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => setTransactionPrice(Number(price) + 100)} value="+100"></input>
-                <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => setTransactionPrice(Number(price) + 50)} value="+50"></input>
+                <input type="button" className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => setTransactionPrice(Number(price) + 10)} value="+10"></input>
               </div>
               <div className="decrease">
                 <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => setTransactionPrice(Number(price) - 10000)} value="-10000"></input>
                 <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => setTransactionPrice(Number(price) - 1000)} value="-1000"></input>
                 <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => setTransactionPrice(Number(price) - 100)} value="-100"></input>
-                <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => setTransactionPrice(Number(price) - 50)} value="-50"></input>
+                <input type="button" className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={(event) => setTransactionPrice(Number(price) - 10)} value="-10"></input>
               </div>
             </div>
           </div>
