@@ -124,7 +124,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
     await databaseClient.setPause(true, userID)
     
     // wait 5 seconds to give the synch loop more time to finish
-    await sleep(5000);
+    await robot.sleep(5000);
     
     // mark all open orders as reorder
     await databaseClient.setReorder();
