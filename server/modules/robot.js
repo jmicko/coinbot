@@ -312,9 +312,9 @@ async function settleMultipleOrders(ordersArray, userID) {
         });
         try {
           // wait between each loop to prevent rate limiting
-          await sleep(500);
+          // await sleep(500);
           // get all the order details from cb
-          await sleep(100); // avoid rate limiting
+          await sleep(200); // avoid rate limiting
           let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID);
           // console.log('1111111111111 setting this trade as settled in the db', orderToCheck.id, orderToCheck.price, fullSettledDetails);
           if (fullSettledDetails.size !== fullSettledDetails.filled_size) {
@@ -382,16 +382,60 @@ async function reorder(orderToReorder) {
       // if the order is marked for reordering, it was deleted already and there is no need to wait to double check
       if (upToDateDbOrder.reorder) {
         console.log('for sure need to reorder');
+        if (!upToDateDbOrder.will_cancel) {
+          try {
+            const tradeDetails = {
+              original_sell_price: orderToReorder.original_sell_price,
+              original_buy_price: orderToReorder.original_buy_price,
+              side: orderToReorder.side,
+              price: orderToReorder.price, // USD
+              size: orderToReorder.size, // BTC
+              product_id: orderToReorder.product_id,
+              trade_pair_ratio: orderToReorder.trade_pair_ratio,
+              stp: 'cn',
+              userID: orderToReorder.userID,
+            };
+            // send the new order with the trade details
+            let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
+            // store the new trade in the db. the trade details are also sent to store trade position prices
+            let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
+  
+            // delete the old order from the db
+            const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+            await pool.query(queryText, [orderToReorder.id]);
+            socketClient.emit('message', {
+              message: `trade was reordered`,
+              orderUpdate: true,
+              userID: Number(orderToReorder.userID)
+            });
+            resolve({
+              results: results,
+              reordered: true
+            })
+          } catch (err) {
+            if (err.response?.status === 400) {
+              // console.log('Insufficient funds when reordering missing trade in the loop!');
+              socketClient.emit('message', {
+                error: `Insufficient funds!`,
+                orderUpdate: true,
+                userID: Number(orderToReorder.userID)
+              });
+              reject('Insufficient funds')
+            }
+            console.log('error in reorder function in robot.js');
+            reject(err)
+          }
+        }
       } else {
         await sleep(1000);
+        
+        // todo - for some reason the promise never resolves when called here
+        // let success = await coinbaseClient.repeatedCheck(orderToReorder, userID, 0);
+        // console.log('was the order found by repeatedChecker?', success);
+        
+        // await sleep(100);
+        let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID);
       }
-
-      // todo - for some reason the promise never resolves when called here
-      // let success = await coinbaseClient.repeatedCheck(orderToReorder, userID, 0);
-      // console.log('was the order found by repeatedChecker?', success);
-
-
-      let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID);
       // console.log('did it find the order?', fullSettledDetails);
     } catch (err) {
       // console.log('did not find the order', err.response?.status);

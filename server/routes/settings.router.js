@@ -118,6 +118,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
     ]);
 
     // Now cancel all trades so they can be reordered with the new numbers
+    await databaseClient.setReorder();
     await coinbaseClient.cancelAllOrders(user.id);
 
     res.sendStatus(200);
