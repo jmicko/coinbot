@@ -375,13 +375,13 @@ async function reorder(orderToReorder) {
   return new Promise(async (resolve, reject) => {
     try {
       const userID = orderToReorder.userID;
-      console.log('looking again for the order before reordering', orderToReorder);
+      // console.log('looking again for the order before reordering', orderToReorder);
       let upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.id);
-      console.log('order in db up to date', upToDateDbOrder.reorder);
+      // console.log('order in db up to date', upToDateDbOrder.reorder);
 
       // if the order is marked for reordering, it was deleted already and there is no need to wait to double check
       if (upToDateDbOrder.reorder) {
-        console.log('for sure need to reorder');
+        // console.log('for sure need to reorder');
         if (!upToDateDbOrder.will_cancel) {
           try {
             const tradeDetails = {
@@ -428,15 +428,9 @@ async function reorder(orderToReorder) {
         }
       } else {
         await sleep(1000);
-        
-        // todo - for some reason the promise never resolves when called here
-        // let success = await coinbaseClient.repeatedCheck(orderToReorder, userID, 0);
-        // console.log('was the order found by repeatedChecker?', success);
-        
-        // await sleep(100);
+        // check again. if it finds it, don't do anything. If not found, error handling will reorder
         let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID);
       }
-      // console.log('did it find the order?', fullSettledDetails);
     } catch (err) {
       // console.log('did not find the order', err.response?.status);
       let cancelling = await databaseClient.checkIfCancelling(orderToReorder.id);

@@ -131,23 +131,7 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
           { label: 'Original sell price', value: 'original_sell_price' }
         ],
         content: allOrders
-        // [
-        //   { name: 'Monserrat', age: 21, more: { phone: '11111111' } },
-        //   { name: 'Luis', age: 22, more: { phone: '12345678' } }
-        // ]
       },
-      // second sheet here
-      // {
-      //   sheet: 'Pets',
-      //   columns: [
-      //     { label: 'Name', value: 'name' },
-      //     { label: 'Age', value: 'age' }
-      //   ],
-      //   content: [
-      //     { name: 'Malteada', age: 4, more: { phone: '99999999' } },
-      //     { name: 'Picadillo', age: 1, more: { phone: '87654321' } }
-      //   ]
-      // }
     ]
 
     const settings = {
@@ -156,11 +140,7 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
         bookType: 'xlsx'
       }
     }
-
-
-    // const buffer = xlsx(data, settings)
     res.status(200).send(data);
-    // res.send(200, {data})
   } catch (err) {
     console.log('problem getting all orders');
   }
@@ -172,7 +152,6 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
 router.put('/pause', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
-    // console.log('in the PAUSE ROUTE', user, req.body);
     const queryText = `UPDATE "user_settings" SET "paused" = $1 WHERE "userID" = $2`;
     let result = await pool.query(queryText, [!user.paused, user.id]);
     res.sendStatus(200);
