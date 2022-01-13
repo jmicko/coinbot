@@ -87,6 +87,8 @@ router.put('/toggleMaintenance', rejectUnauthenticated, async (req, res) => {
  */
 router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
+  const userID = req.user.id;
+  const previousPauseStatus = req.user.paused;
   const bulk_pair_ratio = req.body.bulk_pair_ratio;
   try {
     // update the trade-pair ratio for all trades for that user
@@ -118,7 +120,20 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
     ]);
 
     // Now cancel all trades so they can be reordered with the new numbers
-    await coinbaseClient.cancelAllOrders(user.id);
+    // pause trading before cancelling all orders or it will reorder them before done, making it take longer
+    await databaseClient.setPause(true, userID)
+    
+    // wait 5 seconds to give the synch loop more time to finish
+    await robot.sleep(5000);
+    
+    // mark all open orders as reorder
+    await databaseClient.setReorder();
+
+    // cancel all orders. The sync loop will take care of replacing them
+    await coinbaseClient.cancelAllOrders(userID);
+    
+    // set pause status to what it was before route was hit
+    await databaseClient.setPause(previousPauseStatus, userID)
 
     res.sendStatus(200);
   } catch (err) {

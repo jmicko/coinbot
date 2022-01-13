@@ -213,6 +213,30 @@ async function toggleMaintenance() {
   })
 }
 
+async function setReorder() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `UPDATE "orders" SET "reorder" = true WHERE "settled"=false;`;
+      await pool.query(sqlText);
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+async function setPause(status, userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `UPDATE "user_settings" SET "paused" = $1 WHERE "userID" = $2`;
+      let result = await pool.query(sqlText, [status, userID]);
+      resolve(result);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 
 const databaseClient = {
   storeTrade: storeTrade,
@@ -224,7 +248,9 @@ const databaseClient = {
   checkIfCancelling: checkIfCancelling,
   getUserAPI: getUserAPI,
   getBotSettings: getBotSettings,
-  toggleMaintenance: toggleMaintenance
+  toggleMaintenance: toggleMaintenance,
+  setReorder: setReorder,
+  setPause: setPause
 }
 
 module.exports = databaseClient;

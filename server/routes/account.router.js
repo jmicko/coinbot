@@ -5,6 +5,7 @@ const { rejectUnauthenticated, } = require('../modules/authentication-middleware
 const coinbaseClient = require('../modules/coinbaseClient');
 const socketClient = require('../modules/socketClient');
 const xlsx = require('json-as-xlsx');
+const databaseClient = require('../modules/databaseClient');
 // const databaseClient = require('../modules/databaseClient/databaseClient');
 
 
@@ -131,23 +132,7 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
           { label: 'Original sell price', value: 'original_sell_price' }
         ],
         content: allOrders
-        // [
-        //   { name: 'Monserrat', age: 21, more: { phone: '11111111' } },
-        //   { name: 'Luis', age: 22, more: { phone: '12345678' } }
-        // ]
       },
-      // second sheet here
-      // {
-      //   sheet: 'Pets',
-      //   columns: [
-      //     { label: 'Name', value: 'name' },
-      //     { label: 'Age', value: 'age' }
-      //   ],
-      //   content: [
-      //     { name: 'Malteada', age: 4, more: { phone: '99999999' } },
-      //     { name: 'Picadillo', age: 1, more: { phone: '87654321' } }
-      //   ]
-      // }
     ]
 
     const settings = {
@@ -156,11 +141,7 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
         bookType: 'xlsx'
       }
     }
-
-
-    // const buffer = xlsx(data, settings)
     res.status(200).send(data);
-    // res.send(200, {data})
   } catch (err) {
     console.log('problem getting all orders');
   }
@@ -172,9 +153,7 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
 router.put('/pause', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
-    // console.log('in the PAUSE ROUTE', user, req.body);
-    const queryText = `UPDATE "user_settings" SET "paused" = $1 WHERE "userID" = $2`;
-    let result = await pool.query(queryText, [!user.paused, user.id]);
+    databaseClient.setPause(!user.paused, user.id)
     res.sendStatus(200);
   } catch (err) {
     console.log('problem in PAUSE ROUTE', err);
@@ -235,8 +214,6 @@ router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
 */
 router.post('/resetProfit', rejectUnauthenticated, async (req, res) => {
   const profit_reset = new Date();
-  console.log('RESETTING PROFIT!!!!!!!!!!!!!!!!!!!!!!!!!', profit_reset.toLocaleString('en-US'));
-  console.log('RESETTING PROFIT!!!!!!!!!!!!!!!!!!!!!!!!!', profit_reset);
   const userID = req.user.id;
   const queryText = `UPDATE "orders" SET "include_in_profit" = false WHERE "userID"=$1 AND "settled"=true;`;
   const timeQuery = `UPDATE "user_settings" SET "profit_reset" = $1 WHERE "userID" = $2;`
@@ -312,7 +289,7 @@ router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
     CREATE TABLE IF NOT EXISTS "orders"
     (
       id character varying COLLATE pg_catalog."default" NOT NULL,
-      "userID" character varying COLLATE pg_catalog."default",
+      "userID" integer,
       "API_ID" character varying,
       price numeric(32,8),
       size numeric(32,8),
@@ -322,6 +299,7 @@ router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
       settled boolean DEFAULT false,
       flipped boolean DEFAULT false,
       will_cancel boolean DEFAULT false,
+      reorder boolean DEFAULT false,
       include_in_profit boolean DEFAULT true,
       product_id character varying COLLATE pg_catalog."default",
       time_in_force character varying COLLATE pg_catalog."default",
@@ -380,9 +358,9 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
 
     CREATE TABLE IF NOT EXISTS "bot_settings"
     (
-      "loop_speed" integer DEFAULT 100
+      "loop_speed" integer DEFAULT 1,
+      "maintenance" boolean DEFAULT false
     );
-
     INSERT INTO "bot_settings" 
       ("loop_speed")
       VALUES (1);
@@ -400,6 +378,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       settled boolean DEFAULT false,
       flipped boolean DEFAULT false,
       will_cancel boolean DEFAULT false,
+      reorder boolean DEFAULT false,
       include_in_profit boolean DEFAULT true,
       product_id character varying COLLATE pg_catalog."default",
       time_in_force character varying COLLATE pg_catalog."default",
