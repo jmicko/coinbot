@@ -40,11 +40,26 @@ router.get('/', rejectUnauthenticated, (req, res) => {
 */
 router.put('/', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
-  console.log('in orders synchronize route');
-  await databaseClient.setReorder();
-  await coinbaseClient.cancelAllOrders(userID);
-  console.log('+++++++ synchronization complete +++++++');
-  res.sendStatus(200)
+  const previousPauseStatus = req.user.paused;
+  console.log('in orders synchronize route. Paused:', previousPauseStatus);
+  try{
+
+    // pause trading before cancelling all orders or it will reorder them before done, making it take longer
+    await databaseClient.setPause(true, userID)
+    
+    // mark all open orders as reorder
+    await databaseClient.setReorder();
+
+    // cancel all orders. The sync loop will take care of replacing them
+    await coinbaseClient.cancelAllOrders(userID);
+    
+    // set pause status to what it was before route was hit
+    await databaseClient.setPause(previousPauseStatus, userID)
+    console.log('+++++++ synchronization complete +++++++');
+    res.sendStatus(200)
+  } catch (err) {
+    console.log('problem in synch orders PUT route');
+  }
 });
 
 
