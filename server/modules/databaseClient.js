@@ -225,6 +225,18 @@ async function setReorder() {
   })
 }
 
+async function setPause(status, userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `UPDATE "user_settings" SET "paused" = $1 WHERE "userID" = $2`;
+      let result = await pool.query(sqlText, [status, userID]);
+      resolve(result);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 
 const databaseClient = {
   storeTrade: storeTrade,
@@ -237,7 +249,8 @@ const databaseClient = {
   getUserAPI: getUserAPI,
   getBotSettings: getBotSettings,
   toggleMaintenance: toggleMaintenance,
-  setReorder: setReorder
+  setReorder: setReorder,
+  setPause: setPause
 }
 
 module.exports = databaseClient;

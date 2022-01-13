@@ -5,6 +5,7 @@ const { rejectUnauthenticated, } = require('../modules/authentication-middleware
 const coinbaseClient = require('../modules/coinbaseClient');
 const socketClient = require('../modules/socketClient');
 const xlsx = require('json-as-xlsx');
+const databaseClient = require('../modules/databaseClient');
 // const databaseClient = require('../modules/databaseClient/databaseClient');
 
 
@@ -152,8 +153,7 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
 router.put('/pause', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
-    const queryText = `UPDATE "user_settings" SET "paused" = $1 WHERE "userID" = $2`;
-    let result = await pool.query(queryText, [!user.paused, user.id]);
+    databaseClient.setPause(!user.paused, user.id)
     res.sendStatus(200);
   } catch (err) {
     console.log('problem in PAUSE ROUTE', err);
