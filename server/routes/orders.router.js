@@ -6,6 +6,7 @@ const databaseClient = require('../modules/databaseClient');
 const robot = require('../modules/robot');
 const socketClient = require("../modules/socketClient");
 const coinbaseClient = require('../modules/coinbaseClient');
+const { sleep } = require('../modules/robot');
 
 
 /**
@@ -46,6 +47,9 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
 
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID)
+
+    // wait 5 seconds to give the synch loop more time to finish
+    await sleep(5000);
     
     // mark all open orders as reorder
     await databaseClient.setReorder();
@@ -68,13 +72,27 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
 */
 router.delete('/', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
+  const previousPauseStatus = req.user.paused;
   console.log('in delete all orders route', userID);
   try {
+    // pause trading before cancelling all orders or it will reorder them before done, making it take longer
+    await databaseClient.setPause(true, userID)
+    
+    // wait 5 seconds to give the synch loop more time to finish
+    await sleep(5000);
+
     // delete from db first
     const queryText = `DELETE from "orders" WHERE "settled" = false AND "userID"=$1;`;
     await pool.query(queryText, [userID]);
-    // delete all orders from coinbase
+    
+    // mark all open orders as reorder
+    await databaseClient.setReorder();
+
+    // cancel all orders. The sync loop will take care of replacing them
     await coinbaseClient.cancelAllOrders(userID);
+    
+    // set pause status to what it was before route was hit
+    await databaseClient.setPause(previousPauseStatus, userID)
     console.log('+++++++ EVERYTHING WAS DELETED +++++++');
     // tell front end to update
     socketClient.emit('message', {
