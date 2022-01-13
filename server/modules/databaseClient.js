@@ -213,6 +213,18 @@ async function toggleMaintenance() {
   })
 }
 
+async function setReorder() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `UPDATE "orders" SET "reorder" = true WHERE "settled"=false;`;
+      await pool.query(sqlText);
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 
 const databaseClient = {
   storeTrade: storeTrade,
@@ -224,7 +236,8 @@ const databaseClient = {
   checkIfCancelling: checkIfCancelling,
   getUserAPI: getUserAPI,
   getBotSettings: getBotSettings,
-  toggleMaintenance: toggleMaintenance
+  toggleMaintenance: toggleMaintenance,
+  setReorder: setReorder
 }
 
 module.exports = databaseClient;
