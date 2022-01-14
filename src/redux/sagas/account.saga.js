@@ -128,6 +128,34 @@ function* reinvestRatio(action) {
   }
 }
 
+function* tradeMax(action) {
+  try {
+    console.log('toggling trade max');
+    const response = yield axios.put(`/api/account/tradeMax`, action.payload);
+    console.log('response from tradeMax', response);
+    yield put({ type: 'FETCH_USER' });
+  } catch (error) {
+    console.log('put account route reinvest has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
+function* storeMaxTradeSize(action) {
+  try {
+    console.log('storing max trade size');
+    const response = yield axios.put(`/api/account/maxTradeSize`, action.payload);
+    console.log('response from maxTradeSize', response);
+    yield put({ type: 'FETCH_USER' });
+  } catch (error) {
+    console.log('put account route reinvest ratio has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 function* factoryReset() {
   try {
     console.log('Factory Reset!');
@@ -184,6 +212,8 @@ function* accountSaga() {
   yield takeLatest('SET_THEME', setTheme);
   yield takeLatest('REINVEST', reinvest);
   yield takeLatest('REINVEST_RATIO', reinvestRatio);
+  yield takeLatest('TOGGLE_TRADE_MAX', tradeMax);
+  yield takeLatest('STORE_MAX_TRADE_SIZE', storeMaxTradeSize);
   yield takeLatest('FACTORY_RESET', factoryReset);
   yield takeLatest('ORDERS_RESET', ordersReset);
   yield takeLatest('EXPORT_XLSX', exportXlsx);

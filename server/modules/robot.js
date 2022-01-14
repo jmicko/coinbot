@@ -242,6 +242,7 @@ async function processOrders(userID) {
 // Returns the tradeDetails object needed to send trade to CB
 function flipTrade(dbOrder, user) {
   const reinvestRatio = user.reinvest_ratio / 100;
+  const maxTradeSize = user.max_trade_size;
   // set up the object to be sent
   const tradeDetails = {
     side: '',
@@ -262,6 +263,7 @@ function flipTrade(dbOrder, user) {
   let profit = Number(grossProfit - (dbOrder.fill_fees * 2))
   let profitBTC = Number(Math.floor((profit / dbOrder.price) * reinvestRatio * 100000000) / 100000000)
   let newSize = Math.floor((orderSize + profitBTC) * 100000000) / 100000000;
+
   if (dbOrder.side === "buy") {
     // if it was a buy, sell for more. multiply old price
     tradeDetails.side = "sell"
@@ -271,8 +273,30 @@ function flipTrade(dbOrder, user) {
       userID: Number(dbOrder.userID)
     });
   } else {
+
+    // if it is a sell turning into a buy, check if user wants to reinvest the funds
     if (user.reinvest) {
-      tradeDetails.size = newSize.toFixed(8);
+      let newPrice = dbOrder.original_buy_price;
+      let newSizeString = newSize.toFixed(8);
+      console.log('new size after reinvesting', newSizeString);
+      let newSizeNumber = Number(newSizeString);
+      console.log('new size as number', newSizeNumber, 'price', newPrice);
+      let newSizeUSD = newSizeNumber * newPrice;
+      console.log('new size in usd', newSizeUSD);
+      console.log('user set max size in usd', maxTradeSize);
+
+      // if the new size is bigger than the user set max, just use the user set max instead
+      if ((newSizeUSD > maxTradeSize) && (maxTradeSize > 0)) {
+        console.log('!!!!!the new size is TOO BIG!!!!!');
+        // divide the max trade size by the price to get new size
+        let maxNewSize = (maxTradeSize / newPrice);
+        console.log('this would be a better size:', maxNewSize.toFixed(8));
+        tradeDetails.size = maxNewSize.toFixed(8);
+      } else {
+        console.log('the new size is small enough');
+        tradeDetails.size = newSize.toFixed(8);
+      }
+
     }
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "buy"
