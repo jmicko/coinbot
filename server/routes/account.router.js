@@ -232,8 +232,13 @@ router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
     console.log('in the maxTradeSize ROUTE', user, req.body);
-    const queryText = `UPDATE "user_settings" SET "max_trade_size" = $1 WHERE "userID" = $2`;
-    await pool.query(queryText, [req.body.max_trade_size, user.id]);
+    if (req.body.max_trade_size >= 0) {
+      const queryText = `UPDATE "user_settings" SET "max_trade_size" = $1 WHERE "userID" = $2`;
+      await pool.query(queryText, [req.body.max_trade_size, user.id]);
+    } else {
+      const queryText = `UPDATE "user_settings" SET "max_trade_size" = $1 WHERE "userID" = $2`;
+      await pool.query(queryText, [0, user.id]);
+    }
     res.sendStatus(200);
   } catch (err) {
     console.log('problem in maxTradeSize ROUTE', err);
