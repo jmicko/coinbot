@@ -353,6 +353,8 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       "theme" character varying DEFAULT 'original',
       "reinvest" boolean DEFAULT false,
       "reinvest_ratio" integer DEFAULT 0,
+      "max_trade" boolean DEFAULT false,
+      "max_trade_size" integer DEFAULT 0,
       "profit_reset" timestamp
     );
 
