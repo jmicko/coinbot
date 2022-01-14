@@ -25,6 +25,10 @@ function General(props) {
     setReinvest_ratio(props.store.accountReducer.userReducer.reinvest_ratio)
   }, [props.store.accountReducer.userReducer.reinvest_ratio])
 
+  useEffect(() => {
+    setMaxTradeSize(props.store.accountReducer.userReducer.max_trade_size)
+  }, [props.store.accountReducer.userReducer.max_trade_size])
+
   function pause(event) {
     // event.preventDefault();
     console.log('Pausing the bot!');
@@ -40,7 +44,7 @@ function General(props) {
       type: 'REINVEST',
     });
   }
-  
+
   function reinvestRatio(event) {
     event.preventDefault();
     console.log('reinvest ratio submitted!');
@@ -51,7 +55,7 @@ function General(props) {
       }
     });
   }
-  
+
   function tradeMax(event) {
     // event.preventDefault();
     console.log('toggle trade max sent!');
@@ -59,7 +63,7 @@ function General(props) {
       type: 'TOGGLE_TRADE_MAX',
     });
   }
-  
+
   function storeMaxTradeSize(event) {
     event.preventDefault();
     console.log('reinvest ratio submitted!');
@@ -104,8 +108,8 @@ function General(props) {
 
       {/* THEME */}
       <h4>Theme</h4>
-        <button className="btn-blue medium" onClick={() => { setTheme("original") }}>Original</button>
-        <button className={`btn-blue medium darkTheme`} onClick={() => { setTheme("darkTheme") }}>Dark</button>
+      <button className="btn-blue medium" onClick={() => { setTheme("original") }}>Original</button>
+      <button className={`btn-blue medium darkTheme`} onClick={() => { setTheme("darkTheme") }}>Dark</button>
       <div className="divider" />
 
       {/* PAUSE */}
@@ -151,34 +155,40 @@ function General(props) {
       }
 
       {/* MAX TRADE SIZE USD */}
-      <h4>Max Trade Size</h4>
-      <p>
-        Coinbot can try to limit the size of your trades. This is useful in case you want to 
-        stop reinvesting after a certain point, but keep reinvestment turned on for all other trades.
-        Size cap is in USD.
-      </p>
-      {(props.store.accountReducer.userReducer.max_trade)
-        ? <button className={`btn-blue medium ${props.theme}`} onClick={() => { tradeMax() }}>Turn off</button>
-        : <button className={`btn-blue medium ${props.theme}`} onClick={() => { tradeMax() }}>Turn on</button>
-      }
-      {props.store.accountReducer.userReducer.max_trade &&
+      {/* only show if reinvest is also turned on */}
+      {
+        props.store.accountReducer.userReducer.reinvest &&
         <>
-          <p>Current max trade size: {props.store.accountReducer.userReducer.max_trade_size}%</p>
-          <label htmlFor="reinvest_ratio">
-            Set Max:
-          </label>
-          <input
-            type="number"
-            name="reinvest_ratio"
-            value={max_trade_size}
-            step={10}
-            max={200}
-            required
-            onChange={(event) => setReinvest_ratio(event.target.value)}
-          />
-          <br />
-          <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { storeMaxTradeSize(event) }}>Save Max</button>
-          <div className="divider" />
+          <h4>Max Trade Size</h4>
+          <p>
+            Coinbot can try to limit the size of your trades. This is useful in case you want to
+            stop reinvesting after a certain point, but keep reinvestment turned on for all other trades.
+            Size cap is in USD.
+          </p>
+          {(props.store.accountReducer.userReducer.max_trade)
+            ? <button className={`btn-blue medium ${props.theme}`} onClick={() => { tradeMax() }}>Turn off</button>
+            : <button className={`btn-blue medium ${props.theme}`} onClick={() => { tradeMax() }}>Turn on</button>
+          }
+          {props.store.accountReducer.userReducer.max_trade &&
+            <>
+              <p>Current max trade size: ${props.store.accountReducer.userReducer.max_trade_size}</p>
+              <label htmlFor="reinvest_ratio">
+                Set Max:
+              </label>
+              <input
+                type="number"
+                name="reinvest_ratio"
+                value={max_trade_size}
+                step={10}
+                max={200}
+                required
+                onChange={(event) => setMaxTradeSize(Number(event.target.value))}
+              />
+              <br />
+              <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { storeMaxTradeSize(event) }}>Save Max</button>
+              <div className="divider" />
+            </>
+          }
         </>
       }
 
@@ -187,25 +197,25 @@ function General(props) {
       <p>
         EXPERIMENTAL FEATURE. This will change the trade pair ratio for ALL trades to a uniform percentage. This can be useful for when your fees change due to trade volume and you want to change the ratio accordingly.
       </p>
-        <>
-          <label htmlFor="bulk_pair_ratio">
-            New Ratio:
-          </label>
-          <input
-            type="number"
-            name="bulk_pair_ratio"
-            value={bulk_pair_ratio}
-            step={.1}
-            max={100}
-            min={0}
-            required
-            onChange={(event) => setBulk_pair_ratio(Number(event.target.value))}
-          />
-          <br />
-          <button className={`btn-blue btn-bulk-pair-ratio medium ${props.theme}`} onClick={(event) => { bulkPairRatio(event) }}>Set all trades to new ratio</button>
-          <div className="divider" />
-        </>
-      
+      <>
+        <label htmlFor="bulk_pair_ratio">
+          New Ratio:
+        </label>
+        <input
+          type="number"
+          name="bulk_pair_ratio"
+          value={bulk_pair_ratio}
+          step={.1}
+          max={100}
+          min={0}
+          required
+          onChange={(event) => setBulk_pair_ratio(Number(event.target.value))}
+        />
+        <br />
+        <button className={`btn-blue btn-bulk-pair-ratio medium ${props.theme}`} onClick={(event) => { bulkPairRatio(event) }}>Set all trades to new ratio</button>
+        <div className="divider" />
+      </>
+
     </div>
   );
 }
