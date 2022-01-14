@@ -179,8 +179,8 @@ function General(props) {
                 type="number"
                 name="reinvest_ratio"
                 value={max_trade_size}
-                step={10}
-                max={200}
+                // step={10}
+                // max={200}
                 required
                 onChange={(event) => setMaxTradeSize(Number(event.target.value))}
               />
