@@ -9,6 +9,7 @@ function General(props) {
 
   const [reinvest_ratio, setReinvest_ratio] = useState(0);
   const [bulk_pair_ratio, setBulk_pair_ratio] = useState(1.1);
+  const [max_trade_size, setMaxTradeSize] = useState(30);
 
   // make sure ratio is within percentage range
   useEffect(() => {
@@ -39,12 +40,31 @@ function General(props) {
       type: 'REINVEST',
     });
   }
-
+  
   function reinvestRatio(event) {
     event.preventDefault();
     console.log('reinvest ratio submitted!');
     dispatch({
       type: 'REINVEST_RATIO',
+      payload: {
+        reinvest_ratio: reinvest_ratio
+      }
+    });
+  }
+  
+  function tradeMax(event) {
+    // event.preventDefault();
+    console.log('reinvest sent!');
+    dispatch({
+      type: 'TOGGLE_TRADE_MAX',
+    });
+  }
+  
+  function storeMaxTradeSize(event) {
+    event.preventDefault();
+    console.log('reinvest ratio submitted!');
+    dispatch({
+      type: 'STORE_MAX_TRADE_SIZE',
       payload: {
         reinvest_ratio: reinvest_ratio
       }
@@ -126,6 +146,38 @@ function General(props) {
           />
           <br />
           <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { reinvestRatio(event) }}>Save reinvestment ratio</button>
+          <div className="divider" />
+        </>
+      }
+
+      {/* MAX TRADE SIZE USD */}
+      <h4>Max Trade Size</h4>
+      <p>
+        Coinbot can try to limit the size of your trades. This is useful in case you want to 
+        stop reinvesting after a certain point, but keep reinvestment turned on for all other trades.
+        Size cap is in USD.
+      </p>
+      {(props.store.accountReducer.userReducer.max_trade)
+        ? <button className={`btn-blue medium ${props.theme}`} onClick={() => { tradeMax() }}>Turn off</button>
+        : <button className={`btn-blue medium ${props.theme}`} onClick={() => { tradeMax() }}>Turn on</button>
+      }
+      {props.store.accountReducer.userReducer.max_trade &&
+        <>
+          <p>Current max trade size: {props.store.accountReducer.userReducer.max_trade_size}%</p>
+          <label htmlFor="reinvest_ratio">
+            Set Max:
+          </label>
+          <input
+            type="number"
+            name="reinvest_ratio"
+            value={max_trade_size}
+            step={10}
+            max={200}
+            required
+            onChange={(event) => setReinvest_ratio(event.target.value)}
+          />
+          <br />
+          <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { storeMaxTradeSize(event) }}>Save Max</button>
           <div className="divider" />
         </>
       }
