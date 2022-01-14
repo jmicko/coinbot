@@ -242,6 +242,7 @@ async function processOrders(userID) {
 // Returns the tradeDetails object needed to send trade to CB
 function flipTrade(dbOrder, user) {
   const reinvestRatio = user.reinvest_ratio / 100;
+  const maxTradeSize = user.max_trade_size;
   // set up the object to be sent
   const tradeDetails = {
     side: '',
@@ -282,6 +283,13 @@ function flipTrade(dbOrder, user) {
       console.log('new size as number', newSizeNumber, 'price', newPrice);
       let newSizeUSD = newSizeNumber * newPrice;
       console.log('new size in usd', newSizeUSD);
+      console.log('user set max size in usd', maxTradeSize);
+
+      if (newSizeUSD > maxTradeSize) {
+        console.log('the new size is too big');
+      } else {
+        console.log('the new size is small enough');
+      }
 
       tradeDetails.size = newSize.toFixed(8);
     }
