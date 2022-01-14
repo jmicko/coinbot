@@ -210,6 +210,38 @@ router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
+* PUT route to change status of reinvestment
+*/
+router.put('/tradeMax', rejectUnauthenticated, async (req, res) => {
+  const user = req.user;
+  try {
+    // console.log('in the REINVEST ROUTE', user, req.body);
+    // const queryText = `UPDATE "user_settings" SET "reinvest" = $1 WHERE "userID" = $2`;
+    // let result = await pool.query(queryText, [!user.reinvest, user.id]);
+    res.sendStatus(200);
+  } catch (err) {
+    console.log('problem in tradeMax ROUTE', err);
+    res.sendStatus(500);
+  }
+});
+
+/**
+* PUT route to change status of reinvestment ratio
+*/
+router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
+  const user = req.user;
+  try {
+    // console.log('in the REINVEST RATIO ROUTE', user, req.body);
+    // const queryText = `UPDATE "user_settings" SET "reinvest_ratio" = $1 WHERE "userID" = $2`;
+    // await pool.query(queryText, [req.body.reinvest_ratio, user.id]);
+    res.sendStatus(200);
+  } catch (err) {
+    console.log('problem in maxTradeSize ROUTE', err);
+    res.sendStatus(500);
+  }
+});
+
+/**
 * POST route to reset profits
 */
 router.post('/resetProfit', rejectUnauthenticated, async (req, res) => {
