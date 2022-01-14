@@ -285,13 +285,18 @@ function flipTrade(dbOrder, user) {
       console.log('new size in usd', newSizeUSD);
       console.log('user set max size in usd', maxTradeSize);
 
+      // if the new size is bigger than the user set max, just use the user set max instead
       if (newSizeUSD > maxTradeSize) {
-        console.log('the new size is too big');
+        console.log('!!!!!the new size is TOO BIG!!!!!');
+        // divide the max trade size by the price to get new size
+        let maxNewSize = (maxTradeSize / newPrice);
+        console.log('this would be a better size:', maxNewSize.toFixed(8));
+        tradeDetails.size = maxNewSize.toFixed(8);
       } else {
         console.log('the new size is small enough');
+        tradeDetails.size = newSize.toFixed(8);
       }
 
-      tradeDetails.size = newSize.toFixed(8);
     }
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "buy"
