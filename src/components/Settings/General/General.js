@@ -54,7 +54,7 @@ function General(props) {
   
   function tradeMax(event) {
     // event.preventDefault();
-    console.log('reinvest sent!');
+    console.log('toggle trade max sent!');
     dispatch({
       type: 'TOGGLE_TRADE_MAX',
     });
