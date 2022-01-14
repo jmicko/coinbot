@@ -286,7 +286,7 @@ function flipTrade(dbOrder, user) {
       console.log('user set max size in usd', maxTradeSize);
 
       // if the new size is bigger than the user set max, just use the user set max instead
-      if (newSizeUSD > maxTradeSize) {
+      if ((newSizeUSD > maxTradeSize) && (maxTradeSize > 0)) {
         console.log('!!!!!the new size is TOO BIG!!!!!');
         // divide the max trade size by the price to get new size
         let maxNewSize = (maxTradeSize / newPrice);

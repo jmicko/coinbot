@@ -163,7 +163,7 @@ function General(props) {
           <p>
             Coinbot can try to limit the size of your trades. This is useful in case you want to
             stop reinvesting after a certain point, but keep reinvestment turned on for all other trades.
-            Size cap is in USD.
+            Size cap is in USD. If set to 0, the bot will ignore it and default to the reinvestment ratio.
           </p>
           {(props.store.accountReducer.userReducer.max_trade)
             ? <button className={`btn-blue medium ${props.theme}`} onClick={() => { tradeMax() }}>Turn off</button>
