@@ -26,7 +26,7 @@ function General(props) {
   }, [props.store.accountReducer.userReducer.reinvest_ratio])
 
   useEffect(() => {
-    setMaxTradeSize(props.store.accountReducer.userReducer.max_trade_size)
+    setMaxTradeSize(Number(props.store.accountReducer.userReducer.max_trade_size))
   }, [props.store.accountReducer.userReducer.max_trade_size])
 
   function pause(event) {
@@ -171,7 +171,7 @@ function General(props) {
           }
           {props.store.accountReducer.userReducer.max_trade &&
             <>
-              <p>Current max trade size: ${props.store.accountReducer.userReducer.max_trade_size}</p>
+              <p>Current max trade size: ${Number(props.store.accountReducer.userReducer.max_trade_size)}</p>
               <label htmlFor="reinvest_ratio">
                 Set Max:
               </label>
