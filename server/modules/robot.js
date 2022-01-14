@@ -262,6 +262,7 @@ function flipTrade(dbOrder, user) {
   let profit = Number(grossProfit - (dbOrder.fill_fees * 2))
   let profitBTC = Number(Math.floor((profit / dbOrder.price) * reinvestRatio * 100000000) / 100000000)
   let newSize = Math.floor((orderSize + profitBTC) * 100000000) / 100000000;
+
   if (dbOrder.side === "buy") {
     // if it was a buy, sell for more. multiply old price
     tradeDetails.side = "sell"
@@ -271,7 +272,17 @@ function flipTrade(dbOrder, user) {
       userID: Number(dbOrder.userID)
     });
   } else {
+
+    // if it is a sell turning into a buy, check if user wants to reinvest the funds
     if (user.reinvest) {
+      let newPrice = dbOrder.original_buy_price;
+      let newSizeString = newSize.toFixed(8);
+      console.log('new size after reinvesting', newSizeString);
+      let newSizeNumber = Number(newSizeString);
+      console.log('new size as number', newSizeNumber, 'price', newPrice);
+      let newSizeUSD = newSizeNumber * newPrice;
+      console.log('new size in usd', newSizeUSD);
+
       tradeDetails.size = newSize.toFixed(8);
     }
     // if it was a sell, buy for less. divide old price

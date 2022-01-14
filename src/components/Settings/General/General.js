@@ -66,7 +66,7 @@ function General(props) {
     dispatch({
       type: 'STORE_MAX_TRADE_SIZE',
       payload: {
-        reinvest_ratio: reinvest_ratio
+        max_trade_size: max_trade_size
       }
     });
   }
