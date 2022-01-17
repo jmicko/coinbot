@@ -13,8 +13,8 @@ function General(props) {
 
   // make sure ratio is within percentage range
   useEffect(() => {
-    if (reinvest_ratio > 200) {
-      setReinvest_ratio(200)
+    if (reinvest_ratio > 500) {
+      setReinvest_ratio(500)
     }
     if (reinvest_ratio < 0) {
       setReinvest_ratio(0)
@@ -144,7 +144,7 @@ function General(props) {
             name="reinvest_ratio"
             value={reinvest_ratio}
             step={10}
-            max={200}
+            // max={200}
             required
             onChange={(event) => setReinvest_ratio(event.target.value)}
           />
