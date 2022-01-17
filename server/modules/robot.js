@@ -154,7 +154,8 @@ async function syncOrders(userID) {
     if (user) {
       setTimeout(() => {
         syncOrders(userID);
-      }, (botSettings.loopSpeed * 100));
+        console.log(botSettings.loop_speed);
+      }, (botSettings.loop_speed * 100));
     } else {
       console.log('user is NOT THERE, stopping loop for user');
     }
