@@ -399,18 +399,15 @@ async function repeatedCheck(order, userID, tries) {
     if (tries < 10) {
       await sleep(tries * 100)
       tries++;
-      // console.log('checking times:', tries);
       // check if the order is in coinbase
       try {
         let cbOrder = await getOrder(order.id, userID);
-        // console.log('order from coinbase', cbOrder);
         resolve(true);
       } catch (err) {
         console.log('error checking coinbase for order');
         repeatedCheck(order, userID, tries);
       }
     } else { // if it has already repeated, give up
-      // console.log('done checking again');
       resolve(false);
     }
   });

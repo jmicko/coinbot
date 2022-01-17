@@ -47,7 +47,6 @@ async function syncOrders(userID) {
         // compare the arrays and remove any where the ids match in both,
         // leaving a list of orders that are older than the initial 1000 orders from cb
         const olderOrdersRemovedDuplicates = await orderElimination(olderOrders, cbOrders);
-        // console.log('after removing duplicates', olderOrdersRemovedDuplicates);
 
         // Combine the arrays
         cbOrders = cbOrders.concat(olderOrdersRemovedDuplicates);
@@ -74,11 +73,10 @@ async function syncOrders(userID) {
 
 
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
-      if (ordersToCancel.length) {        
+      if (ordersToCancel.length) {
         try {
           let result = await cancelMultipleOrders(ordersToCancel, userID);
           if (result.ordersCanceled && (result.quantity > 0)) {
-            // console.log(result.message);
             socketClient.emit('message', {
               error: `${result.quantity} Extra orders were found and canceled for user ${userID}`,
               orderUpdate: true,
@@ -98,7 +96,6 @@ async function syncOrders(userID) {
         try {
           let result = await settleMultipleOrders(ordersToCheck, userID);
           if (result.ordersFlipped) {
-            // console.log(result.message);
           }
         } catch (err) {
           if (err.response?.status === 500) {
@@ -143,7 +140,7 @@ async function syncOrders(userID) {
         userID: Number(userID)
       });
     } else {
-      console.log('unknown error at end of syncOrders', err);
+      console.log(err, 'unknown error at end of syncOrders');
     }
   } finally {
     socketClient.emit('message', {
@@ -154,7 +151,6 @@ async function syncOrders(userID) {
     if (user) {
       setTimeout(() => {
         syncOrders(userID);
-        console.log(botSettings.loop_speed);
       }, (botSettings.loop_speed * 100));
     } else {
       console.log('user is NOT THERE, stopping loop for user');
@@ -168,7 +164,6 @@ async function deleteMarkedOrders(userID) {
       const queryText = `DELETE from "orders" WHERE "will_cancel"=true AND "userID"=$1;`;
       let result = await pool.query(queryText, [userID]);
       if (result.rowCount > 0) {
-        console.log('orders marked for cancel were deleted from db', result.rowCount);
         socketClient.emit('message', {
           message: `orders marked for cancel were deleted from db`,
           orderUpdate: true,
@@ -177,7 +172,6 @@ async function deleteMarkedOrders(userID) {
       }
       resolve(result);
     } catch (err) {
-      // console.log('problem in deleteMarkedOrders function in robot', err);
       reject(err)
     }
   });
@@ -229,7 +223,7 @@ async function processOrders(userID) {
             // todo - check funds to make sure there is enough for 
             // all of them to be replaced, and balance if needed
           } else {
-            console.log('unknown error in processOrders', err);
+            console.log(err, 'unknown error in processOrders');
           }
         }
         // avoid rate limiting
@@ -282,22 +276,22 @@ function flipTrade(dbOrder, user) {
     if (user.reinvest) {
       let newPrice = dbOrder.original_buy_price;
       let newSizeString = newSize.toFixed(8);
-      console.log('new size after reinvesting', newSizeString);
+      // console.log('new size after reinvesting', newSizeString);
       let newSizeNumber = Number(newSizeString);
-      console.log('new size as number', newSizeNumber, 'price', newPrice);
+      // console.log('new size as number', newSizeNumber, 'price', newPrice);
       let newSizeUSD = newSizeNumber * newPrice;
-      console.log('new size in usd', newSizeUSD);
-      console.log('user set max size in usd', maxTradeSize);
+      // console.log('new size in usd', newSizeUSD);
+      // console.log('user set max size in usd', maxTradeSize);
 
       // if the new size is bigger than the user set max, just use the user set max instead
       if ((newSizeUSD > maxTradeSize) && (maxTradeSize > 0)) {
-        console.log('!!!!!the new size is TOO BIG!!!!!');
+        // console.log('!!!!!the new size is TOO BIG!!!!!');
         // divide the max trade size by the price to get new size
         let maxNewSize = (maxTradeSize / newPrice);
-        console.log('this would be a better size:', maxNewSize.toFixed(8));
+        // console.log('this would be a better size:', maxNewSize.toFixed(8));
         tradeDetails.size = maxNewSize.toFixed(8);
       } else {
-        console.log('the new size is small enough');
+        // console.log('the new size is small enough');
         tradeDetails.size = newSize.toFixed(8);
       }
 
@@ -323,7 +317,6 @@ function sleep(milliseconds) {
 async function settleMultipleOrders(ordersArray, userID) {
   return new Promise(async (resolve, reject) => {
     if (ordersArray.length > 0) {
-      // console.log(`User ${userID} has ${ordersArray.length} settled orders that should be flipped`);
       socketClient.emit('message', {
         message: `There are ${ordersArray.length} orders that need to be synced`,
         userID: Number(userID)
@@ -342,9 +335,7 @@ async function settleMultipleOrders(ordersArray, userID) {
           // get all the order details from cb
           await sleep(200); // avoid rate limiting
           let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID);
-          // console.log('1111111111111 setting this trade as settled in the db', orderToCheck.id, orderToCheck.price, fullSettledDetails);
           if (fullSettledDetails.size !== fullSettledDetails.filled_size) {
-            console.log('!!!!!!!!!!!!!!! the order was not fully settled!');
           }
           // update the order in the db
           const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
@@ -362,22 +353,20 @@ async function settleMultipleOrders(ordersArray, userID) {
           if (err.response?.status === 404) {
             // if the order was supposed to be canceled, cancel it
             if (orderToCheck.will_cancel) {
-              // console.log('need to delete for sure', orderToCheck);
               // delete the trade from the db
               await databaseClient.deleteTrade(orderToCheck.id);
             }
             // if the order was not supposed to be canceled, reorder it
             else {
-              // console.log('need to reorder', orderToCheck.price);
               try {
                 await reorder(orderToCheck, userID);
               } catch (err) {
-                console.log('error reordering trade', err);
+                console.log(err, 'error reordering trade');
               }
             } // end reorder
           } // end not found
           else {
-            console.log('error in settleMultipleOrders loop', err);
+            console.log(err, 'error in settleMultipleOrders loop');
           }
         } // end catch
       } // end for loop
@@ -401,13 +390,10 @@ async function reorder(orderToReorder) {
   return new Promise(async (resolve, reject) => {
     try {
       const userID = orderToReorder.userID;
-      // console.log('looking again for the order before reordering', orderToReorder);
       let upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.id);
-      // console.log('order in db up to date', upToDateDbOrder.reorder);
 
       // if the order is marked for reordering, it was deleted already and there is no need to wait to double check
       if (upToDateDbOrder.reorder) {
-        // console.log('for sure need to reorder');
         if (!upToDateDbOrder.will_cancel) {
           try {
             const tradeDetails = {
@@ -450,7 +436,7 @@ async function reorder(orderToReorder) {
               });
               reject('Insufficient funds')
             }
-            console.log('error in reorder function in robot.js');
+            console.log(err, 'error in reorder function in robot.js');
             reject(err)
           }
         }
@@ -460,9 +446,7 @@ async function reorder(orderToReorder) {
         let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID);
       }
     } catch (err) {
-      // console.log('did not find the order', err.response?.status);
       let cancelling = await databaseClient.checkIfCancelling(orderToReorder.id);
-      // console.log('cancelling?:', cancelling);
       if ((err.response?.status === 404) && (!cancelling)) {
         try {
           const tradeDetails = {
@@ -497,7 +481,6 @@ async function reorder(orderToReorder) {
           })
         } catch (err) {
           if (err.response?.status === 400) {
-            // console.log('Insufficient funds when reordering missing trade in the loop!');
             socketClient.emit('message', {
               error: `Insufficient funds!`,
               orderUpdate: true,
@@ -521,11 +504,9 @@ async function cancelMultipleOrders(ordersArray, userID) {
     // set variable to track how many orders were actually canceled
     let quantity = 0;
     if (ordersArray.length > 0) {
-      // console.log(`There are ${ordersArray.length} extra orders that may need to be canceled`);
       // need to wait and double check db before deleting because they take time to store and show up on cb first
       // only need to wait once because as the loop runs nothing will be added to it. Only wait for most recent order
       await sleep(2000);
-
 
       for (let i = 0; i < ordersArray.length; i++) {
         const orderToCancel = ordersArray[i];
@@ -537,12 +518,9 @@ async function cancelMultipleOrders(ordersArray, userID) {
             // console.log('canceling order', orderToCancel.id, 'at price', orderToCancel.price);
             await coinbaseClient.cancelOrder(orderToCancel.id, userID);
             quantity++;
-          } else {
-            // console.log('checked again for the order in the db', doubleCheck.id, doubleCheck.price);
           }
         } catch (err) {
           if (err.response?.status === 404) {
-            console.log('order not found when canceling extra order!');
             // if not found, cancel all orders may have been done, so get out of the loop
             // new array will be made on next loop
             i += ordersArray.length; // don't use break because need current loop iteration to finish
@@ -554,7 +532,7 @@ async function cancelMultipleOrders(ordersArray, userID) {
               userID: Number(userID)
             });
           } else {
-            console.log('unknown error in cancelMultipleOrders for loop', err);
+            console.log(err, 'unknown error in cancelMultipleOrders for loop');
           }
         }
         // wait to prevent rate limiting
@@ -612,10 +590,8 @@ async function autoSetup(user, parameters) {
   // stop bot from adding more trades if 10000 already placed
   let totalOrders = await databaseClient.getUnsettledTrades('all', user.id);
   if (totalOrders.length >= 10000) {
-    // console.log('more than 10000 unsettled orders');
     return;
   }
-  // console.log('in autoSetup function', user, parameters);
 
   // get the BTC size from the entered USD size
   const convertedAmount = Number(Math.floor((parameters.size / parameters.startingValue) * 100000000)) / 100000000;
@@ -635,7 +611,6 @@ async function autoSetup(user, parameters) {
     userID: user.id,
     trade_pair_ratio: parameters.trade_pair_ratio
   };
-  // console.log('trade details', tradeDetails);
 
   // send the order through
   try {
@@ -682,7 +657,7 @@ async function autoSetup(user, parameters) {
         orderUpdate: true
       });
     } else {
-      console.log('problem in autoSetup', err);
+      console.log(err, 'problem in autoSetup');
     }
   }
 }
