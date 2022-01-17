@@ -344,6 +344,7 @@ router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
       done_at timestamptz,
       done_reason character varying COLLATE pg_catalog."default",
       fill_fees numeric(32,16),
+      previous_fill_fees numeric(32,16),
       filled_size numeric(32,8),
       executed_value numeric(32,16),
       original_buy_price numeric(32,16),
