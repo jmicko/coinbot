@@ -80,7 +80,7 @@ router.get('/fees', rejectUnauthenticated, (req, res) => {
 router.get('/profits', rejectUnauthenticated, (req, res) => {
   const userID = req.user.id;
   // console.log('getting profits for', userID);
-  const queryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" * 2)) 
+  const queryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" + "previous_fill_fees")) 
   FROM public.orders 
   WHERE "side" = 'sell' AND "settled" = 'true' AND "include_in_profit" = 'true' AND "userID" = $1;`;
   pool.query(queryText, [userID])
