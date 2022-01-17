@@ -9,8 +9,8 @@ const storeTrade = (newOrder, originalDetails) => {
     // add new order to the database
     const sqlText = `INSERT INTO "orders" 
       ("id", "userID", "price", "size", "trade_pair_ratio", "side", "settled", "product_id", "time_in_force", 
-      "created_at", "done_at", "fill_fees", "filled_size", "executed_value", "original_buy_price", "original_sell_price") 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16);`;
+      "created_at", "done_at", "fill_fees", "previous_fill_fees", "filled_size", "executed_value", "original_buy_price", "original_sell_price") 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17);`;
     pool.query(sqlText, [
       newOrder.id,
       originalDetails.userID,
@@ -24,6 +24,8 @@ const storeTrade = (newOrder, originalDetails) => {
       newOrder.created_at,
       newOrder.done_at,
       newOrder.fill_fees,
+      // bring the fees from the previous order to the new one for more accurate profit calculation
+      originalDetails.fill_fees,
       newOrder.filled_size,
       newOrder.executed_value,
       originalDetails.original_buy_price,

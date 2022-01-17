@@ -21,7 +21,7 @@ async function syncOrders(userID) {
   try {
     botSettings = await databaseClient.getBotSettings();
     user = await databaseClient.getUserAndSettings(userID);
-    
+
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
 
       // *** GET ORDERS THAT NEED PROCESSING ***
@@ -51,18 +51,18 @@ async function syncOrders(userID) {
 
         // Combine the arrays
         cbOrders = cbOrders.concat(olderOrdersRemovedDuplicates);
-        
+
         // if there are 1000 orders, there may be more so check again
         if (olderOrders.length >= 1000) {
           await getMoreOrders();
         }
       }
-      
+
       // CHECK IF THERE ARE 1000 OPEN ORDERS AND GET MORE FROM CB IF NEEDED
       if (cbOrders.length >= 1000) {
         await getMoreOrders();
       }
-      
+
 
       // compare the arrays and remove any where the ids match in both,
       // leaving a list of orders that are open in the db, but not on cb. Probably settled
@@ -419,9 +419,11 @@ async function reorder(orderToReorder) {
             };
             // send the new order with the trade details
             let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
+            // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
+            tradeDetails.fill_fees = orderToReorder.previous_fill_fees;
             // store the new trade in the db. the trade details are also sent to store trade position prices
             let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
-  
+
             // delete the old order from the db
             const queryText = `DELETE from "orders" WHERE "id"=$1;`;
             await pool.query(queryText, [orderToReorder.id]);
@@ -472,6 +474,8 @@ async function reorder(orderToReorder) {
           };
           // send the new order with the trade details
           let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
+          // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
+          tradeDetails.fill_fees = orderToReorder.previous_fill_fees;
           // store the new trade in the db. the trade details are also sent to store trade position prices
           let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
 
