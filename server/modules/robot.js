@@ -21,7 +21,7 @@ async function syncOrders(userID) {
   try {
     botSettings = await databaseClient.getBotSettings();
     user = await databaseClient.getUserAndSettings(userID);
-    
+
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
 
       // *** GET ORDERS THAT NEED PROCESSING ***
@@ -51,18 +51,18 @@ async function syncOrders(userID) {
 
         // Combine the arrays
         cbOrders = cbOrders.concat(olderOrdersRemovedDuplicates);
-        
+
         // if there are 1000 orders, there may be more so check again
         if (olderOrders.length >= 1000) {
           await getMoreOrders();
         }
       }
-      
+
       // CHECK IF THERE ARE 1000 OPEN ORDERS AND GET MORE FROM CB IF NEEDED
       if (cbOrders.length >= 1000) {
         await getMoreOrders();
       }
-      
+
 
       // compare the arrays and remove any where the ids match in both,
       // leaving a list of orders that are open in the db, but not on cb. Probably settled
@@ -74,40 +74,43 @@ async function syncOrders(userID) {
 
 
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
-      try {
-        let result = await cancelMultipleOrders(ordersToCancel, userID);
-        if (result.ordersCanceled && (result.quantity > 0)) {
-          // console.log(result.message);
-          socketClient.emit('message', {
-            error: `${result.quantity} Extra orders were found and canceled for user ${userID}`,
-            orderUpdate: true,
-            userID: Number(userID)
-          });
+      if (ordersToCancel.length) {        
+        try {
+          let result = await cancelMultipleOrders(ordersToCancel, userID);
+          if (result.ordersCanceled && (result.quantity > 0)) {
+            // console.log(result.message);
+            socketClient.emit('message', {
+              error: `${result.quantity} Extra orders were found and canceled for user ${userID}`,
+              orderUpdate: true,
+              userID: Number(userID)
+            });
+          }
+        } catch (err) {
+          console.log('error deleting extra order', err);
         }
-      } catch (err) {
-        console.log('error deleting extra order', err);
+        // wait for a second to allow cancels to go through so bot doesn't cancel twice
+        await sleep(1000);
       }
-      // wait for a second to allow cancels to go through so bot doesn't cancel twice
-      await sleep(1000);
-      // }
 
 
       // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
-      try {
-        let result = await settleMultipleOrders(ordersToCheck, userID);
-        if (result.ordersFlipped) {
-          // console.log(result.message);
-        }
-      } catch (err) {
-        if (err.response?.status === 500) {
-          console.log('internal server error from coinbase');
-          socketClient.emit('message', {
-            error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
-            orderUpdate: true,
-            userID: Number(userID)
-          });
-        } else {
-          console.log('Error settling all settled orders', err);
+      if (ordersToCheck.length) {
+        try {
+          let result = await settleMultipleOrders(ordersToCheck, userID);
+          if (result.ordersFlipped) {
+            // console.log(result.message);
+          }
+        } catch (err) {
+          if (err.response?.status === 500) {
+            console.log('internal server error from coinbase');
+            socketClient.emit('message', {
+              error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
+              orderUpdate: true,
+              userID: Number(userID)
+            });
+          } else {
+            console.log('Error settling all settled orders', err);
+          }
         }
       }
 
@@ -151,7 +154,8 @@ async function syncOrders(userID) {
     if (user) {
       setTimeout(() => {
         syncOrders(userID);
-      }, (botSettings.loopSpeed * 100));
+        console.log(botSettings.loop_speed);
+      }, (botSettings.loop_speed * 100));
     } else {
       console.log('user is NOT THERE, stopping loop for user');
     }
@@ -419,9 +423,11 @@ async function reorder(orderToReorder) {
             };
             // send the new order with the trade details
             let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
+            // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
+            tradeDetails.fill_fees = orderToReorder.previous_fill_fees;
             // store the new trade in the db. the trade details are also sent to store trade position prices
             let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
-  
+
             // delete the old order from the db
             const queryText = `DELETE from "orders" WHERE "id"=$1;`;
             await pool.query(queryText, [orderToReorder.id]);
@@ -472,6 +478,8 @@ async function reorder(orderToReorder) {
           };
           // send the new order with the trade details
           let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
+          // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
+          tradeDetails.fill_fees = orderToReorder.previous_fill_fees;
           // store the new trade in the db. the trade details are also sent to store trade position prices
           let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
 
