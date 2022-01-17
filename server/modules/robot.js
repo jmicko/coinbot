@@ -74,22 +74,23 @@ async function syncOrders(userID) {
 
 
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
-      try {
-        let result = await cancelMultipleOrders(ordersToCancel, userID);
-        if (result.ordersCanceled && (result.quantity > 0)) {
-          // console.log(result.message);
-          socketClient.emit('message', {
-            error: `${result.quantity} Extra orders were found and canceled for user ${userID}`,
-            orderUpdate: true,
-            userID: Number(userID)
-          });
+      if (ordersToCancel.length) {        
+        try {
+          let result = await cancelMultipleOrders(ordersToCancel, userID);
+          if (result.ordersCanceled && (result.quantity > 0)) {
+            // console.log(result.message);
+            socketClient.emit('message', {
+              error: `${result.quantity} Extra orders were found and canceled for user ${userID}`,
+              orderUpdate: true,
+              userID: Number(userID)
+            });
+          }
+        } catch (err) {
+          console.log('error deleting extra order', err);
         }
-      } catch (err) {
-        console.log('error deleting extra order', err);
+        // wait for a second to allow cancels to go through so bot doesn't cancel twice
+        await sleep(1000);
       }
-      // wait for a second to allow cancels to go through so bot doesn't cancel twice
-      await sleep(1000);
-      // }
 
 
       // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
