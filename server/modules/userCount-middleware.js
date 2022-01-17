@@ -6,7 +6,6 @@ const userCount = (req, res, next) => {
   pool.query(queryText)
     .then((result) => {
       if (result && result.rows && (result.rows[0].count < 10)) {
-        // console.log('number of users:', result.rows[0].count);
         next();
       } else {
         console.log('too many users!');
