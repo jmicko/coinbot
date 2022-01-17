@@ -62,14 +62,20 @@ async function syncOrders(userID) {
         await getMoreOrders();
       }
 
+      // console.log('dbOrders.length', dbOrders.length, 'cbOrders.length', cbOrders.length);
 
       // compare the arrays and remove any where the ids match in both,
       // leaving a list of orders that are open in the db, but not on cb. Probably settled
       const ordersToCheck = await orderElimination(dbOrders, cbOrders);
 
       // also get a list of orders that are open on cb, but not stored in the db. 
-      // these are extra orders and should be canceled???
-      const ordersToCancel = await orderElimination(cbOrders, dbOrders);
+      let ordersToCancel = 0;
+      // this if statement saves a little processing by skipping the filter if not needed
+      if (!(dbOrders.length === cbOrders.length && ordersToCheck.length === 0)) {
+        // console.log('!!!!orders to check length', ordersToCheck.length);
+        ordersToCancel = await orderElimination(cbOrders, dbOrders);
+        
+      }
 
 
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
