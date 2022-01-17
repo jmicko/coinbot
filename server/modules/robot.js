@@ -94,21 +94,23 @@ async function syncOrders(userID) {
 
 
       // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
-      try {
-        let result = await settleMultipleOrders(ordersToCheck, userID);
-        if (result.ordersFlipped) {
-          // console.log(result.message);
-        }
-      } catch (err) {
-        if (err.response?.status === 500) {
-          console.log('internal server error from coinbase');
-          socketClient.emit('message', {
-            error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
-            orderUpdate: true,
-            userID: Number(userID)
-          });
-        } else {
-          console.log('Error settling all settled orders', err);
+      if (ordersToCheck.length) {
+        try {
+          let result = await settleMultipleOrders(ordersToCheck, userID);
+          if (result.ordersFlipped) {
+            // console.log(result.message);
+          }
+        } catch (err) {
+          if (err.response?.status === 500) {
+            console.log('internal server error from coinbase');
+            socketClient.emit('message', {
+              error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
+              orderUpdate: true,
+              userID: Number(userID)
+            });
+          } else {
+            console.log('Error settling all settled orders', err);
+          }
         }
       }
 
