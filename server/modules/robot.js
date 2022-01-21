@@ -599,9 +599,20 @@ async function autoSetup(user, parameters) {
     return;
   }
 
-  // get the BTC size from the entered USD size
-  const convertedAmount = Number(Math.floor((parameters.size / parameters.startingValue) * 100000000)) / 100000000;
-  // console.log(convertedAmount);
+  console.log("autoSetup parameters", parameters);
+
+  // assume size is in btc
+  let convertedAmount = parameters.size;
+
+  // if size is in usd, convert it to btc
+  if (parameters.sizeType === "USD") {
+    console.log('need to convert to btc!');
+    // get the BTC size from the entered USD size
+    convertedAmount = Number(Math.floor((parameters.size / parameters.startingValue) * 100000000)) / 100000000;
+  } else {
+    console.log('no need to convert to btc');
+  }
+    // console.log(convertedAmount);
 
   // calculate original sell price
   let original_sell_price = (Math.round((parameters.startingValue * (Number(parameters.trade_pair_ratio) + 100))) / 100);
@@ -640,6 +651,7 @@ async function autoSetup(user, parameters) {
       increment: parameters.increment, // done
       trade_pair_ratio: parameters.trade_pair_ratio, // done
       size: parameters.size, // done
+      sizeType: parameters.sizeType,
       product_id: parameters.product_id // done
     }
 
