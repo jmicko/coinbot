@@ -13,7 +13,7 @@ function SingleTrade(props) {
     //   return
     // }
     // this formula is ridiculous but hey, at least I didn't inject it right into the html, right?
-    const profit = Math.round((((props.order.original_sell_price * props.order.size - props.order.original_buy_price * props.order.size)) - ((props.store.accountReducer.feeReducer.maker_fee_rate * props.order.original_buy_price * props.order.size) + (props.store.accountReducer.feeReducer.maker_fee_rate * props.order.original_sell_price * props.order.size))) * 10000) / 10000;
+    const profit = Math.round((((props.order.original_sell_price * props.order.size - props.order.original_buy_price * props.order.size)) - ((props.store.accountReducer.feeReducer.maker_fee_rate * props.order.original_buy_price * props.order.size) + (props.store.accountReducer.feeReducer.maker_fee_rate * props.order.original_sell_price * props.order.size))) * 100000000) / 100000000;
     setProfit(profit);
   }, [props.store.accountReducer, props.order.original_sell_price, props.order.original_buy_price, props.order.size]);
 
