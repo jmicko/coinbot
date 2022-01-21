@@ -10,6 +10,7 @@ function AutoSetup(props) {
   const [startingValue, setStartingValue] = useState(1000);
   const [increment, setIncrement] = useState(100);
   const [size, setSize] = useState(10);
+  const [sizeType, setSizeType] = useState('USD');
   const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
   const [tradePairRatio, setTradePairRatio] = useState(1.1);
   const [setupResults, setSetupResults] = useState(1);
@@ -23,7 +24,7 @@ function AutoSetup(props) {
     if (size) {
       calculateResults();
     }
-  }, [startingValue, increment, size, props.priceTicker])
+  }, [startingValue, increment, size, sizeType, props.priceTicker])
 
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
   const numberWithCommas = (x) => {
@@ -32,17 +33,23 @@ function AutoSetup(props) {
 
   function calculateResults() {
     let availableFunds = props.store.accountReducer.accountReducer;
-    let startingPrice = startingValue;
-    let finalPrice = startingPrice;
+    // let startingPrice = startingValue;
+    let finalPrice = startingValue;
     let tradingPrice = props.priceTicker;
     let count = 0;
-    setSetupResults(startingValue)
+    // setSetupResults(startingValue)
 
     while ((size <= availableFunds) && (count < 10000)) {
       let actualSize = size;
+      if (sizeType === "BTC") {
+        actualSize = size * finalPrice;
+      }
 
       if (finalPrice >= tradingPrice) {
-        let BTCSize = size / finalPrice;
+        let BTCSize = size;
+        if (sizeType === "USD") {
+          BTCSize = size / finalPrice;
+        }
         let actualUSDSize = tradingPrice * BTCSize;
         actualSize = actualUSDSize;
       }
@@ -53,12 +60,8 @@ function AutoSetup(props) {
       finalPrice += increment;
       count++;
     }
-
-
     setSetupResults(finalPrice);
     setTotalTrades(count);
-
-
   }
 
 
@@ -67,6 +70,17 @@ function AutoSetup(props) {
     setAutoTradeStarted(true);
     console.log('automatically setting up bot');
     autoTrader();
+  }
+  
+  function changeSizeType(event) {
+    event.preventDefault();
+    if (sizeType === "USD") {
+      setSizeType("BTC");
+      setSize(0.01);
+    } else {
+      setSizeType("USD");
+      setSize(10);
+    }
   }
 
   function autoTrader() {
@@ -79,6 +93,7 @@ function AutoSetup(props) {
         increment: increment,
         trade_pair_ratio: tradePairRatio,
         size: size,
+        sizeType: sizeType,
         product_id: transactionProduct,
       }
     })
@@ -146,16 +161,19 @@ function AutoSetup(props) {
           </label>
 
           {/* SIZE */}
-          <p>What size in USD should each trade-pair be?</p>
+          <p>What size in {sizeType === "USD" ? "USD" : "BTC"} should each trade-pair be? {sizeType === "USD" 
+          ? <button className={`btn-blue ${props.theme}`} onClick={changeSizeType}> Change to BTC</button> 
+          : <button className={`btn-blue ${props.theme}`} onClick={changeSizeType}> Change to USD</button> 
+          }</p>
+          
           <label htmlFor='size'>
-            Size in USD:
+            Size in {sizeType === "USD" ? "USD" : "BTC"}:
             <br />
             <input
               name='size'
               type='number'
               value={size}
               step={.01}
-              min={1}
               required
               onChange={(event) => setSize(Number(event.target.value))}
             />
@@ -178,8 +196,7 @@ function AutoSetup(props) {
             <strong>{numberWithCommas(setupResults)}</strong>
           </p>
           <p>
-            This will likely be higher if trades are placed higher than the current price of BTC, as they
-            will cost less. It can also change if the price of BTC moves up or down significantly while the
+            This calculation isn't perfect but it will get close. It can also change if the price of BTC moves up or down significantly while the
             trades are being set up.
           </p>
           <p>
