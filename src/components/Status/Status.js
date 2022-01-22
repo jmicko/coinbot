@@ -12,6 +12,15 @@ function Status(props) {
 
   const socket = useSocket();
 
+  const refresh = () => {
+    console.log('clicked refresh');
+    dispatch({ type: 'FETCH_PROFITS' });
+    dispatch({ type: 'FETCH_ACCOUNT' });
+    dispatch({ type: 'FETCH_FEES' });
+    dispatch({ type: 'FETCH_ORDERS' });
+    dispatch({ type: 'FETCH_USER' });
+  }
+
   const getProfits = useCallback(
     () => {
       dispatch({
@@ -75,14 +84,55 @@ function Status(props) {
     <div className="Status boxed fit">
       {/* todo - maybe style in some divider lines here or something */}
       {/* <p className="info status-ticker"><strong>~~~ user ~~~</strong><br />{JSON.stringify(props.store.accountReducer.userReducer)}</p> */}
-      <p className="info status-ticker"><strong>~~~ BTC-USD ~~~</strong><br />${numberWithCommas(props.priceTicker)}/coin</p>
-      <p className="info status-ticker"><strong>Available Funds</strong><br />${numberWithCommas(Math.floor(props.store.accountReducer.accountReducer * 100) / 100)}</p>
-      <p className="info status-ticker"><strong>Maker Fee</strong><br />{Number((props.store.accountReducer.feeReducer.maker_fee_rate * 100).toFixed(2))}%</p>
-      <p className="info status-ticker"><strong>Taker Fee</strong><br />{Number((props.store.accountReducer.feeReducer.taker_fee_rate * 100).toFixed(2))}%</p>
-      <p className="info status-ticker"><strong>30 Day Volume</strong><br />${numberWithCommas(props.store.accountReducer.feeReducer.usd_volume)}</p>
-      <p className="info status-ticker"><strong>Profit Estimate</strong><br />${numberWithCommas(Number(props.store.accountReducer.profitsReducer[0].sum))}</p>
-      <p className="info status-ticker"><strong>Total Open Orders</strong><br />{numberWithCommas(openOrderQuantity)}</p>
-      <p className="info status-ticker">~~{loopStatus ? <strong>HEARTBEAT</strong> : <strong>heartbeat</strong>}~~</p>
+
+      <p className="info status-ticker">
+        <strong>~~~ BTC-USD ~~~</strong>
+        <br />
+        ${numberWithCommas(props.priceTicker)}/coin
+      </p>
+
+      <p className="info status-ticker">
+        <strong>Available Funds</strong>
+        <br />
+        ${numberWithCommas(Math.floor(props.store.accountReducer.accountReducer * 100) / 100)}
+      </p>
+
+      <p className="info status-ticker">
+        <strong>Maker Fee</strong>
+        <br />
+        {Number((props.store.accountReducer.feeReducer.maker_fee_rate * 100).toFixed(2))}%
+      </p>
+
+      <p className="info status-ticker">
+        <strong>Taker Fee</strong>
+        <br />
+        {Number((props.store.accountReducer.feeReducer.taker_fee_rate * 100).toFixed(2))}%
+      </p>
+
+      <p className="info status-ticker">
+        <strong>30 Day Volume</strong>
+        <br />
+        ${numberWithCommas(props.store.accountReducer.feeReducer.usd_volume)}
+      </p>
+
+      <p className="info status-ticker">
+        <strong>Profit Estimate</strong>
+        <br />
+        ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[0].sum))}
+      </p>
+
+      <p className="info status-ticker">
+        <strong>Total Open Orders</strong>
+        <br />
+        {numberWithCommas(openOrderQuantity)}
+      </p>
+
+      <p className="info status-ticker">~~{loopStatus ? <strong>HEARTBEAT</strong> : <strong>heartbeat</strong>}~~
+        <br />
+        <center>
+          <button className={`btn-blue ${props.theme}`} onClick={refresh}>Refresh</button>
+        </center>
+      </p>
     </div>
   )
 }
