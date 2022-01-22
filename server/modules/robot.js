@@ -232,8 +232,8 @@ async function processOrders(userID) {
             console.log(err, 'unknown error in processOrders');
           }
         }
-        // avoid rate limiting
-        await sleep(100)
+        // avoid rate limiting and give orders time to settle before checking again
+        await sleep(150)
       }
     } else {
       resolve();
@@ -336,10 +336,9 @@ async function settleMultipleOrders(ordersArray, userID) {
           userID: Number(userID)
         });
         try {
-          // wait between each loop to prevent rate limiting
-          // await sleep(500);
           // get all the order details from cb
-          await sleep(200); // avoid rate limiting
+          // console.log('ORDER TO CHECK:', orderToCheck);
+          await sleep(100); // avoid rate limiting
           let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID);
           if (fullSettledDetails.size !== fullSettledDetails.filled_size) {
           }
@@ -521,12 +520,13 @@ async function cancelMultipleOrders(ordersArray, userID) {
           let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
           if (!doubleCheck) {
             // cancel the order if nothing comes back from db
-            // console.log('canceling order', orderToCancel.id, 'at price', orderToCancel.price);
+            // console.log('canceling order', orderToCancel);
             await coinbaseClient.cancelOrder(orderToCancel.id, userID);
             quantity++;
           }
         } catch (err) {
           if (err.response?.status === 404) {
+            // console.log(err.response.data, 'order not found when cancelling');
             // if not found, cancel all orders may have been done, so get out of the loop
             // new array will be made on next loop
             i += ordersArray.length; // don't use break because need current loop iteration to finish
