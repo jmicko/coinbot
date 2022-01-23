@@ -8,6 +8,8 @@ import { useSocket } from "../../contexts/SocketProvider";
 function Status(props) {
   const dispatch = useDispatch();
   const [loopStatus, setLoopStatus] = useState(true);
+  const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
+  const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
 
   const socket = useSocket();
@@ -75,6 +77,8 @@ function Status(props) {
   useEffect(() => {
     if (props.store.ordersReducer.openOrdersInOrder.sells !== undefined && props.store.ordersReducer.openOrdersInOrder.buys !== undefined) {
       setOpenOrderQuantity(props.store.ordersReducer.openOrdersInOrder.sells.length + props.store.ordersReducer.openOrdersInOrder.buys.length)
+      setOpenSellsQuantity(props.store.ordersReducer.openOrdersInOrder.sells.length)
+      setOpenBuysQuantity(props.store.ordersReducer.openOrdersInOrder.buys.length)
     }
   }, [props.store.ordersReducer.openOrdersInOrder.sells, props.store.ordersReducer.openOrdersInOrder.buys]);
 
@@ -124,7 +128,7 @@ function Status(props) {
       <p className="info status-ticker">
         <strong>Total Open Orders</strong>
         <br />
-        {numberWithCommas(openOrderQuantity)}
+        <strong>B:</strong>{numberWithCommas(openBuysQuantity)} <strong>S:</strong>{numberWithCommas(openSellsQuantity)} <strong>T:</strong>{numberWithCommas(openOrderQuantity)}
       </p>
 
       <p className="info status-ticker">~~{loopStatus ? <strong>HEARTBEAT</strong> : <strong>heartbeat</strong>}~~
