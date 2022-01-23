@@ -12,6 +12,7 @@ const databaseClient = require('../modules/databaseClient');
 /**
  * GET route to get all accounts info
  * For now this just wants to return usd account available balance
+ * todo - fix this, it's horrible
  */
 router.get('/', (req, res) => {
   const user = req.user;
@@ -21,9 +22,9 @@ router.get('/', (req, res) => {
 
     coinbaseClient.getAccounts(userID)
       .then((result) => {
+        // console.log('accounts on cb are', result);
         return result.forEach(account => {
           if (account.currency === 'USD') {
-            // console.log('usd is', account.available);
             res.send(account.available)
             return account;
           }

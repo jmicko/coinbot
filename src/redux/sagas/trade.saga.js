@@ -3,9 +3,9 @@ import axios from 'axios';
 
 function* startTrade(action) {
   try {
-    console.log('payload is:', action.payload);
+    // console.log('startTrade payload is:', action.payload);
     const response = yield axios.post(`/api/trade/`, action.payload);
-    console.log('response is.....', response);
+    // console.log('startTrade response is.....', response);
   } catch (error) {
     console.log('POST order route has failed', error)
     if (error.response.status === 403) {
@@ -16,9 +16,9 @@ function* startTrade(action) {
 
 function* autoSetup(action) {
   try {
-    console.log('payload is:', action.payload);
+    // console.log('autoSetup payload is:', action.payload);
     const response = yield axios.post(`/api/trade/autoSetup`, action.payload);
-    console.log('response is.....', response);
+    // console.log('response is.....', response);
   } catch (error) {
     console.log('POST order route has failed', error)
     if (error.response.status === 403) {
@@ -29,9 +29,9 @@ function* autoSetup(action) {
 
 function* deleteTrade(action) {
   try {
-    console.log('payload is...', action.payload);
+    // console.log('deleteTrade payload is...', action.payload);
     const response = yield axios.delete(`/api/trade/`, { data: action.payload });
-    console.log('response is.....', response);
+    // console.log('response is.....', response);
   } catch (error) {
     console.log('POST order route has failed', error)
     if (error.response.status === 403) {
