@@ -13,9 +13,9 @@ function General(props) {
 
   // make sure ratio is within percentage range
   useEffect(() => {
-    if (reinvest_ratio > 500) {
-      setReinvest_ratio(500)
-    }
+    // if (reinvest_ratio > 500) {
+    //   setReinvest_ratio(500)
+    // }
     if (reinvest_ratio < 0) {
       setReinvest_ratio(0)
     }
