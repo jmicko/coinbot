@@ -10,11 +10,20 @@ function Trade(props) {
   // of bitcoin, rounded to the closest $100
   const [transactionSide, setTransactionSide] = useState('buy');
   const [price, setTransactionPrice] = useState(0);
+  const [sellPrice, setSellPrice] = useState(0);
+  const [priceMargin, setPriceMargin] = useState(0);
+  const [pairMargin, setPairMargin] = useState(0);
+  const [pairProfit, setPairProfit] = useState(0);
+  const [volumeCostBuy, setVolumeCostBuy] = useState(0);
+  const [volumeCostSell, setVolumeCostSell] = useState(0);
   const [transactionAmountBTC, setTransactionAmountBTC] = useState(0.001);
   const [transactionAmountUSD, setTransactionAmountUSD] = useState(10);
   const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
   const [tradePairRatio, setTradePairRatio] = useState(1.1);
   const [fees, setFees] = useState(0.005);
+  const [buyFee, setBuyFee] = useState(0.005);
+  const [sellFee, setSellFee] = useState(0.005);
+  const [totalfees, setTotalFees] = useState(0.005);
   const [amountTypeIsUSD, setAmountTypeIsUSD] = useState(true);
   const dispatch = useDispatch();
 
@@ -22,6 +31,49 @@ function Trade(props) {
   const numberWithCommas = (x) => {
     return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
   }
+
+  // calculate New Position values every time a number in the calculator changes
+  useEffect(() => {
+    // increase the buy price by the trade pair ratio to get sell price
+    let sellPrice = (price * (tradePairRatio + 100)) / 100;
+    // console.log('sell price:', sellPrice);
+
+    let priceMargin = sellPrice - price;
+    // console.log('priceMargin:', priceMargin);
+
+    let volumeCostBuy = price * transactionAmountBTC;
+    // console.log('volumeCost:', volumeCostBuy);
+
+    let volumeCostSell = sellPrice * transactionAmountBTC;
+    // console.log('volumeCostSell:', volumeCostSell);
+
+    let buyFee = volumeCostBuy * fees;
+    // console.log('buyFee:', buyFee);
+
+    let sellFee = volumeCostSell * fees;
+    // console.log('sellFee:', sellFee);
+
+    let totalfees = buyFee + sellFee;
+    // console.log('totalfees:', totalfees);
+
+    let pairMargin = volumeCostSell - volumeCostBuy;
+    // console.log('pairMargin:', pairMargin);
+
+    let pairProfit = pairMargin - totalfees;
+    // console.log('pairProfit:', pairProfit);
+
+    setSellPrice(sellPrice);
+    setPriceMargin(priceMargin);
+    setVolumeCostBuy(volumeCostBuy);
+    setVolumeCostSell(volumeCostSell);
+    setBuyFee(buyFee);
+    setSellFee(sellFee);
+    setTotalFees(totalfees);
+    setPairMargin(pairMargin);
+    setPairProfit(pairProfit);
+
+  }, [price, transactionAmountBTC, transactionAmountUSD, tradePairRatio, amountTypeIsUSD]);
+
 
   function submitTransaction(event) {
     event.preventDefault();
@@ -264,19 +316,23 @@ function Trade(props) {
           {/* display some details about the new transaction that is going to be made */}
           <div className={`boxed dark ${props.store.accountReducer.userReducer.theme}`}>
             <h4 className={`title ${props.theme}`}>New position</h4>
-            <p><strong>Per coin:</strong></p>
-            <p className="info">Buy price: <strong>${numberWithCommas(price)}</strong> </p>
-            <p className="info">Sell price <strong>${numberWithCommas(Math.round((price * (tradePairRatio + 100))) / 100)}</strong></p>
-            <p className="info">Price margin: <strong>{numberWithCommas(Math.round(((price * (tradePairRatio + 100) / 100) - price) * 100) / 100)}</strong> </p>
+            <p><strong>Trade Pair Details:</strong></p>
+            <p className="info">Buy price: <strong>${numberWithCommas(price.toFixed(2))}</strong> </p>
+            <p className="info">Sell price <strong>${numberWithCommas(sellPrice.toFixed(2))}</strong></p>
+            <p className="info">Price margin: <strong>{numberWithCommas(priceMargin.toFixed(2))}</strong> </p>
             <p className="info">Volume <strong>{transactionAmountBTC}</strong> </p>
             <p><strong>Cost at this volume:</strong></p>
-            <p className="info"><strong>BUY*:</strong> ${numberWithCommas(Math.round(price * transactionAmountBTC * 100) / 100)}</p>
-            <p className="info"><strong>SELL*:</strong>${numberWithCommas(Math.round((price * transactionAmountBTC * (tradePairRatio + 100))) / 100)}</p>
-            <p className="info"><strong>FEE*:</strong> ${Math.round(price * transactionAmountBTC * (fees * 10000)) / 10000}</p>
-            <p className="info"><strong>PAIR MARGIN*:</strong> ${numberWithCommas((Math.round((((price * transactionAmountBTC * (tradePairRatio + 100))) / 100 - (price * transactionAmountBTC)) * 10000)) / 10000)}</p>
-            <p className="info"><strong>PAIR PROFIT*:</strong> ${numberWithCommas((Math.round((((price * transactionAmountBTC * (tradePairRatio + 100)) / 100) - (price * transactionAmountBTC) - (price * transactionAmountBTC * fees) * 2) * 10000)) / 10000)}</p>
-            {/* <p className="info">The value in USD for the initial transaction will be about ${((Math.round((price * transactionAmountBTC) * 100)) / 100)}.</p> */}
-            <p className="small info">*Costs, fees, margin, and profit, are estimated and may be different at time of transaction. This is mostly due to rounding issues market conditions.</p>
+            <p className="info"><strong>BUY*:</strong> ${numberWithCommas(volumeCostBuy.toFixed(2))}</p>
+            <p className="info"><strong>SELL*:</strong>${numberWithCommas(volumeCostSell.toFixed(2))}</p>
+            <p className="info"><strong>BUY FEE*:</strong> ${buyFee.toFixed(8)}</p>
+            <p className="info"><strong>SELL FEE*:</strong> ${sellFee.toFixed(8)}</p>
+            <p className="info"><strong>TOTAL FEES*:</strong> ${totalfees.toFixed(8)}</p>
+            <p className="info"><strong>PAIR MARGIN*:</strong> ${numberWithCommas(pairMargin.toFixed(8))}</p>
+            <p className="info"><strong>PAIR PROFIT*:</strong> ${numberWithCommas(pairProfit.toFixed(8))}</p>
+            <p className="small info">
+              *Costs, fees, margins, and profits, are estimated and may be different at the time of transaction.
+              This is mostly due to rounding issues and market conditions.
+            </p>
           </div>
         </form>
       </div>
