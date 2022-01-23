@@ -83,6 +83,27 @@ router.put('/toggleMaintenance', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
+ * PUT route setting Trade Load Max
+ */
+router.put('/tradeLoadMax', rejectUnauthenticated, async (req, res) => {
+  // POST route code here
+  const user = req.user;
+  console.log('toggleMaintenance route hit!');
+  try {
+    console.log('tradeLoadMax route hit!', user, req.body);
+
+    const queryText = `UPDATE "user_settings" SET "max_trade_load" = $1 WHERE "userID" = $2`;
+    await pool.query(queryText, [req.body.max_trade_load, user.id]);
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.log('error with toggleMaintenance route', err);
+    res.sendStatus(500);
+  }
+
+});
+
+/**
  * PUT route bulk updating trade pair ratio
  */
 router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
@@ -122,16 +143,16 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
     // Now cancel all trades so they can be reordered with the new numbers
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID)
-    
+
     // wait 5 seconds to give the synch loop more time to finish
     await robot.sleep(5000);
-    
+
     // mark all open orders as reorder
     await databaseClient.setReorder();
 
     // cancel all orders. The sync loop will take care of replacing them
     await coinbaseClient.cancelAllOrders(userID);
-    
+
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID)
 

@@ -59,11 +59,26 @@ function* bulkPairRatio(action) {
   }
 }
 
+function* sendTradeLoadMax(action) {
+  try {
+    console.log('bulk setting pair ratio saga', action.payload);
+    const response = yield axios.put(`/api/settings/tradeLoadMax`, action.payload);
+    console.log('response from sendTradeLoadMax', response);
+    yield put({ type: 'FETCH_ORDERS' })
+  } catch (error) {
+    console.log('sendTradeLoadMax saga has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 
 function* settingsSaga() {
   yield takeLatest('FETCH_SETTINGS', getAllSettings);
   yield takeLatest('SEND_LOOP_SPEED', loopSpeed);
   yield takeLatest('SET_BULK_PAIR_RATIO', bulkPairRatio);
+  yield takeLatest('SET_MAX_TRADE_LOAD', sendTradeLoadMax);
   yield takeLatest('TOGGLE_MAINTENANCE', toggleMaintenance);
 }
 
