@@ -58,21 +58,25 @@ const getUnsettledTrades = (side, userID) => {
     // can request a limited amount of data to save on network costs
     if (side == 'buy') {
       // gets all unsettled buys, sorted by price
-      sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
+      sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" 
+      WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" DESC;`;
+      // LIMIT 10;`;
       pool.query(sqlText, [userID])
-        .then((results) => {
-          // promise returns promise from pool if success
-          resolve(results.rows);
-        })
-        .catch((err) => {
-          // or promise relays errors from pool to parent
-          reject(err);
-        })
+      .then((results) => {
+        // promise returns promise from pool if success
+        resolve(results.rows);
+      })
+      .catch((err) => {
+        // or promise relays errors from pool to parent
+        reject(err);
+      })
     } else if (side == 'sell') {
       // gets all unsettled sells, sorted by price
-      sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
+      sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" 
+      WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" DESC;`;
+      // LIMIT 10;`;
       pool.query(sqlText, [userID])
         .then((results) => {
           // promise returns promise from pool if success

@@ -37,12 +37,12 @@ function TradeList(props) {
   useEffect(() => {
     if (props.store.ordersReducer.openOrdersInOrder.sells !== undefined) {
       setSells(props.store.ordersReducer.openOrdersInOrder.sells.map((sell) => {
-        return <SingleTrade key={sell.id} order={sell} />
+        return <SingleTrade key={sell.id} order={sell} theme={props.theme} />
       }))
     }
     if (props.store.ordersReducer.openOrdersInOrder.buys !== undefined) {
       setBuys(props.store.ordersReducer.openOrdersInOrder.buys.map((sell) => {
-        return <SingleTrade key={sell.id} order={sell} />
+        return <SingleTrade key={sell.id} order={sell} theme={props.theme} />
       }))
     }
   }, [props.store.ordersReducer.openOrdersInOrder.sells, props.store.ordersReducer.openOrdersInOrder.buys]);
