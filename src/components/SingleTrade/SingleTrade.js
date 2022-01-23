@@ -85,7 +85,19 @@ function SingleTrade(props) {
           <strong> ~Time</strong> {new Date(props.order.created_at).toLocaleString('en-US')}
           {/* {JSON.stringify(props.order)} */}
           {
-            showAll && !deleting && <><strong> Pair Ratio:</strong> {props.order.trade_pair_ratio}</>
+            showAll && !deleting && <><strong> Pair Ratio:</strong> {Number(props.order.trade_pair_ratio)}</>
+          }
+          {
+            showAll && !deleting && <><strong> Buy Fees:</strong> {buyFee.toFixed(8)}</>
+          }
+          {
+          showAll && !deleting && <><strong> Sell Fees:</strong> {sellFee.toFixed(8)}</>
+          }
+          {
+          showAll && !deleting && <><strong> Total Fees:</strong> {(Number(sellFee.toFixed(8)) + Number(buyFee.toFixed(8))).toFixed(8)}</>
+          }
+          {
+          showAll && !deleting && <><strong> Gross Pair Profit:</strong> {(props.order.original_sell_price * props.order.size - props.order.original_buy_price * props.order.size).toFixed(8)}</>
           }
         </p>
       </div>
