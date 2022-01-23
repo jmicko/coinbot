@@ -4,6 +4,7 @@ import mapStoreToProps from '../../redux/mapStoreToProps';
 import Admin from './Admin/Admin';
 import AutoSetup from './AutoSetup/AutoSetup';
 import General from './General/General';
+import Investment from './Investment/Investment';
 import Reset from './Reset/Reset';
 import History from './History/History';
 import './Settings.css'
@@ -23,6 +24,7 @@ function Settings(props) {
         {
           {
             'general': <General theme={props.theme} />,
+            'investment': <Investment theme={props.theme} />,
             'history': <History theme={props.theme} />,
             'autoSetup': <AutoSetup theme={props.theme} priceTicker={props.priceTicker} />,
             'reset': <Reset theme={props.theme} />,
