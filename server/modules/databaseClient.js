@@ -78,7 +78,7 @@ const getUnsettledTrades = (side, userID) => {
       // gets all unsettled sells, sorted by price
       sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" 
       WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
-      ORDER BY "price" DESC
+      ORDER BY "price" ASC
       LIMIT $2;`;
       pool.query(sqlText, [userID, userSettings.max_trade_load])
         .then((results) => {
