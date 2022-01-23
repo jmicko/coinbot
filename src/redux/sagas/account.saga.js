@@ -5,8 +5,7 @@ import axios from 'axios';
 
 function* fetchFees(action) {
   try {
-    console.log('payload is:', action.payload);
-    const response = yield axios.get(`/api/account/fees`, action.payload);
+    const response = yield axios.get(`/api/account/fees`);
     yield put({ type: 'SET_FEES', payload: response.data })
   } catch (error) {
     console.log('GET fees route has failed', error);
