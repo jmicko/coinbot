@@ -13,9 +13,9 @@ function General(props) {
 
   // make sure ratio is within percentage range
   useEffect(() => {
-    if (reinvest_ratio > 500) {
-      setReinvest_ratio(500)
-    }
+    // if (reinvest_ratio > 500) {
+    //   setReinvest_ratio(500)
+    // }
     if (reinvest_ratio < 0) {
       setReinvest_ratio(0)
     }
@@ -135,6 +135,10 @@ function General(props) {
       }
       {props.store.accountReducer.userReducer.reinvest &&
         <>
+        {((reinvest_ratio > 100) || (props.store.accountReducer.userReducer.reinvest_ratio > 100)) && 
+        <p>** WARNING! ** <br/> Setting the reinvestment ratio higher than 100% will take money from your available funds! 
+        You will need to keep an eye on the bot and make sure you don't run out!</p>
+        }
           <p>Current reinvestment ratio: {props.store.accountReducer.userReducer.reinvest_ratio}%</p>
           <label htmlFor="reinvest_ratio">
             Set Ratio:
