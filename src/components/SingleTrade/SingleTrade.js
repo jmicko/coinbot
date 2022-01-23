@@ -95,7 +95,7 @@ function SingleTrade(props) {
           }
           {/* {JSON.stringify(props.order)} */}
           {
-            showAll && !deleting && <><strong> Pair Ratio:</strong> {Number(props.order.trade_pair_ratio)}</>
+            showAll && !deleting && <><strong> Pair Ratio:</strong> {Number(props.order.trade_pair_ratio)}%</>
           }
           {
             showAll && !deleting && <><strong> Buy Fees:</strong> {buyFee.toFixed(8)}</>
