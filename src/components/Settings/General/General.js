@@ -83,7 +83,7 @@ function General(props) {
           </p>
           {props.store.accountReducer.userReducer.max_trade &&
             <>
-              <p>Current max trades to load per side: {Number(props.store.accountReducer.userReducer.max_trade_size)}</p>
+              <p>Current max trades to load per side: {Number(props.store.accountReducer.userReducer.max_trade_load)}</p>
               <label htmlFor="reinvest_ratio">
                 Set Max:
               </label>

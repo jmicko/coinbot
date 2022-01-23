@@ -65,6 +65,7 @@ function* sendTradeLoadMax(action) {
     const response = yield axios.put(`/api/settings/tradeLoadMax`, action.payload);
     console.log('response from sendTradeLoadMax', response);
     yield put({ type: 'FETCH_ORDERS' })
+    yield put({ type: 'FETCH_USER' })
   } catch (error) {
     console.log('sendTradeLoadMax saga has failed', error);
     if (error.response.status === 403) {
