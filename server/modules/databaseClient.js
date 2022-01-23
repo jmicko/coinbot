@@ -54,9 +54,11 @@ const getUnsettledTrades = (side, userID) => {
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
 
+    // the only time 'buy' or 'sell' is passed is when the frontend is calling for all trades. 
+    // can request a limited amount of data to save on network costs
     if (side == 'buy') {
       // gets all unsettled buys, sorted by price
-      sqlText = `SELECT * FROM "orders" WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
+      sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" DESC;`;
       pool.query(sqlText, [userID])
         .then((results) => {
@@ -69,7 +71,7 @@ const getUnsettledTrades = (side, userID) => {
         })
     } else if (side == 'sell') {
       // gets all unsettled sells, sorted by price
-      sqlText = `SELECT * FROM "orders" WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
+      sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" DESC;`;
       pool.query(sqlText, [userID])
         .then((results) => {
