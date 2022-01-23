@@ -195,7 +195,7 @@ function Trade(props) {
               // todo - this could possibly be changed to 100, or add a selector menu thing to toggle between different amounts
               step={1}
               required
-              onChange={(event) => setTransactionPrice(event.target.value)}
+              onChange={(event) => setTransactionPrice(Number(event.target.value))}
             />
             <div className="increment-buttons">
               <div className="increase">
