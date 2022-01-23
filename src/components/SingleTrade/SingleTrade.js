@@ -8,17 +8,27 @@ function SingleTrade(props) {
   const [profit, setProfit] = useState(0);
   const [deleting, setDeleting] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [sellFee, setSellFee] = useState();
+  const [buyFee, setBuyFee] = useState();
 
   useEffect(() => {
+    // calculate all the numbers when the component renders
 
+    // pull from props and make more manageable
     let original_sell_price = props.order.original_sell_price;
     let size = props.order.size;
     let original_buy_price = props.order.original_buy_price;
     let maker_fee_rate = props.store.accountReducer.feeReducer.maker_fee_rate;
 
-    // this formula is ridiculous but hey, at least I didn't inject it right into the html, right?
-    const profit = Math.round((((original_sell_price * size - original_buy_price * size)) - ((maker_fee_rate * original_buy_price * size) + (maker_fee_rate * original_sell_price * size))) * 100000000) / 100000000;
+    // calculate fees
+    let sellFee = (maker_fee_rate * original_sell_price * size)
+    let buyFee = (maker_fee_rate * original_buy_price * size)
+
+    // calculate profits
+    const profit = Math.round((((original_sell_price * size - original_buy_price * size)) - (buyFee + sellFee)) * 100000000) / 100000000;
     setProfit(profit);
+    setBuyFee(buyFee)
+    setSellFee(sellFee)
   }, [props.store.accountReducer, props.order.original_sell_price, props.order.original_buy_price, props.order.size]);
 
   // delete the order if the abandon button is clicked.
