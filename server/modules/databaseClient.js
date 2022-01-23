@@ -50,19 +50,21 @@ const storeTrade = (newOrder, originalDetails) => {
 
 
 const getUnsettledTrades = (side, userID) => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
+    let userSettings = await getUserAndSettings(userID);
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
 
     // the only time 'buy' or 'sell' is passed is when the frontend is calling for all trades. 
     // can request a limited amount of data to save on network costs
     if (side == 'buy') {
+      console.log('getting buys', userSettings.max_trade_load);
       // gets all unsettled buys, sorted by price
       sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" 
       WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
-      ORDER BY "price" DESC;`;
-      // LIMIT 10;`;
-      pool.query(sqlText, [userID])
+      ORDER BY "price" DESC
+      LIMIT $2;`;
+      pool.query(sqlText, [userID, userSettings.max_trade_load])
       .then((results) => {
         // promise returns promise from pool if success
         resolve(results.rows);
@@ -72,12 +74,13 @@ const getUnsettledTrades = (side, userID) => {
         reject(err);
       })
     } else if (side == 'sell') {
+      console.log('getting sells', userSettings.max_trade_load);
       // gets all unsettled sells, sorted by price
       sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" 
       WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
-      ORDER BY "price" DESC;`;
-      // LIMIT 10;`;
-      pool.query(sqlText, [userID])
+      ORDER BY "price" DESC
+      LIMIT $2;`;
+      pool.query(sqlText, [userID, userSettings.max_trade_load])
         .then((results) => {
           // promise returns promise from pool if success
           resolve(results.rows);
