@@ -7,13 +7,17 @@ function SingleTrade(props) {
   const dispatch = useDispatch();
   const [profit, setProfit] = useState(0);
   const [deleting, setDeleting] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
-    // if (props.store.accountReducer === undefined) {
-    //   return
-    // }
+
+    let original_sell_price = props.order.original_sell_price;
+    let size = props.order.size;
+    let original_buy_price = props.order.original_buy_price;
+    let maker_fee_rate = props.store.accountReducer.feeReducer.maker_fee_rate;
+
     // this formula is ridiculous but hey, at least I didn't inject it right into the html, right?
-    const profit = Math.round((((props.order.original_sell_price * props.order.size - props.order.original_buy_price * props.order.size)) - ((props.store.accountReducer.feeReducer.maker_fee_rate * props.order.original_buy_price * props.order.size) + (props.store.accountReducer.feeReducer.maker_fee_rate * props.order.original_sell_price * props.order.size))) * 100000000) / 100000000;
+    const profit = Math.round((((original_sell_price * size - original_buy_price * size)) - ((maker_fee_rate * original_buy_price * size) + (maker_fee_rate * original_sell_price * size))) * 100000000) / 100000000;
     setProfit(profit);
   }, [props.store.accountReducer, props.order.original_sell_price, props.order.original_buy_price, props.order.size]);
 
@@ -28,6 +32,11 @@ function SingleTrade(props) {
         id: props.order.id,
       }
     })
+  }
+
+  function toggleShowAll() {
+    console.log('show all details', props.order);
+    setShowAll(!showAll);
   }
 
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
@@ -45,7 +54,7 @@ function SingleTrade(props) {
           ? <p className="deleting">Deleting...</p>
           : <button className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={() => { deleteOrder() }}>Abandon</button>
         }
-        <p className="single-trade-text">
+        <p className="single-trade-text" onClick={toggleShowAll}>
           {/* {JSON.stringify(props.store.accountReducer.userReducer.theme)} */}
           <strong>
             Price: </strong>
@@ -64,6 +73,10 @@ function SingleTrade(props) {
           <strong>Value</strong> ${numberWithCommas((Math.round((props.order.price * props.order.size) * 100) / 100).toFixed(2))} ~
           <strong>Pair Profit</strong> ${profit.toFixed(8)}
           <strong> ~Time</strong> {new Date(props.order.created_at).toLocaleString('en-US')}
+          {/* {JSON.stringify(props.order)} */}
+          {
+            showAll && !deleting && <><strong> Pair Ratio:</strong> {props.order.trade_pair_ratio}</>
+          }
         </p>
       </div>
     </div>
