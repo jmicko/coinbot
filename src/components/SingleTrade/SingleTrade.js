@@ -89,6 +89,10 @@ function SingleTrade(props) {
           <strong>Value</strong> ${numberWithCommas((Math.round((props.order.price * props.order.size) * 100) / 100).toFixed(2))} ~
           <strong>Pair Profit</strong> ${profit.toFixed(8)}
           <strong> ~Time</strong> {new Date(props.order.created_at).toLocaleString('en-US')}
+          <br />
+          {
+            showAll && !deleting && <><strong> Pair Ratio:</strong> {Number(props.order.trade_pair_ratio)}</>
+          }
           {/* {JSON.stringify(props.order)} */}
           {
             showAll && !deleting && <><strong> Pair Ratio:</strong> {Number(props.order.trade_pair_ratio)}</>
