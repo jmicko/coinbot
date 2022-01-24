@@ -6,6 +6,7 @@ function* startTrade(action) {
     // console.log('startTrade payload is:', action.payload);
     const response = yield axios.post(`/api/trade/`, action.payload);
     // console.log('startTrade response is.....', response);
+    yield put({ type: 'FETCH_ORDERS' });
   } catch (error) {
     console.log('POST order route has failed', error)
     if (error.response.status === 403) {

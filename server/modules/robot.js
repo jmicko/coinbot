@@ -422,6 +422,7 @@ async function reorder(orderToReorder) {
             // delete the old order from the db
             const queryText = `DELETE from "orders" WHERE "id"=$1;`;
             await pool.query(queryText, [orderToReorder.id]);
+            // tell the DOM to update
             socketClient.emit('message', {
               message: `trade was reordered`,
               orderUpdate: true,
@@ -475,6 +476,7 @@ async function reorder(orderToReorder) {
           // delete the old order from the db
           const queryText = `DELETE from "orders" WHERE "id"=$1;`;
           await pool.query(queryText, [orderToReorder.id]);
+          // tell the DOM to update
           socketClient.emit('message', {
             message: `trade was reordered`,
             orderUpdate: true,
@@ -637,6 +639,13 @@ async function autoSetup(user, parameters) {
     await robot.sleep(100);
     // store the new trade in the db. the trade details are also sent to store trade position prices
     await databaseClient.storeTrade(pendingTrade, tradeDetails);
+
+    // tell the DOM to update
+    socketClient.emit('message', {
+      message: `trade was reordered`,
+      orderUpdate: true,
+      userID: Number(user.id)
+    });
 
     await robot.sleep(1000);
 
