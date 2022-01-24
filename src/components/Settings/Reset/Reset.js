@@ -11,21 +11,18 @@ function Reset(props) {
   // the loop already detects deleted orders, so only need to make a call to coinbase
   // no need to bother the database if it is busy
   function deleteAllOrders() {
-    console.log('clicked delete', props.store.ordersReducer.openOrdersInOrder);
     // call the orders delete route
     dispatch({ type: 'DELETE_ALL_ORDERS' });
   }
 
   function resetProfit(event) {
     // event.preventDefault();
-    console.log('resetting profit!');
     dispatch({
       type: 'RESET_PROFIT',
     });
   }
 
   function deleteUser() {
-    console.log('clicked delete', props.store.accountReducer.userReducer.id);
     // setDeleting(true)
     dispatch({
       type: 'DELETE_USER', payload: {

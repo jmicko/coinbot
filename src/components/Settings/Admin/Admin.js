@@ -11,7 +11,6 @@ function Admin(props) {
 
   const getUsers = useCallback(
     () => {
-      console.log('getting users');
       if (props.store.accountReducer.userReducer.admin) {
         dispatch({ type: 'FETCH_USERS' })
       }
@@ -20,7 +19,6 @@ function Admin(props) {
 
   const getAllSettings = useCallback(
     () => {
-      console.log('getting all settings');
       if (props.store.accountReducer.userReducer.admin) {
         dispatch({ type: 'FETCH_SETTINGS' })
       }

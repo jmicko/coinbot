@@ -42,7 +42,6 @@ function Home(props) {
     };
 
     axios.request(options).then(function (response) {
-      // console.log(response.data);
       setPriceTicker(response.data.price)
     }).catch(function (error) {
       console.error(error);

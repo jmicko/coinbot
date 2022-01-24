@@ -14,7 +14,6 @@ function NotActive(props) {
 
   function submitApi(event) {
     event.preventDefault();
-    console.log('api details submitted!');
     dispatch({
       type: 'STORE_API',
       payload: {

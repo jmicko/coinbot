@@ -35,7 +35,6 @@ function SingleTrade(props) {
   // the loop already detects deleted orders, so only need to make a call to coinbase
   // no need to bother the database if it is busy
   function deleteOrder() {
-    console.log('clicked delete');
     setDeleting(true)
     dispatch({
       type: 'DELETE_TRADE', payload: {
@@ -45,7 +44,6 @@ function SingleTrade(props) {
   }
 
   function toggleShowAll() {
-    console.log('show all details', props.order);
     setShowAll(!showAll);
   }
 

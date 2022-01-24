@@ -23,7 +23,6 @@ function Messages(props) {
         // console.log('HERE IS THE USER ID FROM THE MESSAGE', message.userID);
         if (message.message) {
           setMessagesCount(prevMessagesCount => {
-            console.log('previous error count', prevMessagesCount);
             return prevMessagesCount + 1;
           });
           setMessages(prevMessages => {
@@ -40,7 +39,6 @@ function Messages(props) {
         }
         if (message.error) {
           setErrorCount(prevErrorCount => {
-            console.log('previous error count', prevErrorCount);
             return prevErrorCount + 1;
           });
           setErrors(prevErrors => {

@@ -3,7 +3,7 @@ import { combineReducers } from 'redux';
 const userReducer = (state = {}, action) => {
   switch (action.type) {
     case 'SET_USER':
-      console.log('setting user', action.payload);
+      // console.log('setting user', action.payload);
       return action.payload;
     case 'UNSET_USER':
       return {};

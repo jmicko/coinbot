@@ -9,7 +9,6 @@ function SingleUser(props) {
   const [approving, setApproving] = useState(false);
 
   function deleteUser() {
-    console.log('clicked delete', props.user.id);
     setDeleting(true)
     dispatch({
       type: 'DELETE_USER', payload: {
@@ -20,7 +19,6 @@ function SingleUser(props) {
   }
 
   function approveUser() {
-    console.log('clicked approve', props.user.id);
     setApproving(true)
     dispatch({
       type: 'APPROVE_USER', payload: {

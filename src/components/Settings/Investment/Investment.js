@@ -31,7 +31,6 @@ function Investment(props) {
 
   function reinvest(event) {
     // event.preventDefault();
-    console.log('reinvest sent!');
     dispatch({
       type: 'REINVEST',
     });
@@ -39,7 +38,6 @@ function Investment(props) {
 
   function reinvestRatio(event) {
     event.preventDefault();
-    console.log('reinvest ratio submitted!');
     dispatch({
       type: 'REINVEST_RATIO',
       payload: {
@@ -50,7 +48,6 @@ function Investment(props) {
 
   function tradeMax(event) {
     // event.preventDefault();
-    console.log('toggle trade max sent!');
     dispatch({
       type: 'TOGGLE_TRADE_MAX',
     });
@@ -58,7 +55,6 @@ function Investment(props) {
 
   function storeMaxTradeSize(event) {
     event.preventDefault();
-    console.log('reinvest ratio submitted!');
     dispatch({
       type: 'STORE_MAX_TRADE_SIZE',
       payload: {
@@ -69,7 +65,6 @@ function Investment(props) {
 
   function bulkPairRatio(event) {
     event.preventDefault();
-    console.log('bulk ratio sent!');
     dispatch({
       type: 'SET_BULK_PAIR_RATIO',
       payload: {

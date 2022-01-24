@@ -34,33 +34,16 @@ function Trade(props) {
 
   // calculate New Position values every time a number in the calculator changes
   useEffect(() => {
-    // increase the buy price by the trade pair ratio to get sell price
+
     let sellPrice = (price * (tradePairRatio + 100)) / 100;
-    // console.log('sell price:', sellPrice);
-
     let priceMargin = sellPrice - price;
-    // console.log('priceMargin:', priceMargin);
-
     let volumeCostBuy = price * transactionAmountBTC;
-    // console.log('volumeCost:', volumeCostBuy);
-
     let volumeCostSell = sellPrice * transactionAmountBTC;
-    // console.log('volumeCostSell:', volumeCostSell);
-
     let buyFee = volumeCostBuy * fees;
-    // console.log('buyFee:', buyFee);
-
     let sellFee = volumeCostSell * fees;
-    // console.log('sellFee:', sellFee);
-
     let totalfees = buyFee + sellFee;
-    // console.log('totalfees:', totalfees);
-
     let pairMargin = volumeCostSell - volumeCostBuy;
-    // console.log('pairMargin:', pairMargin);
-
     let pairProfit = pairMargin - totalfees;
-    // console.log('pairProfit:', pairProfit);
 
     setSellPrice(sellPrice);
     setPriceMargin(priceMargin);
@@ -127,7 +110,6 @@ function Trade(props) {
 
   // once the account fees load into redux, 
   useEffect(() => {
-    console.log('fees from useEffect:', props.store.accountReducer.feeReducer);
     setFees(props.store.accountReducer.feeReducer.maker_fee_rate)
   }, [props.store.accountReducer.feeReducer])
 
