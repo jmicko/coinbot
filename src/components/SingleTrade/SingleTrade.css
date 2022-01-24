@@ -65,10 +65,17 @@
 }
 
 .deleting,
-.buy button,
-.sell button {
+.buy .kill-button,
+.sell .kill-button {
   float        : right;
   margin       : 0;
   padding      : .2rem;
   /* text-align: center; */
+}
+
+.expand-single-trade{
+  margin       : 0;
+  padding      : .2rem;
+  float: left;
+  /* float: right; */
 }
