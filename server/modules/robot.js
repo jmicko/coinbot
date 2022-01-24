@@ -44,41 +44,16 @@ async function syncOrders(userID) {
         // use the oldest date to get open orders before that date
         const olderOrders = await coinbaseClient.getOpenOrdersBeforeDate(userID, oldestDate);
 
-        let qtyFetched = olderOrders.length;
-        console.log('how many fetched', qtyFetched);
-
-        // console.log('both arrays', cbOrders[cbOrders.length - 1].id, olderOrders[0].id);
-
+        // check to make sure the last and first object of the arrays are the same and then remove one to prevent duplicates
         if (cbOrders[cbOrders.length - 1].id === olderOrders[0].id) {
-          // console.log('same');
-          olderOrders.shift();
+          cbOrders.pop();
         }
-
-        // console.log('both arrays after unshift', cbOrders[cbOrders.length - 1].id, olderOrders[0].id);
-
-        if (cbOrders[cbOrders.length - 1].id === olderOrders[0].id) {
-          console.log('same');
-          // olderOrders.shift();
-        } else {
-          // console.log('not same');
-        }
-
+        
         // Combine the arrays
         cbOrders = cbOrders.concat(olderOrders);
 
-
-
-        // // compare the arrays and remove any where the ids match in both,
-        // // leaving a list of orders that are older than the initial 1000 orders from cb
-        // const olderOrdersRemovedDuplicates = await orderElimination(olderOrders, cbOrders);
-
-        // // Combine the arrays
-        // cbOrders = cbOrders.concat(olderOrdersRemovedDuplicates);
-
-        // console.log('how long are the arrays', cbOrdersTest.length, cbOrders.length, olderOrders.length);
-
-        // if there are 1000 orders, there may be more so check again
-        if (qtyFetched >= 1000) {
+        // if just pulled 1000 older orders, there may be more so check again
+        if (olderOrders.length >= 1000) {
           await getMoreOrders();
         }
       }
