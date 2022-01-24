@@ -5,9 +5,7 @@ import axios from 'axios';
 
 function* getAllSettings() {
   try {
-    console.log('getting all settings');
     const response = yield axios.get(`/api/settings`);
-    console.log('response from get all settings', response);
     yield put({ type: 'SET_ALL_SETTINGS', payload: response.data })
   } catch (error) {
     console.log('getting all settings has failed', error);
@@ -19,9 +17,7 @@ function* getAllSettings() {
 
 function* loopSpeed(action) {
   try {
-    console.log('setting bot speed');
     const response = yield axios.put(`/api/settings/loopSpeed`, action.payload);
-    console.log('response from loopSpeed', response);
     yield put({ type: 'FETCH_SETTINGS', payload: response.data })
   } catch (error) {
     console.log('setting bot speed has failed', error);
@@ -33,9 +29,7 @@ function* loopSpeed(action) {
 
 function* toggleMaintenance(action) {
   try {
-    console.log('toggling maintenance');
     const response = yield axios.put(`/api/settings/toggleMaintenance`, action.payload);
-    console.log('response from toggleMaintenance', response);
     yield put({ type: 'FETCH_SETTINGS', payload: response.data })
   } catch (error) {
     console.log('setting bot speed has failed', error);
@@ -47,10 +41,8 @@ function* toggleMaintenance(action) {
 
 function* bulkPairRatio(action) {
   try {
-    console.log('bulk setting pair ratio saga');
-    const response = yield axios.put(`/api/settings/bulkPairRatio`, action.payload);
-    console.log('response from bulkPairRatio', response);
-    yield put({ type: 'FETCH_ORDERS', payload: response.data })
+    yield axios.put(`/api/settings/bulkPairRatio`, action.payload);
+    yield put({ type: 'FETCH_ORDERS' })
   } catch (error) {
     console.log('setting bot speed has failed', error);
     if (error.response.status === 403) {
@@ -61,9 +53,7 @@ function* bulkPairRatio(action) {
 
 function* sendTradeLoadMax(action) {
   try {
-    console.log('bulk setting pair ratio saga', action.payload);
-    const response = yield axios.put(`/api/settings/tradeLoadMax`, action.payload);
-    console.log('response from sendTradeLoadMax', response);
+    yield axios.put(`/api/settings/tradeLoadMax`, action.payload);
     yield put({ type: 'FETCH_ORDERS' })
     yield put({ type: 'FETCH_USER' })
   } catch (error) {
