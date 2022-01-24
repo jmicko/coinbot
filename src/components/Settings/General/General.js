@@ -28,7 +28,7 @@ function General(props) {
       }
     });
   }
-  
+
   function sendTradeLoadMax(event) {
     // event.preventDefault();
     console.log('tradeLoadMax sent!');
@@ -67,38 +67,33 @@ function General(props) {
       <div className="divider" />
 
       {/* MAX TRADES ON SCREEN */}
-      {
-        props.store.accountReducer.userReducer.reinvest &&
+      <h4>Max Trades on Screen</h4>
+      <p>
+        Limit the number of trades to load per side (buy/sell). This can make load times shorter and limit the amount of scrolling
+        needed to get to the split.
+        <br />
+        <br />
+        Since it is PER SIDE, setting the value to 10 for example would potentially load up to 20 trades total.
+        <br />
+        <br />
+        There is a hard limit of 10,000 open trades per user, so there is no reason to set the value higher than that.
+      </p>
+      {props.store.accountReducer.userReducer.max_trade &&
         <>
-          <h4>Max Trades on Screen</h4>
-          <p>
-            Limit the number of trades to load per side (buy/sell). This can make load times shorter and limit the amount of scrolling
-            needed to get to the split. 
-            <br/>
-            <br/>
-            Since it is PER SIDE, setting the value to 10 for example would potentially load up to 20 trades total.
-            <br/>
-            <br/>
-            There is a hard limit of 10,000 open trades per user, so there is no reason to set the value higher than that.
-          </p>
-          {props.store.accountReducer.userReducer.max_trade &&
-            <>
-              <p>Current max trades to load per side: {Number(props.store.accountReducer.userReducer.max_trade_load)}</p>
-              <label htmlFor="reinvest_ratio">
-                Set Max:
-              </label>
-              <input
-                type="number"
-                name="reinvest_ratio"
-                value={max_trade_load}
-                required
-                onChange={(event) => setMaxTradeLoad(Number(event.target.value))}
-              />
-              <br />
-              <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { sendTradeLoadMax(event) }}>Save Max</button>
-              <div className="divider" />
-            </>
-          }
+          <p>Current max trades to load per side: {Number(props.store.accountReducer.userReducer.max_trade_load)}</p>
+          <label htmlFor="reinvest_ratio">
+            Set Max:
+          </label>
+          <input
+            type="number"
+            name="reinvest_ratio"
+            value={max_trade_load}
+            required
+            onChange={(event) => setMaxTradeLoad(Number(event.target.value))}
+          />
+          <br />
+          <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { sendTradeLoadMax(event) }}>Save Max</button>
+          <div className="divider" />
         </>
       }
     </div>
