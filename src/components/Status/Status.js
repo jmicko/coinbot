@@ -76,11 +76,11 @@ function Status(props) {
   // get the total number of open orders
   useEffect(() => {
     if (props.store.ordersReducer.openOrdersInOrder.sells !== undefined && props.store.ordersReducer.openOrdersInOrder.buys !== undefined) {
-      setOpenOrderQuantity(props.store.ordersReducer.openOrdersInOrder.sells.length + props.store.ordersReducer.openOrdersInOrder.buys.length)
-      setOpenSellsQuantity(props.store.ordersReducer.openOrdersInOrder.sells.length)
-      setOpenBuysQuantity(props.store.ordersReducer.openOrdersInOrder.buys.length)
+      setOpenOrderQuantity(props.store.ordersReducer.openOrdersInOrder.counts.totalOpenOrders.count)
+      setOpenSellsQuantity(props.store.ordersReducer.openOrdersInOrder.counts.totalOpenSells.count)
+      setOpenBuysQuantity(props.store.ordersReducer.openOrdersInOrder.counts.totalOpenBuys.count)
     }
-  }, [props.store.ordersReducer.openOrdersInOrder.sells, props.store.ordersReducer.openOrdersInOrder.buys]);
+  }, [props.store.ordersReducer.openOrdersInOrder.counts]);
 
 
   return (
