@@ -11,16 +11,12 @@ function General(props) {
 
 
   function pause(event) {
-    // event.preventDefault();
-    console.log('Pausing the bot!');
     dispatch({
       type: 'PAUSE',
     });
   }
 
   function setTheme(theme) {
-    // event.preventDefault();
-    console.log('setting the theme!');
     dispatch({
       type: 'SET_THEME',
       payload: {
@@ -30,8 +26,6 @@ function General(props) {
   }
 
   function sendTradeLoadMax(event) {
-    // event.preventDefault();
-    console.log('tradeLoadMax sent!');
     dispatch({
       type: 'SET_MAX_TRADE_LOAD',
       payload: {
@@ -43,9 +37,6 @@ function General(props) {
 
   return (
     <div className="General">
-      {/* <center>
-        <p>General Settings Page</p>
-      </center> */}
       <div className="divider" />
 
       {/* THEME */}

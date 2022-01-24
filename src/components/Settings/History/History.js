@@ -8,7 +8,6 @@ function History(props) {
   const dispatch = useDispatch();
 
   async function exportXlxs() {
-    console.log('exporting spreadsheet');
     dispatch({
       type: 'EXPORT_XLSX'
     })

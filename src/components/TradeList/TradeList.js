@@ -22,7 +22,6 @@ function TradeList(props) {
   // when an exchange is made and stored, do a REST call to get all open orders
   const getOpenOrders = useCallback(
     () => {
-      console.log('dispatching to fetch orders');
       dispatch({ type: 'FETCH_ORDERS' });
     }, [dispatch]
   )
@@ -56,7 +55,6 @@ function TradeList(props) {
     socket.on('message', update => {
       // check if the update is an order update, meaning there is something to change on dom
       if ((update.orderUpdate != null) && (update.userID === props.store.accountReducer.userReducer.id)) {
-        // console.log('!!!!!!orderUpdate!!!!!!', update);
         // do api call for all open orders
         getOpenOrders()
       }

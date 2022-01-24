@@ -15,7 +15,6 @@ function Status(props) {
   const socket = useSocket();
 
   const refresh = () => {
-    console.log('clicked refresh');
     dispatch({ type: 'FETCH_PROFITS' });
     dispatch({ type: 'FETCH_ACCOUNT' });
     dispatch({ type: 'FETCH_FEES' });
