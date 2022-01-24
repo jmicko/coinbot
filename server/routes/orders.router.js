@@ -20,18 +20,21 @@ router.get('/', rejectUnauthenticated, (req, res) => {
     // get all open orders from db and from coinbase
     databaseClient.getUnsettledTrades('buy', userID),
     databaseClient.getUnsettledTrades('sell', userID),
+    databaseClient.getUnsettledTradeCounts(userID)
   ])
     .then((result) => {
-      const buys = result[0], sells = result[1];
+      const buys = result[0], sells = result[1], counts = result[2];
       const openOrdersInOrder = {
         sells: sells,
-        buys: buys
+        buys: buys,
+        counts: counts
       }
       // console.log('here are all the open orders', openOrdersInOrder);
       res.send(openOrdersInOrder)
     })
     .catch((error) => {
-      res.send(500)
+      console.log(error, 'error in get orders route');
+      res.sendStatus(500)
     })
 });
 
@@ -93,7 +96,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
     
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID)
-    // console.log('+++++++ EVERYTHING WAS DELETED +++++++');
+    console.log('+++++++ EVERYTHING WAS DELETED +++++++ for user:', userID);
     // tell front end to update
     socketClient.emit('message', {
       orderUpdate: true

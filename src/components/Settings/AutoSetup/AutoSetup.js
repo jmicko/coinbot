@@ -193,7 +193,7 @@ function AutoSetup(props) {
             The price of the last trade-pair will be close to:
           </p>
           <p>
-            <strong>{numberWithCommas(setupResults)}</strong>
+            <strong>{numberWithCommas(setupResults.toFixed(2))}</strong>
           </p>
           <p>
             This calculation isn't perfect but it will get close. It can also change if the price of BTC moves up or down significantly while the

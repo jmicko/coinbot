@@ -599,18 +599,16 @@ async function autoSetup(user, parameters) {
     return;
   }
 
-  console.log("autoSetup parameters", parameters);
+  // console.log("autoSetup parameters", parameters);
 
   // assume size is in btc
   let convertedAmount = parameters.size;
 
   // if size is in usd, convert it to btc
   if (parameters.sizeType === "USD") {
-    console.log('need to convert to btc!');
+    // console.log('need to convert to btc!');
     // get the BTC size from the entered USD size
     convertedAmount = Number(Math.floor((parameters.size / parameters.startingValue) * 100000000)) / 100000000;
-  } else {
-    console.log('no need to convert to btc');
   }
     // console.log(convertedAmount);
 
@@ -644,7 +642,7 @@ async function autoSetup(user, parameters) {
 
     // create new parameters 
 
-    const newStartingValue = (Number(parameters.startingValue) + Number(parameters.increment));
+    const newStartingValue = (Number(parameters.startingValue) + Number(parameters.increment)).toFixed(2);
 
     const newParameters = {
       startingValue: newStartingValue, // done

@@ -50,30 +50,37 @@ const storeTrade = (newOrder, originalDetails) => {
 
 
 const getUnsettledTrades = (side, userID) => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
+    let userSettings = await getUserAndSettings(userID);
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
 
     // the only time 'buy' or 'sell' is passed is when the frontend is calling for all trades. 
     // can request a limited amount of data to save on network costs
     if (side == 'buy') {
+      // console.log('getting buys', userSettings.max_trade_load);
       // gets all unsettled buys, sorted by price
-      sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
-      ORDER BY "price" DESC;`;
-      pool.query(sqlText, [userID])
-        .then((results) => {
-          // promise returns promise from pool if success
-          resolve(results.rows);
-        })
-        .catch((err) => {
-          // or promise relays errors from pool to parent
-          reject(err);
-        })
+      sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" 
+      WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
+      ORDER BY "price" DESC
+      LIMIT $2;`;
+      pool.query(sqlText, [userID, userSettings.max_trade_load])
+      .then((results) => {
+        // promise returns promise from pool if success
+        resolve(results.rows);
+      })
+      .catch((err) => {
+        // or promise relays errors from pool to parent
+        reject(err);
+      })
     } else if (side == 'sell') {
+      // console.log('getting sells', userSettings.max_trade_load);
       // gets all unsettled sells, sorted by price
-      sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
-      ORDER BY "price" DESC;`;
-      pool.query(sqlText, [userID])
+      sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" 
+      WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
+      ORDER BY "price" ASC
+      LIMIT $2;`;
+      pool.query(sqlText, [userID, userSettings.max_trade_load])
         .then((results) => {
           // promise returns promise from pool if success
           resolve(results.rows);
@@ -94,6 +101,40 @@ const getUnsettledTrades = (side, userID) => {
           // or promise relays errors from pool to parent
           reject(err);
         })
+    }
+  });
+}
+
+const getUnsettledTradeCounts = (userID) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+
+      // get total open orders
+      let sqlTextTotal = `SELECT COUNT(*) FROM "orders" WHERE "userID"=$1 AND settled=false;`;
+      let totalResult = await pool.query(sqlTextTotal, [userID]);
+      const totalOpenOrders = totalResult.rows[0];
+
+      // get total open buys
+      let sqlTextBuys = `SELECT COUNT(*) FROM "orders" WHERE "userID"=$1 AND settled=false AND side='buy';`;
+      let buysResult = await pool.query(sqlTextBuys, [userID]);
+      const totalOpenBuys = buysResult.rows[0];
+
+      // get total open sells
+      let sqlTextSells = `SELECT COUNT(*) FROM "orders" WHERE "userID"=$1 AND settled=false AND side='sell';`;
+      let sellsResult = await pool.query(sqlTextSells, [userID]);
+      const totalOpenSells = sellsResult.rows[0];
+
+      const unsettledOrderCounts = {
+        totalOpenOrders,
+        totalOpenBuys,
+        totalOpenSells
+      }
+
+      // promise returns promise from pool if success
+      resolve(unsettledOrderCounts);
+    } catch (err) {
+      // or promise relays errors from pool to parent
+      reject(err);
     }
   });
 }
@@ -245,6 +286,7 @@ async function setPause(status, userID) {
 const databaseClient = {
   storeTrade: storeTrade,
   getUnsettledTrades: getUnsettledTrades,
+  getUnsettledTradeCounts: getUnsettledTradeCounts,
   getSingleTrade: getSingleTrade,
   deleteTrade: deleteTrade,
   getUser: getUser,

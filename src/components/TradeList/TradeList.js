@@ -36,13 +36,13 @@ function TradeList(props) {
   // this watches the store and maps arrays to html when it changes because can't map nothing
   useEffect(() => {
     if (props.store.ordersReducer.openOrdersInOrder.sells !== undefined) {
-      setSells(props.store.ordersReducer.openOrdersInOrder.sells.map((sell) => {
-        return <SingleTrade key={sell.id} order={sell} />
+      setSells(props.store.ordersReducer.openOrdersInOrder.sells.reverse().map((sell) => {
+        return <SingleTrade key={sell.id} order={sell} theme={props.theme} />
       }))
     }
     if (props.store.ordersReducer.openOrdersInOrder.buys !== undefined) {
       setBuys(props.store.ordersReducer.openOrdersInOrder.buys.map((sell) => {
-        return <SingleTrade key={sell.id} order={sell} />
+        return <SingleTrade key={sell.id} order={sell} theme={props.theme} />
       }))
     }
   }, [props.store.ordersReducer.openOrdersInOrder.sells, props.store.ordersReducer.openOrdersInOrder.buys]);

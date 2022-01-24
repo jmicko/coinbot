@@ -58,14 +58,20 @@ function SingleTrade(props) {
   // postgres is much better at math using exact
 
   return (
-    <div className={`Single-trade ${props.order.side} ${props.store.accountReducer.userReducer.theme}`}>
+    <div className={`Single-trade ${props.order.side} ${props.theme}`}>
       <div className={"overlay"}>
         {(deleting === true)
           ? <p className="deleting">Deleting...</p>
-          : <button className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={() => { deleteOrder() }}>Abandon</button>
+          : <>
+            <button className={`btn-red ${props.theme}`} onClick={() => { deleteOrder() }}>Kill</button>
+            {showAll
+              ? <button className={`btn-blue ${props.theme}`} onClick={toggleShowAll}>&#9650;</button>
+              : <button className={`btn-blue ${props.theme}`} onClick={toggleShowAll}>&#9660;</button>
+            }
+          </>
         }
-        <p className="single-trade-text" onClick={toggleShowAll}>
-          {/* {JSON.stringify(props.store.accountReducer.userReducer.theme)} */}
+        <p className="single-trade-text" >
+          {/* {JSON.stringify(props.theme)} */}
           <strong>
             Price: </strong>
           {(props.order.side === 'sell')
@@ -83,21 +89,25 @@ function SingleTrade(props) {
           <strong>Value</strong> ${numberWithCommas((Math.round((props.order.price * props.order.size) * 100) / 100).toFixed(2))} ~
           <strong>Pair Profit</strong> ${profit.toFixed(8)}
           <strong> ~Time</strong> {new Date(props.order.created_at).toLocaleString('en-US')}
-          {/* {JSON.stringify(props.order)} */}
+          <br />
           {
             showAll && !deleting && <><strong> Pair Ratio:</strong> {Number(props.order.trade_pair_ratio)}</>
+          }
+          {/* {JSON.stringify(props.order)} */}
+          {
+            showAll && !deleting && <><strong> Pair Ratio:</strong> {Number(props.order.trade_pair_ratio)}%</>
           }
           {
             showAll && !deleting && <><strong> Buy Fees:</strong> {buyFee.toFixed(8)}</>
           }
           {
-          showAll && !deleting && <><strong> Sell Fees:</strong> {sellFee.toFixed(8)}</>
+            showAll && !deleting && <><strong> Sell Fees:</strong> {sellFee.toFixed(8)}</>
           }
           {
-          showAll && !deleting && <><strong> Total Fees:</strong> {(Number(sellFee.toFixed(8)) + Number(buyFee.toFixed(8))).toFixed(8)}</>
+            showAll && !deleting && <><strong> Total Fees:</strong> {(Number(sellFee.toFixed(8)) + Number(buyFee.toFixed(8))).toFixed(8)}</>
           }
           {
-          showAll && !deleting && <><strong> Gross Pair Profit:</strong> {(props.order.original_sell_price * props.order.size - props.order.original_buy_price * props.order.size).toFixed(8)}</>
+            showAll && !deleting && <><strong> Gross Pair Profit:</strong> {(props.order.original_sell_price * props.order.size - props.order.original_buy_price * props.order.size).toFixed(8)}</>
           }
         </p>
       </div>
