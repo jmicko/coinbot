@@ -29,7 +29,6 @@ router.get('/', rejectUnauthenticated, (req, res) => {
         buys: buys,
         counts: counts
       }
-      // console.log('here are all the open orders', openOrdersInOrder);
       res.send(openOrdersInOrder)
     })
     .catch((error) => {
@@ -45,7 +44,6 @@ router.get('/', rejectUnauthenticated, (req, res) => {
 router.put('/', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   const previousPauseStatus = req.user.paused;
-  console.log('in orders synchronize route. Paused:', previousPauseStatus);
   try{
 
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
@@ -98,7 +96,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
     await databaseClient.setPause(previousPauseStatus, userID)
     console.log('+++++++ EVERYTHING WAS DELETED +++++++ for user:', userID);
   } catch (err) {
-    console.log(err);
+    console.log(err, 'error in delete all orders route');
   }
   res.sendStatus(200)
 });

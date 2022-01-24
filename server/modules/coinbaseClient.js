@@ -404,7 +404,7 @@ async function repeatedCheck(order, userID, tries) {
         let cbOrder = await getOrder(order.id, userID);
         resolve(true);
       } catch (err) {
-        console.log('error checking coinbase for order');
+        // console.log('error checking coinbase for order');
         repeatedCheck(order, userID, tries);
       }
     } else { // if it has already repeated, give up
@@ -417,13 +417,8 @@ async function testAPI(secret, key, passphrase, API_URI) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
-      // // sign the request
-      // const userAPI = await databaseClient.getUserAPI(userID);
-      // const secret = userAPI.CB_SECRET;
-      // const key = userAPI.CB_ACCESS_KEY;
-      // const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
-      // const API_URI = userAPI.API_URI;
 
+      // sign the request
       function computeSignature() {
         const method = 'GET';
         const path = "/fees";

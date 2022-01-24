@@ -44,41 +44,16 @@ async function syncOrders(userID) {
         // use the oldest date to get open orders before that date
         const olderOrders = await coinbaseClient.getOpenOrdersBeforeDate(userID, oldestDate);
 
-        let qtyFetched = olderOrders.length;
-        console.log('how many fetched', qtyFetched);
-
-        // console.log('both arrays', cbOrders[cbOrders.length - 1].id, olderOrders[0].id);
-
+        // check to make sure the last and first object of the arrays are the same and then remove one to prevent duplicates
         if (cbOrders[cbOrders.length - 1].id === olderOrders[0].id) {
-          // console.log('same');
-          olderOrders.shift();
-        }
-
-        // console.log('both arrays after unshift', cbOrders[cbOrders.length - 1].id, olderOrders[0].id);
-
-        if (cbOrders[cbOrders.length - 1].id === olderOrders[0].id) {
-          console.log('same');
-          // olderOrders.shift();
-        } else {
-          // console.log('not same');
+          cbOrders.pop();
         }
 
         // Combine the arrays
         cbOrders = cbOrders.concat(olderOrders);
 
-
-
-        // // compare the arrays and remove any where the ids match in both,
-        // // leaving a list of orders that are older than the initial 1000 orders from cb
-        // const olderOrdersRemovedDuplicates = await orderElimination(olderOrders, cbOrders);
-
-        // // Combine the arrays
-        // cbOrders = cbOrders.concat(olderOrdersRemovedDuplicates);
-
-        // console.log('how long are the arrays', cbOrdersTest.length, cbOrders.length, olderOrders.length);
-
-        // if there are 1000 orders, there may be more so check again
-        if (qtyFetched >= 1000) {
+        // if just pulled 1000 older orders, there may be more so check again
+        if (olderOrders.length >= 1000) {
           await getMoreOrders();
         }
       }
@@ -88,8 +63,6 @@ async function syncOrders(userID) {
         await getMoreOrders();
       }
 
-      // console.log('dbOrders.length', dbOrders.length, 'cbOrders.length', cbOrders.length);
-
       // compare the arrays and remove any where the ids match in both,
       // leaving a list of orders that are open in the db, but not on cb. Probably settled
       const ordersToCheck = await orderElimination(dbOrders, cbOrders);
@@ -97,10 +70,9 @@ async function syncOrders(userID) {
       // also get a list of orders that are open on cb, but not stored in the db. 
       let ordersToCancel = 0;
       // this if statement saves a little processing by skipping the filter if not needed
+      // only checks for cancels if the two arrays are the same length and no orders to flip
       if (!(dbOrders.length === cbOrders.length && ordersToCheck.length === 0)) {
-        console.log('checking if need to cancel any orders');
         ordersToCancel = await orderElimination(cbOrders, dbOrders);
-
       }
 
 
@@ -138,7 +110,7 @@ async function syncOrders(userID) {
               userID: Number(userID)
             });
           } else {
-            console.log('Error settling all settled orders', err);
+            console.log(err, 'Error settling all settled orders');
           }
         }
       }
@@ -171,6 +143,8 @@ async function syncOrders(userID) {
         orderUpdate: false,
         userID: Number(userID)
       });
+    } else if (err.response?.statusText === 'Bad Gateway') {
+      console.log('bad gateway');
     } else {
       console.log(err, 'unknown error at end of syncOrders');
     }
@@ -247,7 +221,7 @@ async function processOrders(userID) {
           if (err.code && err.code === 'ETIMEDOUT') {
             console.log('Timed out!!!!! from processOrders');
           } else if (err.response?.status === 400) {
-            console.log('Insufficient funds! from processOrders');
+            console.log(err.response, 'Insufficient funds! from processOrders');
             socketClient.emit('message', {
               error: `Insufficient funds in processOrders!`,
               userID: Number(dbOrder.userID)

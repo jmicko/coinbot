@@ -45,7 +45,7 @@ router.get('/', (req, res) => {
             userID: Number(userID)
           });
         } else {
-          console.log('error getting accounts:', err);
+          console.log(err, 'error getting accounts:');
         }
         res.sendStatus(500)
       })
@@ -66,7 +66,7 @@ router.get('/fees', rejectUnauthenticated, (req, res) => {
         res.send(result)
       })
       .catch((error) => {
-        console.log('error getting fees:', error);
+        console.log(error, 'error getting fees:');
         res.sendStatus(500)
       })
   } else {
@@ -86,11 +86,10 @@ router.get('/profits', rejectUnauthenticated, (req, res) => {
   WHERE "side" = 'sell' AND "settled" = 'true' AND "include_in_profit" = 'true' AND "userID" = $1;`;
   pool.query(queryText, [userID])
     .then((result) => {
-      // console.log('here are the profits', result.rows[0].sum);
       res.send(result.rows)
     })
     .catch((error) => {
-      console.log('error in profits route:', error);
+      console.log(error, 'error in profits route:');
       res.sendStatus(500)
     })
 });
@@ -100,15 +99,10 @@ router.get('/profits', rejectUnauthenticated, (req, res) => {
 */
 router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
-  console.log('exporting xlsx for', userID);
-
   try {
     let sqlText = `SELECT * FROM "orders" WHERE "userID"=$1;`;
-
     let result = await pool.query(sqlText, [userID]);
     const allOrders = result.rows;
-    // console.log(allOrders);
-
 
     const data = [
       {
@@ -157,7 +151,7 @@ router.put('/pause', rejectUnauthenticated, async (req, res) => {
     databaseClient.setPause(!user.paused, user.id)
     res.sendStatus(200);
   } catch (err) {
-    console.log('problem in PAUSE ROUTE', err);
+    console.log(err, 'problem in PAUSE ROUTE');
     res.sendStatus(500);
   }
 });
@@ -168,12 +162,11 @@ router.put('/pause', rejectUnauthenticated, async (req, res) => {
 router.put('/theme', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
-    console.log('in the THEME ROUTE', user.username, req.body.theme);
     const queryText = `UPDATE "user_settings" SET "theme" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.theme, user.id]);
     res.sendStatus(200);
   } catch (err) {
-    console.log('problem in THEME ROUTE', err);
+    console.log(err, 'problem in THEME ROUTE');
     res.sendStatus(500);
   }
 });
@@ -184,12 +177,11 @@ router.put('/theme', rejectUnauthenticated, async (req, res) => {
 router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
-    // console.log('in the REINVEST ROUTE', user, req.body);
     const queryText = `UPDATE "user_settings" SET "reinvest" = $1 WHERE "userID" = $2`;
     let result = await pool.query(queryText, [!user.reinvest, user.id]);
     res.sendStatus(200);
   } catch (err) {
-    console.log('problem in REINVEST ROUTE', err);
+    console.log(err, 'problem in REINVEST ROUTE');
     res.sendStatus(500);
   }
 });
@@ -200,12 +192,11 @@ router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
 router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
-    // console.log('in the REINVEST RATIO ROUTE', user, req.body);
     const queryText = `UPDATE "user_settings" SET "reinvest_ratio" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.reinvest_ratio, user.id]);
     res.sendStatus(200);
   } catch (err) {
-    console.log('problem in REINVEST ROUTE', err);
+    console.log(err, 'problem in REINVEST ROUTE');
     res.sendStatus(500);
   }
 });
@@ -216,12 +207,11 @@ router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
 router.put('/tradeMax', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
-    console.log('in the tradeMax ROUTE', user, req.body);
     const queryText = `UPDATE "user_settings" SET "max_trade" = $1 WHERE "userID" = $2`;
     let result = await pool.query(queryText, [!user.max_trade, user.id]);
     res.sendStatus(200);
   } catch (err) {
-    console.log('problem in tradeMax ROUTE', err);
+    console.log(err, 'problem in tradeMax ROUTE');
     res.sendStatus(500);
   }
 });
@@ -232,7 +222,6 @@ router.put('/tradeMax', rejectUnauthenticated, async (req, res) => {
 router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
-    console.log('in the maxTradeSize ROUTE', user, req.body);
     if (req.body.max_trade_size >= 0) {
       const queryText = `UPDATE "user_settings" SET "max_trade_size" = $1 WHERE "userID" = $2`;
       await pool.query(queryText, [req.body.max_trade_size, user.id]);
@@ -242,7 +231,7 @@ router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
     }
     res.sendStatus(200);
   } catch (err) {
-    console.log('problem in maxTradeSize ROUTE', err);
+    console.log(err, 'problem in maxTradeSize ROUTE');
     res.sendStatus(500);
   }
 });
@@ -260,7 +249,7 @@ router.post('/resetProfit', rejectUnauthenticated, async (req, res) => {
     await pool.query(timeQuery, [profit_reset, userID]);
     res.sendStatus(200);
   } catch (err) {
-    console.log('problem resetting profit', err);
+    console.log(err, 'problem resetting profit');
     res.sendStatus(500);
   }
 });
@@ -310,7 +299,7 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
       });
       res.sendStatus(500);
     } else {
-      console.log('problem updating api details', err);
+      console.log(err, 'problem updating api details');
       res.sendStatus(500);
     }
   }
@@ -320,8 +309,6 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
 * POST route to factory reset the bot
 */
 router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
-  console.log('order reset route hit!');
-  console.log(req.user.admin);
   if (req.user.admin) {
     const queryText = `DROP TABLE IF EXISTS "orders";
     CREATE TABLE IF NOT EXISTS "orders"
@@ -353,10 +340,8 @@ router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
       CONSTRAINT orders_pkey PRIMARY KEY (id)
     );`;
     let result = await pool.query(queryText);
-    console.log('factory reset db call');
     res.sendStatus(200);
   } else {
-    console.log(`you can't do that because you are not admin!`);
     res.sendStatus(403)
   }
 });
@@ -365,8 +350,6 @@ router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
 * POST route to factory reset the bot
 */
 router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
-  console.log('factory reset route hit!');
-  console.log(req.user.admin);
   if (req.user.admin) {
     const queryText = `DROP TABLE IF EXISTS "orders";
     DROP TABLE IF EXISTS "user";
@@ -394,6 +377,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       "reinvest_ratio" integer DEFAULT 0,
       "max_trade" boolean DEFAULT false,
       "max_trade_size" numeric(32,8) DEFAULT 0,
+      "max_trade_load" integer DEFAULT 1000,
       "profit_reset" timestamp
     );
 
@@ -456,10 +440,8 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
     ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
     CREATE INDEX "IDX_session_expire" ON "session" ("expire");`;
     let result = await pool.query(queryText);
-    console.log('factory reset db call');
     res.sendStatus(200);
   } else {
-    console.log(`you can't do that because you are not admin!`);
     res.sendStatus(403)
   }
 });

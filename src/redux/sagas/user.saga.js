@@ -31,8 +31,6 @@ function* fetchUsers() {
       withCredentials: true,
     };
     const response = yield axios.get('/api/user/all', config);
-
-    console.log('the users are', response);
     yield put({ type: 'SET_ALL_USERS', payload: response.data });
   } catch (error) {
     console.log('User get request failed', error);
@@ -49,13 +47,9 @@ function* deleteUser(action) {
       withCredentials: true,
       data: action.payload
     };
-    console.log('deleting user');
-
-    const response = yield axios.delete('/api/user/', config);
-
-    console.log('the delete user response is', response);
+    yield axios.delete('/api/user/', config);
     if (action.payload.fromAdmin) {
-      yield put({ type: 'FETCH_USERS'});
+      yield put({ type: 'FETCH_USERS' });
     } else {
       yield put({ type: 'UNSET_USER' });
     }
@@ -74,12 +68,8 @@ function* approveUser(action) {
       withCredentials: true,
       data: action.payload
     };
-    console.log('approving user');
-
-    const response = yield axios.put('/api/user/approve', config);
-
-    console.log('the approve user response is', response);
-    yield put({ type: 'FETCH_USERS'});
+    yield axios.put('/api/user/approve', config);
+    yield put({ type: 'FETCH_USERS' });
   } catch (error) {
     console.log('User get request failed', error);
     if (error.response.status === 403) {
