@@ -36,7 +36,6 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
     try {
       // send the new order with the trade details
       let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
-      // console.log('pending trade', pendingTrade);
       // wait a second before storing the trade. Sometimes it takes a second for coinbase to register the trade,
       // even after returning the details. robot.syncOrders will think it settled if it sees it in the db first
       await robot.sleep(100);
@@ -47,9 +46,9 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       res.sendStatus(200);
 
       // check if order went through
-      await robot.sleep(1000);
-      let success = await coinbaseClient.repeatedCheck(pendingTrade, userID, 0);
-      console.log('did the order go through?', success);
+      // await robot.sleep(1000);
+      // let success = await coinbaseClient.repeatedCheck(pendingTrade, userID, 0);
+      // console.log('did the order go through?', success);
     } catch (err) {
       if (err.response?.status === 400) {
         console.log('Insufficient funds!');
@@ -64,7 +63,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
           orderUpdate: true
         });
       } else {
-        console.log('problem in sending trade post route', err);
+        console.log(err, 'problem in sending trade post route');
       }
       // send internal error status
       res.sendStatus(500);

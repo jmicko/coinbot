@@ -8,7 +8,7 @@ function* fetchFees(action) {
     const response = yield axios.get(`/api/account/fees`);
     yield put({ type: 'SET_FEES', payload: response.data })
   } catch (error) {
-    console.log('GET fees route has failed', error);
+    // console.log('GET fees route has failed', error);
     if (error.response.status === 403) {
       yield put({ type: 'UNSET_USER' });
     }
@@ -17,11 +17,10 @@ function* fetchFees(action) {
 
 function* fetchProfits() {
   try {
-    console.log('getting profits in saga');
     const response = yield axios.get(`/api/account/profits`);
     yield put({ type: 'SET_PROFITS', payload: response.data })
   } catch (error) {
-    console.log('GET fees route has failed', error);
+    // console.log('GET profits route has failed', error);
     if (error.response.status === 403) {
       yield put({ type: 'UNSET_USER' });
     }
@@ -30,11 +29,10 @@ function* fetchProfits() {
 
 function* fetchAccounts() {
   try {
-    console.log('getting profits in saga');
     const response = yield axios.get(`/api/account/`);
     yield put({ type: 'SET_ACCOUNT', payload: response.data })
   } catch (error) {
-    console.log('GET account route has failed', error);
+    // console.log('GET account route has failed', error);
     if (error.response.status === 403) {
       yield put({ type: 'UNSET_USER' });
     }
@@ -43,13 +41,10 @@ function* fetchAccounts() {
 
 function* storeApi(action) {
   try {
-    console.log('storing api');
-
-    const response = yield axios.post(`/api/account/storeApi`, action.payload);
-    console.log('response from storing api', response);
+    yield axios.post(`/api/account/storeApi`, action.payload);
     yield put({ type: 'FETCH_USER' });
   } catch (error) {
-    console.log('post account route storeApi has failed', error);
+    // console.log('post account route storeApi has failed', error);
     if (error.response.status === 403) {
       yield put({ type: 'UNSET_USER' });
     }
@@ -58,13 +53,11 @@ function* storeApi(action) {
 
 function* resetProfit(action) {
   try {
-    console.log('reset profit saga');
-    const response = yield axios.post(`/api/account/resetProfit`, action.payload);
-    console.log('response from reinvest', response);
+    yield axios.post(`/api/account/resetProfit`, action.payload);
     yield put({ type: 'FETCH_PROFITS' });
     yield put({ type: 'FETCH_USER' });
   } catch (error) {
-    console.log('put account route resetProfit has failed', error);
+    // console.log('put account route resetProfit has failed', error);
     if (error.response.status === 403) {
       yield put({ type: 'UNSET_USER' });
     }
@@ -73,9 +66,7 @@ function* resetProfit(action) {
 
 function* pause(action) {
   try {
-    console.log('sending pause');
-    const response = yield axios.put(`/api/account/pause`, action.payload);
-    console.log('response from pause', response);
+    yield axios.put(`/api/account/pause`, action.payload);
     yield put({ type: 'FETCH_USER' });
   } catch (error) {
     console.log('put account route pause has failed', error);
@@ -87,9 +78,7 @@ function* pause(action) {
 
 function* setTheme(action) {
   try {
-    console.log('storing reinvest ratio');
-    const response = yield axios.put(`/api/account/theme`, action.payload);
-    console.log('response from set theme', response);
+    yield axios.put(`/api/account/theme`, action.payload);
     yield put({ type: 'FETCH_USER' });
   } catch (error) {
     console.log('put account route reinvest ratio has failed', error);
@@ -101,9 +90,7 @@ function* setTheme(action) {
 
 function* reinvest(action) {
   try {
-    console.log('storing reinvest');
-    const response = yield axios.put(`/api/account/reinvest`, action.payload);
-    console.log('response from reinvest', response);
+    yield axios.put(`/api/account/reinvest`, action.payload);
     yield put({ type: 'FETCH_USER' });
   } catch (error) {
     console.log('put account route reinvest has failed', error);
@@ -115,9 +102,7 @@ function* reinvest(action) {
 
 function* reinvestRatio(action) {
   try {
-    console.log('storing reinvest ratio');
-    const response = yield axios.put(`/api/account/reinvestRatio`, action.payload);
-    console.log('response from reinvest ratio', response);
+    yield axios.put(`/api/account/reinvestRatio`, action.payload);
     yield put({ type: 'FETCH_USER' });
   } catch (error) {
     console.log('put account route reinvest ratio has failed', error);
@@ -129,9 +114,7 @@ function* reinvestRatio(action) {
 
 function* tradeMax(action) {
   try {
-    console.log('toggling trade max');
-    const response = yield axios.put(`/api/account/tradeMax`, action.payload);
-    console.log('response from tradeMax', response);
+    yield axios.put(`/api/account/tradeMax`, action.payload);
     yield put({ type: 'FETCH_USER' });
   } catch (error) {
     console.log('put account route reinvest has failed', error);
@@ -143,9 +126,7 @@ function* tradeMax(action) {
 
 function* storeMaxTradeSize(action) {
   try {
-    console.log('storing max trade size');
-    const response = yield axios.put(`/api/account/maxTradeSize`, action.payload);
-    console.log('response from maxTradeSize', response);
+    yield axios.put(`/api/account/maxTradeSize`, action.payload);
     yield put({ type: 'FETCH_USER' });
   } catch (error) {
     console.log('put account route reinvest ratio has failed', error);
@@ -157,10 +138,7 @@ function* storeMaxTradeSize(action) {
 
 function* factoryReset() {
   try {
-    console.log('Factory Reset!');
-
-    const response = yield axios.post(`/api/account/factoryReset`);
-    console.log('response from factory reset', response);
+    yield axios.post(`/api/account/factoryReset`);
     yield put({ type: 'UNSET_USER' });
   } catch (error) {
     console.log('post account route factoryReset has failed', error);
@@ -172,9 +150,7 @@ function* factoryReset() {
 
 function* ordersReset() {
   try {
-    console.log('Orders Reset!');
-    const response = yield axios.post(`/api/account/ordersReset`);
-    console.log('response from factory reset', response.data);
+    yield axios.post(`/api/account/ordersReset`);
     yield put({ type: 'FETCH_ORDERS' });
   } catch (error) {
     console.log('post account route factoryReset has failed', error);
@@ -186,12 +162,7 @@ function* ordersReset() {
 
 function* exportXlsx() {
   try {
-    console.log('Orders exporting!!!!!!!!!!!');
-    
     const response = yield axios.get(`/api/account/exportXlsx`);
-
-    const data = response.data
-    console.log('response from EXPORT ORDERS', data);
     yield put({ type: 'SET_XLSX', payload: response })
   } catch (error) {
     console.log('post account route factoryReset has failed', error);

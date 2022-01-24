@@ -12,17 +12,12 @@ const coinbaseClient = require('../modules/coinbaseClient');
  * GET route getting all settings
  */
 router.get('/', rejectUnauthenticated, async (req, res) => {
-  // POST route code here
   const user = req.user;
+  // only admin can do this
   if (user.admin) {
-    console.log('GET all settings route hit!');
     try {
-
       const queryText = `SELECT * FROM "bot_settings";`;
-
       const results = await pool.query(queryText);
-      console.log('results of GET ALL SETTINGS', results.rows[0]);
-
       res.send(results.rows[0]);
     } catch (err) {
       console.log('error with loop speed route', err);
@@ -38,17 +33,12 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
  * PUT route updating bot speed
  */
 router.put('/loopSpeed', rejectUnauthenticated, async (req, res) => {
-  // POST route code here
   const user = req.user;
   const loopSpeed = req.body.loopSpeed;
   if (user.admin && loopSpeed <= 100 && loopSpeed >= 1) {
-    console.log('loop speed route hit! SPEED:', loopSpeed);
     try {
-
       const queryText = `UPDATE "bot_settings" SET "loop_speed" = $1;`;
-
       await pool.query(queryText, [loopSpeed]);
-
       res.sendStatus(200);
     } catch (err) {
       console.log('error with loop speed route', err);
@@ -64,16 +54,13 @@ router.put('/loopSpeed', rejectUnauthenticated, async (req, res) => {
  * PUT route toggling maintenance mode
  */
 router.put('/toggleMaintenance', rejectUnauthenticated, async (req, res) => {
-  // POST route code here
   const user = req.user;
   if (user.admin) {
-    // console.log('toggleMaintenance route hit!');
     try {
       await databaseClient.toggleMaintenance();
-
       res.sendStatus(200);
     } catch (err) {
-      console.log('error with toggleMaintenance route', err);
+      console.log(err, 'error with toggleMaintenance route');
       res.sendStatus(500);
     }
   } else {
@@ -86,15 +73,10 @@ router.put('/toggleMaintenance', rejectUnauthenticated, async (req, res) => {
  * PUT route setting Trade Load Max
  */
 router.put('/tradeLoadMax', rejectUnauthenticated, async (req, res) => {
-  // POST route code here
   const user = req.user;
-  // console.log('tradeLoadMax route hit!');
   try {
-    // console.log('tradeLoadMax route hit!', user, req.body);
-
     const queryText = `UPDATE "user_settings" SET "max_trade_load" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.max_trade_load, user.id]);
-
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'error with tradeLoadMax route');
@@ -158,7 +140,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
 
     res.sendStatus(200);
   } catch (err) {
-    console.log('error with bulk updating trade pair ratio route', err);
+    console.log(err, 'error with bulk updating trade pair ratio route');
     res.sendStatus(500);
   }
 });
