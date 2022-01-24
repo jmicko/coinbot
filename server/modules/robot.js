@@ -644,7 +644,7 @@ async function autoSetup(user, parameters) {
 
     // create new parameters 
 
-    const newStartingValue = (Number(parameters.startingValue) + Number(parameters.increment));
+    const newStartingValue = (Number(parameters.startingValue) + Number(parameters.increment)).toFixed(2);
 
     const newParameters = {
       startingValue: newStartingValue, // done
