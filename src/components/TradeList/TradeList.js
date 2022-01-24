@@ -55,7 +55,8 @@ function TradeList(props) {
 
     socket.on('message', update => {
       // check if the update is an order update, meaning there is something to change on dom
-      if (update.orderUpdate != null) {
+      if ((update.orderUpdate != null) && (update.userID === props.store.accountReducer.userReducer.id)) {
+        // console.log('!!!!!!orderUpdate!!!!!!', update);
         // do api call for all open orders
         getOpenOrders()
       }

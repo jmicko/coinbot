@@ -37,9 +37,10 @@ const storeTrade = (newOrder, originalDetails) => {
           results: results,
           success: true
         }
-        socketClient.emit('message', {
-          orderUpdate: true
-        });
+        // socketClient.emit('message', {
+        //   orderUpdate: true,
+        //   userID: Number(originalDetails.userID)
+        // });
         resolve(success);
       })
       .catch((err) => {
@@ -180,10 +181,6 @@ const deleteTrade = async (id) => {
     try {
       const queryText = `DELETE from "orders" WHERE "id"=$1;`;
       let result = await pool.query(queryText, [id]);
-      socketClient.emit('message', {
-        message: `exchange was removed from the database`,
-        orderUpdate: true
-      });
       resolve(result);
     } catch (err) {
       reject(err)

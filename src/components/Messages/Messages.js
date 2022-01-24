@@ -11,6 +11,7 @@ function Messages(props) {
   const [messagesCount, setMessagesCount] = useState(0);
   const [errors, setErrors] = useState([]);
   const [errorCount, setErrorCount] = useState(0);
+  const [collapsed, setCollapsed] = useState(false);
 
   // need use effect to prevent multiplying connections every time component renders
   useEffect(() => {
@@ -62,20 +63,26 @@ function Messages(props) {
     // not be there right when the page loads
   }, [socket, props.store.accountReducer.userReducer.id]);
 
+  function toggleCollapse() {
+    setCollapsed(!collapsed);
+  }
+
   return (
     // show messages on screen
     <div className="Messages boxed">
-      <h3 className={`title ${props.theme}`}>Coinbot Message Board</h3>
+      <h3 className={`title ${props.theme}`} onClick={toggleCollapse}>Coinbot Message Board {collapsed ? <>&#9650;</> : <>&#9660;</>}</h3>
       <div className="message-board">
+        {/* MESSAGES */}
         <div className="message-section scrollable">
-          <h3 className={`title ${props.theme}`}>General Messages</h3>
-          {messages.map((message, i) => {
+          <h3 className={`title ${props.theme}`}>{collapsed && messagesCount} General Messages</h3>
+          {!collapsed && messages.map((message, i) => {
             return <p key={i}><strong>Msg #{messagesCount - i} {message.date}</strong> <br /> {message.message}</p>
           })}
         </div>
+        {/* ERRORS */}
         <div className="errors-section scrollable">
-          <h3 className={`title ${props.theme}`}>Errors</h3>
-          {errors.map((error, i) => {
+          <h3 className={`title ${props.theme}`}>{collapsed && errorCount} Errors</h3>
+          {!collapsed && errors.map((error, i) => {
             return <p key={i}><strong>Err #{errorCount - i} {error.date}</strong> <br /> {error.error}</p>
           })}
         </div>

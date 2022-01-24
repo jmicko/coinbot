@@ -97,10 +97,6 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID)
     console.log('+++++++ EVERYTHING WAS DELETED +++++++ for user:', userID);
-    // tell front end to update
-    socketClient.emit('message', {
-      orderUpdate: true
-    });
   } catch (err) {
     console.log(err);
   }

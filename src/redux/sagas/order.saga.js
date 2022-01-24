@@ -31,6 +31,7 @@ function* deleteAllOrders() {
   try {
     const response = yield axios.delete(`/api/orders/`);
     console.log('delete all orders response is.....', response);
+    yield put({ type: 'FETCH_ORDERS' });
   } catch (error) {
     console.log('DELETE all orders route has failed', error);
     if (error.response.status === 403) {
