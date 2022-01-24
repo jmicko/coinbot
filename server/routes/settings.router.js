@@ -67,7 +67,7 @@ router.put('/toggleMaintenance', rejectUnauthenticated, async (req, res) => {
   // POST route code here
   const user = req.user;
   if (user.admin) {
-    console.log('toggleMaintenance route hit!');
+    // console.log('toggleMaintenance route hit!');
     try {
       await databaseClient.toggleMaintenance();
 
@@ -88,16 +88,16 @@ router.put('/toggleMaintenance', rejectUnauthenticated, async (req, res) => {
 router.put('/tradeLoadMax', rejectUnauthenticated, async (req, res) => {
   // POST route code here
   const user = req.user;
-  console.log('toggleMaintenance route hit!');
+  // console.log('tradeLoadMax route hit!');
   try {
-    console.log('tradeLoadMax route hit!', user, req.body);
+    // console.log('tradeLoadMax route hit!', user, req.body);
 
     const queryText = `UPDATE "user_settings" SET "max_trade_load" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.max_trade_load, user.id]);
 
     res.sendStatus(200);
   } catch (err) {
-    console.log('error with toggleMaintenance route', err);
+    console.log(err, 'error with tradeLoadMax route');
     res.sendStatus(500);
   }
 
