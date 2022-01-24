@@ -44,15 +44,41 @@ async function syncOrders(userID) {
         // use the oldest date to get open orders before that date
         const olderOrders = await coinbaseClient.getOpenOrdersBeforeDate(userID, oldestDate);
 
-        // compare the arrays and remove any where the ids match in both,
-        // leaving a list of orders that are older than the initial 1000 orders from cb
-        const olderOrdersRemovedDuplicates = await orderElimination(olderOrders, cbOrders);
+        let qtyFetched = olderOrders.length;
+        console.log('how many fetched', qtyFetched);
+
+        // console.log('both arrays', cbOrders[cbOrders.length - 1].id, olderOrders[0].id);
+
+        if (cbOrders[cbOrders.length - 1].id === olderOrders[0].id) {
+          // console.log('same');
+          olderOrders.shift();
+        }
+
+        // console.log('both arrays after unshift', cbOrders[cbOrders.length - 1].id, olderOrders[0].id);
+
+        if (cbOrders[cbOrders.length - 1].id === olderOrders[0].id) {
+          console.log('same');
+          // olderOrders.shift();
+        } else {
+          // console.log('not same');
+        }
 
         // Combine the arrays
-        cbOrders = cbOrders.concat(olderOrdersRemovedDuplicates);
+        cbOrders = cbOrders.concat(olderOrders);
+
+
+
+        // // compare the arrays and remove any where the ids match in both,
+        // // leaving a list of orders that are older than the initial 1000 orders from cb
+        // const olderOrdersRemovedDuplicates = await orderElimination(olderOrders, cbOrders);
+
+        // // Combine the arrays
+        // cbOrders = cbOrders.concat(olderOrdersRemovedDuplicates);
+
+        // console.log('how long are the arrays', cbOrdersTest.length, cbOrders.length, olderOrders.length);
 
         // if there are 1000 orders, there may be more so check again
-        if (olderOrders.length >= 1000) {
+        if (qtyFetched >= 1000) {
           await getMoreOrders();
         }
       }
@@ -72,9 +98,9 @@ async function syncOrders(userID) {
       let ordersToCancel = 0;
       // this if statement saves a little processing by skipping the filter if not needed
       if (!(dbOrders.length === cbOrders.length && ordersToCheck.length === 0)) {
-        // console.log('!!!!orders to check length', ordersToCheck.length);
+        console.log('checking if need to cancel any orders');
         ordersToCancel = await orderElimination(cbOrders, dbOrders);
-        
+
       }
 
 
@@ -612,7 +638,7 @@ async function autoSetup(user, parameters) {
     // get the BTC size from the entered USD size
     convertedAmount = Number(Math.floor((parameters.size / parameters.startingValue) * 100000000)) / 100000000;
   }
-    // console.log(convertedAmount);
+  // console.log(convertedAmount);
 
   // calculate original sell price
   let original_sell_price = (Math.round((parameters.startingValue * (Number(parameters.trade_pair_ratio) + 100))) / 100);
