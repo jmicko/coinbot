@@ -58,7 +58,7 @@ const getUnsettledTrades = (side, userID) => {
     // the only time 'buy' or 'sell' is passed is when the frontend is calling for all trades. 
     // can request a limited amount of data to save on network costs
     if (side == 'buy') {
-      console.log('getting buys', userSettings.max_trade_load);
+      // console.log('getting buys', userSettings.max_trade_load);
       // gets all unsettled buys, sorted by price
       sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" 
       WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
@@ -74,7 +74,7 @@ const getUnsettledTrades = (side, userID) => {
         reject(err);
       })
     } else if (side == 'sell') {
-      console.log('getting sells', userSettings.max_trade_load);
+      // console.log('getting sells', userSettings.max_trade_load);
       // gets all unsettled sells, sorted by price
       sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" 
       WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
