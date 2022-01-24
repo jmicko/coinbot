@@ -74,14 +74,14 @@ function Messages(props) {
       <div className="message-board">
         {/* MESSAGES */}
         <div className="message-section scrollable">
-          <h3 className={`title ${props.theme}`}>General Messages</h3>
+          <h3 className={`title ${props.theme}`}>{collapsed && messagesCount} General Messages</h3>
           {!collapsed && messages.map((message, i) => {
             return <p key={i}><strong>Msg #{messagesCount - i} {message.date}</strong> <br /> {message.message}</p>
           })}
         </div>
         {/* ERRORS */}
         <div className="errors-section scrollable">
-          <h3 className={`title ${props.theme}`}>Errors</h3>
+          <h3 className={`title ${props.theme}`}>{collapsed && errorCount} Errors</h3>
           {!collapsed && errors.map((error, i) => {
             return <p key={i}><strong>Err #{errorCount - i} {error.date}</strong> <br /> {error.error}</p>
           })}
