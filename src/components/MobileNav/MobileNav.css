@@ -6,8 +6,9 @@
     /* grid-column         : 4; */
     /* grid-row            : 1/2; */
     /* display             : block; */
-    /* display             : flex; */
-    /* flex-direction      : row; */
+    display             : flex;
+    flex-direction      : row;
+    justify-content: center;
     /* width               : max-content; */
 }
 
