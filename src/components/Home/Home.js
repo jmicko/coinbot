@@ -72,20 +72,30 @@ function Home(props) {
         <Menu clickSettings={clickSettings} theme={theme} />
         {/* <p>{JSON.stringify(props.store.accountReducer.userReducer)}</p> */}
 
-        {(props.store.accountReducer.userReducer.active)
-          ? <Trade theme={theme} priceTicker={priceTicker} />
-          : <NotActive theme={theme} />
+        {
+          props.store.accountReducer.userReducer.active
+            ? width < 800 && mobilePage === 'newPair'
+              ? <Trade theme={theme} priceTicker={priceTicker} />
+              : width > 800 && <Trade theme={theme} priceTicker={priceTicker} />
+            : width < 800 && mobilePage === 'newPair'
+              ? <NotActive theme={theme} />
+              : width > 800 && <NotActive theme={theme} />
         }
+
         {
           props.store.accountReducer.userReducer.approved
-            ? width < 800 && mobilePage === 'newPair'
+            ? width < 800 && mobilePage === 'tradeList'
               ? <TradeList theme={theme} />
               : width > 800 && <TradeList theme={theme} />
-            : width < 800 && mobilePage === 'newPair'
+            : width < 800 && mobilePage === 'tradeList'
               ? <NotApproved theme={theme} />
               : width > 800 && <NotApproved theme={theme} />
         }
-        <Updates theme={theme} />
+
+        {width < 800 && mobilePage === 'messages'
+              ? <Updates theme={theme} />
+              : width > 800 && <Updates theme={theme} />}
+        
         <Status theme={theme} priceTicker={priceTicker} />
         <Settings showSettings={showSettings} clickSettings={clickSettings} theme={theme} priceTicker={priceTicker} />
         {width < 800 && <MobileNav theme={theme} setMobilePage={setMobilePage} />}
