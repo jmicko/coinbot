@@ -29,8 +29,8 @@
     grid-row     : 5;
     grid-column  : 2 / 3;
     height       : unset;
-    margin-bottom: unset;
-    /* max-height   : 40rem; */
+    /* margin-bottom: unset; */
+    max-height   : unset;
   }
   
   .message-board {
@@ -40,11 +40,13 @@
   .errors-section {
     width: auto;
     max-height: 15rem;
+    /* max-height   : unset; */
     border-left: none;
     border-top: black 1px solid;
   }
   
   .message-section {
+    /* max-height   : 50%; */
     max-height: 15rem;
     width: auto;
   }

@@ -151,8 +151,9 @@ function Trade(props) {
 
 
   return (
-    <div className="Trade" >
-      <div className="scrollable boxed">
+    // <div className="Trade" >
+    <div className="Trade scrollable boxed" >
+      {/* <div className="scrollable boxed"> */}
         <h3 className={`title ${props.theme}`}>New Trade-Pair</h3>
         {/* form with a single input. Input takes a price point at which 
           to make a trade */}
@@ -312,7 +313,7 @@ function Trade(props) {
             </p>
           </div>
         </form>
-      </div>
+      {/* </div> */}
     </div>
   );
 }

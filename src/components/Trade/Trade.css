@@ -11,17 +11,14 @@
     display    : block;
     grid-column: 2;
     grid-row   : 5;
-    /* max-height: 50vh; */
+    min-height: 20vh;
   }
-
 }
 
 
 /* === FORM === */
 
 .new-trade-form {
-  /* display           : flex;
-    flex-direction    : column; */
   margin: .4rem;
 }
 

@@ -68,13 +68,14 @@ function TradeList(props) {
   // map the sell array on top and buy array on bottom
 
   return (
-    <div className="TradeList">
-      <div className="scrollable boxed">
+    // <div className="TradeList">
+    <div className="TradeList scrollable boxed">
+      {/* <div className="scrollable boxed"> */}
         {/* <>{JSON.stringify(props.store.accountReducer)}</> */}
         {sells}
         <center><img className="coinbot-image" src={coinbotFilled} alt="coinbot" /></center>
         {buys}
-      </div>
+      {/* </div> */}
     </div>
   )
 }
