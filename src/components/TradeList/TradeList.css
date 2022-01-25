@@ -6,11 +6,13 @@
 }
 @media (max-width: 800px) {
     .TradeList {
-        grid-row     : 4;
-        grid-column  : 2 / 3;
+        grid-row     : 5;
+        grid-column  : 2;
+        margin-bottom: .4rem;
         /* overflow-y: auto; */
-        display      : block;
-        max-height: 80vh;
+        /* display      : block; */
+        /* max-height: 50vh; */
+        /* max-height: unset; */
     }
 
 }

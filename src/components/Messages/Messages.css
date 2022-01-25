@@ -26,11 +26,11 @@
 
 @media (max-width: 800px) {
   .Messages {
-    grid-row     : 6;
-    grid-column  : 2 / 4;
-    height       : fit-content;
-    margin-bottom: .4rem;
-    max-height   : 40rem;
+    grid-row     : 5;
+    grid-column  : 2 / 3;
+    height       : unset;
+    margin-bottom: unset;
+    /* max-height   : 40rem; */
   }
   
   .message-board {

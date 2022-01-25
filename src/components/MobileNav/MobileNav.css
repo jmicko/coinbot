@@ -1,14 +1,14 @@
 .MobileNav {
-    position               : absolute;
-    bottom                 : 0;
-    left                   : 0;
-    right                  : 0;
-    /* grid-column         : 4; */
-    /* grid-row            : 1/2; */
+    /* position               : absolute; */
+    /* bottom                 : 0; */
+    /* left                   : 0; */
+    /* right                  : 0; */
+    grid-column            : 2/3;
+    grid-row               : 4;
     /* display             : block; */
-    display             : flex;
-    flex-direction      : row;
-    justify-content: center;
+    display                : flex;
+    flex-direction         : row;
+    justify-content        : center;
     /* width               : max-content; */
 }
 
