@@ -12,7 +12,7 @@ import NotApproved from '../NotApproved/NotApproved.js';
 import NotActive from '../NotActive/NotActive.js';
 import { SocketProvider } from '../../contexts/SocketProvider.js';
 import axios from 'axios';
-
+import MobileNav from '../MobileNav/MobileNav.js';
 
 function Home(props) {
   const dispatch = useDispatch();
@@ -78,6 +78,7 @@ function Home(props) {
         <Updates theme={theme} />
         <Status theme={theme} priceTicker={priceTicker} />
         <Settings showSettings={showSettings} clickSettings={clickSettings} theme={theme} priceTicker={priceTicker} />
+        <MobileNav theme={theme} />
       </SocketProvider>
     </div>
   );
