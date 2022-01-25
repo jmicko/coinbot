@@ -38,6 +38,12 @@ function Status(props) {
     }, [dispatch]
   )
 
+
+  // when the page loads, get the account fees 
+  useEffect(() => {
+    dispatch({ type: 'FETCH_FEES' });
+  }, [dispatch])
+
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
   const numberWithCommas = (x) => {
     return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");

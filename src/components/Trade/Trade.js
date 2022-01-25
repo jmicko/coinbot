@@ -95,11 +95,6 @@ function Trade(props) {
     }, [setTransactionPrice, props.priceTicker]
   )
 
-  // when the page loads, get the account fees 
-  useEffect(() => {
-    dispatch({ type: 'FETCH_FEES' });
-  }, [dispatch])
-
 
   // when the page loads, get the current price
   useEffect(() => {
