@@ -1,5 +1,5 @@
 .Status {
-    grid-column     : 1/4;
+    grid-column     : 2/4;
     grid-row        : 1;
     /* display: block; */
 }
@@ -12,7 +12,7 @@
 
 @media (max-width: 800px) {
     .Status {
-        grid-column: 1/3;
+        grid-column: 2/3;
         grid-row: 3;
         /* display: block; */
     }

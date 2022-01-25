@@ -12,12 +12,16 @@ import NotApproved from '../NotApproved/NotApproved.js';
 import NotActive from '../NotActive/NotActive.js';
 import { SocketProvider } from '../../contexts/SocketProvider.js';
 import axios from 'axios';
-
+import MobileNav from '../MobileNav/MobileNav.js';
+import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 
 function Home(props) {
   const dispatch = useDispatch();
+  const { height, width } = useWindowDimensions();
+
   const [showSettings, setShowSettings] = useState(false);
   const [theme, setTheme] = useState('original');
+  const [mobilePage, setMobilePage] = useState('tradeList');
   const [priceTicker, setPriceTicker] = useState(0);
 
   const clickSettings = () => {
@@ -64,20 +68,37 @@ function Home(props) {
         <h2>WE USE COINBOT.</h2>
       </header> */}
       <SocketProvider>
+        {/* <p>{mobilePage}</p> */}
         <Menu clickSettings={clickSettings} theme={theme} />
         {/* <p>{JSON.stringify(props.store.accountReducer.userReducer)}</p> */}
 
-        {(props.store.accountReducer.userReducer.active)
-          ? <Trade theme={theme} priceTicker={priceTicker} />
-          : <NotActive theme={theme} />
+        {
+          props.store.accountReducer.userReducer.active
+            ? width < 800 && mobilePage === 'newPair'
+              ? <Trade theme={theme} priceTicker={priceTicker} />
+              : width > 800 && <Trade theme={theme} priceTicker={priceTicker} />
+            : width < 800 && mobilePage === 'newPair'
+              ? <NotActive theme={theme} />
+              : width > 800 && <NotActive theme={theme} />
         }
-        {(props.store.accountReducer.userReducer.approved)
-          ? <TradeList theme={theme} />
-          : <NotApproved theme={theme} />
+
+        {
+          props.store.accountReducer.userReducer.approved
+            ? width < 800 && mobilePage === 'tradeList'
+              ? <TradeList theme={theme} />
+              : width > 800 && <TradeList theme={theme} />
+            : width < 800 && mobilePage === 'tradeList'
+              ? <NotApproved theme={theme} />
+              : width > 800 && <NotApproved theme={theme} />
         }
-        <Updates theme={theme} />
+
+        {width < 800 && mobilePage === 'messages'
+              ? <Updates theme={theme} />
+              : width > 800 && <Updates theme={theme} />}
+        
         <Status theme={theme} priceTicker={priceTicker} />
         <Settings showSettings={showSettings} clickSettings={clickSettings} theme={theme} priceTicker={priceTicker} />
+        {width < 800 && <MobileNav theme={theme} setMobilePage={setMobilePage} />}
       </SocketProvider>
     </div>
   );

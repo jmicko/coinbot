@@ -11,6 +11,7 @@
     display    : block;
     grid-column: 2;
     grid-row   : 5;
+    /* max-height: 50vh; */
   }
 
 }
