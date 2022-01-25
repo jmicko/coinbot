@@ -13,9 +13,12 @@ import NotActive from '../NotActive/NotActive.js';
 import { SocketProvider } from '../../contexts/SocketProvider.js';
 import axios from 'axios';
 import MobileNav from '../MobileNav/MobileNav.js';
+import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 
 function Home(props) {
   const dispatch = useDispatch();
+  const { height, width } = useWindowDimensions();
+
   const [showSettings, setShowSettings] = useState(false);
   const [theme, setTheme] = useState('original');
   const [priceTicker, setPriceTicker] = useState(0);
@@ -78,7 +81,7 @@ function Home(props) {
         <Updates theme={theme} />
         <Status theme={theme} priceTicker={priceTicker} />
         <Settings showSettings={showSettings} clickSettings={clickSettings} theme={theme} priceTicker={priceTicker} />
-        <MobileNav theme={theme} />
+        {width < 800 && <MobileNav theme={theme} />}
       </SocketProvider>
     </div>
   );

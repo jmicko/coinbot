@@ -15,12 +15,11 @@ function MobileNav(props) {
 
     <div className={`MobileNav dark ${props.store.accountReducer.userReducer.theme}`}>
       <center>
-        <p className="greeting">Hello {width}!</p>
+        <div className="MobileNav-buttons">
+          <button className={`btn-blue btn-nav ${props.theme}`} onClick={() => { props.clickSettings() }}>Settings</button>
+          <button className={`btn-blue btn-nav ${props.theme}`} onClick={() => dispatch({ type: 'LOGOUT' })}>Log Out</button>
+        </div>
       </center>
-      <div className="MobileNav-buttons">
-        <button className={`btn-blue btn-logout ${props.theme}`} onClick={() => { props.clickSettings() }}>Settings</button>
-        <button className={`btn-blue btn-logout ${props.theme}`} onClick={() => dispatch({ type: 'LOGOUT' })}>Log Out</button>
-      </div>
     </div>
 
   )
