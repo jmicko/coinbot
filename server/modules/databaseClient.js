@@ -305,6 +305,7 @@ const databaseClient = {
   getBotSettings: getBotSettings,
   toggleMaintenance: toggleMaintenance,
   setReorder: setReorder,
+  setPause: setPause,
   setKillLock: setKillLock
 }
 
