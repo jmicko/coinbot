@@ -372,6 +372,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
     (
       "userID" integer,
       "paused" boolean DEFAULT false,
+      "kill_locked" boolean DEFAULT false,
       "theme" character varying DEFAULT 'original',
       "reinvest" boolean DEFAULT false,
       "reinvest_ratio" integer DEFAULT 0,
