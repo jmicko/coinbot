@@ -17,8 +17,8 @@ function TradeList(props) {
   // these will store mapped arrays as html so they can be used after page loads
   const [buys, setBuys] = useState(<></>);
   const [sells, setSells] = useState(<></>);
-  const [highestBuy, setHighestBuy] = useState();
-  const [lowestSell, setLowestSell] = useState();
+  const [highestBuy, setHighestBuy] = useState(0);
+  const [lowestSell, setLowestSell] = useState(0);
 
 
   // when an exchange is made and stored, do a REST call to get all open orders
@@ -37,13 +37,13 @@ function TradeList(props) {
   // this watches the store and maps arrays to html when it changes because can't map nothing
   useEffect(() => {
     if (props.store.ordersReducer.openOrdersInOrder.sells !== undefined) {
-      setLowestSell(Number(props.store.ordersReducer.openOrdersInOrder.sells[0].price))
+      setLowestSell(Number(props.store.ordersReducer.openOrdersInOrder.sells[0]?.price || 0))
       setSells(props.store.ordersReducer.openOrdersInOrder.sells.reverse().map((sell) => {
         return <SingleTrade key={sell.id} order={sell} theme={props.theme} />
       }))
     }
     if (props.store.ordersReducer.openOrdersInOrder.buys !== undefined) {
-      setHighestBuy(Number(props.store.ordersReducer.openOrdersInOrder.buys[0].price))
+      setHighestBuy(Number(props.store.ordersReducer.openOrdersInOrder.buys[0]?.price || 0))
       setBuys(props.store.ordersReducer.openOrdersInOrder.buys.map((sell) => {
         return <SingleTrade key={sell.id} order={sell} theme={props.theme} />
       }))
@@ -79,10 +79,10 @@ function TradeList(props) {
       {sells}
       <div className='robot'>
         {/* <p>to sell {props.priceTicker} {JSON.stringify(lowestSell)}</p> */}
-        <p>To Sell &#9650; ${(lowestSell - props.priceTicker).toFixed(2)}<br/>
-        To Buy &nbsp;&#9660; ${(props.priceTicker - highestBuy).toFixed(2)}</p>
+        {lowestSell != 0 && highestBuy != 0 && <p>To Sell &#9650; ${(lowestSell - props.priceTicker).toFixed(2)}<br/>
+        To Buy &nbsp;&#9660; ${(props.priceTicker - highestBuy).toFixed(2)}</p>}
         <img className="coinbot-image" src={coinbotFilled} alt="coinbot" />
-        <p>Margin: ${lowestSell - highestBuy}</p>
+        {lowestSell != 0 && highestBuy != 0 && <p>Margin: ${(lowestSell - highestBuy).toFixed(2)}</p>}
       </div>
       {buys}
       {/* </div> */}
