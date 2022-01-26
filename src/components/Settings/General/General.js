@@ -18,7 +18,7 @@ function General(props) {
 
   function killLock() {
     dispatch({
-      type: 'KILL-LOCK',
+      type: 'KILL_LOCK',
     });
   }
 
