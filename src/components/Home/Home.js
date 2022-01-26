@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { connect, useDispatch } from 'react-redux';
 import Trade from '../Trade/Trade.js';
 import Messages from '../Messages/Messages.js';
@@ -31,11 +31,21 @@ function Home(props) {
   const [mobilePage, setMobilePage] = useState('tradeList');
   const [priceTicker, setPriceTicker] = useState(0);
 
+  const getOpenOrders = useCallback(
+    () => {
+      dispatch({ type: 'FETCH_ORDERS' });
+    }, [dispatch]
+  )
+
   // need use effect to prevent multiplying connections every time component renders
   useEffect(() => {
     // socket may not exist on page load because it hasn't connected yet
     if (socket == null) return;
     socket.on('message', message => {
+      if ((message.orderUpdate != null) && (message.userID === props.store.accountReducer.userReducer.id)) {
+        // do api call for all open orders
+        getOpenOrders()
+      }
       // console.log('HERE IS THE WHOLE MESSAGE', message);
       if (message.userID === props.store.accountReducer.userReducer.id) {
         // console.log('HERE IS THE USER ID FROM THE MESSAGE', message.userID);
@@ -77,7 +87,7 @@ function Home(props) {
     return () => socket.off('message')
     // useEffect will depend on socket because the connection will 
     // not be there right when the page loads
-  }, [socket, props.store.accountReducer.userReducer.id]);
+  }, [socket, props.store.accountReducer.userReducer.id, getOpenOrders]);
 
   const clickSettings = () => {
     setShowSettings(!showSettings);
