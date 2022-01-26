@@ -145,6 +145,8 @@ async function syncOrders(userID) {
       });
     } else if (err.response?.statusText === 'Bad Gateway') {
       console.log('bad gateway');
+    } else if (err.response?.statusText === 'Gateway Timeout') {
+      console.log('Gateway Timeout');
     } else {
       console.log(err, 'unknown error at end of syncOrders');
     }
