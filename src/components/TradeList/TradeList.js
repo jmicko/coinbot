@@ -79,10 +79,10 @@ function TradeList(props) {
       {sells}
       <div className='robot'>
         {/* <p>to sell {props.priceTicker} {JSON.stringify(lowestSell)}</p> */}
-        {lowestSell != 0 && highestBuy != 0 && <p>Sell &#9650; ${(lowestSell - props.priceTicker).toFixed(2)}<br/>
-        Buy &nbsp;&#9660; ${(props.priceTicker - highestBuy).toFixed(2)}</p>}
+        {lowestSell != 0 && highestBuy != 0 && <p>&#9650; ${(lowestSell - props.priceTicker).toFixed(2)}<br/>
+        &#9660; ${(props.priceTicker - highestBuy).toFixed(2)}</p>}
         <img className="coinbot-image" src={coinbotFilled} alt="coinbot" />
-        {lowestSell != 0 && highestBuy != 0 && <p>Margin: ${(lowestSell - highestBuy).toFixed(2)}</p>}
+        {lowestSell != 0 && highestBuy != 0 && <p><center><strong>Margin</strong><br/>${(lowestSell - highestBuy).toFixed(2)}</center></p>}
       </div>
       {buys}
       {/* </div> */}
