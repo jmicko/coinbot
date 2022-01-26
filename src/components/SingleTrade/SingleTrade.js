@@ -57,13 +57,12 @@ function SingleTrade(props) {
 
   return (
     <div className={`Single-trade ${props.order.side} ${props.theme}`}>
-        <button className={`btn-blue expand-single-trade ${props.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>
+      <button className={`btn-blue expand-single-trade ${props.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>
       <div className={"overlay"}>
         {(deleting === true)
           ? <p className="deleting">Deleting...</p>
-          : <>
-            <button className={`btn-red kill-button ${props.theme}`} onClick={() => { deleteOrder() }}>Kill</button>
-          </>
+          : !props.store.accountReducer.userReducer.kill_locked && <button className={`btn-red kill-button ${props.theme}`} onClick={() => { deleteOrder() }}>Kill</button>
+          
         }
         <p className="single-trade-text" >
           {/* {JSON.stringify(props.theme)} */}
