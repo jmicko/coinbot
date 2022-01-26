@@ -45,7 +45,7 @@ function BulkDelete(props) {
       {/* DELETE RANGE */}
       <div className="divider" />
       <h4>Delete Range</h4>
-      <p>Delete all trades that fall within a price range. This is based on the current price,
+      <p>Delete all trades that fall within a price range, inclusive of the numbers set. This is based on the current price,
         so if the trade is a buy, it will look at the buy price. If it is a sell, it will look at the sell price.</p>
 
       <label htmlFor="upper_limit">
