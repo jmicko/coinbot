@@ -9,6 +9,7 @@ import Reset from './Reset/Reset';
 import History from './History/History';
 import './Settings.css'
 import SettingsNav from './SettingsNav/SettingsNav';
+import BulkDelete from './BulkDelete/BulkDelete';
 
 
 
@@ -28,6 +29,7 @@ function Settings(props) {
             'history': <History theme={props.theme} />,
             'autoSetup': <AutoSetup theme={props.theme} priceTicker={props.priceTicker} />,
             'reset': <Reset theme={props.theme} />,
+            'bulkDelete': <BulkDelete theme={props.theme} />,
             'admin': <Admin theme={props.theme} />
           }[settingsPage]
         }
