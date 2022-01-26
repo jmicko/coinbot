@@ -4,7 +4,7 @@ import axios from 'axios';
 function* startBasicTrade(action) {
   try {
     yield axios.post(`/api/trade/basic`, action.payload);
-    // yield put({ type: 'FETCH_ORDERS' });
+    yield put({ type: 'FETCH_ACCOUNT' });
   } catch (error) {
     console.log('POST basic trade route has failed', error)
     if (error.response.status === 403) {

@@ -83,15 +83,16 @@ function Trade(props) {
       }
     })
   }
-
+  
   function submitBasicTransaction(event) {
     event.preventDefault();
     console.log('BASIC TRADE STARTED');
     dispatch({
       type: 'START_BASIC_TRADE', payload: {
         type: "market",
-        basicAmount: basicAmount,
-        basicSide: basicSide
+        size: basicAmount,
+        product_id: transactionProduct,
+        side: basicSide
       }
     })
   }
