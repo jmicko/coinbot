@@ -7,8 +7,8 @@ import './BulkDelete.css'
 function BulkDelete(props) {
   const dispatch = useDispatch();
 
-  const [lowerRange, setLowerRange] = useState(0);
-  const [upperRange, setUpperRange] = useState(0);
+  const [lowerLimit, setLowerLimit] = useState(0);
+  const [upperLimit, setUpperLimit] = useState(0);
 
   // delete the order if the abandon button is clicked.
   // the loop already detects deleted orders, so only need to make a call to coinbase
@@ -20,7 +20,13 @@ function BulkDelete(props) {
 
   function deleteRange() {
     // call the orders delete route
-    dispatch({ type: 'DELETE_RANGE' });
+    dispatch({
+      type: 'DELETE_RANGE',
+      payload: {
+        lowerLimit: lowerLimit,
+        upperLimit: upperLimit
+      }
+    });
   }
 
 
@@ -48,9 +54,9 @@ function BulkDelete(props) {
       <input
         type="number"
         name="upper_limit"
-        value={upperRange}
+        value={upperLimit}
         required
-        onChange={(event) => setUpperRange(Number(event.target.value))}
+        onChange={(event) => setUpperLimit(Number(event.target.value))}
       />
 
       <br />
@@ -61,9 +67,9 @@ function BulkDelete(props) {
       <input
         type="number"
         name="lower_limit"
-        value={lowerRange}
+        value={lowerLimit}
         required
-        onChange={(event) => setLowerRange(Number(event.target.value))}
+        onChange={(event) => setLowerLimit(Number(event.target.value))}
       />
 
       <br />
