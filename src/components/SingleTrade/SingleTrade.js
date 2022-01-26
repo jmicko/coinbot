@@ -82,11 +82,11 @@ function SingleTrade(props) {
             : numberWithCommas(Number(props.order.original_sell_price).toFixed(2))
           } ~<strong>Size </strong>{Number(props.order.size).toFixed(8)} ~
           <strong>Value</strong> ${numberWithCommas((Math.round((props.order.price * props.order.size) * 100) / 100).toFixed(2))} ~
-          <strong>Pair Profit</strong> ${profit.toFixed(8)}
+          <strong>Net Profit</strong> ${profit.toFixed(8)}
           <strong> ~Time</strong> {new Date(props.order.created_at).toLocaleString('en-US')}
           <br />
           {
-            showAll && !deleting && <><strong> Pair Ratio:</strong> {Number(props.order.trade_pair_ratio)}</>
+            showAll && !deleting && <><strong> Percent Increase:</strong> {Number(props.order.trade_pair_ratio)}</>
           }
           {
             showAll && !deleting && <><strong> Buy Fees:</strong> {buyFee.toFixed(8)}</>
@@ -98,7 +98,7 @@ function SingleTrade(props) {
             showAll && !deleting && <><strong> Total Fees:</strong> {(Number(sellFee.toFixed(8)) + Number(buyFee.toFixed(8))).toFixed(8)}</>
           }
           {
-            showAll && !deleting && <><strong> Gross Pair Profit:</strong> {(props.order.original_sell_price * props.order.size - props.order.original_buy_price * props.order.size).toFixed(8)}</>
+            showAll && !deleting && <><strong> Gross Profit:</strong> {(props.order.original_sell_price * props.order.size - props.order.original_buy_price * props.order.size).toFixed(8)}</>
           }
         </p>
       </div>
