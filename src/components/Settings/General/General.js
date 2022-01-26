@@ -10,9 +10,15 @@ function General(props) {
   const [max_trade_load, setMaxTradeLoad] = useState(100);
 
 
-  function pause(event) {
+  function pause() {
     dispatch({
       type: 'PAUSE',
+    });
+  }
+
+  function killLock() {
+    dispatch({
+      type: 'KILL_LOCK',
     });
   }
 
@@ -45,13 +51,25 @@ function General(props) {
       <button className={`btn-blue medium darkTheme`} onClick={() => { setTheme("darkTheme") }}>Dark</button>
       <div className="divider" />
 
+      {/* KILL PREVENTION */}
+
+      <h4>Kill Prevention</h4>
+      <p>
+        Removes the kill button from the trade pairs. This helps prevent accidental deletion of trades. Highly recommended to leave this on.
+      </p>
+      {props.store.accountReducer.userReducer.kill_locked
+        ? <button className={`btn-blue medium ${props.theme}`} onClick={( )=> { killLock() }}>Unlock</button>
+        : <button className={`btn-blue medium ${props.theme}`} onClick={() => { killLock() }}>Lock</button>
+      }
+      <div className="divider" />
+
       {/* PAUSE */}
       <h4>Pause</h4>
       <p>
         Pauses the bot. Trades will stay in place, but the bot will not check on them or flip them. If they are cancelled on Coinbase, the bot will not notice until it is unpaused.
         Be careful not to trade funds away manually while the bot is paused, or there might be an insufficient funds error.
       </p>
-      {(props.store.accountReducer.userReducer.paused)
+      {props.store.accountReducer.userReducer.paused
         ? <button className={`btn-blue medium ${props.theme}`} onClick={() => { pause() }}>Unpause</button>
         : <button className={`btn-blue medium ${props.theme}`} onClick={() => { pause() }}>Pause</button>
       }

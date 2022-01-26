@@ -82,7 +82,21 @@ router.put('/tradeLoadMax', rejectUnauthenticated, async (req, res) => {
     console.log(err, 'error with tradeLoadMax route');
     res.sendStatus(500);
   }
+});
 
+/**
+ * PUT route to change status of kill_lock
+ */
+ router.put('/killLock', rejectUnauthenticated, async (req, res) => {
+  const user = req.user;
+  try {
+    databaseClient.setKillLock(!user.kill_locked, user.id)
+    console.log('kill lock route hit', user);
+    res.sendStatus(200);
+  } catch (err) {
+    console.log(err, 'problem in kill lock ROUTE');
+    res.sendStatus(500);
+  }
 });
 
 /**

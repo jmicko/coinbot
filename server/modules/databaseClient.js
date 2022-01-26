@@ -279,6 +279,18 @@ async function setPause(status, userID) {
   })
 }
 
+async function setKillLock(status, userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `UPDATE "user_settings" SET "kill_locked" = $1 WHERE "userID" = $2`;
+      let result = await pool.query(sqlText, [status, userID]);
+      resolve(result);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 
 const databaseClient = {
   storeTrade: storeTrade,
@@ -293,7 +305,7 @@ const databaseClient = {
   getBotSettings: getBotSettings,
   toggleMaintenance: toggleMaintenance,
   setReorder: setReorder,
-  setPause: setPause
+  setKillLock: setKillLock
 }
 
 module.exports = databaseClient;

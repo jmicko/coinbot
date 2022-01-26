@@ -64,6 +64,18 @@ function* sendTradeLoadMax(action) {
   }
 }
 
+function* killLock(action) {
+  try {
+    yield axios.put(`/api/settings/killLock`, action.payload);
+    yield put({ type: 'FETCH_USER' });
+  } catch (error) {
+    console.log('put account route killLock has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 
 function* settingsSaga() {
   yield takeLatest('FETCH_SETTINGS', getAllSettings);
@@ -71,6 +83,7 @@ function* settingsSaga() {
   yield takeLatest('SET_BULK_PAIR_RATIO', bulkPairRatio);
   yield takeLatest('SET_MAX_TRADE_LOAD', sendTradeLoadMax);
   yield takeLatest('TOGGLE_MAINTENANCE', toggleMaintenance);
+  yield takeLatest('KILL_LOCK', killLock);
 }
 
 export default settingsSaga;
