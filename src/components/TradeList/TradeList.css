@@ -21,3 +21,9 @@
     height: 5rem;
     background-color: transparent;
 }
+
+.robot{
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+}

@@ -85,8 +85,8 @@ function Home(props) {
         {
           props.store.accountReducer.userReducer.approved
             ? width < 800 && mobilePage === 'tradeList'
-              ? <TradeList theme={theme} />
-              : width > 800 && <TradeList theme={theme} />
+              ? <TradeList priceTicker={priceTicker} theme={theme} />
+              : width > 800 && <TradeList priceTicker={priceTicker} theme={theme} />
             : width < 800 && mobilePage === 'tradeList'
               ? <NotApproved theme={theme} />
               : width > 800 && <NotApproved theme={theme} />
