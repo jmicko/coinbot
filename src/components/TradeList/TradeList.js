@@ -20,7 +20,6 @@ function TradeList(props) {
   const [highestBuy, setHighestBuy] = useState(0);
   const [lowestSell, setLowestSell] = useState(0);
 
-
   // when an exchange is made and stored, do a REST call to get all open orders
   const getOpenOrders = useCallback(
     () => {
@@ -50,24 +49,6 @@ function TradeList(props) {
     }
   }, [props.store.ordersReducer.openOrdersInOrder.sells, props.store.ordersReducer.openOrdersInOrder.buys]);
 
-  // need use effect to prevent multiplying connections every time component renders
-  useEffect(() => {
-    // socket may not exist on page load because it hasn't connected yet
-    if (socket == null) return;
-
-
-    socket.on('message', update => {
-      // check if the update is an order update, meaning there is something to change on dom
-      if ((update.orderUpdate != null) && (update.userID === props.store.accountReducer.userReducer.id)) {
-        // do api call for all open orders
-        getOpenOrders()
-      }
-    });
-    // this will remove the listener when component rerenders
-    return () => socket.off('message')
-    // useEffect will depend on socket because the connection will 
-    // not be there right when the page loads
-  }, [socket, getOpenOrders])
 
   // map the sell array on top and buy array on bottom
 
