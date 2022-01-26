@@ -90,7 +90,7 @@ router.put('/tradeLoadMax', rejectUnauthenticated, async (req, res) => {
  router.put('/killLock', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
-    // databaseClient.setPause(!user.paused, user.id)
+    databaseClient.setKillLock(!user.kill_locked, user.id)
     console.log('kill lock route hit', user);
     res.sendStatus(200);
   } catch (err) {
