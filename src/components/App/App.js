@@ -12,6 +12,7 @@ import mapStoreToProps from '../../redux/mapStoreToProps';
 // Directory imports
 import Home from '../Home/Home';
 import Login from '../Login/Login';
+import { SocketProvider } from '../../contexts/SocketProvider';
 
 function App(props) {
   const dispatch = useDispatch();
@@ -29,12 +30,14 @@ function App(props) {
     <div className={`App darkTheme`}>
       <Router>
         <Switch>
-          <Route
-            exact path="/"
-            component={props.store.accountReducer.userReducer.id
-              ? Home
-              : Login}
-          />
+          <SocketProvider>
+            <Route
+              exact path="/"
+              component={props.store.accountReducer.userReducer.id
+                ? Home
+                : Login}
+            />
+          </SocketProvider>
           <Route
             exact path="/login"
             component={Login} />
