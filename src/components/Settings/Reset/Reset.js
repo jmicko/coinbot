@@ -10,10 +10,6 @@ function Reset(props) {
   // delete the order if the abandon button is clicked.
   // the loop already detects deleted orders, so only need to make a call to coinbase
   // no need to bother the database if it is busy
-  function deleteAllOrders() {
-    // call the orders delete route
-    dispatch({ type: 'DELETE_ALL_ORDERS' });
-  }
 
   function resetProfit(event) {
     // event.preventDefault();

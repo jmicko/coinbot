@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../../redux/mapStoreToProps';
 import './BulkDelete.css'
@@ -6,6 +6,9 @@ import './BulkDelete.css'
 
 function BulkDelete(props) {
   const dispatch = useDispatch();
+
+  const [lowerRange, setLowerRange] = useState(0);
+  const [upperRange, setUpperRange] = useState(0);
 
   // delete the order if the abandon button is clicked.
   // the loop already detects deleted orders, so only need to make a call to coinbase
@@ -15,21 +18,11 @@ function BulkDelete(props) {
     dispatch({ type: 'DELETE_ALL_ORDERS' });
   }
 
-  function resetProfit(event) {
-    // event.preventDefault();
-    dispatch({
-      type: 'RESET_PROFIT',
-    });
+  function deleteRange() {
+    // call the orders delete route
+    dispatch({ type: 'DELETE_RANGE' });
   }
 
-  function deleteUser() {
-    // setDeleting(true)
-    dispatch({
-      type: 'DELETE_USER', payload: {
-        id: props.store.accountReducer.userReducer.id,
-      }
-    })
-  }
 
   return (
     <div className="Reset">
@@ -42,6 +35,41 @@ function BulkDelete(props) {
         database. It can sometimes fix issues that cause repeated errors, and may take a few minutes to complete
       </p>
       <button className={`btn-blue medium ${props.theme}`} onClick={() => dispatch({ type: 'SYNC_ORDERS' })}>Sync All Trades</button>
+
+      {/* DELETE RANGE */}
+      <div className="divider" />
+      <h4>Delete Range</h4>
+      <p>Delete all trades that fall within a price range. This is based on the current price,
+        so if the trade is a buy, it will look at the buy price. If it is a sell, it will look at the sell price.</p>
+
+      <label htmlFor="upper_limit">
+        Upper Limit:
+      </label>
+      <input
+        type="number"
+        name="upper_limit"
+        value={upperRange}
+        required
+        onChange={(event) => setUpperRange(Number(event.target.value))}
+      />
+
+      <br />
+
+      <label htmlFor="lower_limit">
+        Lower Limit:
+      </label>
+      <input
+        type="number"
+        name="lower_limit"
+        value={lowerRange}
+        required
+        onChange={(event) => setLowerRange(Number(event.target.value))}
+      />
+
+      <br />
+      <br />
+
+      <button className={`btn-red medium ${props.theme}`} onClick={() => { deleteRange() }}>Delete Range</button>
 
       {/* DELETE ALL TRADES */}
       <div className="divider" />
