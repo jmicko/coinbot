@@ -139,7 +139,7 @@ router.post('/basic', rejectUnauthenticated, async (req, res) => {
   //   console.log('user is not active and cannot trade!');
   //   res.sendStatus(404)
   // }
-  console.log('basic trade post route hit');
+  console.log('basic trade post route hit', req.body);
   res.sendStatus(200);
 });
 
