@@ -69,9 +69,43 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
 
 
 /**
+* DELETE RANGE route - Delete orders within a range
+*/
+router.delete('/range', rejectUnauthenticated, async (req, res) => {
+  const userID = req.user.id;
+  const previousPauseStatus = req.user.paused;
+  console.log('in delete range route', userID);
+  // try {
+  //   // pause trading before cancelling all orders or it will reorder them before done, making it take longer
+  //   await databaseClient.setPause(true, userID)
+    
+  //   // wait 5 seconds to give the synch loop more time to finish
+  //   await sleep(5000);
+
+  //   // delete from db first
+  //   const queryText = `DELETE from "orders" WHERE "settled" = false AND "userID"=$1;`;
+  //   await pool.query(queryText, [userID]);
+    
+  //   // mark all open orders as reorder
+  //   await databaseClient.setReorder();
+
+  //   // cancel all orders. The sync loop will take care of replacing them
+  //   await coinbaseClient.cancelAllOrders(userID);
+    
+  //   // set pause status to what it was before route was hit
+  //   await databaseClient.setPause(previousPauseStatus, userID)
+  //   console.log('+++++++ EVERYTHING WAS DELETED +++++++ for user:', userID);
+  // } catch (err) {
+  //   console.log(err, 'error in delete all orders route');
+  // }
+  res.sendStatus(200)
+});
+
+
+/**
 * DELETE route - Mark all orders as will_cancel
 */
-router.delete('/', rejectUnauthenticated, async (req, res) => {
+router.delete('/all', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   const previousPauseStatus = req.user.paused;
   console.log('in delete all orders route', userID);

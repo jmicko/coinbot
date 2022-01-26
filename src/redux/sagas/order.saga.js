@@ -27,7 +27,7 @@ function* syncOrders() {
 
 function* deleteAllOrders() {
   try {
-    yield axios.delete(`/api/orders/`);
+    yield axios.delete(`/api/orders/all`);
     yield put({ type: 'FETCH_ORDERS' });
   } catch (error) {
     console.log('DELETE all orders route has failed', error);
