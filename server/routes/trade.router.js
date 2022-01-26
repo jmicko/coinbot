@@ -74,6 +74,59 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
   }
 });
 
+
+/**
+ * POST route sending basic trade
+ */
+router.post('/basic', rejectUnauthenticated, async (req, res) => {
+  console.log('basic trade post route hit', req.body);
+  // res.sendStatus(200);
+  // POST route code here
+  const user = req.user;
+  if (user.active && user.approved) {
+    const userID = req.user.id;
+    const order = req.body;
+    // tradeDetails const should take in values sent from trade component form
+    const tradeDetails = {
+      side: order.side,
+      size: order.size, // BTC
+      product_id: order.product_id,
+      stp: 'cn',
+      userID: userID,
+      type: order.type
+    };
+    try {
+      // send the new order with the trade details
+      await coinbaseClient.placeOrder(tradeDetails);
+
+      // send OK status
+      res.sendStatus(200);
+
+    } catch (err) {
+      if (err.response?.status === 400) {
+        console.log('Insufficient funds!');
+        socketClient.emit('message', {
+          error: `Insufficient funds!`,
+          orderUpdate: true
+        });
+      } else if (err.code && err.code === 'ETIMEDOUT') {
+        console.log('Timed out');
+        socketClient.emit('message', {
+          error: `Connection timed out`,
+          // orderUpdate: true
+        });
+      } else {
+        console.log(err, 'problem in sending trade post route');
+      }
+      // send internal error status
+      res.sendStatus(500);
+    }
+  } else {
+    console.log('user is not active and cannot trade!');
+    res.sendStatus(404)
+  }
+});
+
 /**
  * POST route for auto setup
  */

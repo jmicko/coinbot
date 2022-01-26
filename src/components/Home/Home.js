@@ -29,6 +29,7 @@ function Home(props) {
   const [showSettings, setShowSettings] = useState(false);
   const [theme, setTheme] = useState('original');
   const [mobilePage, setMobilePage] = useState('tradeList');
+  const [tradeType, setTradeType] = useState('pair');
   const [priceTicker, setPriceTicker] = useState(0);
 
   const getOpenOrders = useCallback(
@@ -150,8 +151,8 @@ function Home(props) {
       {
         props.store.accountReducer.userReducer.active
           ? width < 800 && mobilePage === 'newPair'
-            ? <Trade theme={theme} priceTicker={priceTicker} />
-            : width > 800 && <Trade theme={theme} priceTicker={priceTicker} />
+            ? <Trade theme={theme} priceTicker={priceTicker} setTradeType={setTradeType} tradeType={tradeType} />
+            : width > 800 && <Trade theme={theme} priceTicker={priceTicker} setTradeType={setTradeType} tradeType={tradeType} />
           : width < 800 && mobilePage === 'newPair'
             ? <NotActive theme={theme} />
             : width > 800 && <NotActive theme={theme} />

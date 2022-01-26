@@ -25,6 +25,10 @@ function Trade(props) {
   const [sellFee, setSellFee] = useState(0.005);
   const [totalfees, setTotalFees] = useState(0.005);
   const [amountTypeIsUSD, setAmountTypeIsUSD] = useState(true);
+
+  const [tradeType, setTradeType] = useState(true);
+  const [basicAmount, setBasicAmount] = useState(0);
+  const [basicSide, setBasicSide] = useState('buy');
   const dispatch = useDispatch();
 
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
@@ -76,6 +80,19 @@ function Trade(props) {
         product_id: transactionProduct,
         trade_pair_ratio: tradePairRatio,
         type: type
+      }
+    })
+  }
+  
+  function submitBasicTransaction(event) {
+    event.preventDefault();
+    console.log('BASIC TRADE STARTED');
+    dispatch({
+      type: 'START_BASIC_TRADE', payload: {
+        type: "market",
+        size: basicAmount,
+        product_id: transactionProduct,
+        side: basicSide
       }
     })
   }
@@ -149,12 +166,17 @@ function Trade(props) {
     }
   }, [price])
 
+  function toggleTradeType() {
+    setTradeType(!tradeType);
+  }
+
 
   return (
-    // <div className="Trade" >
-    <div className="Trade scrollable boxed" >
-      {/* <div className="scrollable boxed"> */}
-        <h3 className={`title ${props.theme}`}>New Trade-Pair</h3>
+
+    tradeType
+      ? <div className="Trade scrollable boxed" >
+        {/* <div className="scrollable boxed"> */}
+        <h3 className={`title ${props.theme}`}>New Trade-Pair <button className={`btn-blue ${props.theme}`} onClick={toggleTradeType} >Switch</button></h3>
         {/* form with a single input. Input takes a price point at which 
           to make a trade */}
         <form className="new-trade-form" onSubmit={submitTransaction} >
@@ -313,8 +335,51 @@ function Trade(props) {
             </p>
           </div>
         </form>
-      {/* </div> */}
-    </div>
+        {/* </div> */}
+      </div>
+
+
+
+
+
+      : <div className="Trade scrollable boxed" >
+        {/* <div className="scrollable boxed"> */}
+        <h3 className={`title ${props.theme}`}>Basic Trade <button className={`btn-blue ${props.theme}`} onClick={toggleTradeType} >Switch</button></h3>
+        {/* form with a single input. Input takes a price point at which 
+        to make a trade */}
+
+        <form className="basic-trade-form" onSubmit={submitBasicTransaction} >
+
+          <input className={`btn-green ${props.theme}`} onClick={(event) => setBasicSide('buy')} type="button" name="submit" value="BUY" />
+          <input className={`btn-red ${props.theme}`} onClick={(event) => setBasicSide('sell')} type="button" name="submit" value="SELL" />
+          <br />
+          <p><strong>
+            {
+              basicSide === 'buy'
+                ? 'Buying'
+                : 'Selling'
+            }
+          </strong>
+          </p>
+
+          <label htmlFor="trade-amount">
+            Trade volume in BTC:
+          </label>
+          <br />
+          <input
+            className={props.theme}
+            type="number"
+            name="trade-amount"
+            value={Number(basicAmount)}
+            required
+            onChange={(event) => setBasicAmount(Number(event.target.value))}
+          />
+          <br />
+          <input className={`btn-send-trade btn-blue ${props.theme}`} type="submit" name="submit" value="Send Trade" />
+        </form>
+
+        {/* </div> */}
+      </div>
   );
 }
 
