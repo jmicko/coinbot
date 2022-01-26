@@ -136,12 +136,12 @@ function Status(props) {
         <strong>B:</strong>{numberWithCommas(openBuysQuantity)} <strong>S:</strong>{numberWithCommas(openSellsQuantity)} <strong>T:</strong>{numberWithCommas(openOrderQuantity)}
       </p>
 
-      <p className="info status-ticker">~~{loopStatus ? <strong>HEARTBEAT</strong> : <strong>heartbeat</strong>}~~
-        <br />
-        <center>
+      <center>
+        <p className="info status-ticker">~~{loopStatus ? <strong>HEARTBEAT</strong> : <strong>heartbeat</strong>}~~
+          <br />
           <button className={`btn-blue ${props.theme}`} onClick={refresh}>Refresh</button>
-        </center>
-      </p>
+        </p>
+      </center>
     </div>
   )
 }

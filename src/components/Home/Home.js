@@ -37,18 +37,35 @@ function Home(props) {
     }, [dispatch]
   )
 
+  useEffect(() => {
+    getOpenOrders();
+  }, [getOpenOrders]);
+
+  // need use effect to prevent multiplying connections every time component renders
+  useEffect(() => {
+    // socket may not exist on page load because it hasn't connected yet
+    if (socket == null) return;
+
+
+    socket.on('message', update => {
+      // check if the update is an order update, meaning there is something to change on dom
+      if ((update.orderUpdate != null) && (update.userID === props.store.accountReducer.userReducer.id)) {
+        // do api call for all open orders
+        getOpenOrders()
+      }
+    });
+    // this will remove the listener when component rerenders
+    return () => socket.off('message')
+    // useEffect will depend on socket because the connection will 
+    // not be there right when the page loads
+  }, [socket, getOpenOrders])
+
   // need use effect to prevent multiplying connections every time component renders
   useEffect(() => {
     // socket may not exist on page load because it hasn't connected yet
     if (socket == null) return;
     socket.on('message', message => {
-      if ((message.orderUpdate != null) && (message.userID === props.store.accountReducer.userReducer.id)) {
-        // do api call for all open orders
-        getOpenOrders()
-      }
-      // console.log('HERE IS THE WHOLE MESSAGE', message);
       if (message.userID === props.store.accountReducer.userReducer.id) {
-        // console.log('HERE IS THE USER ID FROM THE MESSAGE', message.userID);
         if (message.message) {
           setMessagesCount(prevMessagesCount => {
             return prevMessagesCount + 1;
@@ -87,7 +104,7 @@ function Home(props) {
     return () => socket.off('message')
     // useEffect will depend on socket because the connection will 
     // not be there right when the page loads
-  }, [socket, props.store.accountReducer.userReducer.id, getOpenOrders]);
+  }, [socket, props.store.accountReducer.userReducer.id]);
 
   const clickSettings = () => {
     setShowSettings(!showSettings);
@@ -129,42 +146,34 @@ function Home(props) {
 
   return (
     <div className={`Home ${theme}`}>
-      {/* <header className="header">
-        <h2>WE USE COINBOT.</h2>
-      </header> */}
-      <SocketProvider>
-        {/* <p>{mobilePage}</p> */}
-        <Menu clickSettings={clickSettings} theme={theme} />
-        {/* <p>{JSON.stringify(props.store.accountReducer.userReducer)}</p> */}
+      <Menu clickSettings={clickSettings} theme={theme} />
+      {
+        props.store.accountReducer.userReducer.active
+          ? width < 800 && mobilePage === 'newPair'
+            ? <Trade theme={theme} priceTicker={priceTicker} />
+            : width > 800 && <Trade theme={theme} priceTicker={priceTicker} />
+          : width < 800 && mobilePage === 'newPair'
+            ? <NotActive theme={theme} />
+            : width > 800 && <NotActive theme={theme} />
+      }
 
-        {
-          props.store.accountReducer.userReducer.active
-            ? width < 800 && mobilePage === 'newPair'
-              ? <Trade theme={theme} priceTicker={priceTicker} />
-              : width > 800 && <Trade theme={theme} priceTicker={priceTicker} />
-            : width < 800 && mobilePage === 'newPair'
-              ? <NotActive theme={theme} />
-              : width > 800 && <NotActive theme={theme} />
-        }
+      {
+        props.store.accountReducer.userReducer.approved
+          ? width < 800 && mobilePage === 'tradeList'
+            ? <TradeList priceTicker={priceTicker} theme={theme} />
+            : width > 800 && <TradeList priceTicker={priceTicker} theme={theme} />
+          : width < 800 && mobilePage === 'tradeList'
+            ? <NotApproved theme={theme} />
+            : width > 800 && <NotApproved theme={theme} />
+      }
 
-        {
-          props.store.accountReducer.userReducer.approved
-            ? width < 800 && mobilePage === 'tradeList'
-              ? <TradeList priceTicker={priceTicker} theme={theme} />
-              : width > 800 && <TradeList priceTicker={priceTicker} theme={theme} />
-            : width < 800 && mobilePage === 'tradeList'
-              ? <NotApproved theme={theme} />
-              : width > 800 && <NotApproved theme={theme} />
-        }
+      {width < 800 && mobilePage === 'messages'
+        ? <Messages theme={theme} messages={messages} messagesCount={messagesCount} errors={errors} errorCount={errorCount} />
+        : width > 800 && <Messages theme={theme} messages={messages} messagesCount={messagesCount} errors={errors} errorCount={errorCount} />}
 
-        {width < 800 && mobilePage === 'messages'
-          ? <Messages theme={theme} messages={messages} messagesCount={messagesCount} errors={errors} errorCount={errorCount} />
-          : width > 800 && <Messages theme={theme} messages={messages} messagesCount={messagesCount} errors={errors} errorCount={errorCount} />}
-
-        <Status theme={theme} priceTicker={priceTicker} />
-        <Settings showSettings={showSettings} clickSettings={clickSettings} theme={theme} priceTicker={priceTicker} />
-        {width < 800 && <MobileNav theme={theme} setMobilePage={setMobilePage} />}
-      </SocketProvider>
+      <Status theme={theme} priceTicker={priceTicker} />
+      <Settings showSettings={showSettings} clickSettings={clickSettings} theme={theme} priceTicker={priceTicker} />
+      {width < 800 && <MobileNav theme={theme} setMobilePage={setMobilePage} />}
     </div>
   );
 }
