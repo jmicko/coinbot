@@ -33,16 +33,6 @@ function BulkDelete(props) {
 
   return (
     <div className="Reset">
-      {/* <center>
-        <p>Reset Settings Page</p>
-      </center> */}
-
-      {/* RESET PROFIT */}
-      <div className="divider" />
-      <h4>Reset Profit</h4>
-      <p>This will start the profit calculation back at $0</p>
-      <p>Last reset at: {new Date(props.store.accountReducer.userReducer.profit_reset).toLocaleString('en-US')}</p>
-      <button className={`btn-blue medium ${props.theme}`} onClick={() => { resetProfit() }}>Reset Profit</button>
 
       {/* SYNC ALL TRADES */}
       <div className="divider" />
@@ -58,12 +48,6 @@ function BulkDelete(props) {
       <h4>Delete All Trades</h4>
       <p>Danger! This button will delete all your positions! Press it carefully!</p>
       <button className={`btn-red medium ${props.theme}`} onClick={() => { deleteAllOrders() }}>Delete All</button>
-
-      {/* DELETE OWN ACCOUNT */}
-      <div className="divider" />
-      <h4>Delete Account</h4>
-      <p>Danger! This button will instantly and permanently delete your account and all user data including trades! Press it carefully!</p>
-      <button className={`btn-red medium ${props.theme}`} onClick={() => { deleteUser() }}>Delete Account</button>
 
       <div className="divider" />
     </div>
