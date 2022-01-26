@@ -82,7 +82,7 @@ function TradeList(props) {
         <p>To Sell &#9650; ${(lowestSell - props.priceTicker).toFixed(2)}<br/>
         To Buy &nbsp;&#9660; ${(props.priceTicker - highestBuy).toFixed(2)}</p>
         <img className="coinbot-image" src={coinbotFilled} alt="coinbot" />
-        <p>Margin: {lowestSell - highestBuy}</p>
+        <p>Margin: ${lowestSell - highestBuy}</p>
       </div>
       {buys}
       {/* </div> */}
