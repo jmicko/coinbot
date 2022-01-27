@@ -37,7 +37,7 @@ async function syncOrders(userID, count) {
 
 
       if (count === 0) {
-        console.log('full sync');
+        console.log('---FULL SYNC---');
 
         // get lists of trades to compare which have been settled
         const results = await Promise.all([
@@ -88,7 +88,7 @@ async function syncOrders(userID, count) {
         // checks for orders if it finds any fills 
         console.log('quick sync');
 
-        let fills = await coinbaseClient.getLimitedFills(userID, 200);
+        let fills = await coinbaseClient.getLimitedFills(userID, 1000);
         await sleep(100); // avoid rate limit
 
         for (let i = 0; i < fills.length; i++) {
@@ -98,7 +98,7 @@ async function syncOrders(userID, count) {
           console.log('order from fill', dbOrder?.id);
           // only need to check it if there is an order in the db. Otherwise it might be a basic trade
           if (dbOrder) {
-            
+
             if (dbOrder && !dbOrder?.settled) {
               console.log('!!!!!!!!need to check this order!', dbOrder.settled);
               ordersToCheck.push(dbOrder);
