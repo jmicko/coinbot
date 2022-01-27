@@ -12,6 +12,8 @@ function Status(props) {
   const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
 
+  const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
+
   const socket = useSocket();
 
   const refresh = () => {
@@ -87,6 +89,14 @@ function Status(props) {
     }
   }, [props.store.ordersReducer.openOrdersInOrder.counts]);
 
+  useEffect(() => {
+    if (props.store.accountReducer.accountReducer) {
+      let USD = props.store.accountReducer.accountReducer.filter(account => account.currency === 'USD');
+      setAvailableFundsUSD(USD[0]);
+    }
+  }, [props.store.accountReducer.accountReducer]);
+
+
 
   return (
 
@@ -103,7 +113,7 @@ function Status(props) {
       <p className="info status-ticker">
         <strong>Available Funds</strong>
         <br />
-        ${numberWithCommas(Math.floor(props.store.accountReducer.accountReducer * 100) / 100)}
+        ${numberWithCommas(Math.floor(availableFundsUSD.available * 100) / 100)}
       </p>
 
       <p className="info status-ticker">
