@@ -13,6 +13,7 @@ function Status(props) {
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
 
   const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
+  const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
 
   const socket = useSocket();
 
@@ -93,6 +94,8 @@ function Status(props) {
     if (props.store.accountReducer.accountReducer) {
       let USD = props.store.accountReducer.accountReducer.filter(account => account.currency === 'USD');
       setAvailableFundsUSD(USD[0]);
+      let BTC = props.store.accountReducer.accountReducer.filter(account => account.currency === 'BTC');
+      setAvailableFundsBTC(BTC[0]);
     }
   }, [props.store.accountReducer.accountReducer]);
 
@@ -110,11 +113,13 @@ function Status(props) {
         ${numberWithCommas(props.priceTicker)}/coin
       </p>
 
-      <p className="info status-ticker">
-        <strong>Available Funds</strong>
-        <br />
-        ${numberWithCommas(Math.floor(availableFundsUSD.available * 100) / 100)}
-      </p>
+      <center>
+        <p className="info status-ticker">
+          <strong>Available Funds</strong>
+          <br />
+          ${numberWithCommas(Math.floor(availableFundsUSD.available * 100) / 100)} / {numberWithCommas(Math.floor(availableFundsBTC.available * 100000000) / 100000000)} BTC
+        </p>
+      </center>
 
       <p className="info status-ticker">
         <strong>Maker Fee</strong>
