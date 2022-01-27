@@ -49,8 +49,32 @@ const storeTrade = (newOrder, originalDetails) => {
   });
 }
 
+const getLimitedTrades = (userID, limit) => {
+  return new Promise(async (resolve, reject) => {
+    // get limit of buys
+    // get limit of sells
+    try {
 
-const getUnsettledTrades = (side, max_trade_load, userID) => {
+      const results = await Promise.all([
+        // get all open orders from db and cb
+        databaseClient.getUnsettledTrades('buy', userID, limit),
+        databaseClient.getUnsettledTrades('sell', userID, limit),
+      ]);
+      // combine both
+      // console.log('buys', results[0].length);
+      // console.log('sells', results[1].length);
+
+      let combinedArray = results[0].concat(results[1]);
+      // return them 
+      resolve(combinedArray);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+
+const getUnsettledTrades = (side, userID, max_trade_load) => {
   return new Promise(async (resolve, reject) => {
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
@@ -65,14 +89,14 @@ const getUnsettledTrades = (side, max_trade_load, userID) => {
       ORDER BY "price" DESC
       LIMIT $2;`;
       pool.query(sqlText, [userID, max_trade_load])
-      .then((results) => {
-        // promise returns promise from pool if success
-        resolve(results.rows);
-      })
-      .catch((err) => {
-        // or promise relays errors from pool to parent
-        reject(err);
-      })
+        .then((results) => {
+          // promise returns promise from pool if success
+          resolve(results.rows);
+        })
+        .catch((err) => {
+          // or promise relays errors from pool to parent
+          reject(err);
+        })
     } else if (side == 'sell') {
       // console.log('getting sells', max_trade_load);
       // gets all unsettled sells, sorted by price
@@ -293,6 +317,7 @@ async function setKillLock(status, userID) {
 
 const databaseClient = {
   storeTrade: storeTrade,
+  getLimitedTrades: getLimitedTrades,
   getUnsettledTrades: getUnsettledTrades,
   getUnsettledTradeCounts: getUnsettledTradeCounts,
   getSingleTrade: getSingleTrade,
