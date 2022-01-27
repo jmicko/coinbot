@@ -26,7 +26,7 @@ async function syncOrders(userID, count) {
     user = await databaseClient.getUserAndSettings(userID);
 
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
-      console.log('count is', count);
+      // console.log('count is', count);
 
       // *** GET ORDERS THAT NEED PROCESSING ***
 
@@ -37,7 +37,7 @@ async function syncOrders(userID, count) {
 
 
       if (count === 0) {
-        console.log('---FULL SYNC---');
+        // console.log('---FULL SYNC---');
 
         // get lists of trades to compare which have been settled
         const results = await Promise.all([
@@ -86,24 +86,23 @@ async function syncOrders(userID, count) {
       } else {
         // IF QUICK SYNC, only get fills
         // checks for orders if it finds any fills 
-        console.log('quick sync');
+        // console.log('quick sync');
 
         let fills = await coinbaseClient.getLimitedFills(userID, 1000);
         await sleep(100); // avoid rate limit
 
         for (let i = 0; i < fills.length; i++) {
           const fill = fills[i];
-          console.log('one fill', fill.order_id);
           let dbOrder = await databaseClient.getSingleTrade(fill.order_id);
-          console.log('order from fill', dbOrder?.id);
+          // console.log('order from fill', dbOrder?.id);
           // only need to check it if there is an order in the db. Otherwise it might be a basic trade
           if (dbOrder) {
 
             if (dbOrder && !dbOrder?.settled) {
-              console.log('!!!!!!!!need to check this order!', dbOrder.settled);
+              // console.log('!!!!!!!!need to check this order!', dbOrder.settled);
               ordersToCheck.push(dbOrder);
             } else {
-              console.log('DO NOT check this order! or any orders after this because they will be processed already');
+              // console.log('DO NOT check this order! or any orders after this because they will be processed already');
               i += fills.length;
             }
           }
@@ -321,7 +320,6 @@ function flipTrade(dbOrder, user) {
       userID: Number(dbOrder.userID)
     });
   } else {
-
     // if it is a sell turning into a buy, check if user wants to reinvest the funds
     if (user.reinvest) {
       let newPrice = dbOrder.original_buy_price;
@@ -341,12 +339,9 @@ function flipTrade(dbOrder, user) {
         // console.log('this would be a better size:', maxNewSize.toFixed(8));
         tradeDetails.size = maxNewSize.toFixed(8);
       } else if (newSize < 0.000016) {
-        console.log('=================the new size is too small!', newSizeUSD, 'btc:', newSize);
+        // need to stay above minimum order size
         tradeDetails.size = 0.000016;
-        // tradeDetails.size = newSize.toFixed(8);
-      
       } else {
-        // console.log('the new size is small enough');
         tradeDetails.size = newSize.toFixed(8);
       }
 
