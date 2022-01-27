@@ -17,6 +17,8 @@ function AutoSetup(props) {
   const [autoTradeStarted, setAutoTradeStarted] = useState(false);
   const [totalTrades, setTotalTrades] = useState(false);
 
+  const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
+
   // const [keepTrading, setKeepTrading] = useState(false);
 
 
@@ -26,13 +28,20 @@ function AutoSetup(props) {
     }
   }, [startingValue, increment, size, sizeType, props.priceTicker])
 
+  useEffect(() => {
+    if (props.store.accountReducer.accountReducer) {
+      let USD = props.store.accountReducer.accountReducer.filter(account => account.currency === 'USD');
+      setAvailableFundsUSD(USD[0]);
+    }
+  }, [props.store.accountReducer.accountReducer]);
+
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
   const numberWithCommas = (x) => {
     return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
   }
 
   function calculateResults() {
-    let availableFunds = props.store.accountReducer.accountReducer;
+    let availableFunds = availableFundsUSD;
     // let startingPrice = startingValue;
     let finalPrice = startingValue;
     let tradingPrice = props.priceTicker;
@@ -84,7 +93,7 @@ function AutoSetup(props) {
   }
 
   function autoTrader() {
-    let availableFunds = props.store.accountReducer.accountReducer;
+    let availableFunds = availableFundsUSD;
     console.log('here is the current available funds', availableFunds);
 
     dispatch({

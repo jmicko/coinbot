@@ -12,6 +12,9 @@ function Status(props) {
   const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
 
+  const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
+  const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
+
   const socket = useSocket();
 
   const refresh = () => {
@@ -87,6 +90,16 @@ function Status(props) {
     }
   }, [props.store.ordersReducer.openOrdersInOrder.counts]);
 
+  useEffect(() => {
+    if (props.store.accountReducer.accountReducer) {
+      let USD = props.store.accountReducer.accountReducer.filter(account => account.currency === 'USD');
+      setAvailableFundsUSD(USD[0]);
+      let BTC = props.store.accountReducer.accountReducer.filter(account => account.currency === 'BTC');
+      setAvailableFundsBTC(BTC[0]);
+    }
+  }, [props.store.accountReducer.accountReducer]);
+
+
 
   return (
 
@@ -94,50 +107,64 @@ function Status(props) {
       {/* todo - maybe style in some divider lines here or something */}
       {/* <p className="info status-ticker"><strong>~~~ user ~~~</strong><br />{JSON.stringify(props.store.accountReducer.userReducer)}</p> */}
 
-      <p className="info status-ticker">
-        <strong>~~~ BTC-USD ~~~</strong>
-        <br />
-        ${numberWithCommas(props.priceTicker)}/coin
-      </p>
-
-      <p className="info status-ticker">
-        <strong>Available Funds</strong>
-        <br />
-        ${numberWithCommas(Math.floor(props.store.accountReducer.accountReducer * 100) / 100)}
-      </p>
-
-      <p className="info status-ticker">
-        <strong>Maker Fee</strong>
-        <br />
-        {Number((props.store.accountReducer.feeReducer.maker_fee_rate * 100).toFixed(2))}%
-      </p>
-
-      <p className="info status-ticker">
-        <strong>Taker Fee</strong>
-        <br />
-        {Number((props.store.accountReducer.feeReducer.taker_fee_rate * 100).toFixed(2))}%
-      </p>
-
-      <p className="info status-ticker">
-        <strong>30 Day Volume</strong>
-        <br />
-        ${numberWithCommas(props.store.accountReducer.feeReducer.usd_volume)}
-      </p>
-
-      <p className="info status-ticker">
-        <strong>Profit Estimate</strong>
-        <br />
-        ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[0].sum))}
-      </p>
-
-      <p className="info status-ticker">
-        <strong>Total Open Orders</strong>
-        <br />
-        <strong>B:</strong>{numberWithCommas(openBuysQuantity)} <strong>S:</strong>{numberWithCommas(openSellsQuantity)} <strong>T:</strong>{numberWithCommas(openOrderQuantity)}
-      </p>
+      <center>
+        <p className="info status-ticker">
+          <strong>Profit Estimate</strong>
+          <br />
+          ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[0].sum))}
+        </p>
+      </center>
 
       <center>
-        <p className="info status-ticker">~~{loopStatus ? <strong>HEARTBEAT</strong> : <strong>heartbeat</strong>}~~
+        <p className="info status-ticker">
+          <strong> BTC-USD Price</strong>
+          <br />
+          ${numberWithCommas(props.priceTicker)}/coin
+        </p>
+      </center>
+
+      <center>
+        <p className="info status-ticker">
+          <strong>Available Funds</strong>
+          <br />
+          ${numberWithCommas(Math.floor(availableFundsUSD.available * 100) / 100)} / {numberWithCommas(Math.floor(availableFundsBTC.available * 100000000) / 100000000)} BTC
+        </p>
+      </center>
+
+      <center>
+        <p className="info status-ticker">
+          <strong>Maker Fee</strong>
+          <br />
+          {Number((props.store.accountReducer.feeReducer.maker_fee_rate * 100).toFixed(2))}%
+        </p>
+      </center>
+
+      <center>
+        <p className="info status-ticker">
+          <strong>Taker Fee</strong>
+          <br />
+          {Number((props.store.accountReducer.feeReducer.taker_fee_rate * 100).toFixed(2))}%
+        </p>
+      </center>
+
+      <center>
+        <p className="info status-ticker">
+          <strong>30 Day Volume</strong>
+          <br />
+          ${numberWithCommas(props.store.accountReducer.feeReducer.usd_volume)}
+        </p>
+      </center>
+
+      <center>
+        <p className="info status-ticker">
+          <strong>Total Open Orders</strong>
+          <br />
+          <strong>B:</strong>{numberWithCommas(openBuysQuantity)} <strong>S:</strong>{numberWithCommas(openSellsQuantity)} <strong>T:</strong>{numberWithCommas(openOrderQuantity)}
+        </p>
+      </center>
+
+      <center>
+        <p className="info status-ticker">{loopStatus ? <strong>HEARTBEAT</strong> : <strong>heartbeat</strong>}
           <br />
           <button className={`btn-blue ${props.theme}`} onClick={refresh}>Refresh</button>
         </p>
