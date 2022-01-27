@@ -23,12 +23,7 @@ router.get('/', (req, res) => {
     coinbaseClient.getAccounts(userID)
       .then((result) => {
         res.send(result)
-        console.log('accounts on cb are', result);
-        // return result.forEach(account => {
-        //   if (account.currency === 'USD') {
-        //     return account;
-        //   }
-        // });
+        // console.log('accounts on cb are', result);
       })
       .catch((err) => {
         if (err.response?.status === 500) {

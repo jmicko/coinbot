@@ -49,39 +49,62 @@ const storeTrade = (newOrder, originalDetails) => {
   });
 }
 
-
-const getUnsettledTrades = (side, userID) => {
+const getLimitedTrades = (userID, limit) => {
   return new Promise(async (resolve, reject) => {
-    let userSettings = await getUserAndSettings(userID);
+    // get limit of buys
+    // get limit of sells
+    try {
+
+      const results = await Promise.all([
+        // get all open orders from db and cb
+        databaseClient.getUnsettledTrades('buy', userID, limit),
+        databaseClient.getUnsettledTrades('sell', userID, limit),
+      ]);
+      // combine both
+      // console.log('buys', results[0].length);
+      // console.log('sells', results[1].length);
+
+      let combinedArray = results[0].concat(results[1]);
+      // return them 
+      resolve(combinedArray);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+
+const getUnsettledTrades = (side, userID, max_trade_load) => {
+  return new Promise(async (resolve, reject) => {
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
 
     // the only time 'buy' or 'sell' is passed is when the frontend is calling for all trades. 
     // can request a limited amount of data to save on network costs
     if (side == 'buy') {
-      // console.log('getting buys', userSettings.max_trade_load);
+      // console.log('getting buys', max_trade_load);
       // gets all unsettled buys, sorted by price
       sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" 
       WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" DESC
       LIMIT $2;`;
-      pool.query(sqlText, [userID, userSettings.max_trade_load])
-      .then((results) => {
-        // promise returns promise from pool if success
-        resolve(results.rows);
-      })
-      .catch((err) => {
-        // or promise relays errors from pool to parent
-        reject(err);
-      })
+      pool.query(sqlText, [userID, max_trade_load])
+        .then((results) => {
+          // promise returns promise from pool if success
+          resolve(results.rows);
+        })
+        .catch((err) => {
+          // or promise relays errors from pool to parent
+          reject(err);
+        })
     } else if (side == 'sell') {
-      // console.log('getting sells', userSettings.max_trade_load);
+      // console.log('getting sells', max_trade_load);
       // gets all unsettled sells, sorted by price
       sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" 
       WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" ASC
       LIMIT $2;`;
-      pool.query(sqlText, [userID, userSettings.max_trade_load])
+      pool.query(sqlText, [userID, max_trade_load])
         .then((results) => {
           // promise returns promise from pool if success
           resolve(results.rows);
@@ -294,6 +317,7 @@ async function setKillLock(status, userID) {
 
 const databaseClient = {
   storeTrade: storeTrade,
+  getLimitedTrades: getLimitedTrades,
   getUnsettledTrades: getUnsettledTrades,
   getUnsettledTradeCounts: getUnsettledTradeCounts,
   getSingleTrade: getSingleTrade,

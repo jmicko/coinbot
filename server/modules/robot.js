@@ -10,12 +10,15 @@ async function startSync() {
   const result = await pool.query(sqlText);
   const userlist = result.rows;
   userlist.forEach(user => {
-    syncOrders(user.id);
+    syncOrders(user.id, 0);
   });
 }
 
 // REST protocol to find orders that have settled on coinbase
-async function syncOrders(userID) {
+async function syncOrders(userID, count) {
+  if (count > 9) {
+    count = 0
+  }
   let user;
   let botSettings;
   try {
@@ -23,52 +26,92 @@ async function syncOrders(userID) {
     user = await databaseClient.getUserAndSettings(userID);
 
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
+      console.log('count is', count);
 
       // *** GET ORDERS THAT NEED PROCESSING ***
 
-      // get lists of trades to compare which have been settled
-      const results = await Promise.all([
-        // get all open orders from db and cb
-        databaseClient.getUnsettledTrades('all', userID),
-        coinbaseClient.getOpenOrders(userID)
-      ]);
-      // store the lists of orders in the corresponding arrays so they can be compared
-      const dbOrders = results[0];
-      let cbOrders = results[1];
+      // start with two empty arrays
+      let dbOrders = [];
+      let cbOrders = [];
+      let ordersToCheck = [];
 
-      const getMoreOrders = async () => {
-        // find the oldest date in the returned orders
-        const oldestDate = cbOrders[cbOrders.length - 1].created_at;
 
-        await sleep(100); // avoid rate limit
-        // use the oldest date to get open orders before that date
-        const olderOrders = await coinbaseClient.getOpenOrdersBeforeDate(userID, oldestDate);
+      if (count === 0) {
+        console.log('---FULL SYNC---');
 
-        // check to make sure the last and first object of the arrays are the same and then remove one to prevent duplicates
-        if (cbOrders[cbOrders.length - 1].id === olderOrders[0].id) {
-          cbOrders.pop();
+        // get lists of trades to compare which have been settled
+        const results = await Promise.all([
+          // get all open orders from db and cb
+          databaseClient.getUnsettledTrades('all', userID),
+          coinbaseClient.getOpenOrders(userID)
+        ]);
+
+
+        // store the lists of orders in the corresponding arrays so they can be compared
+        dbOrders = results[0];
+        cbOrders = results[1];
+
+        const getMoreOrders = async () => {
+          // find the oldest date in the returned orders
+          const oldestDate = cbOrders[cbOrders.length - 1].created_at;
+
+          await sleep(100); // avoid rate limit
+          // use the oldest date to get open orders before that date
+          const olderOrders = await coinbaseClient.getOpenOrdersBeforeDate(userID, oldestDate);
+
+          // check to make sure the last and first object of the arrays are the same and then remove one to prevent duplicates
+          if (cbOrders[cbOrders.length - 1].id === olderOrders[0].id) {
+            cbOrders.pop();
+          }
+
+          // Combine the arrays
+          cbOrders = cbOrders.concat(olderOrders);
+
+          // if just pulled 1000 older orders, there may be more so check again
+          if (olderOrders.length >= 1000) {
+            await getMoreOrders();
+          }
         }
 
-        // Combine the arrays
-        cbOrders = cbOrders.concat(olderOrders);
-
-        // if just pulled 1000 older orders, there may be more so check again
-        if (olderOrders.length >= 1000) {
+        // CHECK IF THERE ARE 1000 OPEN ORDERS AND GET MORE FROM CB IF NEEDED
+        if (cbOrders.length >= 1000) {
           await getMoreOrders();
         }
-      }
+        // compare the arrays and remove any where the ids match in both,
+        // leaving a list of orders that are open in the db, but not on cb. Probably settled
+        ordersToCheck = await orderElimination(dbOrders, cbOrders);
 
-      // CHECK IF THERE ARE 1000 OPEN ORDERS AND GET MORE FROM CB IF NEEDED
-      if (cbOrders.length >= 1000) {
-        await getMoreOrders();
-      }
+        // DONE GETTING ORDERS
 
-      // compare the arrays and remove any where the ids match in both,
-      // leaving a list of orders that are open in the db, but not on cb. Probably settled
-      const ordersToCheck = await orderElimination(dbOrders, cbOrders);
+      } else {
+        // IF QUICK SYNC, only get fills
+        // checks for orders if it finds any fills 
+        console.log('quick sync');
+
+        let fills = await coinbaseClient.getLimitedFills(userID, 1000);
+        await sleep(100); // avoid rate limit
+
+        for (let i = 0; i < fills.length; i++) {
+          const fill = fills[i];
+          console.log('one fill', fill.order_id);
+          let dbOrder = await databaseClient.getSingleTrade(fill.order_id);
+          console.log('order from fill', dbOrder?.id);
+          // only need to check it if there is an order in the db. Otherwise it might be a basic trade
+          if (dbOrder) {
+
+            if (dbOrder && !dbOrder?.settled) {
+              console.log('!!!!!!!!need to check this order!', dbOrder.settled);
+              ordersToCheck.push(dbOrder);
+            } else {
+              console.log('DO NOT check this order! or any orders after this because they will be processed already');
+              i += fills.length;
+            }
+          }
+        }
+      }
 
       // also get a list of orders that are open on cb, but not stored in the db. 
-      let ordersToCancel = 0;
+      let ordersToCancel = [];
       // this if statement saves a little processing by skipping the filter if not needed
       // only checks for cancels if the two arrays are the same length and no orders to flip
       if (!(dbOrders.length === cbOrders.length && ordersToCheck.length === 0)) {
@@ -78,6 +121,7 @@ async function syncOrders(userID) {
 
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
       if (ordersToCancel.length) {
+        console.log(' deleting extra orders', ordersToCancel.length);
         try {
           let result = await cancelMultipleOrders(ordersToCancel, userID);
           if (result.ordersCanceled && (result.quantity > 0)) {
@@ -99,8 +143,6 @@ async function syncOrders(userID) {
       if (ordersToCheck.length) {
         try {
           let result = await settleMultipleOrders(ordersToCheck, userID);
-          if (result.ordersFlipped) {
-          }
         } catch (err) {
           if (err.response?.status === 500) {
             console.log('internal server error from coinbase');
@@ -158,7 +200,7 @@ async function syncOrders(userID) {
     // when everything is done, call the sync again if the user still exists
     if (user) {
       setTimeout(() => {
-        syncOrders(userID);
+        syncOrders(userID, count + 1);
       }, (botSettings.loop_speed * 100));
     } else {
       console.log('user is NOT THERE, stopping loop for user');
@@ -342,8 +384,6 @@ async function settleMultipleOrders(ordersArray, userID) {
           // console.log('ORDER TO CHECK:', orderToCheck);
           await sleep(100); // avoid rate limiting
           let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID);
-          if (fullSettledDetails.size !== fullSettledDetails.filled_size) {
-          }
           // update the order in the db
           const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
           await pool.query(queryText, [
