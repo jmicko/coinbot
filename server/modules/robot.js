@@ -340,6 +340,11 @@ function flipTrade(dbOrder, user) {
         let maxNewSize = (maxTradeSize / newPrice);
         // console.log('this would be a better size:', maxNewSize.toFixed(8));
         tradeDetails.size = maxNewSize.toFixed(8);
+      } else if (newSize < 0.000016) {
+        console.log('=================the new size is too small!', newSizeUSD, 'btc:', newSize);
+        tradeDetails.size = 0.000016;
+        // tradeDetails.size = newSize.toFixed(8);
+      
       } else {
         // console.log('the new size is small enough');
         tradeDetails.size = newSize.toFixed(8);
