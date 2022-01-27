@@ -33,9 +33,10 @@ async function syncOrders(userID, count) {
       // start with two empty arrays
       let dbOrders = [];
       let cbOrders = [];
+      let ordersToCheck = [];
 
 
-      if (count === 1) {
+      if (count === 11) {
         console.log('full sync');
 
         // get lists of trades to compare which have been settled
@@ -79,27 +80,47 @@ async function syncOrders(userID, count) {
         if (cbOrders.length >= 1000) {
           await getMoreOrders();
         }
-
         // DONE GETTING ORDERS
+
+        
+        // compare the arrays and remove any where the ids match in both,
+        // leaving a list of orders that are open in the db, but not on cb. Probably settled
+        ordersToCheck = await orderElimination(dbOrders, cbOrders);
+        
       } else {
+        // IF QUICK SYNC, only get a few orders on either side of current trading price to compare
         console.log('quick sync');
 
-        const results = await Promise.all([
-          // get all open orders from db and cb
-          databaseClient.getLimitedTrades(userID, 10),
-          coinbaseClient.getOpenOrders(userID)
-        ]);
+        // const results = await Promise.all([
+        //   // get all open orders from db and cb
+        //   databaseClient.getLimitedTrades(userID, 10),
+        //   coinbaseClient.getLimitedOpenOrders(userID, 2)
+        // ]);
+        let fills = await coinbaseClient.getLimitedOpenOrders(userID, 20);
 
-        console.log('db orders', results[0].length);
-        console.log('cb orders', results[1].length);
+        for (let i = 0; i < fills.length; i++) {
+          const fill = fills[i];
+          console.log('one fill', fill.order_id);
+          let dbOrder = await databaseClient.getSingleTrade(fill.order_id);
+          console.log('order from fill', dbOrder.settled);
+          if (!dbOrder.settled) {
+            console.log('!!!!!!!!need to check this order!');
+            ordersToCheck.push(dbOrder);
+          } else {
+            console.log('DO NOT check this order! or any orders after this because they will be processed already');
+            i+= fills.length;
+          }
+        }
+
+        // console.log('db orders', results[0].length);
+        // console.log('cb orders', results[1]);
+        // console.log('fills', fills);
+
+
       }
 
-      // compare the arrays and remove any where the ids match in both,
-      // leaving a list of orders that are open in the db, but not on cb. Probably settled
-      const ordersToCheck = await orderElimination(dbOrders, cbOrders);
-
       // also get a list of orders that are open on cb, but not stored in the db. 
-      let ordersToCancel = 0;
+      let ordersToCancel = [];
       // this if statement saves a little processing by skipping the filter if not needed
       // only checks for cancels if the two arrays are the same length and no orders to flip
       if (!(dbOrders.length === cbOrders.length && ordersToCheck.length === 0)) {
@@ -109,6 +130,7 @@ async function syncOrders(userID, count) {
 
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
       if (ordersToCancel.length) {
+        console.log(' deleting extra orders', ordersToCancel.length);
         try {
           let result = await cancelMultipleOrders(ordersToCancel, userID);
           if (result.ordersCanceled && (result.quantity > 0)) {
@@ -130,8 +152,6 @@ async function syncOrders(userID, count) {
       if (ordersToCheck.length) {
         try {
           let result = await settleMultipleOrders(ordersToCheck, userID);
-          if (result.ordersFlipped) {
-          }
         } catch (err) {
           if (err.response?.status === 500) {
             console.log('internal server error from coinbase');
@@ -373,8 +393,6 @@ async function settleMultipleOrders(ordersArray, userID) {
           // console.log('ORDER TO CHECK:', orderToCheck);
           await sleep(100); // avoid rate limiting
           let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID);
-          if (fullSettledDetails.size !== fullSettledDetails.filled_size) {
-          }
           // update the order in the db
           const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
           await pool.query(queryText, [
