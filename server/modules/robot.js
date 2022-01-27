@@ -36,7 +36,7 @@ async function syncOrders(userID, count) {
       let ordersToCheck = [];
 
 
-      if (count === 11) {
+      if (count === 0) {
         console.log('full sync');
 
         // get lists of trades to compare which have been settled
@@ -50,9 +50,6 @@ async function syncOrders(userID, count) {
         // store the lists of orders in the corresponding arrays so they can be compared
         dbOrders = results[0];
         cbOrders = results[1];
-
-        // console.log('db orders', results[0]);
-        // console.log('cb orders', results[1]);
 
         const getMoreOrders = async () => {
           // find the oldest date in the returned orders
@@ -80,43 +77,37 @@ async function syncOrders(userID, count) {
         if (cbOrders.length >= 1000) {
           await getMoreOrders();
         }
-        // DONE GETTING ORDERS
-
-        
         // compare the arrays and remove any where the ids match in both,
         // leaving a list of orders that are open in the db, but not on cb. Probably settled
         ordersToCheck = await orderElimination(dbOrders, cbOrders);
-        
+
+        // DONE GETTING ORDERS
+
       } else {
-        // IF QUICK SYNC, only get a few orders on either side of current trading price to compare
+        // IF QUICK SYNC, only get fills
+        // checks for orders if it finds any fills 
         console.log('quick sync');
 
-        // const results = await Promise.all([
-        //   // get all open orders from db and cb
-        //   databaseClient.getLimitedTrades(userID, 10),
-        //   coinbaseClient.getLimitedOpenOrders(userID, 2)
-        // ]);
-        let fills = await coinbaseClient.getLimitedOpenOrders(userID, 20);
+        let fills = await coinbaseClient.getLimitedFills(userID, 200);
+        await sleep(100); // avoid rate limit
 
         for (let i = 0; i < fills.length; i++) {
           const fill = fills[i];
           console.log('one fill', fill.order_id);
           let dbOrder = await databaseClient.getSingleTrade(fill.order_id);
-          console.log('order from fill', dbOrder.settled);
-          if (!dbOrder.settled) {
-            console.log('!!!!!!!!need to check this order!');
-            ordersToCheck.push(dbOrder);
-          } else {
-            console.log('DO NOT check this order! or any orders after this because they will be processed already');
-            i+= fills.length;
+          console.log('order from fill', dbOrder?.id);
+          // only need to check it if there is an order in the db. Otherwise it might be a basic trade
+          if (dbOrder) {
+            
+            if (dbOrder && !dbOrder?.settled) {
+              console.log('!!!!!!!!need to check this order!', dbOrder.settled);
+              ordersToCheck.push(dbOrder);
+            } else {
+              console.log('DO NOT check this order! or any orders after this because they will be processed already');
+              i += fills.length;
+            }
           }
         }
-
-        // console.log('db orders', results[0].length);
-        // console.log('cb orders', results[1]);
-        // console.log('fills', fills);
-
-
       }
 
       // also get a list of orders that are open on cb, but not stored in the db. 

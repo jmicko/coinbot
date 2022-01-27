@@ -134,7 +134,7 @@ async function getAllOrders(userID) {
 
 
 
-async function getLimitedOpenOrders(userID, limit) {
+async function getLimitedFills(userID, limit) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
@@ -158,90 +158,6 @@ async function getLimitedOpenOrders(userID, limit) {
       const options = {
         method: 'GET',
         url: `${API_URI}/fills?product_id=BTC-USD&profile_id=default&limit=${limit}`,
-        headers: {
-          Accept: 'application/json',
-          'cb-access-key': key,
-          'cb-access-passphrase': passphrase,
-          'cb-access-sign': computeSignature(),
-          'cb-access-timestamp': timestamp
-        }
-      };
-
-      let response = await axios.request(options);
-      resolve(response.data);
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
-
-
-async function getLimitedOpenBuys(userID, limit) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const timestamp = Math.floor(Date.now() / 1000);
-      // // sign the request
-      const userAPI = await databaseClient.getUserAPI(userID);
-      const secret = userAPI.CB_SECRET;
-      const key = userAPI.CB_ACCESS_KEY;
-      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
-      const API_URI = userAPI.API_URI;
-
-      function computeSignature(request) {
-        // const data      = request.data;
-        const method = 'GET';
-        const path = `/orders?status=open&sortedBy=price&sorting=desc&limit=${limit}`;
-        const message = timestamp + method + path;
-        const key = CryptoJS.enc.Base64.parse(secret);
-        const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-        return hash;
-      }
-
-      const options = {
-        method: 'GET',
-        url: `${API_URI}/orders?status=open&sortedBy=price&sorting=desc&limit=${limit}`,
-        headers: {
-          Accept: 'application/json',
-          'cb-access-key': key,
-          'cb-access-passphrase': passphrase,
-          'cb-access-sign': computeSignature(),
-          'cb-access-timestamp': timestamp
-        }
-      };
-
-      let response = await axios.request(options);
-      resolve(response.data);
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
-
-
-async function getLimitedOpenSells(userID, limit) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const timestamp = Math.floor(Date.now() / 1000);
-      // // sign the request
-      const userAPI = await databaseClient.getUserAPI(userID);
-      const secret = userAPI.CB_SECRET;
-      const key = userAPI.CB_ACCESS_KEY;
-      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
-      const API_URI = userAPI.API_URI;
-
-      function computeSignature(request) {
-        // const data      = request.data;
-        const method = 'GET';
-        const path = "/orders?status=open&sortedBy=created_at&sorting=desc";
-        const message = timestamp + method + path;
-        const key = CryptoJS.enc.Base64.parse(secret);
-        const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-        return hash;
-      }
-
-      const options = {
-        method: 'GET',
-        url: `${API_URI}/orders?status=open&sortedBy=created_at&sorting=desc`,
         headers: {
           Accept: 'application/json',
           'cb-access-key': key,
@@ -575,7 +491,7 @@ async function testAPI(secret, key, passphrase, API_URI) {
 
 module.exports = {
   getAllOrders: getAllOrders,
-  getLimitedOpenOrders: getLimitedOpenOrders,
+  getLimitedFills: getLimitedFills,
   getOpenOrders: getOpenOrders,
   cancelOrder: cancelOrder,
   placeOrder: placeOrder,
