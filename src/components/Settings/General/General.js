@@ -45,7 +45,7 @@ function General(props) {
     dispatch({
       type: 'SET_PROFIT_ACCURACY',
       payload: {
-        max_trade_load: max_trade_load
+        profit_accuracy: profit_accuracy
       }
     });
   }
