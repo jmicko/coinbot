@@ -109,7 +109,7 @@ function AutoSetup(props) {
   }
 
   return (
-    <div className="AutoSetup">
+    <div className="AutoSetup settings-panel scrollable">
       <div className="divider" />
       <h4>Auto Setup</h4>
       <p>

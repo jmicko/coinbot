@@ -33,7 +33,7 @@ function History(props) {
 
 
   return (
-    <div className="History">
+    <div className="History settings-panel scrollable">
 
       <div className="divider" />
       <h4>Export .xlsx spreadsheet</h4>

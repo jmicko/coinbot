@@ -75,7 +75,7 @@ function Investment(props) {
 
 
   return (
-    <div className="Investment scrollable">
+    <div className="Investment settings-panel scrollable">
       <div className="divider" />
 
       {/* REINVEST */}

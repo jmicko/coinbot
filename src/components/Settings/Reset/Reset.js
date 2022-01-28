@@ -28,7 +28,7 @@ function Reset(props) {
   }
 
   return (
-    <div className="Reset">
+    <div className="Reset settings-panel scrollable">
       {/* <center>
         <p>Reset Settings Page</p>
       </center> */}

@@ -42,7 +42,7 @@ function General(props) {
 
 
   return (
-    <div className="General">
+    <div className="General settings-panel scrollable">
       <div className="divider" />
 
       {/* THEME */}
