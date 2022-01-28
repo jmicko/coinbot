@@ -11,6 +11,7 @@ function Status(props) {
   const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
   const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
+  const [sevenDayProfits, setSevenDayProfits] = useState(false);
 
   const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
   const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
@@ -107,12 +108,19 @@ function Status(props) {
       {/* todo - maybe style in some divider lines here or something */}
       {/* <p className="info status-ticker"><strong>~~~ user ~~~</strong><br />{JSON.stringify(props.store.accountReducer.userReducer)}</p> */}
 
-      <center>
-        <p className="info status-ticker">
-          <strong>Profit Estimate</strong>
-          <br />
-          ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[0].sum))}
-        </p>
+      <center onClick={()=>{setSevenDayProfits(!sevenDayProfits)}}>
+        {sevenDayProfits
+          ? <p className="info status-ticker">
+            <strong>7 Day Profit</strong>
+            <br />
+            ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[1].sum))}
+          </p>
+          : <p className="info status-ticker">
+            <strong>Profit Since Reset</strong>
+            <br />
+            ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[0].sum))}
+          </p>
+        }
       </center>
 
       <center>
