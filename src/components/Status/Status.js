@@ -12,6 +12,8 @@ function Status(props) {
   const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
   const [sevenDayProfits, setSevenDayProfits] = useState(false);
+  const [availableFundsDisplay, setAvailableFundsDisplay] = useState(false);
+  const [feeDisplay, setFeeDisplay] = useState(true);
 
   const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
   const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
@@ -108,7 +110,7 @@ function Status(props) {
       {/* todo - maybe style in some divider lines here or something */}
       {/* <p className="info status-ticker"><strong>~~~ user ~~~</strong><br />{JSON.stringify(props.store.accountReducer.userReducer)}</p> */}
 
-      <center onClick={()=>{setSevenDayProfits(!sevenDayProfits)}}>
+      <center onClick={() => { setSevenDayProfits(!sevenDayProfits) }}>
         {sevenDayProfits
           ? <p className="info status-ticker">
             <strong>7 Day Profit</strong>
@@ -127,32 +129,38 @@ function Status(props) {
         <p className="info status-ticker">
           <strong> BTC-USD Price</strong>
           <br />
-          ${numberWithCommas(props.priceTicker)}/coin
+          ${numberWithCommas(Number(props.priceTicker).toFixed(2))}
         </p>
       </center>
 
-      <center>
-        <p className="info status-ticker">
-          <strong>Available Funds</strong>
-          <br />
-          ${numberWithCommas(Math.floor(availableFundsUSD.available * 100) / 100)} / {numberWithCommas(Math.floor(availableFundsBTC.available * 100000000) / 100000000)} BTC
-        </p>
+      <center onClick={() => { setAvailableFundsDisplay(!availableFundsDisplay) }}>
+        {availableFundsDisplay
+          ? <p className="info status-ticker">
+            <strong>Available Funds</strong>
+            <br />
+            {numberWithCommas(Math.floor(availableFundsBTC.available * 100000000) / 100000000)} BTC
+          </p>
+          : <p className="info status-ticker">
+            <strong>Available Funds</strong>
+            <br />
+            ${numberWithCommas(Math.floor(availableFundsUSD.available * 100) / 100)}
+          </p>
+        }
       </center>
 
-      <center>
-        <p className="info status-ticker">
-          <strong>Maker Fee</strong>
-          <br />
-          {Number((props.store.accountReducer.feeReducer.maker_fee_rate * 100).toFixed(2))}%
-        </p>
-      </center>
-
-      <center>
-        <p className="info status-ticker">
-          <strong>Taker Fee</strong>
-          <br />
-          {Number((props.store.accountReducer.feeReducer.taker_fee_rate * 100).toFixed(2))}%
-        </p>
+      <center onClick={() => { setFeeDisplay(!feeDisplay) }}>
+        {feeDisplay
+          ? <p className="info status-ticker">
+            <strong>Maker Fee</strong>
+            <br />
+            {Number((props.store.accountReducer.feeReducer.maker_fee_rate * 100).toFixed(2))}%
+          </p>
+          : <p className="info status-ticker">
+            <strong>Taker Fee</strong>
+            <br />
+            {Number((props.store.accountReducer.feeReducer.taker_fee_rate * 100).toFixed(2))}%
+          </p>
+        }
       </center>
 
       <center>
