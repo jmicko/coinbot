@@ -73,20 +73,39 @@ router.get('/fees', rejectUnauthenticated, (req, res) => {
 /**
 * GET route to get total profit estimate
 */
-router.get('/profits', rejectUnauthenticated, (req, res) => {
+router.get('/profits', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
+
+  // let date = new Date();
+  // console.log('today', date);
+  // date.setDate(date.getDate() - 5);
+  // console.log('five days ago', date);
   // console.log('getting profits for', userID);
+  // for sum since a week ago
+  const lastWeekQueryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" + "previous_fill_fees")) 
+  FROM public.orders 
+  WHERE "side" = 'sell' AND "settled" = 'true' AND "userID" = $1 AND "done_at" > now() - interval '1 week';`;
+  // // for sum since reset
   const queryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" + "previous_fill_fees")) 
   FROM public.orders 
   WHERE "side" = 'sell' AND "settled" = 'true' AND "include_in_profit" = 'true' AND "userID" = $1;`;
-  pool.query(queryText, [userID])
-    .then((result) => {
-      res.send(result.rows)
-    })
-    .catch((error) => {
-      console.log(error, 'error in profits route:');
-      res.sendStatus(500)
-    })
+  try {
+
+    let profits = [];
+
+    let result = await pool.query(queryText, [userID]);
+    let weekResult = await pool.query(lastWeekQueryText, [userID]);
+    
+    profits.push(result.rows[0]);
+    profits.push(weekResult.rows[0]);
+    
+    console.log(profits);
+
+    res.send(profits);
+  } catch (err) {
+    console.log(err, 'error in profits route:');
+    res.sendStatus(500)
+  }
 });
 
 /**
