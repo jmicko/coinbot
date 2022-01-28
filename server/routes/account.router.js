@@ -76,11 +76,6 @@ router.get('/fees', rejectUnauthenticated, (req, res) => {
 router.get('/profits', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
 
-  // let date = new Date();
-  // console.log('today', date);
-  // date.setDate(date.getDate() - 5);
-  // console.log('five days ago', date);
-  // console.log('getting profits for', userID);
   // for sum since a week ago
   const lastWeekQueryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" + "previous_fill_fees")) 
   FROM public.orders 
@@ -98,9 +93,6 @@ router.get('/profits', rejectUnauthenticated, async (req, res) => {
     
     profits.push(result.rows[0]);
     profits.push(weekResult.rows[0]);
-    
-    console.log(profits);
-
     res.send(profits);
   } catch (err) {
     console.log(err, 'error in profits route:');
