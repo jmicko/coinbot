@@ -76,23 +76,29 @@ router.get('/fees', rejectUnauthenticated, (req, res) => {
 router.get('/profits', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
 
+  // for sum since a day ago
+  const lastDayQueryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" + "previous_fill_fees")) 
+  FROM public.orders 
+  WHERE "side" = 'sell' AND "settled" = 'true' AND "userID" = $1 AND "done_at" > now() - interval '1 day';`;
   // for sum since a week ago
   const lastWeekQueryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" + "previous_fill_fees")) 
   FROM public.orders 
   WHERE "side" = 'sell' AND "settled" = 'true' AND "userID" = $1 AND "done_at" > now() - interval '1 week';`;
   // // for sum since reset
-  const queryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" + "previous_fill_fees")) 
+  const sinceResetQueryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" + "previous_fill_fees")) 
   FROM public.orders 
   WHERE "side" = 'sell' AND "settled" = 'true' AND "include_in_profit" = 'true' AND "userID" = $1;`;
   try {
 
     let profits = [];
 
-    let result = await pool.query(queryText, [userID]);
+    let dayResult = await pool.query(lastDayQueryText, [userID]);
     let weekResult = await pool.query(lastWeekQueryText, [userID]);
+    let sinceResetResult = await pool.query(sinceResetQueryText, [userID]);
     
-    profits.push(result.rows[0]);
+    profits.push(dayResult.rows[0]);
     profits.push(weekResult.rows[0]);
+    profits.push(sinceResetResult.rows[0]);
     res.send(profits);
   } catch (err) {
     console.log(err, 'error in profits route:');

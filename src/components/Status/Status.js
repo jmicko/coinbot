@@ -11,7 +11,7 @@ function Status(props) {
   const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
   const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
-  const [sevenDayProfits, setSevenDayProfits] = useState(false);
+  const [profitDisplay, setProfitDisplay] = useState(1);
   const [availableFundsDisplay, setAvailableFundsDisplay] = useState(false);
   const [feeDisplay, setFeeDisplay] = useState(true);
 
@@ -102,6 +102,13 @@ function Status(props) {
     }
   }, [props.store.accountReducer.accountReducer]);
 
+  useEffect(() => {
+    if (profitDisplay > 3) {
+      setProfitDisplay(1)
+    };
+
+  }, [profitDisplay]);
+
 
 
   return (
@@ -110,18 +117,24 @@ function Status(props) {
       {/* todo - maybe style in some divider lines here or something */}
       {/* <p className="info status-ticker"><strong>~~~ user ~~~</strong><br />{JSON.stringify(props.store.accountReducer.userReducer)}</p> */}
 
-      <center onClick={() => { setSevenDayProfits(!sevenDayProfits) }}>
-        {sevenDayProfits
+      <center onClick={() => { setProfitDisplay(profitDisplay + 1) }}>
+        {profitDisplay === 1
           ? <p className="info status-ticker">
-            <strong>7 Day Profit</strong>
-            <br />
-            ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[1].sum))}
-          </p>
-          : <p className="info status-ticker">
-            <strong>Profit Since Reset</strong>
+            <strong>24 hour Profit</strong>
             <br />
             ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[0].sum))}
           </p>
+          : profitDisplay === 2
+            ? <p className="info status-ticker">
+              <strong>7 Day Profit</strong>
+              <br />
+              ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[1]?.sum))}
+            </p>
+            : <p className="info status-ticker">
+              <strong>Profit Since Reset</strong>
+              <br />
+              ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[2].sum))}
+            </p>
         }
       </center>
 
