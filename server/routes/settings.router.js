@@ -89,10 +89,19 @@ router.put('/tradeLoadMax', rejectUnauthenticated, async (req, res) => {
  */
 router.put('/profitAccuracy', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
+  const accuracy = () => {
+    if (req.body.profit_accuracy > 16) {
+      return 16
+    } else if (req.body.profit_accuracy < 0) {
+      return 0
+    } else {
+      return Math.round(req.body.profit_accuracy)
+    }
+  }
   try {
     console.log('profit_accuracy route hit', req.body);
     const queryText = `UPDATE "user_settings" SET "profit_accuracy" = $1 WHERE "userID" = $2`;
-    await pool.query(queryText, [req.body.profit_accuracy, user.id]);
+    await pool.query(queryText, [accuracy(), user.id]);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'error with profit accuracy route');
