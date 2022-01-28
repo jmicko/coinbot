@@ -103,7 +103,7 @@ function Status(props) {
   }, [props.store.accountReducer.accountReducer]);
 
   useEffect(() => {
-    if (profitDisplay > 3) {
+    if (profitDisplay > 4) {
       setProfitDisplay(1)
     };
 
@@ -130,11 +130,17 @@ function Status(props) {
               <br />
               ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[1]?.sum))}
             </p>
-            : <p className="info status-ticker">
-              <strong>Profit Since Reset</strong>
-              <br />
-              ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[2].sum))}
-            </p>
+            : profitDisplay === 3
+              ? <p className="info status-ticker">
+                <strong>30 Day Profit</strong>
+                <br />
+                ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[2]?.sum))}
+              </p>
+              : <p className="info status-ticker">
+                <strong>Profit Since Reset</strong>
+                <br />
+                ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[3]?.sum))}
+              </p>
         }
       </center>
 

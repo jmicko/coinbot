@@ -84,6 +84,10 @@ router.get('/profits', rejectUnauthenticated, async (req, res) => {
   const lastWeekQueryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" + "previous_fill_fees")) 
   FROM public.orders 
   WHERE "side" = 'sell' AND "settled" = 'true' AND "userID" = $1 AND "done_at" > now() - interval '1 week';`;
+  // for sum since 30 days ago
+  const lastThirtyDayQueryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" + "previous_fill_fees")) 
+  FROM public.orders 
+  WHERE "side" = 'sell' AND "settled" = 'true' AND "userID" = $1 AND "done_at" > now() - interval '30 day';`;
   // // for sum since reset
   const sinceResetQueryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" + "previous_fill_fees")) 
   FROM public.orders 
@@ -94,10 +98,12 @@ router.get('/profits', rejectUnauthenticated, async (req, res) => {
 
     let dayResult = await pool.query(lastDayQueryText, [userID]);
     let weekResult = await pool.query(lastWeekQueryText, [userID]);
+    let monthResult = await pool.query(lastThirtyDayQueryText, [userID]);
     let sinceResetResult = await pool.query(sinceResetQueryText, [userID]);
     
     profits.push(dayResult.rows[0]);
     profits.push(weekResult.rows[0]);
+    profits.push(monthResult.rows[0]);
     profits.push(sinceResetResult.rows[0]);
     res.send(profits);
   } catch (err) {
