@@ -51,6 +51,11 @@ function Status(props) {
     dispatch({ type: 'FETCH_FEES' });
   }, [dispatch])
 
+  // watch to see if accuracy changes
+  useEffect(() => {
+    setProfitAccuracy(Number(props.store.accountReducer.userReducer.profit_accuracy));
+  }, [props.store.accountReducer.userReducer.profit_accuracy])
+
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
   const numberWithCommas = (x) => {
     return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
