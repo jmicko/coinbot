@@ -1,17 +1,17 @@
 /* === MAIN === */
 
 .Settings {
-  display    : block;
-  grid-column: 3;
-  grid-row   : 2/4;
+  display         : block;
+  grid-column     : 3;
+  grid-row        : 2/4;
   background-color: #acacaf;
-  z-index: 1;
-  height: fit-content;
-  width: fit-content;
-  max-width: 50rem;
-  margin: 0 auto;
-  padding: 1rem;
-  border-radius: .25rem;
+  z-index         : 1;
+  height          : fit-content;
+  width           : fit-content;
+  max-width       : 50rem;
+  margin          : 0 auto;
+  padding         : 1rem;
+  border-radius   : .25rem;
 }
 
 .Settings.darkTheme {
@@ -23,11 +23,18 @@
     display    : block;
     grid-column: 2;
     grid-row   : 2/6;
-    /* height: unset; */
+    /* height  : unset; */
   }
 
+  .settings-panel {
+    max-height: 60vh;
+  }
 }
 
 .settings-header {
   text-align: center;
+}
+
+.settings-panel {
+  max-height: 65vh;
 }

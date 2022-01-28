@@ -31,7 +31,7 @@ function BulkDelete(props) {
 
 
   return (
-    <div className="Reset">
+    <div className="BulkDelete settings-panel scrollable">
 
       {/* SYNC ALL TRADES */}
       <div className="divider" />
