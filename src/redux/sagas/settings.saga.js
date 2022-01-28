@@ -64,6 +64,18 @@ function* sendTradeLoadMax(action) {
   }
 }
 
+function* sendProfitAccuracy(action) {
+  try {
+    yield axios.put(`/api/settings/profitAccuracy`, action.payload);
+    yield put({ type: 'FETCH_USER' })
+  } catch (error) {
+    console.log('sendTradeLoadMax saga has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 function* killLock(action) {
   try {
     yield axios.put(`/api/settings/killLock`, action.payload);
@@ -81,6 +93,7 @@ function* settingsSaga() {
   yield takeLatest('FETCH_SETTINGS', getAllSettings);
   yield takeLatest('SEND_LOOP_SPEED', loopSpeed);
   yield takeLatest('SET_BULK_PAIR_RATIO', bulkPairRatio);
+  yield takeLatest('SET_PROFIT_ACCURACY', sendProfitAccuracy);
   yield takeLatest('SET_MAX_TRADE_LOAD', sendTradeLoadMax);
   yield takeLatest('TOGGLE_MAINTENANCE', toggleMaintenance);
   yield takeLatest('KILL_LOCK', killLock);

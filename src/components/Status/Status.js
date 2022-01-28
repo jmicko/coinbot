@@ -14,6 +14,7 @@ function Status(props) {
   const [profitDisplay, setProfitDisplay] = useState(1);
   const [availableFundsDisplay, setAvailableFundsDisplay] = useState(false);
   const [feeDisplay, setFeeDisplay] = useState(true);
+  const [profitAccuracy, setProfitAccuracy] = useState(2);
 
   const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
   const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
@@ -49,6 +50,11 @@ function Status(props) {
   useEffect(() => {
     dispatch({ type: 'FETCH_FEES' });
   }, [dispatch])
+
+  // watch to see if accuracy changes
+  useEffect(() => {
+    setProfitAccuracy(Number(props.store.accountReducer.userReducer.profit_accuracy));
+  }, [props.store.accountReducer.userReducer.profit_accuracy])
 
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
   const numberWithCommas = (x) => {
@@ -122,24 +128,24 @@ function Status(props) {
           ? <p className="info status-ticker">
             <strong>24 hour Profit</strong>
             <br />
-            ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[0].sum))}
+            ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[0].sum).toFixed(profitAccuracy))}
           </p>
           : profitDisplay === 2
             ? <p className="info status-ticker">
               <strong>7 Day Profit</strong>
               <br />
-              ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[1]?.sum))}
+              ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[1]?.sum).toFixed(profitAccuracy))}
             </p>
             : profitDisplay === 3
               ? <p className="info status-ticker">
                 <strong>30 Day Profit</strong>
                 <br />
-                ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[2]?.sum))}
+                ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[2]?.sum).toFixed(profitAccuracy))}
               </p>
               : <p className="info status-ticker">
                 <strong>Profit Since Reset</strong>
                 <br />
-                ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[3]?.sum))}
+                ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[3]?.sum).toFixed(profitAccuracy))}
               </p>
         }
       </center>
