@@ -8,6 +8,7 @@ function General(props) {
   const dispatch = useDispatch();
 
   const [max_trade_load, setMaxTradeLoad] = useState(100);
+  const [profit_accuracy, setProfit_accuracy] = useState(2);
 
 
   function pause() {
@@ -40,6 +41,15 @@ function General(props) {
     });
   }
 
+  function sendProfitAccuracy(event) {
+    dispatch({
+      type: 'SET_PROFIT_ACCURACY',
+      payload: {
+        max_trade_load: max_trade_load
+      }
+    });
+  }
+
 
   return (
     <div className="General settings-panel scrollable">
@@ -58,7 +68,7 @@ function General(props) {
         Removes the kill button from the trade pairs. This helps prevent accidental deletion of trades. Highly recommended to leave this on.
       </p>
       {props.store.accountReducer.userReducer.kill_locked
-        ? <button className={`btn-blue medium ${props.theme}`} onClick={( )=> { killLock() }}>Unlock</button>
+        ? <button className={`btn-blue medium ${props.theme}`} onClick={() => { killLock() }}>Unlock</button>
         : <button className={`btn-blue medium ${props.theme}`} onClick={() => { killLock() }}>Lock</button>
       }
       <div className="divider" />
@@ -100,6 +110,26 @@ function General(props) {
       />
       <br />
       <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { sendTradeLoadMax(event) }}>Save Max</button>
+      <div className="divider" />
+
+      {/* PROFIT ACCURACY */}
+      <h4>Profit accuracy</h4>
+      <p>
+        How many decimals to display on screen for profits.
+      </p>
+      <p>Current accuracy: {Number(props.store.accountReducer.userReducer.profit_accuracy)}</p>
+      <label htmlFor="profit_accuracy">
+        Set Max:
+      </label>
+      <input
+        type="number"
+        name="profit_accuracy"
+        value={profit_accuracy}
+        required
+        onChange={(event) => setProfit_accuracy(Number(event.target.value))}
+      />
+      <br />
+      <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { sendProfitAccuracy(event) }}>Save</button>
       <div className="divider" />
     </div>
   );
