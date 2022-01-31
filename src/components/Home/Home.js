@@ -77,7 +77,7 @@ function Home(props) {
               prevMessages.pop();
             }
             let datedMessage = {
-              date: `${Date()}`,
+              date: `${new Date().toLocaleString('en-US')}`,
               message: `${message.message}`
             }
             return [datedMessage, ...prevMessages]
@@ -93,7 +93,7 @@ function Home(props) {
               prevErrors.pop();
             }
             let datedError = {
-              date: `${Date()}`,
+              date: `${new Date().toLocaleString('en-US')}`,
               error: `${message.error}`
             }
             return [datedError, ...prevErrors]
