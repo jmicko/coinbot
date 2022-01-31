@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { connect } from 'react-redux';
+import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 import SingleTrade from '../SingleTrade/SingleTrade'
 import coinbotFilled from "../../../src/coinbotFilled.png";
@@ -8,10 +8,12 @@ import './TradeList.css'
 
 
 function TradeList(props) {
+  const dispatch = useDispatch();
 
   // these will store mapped arrays as html so they can be used after page loads
   const [buys, setBuys] = useState(<></>);
   const [sells, setSells] = useState(<></>);
+
   const [highestBuy, setHighestBuy] = useState(0);
   const [lowestSell, setLowestSell] = useState(0);
   const [alreadyScrolled, setAlreadyScrolled] = useState(false);
@@ -30,7 +32,14 @@ function TradeList(props) {
       setBuys(props.store.ordersReducer.openOrdersInOrder.buys.map((sell) => {
         return <SingleTrade key={sell.id} order={sell} theme={props.theme} />
       }))
+      dispatch({
+        type: 'SET_SCROLL',
+        payload: {
+          canScroll: true
+        }
+      });
     }
+    
   }, [props.store.ordersReducer.openOrdersInOrder.sells, props.store.ordersReducer.openOrdersInOrder.buys]);
 
   const robotRef = useRef()
@@ -47,8 +56,11 @@ function TradeList(props) {
   useEffect(() => {
     // setAlreadyScrolled(true);
 
-    // alreadyScrolled = true;
-    scrollToRobot();
+    if (!props.store.settingsReducer.scrollingReducer.canScroll) {
+      
+      // alreadyScrolled = true;
+      scrollToRobot();
+    }
 
     // triggered on buys because they will load last
   }, [buys])
@@ -58,6 +70,7 @@ function TradeList(props) {
     <div className="TradeList scrollable boxed">
       {/* map the sell array on top and buy array on bottom */}
       {sells}
+      {/* {JSON.stringify(props.store.settingsReducer.scrollingReducer.canScroll)} */}
       <div className='robot' ref={robotRef}>
         {lowestSell !== 0 && highestBuy !== 0 && <p>&#9650; ${(lowestSell - props.priceTicker).toFixed(2)}<br />
           &#9660; ${(props.priceTicker - highestBuy).toFixed(2)}</p>}
