@@ -26,7 +26,7 @@ async function syncOrders(userID, count) {
     user = await databaseClient.getUserAndSettings(userID);
 
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
-      // console.log('count is', count);
+      console.log('count is', count);
 
       // *** GET ORDERS THAT NEED PROCESSING ***
 
