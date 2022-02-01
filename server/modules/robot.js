@@ -325,14 +325,9 @@ function flipTrade(dbOrder, user) {
     // if it is a sell turning into a buy, check if user wants to reinvest the funds
     if (user.reinvest) {
       console.log('settled order', dbOrder);
-      let orderSize = Number(dbOrder.size);
-      // let orderSizeUSD = orderSize * dbOrder.original_buy_price
+      const orderSize = Number(dbOrder.size);
 
-      // let margin = (dbOrder.original_sell_price - dbOrder.original_buy_price)
-      // let grossProfit = Number(margin * dbOrder.size)
-      // let profit = Number(grossProfit - (Number(dbOrder.fill_fees) + Number(dbOrder.previous_fill_fees)))
-      // let profitBTC = Number(Math.floor((profit / dbOrder.price) * reinvestRatio * 100000000) / 100000000)
-      let BTCprofit = calculateProfitBTC(dbOrder);
+      const BTCprofit = calculateProfitBTC(dbOrder);
       console.log('testing calculateProfitBTC', BTCprofit);
 
       const amountToReinvest = BTCprofit * reinvestRatio;
@@ -350,9 +345,6 @@ function flipTrade(dbOrder, user) {
 
       // DONE WITH DO THIS BETTER
 
-
-      // let newPrice = dbOrder.original_buy_price;
-
       // if the new size is bigger than the user set max, just use the user set max instead
       if ((newSize > maxSizeBTC) && (maxTradeSize > 0)) {
         // console.log('!!!!!the new size is TOO BIG!!!!!');
@@ -361,8 +353,9 @@ function flipTrade(dbOrder, user) {
         // console.log('this would be a better size:', maxNewSize.toFixed(8));
         tradeDetails.size = maxSizeBTC;
 
-        if (orderSize === maxSizeBTC) {
-          console.log('the old size is the same as the max!');
+        if (orderSize >= maxSizeBTC) {
+          console.log('the old size is the same as or bigger than the max!');
+          // at this point, the post max ratio should be used
         }
       } else if (newSize < 0.000016) {
         // need to stay above minimum order size
