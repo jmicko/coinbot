@@ -26,7 +26,7 @@ async function syncOrders(userID, count) {
     user = await databaseClient.getUserAndSettings(userID);
 
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
-      console.log('count is', count);
+      // console.log('count is', count);
 
       // *** GET ORDERS THAT NEED PROCESSING ***
 
@@ -86,17 +86,25 @@ async function syncOrders(userID, count) {
       } else {
         // IF QUICK SYNC, only get fills
         // checks for orders if it finds any fills 
-        // console.log('quick sync');
+        // console.log('quick sync, getting fills');
 
+        // todo - this sometimes will cause the loop to stop. Why?
+        
         let fills = await coinbaseClient.getLimitedFills(userID, 1000);
+        // console.log('quick sync, done getting fills. sleeping');
         await sleep(100); // avoid rate limit
-
+        
+        // console.log('quick sync, done sleeping, starting loop through fills');
         for (let i = 0; i < fills.length; i++) {
+          // console.log('quick sync loop through fills, setting fill');
           const fill = fills[i];
+          // console.log('quick sync loop through fills, getting trade from db');
           let dbOrder = await databaseClient.getSingleTrade(fill.order_id);
+          // console.log('quick sync loop through fills, got trade from db');
           // console.log('order from fill', dbOrder?.id);
           // only need to check it if there is an order in the db. Otherwise it might be a basic trade
           if (dbOrder) {
+            // console.log('quick sync loop through fills, comparing trade from db');
 
             if (dbOrder && !dbOrder?.settled) {
               // console.log('!!!!!!!!need to check this order!', dbOrder.settled);

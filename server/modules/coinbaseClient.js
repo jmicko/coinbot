@@ -170,6 +170,7 @@ async function getLimitedFills(userID, limit) {
       let response = await axios.request(options);
       resolve(response.data);
     } catch (err) {
+      console.log(err, 'error in coinbaseClient.getLimitedFills');
       reject(err);
     }
   });
