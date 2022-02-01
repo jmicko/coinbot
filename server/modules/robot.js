@@ -89,11 +89,11 @@ async function syncOrders(userID, count) {
         // console.log('quick sync, getting fills');
 
         // todo - this sometimes will cause the loop to stop. Why?
-        
+
         let fills = await coinbaseClient.getLimitedFills(userID, 1000);
         // console.log('quick sync, done getting fills. sleeping');
         await sleep(100); // avoid rate limit
-        
+
         // console.log('quick sync, done sleeping, starting loop through fills');
         for (let i = 0; i < fills.length; i++) {
           // console.log('quick sync loop through fills, setting fill');
@@ -296,6 +296,7 @@ async function processOrders(userID) {
 // function for flipping sides on a trade
 // Returns the tradeDetails object needed to send trade to CB
 function flipTrade(dbOrder, user) {
+  // console.log('flipping');
   const reinvestRatio = user.reinvest_ratio / 100;
   const maxTradeSize = user.max_trade_size;
   // set up the object to be sent
@@ -311,13 +312,6 @@ function flipTrade(dbOrder, user) {
   };
   // add buy/sell requirement and price
 
-  let orderSize = Number(dbOrder.size);
-
-  let margin = (dbOrder.original_sell_price - dbOrder.original_buy_price)
-  let grossProfit = Number(margin * dbOrder.size)
-  let profit = Number(grossProfit - (dbOrder.fill_fees * 2))
-  let profitBTC = Number(Math.floor((profit / dbOrder.price) * reinvestRatio * 100000000) / 100000000)
-  let newSize = Math.floor((orderSize + profitBTC) * 100000000) / 100000000;
 
   if (dbOrder.side === "buy") {
     // if it was a buy, sell for more. multiply old price
@@ -330,22 +324,42 @@ function flipTrade(dbOrder, user) {
   } else {
     // if it is a sell turning into a buy, check if user wants to reinvest the funds
     if (user.reinvest) {
-      let newPrice = dbOrder.original_buy_price;
-      let newSizeString = newSize.toFixed(8);
-      // console.log('new size after reinvesting', newSizeString);
-      let newSizeNumber = Number(newSizeString);
-      // console.log('new size as number', newSizeNumber, 'price', newPrice);
-      let newSizeUSD = newSizeNumber * newPrice;
-      // console.log('new size in usd', newSizeUSD);
-      // console.log('user set max size in usd', maxTradeSize);
+      console.log('settled order', dbOrder);
+      let orderSize = Number(dbOrder.size);
+      // let orderSizeUSD = orderSize * dbOrder.original_buy_price
+
+      // let margin = (dbOrder.original_sell_price - dbOrder.original_buy_price)
+      // let grossProfit = Number(margin * dbOrder.size)
+      // let profit = Number(grossProfit - (Number(dbOrder.fill_fees) + Number(dbOrder.previous_fill_fees)))
+      // let profitBTC = Number(Math.floor((profit / dbOrder.price) * reinvestRatio * 100000000) / 100000000)
+      let BTCprofit = calculateProfitBTC(dbOrder);
+      console.log('testing calculateProfitBTC', BTCprofit);
+      let newSize = Math.floor((orderSize + BTCprofit) * 100000000) / 100000000;
+
+      // DO THIS BETTER
+      const buyPrice = dbOrder.original_buy_price;
+      const maxSizeBTC = Number((maxTradeSize / buyPrice).toFixed(8));
+      console.log('reinvest ratio', reinvestRatio);
+      console.log('new size', newSize);
+      console.log('old size', orderSize);
+      console.log('MAX SIZE USD:', maxTradeSize, 'MAX SIZE BTC', maxSizeBTC);
+
+      // DONE WITH DO THIS BETTER
+
+
+      // let newPrice = dbOrder.original_buy_price;
 
       // if the new size is bigger than the user set max, just use the user set max instead
-      if ((newSizeUSD > maxTradeSize) && (maxTradeSize > 0)) {
+      if ((newSize > maxSizeBTC) && (maxTradeSize > 0)) {
         // console.log('!!!!!the new size is TOO BIG!!!!!');
         // divide the max trade size by the price to get new size
-        let maxNewSize = (maxTradeSize / newPrice);
+        // let maxNewSize = maxSizeBTC;
         // console.log('this would be a better size:', maxNewSize.toFixed(8));
-        tradeDetails.size = maxNewSize.toFixed(8);
+        tradeDetails.size = maxSizeBTC;
+
+        if (orderSize === maxSizeBTC) {
+          console.log('the old size is the same as the max!');
+        }
       } else if (newSize < 0.000016) {
         // need to stay above minimum order size
         tradeDetails.size = 0.000016;
@@ -364,6 +378,16 @@ function flipTrade(dbOrder, user) {
   }
   // return the tradeDetails object
   return tradeDetails;
+}
+
+function calculateProfitBTC(dbOrder) {
+
+  let margin = (dbOrder.original_sell_price - dbOrder.original_buy_price)
+  let grossProfit = Number(margin * dbOrder.size)
+  let profit = Number(grossProfit - (Number(dbOrder.fill_fees) + Number(dbOrder.previous_fill_fees)))
+  let profitBTC = Number((Math.floor((profit / dbOrder.price) * 100000000) / 100000000))
+
+  return profitBTC;
 }
 
 
