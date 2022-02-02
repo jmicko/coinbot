@@ -32,6 +32,13 @@ function Home(props) {
   const [tradeType, setTradeType] = useState('pair');
   const [priceTicker, setPriceTicker] = useState(0);
 
+  // for checkbox to auto scroll
+  const [isAutoScroll, setIsAutoScroll] = useState(false);
+
+  const handleAutoScrollChange = () => {
+    setIsAutoScroll(!isAutoScroll);
+  };
+
   const getOpenOrders = useCallback(
     () => {
       dispatch({ type: 'FETCH_ORDERS' });
@@ -161,8 +168,8 @@ function Home(props) {
       {
         props.store.accountReducer.userReducer.approved
           ? width < 800 && mobilePage === 'tradeList'
-            ? <TradeList priceTicker={priceTicker} theme={theme} />
-            : width > 800 && <TradeList priceTicker={priceTicker} theme={theme} />
+            ? <TradeList isAutoScroll={isAutoScroll} priceTicker={priceTicker} theme={theme} />
+            : width > 800 && <TradeList isAutoScroll={isAutoScroll} priceTicker={priceTicker} theme={theme} />
           : width < 800 && mobilePage === 'tradeList'
             ? <NotApproved theme={theme} />
             : width > 800 && <NotApproved theme={theme} />
@@ -172,7 +179,7 @@ function Home(props) {
         ? <Messages theme={theme} messages={messages} messagesCount={messagesCount} errors={errors} errorCount={errorCount} />
         : width > 800 && <Messages theme={theme} messages={messages} messagesCount={messagesCount} errors={errors} errorCount={errorCount} />}
 
-      <Status theme={theme} priceTicker={priceTicker} />
+      <Status theme={theme} priceTicker={priceTicker} isAutoScroll={isAutoScroll} handleAutoScrollChange={handleAutoScrollChange} />
       <Settings showSettings={showSettings} clickSettings={clickSettings} theme={theme} priceTicker={priceTicker} />
       {width < 800 && <MobileNav theme={theme} setMobilePage={setMobilePage} />}
     </div>

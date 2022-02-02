@@ -210,6 +210,20 @@ function Status(props) {
           <button className={`btn-blue ${props.theme}`} onClick={refresh}>Refresh</button>
         </p>
       </center>
+
+      <center>
+        <p className="info status-ticker auto-scroll"><strong>Auto Scroll</strong>
+          {/* <br /> */}
+          <input
+            type="checkbox"
+            id="topping"
+            name="topping"
+            value="Paneer"
+            checked={props.isAutoScroll}
+            onChange={props.handleAutoScrollChange}
+          />
+        </p>
+      </center>
     </div>
   )
 }
