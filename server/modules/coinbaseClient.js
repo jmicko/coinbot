@@ -163,7 +163,7 @@ async function getLimitedFills(userID, limit) {
 
       const options = {
         method: 'GET',
-        timeout: 1000,
+        timeout: 10000,
         url: `${API_URI}/fills?product_id=BTC-USD&profile_id=default&limit=${limit}`,
         headers: {
           Accept: 'application/json',
