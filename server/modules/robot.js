@@ -52,7 +52,7 @@ async function syncOrders(userID, count) {
           // find the oldest date in the returned orders
           const oldestDate = cbOrders[cbOrders.length - 1].created_at;
 
-          await sleep(100); // avoid rate limit
+          await sleep(80); // avoid rate limit
           // use the oldest date to get open orders before that date
           const olderOrders = await coinbaseClient.getOpenOrdersBeforeDate(userID, oldestDate);
 
@@ -83,13 +83,13 @@ async function syncOrders(userID, count) {
       } else {
         // IF QUICK SYNC, only get fills
         // checks for orders if it finds any fills 
-        // console.log('quick sync, getting fills');
+        console.log('quick sync', count);
 
         // todo - this sometimes will cause the loop to stop. Why?
 
-        const fills = await coinbaseClient.getLimitedFills(userID, 1000);
+        const fills = await coinbaseClient.getLimitedFills(userID, 500);
         // console.log('quick sync, done getting fills. sleeping');
-        await sleep(100); // avoid rate limit
+        // await sleep(100); // avoid rate limit
 
         // console.log('quick sync, done sleeping, starting loop through fills');
         for (let i = 0; i < fills.length; i++) {
@@ -207,7 +207,7 @@ async function syncOrders(userID, count) {
     if (user) {
       setTimeout(() => {
         syncOrders(userID, count + 1);
-      }, (botSettings.loop_speed * 100));
+      }, (botSettings.loop_speed * 10));
     } else {
       console.log('user is NOT THERE, stopping loop for user');
     }
@@ -412,7 +412,7 @@ async function settleMultipleOrders(ordersArray, userID) {
         try {
           // get all the order details from cb
           // console.log('ORDER TO CHECK:', orderToCheck);
-          await sleep(100); // avoid rate limiting
+          await sleep(80); // avoid rate limiting
           let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID);
           // update the order in the db
           const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
@@ -616,7 +616,7 @@ async function cancelMultipleOrders(ordersArray, userID) {
           }
         }
         // wait to prevent rate limiting
-        await sleep(100);
+        await sleep(80);
       } //end for loop
       // if all goes well, resolve promise with success message
       resolve({
@@ -673,8 +673,6 @@ async function autoSetup(user, parameters) {
     return;
   }
 
-  // console.log("autoSetup parameters", parameters);
-
   // assume size is in btc
   let convertedAmount = parameters.size;
 
@@ -684,7 +682,6 @@ async function autoSetup(user, parameters) {
     // get the BTC size from the entered USD size
     convertedAmount = Number(Math.floor((parameters.size / parameters.startingValue) * 100000000)) / 100000000;
   }
-  // console.log(convertedAmount);
 
   // calculate original sell price
   let original_sell_price = (Math.round((parameters.startingValue * (Number(parameters.trade_pair_ratio) + 100))) / 100);
@@ -714,12 +711,12 @@ async function autoSetup(user, parameters) {
 
     // tell the DOM to update
     socketClient.emit('message', {
-      message: `trade was reordered`,
+      message: `trade was auto-placed`,
       orderUpdate: true,
       userID: Number(user.id)
     });
 
-    await robot.sleep(1000);
+    await robot.sleep(500);
 
     // create new parameters 
 
