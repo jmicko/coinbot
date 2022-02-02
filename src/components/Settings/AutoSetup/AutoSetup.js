@@ -20,21 +20,12 @@ function AutoSetup(props) {
   const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
   const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
 
-  // const [keepTrading, setKeepTrading] = useState(false);
-
 
   useEffect(() => {
     if (size) {
       calculateResults();
     }
   }, [startingValue, increment, size, sizeType, props.priceTicker])
-
-  // useEffect(() => {
-  //   if (props.store.accountReducer.accountReducer) {
-  //     let USD = props.store.accountReducer.accountReducer.filter(account => account.currency === 'USD');
-  //     setAvailableFundsUSD(USD[0]);
-  //   }
-  // }, [props.store.accountReducer.accountReducer]);
 
   useEffect(() => {
     if (props.store.accountReducer.accountReducer) {
@@ -52,23 +43,17 @@ function AutoSetup(props) {
 
   function calculateResults() {
     let availableFunds = availableFundsUSD.available;
-
     // this is the current price point that the loop is working with
     let loopPrice = startingValue;
-
     // this is the price BTC is currently trading at
     let tradingPrice = props.priceTicker;
-
     // this is how many times the loop has looped
     let count = 0;
-
-    // setSetupResults(startingValue)
 
     if (sizeType === "USD") {
       // logic for when size is in USD
       while ((size <= availableFunds) && (count < 10000)) {
         let actualSize = size;
-
         // if the loop price is higher than the trading price,
         // need to find actual cost of the trade at that volume
         if (loopPrice >= tradingPrice) {
@@ -89,12 +74,10 @@ function AutoSetup(props) {
       }
       setTotalTrades(count);
     } else {
-      // logic for when size is in btc 
-
+      // logic for when size is in btc
+      // need a variable for usd size since it will change
       let USDSize = size * loopPrice;
-      console.log('usd size', USDSize);
       while ((USDSize <= availableFunds) && (count < 10000)) {
-        
         // if the loop price is higher than the trading price,
         // need to find current cost of the trade at that volume
         if (loopPrice >= tradingPrice) {
@@ -103,7 +86,7 @@ function AutoSetup(props) {
           // USDSize = actualUSDSize;
         }
         // each loop needs to buy BTC with the USD size
-        // this will lower the value of available funds by the size
+        // this will lower the value of available funds by the USD size
         availableFunds -= USDSize;
         // then it will increase the final price by the increment value
         setSetupResults(loopPrice);
