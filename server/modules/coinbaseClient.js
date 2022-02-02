@@ -135,7 +135,13 @@ async function getAllOrders(userID) {
 
 
 async function getLimitedFills(userID, limit) {
+  let finished = false;
   return new Promise(async (resolve, reject) => {
+    setTimeout(() => {
+      if (!finished) {
+        console.log('did not finish!!!');
+      }
+    }, 10000);
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
@@ -157,6 +163,7 @@ async function getLimitedFills(userID, limit) {
 
       const options = {
         method: 'GET',
+        timeout: 1000,
         url: `${API_URI}/fills?product_id=BTC-USD&profile_id=default&limit=${limit}`,
         headers: {
           Accept: 'application/json',
@@ -168,10 +175,13 @@ async function getLimitedFills(userID, limit) {
       };
 
       let response = await axios.request(options);
+      console.log('resolving getLimitedFills');
       resolve(response.data);
+      finished = true;
     } catch (err) {
       console.log(err, 'error in coinbaseClient.getLimitedFills');
       reject(err);
+      finished = true;
     }
   });
 }
