@@ -124,7 +124,7 @@ function Admin(props) {
         This will adjust how often the bot does a full sync. A full sync takes longer and is more CPU intensive,
         But will check for and delete extra trades etc. A quick sync only checks for recently settled trades.
       </p>
-      <p>Current frequency: Every {props.store.settingsReducer.allSettingsReducer.loop_speed} loop{props.store.settingsReducer.allSettingsReducer.loop_speed > 1 && 's'}</p>
+      <p>Current frequency: Every {props.store.settingsReducer.allSettingsReducer.full_sync} loop{props.store.settingsReducer.allSettingsReducer.full_sync > 1 && 's'}</p>
       <label htmlFor="fullSync">
         Set frequency:
       </label>
@@ -140,7 +140,7 @@ function Admin(props) {
       />
       <br />
       <br />
-      <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendFullSync() }}>Save speed</button>
+      <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendFullSync() }}>Save frequency</button>
 
       <div className="divider" />
 

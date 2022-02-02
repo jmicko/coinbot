@@ -51,15 +51,16 @@ router.put('/loopSpeed', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
- * PUT route updating bot speed
+ * PUT route updating fullSync
  */
-router.put('/loopSpeed', rejectUnauthenticated, async (req, res) => {
+router.put('/fullSync', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   const fullSync = req.body.fullSync;
   if (user.admin && fullSync <= 100 && fullSync >= 1) {
     try {
-      // const queryText = `UPDATE "bot_settings" SET "full_sync" = $1;`;
-      // await pool.query(queryText, [fullSync]);
+      console.log('full_sync rroute hit', fullSync);
+      const queryText = `UPDATE "bot_settings" SET "full_sync" = $1;`;
+      await pool.query(queryText, [fullSync]);
       res.sendStatus(200);
     } catch (err) {
       console.log('error with loop speed route', err);
