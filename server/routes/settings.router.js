@@ -85,6 +85,22 @@ router.put('/tradeLoadMax', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
+* PUT route to change status of reinvestment ratio
+*/
+router.put('/postMaxReinvestRatio', rejectUnauthenticated, async (req, res) => {
+  const user = req.user;
+  try {
+    console.log("postMaxReinvestRatio route hit", req.body);
+    const queryText = `UPDATE "user_settings" SET "post_max_reinvest_ratio" = $1 WHERE "userID" = $2`;
+    await pool.query(queryText, [req.body.postMaxReinvestRatio, user.id]);
+    res.sendStatus(200);
+  } catch (err) {
+    console.log(err, 'problem in postMaxReinvestRatio ROUTE');
+    res.sendStatus(500);
+  }
+});
+
+/**
  * PUT route setting profit accuracy
  */
 router.put('/profitAccuracy', rejectUnauthenticated, async (req, res) => {
