@@ -65,8 +65,14 @@ function Admin(props) {
     if (props.store.settingsReducer.allSettingsReducer.loop_speed) {
       handleLoopSpeedChange(props.store.settingsReducer.allSettingsReducer.loop_speed);
     }
-
   }, [props.store.settingsReducer.allSettingsReducer.loop_speed]);
+
+    useEffect(() => {
+    if (props.store.settingsReducer.allSettingsReducer.full_sync) {
+      handleFullSyncChange(props.store.settingsReducer.allSettingsReducer.full_sync);
+    }
+
+  }, [props.store.settingsReducer.allSettingsReducer.full_sync]);
 
   useEffect(() => {
     getUsers();
