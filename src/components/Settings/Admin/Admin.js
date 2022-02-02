@@ -8,6 +8,7 @@ import './Admin.css'
 function Admin(props) {
   const dispatch = useDispatch();
   const [loopSpeed, setLoopSpeed] = useState(1);
+  const [fullSync, setFullSync] = useState(10);
 
   const getUsers = useCallback(
     () => {
@@ -34,6 +35,15 @@ function Admin(props) {
     })
   }
 
+  function sendFullSync() {
+    dispatch({
+      type: 'SEND_FULL_SYNC',
+      payload: {
+        fullSync: fullSync
+      }
+    })
+  }
+
   function toggleMaintenance() {
     dispatch({
       type: 'TOGGLE_MAINTENANCE',
@@ -47,12 +57,22 @@ function Admin(props) {
     setLoopSpeed(speed);
   }
 
+  function handleFullSyncChange(speed) {
+    setFullSync(speed);
+  }
+
   useEffect(() => {
     if (props.store.settingsReducer.allSettingsReducer.loop_speed) {
       handleLoopSpeedChange(props.store.settingsReducer.allSettingsReducer.loop_speed);
     }
-
   }, [props.store.settingsReducer.allSettingsReducer.loop_speed]);
+
+  useEffect(() => {
+    if (props.store.settingsReducer.allSettingsReducer.full_sync) {
+      handleFullSyncChange(props.store.settingsReducer.allSettingsReducer.full_sync);
+    }
+
+  }, [props.store.settingsReducer.allSettingsReducer.full_sync]);
 
   useEffect(() => {
     getUsers();
@@ -60,7 +80,7 @@ function Admin(props) {
   }, [getUsers, getAllSettings]);
 
   return (
-    <div className="Admin">
+    <div className="Admin settings-panel scrollable">
       {/* <center>
         <p>Admin Settings Page</p>
       </center> */}
@@ -100,6 +120,33 @@ function Admin(props) {
       <br />
       <br />
       <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendLoopSpeed() }}>Save speed</button>
+
+      <div className="divider" />
+
+      {/* SET FULL SYNC FREQUENCY */}
+
+      <h4>Set Full Sync Frequency</h4>
+      <p>
+        This will adjust how often the bot does a full sync. A full sync takes longer and is more CPU intensive,
+        but will check for and delete extra trades etc. A quick sync only checks for recently settled trades.
+      </p>
+      <p>Current frequency: Every {props.store.settingsReducer.allSettingsReducer.full_sync} loop{props.store.settingsReducer.allSettingsReducer.full_sync > 1 && 's'}</p>
+      <label htmlFor="fullSync">
+        Set frequency:
+      </label>
+      <input
+        type="number"
+        name="fullSync"
+        value={fullSync}
+        step={1}
+        max={100}
+        min={1}
+        required
+        onChange={(event) => handleFullSyncChange(Number(event.target.value))}
+      />
+      <br />
+      <br />
+      <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendFullSync() }}>Save frequency</button>
 
       <div className="divider" />
 

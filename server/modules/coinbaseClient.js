@@ -175,7 +175,7 @@ async function getLimitedFills(userID, limit) {
       };
 
       let response = await axios.request(options);
-      console.log('resolving getLimitedFills');
+      // console.log('resolving getLimitedFills');
       resolve(response.data);
       finished = true;
     } catch (err) {

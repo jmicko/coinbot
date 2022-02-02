@@ -17,8 +17,20 @@ function* getAllSettings() {
 
 function* loopSpeed(action) {
   try {
-    const response = yield axios.put(`/api/settings/loopSpeed`, action.payload);
-    yield put({ type: 'FETCH_SETTINGS', payload: response.data })
+    yield axios.put(`/api/settings/loopSpeed`, action.payload);
+    yield put({ type: 'FETCH_SETTINGS' })
+  } catch (error) {
+    console.log('setting bot speed has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
+function* fullSync(action) {
+  try {
+    yield axios.put(`/api/settings/fullSync`, action.payload);
+    yield put({ type: 'FETCH_SETTINGS' })
   } catch (error) {
     console.log('setting bot speed has failed', error);
     if (error.response.status === 403) {
@@ -29,8 +41,8 @@ function* loopSpeed(action) {
 
 function* toggleMaintenance(action) {
   try {
-    const response = yield axios.put(`/api/settings/toggleMaintenance`, action.payload);
-    yield put({ type: 'FETCH_SETTINGS', payload: response.data })
+    yield axios.put(`/api/settings/toggleMaintenance`, action.payload);
+    yield put({ type: 'FETCH_SETTINGS' })
   } catch (error) {
     console.log('setting bot speed has failed', error);
     if (error.response.status === 403) {
@@ -104,6 +116,7 @@ function* killLock(action) {
 function* settingsSaga() {
   yield takeLatest('FETCH_SETTINGS', getAllSettings);
   yield takeLatest('SEND_LOOP_SPEED', loopSpeed);
+  yield takeLatest('SEND_FULL_SYNC', fullSync);
   yield takeLatest('SET_BULK_PAIR_RATIO', bulkPairRatio);
   yield takeLatest('SET_PROFIT_ACCURACY', sendProfitAccuracy);
   yield takeLatest('SET_MAX_TRADE_LOAD', sendTradeLoadMax);

@@ -16,17 +16,15 @@ async function startSync() {
 
 // REST protocol to find orders that have settled on coinbase
 async function syncOrders(userID, count) {
-  if (count > 9) {
-    count = 0
-  }
   let user;
   let botSettings;
   try {
     botSettings = await databaseClient.getBotSettings();
     user = await databaseClient.getUserAndSettings(userID);
-
+    if (count > botSettings.full_sync - 1) {
+      count = 0
+    }
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
-      // console.log('count is', count);
 
       // *** GET ORDERS THAT NEED PROCESSING ***
 
@@ -34,7 +32,6 @@ async function syncOrders(userID, count) {
       let dbOrders = [];
       let cbOrders = [];
       let ordersToCheck = [];
-
 
       if (count === 0) {
         // console.log('---FULL SYNC---');
@@ -86,12 +83,12 @@ async function syncOrders(userID, count) {
       } else {
         // IF QUICK SYNC, only get fills
         // checks for orders if it finds any fills 
-        console.log('quick sync, getting fills');
+        // console.log('quick sync, getting fills');
 
         // todo - this sometimes will cause the loop to stop. Why?
 
         const fills = await coinbaseClient.getLimitedFills(userID, 1000);
-        console.log('quick sync, done getting fills. sleeping');
+        // console.log('quick sync, done getting fills. sleeping');
         await sleep(100); // avoid rate limit
 
         // console.log('quick sync, done sleeping, starting loop through fills');
@@ -335,7 +332,7 @@ function flipTrade(dbOrder, user) {
 
       const amountToReinvest = BTCprofit * reinvestRatio;
       // console.log('to reinvest', amountToReinvest);
-      
+
       const newSize = Math.floor((orderSize + amountToReinvest) * 100000000) / 100000000;
 
       // DO THIS BETTER
