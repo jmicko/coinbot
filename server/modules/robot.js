@@ -86,12 +86,12 @@ async function syncOrders(userID, count) {
       } else {
         // IF QUICK SYNC, only get fills
         // checks for orders if it finds any fills 
-        // console.log('quick sync, getting fills');
+        console.log('quick sync, getting fills');
 
         // todo - this sometimes will cause the loop to stop. Why?
 
-        let fills = await coinbaseClient.getLimitedFills(userID, 1000);
-        // console.log('quick sync, done getting fills. sleeping');
+        const fills = await coinbaseClient.getLimitedFills(userID, 1000);
+        console.log('quick sync, done getting fills. sleeping');
         await sleep(100); // avoid rate limit
 
         // console.log('quick sync, done sleeping, starting loop through fills');
@@ -99,16 +99,16 @@ async function syncOrders(userID, count) {
           // console.log('quick sync loop through fills, setting fill');
           const fill = fills[i];
           // console.log('quick sync loop through fills, getting trade from db');
-          let dbOrder = await databaseClient.getSingleTrade(fill.order_id);
+          const singleDbOrder = await databaseClient.getSingleTrade(fill.order_id);
           // console.log('quick sync loop through fills, got trade from db');
-          // console.log('order from fill', dbOrder?.id);
+          // console.log('order from fill', singleDbOrder?.id);
           // only need to check it if there is an order in the db. Otherwise it might be a basic trade
-          if (dbOrder) {
+          if (singleDbOrder) {
             // console.log('quick sync loop through fills, comparing trade from db');
 
-            if (dbOrder && !dbOrder?.settled) {
-              // console.log('!!!!!!!!need to check this order!', dbOrder.settled);
-              ordersToCheck.push(dbOrder);
+            if (singleDbOrder && !singleDbOrder?.settled) {
+              // console.log('!!!!!!!!need to check this order!', singleDbOrder.settled);
+              ordersToCheck.push(singleDbOrder);
             } else {
               // console.log('DO NOT check this order! or any orders after this because they will be processed already');
               i += fills.length;
