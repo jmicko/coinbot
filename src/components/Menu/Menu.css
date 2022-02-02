@@ -1,5 +1,5 @@
 .Menu {
-    grid-column      : 4;
+    grid-column      : 4/5;
     grid-row         : 1/2;
     /* display       : block; */
     /* display       : flex; */
@@ -29,15 +29,17 @@
         /* display    : block; */
         display       : flex;
         flex-direction: row;
-        /* margin: auto auto auto 0; */
-        width: 100%;
+        /* margin     : auto auto auto 0; */
+        width         : 100%;
     }
+
     .greeting {
-        margin: auto 1rem;
+        margin      : auto 1rem;
         margin-right: auto;
     }
+
     .menu-buttons {
-        margin-left: auto;
+        margin-left : auto;
         margin-right: 0;
     }
 }
