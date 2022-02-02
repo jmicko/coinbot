@@ -1,20 +1,19 @@
 .Status {
-    grid-column     : 2/4;
-    grid-row        : 1;
-    /* display: block; */
+    grid-column: 2/4;
+    grid-row   : 1;
+    display    : flex;
+    flex-wrap  : wrap;
 }
 
 .status-ticker {
     width: fit-content;
-    /* background-color: aqua; */
-    float: left;
 }
 
 @media (max-width: 800px) {
     .Status {
         grid-column: 2/3;
-        grid-row: 3;
-        /* display: block; */
+        grid-row   : 3;
+        /* display : block; */
     }
 
 }
