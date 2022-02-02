@@ -161,7 +161,7 @@ function Investment(props) {
                   <p>** WARNING! ** <br /> Setting the reinvestment ratio higher than 100% will take money from your available funds!
                     You will need to keep an eye on the bot and make sure you don't run out!</p>
                 }
-                <p>Current post-max reinvestment ratio: {props.store.accountReducer.userReducer.reinvest_ratio}%</p>
+                <p>Current post-max reinvestment ratio: {props.store.accountReducer.userReducer.post_max_reinvest_ratio}%</p>
                 <label htmlFor="postMaxReinvestRatio">
                   Set Ratio:
                 </label>
