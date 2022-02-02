@@ -56,7 +56,7 @@ function TradeList(props) {
   useEffect(() => {
     // setAlreadyScrolled(true);
 
-    if (!props.store.settingsReducer.scrollingReducer.canScroll) {
+    if (!props.store.settingsReducer.scrollingReducer.canScroll || props.isAutoScroll) {
       
       // alreadyScrolled = true;
       scrollToRobot();
