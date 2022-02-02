@@ -90,7 +90,7 @@ router.put('/tradeLoadMax', rejectUnauthenticated, async (req, res) => {
 router.put('/postMaxReinvestRatio', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
-    console.log("postMaxReinvestRatio route hit");
+    console.log("postMaxReinvestRatio route hit", req.body);
     // const queryText = `UPDATE "user_settings" SET "reinvest_ratio" = $1 WHERE "userID" = $2`;
     // await pool.query(queryText, [req.body.reinvest_ratio, user.id]);
     res.sendStatus(200);

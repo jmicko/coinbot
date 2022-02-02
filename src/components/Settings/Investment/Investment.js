@@ -156,7 +156,9 @@ function Investment(props) {
               <br />
               <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { storeMaxTradeSize(event) }}>Save Max</button>
               <>
-                <p>How much of the profits should the bot reinvest after the max is hit? Leave this at 0 to stop reinvestment after the max.</p>
+                <p>How much of the profits should the bot reinvest after the max is hit? 
+                  Leave this at 0 to stop reinvestment after the max. If set above 0, there is no limit to how large the
+                  size will get. Probably a good idea to stay under 100%</p>
                 {((postMaxReinvestRatio > 100) || (props.store.accountReducer.userReducer.reinvest_ratio > 100)) &&
                   <p>** WARNING! ** <br /> Setting the reinvestment ratio higher than 100% will take money from your available funds!
                     You will need to keep an eye on the bot and make sure you don't run out!</p>
@@ -175,7 +177,7 @@ function Investment(props) {
                   onChange={(event) => setPostMaxReinvestRatio(event.target.value)}
                 />
                 <br />
-                <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { savePostMaxReinvestRatio(event) }}>Save reinvestment ratio</button>
+                <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { savePostMaxReinvestRatio(event) }}>Save post-max ratio</button>
                 {/* <div className="divider" /> */}
               </>
             </>
