@@ -39,7 +39,7 @@ function Admin(props) {
     dispatch({
       type: 'SEND_FULL_SYNC',
       payload: {
-        loopSpeed: fullSync
+        fullSync: fullSync
       }
     })
   }
