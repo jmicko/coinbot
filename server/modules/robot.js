@@ -298,6 +298,7 @@ async function processOrders(userID) {
 function flipTrade(dbOrder, user) {
   // console.log('flipping');
   const reinvestRatio = user.reinvest_ratio / 100;
+  const postMaxReinvestRatio = user.post_max_reinvest_ratio / 100;
   const maxTradeSize = user.max_trade_size;
   // set up the object to be sent
   const tradeDetails = {
@@ -333,7 +334,7 @@ function flipTrade(dbOrder, user) {
       const amountToReinvest = BTCprofit * reinvestRatio;
       console.log('to reinvest', amountToReinvest);
       
-      let newSize = Math.floor((orderSize + amountToReinvest) * 100000000) / 100000000;
+      const newSize = Math.floor((orderSize + amountToReinvest) * 100000000) / 100000000;
 
       // DO THIS BETTER
       const buyPrice = dbOrder.original_buy_price;
@@ -345,17 +346,18 @@ function flipTrade(dbOrder, user) {
 
       // DONE WITH DO THIS BETTER
 
-      // if the new size is bigger than the user set max, just use the user set max instead
       if ((newSize > maxSizeBTC) && (maxTradeSize > 0)) {
-        // console.log('!!!!!the new size is TOO BIG!!!!!');
-        // divide the max trade size by the price to get new size
-        // let maxNewSize = maxSizeBTC;
-        // console.log('this would be a better size:', maxNewSize.toFixed(8));
+        // if the new size is bigger than the user set max, just use the user set max instead
         tradeDetails.size = maxSizeBTC;
 
-        if (orderSize >= maxSizeBTC) {
+        if ((orderSize >= maxSizeBTC) && (postMaxReinvestRatio > 0)) {
           console.log('the old size is the same as or bigger than the max!');
           // at this point, the post max ratio should be used
+          const postMaxAmountToReinvest = BTCprofit * postMaxReinvestRatio;
+          console.log('postMaxAmountToReinvest', postMaxAmountToReinvest);
+          const postMaxNewSize = Math.floor((orderSize + postMaxAmountToReinvest) * 100000000) / 100000000;
+          console.log('postMaxNewSize', postMaxNewSize);
+          tradeDetails.size = postMaxNewSize;
         }
       } else if (newSize < 0.000016) {
         // need to stay above minimum order size
