@@ -55,7 +55,16 @@ router.put('/loopSpeed', rejectUnauthenticated, async (req, res) => {
  */
 router.put('/fullSync', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
-  const fullSync = req.body.fullSync;
+  let fullSync = Math.round(req.body.fullSync);
+
+  if (fullSync < 1) {
+    fullSync = 1;
+  } else if (fullSync > 100) {
+    fullSync = 100;
+  }
+
+  console.log('FULL SYNC', fullSync);
+
   if (user.admin && fullSync <= 100 && fullSync >= 1) {
     try {
       console.log('full_sync rroute hit', fullSync);

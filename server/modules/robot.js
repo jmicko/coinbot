@@ -21,15 +21,10 @@ async function syncOrders(userID, count) {
   try {
     botSettings = await databaseClient.getBotSettings();
     user = await databaseClient.getUserAndSettings(userID);
-
-    console.log('bot settings', botSettings.full_sync);
-
     if (count > botSettings.full_sync - 1) {
       count = 0
     }
-
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
-      // console.log('count is', count);
 
       // *** GET ORDERS THAT NEED PROCESSING ***
 
@@ -38,9 +33,8 @@ async function syncOrders(userID, count) {
       let cbOrders = [];
       let ordersToCheck = [];
 
-
       if (count === 0) {
-        console.log('---FULL SYNC---');
+        // console.log('---FULL SYNC---');
 
         // get lists of trades to compare which have been settled
         const results = await Promise.all([
@@ -89,7 +83,7 @@ async function syncOrders(userID, count) {
       } else {
         // IF QUICK SYNC, only get fills
         // checks for orders if it finds any fills 
-        console.log('quick sync, getting fills');
+        // console.log('quick sync, getting fills');
 
         // todo - this sometimes will cause the loop to stop. Why?
 
