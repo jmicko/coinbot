@@ -89,7 +89,29 @@ function AutoSetup(props) {
       }
       setTotalTrades(count);
     } else {
-      // logic for when size is in btc
+      // logic for when size is in btc 
+
+      let USDSize = size * loopPrice;
+      console.log('usd size', USDSize);
+      while ((USDSize <= availableFunds) && (count < 10000)) {
+        
+        // if the loop price is higher than the trading price,
+        // need to find current cost of the trade at that volume
+        if (loopPrice >= tradingPrice) {
+          // change to size at trading price
+          USDSize = tradingPrice * size;
+          // USDSize = actualUSDSize;
+        }
+        // each loop needs to buy BTC with the USD size
+        // this will lower the value of available funds by the size
+        availableFunds -= USDSize;
+        // then it will increase the final price by the increment value
+        setSetupResults(loopPrice);
+        loopPrice += increment;
+        USDSize = size * loopPrice;
+        count++;
+      }
+      setTotalTrades(count);
     }
   }
 
