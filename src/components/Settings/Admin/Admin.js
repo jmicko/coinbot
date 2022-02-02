@@ -122,7 +122,7 @@ function Admin(props) {
       <h4>Set Full Sync Frequency</h4>
       <p>
         This will adjust how often the bot does a full sync. A full sync takes longer and is more CPU intensive,
-        But will check for and delete extra trades etc. A quick sync only checks for recently settled trades.
+        but will check for and delete extra trades etc. A quick sync only checks for recently settled trades.
       </p>
       <p>Current frequency: Every {props.store.settingsReducer.allSettingsReducer.full_sync} loop{props.store.settingsReducer.allSettingsReducer.full_sync > 1 && 's'}</p>
       <label htmlFor="fullSync">
