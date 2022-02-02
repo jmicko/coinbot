@@ -673,8 +673,6 @@ async function autoSetup(user, parameters) {
     return;
   }
 
-  // console.log("autoSetup parameters", parameters);
-
   // assume size is in btc
   let convertedAmount = parameters.size;
 
@@ -684,7 +682,6 @@ async function autoSetup(user, parameters) {
     // get the BTC size from the entered USD size
     convertedAmount = Number(Math.floor((parameters.size / parameters.startingValue) * 100000000)) / 100000000;
   }
-  // console.log(convertedAmount);
 
   // calculate original sell price
   let original_sell_price = (Math.round((parameters.startingValue * (Number(parameters.trade_pair_ratio) + 100))) / 100);
@@ -714,7 +711,7 @@ async function autoSetup(user, parameters) {
 
     // tell the DOM to update
     socketClient.emit('message', {
-      message: `trade was reordered`,
+      message: `trade was auto-placed`,
       orderUpdate: true,
       userID: Number(user.id)
     });
