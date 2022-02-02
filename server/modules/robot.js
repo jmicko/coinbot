@@ -196,6 +196,8 @@ async function syncOrders(userID, count) {
       console.log('bad gateway');
     } else if (err.response?.statusText === 'Gateway Timeout') {
       console.log('Gateway Timeout');
+    } else if (err.code === 'ECONNABORTED') {
+      console.log('10 sec timeout');
     } else {
       console.log(err, 'unknown error at end of syncOrders');
     }

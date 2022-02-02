@@ -18,8 +18,7 @@ function AutoSetup(props) {
   const [totalTrades, setTotalTrades] = useState(false);
 
   const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
-
-  // const [keepTrading, setKeepTrading] = useState(false);
+  const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
 
 
   useEffect(() => {
@@ -32,6 +31,8 @@ function AutoSetup(props) {
     if (props.store.accountReducer.accountReducer) {
       let USD = props.store.accountReducer.accountReducer.filter(account => account.currency === 'USD');
       setAvailableFundsUSD(USD[0]);
+      let BTC = props.store.accountReducer.accountReducer.filter(account => account.currency === 'BTC');
+      setAvailableFundsBTC(BTC[0]);
     }
   }, [props.store.accountReducer.accountReducer]);
 
@@ -41,36 +42,60 @@ function AutoSetup(props) {
   }
 
   function calculateResults() {
-    let availableFunds = availableFundsUSD;
-    // let startingPrice = startingValue;
-    let finalPrice = startingValue;
+    let availableFunds = availableFundsUSD.available;
+    // this is the current price point that the loop is working with
+    let loopPrice = startingValue;
+    // this is the price BTC is currently trading at
     let tradingPrice = props.priceTicker;
+    // this is how many times the loop has looped
     let count = 0;
-    // setSetupResults(startingValue)
 
-    while ((size <= availableFunds) && (count < 10000)) {
-      let actualSize = size;
-      if (sizeType === "BTC") {
-        actualSize = size * finalPrice;
-      }
-
-      if (finalPrice >= tradingPrice) {
-        let BTCSize = size;
-        if (sizeType === "USD") {
-          BTCSize = size / finalPrice;
+    if (sizeType === "USD") {
+      // logic for when size is in USD
+      while ((size <= availableFunds) && (count < 10000)) {
+        let actualSize = size;
+        // if the loop price is higher than the trading price,
+        // need to find actual cost of the trade at that volume
+        if (loopPrice >= tradingPrice) {
+          // convert size at loop price to BTC
+          let BTCSize = size / loopPrice;
+          // find cost of BTCSize at current price
+          let actualUSDSize = tradingPrice * BTCSize;
+          // set the actual USD size to be the cost of the BTC size at the current trade price
+          actualSize = actualUSDSize;
         }
-        let actualUSDSize = tradingPrice * BTCSize;
-        actualSize = actualUSDSize;
+        // each loop needs to buy BTC with the USD size
+        // this will lower the value of available funds by the size
+        availableFunds -= actualSize;
+        // then it will increase the final price by the increment value
+        setSetupResults(loopPrice);
+        loopPrice += increment;
+        count++;
       }
-      // each loop needs to buy BTC with the USD size
-      // this will lower the value of available funds by the size
-      availableFunds -= actualSize;
-      // then it will increase the final price by the increment value
-      finalPrice += increment;
-      count++;
+      setTotalTrades(count);
+    } else {
+      // logic for when size is in btc
+      // need a variable for usd size since it will change
+      let USDSize = size * loopPrice;
+      while ((USDSize <= availableFunds) && (count < 10000)) {
+        // if the loop price is higher than the trading price,
+        // need to find current cost of the trade at that volume
+        if (loopPrice >= tradingPrice) {
+          // change to size at trading price
+          USDSize = tradingPrice * size;
+          // USDSize = actualUSDSize;
+        }
+        // each loop needs to buy BTC with the USD size
+        // this will lower the value of available funds by the USD size
+        availableFunds -= USDSize;
+        // then it will increase the final price by the increment value
+        setSetupResults(loopPrice);
+        loopPrice += increment;
+        USDSize = size * loopPrice;
+        count++;
+      }
+      setTotalTrades(count);
     }
-    setSetupResults(finalPrice);
-    setTotalTrades(count);
   }
 
 
@@ -80,7 +105,7 @@ function AutoSetup(props) {
     console.log('automatically setting up bot');
     autoTrader();
   }
-  
+
   function changeSizeType(event) {
     event.preventDefault();
     if (sizeType === "USD") {
@@ -93,7 +118,7 @@ function AutoSetup(props) {
   }
 
   function autoTrader() {
-    let availableFunds = availableFundsUSD;
+    let availableFunds = availableFundsUSD.available;
     console.log('here is the current available funds', availableFunds);
 
     dispatch({
@@ -112,6 +137,7 @@ function AutoSetup(props) {
     <div className="AutoSetup settings-panel scrollable">
       <div className="divider" />
       <h4>Auto Setup</h4>
+      <p>{props.priceTicker} avail {availableFundsUSD.available}</p>
       <p>
         Enter the parameters you want and the bot will keep placing trades for you based on
         those parameters until you run out of cash, or until you have 10,000 trade-pairs.
@@ -170,11 +196,11 @@ function AutoSetup(props) {
           </label>
 
           {/* SIZE */}
-          <p>What size in {sizeType === "USD" ? "USD" : "BTC"} should each trade-pair be? {sizeType === "USD" 
-          ? <button className={`btn-blue ${props.theme}`} onClick={changeSizeType}> Change to BTC</button> 
-          : <button className={`btn-blue ${props.theme}`} onClick={changeSizeType}> Change to USD</button> 
+          <p>What size in {sizeType === "USD" ? "USD" : "BTC"} should each trade-pair be? {sizeType === "USD"
+            ? <button className={`btn-blue ${props.theme}`} onClick={changeSizeType}> Change to BTC</button>
+            : <button className={`btn-blue ${props.theme}`} onClick={changeSizeType}> Change to USD</button>
           }</p>
-          
+
           <label htmlFor='size'>
             Size in {sizeType === "USD" ? "USD" : "BTC"}:
             <br />
