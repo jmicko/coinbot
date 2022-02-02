@@ -91,8 +91,8 @@ router.put('/postMaxReinvestRatio', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
     console.log("postMaxReinvestRatio route hit", req.body);
-    // const queryText = `UPDATE "user_settings" SET "reinvest_ratio" = $1 WHERE "userID" = $2`;
-    // await pool.query(queryText, [req.body.reinvest_ratio, user.id]);
+    const queryText = `UPDATE "user_settings" SET "post_max_reinvest_ratio" = $1 WHERE "userID" = $2`;
+    await pool.query(queryText, [req.body.postMaxReinvestRatio, user.id]);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in postMaxReinvestRatio ROUTE');
