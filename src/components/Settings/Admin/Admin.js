@@ -67,7 +67,7 @@ function Admin(props) {
     }
   }, [props.store.settingsReducer.allSettingsReducer.loop_speed]);
 
-    useEffect(() => {
+  useEffect(() => {
     if (props.store.settingsReducer.allSettingsReducer.full_sync) {
       handleFullSyncChange(props.store.settingsReducer.allSettingsReducer.full_sync);
     }
