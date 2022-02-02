@@ -18,6 +18,7 @@ function AutoSetup(props) {
   const [totalTrades, setTotalTrades] = useState(false);
 
   const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
+  const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
 
   // const [keepTrading, setKeepTrading] = useState(false);
 
@@ -28,10 +29,19 @@ function AutoSetup(props) {
     }
   }, [startingValue, increment, size, sizeType, props.priceTicker])
 
+  // useEffect(() => {
+  //   if (props.store.accountReducer.accountReducer) {
+  //     let USD = props.store.accountReducer.accountReducer.filter(account => account.currency === 'USD');
+  //     setAvailableFundsUSD(USD[0]);
+  //   }
+  // }, [props.store.accountReducer.accountReducer]);
+
   useEffect(() => {
     if (props.store.accountReducer.accountReducer) {
       let USD = props.store.accountReducer.accountReducer.filter(account => account.currency === 'USD');
       setAvailableFundsUSD(USD[0]);
+      let BTC = props.store.accountReducer.accountReducer.filter(account => account.currency === 'BTC');
+      setAvailableFundsBTC(BTC[0]);
     }
   }, [props.store.accountReducer.accountReducer]);
 
@@ -41,7 +51,7 @@ function AutoSetup(props) {
   }
 
   function calculateResults() {
-    let availableFunds = availableFundsUSD;
+    let availableFunds = availableFundsUSD.available;
     // let startingPrice = startingValue;
     let finalPrice = startingValue;
     let tradingPrice = props.priceTicker;
@@ -93,7 +103,7 @@ function AutoSetup(props) {
   }
 
   function autoTrader() {
-    let availableFunds = availableFundsUSD;
+    let availableFunds = availableFundsUSD.available;
     console.log('here is the current available funds', availableFunds);
 
     dispatch({
@@ -112,6 +122,7 @@ function AutoSetup(props) {
     <div className="AutoSetup settings-panel scrollable">
       <div className="divider" />
       <h4>Auto Setup</h4>
+      <p>{props.priceTicker} avail {availableFundsUSD.available}</p>
       <p>
         Enter the parameters you want and the bot will keep placing trades for you based on
         those parameters until you run out of cash, or until you have 10,000 trade-pairs.
