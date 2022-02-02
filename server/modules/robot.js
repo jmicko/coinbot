@@ -325,24 +325,24 @@ function flipTrade(dbOrder, user) {
   } else {
     // if it is a sell turning into a buy, check if user wants to reinvest the funds
     if (user.reinvest) {
-      console.log('settled order', dbOrder);
+      // console.log('settled order', dbOrder);
       const orderSize = Number(dbOrder.size);
 
       const BTCprofit = calculateProfitBTC(dbOrder);
-      console.log('testing calculateProfitBTC', BTCprofit);
+      // console.log('testing calculateProfitBTC', BTCprofit);
 
       const amountToReinvest = BTCprofit * reinvestRatio;
-      console.log('to reinvest', amountToReinvest);
+      // console.log('to reinvest', amountToReinvest);
       
       const newSize = Math.floor((orderSize + amountToReinvest) * 100000000) / 100000000;
 
       // DO THIS BETTER
       const buyPrice = dbOrder.original_buy_price;
       const maxSizeBTC = Number((maxTradeSize / buyPrice).toFixed(8));
-      console.log('reinvest ratio', reinvestRatio);
-      console.log('new size', newSize);
-      console.log('old size', orderSize);
-      console.log('MAX SIZE USD:', maxTradeSize, 'MAX SIZE BTC', maxSizeBTC);
+      // console.log('reinvest ratio', reinvestRatio);
+      // console.log('new size', newSize);
+      // console.log('old size', orderSize);
+      // console.log('MAX SIZE USD:', maxTradeSize, 'MAX SIZE BTC', maxSizeBTC);
 
       // DONE WITH DO THIS BETTER
 
@@ -351,12 +351,12 @@ function flipTrade(dbOrder, user) {
         tradeDetails.size = maxSizeBTC;
 
         if ((orderSize >= maxSizeBTC) && (postMaxReinvestRatio > 0)) {
-          console.log('the old size is the same as or bigger than the max!');
+          // console.log('the old size is the same as or bigger than the max!');
           // at this point, the post max ratio should be used
           const postMaxAmountToReinvest = BTCprofit * postMaxReinvestRatio;
-          console.log('postMaxAmountToReinvest', postMaxAmountToReinvest);
+          // console.log('postMaxAmountToReinvest', postMaxAmountToReinvest);
           const postMaxNewSize = Math.floor((orderSize + postMaxAmountToReinvest) * 100000000) / 100000000;
-          console.log('postMaxNewSize', postMaxNewSize);
+          // console.log('postMaxNewSize', postMaxNewSize);
           tradeDetails.size = postMaxNewSize;
         }
       } else if (newSize < 0.000016) {
