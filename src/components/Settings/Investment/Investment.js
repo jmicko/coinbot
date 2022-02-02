@@ -10,6 +10,7 @@ function Investment(props) {
   const [reinvest_ratio, setReinvest_ratio] = useState(0);
   const [bulk_pair_ratio, setBulk_pair_ratio] = useState(1.1);
   const [max_trade_size, setMaxTradeSize] = useState(30);
+  const [postMaxReinvestRatio, setPostMaxReinvestRatio] = useState(0);
 
   // make sure ratio is within percentage range
   useEffect(() => {
@@ -42,6 +43,16 @@ function Investment(props) {
       type: 'REINVEST_RATIO',
       payload: {
         reinvest_ratio: reinvest_ratio
+      }
+    });
+  }
+
+  function savePostMaxReinvestRatio(event) {
+    event.preventDefault();
+    dispatch({
+      type: 'POST_MAX_REINVEST_RATIO',
+      payload: {
+        postMaxReinvestRatio: postMaxReinvestRatio
       }
     });
   }
@@ -144,9 +155,32 @@ function Investment(props) {
               />
               <br />
               <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { storeMaxTradeSize(event) }}>Save Max</button>
-              <div className="divider" />
+              <>
+                <p>How much of the profits should the bot reinvest after the max is hit? Leave this at 0 to stop reinvestment after the max.</p>
+                {((postMaxReinvestRatio > 100) || (props.store.accountReducer.userReducer.reinvest_ratio > 100)) &&
+                  <p>** WARNING! ** <br /> Setting the reinvestment ratio higher than 100% will take money from your available funds!
+                    You will need to keep an eye on the bot and make sure you don't run out!</p>
+                }
+                <p>Current post-max reinvestment ratio: {props.store.accountReducer.userReducer.reinvest_ratio}%</p>
+                <label htmlFor="postMaxReinvestRatio">
+                  Set Ratio:
+                </label>
+                <input
+                  type="number"
+                  name="postMaxReinvestRatio"
+                  value={postMaxReinvestRatio}
+                  step={10}
+                  // max={200}
+                  required
+                  onChange={(event) => setPostMaxReinvestRatio(event.target.value)}
+                />
+                <br />
+                <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { savePostMaxReinvestRatio(event) }}>Save reinvestment ratio</button>
+                {/* <div className="divider" /> */}
+              </>
             </>
           }
+          <div className="divider" />
         </>
       }
 
