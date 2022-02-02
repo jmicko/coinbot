@@ -279,7 +279,7 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   function getURI() {
     if (api.URI === "sandbox") {
-      return "https://api-public.sandbox.pro.coinbase.com";
+      return "https://api-public.sandbox.exchange.coinbase.com";
     }
     else {
       return "https://api.exchange.coinbase.com";
