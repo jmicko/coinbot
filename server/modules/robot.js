@@ -87,7 +87,7 @@ async function syncOrders(userID, count) {
 
         // todo - this sometimes will cause the loop to stop. Why?
 
-        const fills = await coinbaseClient.getLimitedFills(userID, 1000);
+        const fills = await coinbaseClient.getLimitedFills(userID, 500);
         // console.log('quick sync, done getting fills. sleeping');
         // await sleep(100); // avoid rate limit
 
@@ -207,7 +207,7 @@ async function syncOrders(userID, count) {
     if (user) {
       setTimeout(() => {
         syncOrders(userID, count + 1);
-      }, (botSettings.loop_speed * 100));
+      }, (botSettings.loop_speed * 10));
     } else {
       console.log('user is NOT THERE, stopping loop for user');
     }
@@ -719,7 +719,7 @@ async function autoSetup(user, parameters) {
       userID: Number(user.id)
     });
 
-    await robot.sleep(1000);
+    await robot.sleep(500);
 
     // create new parameters 
 
