@@ -425,6 +425,11 @@ async function settleMultipleOrders(ordersArray, userID) {
       // loop over the array and flip each trade
       for (let i = 0; i < ordersArray.length; i++) {
         const orderToCheck = ordersArray[i];
+
+        let reorderTimer = true;
+        setTimeout(() => {
+          reorderTimer = false;
+        }, 80);
         // send heartbeat for each loop
         socketClient.emit('message', {
           heartbeat: true,
@@ -433,7 +438,7 @@ async function settleMultipleOrders(ordersArray, userID) {
         try {
           // get all the order details from cb
           // console.log('ORDER TO CHECK:', orderToCheck);
-          await sleep(80); // avoid rate limiting
+          // await sleep(80); // avoid rate limiting
           let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID);
           // update the order in the db
           const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
@@ -467,6 +472,11 @@ async function settleMultipleOrders(ordersArray, userID) {
             console.log(err, 'error in settleMultipleOrders loop');
           }
         } // end catch
+        while (reorderTimer) {
+          await sleep(10);
+          console.log('not 100ms reorder timer yet!');
+        }
+        console.log('======reorder timer is up');
       } // end for loop
 
       // if all goes well, resolve promise with success message
