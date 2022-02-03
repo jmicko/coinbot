@@ -73,9 +73,9 @@ async function syncOrders(userID, count) {
           cbOrders = cbOrders.concat(olderOrders);
           while (moreOrdersTimer) {
             await sleep(10);
-            console.log('not 100ms more orders timer yet!');
+            // console.log('not 100ms more orders timer yet!');
           }
-          console.log('HAS BEEN 100ms more orders timer yet!');
+          // console.log('HAS BEEN 100ms more orders timer yet!');
 
           // if just pulled 1000 older orders, there may be more so check again
           if (olderOrders.length >= 1000) {
@@ -221,10 +221,10 @@ async function syncOrders(userID, count) {
     if (user) {
       while (timer) {
         await sleep(10);
-        console.log('not 100ms yet!');
+        // console.log('not 100ms yet!');
       }
       if (!timer) {
-        console.log('100ms is up');
+        // console.log('100ms is up');
       }
       setTimeout(() => {
         syncOrders(userID, count + 1);
@@ -474,9 +474,9 @@ async function settleMultipleOrders(ordersArray, userID) {
         } // end catch
         while (reorderTimer) {
           await sleep(10);
-          console.log('not 100ms reorder timer yet!');
+          // console.log('not 100ms reorder timer yet!');
         }
-        console.log('======reorder timer is up');
+        // console.log('======reorder timer is up');
       } // end for loop
 
       // if all goes well, resolve promise with success message
