@@ -145,6 +145,53 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
 
 
 /**
+* SYNC route to sync an individual trade with coinbase
+  this will just delete it and the bot will replace it on the full sync loop
+*/
+router.put('/', rejectUnauthenticated, async (req, res) => {
+  // sync route code here
+  const userID = req.user.id;
+  const orderId = req.body.id;
+
+  try {
+    await coinbaseClient.cancelOrder(orderId, userID)
+    res.sendStatus(200)
+    socketClient.emit('message', {
+      message: `Order will sync at next full sync (blue heartbeat)`,
+      orderUpdate: true,
+      userID: Number(userID)
+    });
+  } catch (error) {
+    if (error.data?.message) {
+      console.log('error message, trade router sync:', error.data.message);
+      // orders that have been canceled are deleted from coinbase and return a 404.
+      if (error.data.message === 'order not found') {
+        socketClient.emit('message', {
+          error: `Order was not found when sync was requested`,
+          orderUpdate: true,
+          userID: Number(userID)
+        });
+        console.log('order not found in account', orderId);
+        res.sendStatus(400)
+      }
+    }
+    if (error.response?.status === 404) {
+      socketClient.emit('message', {
+        error: `Order was not found when delete was requested`,
+        orderUpdate: true,
+        userID: Number(userID),
+      });
+      console.log('order not found in account', orderId);
+      res.sendStatus(400)
+    } else {
+      console.log('something failed in the delete trade route', error);
+      res.sendStatus(500)
+    }
+  };
+});
+
+
+/**
 * DELETE route
 */
 router.delete('/', rejectUnauthenticated, async (req, res) => {
@@ -182,7 +229,8 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       databaseClient.deleteTrade(orderId);
       socketClient.emit('message', {
         error: `Order was not found when delete was requested`,
-        orderUpdate: true
+        orderUpdate: true,
+        userID: Number(userID)
       });
       console.log('order not found in account', orderId);
       res.sendStatus(400)

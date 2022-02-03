@@ -43,6 +43,14 @@ function SingleTrade(props) {
     })
   }
 
+  function syncTrade() {
+    dispatch({
+      type: 'SYNC_TRADE', payload: {
+        id: props.order.id,
+      }
+    })
+  }
+
   function toggleShowAll() {
     setShowAll(!showAll);
   }
@@ -63,6 +71,7 @@ function SingleTrade(props) {
   return (
     <div className={`Single-trade ${props.order.side} ${props.theme}`}>
       <button className={`btn-blue expand-single-trade ${props.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>
+      {showAll && <button className={`btn-blue expand-single-trade ${props.theme}`} onClick={syncTrade}>sync</button>}
       <div className={"overlay"}>
         {(deleting === true)
           ? <p className="deleting">Deleting...</p>

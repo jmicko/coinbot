@@ -16,6 +16,10 @@ async function startSync() {
 
 // REST protocol to find orders that have settled on coinbase
 async function syncOrders(userID, count) {
+  let timer = true;
+  setTimeout(() => {
+    timer = false;
+  }, 100);
   let user;
   let botSettings;
   try {
@@ -83,7 +87,7 @@ async function syncOrders(userID, count) {
       } else {
         // IF QUICK SYNC, only get fills
         // checks for orders if it finds any fills 
-        console.log('quick sync', count);
+        // console.log('quick sync', count);
 
         // todo - this sometimes will cause the loop to stop. Why?
 
@@ -206,6 +210,13 @@ async function syncOrders(userID, count) {
     });
     // when everything is done, call the sync again if the user still exists
     if (user) {
+      while (timer) {
+        await sleep(10);
+        console.log('not 100ms yet!');
+      }
+      if (!timer) { 
+        console.log('100ms is up');
+      }
       setTimeout(() => {
         syncOrders(userID, count + 1);
       }, (botSettings.loop_speed * 10));
