@@ -201,6 +201,7 @@ async function syncOrders(userID, count) {
   } finally {
     socketClient.emit('message', {
       heartbeat: true,
+      count: botSettings.full_sync - count,
       userID: Number(userID)
     });
     // when everything is done, call the sync again if the user still exists

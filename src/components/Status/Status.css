@@ -9,6 +9,14 @@
     width: fit-content;
 }
 
+.blue {
+    color: rgb(29, 120, 180);
+}
+
+.darkTheme.blue {
+    color: turquoise;
+}
+
 @media (max-width: 800px) {
     .Status {
         grid-column: 2/3;

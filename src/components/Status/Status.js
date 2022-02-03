@@ -8,6 +8,7 @@ import { useSocket } from "../../contexts/SocketProvider";
 function Status(props) {
   const dispatch = useDispatch();
   const [loopStatus, setLoopStatus] = useState(true);
+  const [fullSync, setFullSync] = useState("");
   const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
   const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
@@ -82,6 +83,12 @@ function Status(props) {
     socket.on('message', message => {
       // console.log('message from socket', message);
       if (message.heartbeat && message.userID === props.store.accountReducer.userReducer.id) {
+        if (message.count === 1) {
+          console.log(message.count);
+          setFullSync('blue')
+        } else {
+          setFullSync('')
+        }
         setLoopStatus(prevLoopStatus => {
           // console.log('previous error count', prevErrorCount);
           return !prevLoopStatus;
@@ -210,7 +217,7 @@ function Status(props) {
       </center>
 
       <center>
-        <p className="info status-ticker">{loopStatus ? <strong>HEARTBEAT</strong> : <strong>heartbeat</strong>}
+        <p className={`info status-ticker ${props.theme} ${fullSync}`}>{loopStatus ? <strong>HEARTBEAT</strong> : <strong>heartbeat</strong>}
           <br />
           <button className={`btn-blue ${props.theme}`} onClick={refresh}>Refresh</button>
         </p>
