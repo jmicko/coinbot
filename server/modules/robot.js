@@ -83,7 +83,7 @@ async function syncOrders(userID, count) {
       } else {
         // IF QUICK SYNC, only get fills
         // checks for orders if it finds any fills 
-        console.log('quick sync', count);
+        // console.log('quick sync', count);
 
         // todo - this sometimes will cause the loop to stop. Why?
 
