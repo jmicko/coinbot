@@ -84,10 +84,9 @@ function Status(props) {
       // console.log('message from socket', message);
       if (message.heartbeat && message.userID === props.store.accountReducer.userReducer.id) {
         if (message.count === 1) {
-          console.log(message.count);
-          setFullSync('blue')
+          setFullSync('blue');
         } else {
-          setFullSync('')
+          setFullSync('');
         }
         setLoopStatus(prevLoopStatus => {
           // console.log('previous error count', prevErrorCount);
