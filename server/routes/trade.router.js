@@ -145,6 +145,56 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
 
 
 /**
+* SYNC route to sync an individual trade with coinbase
+  this will just delete it and the bot will replace it on the full sync loop
+*/
+router.put('/', rejectUnauthenticated, async (req, res) => {
+  // sync route code here
+  const userID = req.user.id;
+  const orderId = req.body.id;
+  console.log('in the server trade sync route', orderId)
+
+  // mark as canceled in db
+  try {
+    // const queryText = `UPDATE "orders" SET "will_cancel" = true WHERE "id"=$1;`;
+    // let result = await pool.query(queryText, [orderId]);
+    // send cancelOrder to cb
+    // let result = await coinbaseClient.cancelOrder(orderId, userID);
+    // console.log('order was deleted successfully from cb', result);
+    // databaseClient.deleteTrade(orderId);
+    console.log('order was synced');
+    res.sendStatus(200)
+  } catch (error) {
+    if (error.data?.message) {
+      console.log('error message, trade router sync:', error.data.message);
+      // orders that have been canceled are deleted from coinbase and return a 404.
+      // error handling should delete them from db and not worry about coinbase since there is no other way to delete
+      // but also send one last delete message to Coinbase just in case it finds it again, but with no error checking
+      if (error.data.message === 'order not found') {
+        socketClient.emit('message', {
+          error: `Order was not found when sync was requested`,
+          orderUpdate: true
+        });
+        console.log('order not found in account', orderId);
+        res.sendStatus(400)
+      }
+    }
+    if (error.response?.status === 404) {
+      socketClient.emit('message', {
+        error: `Order was not found when delete was requested`,
+        orderUpdate: true
+      });
+      console.log('order not found in account', orderId);
+      res.sendStatus(400)
+    } else {
+      console.log('something failed in the delete trade route', error);
+      res.sendStatus(500)
+    }
+  };
+});
+
+
+/**
 * DELETE route
 */
 router.delete('/', rejectUnauthenticated, async (req, res) => {
