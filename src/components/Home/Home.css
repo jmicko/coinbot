@@ -27,6 +27,7 @@
 
 @media (max-width: 800px) {
   .Home {
+    height               : 90vh;
     /* display              : grid; */
     /* this is STRICTLY A BUSINESS ROBOT, and the color should reflect that! */
     grid-template-columns: 0fr auto 0fr;
