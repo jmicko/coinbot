@@ -366,7 +366,11 @@ function flipTrade(dbOrder, user) {
       const BTCprofit = calculateProfitBTC(dbOrder);
       // console.log('testing calculateProfitBTC', BTCprofit);
 
-      const amountToReinvest = BTCprofit * reinvestRatio;
+      let amountToReinvest = BTCprofit * reinvestRatio;
+      if (amountToReinvest <= 0) {
+        console.log('negative profit');
+        amountToReinvest = 0;
+      }
       // console.log('to reinvest', amountToReinvest);
 
       const newSize = Math.floor((orderSize + amountToReinvest) * 100000000) / 100000000;
