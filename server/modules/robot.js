@@ -54,9 +54,20 @@ async function syncOrders(userID, count) {
 
         const getMoreOrders = async () => {
           let moreOrdersTimer = true;
-          setTimeout(() => {
-            moreOrdersTimer = false;
-          }, 80);
+
+          // get smallest possible time between full sync
+          // if it is more than 1 second, ignore the timer because 
+          // with max 10k trades, cb will only be called up to 11 times
+          // this is within the 15/sec rate limit 
+          // and this is the only part of the loop that calls that endpoint
+          let time = ((botSettings.loop_speed * 10) + 100) * botSettings.full_sync;
+
+          if (time < 1000) {
+          //  console.log('need to use full sync timer'); 
+            setTimeout(() => {
+              moreOrdersTimer = false;
+            }, 80);
+          }
           // find the oldest date in the returned orders
           const oldestDate = cbOrders[cbOrders.length - 1].created_at;
 
@@ -71,9 +82,12 @@ async function syncOrders(userID, count) {
 
           // Combine the arrays
           cbOrders = cbOrders.concat(olderOrders);
-          while (moreOrdersTimer) {
-            await sleep(10);
-            // console.log('not 100ms more orders timer yet!');
+
+          if (time < 1000) {
+            
+            while (moreOrdersTimer) {
+              await sleep(10);
+            }
           }
           // console.log('HAS BEEN 100ms more orders timer yet!');
 
@@ -226,6 +240,7 @@ async function syncOrders(userID, count) {
       if (!timer) {
         // console.log('100ms is up');
       }
+      // console.log('time between full sync', time < 1000, time);
       setTimeout(() => {
         syncOrders(userID, count + 1);
       }, (botSettings.loop_speed * 10));
@@ -356,15 +371,8 @@ function flipTrade(dbOrder, user) {
 
       const newSize = Math.floor((orderSize + amountToReinvest) * 100000000) / 100000000;
 
-      // DO THIS BETTER
       const buyPrice = dbOrder.original_buy_price;
       const maxSizeBTC = Number((maxTradeSize / buyPrice).toFixed(8));
-      // console.log('reinvest ratio', reinvestRatio);
-      // console.log('new size', newSize);
-      // console.log('old size', orderSize);
-      // console.log('MAX SIZE USD:', maxTradeSize, 'MAX SIZE BTC', maxSizeBTC);
-
-      // DONE WITH DO THIS BETTER
 
       if ((newSize > maxSizeBTC) && (maxTradeSize > 0)) {
         // if the new size is bigger than the user set max, just use the user set max instead
