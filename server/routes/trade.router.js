@@ -155,10 +155,13 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
 
   try {
     await coinbaseClient.cancelOrder(orderId, userID)
-    res.sendStatus(200)
+    res.sendStatus(200);
+
+    const sqlText = `UPDATE "orders" SET "reorder" = true WHERE "id"=$1;`;
+    await pool.query(sqlText, [orderId]);
+
     socketClient.emit('message', {
-      message: `Order will sync at next full sync (blue heartbeat)`,
-      orderUpdate: true,
+      message: `Order will sync in a moment`,
       userID: Number(userID)
     });
   } catch (error) {

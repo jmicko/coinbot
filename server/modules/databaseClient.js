@@ -182,6 +182,25 @@ const getSingleTrade = (id) => {
   });
 }
 
+
+const getReorders = (userID) => {
+  return new Promise((resolve, reject) => {
+    let sqlText;
+    // put sql stuff here, extending the pool promise to the parent function
+    sqlText = `SELECT * FROM "orders" WHERE "reorder"=true AND "settled"=false AND "userID"=$1;`;
+    pool.query(sqlText, [userID])
+      .then((results) => {
+        const reorders = results.rows;
+        // promise returns promise from pool if success
+        resolve(reorders);
+      })
+      .catch((err) => {
+        // or promise relays errors from pool to parent
+        reject(err);
+      })
+  });
+}
+
 const checkIfCancelling = async (id) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -321,6 +340,7 @@ const databaseClient = {
   getUnsettledTrades: getUnsettledTrades,
   getUnsettledTradeCounts: getUnsettledTradeCounts,
   getSingleTrade: getSingleTrade,
+  getReorders: getReorders,
   deleteTrade: deleteTrade,
   getUser: getUser,
   getUserAndSettings: getUserAndSettings,
