@@ -3,7 +3,7 @@
 .Trade {
   display    : block;
   grid-column: 2;
-  grid-row   : 2/4;
+  grid-row   : 3/5;
 }
 
 @media (max-width: 800px) {

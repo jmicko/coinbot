@@ -1,12 +1,12 @@
 .Status {
     grid-column: 2/4;
-    grid-row   : 1;
+    grid-row   : 2;
     display    : flex;
     flex-wrap  : wrap;
 }
 
 .status-ticker {
-    width: fit-content;
+    /* width: fit-content; */
 }
 
 .blue {
