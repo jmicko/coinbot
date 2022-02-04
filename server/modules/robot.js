@@ -139,6 +139,11 @@ async function syncOrders(userID, count) {
             }
           }
         }
+        const reorders = await databaseClient.getReorders(userID)
+        if (reorders.length >= 1) {
+          console.log('reorders', reorders);
+          reorders.forEach(order => ordersToCheck.push(order))
+        }
       }
 
       // also get a list of orders that are open on cb, but not stored in the db. 
