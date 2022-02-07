@@ -54,7 +54,7 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
     await sleep(5000);
     
     // mark all open orders as reorder
-    await databaseClient.setReorder();
+    await databaseClient.setReorder(userID);
 
     // cancel all orders. The sync loop will take care of replacing them
     await coinbaseClient.cancelAllOrders(userID);
@@ -122,7 +122,7 @@ router.delete('/all', rejectUnauthenticated, async (req, res) => {
     await pool.query(queryText, [userID]);
     
     // mark all open orders as reorder
-    await databaseClient.setReorder();
+    await databaseClient.setReorder(userID);
 
     // cancel all orders. The sync loop will take care of replacing them
     await coinbaseClient.cancelAllOrders(userID);

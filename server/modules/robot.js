@@ -141,7 +141,7 @@ async function syncOrders(userID, count) {
         }
         const reorders = await databaseClient.getReorders(userID)
         if (reorders.length >= 1) {
-          console.log('reorders', reorders);
+          // console.log('reorders', reorders);
           reorders.forEach(order => ordersToCheck.push(order))
         }
       }
