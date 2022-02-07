@@ -297,11 +297,11 @@ async function toggleMaintenance() {
   })
 }
 
-async function setReorder() {
+async function setReorder(userID) {
   return new Promise(async (resolve, reject) => {
     try {
-      const sqlText = `UPDATE "orders" SET "reorder" = true WHERE "settled"=false;`;
-      await pool.query(sqlText);
+      const sqlText = `UPDATE "orders" SET "reorder" = true WHERE "settled"=false AND "userID" = $1;`;
+      await pool.query(sqlText, [userID]);
       resolve();
     } catch (err) {
       reject(err);
