@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../../redux/mapStoreToProps';
+import Confirm from '../../Confirm/Confirm';
 import SingleUser from '../../SingleUser/SingleUser';
 import './Admin.css'
 
@@ -9,6 +10,9 @@ function Admin(props) {
   const dispatch = useDispatch();
   const [loopSpeed, setLoopSpeed] = useState(1);
   const [fullSync, setFullSync] = useState(10);
+  const [resettingOrders, setResettingOrders] = useState(false);
+  const [factoryResetting, setFactoryResetting] = useState(false);
+
 
   const getUsers = useCallback(
     () => {
@@ -173,6 +177,12 @@ function Admin(props) {
       <div className="divider" />
       {(props.store.accountReducer.userReducer.admin)
         ? <>
+            {factoryResetting && <Confirm
+              // if confirm, dispatch to factory reset bot
+              execute={() => { dispatch({ type: 'FACTORY_RESET' }); setFactoryResetting(false) }}
+              // if cancel, toggle boolean so message goes away
+              ignore={() => setFactoryResetting(false)}
+            />}
           <h4>Factory Reset</h4>
           <p>
             This will delete everything! Use with caution!
@@ -182,21 +192,26 @@ function Admin(props) {
           <p>
             CAUTION <button
               className="btn-logout btn-red"
-              onClick={() => dispatch({ type: 'FACTORY_RESET' })}
-            >
+              onClick={() => setFactoryResetting(true)}
+              >
               Factory Reset
             </button> CAUTION
           </p>
 
+              {resettingOrders && <Confirm
+                // if confirm, dispatch to reset orders table
+                execute={() => { dispatch({ type: 'ORDERS_RESET' }); setResettingOrders(false) }}
+                // if cancel, toggle boolean so message goes away
+                ignore={() => setResettingOrders(false)}
+              />}
           <p>
             This button will only reset the orders table. This will clear the orders for ALL USERS! If you mean to just clear your own, do that in the "Reset" tab
           </p>
           <p>
             CAUTION <button
               className="btn-logout btn-red"
-              onClick={() => dispatch({ type: 'ORDERS_RESET' })}
-            >
-              Reset Orders Table
+              onClick={() => setResettingOrders(true)}
+            > Reset Orders Table
             </button> CAUTION
           </p>
         </>

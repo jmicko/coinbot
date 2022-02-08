@@ -30,6 +30,7 @@ async function getAccounts(userID) {
 
       const options = {
         method: 'GET',
+        timeout: 10000,
         url: `${API_URI}/accounts`,
         headers: {
           Accept: 'application/json',
@@ -73,6 +74,7 @@ async function getFees(userID) {
 
       const options = {
         method: 'GET',
+        timeout: 10000,
         url: `${API_URI}/fees`,
         headers: {
           Accept: 'application/json',
@@ -113,6 +115,7 @@ async function getAllOrders(userID) {
       }
       const options = {
         method: 'GET',
+        timeout: 10000,
         url: `${API_URI}/orders`,
         headers: {
           Accept: 'application/json',
@@ -135,13 +138,7 @@ async function getAllOrders(userID) {
 
 
 async function getLimitedFills(userID, limit) {
-  let finished = false;
   return new Promise(async (resolve, reject) => {
-    setTimeout(() => {
-      if (!finished) {
-        console.log('did not finish!!!');
-      }
-    }, 10000);
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
@@ -177,11 +174,9 @@ async function getLimitedFills(userID, limit) {
       let response = await axios.request(options);
       // console.log('resolving getLimitedFills');
       resolve(response.data);
-      finished = true;
     } catch (err) {
       console.log(err, 'error in coinbaseClient.getLimitedFills');
       reject(err);
-      finished = true;
     }
   });
 }
@@ -210,6 +205,7 @@ async function getOpenOrders(userID) {
 
       const options = {
         method: 'GET',
+        timeout: 10000,
         url: `${API_URI}/orders?status=open&sortedBy=created_at&sorting=desc`,
         headers: {
           Accept: 'application/json',
@@ -252,6 +248,7 @@ async function getOpenOrdersBeforeDate(userID, date) {
 
       const options = {
         method: 'GET',
+        timeout: 10000,
         url: `${API_URI}/orders?status=open&sortedBy=created_at&sorting=desc&end_date=${date}`,
         headers: {
           Accept: 'application/json',
@@ -293,6 +290,7 @@ async function getOrder(orderId, userID) {
 
       const options = {
         method: 'GET',
+        timeout: 10000,
         url: `${API_URI}/orders/${orderId}`,
         headers: {
           Accept: 'application/json',
@@ -334,6 +332,7 @@ async function placeOrder(data) {
 
       const options = {
         method: 'POST',
+        timeout: 10000,
         url: `${API_URI}/orders`,
         headers: {
           Accept: 'application/json',
@@ -374,6 +373,7 @@ async function cancelOrder(orderId, userID) {
       }
       const options = {
         method: 'DELETE',
+        timeout: 10000,
         url: `${API_URI}/orders/${orderId}`,
         headers: {
           Accept: 'application/json',
@@ -413,6 +413,7 @@ async function cancelOrders(userID) {
       }
       const options = {
         method: 'DELETE',
+        timeout: 10000,
         url: `${API_URI}/orders`,
         headers: {
           Accept: 'application/json',
@@ -483,6 +484,7 @@ async function testAPI(secret, key, passphrase, API_URI) {
 
       const options = {
         method: 'GET',
+        timeout: 10000,
         url: `${API_URI}/fees`,
         headers: {
           Accept: 'application/json',
