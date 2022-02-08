@@ -8,8 +8,8 @@ function Confirm(props) {
   return (
     <div className={`Confirm`}>
       <p>Are you sure?</p>
-      <button onClick={props.execute}>Confirm</button>
-      <button onClick={props.ignore}>Cancel</button>
+      <button className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={props.execute}>Confirm</button>
+      <button className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={props.ignore}>Cancel</button>
     </div>
   )
 }
