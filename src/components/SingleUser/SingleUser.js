@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
+import Confirm from '../Confirm/Confirm';
 import './SingleUser.css'
 
 function SingleUser(props) {
@@ -9,7 +10,6 @@ function SingleUser(props) {
   const [approving, setApproving] = useState(false);
 
   function deleteUser() {
-    setDeleting(true)
     dispatch({
       type: 'DELETE_USER', payload: {
         id: props.user.id,
@@ -17,7 +17,7 @@ function SingleUser(props) {
       }
     })
   }
-
+  
   function approveUser() {
     setApproving(true)
     dispatch({
@@ -26,14 +26,20 @@ function SingleUser(props) {
       }
     })
   }
+  
+  function confirmDelete(params) {
+    setDeleting(true)
+    // deleteUser()
+  }
 
   return (
     <div className={`Single-trade`}>
+      {deleting && <Confirm execute={deleteUser} />}
       <div className={"overlay"}>
         {/* Delete a user */}
         {(deleting === true)
           ? <p className="deleting">Deleting...</p>
-          : <button className="btn-red deleting" onClick={() => { deleteUser() }}>Delete</button>
+          : <button className="btn-red deleting" onClick={() => { confirmDelete() }}>Delete</button>
         }
 
         {/* Approve a user */}

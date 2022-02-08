@@ -7,7 +7,7 @@ function Confirm(props) {
 
   return (
     <div className={`Single-trade`}>
-
+      <p>Are you sure?</p>
     </div>
   )
 }
