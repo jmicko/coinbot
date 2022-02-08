@@ -1,3 +1,16 @@
 .Confirm {
-  border: 1px solid black;
+  /* border: 1px solid black; */
+  border-radius: .4rem;
+  position: absolute;
+  width: 20rem;
+  /* height: 7rem; */
+  /* top: 20%; */
+  /* margin: 0 auto; */
+  /* right: 40%; */
+  margin-left: -10rem;
+  padding-bottom: 2rem;
+  left: 50%;
+  top: 20%;
+  color: #ffffff;
+  background-color: #722315d5;
 }

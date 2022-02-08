@@ -7,9 +7,12 @@ function Confirm(props) {
 
   return (
     <div className={`Confirm`}>
-      <p>Are you sure?</p>
-      <button className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={props.execute}>Confirm</button>
-      <button className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={props.ignore}>Cancel</button>
+      <center>
+
+        <p>Are you sure?</p>
+        <button className={`btn-green ${props.store.accountReducer.userReducer.theme}`} onClick={props.execute}>Confirm</button>
+        <button className={`btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={props.ignore}>Cancel</button>
+      </center>
     </div>
   )
 }
