@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../../redux/mapStoreToProps';
+import Confirm from '../../Confirm/Confirm';
 import './Reset.css'
 
 
 function Reset(props) {
   const dispatch = useDispatch();
+
+  const [deleting, setDeleting] = useState(false);
 
   // delete the order if the abandon button is clicked.
   // the loop already detects deleted orders, so only need to make a call to coinbase
@@ -27,11 +30,22 @@ function Reset(props) {
     })
   }
 
+  function cancelDeleteUser(params) {
+    setDeleting(false)
+    // deleteUser()
+  }
+
+  function confirmDelete(params) {
+    setDeleting(true)
+    // deleteUser()
+  }
+
   return (
     <div className="Reset settings-panel scrollable">
       {/* <center>
         <p>Reset Settings Page</p>
       </center> */}
+      {deleting && <Confirm execute={deleteUser} ignore={cancelDeleteUser} />}
 
       {/* RESET PROFIT */}
       <div className="divider" />
@@ -44,7 +58,10 @@ function Reset(props) {
       <div className="divider" />
       <h4>Delete Account</h4>
       <p>Danger! This button will instantly and permanently delete your account and all user data including trades! Press it carefully!</p>
-      <button className={`btn-red medium ${props.theme}`} onClick={() => { deleteUser() }}>Delete Account</button>
+      {(deleting === true)
+        ? <p>Confirming...</p>
+        : <button className={`btn-red medium ${props.theme}`} onClick={() => { confirmDelete() }}>Delete Account</button>
+      }
 
       <div className="divider" />
     </div>
