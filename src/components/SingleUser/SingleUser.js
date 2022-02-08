@@ -17,6 +17,11 @@ function SingleUser(props) {
       }
     })
   }
+
+  function cancelDeleteUser(params) {
+    setDeleting(false)
+    // deleteUser()
+  }
   
   function approveUser() {
     setApproving(true)
@@ -31,10 +36,10 @@ function SingleUser(props) {
     setDeleting(true)
     // deleteUser()
   }
-
+  
   return (
     <div className={`Single-trade`}>
-      {deleting && <Confirm execute={deleteUser} />}
+      {deleting && <Confirm execute={deleteUser} ignore={cancelDeleteUser} />}
       <div className={"overlay"}>
         {/* Delete a user */}
         {(deleting === true)

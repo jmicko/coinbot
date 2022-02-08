@@ -6,8 +6,10 @@ import './Confirm.css'
 function Confirm(props) {
 
   return (
-    <div className={`Single-trade`}>
+    <div className={`Confirm`}>
       <p>Are you sure?</p>
+      <button onClick={props.execute}>Confirm</button>
+      <button onClick={props.ignore}>Cancel</button>
     </div>
   )
 }
