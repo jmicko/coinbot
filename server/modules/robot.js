@@ -43,7 +43,8 @@ async function syncOrders(userID, count) {
         // get lists of trades to compare which have been settled
         const results = await Promise.all([
           // get all open orders from db and cb
-          databaseClient.getUnsettledTrades('all', userID),
+          databaseClient.getLimitedTrades(userID, 200),
+          // databaseClient.getUnsettledTrades('all', userID),
           coinbaseClient.getOpenOrders(userID)
         ]);
 
@@ -640,7 +641,7 @@ async function cancelMultipleOrders(ordersArray, userID) {
         try {
           // check to make sure it really isn't in the db
           let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
-          if (!doubleCheck) {
+          if (doubleCheck) {
             // cancel the order if nothing comes back from db
             // console.log('canceling order', orderToCancel);
             await coinbaseClient.cancelOrder(orderToCancel.id, userID);
