@@ -387,6 +387,18 @@ async function setKillLock(status, userID) {
   })
 }
 
+async function saveFunds(funds, userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `UPDATE "user_settings" SET "available_btc" = $1, "available_usd" = $2, "actualavailable_btc" = $3, "actualavailable_usd" = $4  WHERE "userID" = $5`;
+      let result = await pool.query(sqlText, [funds.availableBTC, funds.availableUSD, funds.actualAvailableBTC, funds.actualAvailableUSD, userID]);
+      resolve(result);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 
 const databaseClient = {
   storeTrade: storeTrade,
@@ -406,7 +418,8 @@ const databaseClient = {
   toggleMaintenance: toggleMaintenance,
   setReorder: setReorder,
   setPause: setPause,
-  setKillLock: setKillLock
+  setKillLock: setKillLock,
+  saveFunds: saveFunds
 }
 
 module.exports = databaseClient;

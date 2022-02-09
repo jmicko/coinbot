@@ -156,7 +156,7 @@ async function syncOrders(userID, count) {
       ordersToCancel = await orderElimination(cbOrders, dbOrders);
       // }
 
-      console.log('cancel:', ordersToCancel, cbOrders.length, dbOrders.length);
+      // console.log('cancel:', ordersToCancel, cbOrders.length, dbOrders.length);
 
 
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
@@ -204,8 +204,9 @@ async function syncOrders(userID, count) {
       // DELETE ALL ORDERS MARKED FOR DELETE
       await deleteMarkedOrders(userID);
 
-      console.log('avail funds');
-      await getAvailableFunds(userID);
+      const available = await getAvailableFunds(userID);
+      console.log('avail funds', available);
+      await databaseClient.saveFunds(available, userID);
 
     } else {
       // if the user is not active or is paused, loop every 5 seconds
@@ -817,43 +818,46 @@ async function autoSetup(user, parameters) {
 }
 
 async function getAvailableFunds(userID) {
-  console.log('getting available funds');
+  // console.log('getting available funds');
   return new Promise(async (resolve, reject) => {
-    const results = await Promise.all([
-      coinbaseClient.getAccounts(userID),
-      databaseClient.getSpentUSD(userID),
-      databaseClient.getSpentBTC(userID)
-    ]);
+    try {
 
-    const [USD] = results[0].filter(account => account.currency === 'USD')
-    const availableUSD = USD.available;
-    const spentUSD = results[1].sum;
-    const actualAvailableUSD = availableUSD - spentUSD;
+      const results = await Promise.all([
+        coinbaseClient.getAccounts(userID),
+        databaseClient.getSpentUSD(userID),
+        databaseClient.getSpentBTC(userID)
+      ]);
 
-    const [BTC] = results[0].filter(account => account.currency === 'BTC')
-    const availableBTC = BTC.available;
-    const spentBTC = results[2].sum;
-    const actualAvailableBTC = Number((availableBTC - spentBTC).toFixed(16));
+      const [USD] = results[0].filter(account => account.currency === 'USD')
+      const availableUSD = USD.available;
+      const spentUSD = results[1].sum;
+      const actualAvailableUSD = availableUSD - spentUSD;
 
-    // console.log('results 0', results[0].length);
-    // console.log('spent USD', spentUSD);
-    // console.log('USD available', availableUSD);
-    // console.log('actualAvailableUSD', actualAvailableUSD);
+      const [BTC] = results[0].filter(account => account.currency === 'BTC')
+      const availableBTC = BTC.available;
+      const spentBTC = results[2].sum;
+      const actualAvailableBTC = Number((availableBTC - spentBTC).toFixed(16));
 
-    // console.log('spent BTC', spentBTC);
-    // console.log('BTC available', availableBTC);
-    // console.log('actualAvailableBTC', actualAvailableBTC);
+      // console.log('results 0', results[0].length);
+      // console.log('spent USD', spentUSD);
+      // console.log('USD available', availableUSD);
+      // console.log('actualAvailableUSD', actualAvailableUSD);
 
-    const availableFunds = {
-      availableBTC: availableBTC,
-      availableUSD: availableUSD,
-      actualAvailableBTC: actualAvailableBTC,
-      actualAvailableUSD: actualAvailableUSD
-    }
+      // console.log('spent BTC', spentBTC);
+      // console.log('BTC available', availableBTC);
+      // console.log('actualAvailableBTC', actualAvailableBTC);
 
-    console.log('availableFunds', availableFunds);
+      const availableFunds = {
+        availableBTC: availableBTC,
+        availableUSD: availableUSD,
+        actualAvailableBTC: actualAvailableBTC,
+        actualAvailableUSD: actualAvailableUSD
+      }
 
-    resolve(availableFunds)
+      // console.log('availableFunds', availableFunds);
+
+      resolve(availableFunds)
+    } catch (err) { reject(err) }
   })
 }
 
