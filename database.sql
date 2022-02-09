@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS "user_settings"
   "reinvest" boolean DEFAULT false,
   "reinvest_ratio" integer DEFAULT 0,
   "post_max_reinvest_ratio" integer DEFAULT 0,
+  "reserve" numeric(32,8) DEFAULT 0,
   "max_trade" boolean DEFAULT false,
   "max_trade_size" numeric(32,8) DEFAULT 0,
   "max_trade_load" integer DEFAULT 1000,
