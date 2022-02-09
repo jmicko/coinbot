@@ -137,9 +137,8 @@ router.put('/postMaxReinvestRatio', rejectUnauthenticated, async (req, res) => {
 router.put('/reserve', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
-    console.log("reserve route hit", user, req.body);
-    // const queryText = `UPDATE "user_settings" SET "post_max_reinvest_ratio" = $1 WHERE "userID" = $2`;
-    // await pool.query(queryText, [req.body.postMaxReinvestRatio, user.id]);
+    const queryText = `UPDATE "user_settings" SET "reserve" = $1 WHERE "userID" = $2`;
+    await pool.query(queryText, [req.body.reserve, user.id]);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in reserve ROUTE');
