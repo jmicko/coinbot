@@ -27,18 +27,6 @@ function* fetchProfits() {
   }
 }
 
-function* fetchAccounts() {
-  try {
-    const response = yield axios.get(`/api/account/`);
-    yield put({ type: 'SET_ACCOUNT', payload: response.data })
-  } catch (error) {
-    // console.log('GET account route has failed', error);
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
-
 function* storeApi(action) {
   try {
     yield axios.post(`/api/account/storeApi`, action.payload);
@@ -174,7 +162,6 @@ function* exportXlsx() {
 
 function* accountSaga() {
   yield takeLatest('FETCH_FEES', fetchFees);
-  yield takeLatest('FETCH_ACCOUNT', fetchAccounts);
   yield takeLatest('FETCH_PROFITS', fetchProfits);
   yield takeLatest('STORE_API', storeApi);
   yield takeLatest('RESET_PROFIT', resetProfit);

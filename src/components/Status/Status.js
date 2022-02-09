@@ -111,13 +111,11 @@ function Status(props) {
   }, [props.store.ordersReducer.openOrdersInOrder.counts]);
 
   useEffect(() => {
-    if (props.store.accountReducer.accountReducer.accounts) {
-      let USD = props.store.accountReducer.accountReducer.accounts.filter(account => account.currency === 'USD');
-      setAvailableFundsUSD(USD[0].available - Number(props.store.accountReducer.accountReducer.spentUSD.sum));
-      let BTC = props.store.accountReducer.accountReducer.accounts.filter(account => account.currency === 'BTC');
-      setAvailableFundsBTC(BTC[0].available);
+    if (props.store.accountReducer.userReducer) {
+      setAvailableFundsUSD(props.store.accountReducer.userReducer.actualavailable_usd);
+      setAvailableFundsBTC(props.store.accountReducer.userReducer.actualavailable_btc);
     }
-  }, [props.store.accountReducer.accountReducer.accounts]);
+  }, [props.store.accountReducer.userReducer]);
 
   useEffect(() => {
     if (profitDisplay > 4) {
@@ -138,7 +136,7 @@ function Status(props) {
         {profitDisplay === 1
           ? <p className="info status-ticker">
             <strong>24 hour Profit</strong>
-            {/* {JSON.stringify(Number(props.store.accountReducer.accountReducer.spentUSD.sum))} */}
+            {JSON.stringify(props.store.accountReducer.userReducer.actualavailable_usd)}
             <br />
             ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[0].sum).toFixed(profitAccuracy))}
           </p>

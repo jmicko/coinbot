@@ -17,7 +17,7 @@ const databaseClient = require('../modules/databaseClient');
 router.get('/', async (req, res) => {
 
   const user = req.user;
-  // console.log('THE USER IS', user);
+  console.log('!!!!!!!!!!!!!ACCOUNT ROUTE', user);
   const userID = req.user.id;
   if (user.active) {
 
