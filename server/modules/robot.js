@@ -730,9 +730,11 @@ function orderElimination(dbOrders, cbOrders) {
 // auto setup trades until run out of money
 async function autoSetup(user, parameters) {
   // stop bot from adding more trades if 10000 already placed
+  await updateFunds(user.id);
   let totalOrders = await databaseClient.getUnsettledTrades('all', user.id);
-  const userAndSettings = getUserAndSettings(user.id);
-  if (totalOrders.length >= 10000) {
+  const userAndSettings = await databaseClient.getUserAndSettings(user.id);
+  console.log('userAndSettings', userAndSettings.actualavailable_usd);
+  if ((totalOrders.length >= 10000) || (Number(userAndSettings.actualavailable_usd) <= 0)) {
     return;
   }
 
@@ -798,7 +800,7 @@ async function autoSetup(user, parameters) {
     // call the function again with the new parameters
     setTimeout(() => {
       autoSetup(user, newParameters);
-    }, 100);
+    }, 1000);
 
   } catch (err) {
     if (err.response?.status === 400) {
@@ -867,7 +869,7 @@ async function updateFunds(userID) {
   return new Promise(async (resolve, reject) => {
     try {
       const available = await getAvailableFunds(userID);
-      console.log('avail funds', available);
+      // console.log('avail funds', available);
       await databaseClient.saveFunds(available, userID);
       resolve()
     } catch (err) { reject(err) }
