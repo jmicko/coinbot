@@ -802,7 +802,7 @@ async function autoSetup(user, parameters) {
     // call the function again with the new parameters
     setTimeout(() => {
       autoSetup(user, newParameters);
-    }, 1000);
+    }, 100);
 
   } catch (err) {
     if (err.response?.status === 400) {
