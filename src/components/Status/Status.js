@@ -136,7 +136,7 @@ function Status(props) {
         {profitDisplay === 1
           ? <p className="info status-ticker">
             <strong>24 hour Profit</strong>
-            {JSON.stringify(props.store.accountReducer.userReducer.actualavailable_usd)}
+            {/* {JSON.stringify(props.store.accountReducer.userReducer.actualavailable_usd)} */}
             <br />
             ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[0].sum).toFixed(profitAccuracy))}
           </p>
