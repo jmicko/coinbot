@@ -115,7 +115,7 @@ function Status(props) {
       let USD = props.store.accountReducer.accountReducer.accounts.filter(account => account.currency === 'USD');
       setAvailableFundsUSD(USD[0].available - Number(props.store.accountReducer.accountReducer.spentUSD.sum));
       let BTC = props.store.accountReducer.accountReducer.accounts.filter(account => account.currency === 'BTC');
-      setAvailableFundsBTC(BTC[0]);
+      setAvailableFundsBTC(BTC[0].available);
     }
   }, [props.store.accountReducer.accountReducer.accounts]);
 
@@ -175,7 +175,7 @@ function Status(props) {
           ? <p className="info status-ticker">
             <strong>Available Funds</strong>
             <br />
-            {numberWithCommas(Math.floor(availableFundsBTC.available * 100000000) / 100000000)} BTC
+            {numberWithCommas(Math.floor(availableFundsBTC * 100000000) / 100000000)} BTC
           </p>
           : <p className="info status-ticker">
             <strong>Available Funds</strong>

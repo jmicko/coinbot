@@ -84,7 +84,7 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
     if (side == 'buy') {
       // console.log('getting buys', max_trade_load);
       // gets all unsettled buys, sorted by price
-      sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" 
+      sqlText = `SELECT * FROM "orders" 
       WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" DESC
       LIMIT $2;`;
@@ -100,7 +100,7 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
     } else if (side == 'sell') {
       // console.log('getting sells', max_trade_load);
       // gets all unsettled sells, sorted by price
-      sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" 
+      sqlText = `SELECT * FROM "orders" 
       WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" ASC
       LIMIT $2;`;

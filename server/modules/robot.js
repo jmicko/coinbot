@@ -64,7 +64,7 @@ async function syncOrders(userID, count) {
           let time = ((botSettings.loop_speed * 10) + 100) * botSettings.full_sync;
 
           if (time < 1000) {
-          //  console.log('need to use full sync timer'); 
+            //  console.log('need to use full sync timer'); 
             setTimeout(() => {
               moreOrdersTimer = false;
             }, 80);
@@ -85,7 +85,7 @@ async function syncOrders(userID, count) {
           cbOrders = cbOrders.concat(olderOrders);
 
           if (time < 1000) {
-            
+
             while (moreOrdersTimer) {
               await sleep(10);
             }
@@ -100,6 +100,7 @@ async function syncOrders(userID, count) {
 
         // CHECK IF THERE ARE 1000 OPEN ORDERS AND GET MORE FROM CB IF NEEDED
         if (cbOrders.length >= 1000) {
+          console.log('!!!!!!!!!getting more orders. This should not happen anymore');
           await getMoreOrders();
         }
         // compare the arrays and remove any where the ids match in both,
@@ -151,9 +152,11 @@ async function syncOrders(userID, count) {
       let ordersToCancel = [];
       // this if statement saves a little processing by skipping the filter if not needed
       // only checks for cancels if the two arrays are the same length and no orders to flip
-      if (!(dbOrders.length === cbOrders.length && ordersToCheck.length === 0)) {
+      // if (!(dbOrders.length === cbOrders.length && ordersToCheck.length === 0)) {
         ordersToCancel = await orderElimination(cbOrders, dbOrders);
-      }
+      // }
+
+      console.log('cancel:', ordersToCancel, cbOrders.length, dbOrders.length);
 
 
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
@@ -200,6 +203,9 @@ async function syncOrders(userID, count) {
 
       // DELETE ALL ORDERS MARKED FOR DELETE
       await deleteMarkedOrders(userID);
+
+      console.log('avail funds');
+      await getAvailableFunds(userID);
 
     } else {
       // if the user is not active or is paused, loop every 5 seconds
@@ -444,6 +450,7 @@ async function settleMultipleOrders(ordersArray, userID) {
       for (let i = 0; i < ordersArray.length; i++) {
         const orderToCheck = ordersArray[i];
 
+        
         let reorderTimer = true;
         setTimeout(() => {
           reorderTimer = false;
@@ -457,7 +464,9 @@ async function settleMultipleOrders(ordersArray, userID) {
           // get all the order details from cb
           // console.log('ORDER TO CHECK:', orderToCheck);
           // await sleep(80); // avoid rate limiting
+          console.log('checking order:', orderToCheck);
           let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID);
+          console.log('full details:', fullSettledDetails);
           // update the order in the db
           const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
           await pool.query(queryText, [
@@ -470,6 +479,7 @@ async function settleMultipleOrders(ordersArray, userID) {
             orderToCheck.id
           ]);
         } catch (err) {
+          // console.log(err);
           // handle not found order
           if (err.response?.status === 404) {
             // if the order was supposed to be canceled, cancel it
@@ -570,6 +580,7 @@ async function reorder(orderToReorder) {
       } else {
         await sleep(1000);
         // check again. if it finds it, don't do anything. If not found, error handling will reorder
+        console.log('checking again before reordering', orderToReorder);
         let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID);
       }
     } catch (err) {
@@ -805,6 +816,20 @@ async function autoSetup(user, parameters) {
   }
 }
 
+async function getAvailableFunds(userID) {
+  console.log('getting available funds');
+  return new Promise(async (resolve, reject) => {
+    const results = await Promise.all([
+      coinbaseClient.getAccounts(userID),
+      databaseClient.getSpentUSD(userID)
+    ]);
+    console.log('results 0', results[0].length);
+    console.log('results 1', results[1]);
+
+    resolve()
+  })
+}
+
 
 const robot = {
   sleep: sleep,
@@ -814,6 +839,7 @@ const robot = {
   syncEverything: syncEverything,
   startSync: startSync,
   autoSetup: autoSetup,
+  getAvailableFunds: getAvailableFunds,
 }
 
 
