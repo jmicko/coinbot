@@ -204,9 +204,10 @@ async function syncOrders(userID, count) {
       // DELETE ALL ORDERS MARKED FOR DELETE
       await deleteMarkedOrders(userID);
 
-      const available = await getAvailableFunds(userID);
-      console.log('avail funds', available);
-      await databaseClient.saveFunds(available, userID);
+      // const available = await getAvailableFunds(userID);
+      // console.log('avail funds', available);
+      // await databaseClient.saveFunds(available, userID);
+      await updateFunds(userID);
 
     } else {
       // if the user is not active or is paused, loop every 5 seconds
@@ -857,6 +858,17 @@ async function getAvailableFunds(userID) {
       // console.log('availableFunds', availableFunds);
 
       resolve(availableFunds)
+    } catch (err) { reject(err) }
+  })
+}
+
+async function updateFunds(userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const available = await getAvailableFunds(userID);
+      console.log('avail funds', available);
+      await databaseClient.saveFunds(available, userID);
+      resolve()
     } catch (err) { reject(err) }
   })
 }
