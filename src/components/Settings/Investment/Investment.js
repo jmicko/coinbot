@@ -48,6 +48,16 @@ function Investment(props) {
     });
   }
 
+  function saveReserve(event) {
+    event.preventDefault();
+    dispatch({
+      type: 'SAVE_RESERVE',
+      payload: {
+        reserve: reserve
+      }
+    });
+  }
+
   function savePostMaxReinvestRatio(event) {
     event.preventDefault();
     dispatch({
@@ -146,7 +156,7 @@ function Investment(props) {
           onChange={(event) => setReserve(event.target.value)}
         />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { reinvestRatio(event) }}>Save reserve</button>
+        <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { saveReserve(event) }}>Save reserve</button>
         <div className="divider" />
       </>
 
