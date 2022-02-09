@@ -153,7 +153,7 @@ async function syncOrders(userID, count) {
       // this if statement saves a little processing by skipping the filter if not needed
       // only checks for cancels if the two arrays are the same length and no orders to flip
       // if (!(dbOrders.length === cbOrders.length && ordersToCheck.length === 0)) {
-        ordersToCancel = await orderElimination(cbOrders, dbOrders);
+      ordersToCancel = await orderElimination(cbOrders, dbOrders);
       // }
 
       console.log('cancel:', ordersToCancel, cbOrders.length, dbOrders.length);
@@ -450,7 +450,7 @@ async function settleMultipleOrders(ordersArray, userID) {
       for (let i = 0; i < ordersArray.length; i++) {
         const orderToCheck = ordersArray[i];
 
-        
+
         let reorderTimer = true;
         setTimeout(() => {
           reorderTimer = false;
@@ -821,12 +821,39 @@ async function getAvailableFunds(userID) {
   return new Promise(async (resolve, reject) => {
     const results = await Promise.all([
       coinbaseClient.getAccounts(userID),
-      databaseClient.getSpentUSD(userID)
+      databaseClient.getSpentUSD(userID),
+      databaseClient.getSpentBTC(userID)
     ]);
-    console.log('results 0', results[0].length);
-    console.log('results 1', results[1]);
 
-    resolve()
+    const [USD] = results[0].filter(account => account.currency === 'USD')
+    const availableUSD = USD.available;
+    const spentUSD = results[1].sum;
+    const actualAvailableUSD = availableUSD - spentUSD;
+
+    const [BTC] = results[0].filter(account => account.currency === 'BTC')
+    const availableBTC = BTC.available;
+    const spentBTC = results[2].sum;
+    const actualAvailableBTC = Number((availableBTC - spentBTC).toFixed(16));
+
+    // console.log('results 0', results[0].length);
+    // console.log('spent USD', spentUSD);
+    // console.log('USD available', availableUSD);
+    // console.log('actualAvailableUSD', actualAvailableUSD);
+
+    // console.log('spent BTC', spentBTC);
+    // console.log('BTC available', availableBTC);
+    // console.log('actualAvailableBTC', actualAvailableBTC);
+
+    const availableFunds = {
+      availableBTC: availableBTC,
+      availableUSD: availableUSD,
+      actualAvailableBTC: actualAvailableBTC,
+      actualAvailableUSD: actualAvailableUSD
+    }
+
+    console.log('availableFunds', availableFunds);
+
+    resolve(availableFunds)
   })
 }
 

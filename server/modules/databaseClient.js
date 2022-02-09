@@ -210,6 +210,33 @@ const getSpentUSD = (userID) => {
 }
 
 
+const getSpentBTC = (userID) => {
+  return new Promise((resolve, reject) => {
+    let sqlText;
+    // put sql stuff here, extending the pool promise to the parent function
+    // sqlText = `SELECT sum("price"*"size" + "price"*"size"*0.002)
+    sqlText = `SELECT sum("size")
+    FROM (
+      SELECT "price", "size"
+      FROM "orders" 
+        WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
+      ORDER BY "price" ASC
+      OFFSET 200
+      ) as volume_btc;`;
+    pool.query(sqlText, [userID])
+      .then((results) => {
+        const [volume_btc] = results.rows;
+        // promise returns promise from pool if success
+        resolve(volume_btc);
+      })
+      .catch((err) => {
+        // or promise relays errors from pool to parent
+        reject(err);
+      })
+  });
+}
+
+
 const getReorders = (userID) => {
   return new Promise((resolve, reject) => {
     let sqlText;
@@ -368,6 +395,7 @@ const databaseClient = {
   getUnsettledTradeCounts: getUnsettledTradeCounts,
   getSingleTrade: getSingleTrade,
   getSpentUSD: getSpentUSD,
+  getSpentBTC: getSpentBTC,
   getReorders: getReorders,
   deleteTrade: deleteTrade,
   getUser: getUser,
