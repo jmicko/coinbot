@@ -42,6 +42,8 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       // store the new trade in the db. the trade details are also sent to store trade position prices
       await databaseClient.storeTrade(pendingTrade, tradeDetails);
 
+      await robot.updateFunds(userID);
+
       // send OK status
       res.sendStatus(200);
 

@@ -41,7 +41,7 @@ function Status(props) {
   const getAccounts = useCallback(
     () => {
       dispatch({
-        type: 'FETCH_ACCOUNT'
+        type: 'FETCH_USER'
       });
     }, [dispatch]
   )

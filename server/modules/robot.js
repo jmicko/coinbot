@@ -731,6 +731,7 @@ function orderElimination(dbOrders, cbOrders) {
 async function autoSetup(user, parameters) {
   // stop bot from adding more trades if 10000 already placed
   let totalOrders = await databaseClient.getUnsettledTrades('all', user.id);
+  const userAndSettings = getUserAndSettings(user.id);
   if (totalOrders.length >= 10000) {
     return;
   }
@@ -883,6 +884,7 @@ const robot = {
   startSync: startSync,
   autoSetup: autoSetup,
   getAvailableFunds: getAvailableFunds,
+  updateFunds:updateFunds,
 }
 
 
