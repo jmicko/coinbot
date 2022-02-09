@@ -644,6 +644,7 @@ async function cancelMultipleOrders(ordersArray, userID) {
   return new Promise(async (resolve, reject) => {
     // set variable to track how many orders were actually canceled
     let quantity = 0;
+    // console.log('ordersArray', ordersArray);
     if (ordersArray.length > 0) {
       // need to wait and double check db before deleting because they take time to store and show up on cb first
       // only need to wait once because as the loop runs nothing will be added to it. Only wait for most recent order
@@ -654,7 +655,8 @@ async function cancelMultipleOrders(ordersArray, userID) {
         try {
           // check to make sure it really isn't in the db
           let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
-          if (doubleCheck) {
+          // console.log('double check', doubleCheck);
+          if (!doubleCheck) {
             // cancel the order if nothing comes back from db
             // console.log('canceling order', orderToCancel);
             await coinbaseClient.cancelOrder(orderToCancel.id, userID);
