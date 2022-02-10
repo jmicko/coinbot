@@ -873,7 +873,19 @@ async function updateFunds(userID) {
   return new Promise(async (resolve, reject) => {
     try {
       const available = await getAvailableFunds(userID);
-      // console.log('avail funds', available);
+      const userSettings = await databaseClient.getUserAndSettings(userID);
+      // console.log('user settings', userSettings);
+      // console.log('avail funds', available.actualAvailableUSD);
+      if (userSettings.reinvest && (userSettings.reinvest_ratio != 0) && (userSettings.reserve > available.actualAvailableUSD)) {
+        console.log('need to turn off reinvest');
+        try {
+          const queryText = `UPDATE "user_settings" SET "reinvest_ratio" = $1, "reinvest" = false WHERE "userID" = $2`;
+          await pool.query(queryText, [0, userID]);
+        } catch (err) {
+          console.log(err, 'problem turning off reinvest');
+          res.sendStatus(500);
+        }
+      }
       await databaseClient.saveFunds(available, userID);
       resolve()
     } catch (err) { reject(err) }
