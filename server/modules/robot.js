@@ -105,7 +105,7 @@ async function syncOrders(userID, count) {
         }
         // compare the arrays and remove any where the ids match in both,
         // leaving a list of orders that are open in the db, but not on cb. Probably settled
-        console.log('dbOrders', dbOrders.length);
+        // console.log('dbOrders', dbOrders.length);
         ordersToCheck = await orderElimination(dbOrders, cbOrders);
 
         // DONE GETTING ORDERS
@@ -467,9 +467,9 @@ async function settleMultipleOrders(ordersArray, userID) {
           // get all the order details from cb
           // console.log('ORDER TO CHECK:', orderToCheck);
           // await sleep(80); // avoid rate limiting
-          console.log('checking order:', orderToCheck);
+          // console.log('checking order:', orderToCheck);
           let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID);
-          console.log('full details:', fullSettledDetails);
+          // console.log('full details:', fullSettledDetails);
           // update the order in the db
           const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
           await pool.query(queryText, [
@@ -656,12 +656,14 @@ async function cancelMultipleOrders(ordersArray, userID) {
         try {
           // check to make sure it really isn't in the db
           let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
-          console.log('double check', doubleCheck);
+          // console.log('double check', doubleCheck);
           if (doubleCheck) {
-            // todo - if it is in the db, it should cancel but set it to reorder because it is out of range
+            // if it is in the db, it should cancel but set it to reorder because it is out of range
             // that way it will reorder faster when it moves back in range
             // console.log('canceling order', orderToCancel);
             await coinbaseClient.cancelOrder(orderToCancel.id, userID);
+            await databaseClient.setSingleReorder(orderToCancel.id);
+            // console.log('old trade was set to reorder when back in range');
             quantity++;
           } else {
             // cancel the order if nothing comes back from db
