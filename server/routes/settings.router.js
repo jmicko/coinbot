@@ -132,6 +132,21 @@ router.put('/postMaxReinvestRatio', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
+* PUT route to set reserve
+*/
+router.put('/reserve', rejectUnauthenticated, async (req, res) => {
+  const user = req.user;
+  try {
+    const queryText = `UPDATE "user_settings" SET "reserve" = $1 WHERE "userID" = $2`;
+    await pool.query(queryText, [req.body.reserve, user.id]);
+    res.sendStatus(200);
+  } catch (err) {
+    console.log(err, 'problem in reserve ROUTE');
+    res.sendStatus(500);
+  }
+});
+
+/**
  * PUT route setting profit accuracy
  */
 router.put('/profitAccuracy', rejectUnauthenticated, async (req, res) => {

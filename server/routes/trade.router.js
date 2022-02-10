@@ -42,6 +42,8 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       // store the new trade in the db. the trade details are also sent to store trade position prices
       await databaseClient.storeTrade(pendingTrade, tradeDetails);
 
+      await robot.updateFunds(userID);
+
       // send OK status
       res.sendStatus(200);
 
@@ -98,6 +100,8 @@ router.post('/basic', rejectUnauthenticated, async (req, res) => {
     try {
       // send the new order with the trade details
       await coinbaseClient.placeOrder(tradeDetails);
+
+      await robot.updateFunds(userID);
 
       // send OK status
       res.sendStatus(200);
@@ -208,8 +212,8 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
     const queryText = `UPDATE "orders" SET "will_cancel" = true WHERE "id"=$1;`;
     let result = await pool.query(queryText, [orderId]);
     // send cancelOrder to cb
-    // let result = await coinbaseClient.cancelOrder(orderId, userID);
-    // console.log('order was deleted successfully from cb', result);
+    let deleteResult = await coinbaseClient.cancelOrder(orderId, userID);
+    console.log('order was deleted successfully from cb', deleteResult);
     // databaseClient.deleteTrade(orderId);
     console.log('order was marked for deletion in database');
     res.sendStatus(200)

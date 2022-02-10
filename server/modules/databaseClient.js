@@ -84,7 +84,7 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
     if (side == 'buy') {
       // console.log('getting buys', max_trade_load);
       // gets all unsettled buys, sorted by price
-      sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" 
+      sqlText = `SELECT * FROM "orders" 
       WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" DESC
       LIMIT $2;`;
@@ -100,7 +100,7 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
     } else if (side == 'sell') {
       // console.log('getting sells', max_trade_load);
       // gets all unsettled sells, sorted by price
-      sqlText = `SELECT "id", price, size, trade_pair_ratio, side, product_id, created_at, original_buy_price, original_sell_price FROM "orders" 
+      sqlText = `SELECT * FROM "orders" 
       WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" ASC
       LIMIT $2;`;
@@ -183,21 +183,76 @@ const getSingleTrade = (id) => {
 }
 
 
-const getReorders = (userID) => {
+const getSpentUSD = (userID) => {
   return new Promise((resolve, reject) => {
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
-    sqlText = `SELECT * FROM "orders" WHERE "reorder"=true AND "settled"=false AND "userID"=$1;`;
+    // sqlText = `SELECT sum("price"*"size" + "price"*"size"*0.002)
+    sqlText = `SELECT sum("price"*"size")
+    FROM (
+      SELECT "price", "size"
+      FROM "orders" 
+        WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
+      ORDER BY "price" DESC
+      OFFSET 200
+      ) as volume_usd;`;
     pool.query(sqlText, [userID])
       .then((results) => {
-        const reorders = results.rows;
+        const [volume_usd] = results.rows;
         // promise returns promise from pool if success
-        resolve(reorders);
+        resolve(volume_usd);
       })
       .catch((err) => {
         // or promise relays errors from pool to parent
         reject(err);
       })
+  });
+}
+
+
+const getSpentBTC = (userID) => {
+  return new Promise((resolve, reject) => {
+    let sqlText;
+    // put sql stuff here, extending the pool promise to the parent function
+    // sqlText = `SELECT sum("price"*"size" + "price"*"size"*0.002)
+    sqlText = `SELECT sum("size")
+    FROM (
+      SELECT "price", "size"
+      FROM "orders" 
+        WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
+      ORDER BY "price" ASC
+      OFFSET 200
+      ) as volume_btc;`;
+    pool.query(sqlText, [userID])
+      .then((results) => {
+        const [volume_btc] = results.rows;
+        // promise returns promise from pool if success
+        resolve(volume_btc);
+      })
+      .catch((err) => {
+        // or promise relays errors from pool to parent
+        reject(err);
+      })
+  });
+}
+
+
+const getReorders = (userID) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // let sqlText;
+      // put sql stuff here, extending the pool promise to the parent function
+      let sqlText = `SELECT * FROM "orders" WHERE "reorder"=true AND "settled"=false AND "userID"=$1;`;
+      const results = await pool.query(sqlText, [userID])
+      // .then((results) => {
+      const reorders = results.rows;
+      // promise returns promise from pool if success
+      resolve(reorders);
+      // })
+    } catch (err) {
+      // or promise relays errors from pool to parent
+      reject(err);
+    }
   });
 }
 
@@ -333,6 +388,18 @@ async function setKillLock(status, userID) {
   })
 }
 
+async function saveFunds(funds, userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `UPDATE "user_settings" SET "available_btc" = $1, "available_usd" = $2, "actualavailable_btc" = $3, "actualavailable_usd" = $4  WHERE "userID" = $5`;
+      let result = await pool.query(sqlText, [funds.availableBTC, funds.availableUSD, funds.actualAvailableBTC, funds.actualAvailableUSD, userID]);
+      resolve(result);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 
 const databaseClient = {
   storeTrade: storeTrade,
@@ -340,6 +407,8 @@ const databaseClient = {
   getUnsettledTrades: getUnsettledTrades,
   getUnsettledTradeCounts: getUnsettledTradeCounts,
   getSingleTrade: getSingleTrade,
+  getSpentUSD: getSpentUSD,
+  getSpentBTC: getSpentBTC,
   getReorders: getReorders,
   deleteTrade: deleteTrade,
   getUser: getUser,
@@ -350,7 +419,8 @@ const databaseClient = {
   toggleMaintenance: toggleMaintenance,
   setReorder: setReorder,
   setPause: setPause,
-  setKillLock: setKillLock
+  setKillLock: setKillLock,
+  saveFunds: saveFunds
 }
 
 module.exports = databaseClient;

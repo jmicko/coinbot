@@ -41,7 +41,7 @@ function Status(props) {
   const getAccounts = useCallback(
     () => {
       dispatch({
-        type: 'FETCH_ACCOUNT'
+        type: 'FETCH_USER'
       });
     }, [dispatch]
   )
@@ -111,13 +111,11 @@ function Status(props) {
   }, [props.store.ordersReducer.openOrdersInOrder.counts]);
 
   useEffect(() => {
-    if (props.store.accountReducer.accountReducer) {
-      let USD = props.store.accountReducer.accountReducer.filter(account => account.currency === 'USD');
-      setAvailableFundsUSD(USD[0]);
-      let BTC = props.store.accountReducer.accountReducer.filter(account => account.currency === 'BTC');
-      setAvailableFundsBTC(BTC[0]);
+    if (props.store.accountReducer.userReducer) {
+      setAvailableFundsUSD(props.store.accountReducer.userReducer.actualavailable_usd);
+      setAvailableFundsBTC(props.store.accountReducer.userReducer.actualavailable_btc);
     }
-  }, [props.store.accountReducer.accountReducer]);
+  }, [props.store.accountReducer.userReducer]);
 
   useEffect(() => {
     if (profitDisplay > 4) {
@@ -138,6 +136,7 @@ function Status(props) {
         {profitDisplay === 1
           ? <p className="info status-ticker">
             <strong>24 hour Profit</strong>
+            {/* {JSON.stringify(props.store.accountReducer.userReducer.actualavailable_usd)} */}
             <br />
             ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[0].sum).toFixed(profitAccuracy))}
           </p>
@@ -174,12 +173,12 @@ function Status(props) {
           ? <p className="info status-ticker">
             <strong>Available Funds</strong>
             <br />
-            {numberWithCommas(Math.floor(availableFundsBTC.available * 100000000) / 100000000)} BTC
+            {numberWithCommas(Math.floor(availableFundsBTC * 100000000) / 100000000)} BTC
           </p>
           : <p className="info status-ticker">
             <strong>Available Funds</strong>
             <br />
-            ${numberWithCommas(Math.floor(availableFundsUSD.available * 100) / 100)}
+            ${numberWithCommas(Math.floor(availableFundsUSD * 100) / 100)}
           </p>
         }
       </center>

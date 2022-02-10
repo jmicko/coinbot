@@ -28,13 +28,11 @@ function AutoSetup(props) {
   }, [startingValue, increment, size, sizeType, props.priceTicker])
 
   useEffect(() => {
-    if (props.store.accountReducer.accountReducer) {
-      let USD = props.store.accountReducer.accountReducer.filter(account => account.currency === 'USD');
-      setAvailableFundsUSD(USD[0]);
-      let BTC = props.store.accountReducer.accountReducer.filter(account => account.currency === 'BTC');
-      setAvailableFundsBTC(BTC[0]);
+    if (props.store.accountReducer.userReducer) {
+      setAvailableFundsUSD(props.store.accountReducer.userReducer.actualavailable_usd);
+      setAvailableFundsBTC(props.store.accountReducer.userReducer.actualavailable_btc);
     }
-  }, [props.store.accountReducer.accountReducer]);
+  }, [props.store.accountReducer.userReducer]);
 
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
   const numberWithCommas = (x) => {
@@ -47,7 +45,7 @@ function AutoSetup(props) {
   }
 
   function calculateResults() {
-    let availableFunds = availableFundsUSD.available;
+    let availableFunds = availableFundsUSD;
     // this is the current price point that the loop is working with
     let loopPrice = startingValue;
     // this is the price BTC is currently trading at
@@ -123,7 +121,7 @@ function AutoSetup(props) {
   }
 
   function autoTrader() {
-    let availableFunds = availableFundsUSD.available;
+    let availableFunds = availableFundsUSD;
     console.log('here is the current available funds', availableFunds);
 
     dispatch({
@@ -142,7 +140,7 @@ function AutoSetup(props) {
     <div className="AutoSetup settings-panel scrollable">
       <div className="divider" />
       <h4>Auto Setup</h4>
-      <p>{props.priceTicker} avail {availableFundsUSD.available}</p>
+      {/* <p>{props.priceTicker} avail {availableFundsUSD}</p> */}
       <p>
         Enter the parameters you want and the bot will keep placing trades for you based on
         those parameters until you run out of cash, or until you have 10,000 trade-pairs.

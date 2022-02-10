@@ -3,7 +3,7 @@
 .Settings {
   display         : block;
   grid-column     : 3;
-  grid-row        : 2/4;
+  grid-row        : 2/5;
   background-color: #acacaf;
   z-index         : 1;
   height          : fit-content;

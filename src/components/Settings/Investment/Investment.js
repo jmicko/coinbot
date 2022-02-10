@@ -8,6 +8,7 @@ function Investment(props) {
   const dispatch = useDispatch();
 
   const [reinvest_ratio, setReinvest_ratio] = useState(0);
+  const [reserve, setReserve] = useState(0);
   const [bulk_pair_ratio, setBulk_pair_ratio] = useState(1.1);
   const [max_trade_size, setMaxTradeSize] = useState(30);
   const [postMaxReinvestRatio, setPostMaxReinvestRatio] = useState(0);
@@ -43,6 +44,16 @@ function Investment(props) {
       type: 'REINVEST_RATIO',
       payload: {
         reinvest_ratio: reinvest_ratio
+      }
+    });
+  }
+
+  function saveReserve(event) {
+    event.preventDefault();
+    dispatch({
+      type: 'SAVE_RESERVE',
+      payload: {
+        reserve: reserve
       }
     });
   }
@@ -123,6 +134,34 @@ function Investment(props) {
         </>
       }
 
+
+      {/* RESERVE */}
+      <h4>Reserve</h4>
+      <p>
+        Automatically turn off reinvestment when the available funds fall below a set amount.
+        This will not be automatically turned back on for you.
+      </p>
+      <>
+        <p>Current reserve: {props.store.accountReducer.userReducer.reserve}</p>
+        <label htmlFor="reserve">
+          Set Reserve:
+        </label>
+        <input
+          type="number"
+          name="reserve"
+          value={reserve}
+          step={10}
+          // max={200}
+          required
+          onChange={(event) => setReserve(event.target.value)}
+        />
+        <br />
+        <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { saveReserve(event) }}>Save reserve</button>
+        <div className="divider" />
+      </>
+
+
+
       {/* MAX TRADE SIZE USD */}
       {/* only show if reinvest is also turned on */}
       {
@@ -156,7 +195,7 @@ function Investment(props) {
               <br />
               <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { storeMaxTradeSize(event) }}>Save Max</button>
               <>
-                <p>How much of the profits should the bot reinvest after the max is hit? 
+                <p>How much of the profits should the bot reinvest after the max is hit?
                   Leave this at 0 to stop reinvestment after the max. If set above 0, there is no limit to how large the
                   size will get. Probably a good idea to stay under 100%</p>
                 {((postMaxReinvestRatio > 100) || (props.store.accountReducer.userReducer.reinvest_ratio > 100)) &&

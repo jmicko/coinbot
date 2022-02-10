@@ -88,6 +88,18 @@ function* postMaxReinvestRatio(action) {
   }
 }
 
+function* reserve(action) {
+  try {
+    yield axios.put(`/api/settings/reserve`, action.payload);
+    yield put({ type: 'FETCH_USER' });
+  } catch (error) {
+    console.log('put account route reserve has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 function* sendProfitAccuracy(action) {
   try {
     yield axios.put(`/api/settings/profitAccuracy`, action.payload);
@@ -121,6 +133,7 @@ function* settingsSaga() {
   yield takeLatest('SET_PROFIT_ACCURACY', sendProfitAccuracy);
   yield takeLatest('SET_MAX_TRADE_LOAD', sendTradeLoadMax);
   yield takeLatest('POST_MAX_REINVEST_RATIO', postMaxReinvestRatio);
+  yield takeLatest('SAVE_RESERVE', reserve);
   yield takeLatest('TOGGLE_MAINTENANCE', toggleMaintenance);
   yield takeLatest('KILL_LOCK', killLock);
 }

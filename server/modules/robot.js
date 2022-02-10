@@ -43,7 +43,8 @@ async function syncOrders(userID, count) {
         // get lists of trades to compare which have been settled
         const results = await Promise.all([
           // get all open orders from db and cb
-          databaseClient.getUnsettledTrades('all', userID),
+          databaseClient.getLimitedTrades(userID, 200),
+          // databaseClient.getUnsettledTrades('all', userID),
           coinbaseClient.getOpenOrders(userID)
         ]);
 
@@ -63,7 +64,7 @@ async function syncOrders(userID, count) {
           let time = ((botSettings.loop_speed * 10) + 100) * botSettings.full_sync;
 
           if (time < 1000) {
-          //  console.log('need to use full sync timer'); 
+            //  console.log('need to use full sync timer'); 
             setTimeout(() => {
               moreOrdersTimer = false;
             }, 80);
@@ -84,7 +85,7 @@ async function syncOrders(userID, count) {
           cbOrders = cbOrders.concat(olderOrders);
 
           if (time < 1000) {
-            
+
             while (moreOrdersTimer) {
               await sleep(10);
             }
@@ -99,6 +100,7 @@ async function syncOrders(userID, count) {
 
         // CHECK IF THERE ARE 1000 OPEN ORDERS AND GET MORE FROM CB IF NEEDED
         if (cbOrders.length >= 1000) {
+          console.log('!!!!!!!!!getting more orders. This should not happen anymore');
           await getMoreOrders();
         }
         // compare the arrays and remove any where the ids match in both,
@@ -150,9 +152,11 @@ async function syncOrders(userID, count) {
       let ordersToCancel = [];
       // this if statement saves a little processing by skipping the filter if not needed
       // only checks for cancels if the two arrays are the same length and no orders to flip
-      if (!(dbOrders.length === cbOrders.length && ordersToCheck.length === 0)) {
-        ordersToCancel = await orderElimination(cbOrders, dbOrders);
-      }
+      // if (!(dbOrders.length === cbOrders.length && ordersToCheck.length === 0)) {
+      ordersToCancel = await orderElimination(cbOrders, dbOrders);
+      // }
+
+      // console.log('cancel:', ordersToCancel, cbOrders.length, dbOrders.length);
 
 
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
@@ -199,6 +203,11 @@ async function syncOrders(userID, count) {
 
       // DELETE ALL ORDERS MARKED FOR DELETE
       await deleteMarkedOrders(userID);
+
+      // const available = await getAvailableFunds(userID);
+      // console.log('avail funds', available);
+      // await databaseClient.saveFunds(available, userID);
+      await updateFunds(userID);
 
     } else {
       // if the user is not active or is paused, loop every 5 seconds
@@ -443,6 +452,7 @@ async function settleMultipleOrders(ordersArray, userID) {
       for (let i = 0; i < ordersArray.length; i++) {
         const orderToCheck = ordersArray[i];
 
+
         let reorderTimer = true;
         setTimeout(() => {
           reorderTimer = false;
@@ -456,7 +466,9 @@ async function settleMultipleOrders(ordersArray, userID) {
           // get all the order details from cb
           // console.log('ORDER TO CHECK:', orderToCheck);
           // await sleep(80); // avoid rate limiting
+          console.log('checking order:', orderToCheck);
           let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID);
+          console.log('full details:', fullSettledDetails);
           // update the order in the db
           const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
           await pool.query(queryText, [
@@ -469,6 +481,7 @@ async function settleMultipleOrders(ordersArray, userID) {
             orderToCheck.id
           ]);
         } catch (err) {
+          // console.log(err);
           // handle not found order
           if (err.response?.status === 404) {
             // if the order was supposed to be canceled, cancel it
@@ -569,6 +582,7 @@ async function reorder(orderToReorder) {
       } else {
         await sleep(1000);
         // check again. if it finds it, don't do anything. If not found, error handling will reorder
+        console.log('checking again before reordering', orderToReorder);
         let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID);
       }
     } catch (err) {
@@ -630,6 +644,7 @@ async function cancelMultipleOrders(ordersArray, userID) {
   return new Promise(async (resolve, reject) => {
     // set variable to track how many orders were actually canceled
     let quantity = 0;
+    // console.log('ordersArray', ordersArray);
     if (ordersArray.length > 0) {
       // need to wait and double check db before deleting because they take time to store and show up on cb first
       // only need to wait once because as the loop runs nothing will be added to it. Only wait for most recent order
@@ -640,7 +655,8 @@ async function cancelMultipleOrders(ordersArray, userID) {
         try {
           // check to make sure it really isn't in the db
           let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
-          if (!doubleCheck) {
+          console.log('double check', doubleCheck);
+          if (doubleCheck) {
             // cancel the order if nothing comes back from db
             // console.log('canceling order', orderToCancel);
             await coinbaseClient.cancelOrder(orderToCancel.id, userID);
@@ -717,23 +733,25 @@ function orderElimination(dbOrders, cbOrders) {
 async function autoSetup(user, parameters) {
   // stop bot from adding more trades if 10000 already placed
   let totalOrders = await databaseClient.getUnsettledTrades('all', user.id);
-  if (totalOrders.length >= 10000) {
+  const userAndSettings = await databaseClient.getUserAndSettings(user.id);
+  console.log('userAndSettings', userAndSettings.actualavailable_usd);
+  if ((totalOrders.length >= 10000) || (Number(userAndSettings.actualavailable_usd) <= 0)) {
     return;
   }
-
+  
   // assume size is in btc
   let convertedAmount = parameters.size;
-
+  
   // if size is in usd, convert it to btc
   if (parameters.sizeType === "USD") {
     // console.log('need to convert to btc!');
     // get the BTC size from the entered USD size
     convertedAmount = Number(Math.floor((parameters.size / parameters.startingValue) * 100000000)) / 100000000;
   }
-
+  
   // calculate original sell price
   let original_sell_price = (Math.round((parameters.startingValue * (Number(parameters.trade_pair_ratio) + 100))) / 100);
-
+  
   const tradeDetails = {
     original_sell_price: original_sell_price, //done
     original_buy_price: parameters.startingValue, //done
@@ -745,7 +763,7 @@ async function autoSetup(user, parameters) {
     userID: user.id,
     trade_pair_ratio: parameters.trade_pair_ratio
   };
-
+  
   // send the order through
   try {
     // send the new order with the trade details
@@ -756,6 +774,9 @@ async function autoSetup(user, parameters) {
     await robot.sleep(100);
     // store the new trade in the db. the trade details are also sent to store trade position prices
     await databaseClient.storeTrade(pendingTrade, tradeDetails);
+    
+    // update current funds
+    await updateFunds(user.id);
 
     // tell the DOM to update
     socketClient.emit('message', {
@@ -804,6 +825,73 @@ async function autoSetup(user, parameters) {
   }
 }
 
+async function getAvailableFunds(userID) {
+  // console.log('getting available funds');
+  return new Promise(async (resolve, reject) => {
+    try {
+
+      const results = await Promise.all([
+        coinbaseClient.getAccounts(userID),
+        databaseClient.getSpentUSD(userID),
+        databaseClient.getSpentBTC(userID)
+      ]);
+
+      const [USD] = results[0].filter(account => account.currency === 'USD')
+      const availableUSD = USD.available;
+      const spentUSD = results[1].sum;
+      const actualAvailableUSD = availableUSD - spentUSD;
+
+      const [BTC] = results[0].filter(account => account.currency === 'BTC')
+      const availableBTC = BTC.available;
+      const spentBTC = results[2].sum;
+      const actualAvailableBTC = Number((availableBTC - spentBTC).toFixed(16));
+
+      // console.log('results 0', results[0].length);
+      // console.log('spent USD', spentUSD);
+      // console.log('USD available', availableUSD);
+      // console.log('actualAvailableUSD', actualAvailableUSD);
+
+      // console.log('spent BTC', spentBTC);
+      // console.log('BTC available', availableBTC);
+      // console.log('actualAvailableBTC', actualAvailableBTC);
+
+      const availableFunds = {
+        availableBTC: availableBTC,
+        availableUSD: availableUSD,
+        actualAvailableBTC: actualAvailableBTC,
+        actualAvailableUSD: actualAvailableUSD
+      }
+
+      // console.log('availableFunds', availableFunds);
+
+      resolve(availableFunds)
+    } catch (err) { reject(err) }
+  })
+}
+
+async function updateFunds(userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const available = await getAvailableFunds(userID);
+      const userSettings = await databaseClient.getUserAndSettings(userID);
+      // console.log('user settings', userSettings);
+      // console.log('avail funds', available.actualAvailableUSD);
+      if (userSettings.reinvest && (userSettings.reinvest_ratio != 0) && (userSettings.reserve > available.actualAvailableUSD)) {
+        console.log('need to turn off reinvest');
+        try {
+          const queryText = `UPDATE "user_settings" SET "reinvest_ratio" = $1, "reinvest" = false WHERE "userID" = $2`;
+          await pool.query(queryText, [0, userID]);
+        } catch (err) {
+          console.log(err, 'problem turning off reinvest');
+          res.sendStatus(500);
+        }
+      }
+      await databaseClient.saveFunds(available, userID);
+      resolve()
+    } catch (err) { reject(err) }
+  })
+}
+
 
 const robot = {
   sleep: sleep,
@@ -813,6 +901,8 @@ const robot = {
   syncEverything: syncEverything,
   startSync: startSync,
   autoSetup: autoSetup,
+  getAvailableFunds: getAvailableFunds,
+  updateFunds:updateFunds,
 }
 
 

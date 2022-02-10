@@ -14,36 +14,51 @@ const databaseClient = require('../modules/databaseClient');
  * For now this just wants to return usd account available balance
  * todo - fix this, it's horrible
  */
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
+
   const user = req.user;
-  // console.log('THE USER IS', user);
+  console.log('!!!!!!!!!!!!!ACCOUNT ROUTE', user);
   const userID = req.user.id;
   if (user.active) {
 
-    coinbaseClient.getAccounts(userID)
-      .then((result) => {
-        res.send(result)
-        // console.log('accounts on cb are', result);
-      })
-      .catch((err) => {
-        if (err.response?.status === 500) {
-          console.log('internal server error from coinbase');
-          socketClient.emit('message', {
-            error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
-            orderUpdate: true
-          });
-        } else if (err.response?.status === 401) {
-          console.log('Invalid API key');
-          socketClient.emit('message', {
-            error: `Invalid API key!`,
-            orderUpdate: false,
-            userID: Number(userID)
-          });
-        } else {
-          console.log(err, 'error getting accounts:');
+    try {
+
+      let accounts = await coinbaseClient.getAccounts(userID);
+
+      let spentUSD = await databaseClient.getSpentUSD(userID);
+      console.log('spent', spentUSD.sum);
+
+      res.send(
+        {
+          accounts: accounts,
+          spentUSD: spentUSD
         }
-        res.sendStatus(500)
-      })
+      );
+      // console.log('accounts on cb are', result);
+    }
+
+    catch (err) {
+      if (err.response?.status === 500) {
+        console.log('internal server error from coinbase');
+        socketClient.emit('message', {
+          error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
+          orderUpdate: true
+        });
+      } else if (err.response?.status === 401) {
+        console.log('Invalid API key');
+        socketClient.emit('message', {
+          error: `Invalid API key!`,
+          orderUpdate: false,
+          userID: Number(userID)
+        });
+      } else {
+        console.log(err, 'error getting accounts:');
+      }
+      res.sendStatus(500)
+    }
+
+
+
   } else {
     res.sendStatus(404)
   }
@@ -100,7 +115,7 @@ router.get('/profits', rejectUnauthenticated, async (req, res) => {
     let weekResult = await pool.query(lastWeekQueryText, [userID]);
     let monthResult = await pool.query(lastThirtyDayQueryText, [userID]);
     let sinceResetResult = await pool.query(sinceResetQueryText, [userID]);
-    
+
     profits.push(dayResult.rows[0]);
     profits.push(weekResult.rows[0]);
     profits.push(monthResult.rows[0]);
@@ -395,6 +410,11 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       "reinvest" boolean DEFAULT false,
       "reinvest_ratio" integer DEFAULT 0,
       "post_max_reinvest_ratio" integer DEFAULT 0,
+      "reserve" numeric(32,8) DEFAULT 0,
+      "available_btc" numeric(32,16) DEFAULT 0,
+      "available_usd" numeric(32,16) DEFAULT 0,
+      "actualAvailable_btc" numeric(32,16) DEFAULT 0,
+      "actualAvailable_usd" numeric(32,16) DEFAULT 0,
       "max_trade" boolean DEFAULT false,
       "max_trade_size" numeric(32,8) DEFAULT 0,
       "max_trade_load" integer DEFAULT 1000,
