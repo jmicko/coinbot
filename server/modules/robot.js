@@ -655,8 +655,8 @@ async function cancelMultipleOrders(ordersArray, userID) {
         try {
           // check to make sure it really isn't in the db
           let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
-          // console.log('double check', doubleCheck);
-          if (!doubleCheck) {
+          console.log('double check', doubleCheck);
+          if (doubleCheck) {
             // cancel the order if nothing comes back from db
             // console.log('canceling order', orderToCancel);
             await coinbaseClient.cancelOrder(orderToCancel.id, userID);
@@ -732,27 +732,26 @@ function orderElimination(dbOrders, cbOrders) {
 // auto setup trades until run out of money
 async function autoSetup(user, parameters) {
   // stop bot from adding more trades if 10000 already placed
-  await updateFunds(user.id);
   let totalOrders = await databaseClient.getUnsettledTrades('all', user.id);
   const userAndSettings = await databaseClient.getUserAndSettings(user.id);
   console.log('userAndSettings', userAndSettings.actualavailable_usd);
   if ((totalOrders.length >= 10000) || (Number(userAndSettings.actualavailable_usd) <= 0)) {
     return;
   }
-
+  
   // assume size is in btc
   let convertedAmount = parameters.size;
-
+  
   // if size is in usd, convert it to btc
   if (parameters.sizeType === "USD") {
     // console.log('need to convert to btc!');
     // get the BTC size from the entered USD size
     convertedAmount = Number(Math.floor((parameters.size / parameters.startingValue) * 100000000)) / 100000000;
   }
-
+  
   // calculate original sell price
   let original_sell_price = (Math.round((parameters.startingValue * (Number(parameters.trade_pair_ratio) + 100))) / 100);
-
+  
   const tradeDetails = {
     original_sell_price: original_sell_price, //done
     original_buy_price: parameters.startingValue, //done
@@ -764,7 +763,7 @@ async function autoSetup(user, parameters) {
     userID: user.id,
     trade_pair_ratio: parameters.trade_pair_ratio
   };
-
+  
   // send the order through
   try {
     // send the new order with the trade details
@@ -775,6 +774,9 @@ async function autoSetup(user, parameters) {
     await robot.sleep(100);
     // store the new trade in the db. the trade details are also sent to store trade position prices
     await databaseClient.storeTrade(pendingTrade, tradeDetails);
+    
+    // update current funds
+    await updateFunds(user.id);
 
     // tell the DOM to update
     socketClient.emit('message', {
