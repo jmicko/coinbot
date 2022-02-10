@@ -55,18 +55,13 @@ const getLimitedTrades = (userID, limit) => {
     // get limit of sells
     try {
 
-      const results = await Promise.all([
-        // get all open orders from db and cb
-        databaseClient.getUnsettledTrades('buy', userID, limit),
-        databaseClient.getUnsettledTrades('sell', userID, limit),
-      ]);
-      // combine both
-      // console.log('buys', results[0].length);
-      // console.log('sells', results[1].length);
+      let sqlText = `(SELECT * FROM "orders" WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT $2)
+      UNION
+      (SELECT * FROM "orders" WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT $2)
+      ORDER BY "price" DESC;`;
+      const results = await pool.query(sqlText, [userID, limit]);
 
-      let combinedArray = results[0].concat(results[1]);
-      // return them 
-      resolve(combinedArray);
+      resolve(results.rows);
     } catch (err) {
       reject(err);
     }
@@ -242,7 +237,13 @@ const getReorders = (userID) => {
     try {
       // let sqlText;
       // put sql stuff here, extending the pool promise to the parent function
-      let sqlText = `SELECT * FROM "orders" WHERE "reorder"=true AND "settled"=false AND "userID"=$1;`;
+      let sqlText = `SELECT * FROM (
+        (SELECT * FROM "orders" WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT 200)
+        UNION
+        (SELECT * FROM "orders" WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT 200)
+        ORDER BY "price" DESC
+        ) as reorders
+        WHERE "reorder"=true;`;
       const results = await pool.query(sqlText, [userID])
       // .then((results) => {
       const reorders = results.rows;
@@ -352,6 +353,18 @@ async function toggleMaintenance() {
   })
 }
 
+async function setSingleReorder(id) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `UPDATE "orders" SET "reorder" = true WHERE "id" = $1;`;
+      await pool.query(sqlText, [id]);
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 async function setReorder(userID) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -417,6 +430,7 @@ const databaseClient = {
   getUserAPI: getUserAPI,
   getBotSettings: getBotSettings,
   toggleMaintenance: toggleMaintenance,
+  setSingleReorder: setSingleReorder,
   setReorder: setReorder,
   setPause: setPause,
   setKillLock: setKillLock,
