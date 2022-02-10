@@ -237,7 +237,13 @@ const getReorders = (userID) => {
     try {
       // let sqlText;
       // put sql stuff here, extending the pool promise to the parent function
-      let sqlText = `SELECT * FROM "orders" WHERE "reorder"=true AND "settled"=false AND "userID"=$1;`;
+      let sqlText = `SELECT * FROM (
+        (SELECT * FROM "orders" WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT 200)
+        UNION
+        (SELECT * FROM "orders" WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT 200)
+        ORDER BY "price" DESC
+        ) as reorders
+        WHERE "reorder"=true;`;
       const results = await pool.query(sqlText, [userID])
       // .then((results) => {
       const reorders = results.rows;
