@@ -101,6 +101,8 @@ router.post('/basic', rejectUnauthenticated, async (req, res) => {
       // send the new order with the trade details
       await coinbaseClient.placeOrder(tradeDetails);
 
+      await robot.updateFunds(userID);
+
       // send OK status
       res.sendStatus(200);
 
