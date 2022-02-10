@@ -657,8 +657,13 @@ async function cancelMultipleOrders(ordersArray, userID) {
           let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
           console.log('double check', doubleCheck);
           if (doubleCheck) {
-            // cancel the order if nothing comes back from db
+            // todo - if it is in the db, it should cancel but set it to reorder because it is out of range
+            // that way it will reorder faster when it moves back in range
             // console.log('canceling order', orderToCancel);
+            await coinbaseClient.cancelOrder(orderToCancel.id, userID);
+            quantity++;
+          } else {
+            // cancel the order if nothing comes back from db
             await coinbaseClient.cancelOrder(orderToCancel.id, userID);
             quantity++;
           }
