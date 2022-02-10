@@ -353,6 +353,18 @@ async function toggleMaintenance() {
   })
 }
 
+async function setSingleReorder(id) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `UPDATE "orders" SET "reorder" = true WHERE "id" = $1;`;
+      await pool.query(sqlText, [id]);
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 async function setReorder(userID) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -418,6 +430,7 @@ const databaseClient = {
   getUserAPI: getUserAPI,
   getBotSettings: getBotSettings,
   toggleMaintenance: toggleMaintenance,
+  setSingleReorder: setSingleReorder,
   setReorder: setReorder,
   setPause: setPause,
   setKillLock: setKillLock,
