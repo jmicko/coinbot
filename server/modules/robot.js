@@ -105,6 +105,7 @@ async function syncOrders(userID, count) {
         }
         // compare the arrays and remove any where the ids match in both,
         // leaving a list of orders that are open in the db, but not on cb. Probably settled
+        console.log('dbOrders', dbOrders.length);
         ordersToCheck = await orderElimination(dbOrders, cbOrders);
 
         // DONE GETTING ORDERS
