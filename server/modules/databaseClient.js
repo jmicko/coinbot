@@ -238,20 +238,21 @@ const getSpentBTC = (userID) => {
 
 
 const getReorders = (userID) => {
-  return new Promise((resolve, reject) => {
-    let sqlText;
-    // put sql stuff here, extending the pool promise to the parent function
-    sqlText = `SELECT * FROM "orders" WHERE "reorder"=true AND "settled"=false AND "userID"=$1;`;
-    pool.query(sqlText, [userID])
-      .then((results) => {
-        const reorders = results.rows;
-        // promise returns promise from pool if success
-        resolve(reorders);
-      })
-      .catch((err) => {
-        // or promise relays errors from pool to parent
-        reject(err);
-      })
+  return new Promise(async (resolve, reject) => {
+    try {
+      // let sqlText;
+      // put sql stuff here, extending the pool promise to the parent function
+      let sqlText = `SELECT * FROM "orders" WHERE "reorder"=true AND "settled"=false AND "userID"=$1;`;
+      const results = await pool.query(sqlText, [userID])
+      // .then((results) => {
+      const reorders = results.rows;
+      // promise returns promise from pool if success
+      resolve(reorders);
+      // })
+    } catch (err) {
+      // or promise relays errors from pool to parent
+      reject(err);
+    }
   });
 }
 
