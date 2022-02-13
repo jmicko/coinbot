@@ -165,6 +165,7 @@ async function syncOrders(userID, count) {
         console.log(' deleting extra orders', ordersToCancel.length);
         try {
           let result = await cancelMultipleOrders(ordersToCancel, userID);
+          await updateFunds(userID);
           if (result.ordersCanceled && (result.quantity > 0)) {
             socketClient.emit('message', {
               error: `${result.quantity} Extra orders were found and canceled for user ${userID}`,
@@ -184,6 +185,7 @@ async function syncOrders(userID, count) {
       if (ordersToCheck.length) {
         try {
           let result = await settleMultipleOrders(ordersToCheck, userID);
+          await updateFunds(userID);
         } catch (err) {
           if (err.response?.status === 500) {
             console.log('internal server error from coinbase');
@@ -208,7 +210,6 @@ async function syncOrders(userID, count) {
       // const available = await getAvailableFunds(userID);
       // console.log('avail funds', available);
       // await databaseClient.saveFunds(available, userID);
-      await updateFunds(userID);
 
     } else {
       // if the user is not active or is paused, loop every 5 seconds
