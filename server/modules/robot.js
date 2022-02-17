@@ -96,13 +96,18 @@ async function syncOrders(userID, count) {
           if (olderOrders.length >= 1000) {
             await getMoreOrders();
           }
-        }
 
+        }
+        
         // CHECK IF THERE ARE 1000 OPEN ORDERS AND GET MORE FROM CB IF NEEDED
         if (cbOrders.length >= 1000) {
           console.log('!!!!!!!!!getting more orders. This should not happen anymore');
           await getMoreOrders();
         }
+
+        // console.log('updating funds in full sync');
+        updateFunds(userID);
+        
         // compare the arrays and remove any where the ids match in both,
         // leaving a list of orders that are open in the db, but not on cb. Probably settled
         // console.log('dbOrders', dbOrders.length);
@@ -165,6 +170,7 @@ async function syncOrders(userID, count) {
         console.log(' deleting extra orders', ordersToCancel.length);
         try {
           let result = await cancelMultipleOrders(ordersToCancel, userID);
+          console.log('updating funds');
           await updateFunds(userID);
           if (result.ordersCanceled && (result.quantity > 0)) {
             socketClient.emit('message', {
@@ -179,12 +185,13 @@ async function syncOrders(userID, count) {
         // wait for a second to allow cancels to go through so bot doesn't cancel twice
         await sleep(1000);
       }
-
-
+      
+      
       // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
       if (ordersToCheck.length) {
         try {
           let result = await settleMultipleOrders(ordersToCheck, userID);
+          console.log('updating funds');
           await updateFunds(userID);
         } catch (err) {
           if (err.response?.status === 500) {
@@ -881,6 +888,7 @@ async function getAvailableFunds(userID) {
 async function updateFunds(userID) {
   return new Promise(async (resolve, reject) => {
     try {
+      console.log('updating funds');
       const available = await getAvailableFunds(userID);
       const userSettings = await databaseClient.getUserAndSettings(userID);
       // console.log('user settings', userSettings);
