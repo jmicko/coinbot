@@ -830,7 +830,7 @@ async function autoSetup(user, parameters) {
 
   } catch (err) {
     if (err.response?.status === 400) {
-      console.log('Insufficient funds! Or too small order or some similar problem');
+      console.log(err, 'Insufficient funds! Or too small order or some similar problem');
       socketClient.emit('message', {
         error: `Insufficient funds!`,
         orderUpdate: true
@@ -855,8 +855,12 @@ async function getAvailableFunds(userID) {
       const results = await Promise.all([
         coinbaseClient.getAccounts(userID),
         databaseClient.getSpentUSD(userID),
-        databaseClient.getSpentBTC(userID)
+        databaseClient.getSpentBTC(userID),
+        databaseClient.getUserAndSettings(userID)
       ]);
+
+      const userSettings = results[3];
+      // console.log('user settings', userSettings);
 
       const [USD] = results[0].filter(account => account.currency === 'USD')
       const availableUSD = USD.available;
@@ -884,7 +888,7 @@ async function getAvailableFunds(userID) {
         actualAvailableUSD: actualAvailableUSD
       }
 
-      // console.log('availableFunds', availableFunds);
+      console.log('availableFunds', availableFunds);
 
       resolve(availableFunds)
     } catch (err) { reject(err) }
