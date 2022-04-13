@@ -189,7 +189,7 @@ const getSpentUSD = (userID) => {
       FROM "orders" 
         WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" DESC
-      OFFSET 200
+      OFFSET 100
       ) as volume_usd;`;
     pool.query(sqlText, [userID])
       .then((results) => {
@@ -216,7 +216,7 @@ const getSpentBTC = (userID) => {
       FROM "orders" 
         WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" ASC
-      OFFSET 200
+      OFFSET 100
       ) as volume_btc;`;
     pool.query(sqlText, [userID])
       .then((results) => {
@@ -238,9 +238,9 @@ const getReorders = (userID) => {
       // let sqlText;
       // put sql stuff here, extending the pool promise to the parent function
       let sqlText = `SELECT * FROM (
-        (SELECT * FROM "orders" WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT 200)
+        (SELECT * FROM "orders" WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT 100)
         UNION
-        (SELECT * FROM "orders" WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT 200)
+        (SELECT * FROM "orders" WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT 100)
         ORDER BY "price" DESC
         ) as reorders
         WHERE "reorder"=true;`;
@@ -413,6 +413,19 @@ async function saveFunds(funds, userID) {
   })
 }
 
+async function saveFees(fees, userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      console.log('saving fees', fees);
+      const sqlText = `UPDATE "user_settings" SET "maker_fee" = $1, "taker_fee" = $2, "usd_volume" = $3  WHERE "userID" = $4`;
+      let result = await pool.query(sqlText, [fees.maker_fee_rate, fees.taker_fee_rate, fees.usd_volume, userID]);
+      resolve(result);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 
 const databaseClient = {
   storeTrade: storeTrade,
@@ -434,7 +447,8 @@ const databaseClient = {
   setReorder: setReorder,
   setPause: setPause,
   setKillLock: setKillLock,
-  saveFunds: saveFunds
+  saveFunds: saveFunds,
+  saveFees: saveFees
 }
 
 module.exports = databaseClient;

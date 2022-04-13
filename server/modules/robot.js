@@ -43,7 +43,7 @@ async function syncOrders(userID, count) {
         // get lists of trades to compare which have been settled
         const results = await Promise.all([
           // get all open orders from db and cb
-          databaseClient.getLimitedTrades(userID, 200),
+          databaseClient.getLimitedTrades(userID, 100),
           // databaseClient.getUnsettledTrades('all', userID),
           coinbaseClient.getOpenOrders(userID)
         ]);
@@ -107,6 +107,12 @@ async function syncOrders(userID, count) {
 
         // console.log('updating funds in full sync');
         updateFunds(userID);
+
+        // need to get the fees for more accurate Available funds reporting
+        // fees don't change frequently so only need to do this during full sync
+        const fees = await coinbaseClient.getFees(userID);
+        console.log('Fees during full sync:', fees);
+        await databaseClient.saveFees(fees, userID);
         
         // compare the arrays and remove any where the ids match in both,
         // leaving a list of orders that are open in the db, but not on cb. Probably settled
@@ -824,7 +830,7 @@ async function autoSetup(user, parameters) {
 
   } catch (err) {
     if (err.response?.status === 400) {
-      console.log('Insufficient funds! Or too small order or some similar problem');
+      console.log(err, 'Insufficient funds! Or too small order or some similar problem');
       socketClient.emit('message', {
         error: `Insufficient funds!`,
         orderUpdate: true
@@ -849,8 +855,12 @@ async function getAvailableFunds(userID) {
       const results = await Promise.all([
         coinbaseClient.getAccounts(userID),
         databaseClient.getSpentUSD(userID),
-        databaseClient.getSpentBTC(userID)
+        databaseClient.getSpentBTC(userID),
+        databaseClient.getUserAndSettings(userID)
       ]);
+
+      const userSettings = results[3];
+      // console.log('user settings', userSettings);
 
       const [USD] = results[0].filter(account => account.currency === 'USD')
       const availableUSD = USD.available;
@@ -878,7 +888,7 @@ async function getAvailableFunds(userID) {
         actualAvailableUSD: actualAvailableUSD
       }
 
-      // console.log('availableFunds', availableFunds);
+      console.log('availableFunds', availableFunds);
 
       resolve(availableFunds)
     } catch (err) { reject(err) }
