@@ -112,6 +112,7 @@ async function syncOrders(userID, count) {
         // fees don't change frequently so only need to do this during full sync
         const fees = await coinbaseClient.getFees(userID);
         console.log('Fees during full sync:', fees);
+        await databaseClient.saveFees(fees, userID);
         
         // compare the arrays and remove any where the ids match in both,
         // leaving a list of orders that are open in the db, but not on cb. Probably settled
