@@ -416,7 +416,7 @@ async function saveFunds(funds, userID) {
 async function saveFees(fees, userID) {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log('saving fees', fees);
+      // console.log('saving fees', fees);
       const sqlText = `UPDATE "user_settings" SET "maker_fee" = $1, "taker_fee" = $2, "usd_volume" = $3  WHERE "userID" = $4`;
       let result = await pool.query(sqlText, [fees.maker_fee_rate, fees.taker_fee_rate, fees.usd_volume, userID]);
       resolve(result);

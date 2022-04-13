@@ -111,7 +111,7 @@ async function syncOrders(userID, count) {
         // need to get the fees for more accurate Available funds reporting
         // fees don't change frequently so only need to do this during full sync
         const fees = await coinbaseClient.getFees(userID);
-        console.log('Fees during full sync:', fees);
+        // console.log('Fees during full sync:', fees);
         await databaseClient.saveFees(fees, userID);
         
         // compare the arrays and remove any where the ids match in both,
@@ -176,7 +176,7 @@ async function syncOrders(userID, count) {
         console.log(' deleting extra orders', ordersToCancel.length);
         try {
           let result = await cancelMultipleOrders(ordersToCancel, userID);
-          console.log('updating funds');
+          // console.log('updating funds');
           await updateFunds(userID);
           if (result.ordersCanceled && (result.quantity > 0)) {
             socketClient.emit('message', {
@@ -197,7 +197,7 @@ async function syncOrders(userID, count) {
       if (ordersToCheck.length) {
         try {
           let result = await settleMultipleOrders(ordersToCheck, userID);
-          console.log('updating funds');
+          // console.log('updating funds');
           await updateFunds(userID);
         } catch (err) {
           if (err.response?.status === 500) {
@@ -860,12 +860,15 @@ async function getAvailableFunds(userID) {
       ]);
 
       const userSettings = results[3];
-      // console.log('user settings', userSettings);
+      const makerFee = userSettings.maker_fee;
+      // console.log('makerFee', makerFee);
 
       const [USD] = results[0].filter(account => account.currency === 'USD')
       const availableUSD = USD.available;
       const spentUSD = results[1].sum;
-      const actualAvailableUSD = availableUSD - spentUSD;
+      // const actualAvailableUSD = availableUSD - spentUSD;
+      const actualAvailableUSD = availableUSD - (spentUSD * (1 + Number(makerFee)));
+      // const fixedActualAvailableUSD = availableUSD - (spentUSD * (1 + Number(makerFee)));
 
       const [BTC] = results[0].filter(account => account.currency === 'BTC')
       const availableBTC = BTC.available;
@@ -888,7 +891,8 @@ async function getAvailableFunds(userID) {
         actualAvailableUSD: actualAvailableUSD
       }
 
-      console.log('availableFunds', availableFunds);
+      // console.log('availableFunds USD      ', availableFunds.actualAvailableUSD);
+      // console.log('fixed availableFunds USD', fixedActualAvailableUSD);
 
       resolve(availableFunds)
     } catch (err) { reject(err) }
@@ -898,7 +902,7 @@ async function getAvailableFunds(userID) {
 async function updateFunds(userID) {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log('updating funds');
+      // console.log('updating funds');
       const available = await getAvailableFunds(userID);
       const userSettings = await databaseClient.getUserAndSettings(userID);
       // console.log('user settings', userSettings);
