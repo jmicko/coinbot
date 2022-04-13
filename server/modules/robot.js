@@ -43,7 +43,7 @@ async function syncOrders(userID, count) {
         // get lists of trades to compare which have been settled
         const results = await Promise.all([
           // get all open orders from db and cb
-          databaseClient.getLimitedTrades(userID, 200),
+          databaseClient.getLimitedTrades(userID, 100),
           // databaseClient.getUnsettledTrades('all', userID),
           coinbaseClient.getOpenOrders(userID)
         ]);

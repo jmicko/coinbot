@@ -189,7 +189,7 @@ const getSpentUSD = (userID) => {
       FROM "orders" 
         WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" DESC
-      OFFSET 200
+      OFFSET 100
       ) as volume_usd;`;
     pool.query(sqlText, [userID])
       .then((results) => {
@@ -216,7 +216,7 @@ const getSpentBTC = (userID) => {
       FROM "orders" 
         WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" ASC
-      OFFSET 200
+      OFFSET 100
       ) as volume_btc;`;
     pool.query(sqlText, [userID])
       .then((results) => {
@@ -238,9 +238,9 @@ const getReorders = (userID) => {
       // let sqlText;
       // put sql stuff here, extending the pool promise to the parent function
       let sqlText = `SELECT * FROM (
-        (SELECT * FROM "orders" WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT 200)
+        (SELECT * FROM "orders" WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT 100)
         UNION
-        (SELECT * FROM "orders" WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT 200)
+        (SELECT * FROM "orders" WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT 100)
         ORDER BY "price" DESC
         ) as reorders
         WHERE "reorder"=true;`;
