@@ -6,6 +6,7 @@ const coinbaseClient = require('../modules/coinbaseClient');
 const socketClient = require('../modules/socketClient');
 const xlsx = require('json-as-xlsx');
 const databaseClient = require('../modules/databaseClient');
+const robot = require('../modules/robot');
 // const databaseClient = require('../modules/databaseClient/databaseClient');
 
 
@@ -68,6 +69,7 @@ router.get('/', async (req, res) => {
 * GET route to get the fees when the user loads the page
 */
 router.get('/fees', rejectUnauthenticated, (req, res) => {
+  console.log('fees get route');
   const user = req.user;
   const userID = req.user.id;
   if (user.active) {
@@ -89,7 +91,15 @@ router.get('/fees', rejectUnauthenticated, (req, res) => {
 * GET route to get total profit estimate
 */
 router.get('/profits', rejectUnauthenticated, async (req, res) => {
+  console.log('profits get route');
   const userID = req.user.id;
+
+  try {
+    console.log('update funds before profits');
+    await robot.updateFunds(userID)
+  } catch (err) {
+    console.log('problem updating funds in account/profits route');
+  }
 
   // for sum since a day ago
   const lastDayQueryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" + "previous_fill_fees")) 
