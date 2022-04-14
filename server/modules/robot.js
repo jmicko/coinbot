@@ -315,7 +315,7 @@ async function processOrders(userID) {
         // get the user of the trade
         let user = await databaseClient.getUserAndSettings(dbOrder.userID);
         // ...flip the trade details
-        let tradeDetails = flipTrade(dbOrder, user, tradeList);
+        let tradeDetails = flipTrade(dbOrder, user, tradeList, i);
         // ...send the new trade
         try {
           let cancelling = await databaseClient.checkIfCancelling(dbOrder.id);
@@ -359,8 +359,7 @@ async function processOrders(userID) {
 
 // function for flipping sides on a trade
 // Returns the tradeDetails object needed to send trade to CB
-function flipTrade(dbOrder, user, allFlips) {
-  console.log('all flips', allFlips);
+function flipTrade(dbOrder, user, allFlips, iteration) {
   const reinvestRatio = user.reinvest_ratio / 100;
   const postMaxReinvestRatio = user.post_max_reinvest_ratio / 100;
   const maxTradeSize = user.max_trade_size;
@@ -376,8 +375,8 @@ function flipTrade(dbOrder, user, allFlips) {
     userID: dbOrder.userID,
   };
   // add buy/sell requirement and price
-
-
+  
+  
   if (dbOrder.side === "buy") {
     // if it was a buy, sell for more. multiply old price
     tradeDetails.side = "sell"
@@ -389,6 +388,7 @@ function flipTrade(dbOrder, user, allFlips) {
   } else {
     // if it is a sell turning into a buy, check if user wants to reinvest the funds
     if (user.reinvest) {
+      console.log('all flips', allFlips);
       console.log('user will reinvest. available:', user.actualavailable_usd, 'order:', dbOrder.executed_value);
       const orderSize = Number(dbOrder.size);
 
@@ -425,16 +425,24 @@ function flipTrade(dbOrder, user, allFlips) {
         tradeDetails.size = 0.000016;
       } else {
         // maybe export to own function and check remaining funds against new size with every if/else
-        const leftoverFunds = Number(user.actualavailable_usd) - (tradeDetails.size * buyPrice);
-        console.log('leftover funds:', leftoverFunds);
-
-        // maybe add up all values of trades that just settled and subtract that from "actualavailable_usd"
+        // const leftoverFunds = Number(user.actualavailable_usd) - (tradeDetails.size * buyPrice);
+        // console.log('leftover funds:', leftoverFunds);
+        
+        // add up all values of trades that just settled and subtract that from "actualavailable_usd"
         let allFlipsValue = 0;
         allFlips.forEach(trade => {
-          allFlipsValue += (trade.size * trade.original_buy_price)
+          if (trade.side === "sell") {
+            console.log('adding sell value to all flips total');
+            allFlipsValue += (trade.size * trade.original_buy_price)
+          }
         });
+        
+        const leftoverFunds = (Number(user.actualavailable_usd) - allFlipsValue);
+
         console.log('all flips value:', allFlipsValue);
+
         console.log('MAYBE MORE ACCURATE leftover funds:', Number(user.actualavailable_usd) - allFlipsValue);
+
 
         if (leftoverFunds > user.reserve) {
           console.log('there is enough money left to reinvest');
@@ -919,11 +927,11 @@ async function getAvailableFunds(userID) {
 async function updateFunds(userID) {
   return new Promise(async (resolve, reject) => {
     try {
-      // console.log('updating funds');
+      console.log('updating funds');
       const available = await getAvailableFunds(userID);
       const userSettings = await databaseClient.getUserAndSettings(userID);
-      // console.log('user settings', userSettings);
-      // console.log('avail funds', available.actualAvailableUSD);
+      console.log('user settings', userSettings);
+      console.log('avail funds', available.actualAvailableUSD);
       if (userSettings.reinvest && (userSettings.reinvest_ratio != 0) && (userSettings.reserve > available.actualAvailableUSD)) {
         // console.log('need to turn off reinvest');
         try {
@@ -931,7 +939,7 @@ async function updateFunds(userID) {
           // await pool.query(queryText, [0, userID]);
         } catch (err) {
           console.log(err, 'problem turning off reinvest');
-          res.sendStatus(500);
+          // res.sendStatus(500);
         }
       }
       await databaseClient.saveFunds(available, userID);
