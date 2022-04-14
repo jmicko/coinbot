@@ -375,8 +375,8 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     userID: dbOrder.userID,
   };
   // add buy/sell requirement and price
-  
-  
+
+
   if (dbOrder.side === "buy") {
     // if it was a buy, sell for more. multiply old price
     tradeDetails.side = "sell"
@@ -427,7 +427,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
         // maybe export to own function and check remaining funds against new size with every if/else
         // const leftoverFunds = Number(user.actualavailable_usd) - (tradeDetails.size * buyPrice);
         // console.log('leftover funds:', leftoverFunds);
-        
+
         // add up all values of trades that just settled and subtract that from "actualavailable_usd"
         let allFlipsValue = 0;
         allFlips.forEach(trade => {
@@ -436,7 +436,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
             allFlipsValue += (trade.size * trade.original_buy_price)
           }
         });
-        
+
         const leftoverFunds = (Number(user.actualavailable_usd) - allFlipsValue);
 
         console.log('all flips value:', allFlipsValue);
@@ -927,11 +927,12 @@ async function getAvailableFunds(userID) {
 async function updateFunds(userID) {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log('updating funds');
+      // console.log('updating funds');
       const available = await getAvailableFunds(userID);
       const userSettings = await databaseClient.getUserAndSettings(userID);
-      console.log('user settings', userSettings);
-      console.log('avail funds', available.actualAvailableUSD);
+      // console.log('user settings', userSettings);
+      // console.log('avail funds', available.actualAvailableUSD);
+
       if (userSettings.reinvest && (userSettings.reinvest_ratio != 0) && (userSettings.reserve > available.actualAvailableUSD)) {
         // console.log('need to turn off reinvest');
         try {
@@ -943,6 +944,15 @@ async function updateFunds(userID) {
         }
       }
       await databaseClient.saveFunds(available, userID);
+
+      if (Number(userSettings.actualavailable_usd) !== Number(available.actualAvailableUSD)) {
+        console.log('usd available did change');
+        socketClient.emit('message', {
+          orderUpdate: true,
+          userID: Number(userID)
+        });
+      }
+
       resolve()
     } catch (err) { reject(err) }
   })
