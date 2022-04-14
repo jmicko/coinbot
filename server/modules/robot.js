@@ -98,7 +98,7 @@ async function syncOrders(userID, count) {
           }
 
         }
-        
+
         // CHECK IF THERE ARE 1000 OPEN ORDERS AND GET MORE FROM CB IF NEEDED
         if (cbOrders.length >= 1000) {
           console.log('!!!!!!!!!getting more orders. This should not happen anymore');
@@ -113,7 +113,7 @@ async function syncOrders(userID, count) {
         const fees = await coinbaseClient.getFees(userID);
         // console.log('Fees during full sync:', fees);
         await databaseClient.saveFees(fees, userID);
-        
+
         // compare the arrays and remove any where the ids match in both,
         // leaving a list of orders that are open in the db, but not on cb. Probably settled
         // console.log('dbOrders', dbOrders.length);
@@ -191,8 +191,8 @@ async function syncOrders(userID, count) {
         // wait for a second to allow cancels to go through so bot doesn't cancel twice
         await sleep(1000);
       }
-      
-      
+
+
       // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
       if (ordersToCheck.length) {
         try {
@@ -315,7 +315,7 @@ async function processOrders(userID) {
         // get the user of the trade
         let user = await databaseClient.getUserAndSettings(dbOrder.userID);
         // ...flip the trade details
-        let tradeDetails = flipTrade(dbOrder, user);
+        let tradeDetails = flipTrade(dbOrder, user, tradeList);
         // ...send the new trade
         try {
           let cancelling = await databaseClient.checkIfCancelling(dbOrder.id);
@@ -359,8 +359,8 @@ async function processOrders(userID) {
 
 // function for flipping sides on a trade
 // Returns the tradeDetails object needed to send trade to CB
-function flipTrade(dbOrder, user) {
-  // console.log('flipping');
+function flipTrade(dbOrder, user, allFlips) {
+  console.log('all flips', allFlips);
   const reinvestRatio = user.reinvest_ratio / 100;
   const postMaxReinvestRatio = user.post_max_reinvest_ratio / 100;
   const maxTradeSize = user.max_trade_size;
@@ -389,7 +389,7 @@ function flipTrade(dbOrder, user) {
   } else {
     // if it is a sell turning into a buy, check if user wants to reinvest the funds
     if (user.reinvest) {
-      // console.log('settled order', dbOrder);
+      console.log('user will reinvest. available:', user.actualavailable_usd, 'order:', dbOrder.executed_value);
       const orderSize = Number(dbOrder.size);
 
       const BTCprofit = calculateProfitBTC(dbOrder);
@@ -424,7 +424,24 @@ function flipTrade(dbOrder, user) {
         // need to stay above minimum order size
         tradeDetails.size = 0.000016;
       } else {
-        tradeDetails.size = newSize.toFixed(8);
+        // maybe export to own function and check remaining funds against new size with every if/else
+        const leftoverFunds = Number(user.actualavailable_usd) - (tradeDetails.size * buyPrice);
+        console.log('leftover funds:', leftoverFunds);
+
+        // maybe add up all values of trades that just settled and subtract that from "actualavailable_usd"
+        let allFlipsValue = 0;
+        allFlips.forEach(trade => {
+          allFlipsValue += (trade.size * trade.original_buy_price)
+        });
+        console.log('all flips value:', allFlipsValue);
+        console.log('MAYBE MORE ACCURATE leftover funds:', Number(user.actualavailable_usd) - allFlipsValue);
+
+        if (leftoverFunds > user.reserve) {
+          console.log('there is enough money left to reinvest');
+          tradeDetails.size = newSize.toFixed(8);
+        } else {
+          console.log('there is NOT enough money left to reinvest');
+        }
       }
 
     }
@@ -760,20 +777,20 @@ async function autoSetup(user, parameters) {
   if ((totalOrders.length >= 10000) || (Number(userAndSettings.actualavailable_usd) <= 0)) {
     return;
   }
-  
+
   // assume size is in btc
   let convertedAmount = parameters.size;
-  
+
   // if size is in usd, convert it to btc
   if (parameters.sizeType === "USD") {
     // console.log('need to convert to btc!');
     // get the BTC size from the entered USD size
     convertedAmount = Number(Math.floor((parameters.size / parameters.startingValue) * 100000000)) / 100000000;
   }
-  
+
   // calculate original sell price
   let original_sell_price = (Math.round((parameters.startingValue * (Number(parameters.trade_pair_ratio) + 100))) / 100);
-  
+
   const tradeDetails = {
     original_sell_price: original_sell_price, //done
     original_buy_price: parameters.startingValue, //done
@@ -785,7 +802,7 @@ async function autoSetup(user, parameters) {
     userID: user.id,
     trade_pair_ratio: parameters.trade_pair_ratio
   };
-  
+
   // send the order through
   try {
     // send the new order with the trade details
@@ -796,7 +813,7 @@ async function autoSetup(user, parameters) {
     await robot.sleep(100);
     // store the new trade in the db. the trade details are also sent to store trade position prices
     await databaseClient.storeTrade(pendingTrade, tradeDetails);
-    
+
     // update current funds
     await updateFunds(user.id);
 
@@ -908,10 +925,10 @@ async function updateFunds(userID) {
       // console.log('user settings', userSettings);
       // console.log('avail funds', available.actualAvailableUSD);
       if (userSettings.reinvest && (userSettings.reinvest_ratio != 0) && (userSettings.reserve > available.actualAvailableUSD)) {
-        console.log('need to turn off reinvest');
+        // console.log('need to turn off reinvest');
         try {
           const queryText = `UPDATE "user_settings" SET "reinvest_ratio" = $1, "reinvest" = false WHERE "userID" = $2`;
-          await pool.query(queryText, [0, userID]);
+          // await pool.query(queryText, [0, userID]);
         } catch (err) {
           console.log(err, 'problem turning off reinvest');
           res.sendStatus(500);
@@ -933,7 +950,7 @@ const robot = {
   startSync: startSync,
   autoSetup: autoSetup,
   getAvailableFunds: getAvailableFunds,
-  updateFunds:updateFunds,
+  updateFunds: updateFunds,
 }
 
 

@@ -18,7 +18,7 @@ const robot = require('../modules/robot');
 router.get('/', async (req, res) => {
 
   const user = req.user;
-  console.log('!!!!!!!!!!!!!ACCOUNT ROUTE', user);
+  // console.log('!!!!!!!!!!!!!ACCOUNT ROUTE', user);
   const userID = req.user.id;
   if (user.active) {
 
@@ -69,7 +69,7 @@ router.get('/', async (req, res) => {
 * GET route to get the fees when the user loads the page
 */
 router.get('/fees', rejectUnauthenticated, (req, res) => {
-  console.log('fees get route');
+  // console.log('fees get route');
   const user = req.user;
   const userID = req.user.id;
   if (user.active) {
@@ -91,11 +91,11 @@ router.get('/fees', rejectUnauthenticated, (req, res) => {
 * GET route to get total profit estimate
 */
 router.get('/profits', rejectUnauthenticated, async (req, res) => {
-  console.log('profits get route');
+  // console.log('profits get route');
   const userID = req.user.id;
 
   try {
-    console.log('update funds before profits');
+    // console.log('update funds before profits');
     await robot.updateFunds(userID)
   } catch (err) {
     console.log('problem updating funds in account/profits route');
