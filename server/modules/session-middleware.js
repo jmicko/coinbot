@@ -20,5 +20,5 @@ module.exports = session({
   // or guests
   // or PRISM
   // jk who even knows what PRISM can still do
-  cookie: { maxAge: 24 * 60 * 60 * 1000 } // 1 day (24 hr * 60 min * 60 sec * 1000 msec)
+  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } // 1 week (7 days * 24 hr * 60 min * 60 sec * 1000 msec)
 });
