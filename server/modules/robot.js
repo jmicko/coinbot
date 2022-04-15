@@ -950,8 +950,8 @@ async function updateFunds(userID) {
       // console.log('updating funds');
       const available = await getAvailableFunds(userID);
       const userSettings = await databaseClient.getUserAndSettings(userID);
-      // console.log('user settings', userSettings);
-      // console.log('avail funds', available.actualAvailableUSD);
+      console.log('user settings actualavailable_usd', Number(userSettings.actualavailable_usd));
+      console.log('avail funds                      ', Number(available.actualAvailableUSD));
 
       if (userSettings.reinvest && (userSettings.reinvest_ratio != 0) && (userSettings.reserve > available.actualAvailableUSD)) {
         // console.log('need to turn off reinvest');
