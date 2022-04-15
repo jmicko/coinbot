@@ -912,7 +912,7 @@ async function getAvailableFunds(userID) {
       const availableUSD = USD.available;
       const spentUSD = results[1].sum;
       // const actualAvailableUSD = availableUSD - spentUSD;
-      const actualAvailableUSD = availableUSD - (spentUSD * (1 + Number(makerFee)));
+      const actualAvailableUSD = (availableUSD - (spentUSD * (1 + Number(makerFee)))).toFixed(16);
       // const fixedActualAvailableUSD = availableUSD - (spentUSD * (1 + Number(makerFee)));
 
       const [BTC] = results[0].filter(account => account.currency === 'BTC')
