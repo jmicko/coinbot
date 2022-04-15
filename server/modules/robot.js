@@ -408,8 +408,35 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
       const maxSizeBTC = Number((maxTradeSize / buyPrice).toFixed(8));
 
       if ((newSize > maxSizeBTC) && (maxTradeSize > 0)) {
-        // if the new size is bigger than the user set max, just use the user set max instead
-        tradeDetails.size = maxSizeBTC;
+
+
+
+        // add up all values of trades that just settled and subtract that from "actualavailable_usd"
+        let allFlipsValue = 0;
+        allFlips.forEach(trade => {
+          if (trade.side === "sell") {
+            console.log('adding sell value to all flips total', user);
+            allFlipsValue += (maxSizeBTC * trade.original_buy_price)
+          }
+        });
+
+        // calculate what funds will be leftover after all pending flips go through
+        const leftoverFunds = (Number(user.actualavailable_usd) - (allFlipsValue * (1 + Number(user.maker_fee))));
+
+
+
+
+        // only set the new size if it will stay above the reserve
+        if (leftoverFunds > user.reserve) {
+          console.log('there is enough money left to reinvest IN MAX SIZE ADJUSTED FLIP');
+          // tradeDetails.size = newSize.toFixed(8);
+          // if the new size is bigger than the user set max, just use the user set max instead
+          tradeDetails.size = maxSizeBTC;
+        } else {
+          console.log('there is NOT enough money left to reinvest IN MAX SIZE ADJUSTED FLIP');
+        }
+
+
 
         if ((orderSize >= maxSizeBTC) && (postMaxReinvestRatio > 0)) {
           // console.log('the old size is the same as or bigger than the max!');
@@ -424,26 +451,19 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
         // need to stay above minimum order size
         tradeDetails.size = 0.000016;
       } else {
-        // maybe export to own function and check remaining funds against new size with every if/else
-        // const leftoverFunds = Number(user.actualavailable_usd) - (tradeDetails.size * buyPrice);
-        // console.log('leftover funds:', leftoverFunds);
-
         // add up all values of trades that just settled and subtract that from "actualavailable_usd"
         let allFlipsValue = 0;
         allFlips.forEach(trade => {
           if (trade.side === "sell") {
-            console.log('adding sell value to all flips total');
+            console.log('adding sell value to all flips total', user);
             allFlipsValue += (trade.size * trade.original_buy_price)
           }
         });
 
-        const leftoverFunds = (Number(user.actualavailable_usd) - allFlipsValue);
+        // calculate what funds will be leftover after all pending flips go through
+        const leftoverFunds = (Number(user.actualavailable_usd) - (allFlipsValue * (1 + Number(user.maker_fee))));
 
-        console.log('all flips value:', allFlipsValue);
-
-        console.log('MAYBE MORE ACCURATE leftover funds:', Number(user.actualavailable_usd) - allFlipsValue);
-
-
+        // only set the new size if it will stay above the reserve
         if (leftoverFunds > user.reserve) {
           console.log('there is enough money left to reinvest');
           tradeDetails.size = newSize.toFixed(8);
