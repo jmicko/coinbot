@@ -906,28 +906,16 @@ async function getAvailableFunds(userID) {
 
       const userSettings = results[3];
       const makerFee = userSettings.maker_fee;
-      // console.log('makerFee', makerFee);
 
       const [USD] = results[0].filter(account => account.currency === 'USD')
       const availableUSD = USD.available;
       const spentUSD = results[1].sum;
-      // const actualAvailableUSD = availableUSD - spentUSD;
       const actualAvailableUSD = (availableUSD - (spentUSD * (1 + Number(makerFee)))).toFixed(16);
-      // const fixedActualAvailableUSD = availableUSD - (spentUSD * (1 + Number(makerFee)));
 
       const [BTC] = results[0].filter(account => account.currency === 'BTC')
       const availableBTC = BTC.available;
       const spentBTC = results[2].sum;
       const actualAvailableBTC = Number((availableBTC - spentBTC).toFixed(16));
-
-      // console.log('results 0', results[0].length);
-      // console.log('spent USD', spentUSD);
-      // console.log('USD available', availableUSD);
-      // console.log('actualAvailableUSD', actualAvailableUSD);
-
-      // console.log('spent BTC', spentBTC);
-      // console.log('BTC available', availableBTC);
-      // console.log('actualAvailableBTC', actualAvailableBTC);
 
       const availableFunds = {
         availableBTC: availableBTC,
@@ -935,9 +923,6 @@ async function getAvailableFunds(userID) {
         actualAvailableBTC: actualAvailableBTC,
         actualAvailableUSD: actualAvailableUSD
       }
-
-      // console.log('availableFunds USD      ', availableFunds.actualAvailableUSD);
-      // console.log('fixed availableFunds USD', fixedActualAvailableUSD);
 
       resolve(availableFunds)
     } catch (err) { reject(err) }
@@ -950,8 +935,6 @@ async function updateFunds(userID) {
       // console.log('updating funds');
       const available = await getAvailableFunds(userID);
       const userSettings = await databaseClient.getUserAndSettings(userID);
-      console.log('user settings actualavailable_usd', Number(userSettings.actualavailable_usd));
-      console.log('avail funds                      ', Number(available.actualAvailableUSD));
 
       if (userSettings.reinvest && (userSettings.reinvest_ratio != 0) && (userSettings.reserve > available.actualAvailableUSD)) {
         // console.log('need to turn off reinvest');
