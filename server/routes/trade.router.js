@@ -161,7 +161,7 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
     await coinbaseClient.cancelOrder(orderId, userID)
     await databaseClient.setSingleReorder(orderId);
     res.sendStatus(200);
-    
+
     socketClient.emit('message', {
       message: `Order will sync in a moment`,
       userID: Number(userID)
@@ -204,21 +204,18 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
   // DELETE route code here
   const userID = req.user.id;
   const orderId = req.body.id;
-  console.log('in the server trade DELETE route', req.body.id)
+  console.log('in the server trade DELETE route')
 
   // mark as canceled in db
   try {
     const queryText = `UPDATE "orders" SET "will_cancel" = true WHERE "id"=$1;`;
-    let result = await pool.query(queryText, [orderId]);
+    await pool.query(queryText, [orderId]);
     // send cancelOrder to cb
-    let deleteResult = await coinbaseClient.cancelOrder(orderId, userID);
-    console.log('order was deleted successfully from cb', deleteResult);
-    // databaseClient.deleteTrade(orderId);
-    console.log('order was marked for deletion in database');
+    await coinbaseClient.cancelOrder(orderId, userID);
     res.sendStatus(200)
   } catch (error) {
     if (error.data?.message) {
-      console.log('error message, trade router DELETE:', error.data.message);
+      console.log(error.data.message, 'error message, trade router DELETE');
       // orders that have been canceled are deleted from coinbase and return a 404.
       // error handling should delete them from db and not worry about coinbase since there is no other way to delete
       // but also send one last delete message to Coinbase just in case it finds it again, but with no error checking
@@ -241,7 +238,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       console.log('order not found in account', orderId);
       res.sendStatus(400)
     } else {
-      console.log('something failed in the delete trade route', error);
+      console.log(error, 'something failed in the delete trade route');
       res.sendStatus(500)
     }
   };
