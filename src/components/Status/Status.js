@@ -62,7 +62,7 @@ function Status(props) {
     // this will work in safari once lookbehind is supported
     // return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
     // for now, use this
-    if (x) {
+    if (x !== null) {
       
       let parts = x.toString().split(".");
       parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
