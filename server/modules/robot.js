@@ -122,54 +122,13 @@ async function syncOrders(userID, count) {
         // DONE GETTING ORDERS
 
       } else {
-        // IF QUICK SYNC, only get fills
-        // checks for orders if it finds any fills 
-        // console.log('quick sync', count);
-
-        // todo - this sometimes will cause the loop to stop. Why?
-
-        const fills = await coinbaseClient.getLimitedFills(userID, 500);
-        // console.log('quick sync, done getting fills. sleeping');
-        // await sleep(100); // avoid rate limit
-
-        // console.log('quick sync, done sleeping, starting loop through fills');
-        for (let i = 0; i < fills.length; i++) {
-          // console.log('quick sync loop through fills, setting fill');
-          const fill = fills[i];
-          // console.log('quick sync loop through fills, getting trade from db');
-          const singleDbOrder = await databaseClient.getSingleTrade(fill.order_id);
-          // console.log('quick sync loop through fills, got trade from db');
-          // console.log('order from fill', singleDbOrder?.id);
-          // only need to check it if there is an order in the db. Otherwise it might be a basic trade
-          if (singleDbOrder) {
-            // console.log('quick sync loop through fills, comparing trade from db');
-
-            if (singleDbOrder && !singleDbOrder?.settled) {
-              // console.log('!!!!!!!!need to check this order!', singleDbOrder.settled);
-              ordersToCheck.push(singleDbOrder);
-            } else {
-              // console.log('DO NOT check this order! or any orders after this because they will be processed already');
-              i += fills.length;
-            }
-          }
-        }
-        const reorders = await databaseClient.getReorders(userID)
-        if (reorders.length >= 1) {
-          // console.log('reorders', reorders);
-          reorders.forEach(order => ordersToCheck.push(order))
-        }
+        //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
+        ordersToCheck = await quickSync(userID);
       }
 
       // also get a list of orders that are open on cb, but not stored in the db. 
       let ordersToCancel = [];
-      // this if statement saves a little processing by skipping the filter if not needed
-      // only checks for cancels if the two arrays are the same length and no orders to flip
-      // if (!(dbOrders.length === cbOrders.length && ordersToCheck.length === 0)) {
       ordersToCancel = await orderElimination(cbOrders, dbOrders);
-      // }
-
-      // console.log('cancel:', ordersToCancel, cbOrders.length, dbOrders.length);
-
 
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
       if (ordersToCancel.length) {
@@ -277,6 +236,58 @@ async function syncOrders(userID, count) {
       console.log('user is NOT THERE, stopping loop for user');
     }
   }
+}
+
+async function quickSync(userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+
+
+      // IF QUICK SYNC, only get fills
+      // checks for orders if it finds any fills 
+      console.log('quick sync');
+
+      // initiate empty array to hold orders that need to be checked for settlement
+      let toCheck = [];
+
+      // get the 500 most recent fills for the account
+      const fills = await coinbaseClient.getLimitedFills(userID, 500);
+
+      // look at each fill and find the order in the db associated with it
+      for (let i = 0; i < fills.length; i++) {
+        const fill = fills[i];
+        // get order from db
+        const singleDbOrder = await databaseClient.getSingleTrade(fill.order_id);
+        // only need to check it if there is an order in the db. Otherwise it might be a basic trade
+        if (singleDbOrder) {
+          // check if the order has already been settled in the db
+          if (singleDbOrder && !singleDbOrder?.settled) {
+            // if it has not been settled in the db, it needs to be checked with coinbase if it settled
+            // push it into the array
+            toCheck.push(singleDbOrder);
+          } else {
+            // if it has been settled, we can stop looping because we will have already check all previous fills
+            i += fills.length;
+          }
+        }
+      }
+      console.log('checking reorders in quick sync');
+      // todo - this does not look like it is doing anything? 
+      // The db hasn't been changed so there would be nothing to reorder, correct?
+      const reorders = await databaseClient.getReorders(userID)
+      if (reorders.length >= 1) {
+        console.log('!!!!! reordering reorders in quick sync robot.js quick sync function');
+        reorders.forEach(order => toCheck.push(order))
+      }
+
+
+
+
+      resolve(toCheck);
+    } catch (err) {
+      reject(err)
+    }
+  });
 }
 
 async function deleteMarkedOrders(userID) {
@@ -642,7 +653,7 @@ async function reorder(orderToReorder) {
       } else {
         await sleep(1000);
         // check again. if it finds it, don't do anything. If not found, error handling will reorder
-        console.log('checking again before reordering', orderToReorder);
+        // console.log('checking again before reordering', orderToReorder);
         let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID);
       }
     } catch (err) {
@@ -938,7 +949,7 @@ async function updateFunds(userID) {
       await databaseClient.saveFunds(available, userID);
 
       if (Number(userSettings.actualavailable_usd) !== Number(available.actualAvailableUSD)) {
-        console.log('usd available did change');
+        // console.log('usd available did change');
         socketClient.emit('message', {
           orderUpdate: true,
           userID: Number(userID)

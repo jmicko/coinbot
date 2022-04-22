@@ -44,7 +44,7 @@ router.get('/all', rejectUnauthenticated, async (req, res) => {
 
 // Handles Ajax request for user information if user is authenticated
 router.get('/', rejectUnauthenticated, (req, res) => {
-  console.log('get user route');
+  // console.log('get user route');
   // Send back user object from the session (previously queried from the database)
   res.send(req.user);
 });
