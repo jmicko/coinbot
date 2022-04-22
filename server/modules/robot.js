@@ -245,7 +245,6 @@ async function quickSync(userID) {
 
       // IF QUICK SYNC, only get fills
       // checks for orders if it finds any fills 
-      console.log('quick sync');
 
       // initiate empty array to hold orders that need to be checked for settlement
       let toCheck = [];
@@ -271,12 +270,12 @@ async function quickSync(userID) {
           }
         }
       }
-      console.log('checking reorders in quick sync');
+      // console.log('checking reorders in quick sync');
       // todo - this does not look like it is doing anything? 
       // The db hasn't been changed so there would be nothing to reorder, correct?
       const reorders = await databaseClient.getReorders(userID)
       if (reorders.length >= 1) {
-        console.log('!!!!! reordering reorders in quick sync robot.js quick sync function');
+        // console.log('!!!!! reordering reorders in quick sync robot.js quick sync function');
         reorders.forEach(order => toCheck.push(order))
       }
 
