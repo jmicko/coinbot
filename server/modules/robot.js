@@ -122,54 +122,13 @@ async function syncOrders(userID, count) {
         // DONE GETTING ORDERS
 
       } else {
-        // IF QUICK SYNC, only get fills
-        // checks for orders if it finds any fills 
-        // console.log('quick sync', count);
-
-        // todo - this sometimes will cause the loop to stop. Why?
-
-        const fills = await coinbaseClient.getLimitedFills(userID, 500);
-        // console.log('quick sync, done getting fills. sleeping');
-        // await sleep(100); // avoid rate limit
-
-        // console.log('quick sync, done sleeping, starting loop through fills');
-        for (let i = 0; i < fills.length; i++) {
-          // console.log('quick sync loop through fills, setting fill');
-          const fill = fills[i];
-          // console.log('quick sync loop through fills, getting trade from db');
-          const singleDbOrder = await databaseClient.getSingleTrade(fill.order_id);
-          // console.log('quick sync loop through fills, got trade from db');
-          // console.log('order from fill', singleDbOrder?.id);
-          // only need to check it if there is an order in the db. Otherwise it might be a basic trade
-          if (singleDbOrder) {
-            // console.log('quick sync loop through fills, comparing trade from db');
-
-            if (singleDbOrder && !singleDbOrder?.settled) {
-              // console.log('!!!!!!!!need to check this order!', singleDbOrder.settled);
-              ordersToCheck.push(singleDbOrder);
-            } else {
-              // console.log('DO NOT check this order! or any orders after this because they will be processed already');
-              i += fills.length;
-            }
-          }
-        }
-        const reorders = await databaseClient.getReorders(userID)
-        if (reorders.length >= 1) {
-          // console.log('reorders', reorders);
-          reorders.forEach(order => ordersToCheck.push(order))
-        }
+        //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
+        ordersToCheck = await quickSync(userID);
       }
 
       // also get a list of orders that are open on cb, but not stored in the db. 
       let ordersToCancel = [];
-      // this if statement saves a little processing by skipping the filter if not needed
-      // only checks for cancels if the two arrays are the same length and no orders to flip
-      // if (!(dbOrders.length === cbOrders.length && ordersToCheck.length === 0)) {
       ordersToCancel = await orderElimination(cbOrders, dbOrders);
-      // }
-
-      // console.log('cancel:', ordersToCancel, cbOrders.length, dbOrders.length);
-
 
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
       if (ordersToCancel.length) {
@@ -277,6 +236,57 @@ async function syncOrders(userID, count) {
       console.log('user is NOT THERE, stopping loop for user');
     }
   }
+}
+
+async function quickSync(userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+
+
+      // IF QUICK SYNC, only get fills
+      // checks for orders if it finds any fills 
+
+      // initiate empty array to hold orders that need to be checked for settlement
+      let toCheck = [];
+
+      // get the 500 most recent fills for the account
+      const fills = await coinbaseClient.getLimitedFills(userID, 500);
+
+      // look at each fill and find the order in the db associated with it
+      for (let i = 0; i < fills.length; i++) {
+        const fill = fills[i];
+        // get order from db
+        const singleDbOrder = await databaseClient.getSingleTrade(fill.order_id);
+        // only need to check it if there is an order in the db. Otherwise it might be a basic trade
+        if (singleDbOrder) {
+          // check if the order has already been settled in the db
+          if (singleDbOrder && !singleDbOrder?.settled) {
+            // if it has not been settled in the db, it needs to be checked with coinbase if it settled
+            // push it into the array
+            toCheck.push(singleDbOrder);
+          } else {
+            // if it has been settled, we can stop looping because we will have already check all previous fills
+            i += fills.length;
+          }
+        }
+      }
+      // console.log('checking reorders in quick sync');
+      // todo - this does not look like it is doing anything? 
+      // The db hasn't been changed so there would be nothing to reorder, correct?
+      const reorders = await databaseClient.getReorders(userID)
+      if (reorders.length >= 1) {
+        // console.log('!!!!! reordering reorders in quick sync robot.js quick sync function');
+        reorders.forEach(order => toCheck.push(order))
+      }
+
+
+
+
+      resolve(toCheck);
+    } catch (err) {
+      reject(err)
+    }
+  });
 }
 
 async function deleteMarkedOrders(userID) {
@@ -642,7 +652,7 @@ async function reorder(orderToReorder) {
       } else {
         await sleep(1000);
         // check again. if it finds it, don't do anything. If not found, error handling will reorder
-        console.log('checking again before reordering', orderToReorder);
+        // console.log('checking again before reordering', orderToReorder);
         let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID);
       }
     } catch (err) {
@@ -906,28 +916,16 @@ async function getAvailableFunds(userID) {
 
       const userSettings = results[3];
       const makerFee = userSettings.maker_fee;
-      // console.log('makerFee', makerFee);
 
       const [USD] = results[0].filter(account => account.currency === 'USD')
       const availableUSD = USD.available;
       const spentUSD = results[1].sum;
-      // const actualAvailableUSD = availableUSD - spentUSD;
       const actualAvailableUSD = (availableUSD - (spentUSD * (1 + Number(makerFee)))).toFixed(16);
-      // const fixedActualAvailableUSD = availableUSD - (spentUSD * (1 + Number(makerFee)));
 
       const [BTC] = results[0].filter(account => account.currency === 'BTC')
       const availableBTC = BTC.available;
       const spentBTC = results[2].sum;
       const actualAvailableBTC = Number((availableBTC - spentBTC).toFixed(16));
-
-      // console.log('results 0', results[0].length);
-      // console.log('spent USD', spentUSD);
-      // console.log('USD available', availableUSD);
-      // console.log('actualAvailableUSD', actualAvailableUSD);
-
-      // console.log('spent BTC', spentBTC);
-      // console.log('BTC available', availableBTC);
-      // console.log('actualAvailableBTC', actualAvailableBTC);
 
       const availableFunds = {
         availableBTC: availableBTC,
@@ -935,9 +933,6 @@ async function getAvailableFunds(userID) {
         actualAvailableBTC: actualAvailableBTC,
         actualAvailableUSD: actualAvailableUSD
       }
-
-      // console.log('availableFunds USD      ', availableFunds.actualAvailableUSD);
-      // console.log('fixed availableFunds USD', fixedActualAvailableUSD);
 
       resolve(availableFunds)
     } catch (err) { reject(err) }
@@ -947,26 +942,13 @@ async function getAvailableFunds(userID) {
 async function updateFunds(userID) {
   return new Promise(async (resolve, reject) => {
     try {
-      // console.log('updating funds');
       const available = await getAvailableFunds(userID);
       const userSettings = await databaseClient.getUserAndSettings(userID);
-      console.log('user settings actualavailable_usd', Number(userSettings.actualavailable_usd));
-      console.log('avail funds                      ', Number(available.actualAvailableUSD));
 
-      if (userSettings.reinvest && (userSettings.reinvest_ratio != 0) && (userSettings.reserve > available.actualAvailableUSD)) {
-        // console.log('need to turn off reinvest');
-        try {
-          const queryText = `UPDATE "user_settings" SET "reinvest_ratio" = $1, "reinvest" = false WHERE "userID" = $2`;
-          // await pool.query(queryText, [0, userID]);
-        } catch (err) {
-          console.log(err, 'problem turning off reinvest');
-          // res.sendStatus(500);
-        }
-      }
       await databaseClient.saveFunds(available, userID);
 
       if (Number(userSettings.actualavailable_usd) !== Number(available.actualAvailableUSD)) {
-        console.log('usd available did change');
+        // console.log('usd available did change');
         socketClient.emit('message', {
           orderUpdate: true,
           userID: Number(userID)

@@ -235,8 +235,8 @@ const getSpentBTC = (userID) => {
 const getReorders = (userID) => {
   return new Promise(async (resolve, reject) => {
     try {
-      // let sqlText;
-      // put sql stuff here, extending the pool promise to the parent function
+      // first select the closest 100 trades on either side 
+      // then select from the results any that need to be reordered
       let sqlText = `SELECT * FROM (
         (SELECT * FROM "orders" WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT 100)
         UNION

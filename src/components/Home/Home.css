@@ -28,23 +28,15 @@
 
 @media (max-width: 800px) {
   .Home {
-    height                  : 90vh;
-    /* display              : grid; */
+    height               : 90vh;
     /* this is STRICTLY A BUSINESS ROBOT, and the color should reflect that! */
-    grid-template-columns   : 0fr auto 0fr;
-    grid-template-rows      : min-content min-content min-content min-content;
-    /* gap                  : .4rem; */
-    /* grid-template-rows   : unset; */
-    /* height               : 100vh; */
+    grid-template-columns: 0fr auto 0fr;
+    grid-template-rows   : min-content min-content min-content min-content;
   }
+}
 
-  /* .header {
-    grid-column     : 1/5;
-    grid-row        : 1;
-    background-color: #803535;
-    text-align      : center;
-    align-items     : center;
-    font-size       : calc(9px + 2vmin);
-    color           : white;
-  } */
+@media (max-width: 800px) and (display-mode: standalone) {
+  .Home {
+    height: 100vh;
+  }
 }
