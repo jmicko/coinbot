@@ -48,3 +48,9 @@
     color           : white;
   } */
 }
+
+@media (max-width: 800px) and (display-mode: standalone) {
+  .Home {
+    height                  : 100vh;
+  }
+}
