@@ -38,10 +38,8 @@ async function syncOrders(userID, count) {
       let ordersToCheck = [];
 
       if (count === 0) {
-
+        // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
         const fullSyncOrders = await fullSync(userID);
-
-        console.log('fullSyncOrders', fullSyncOrders);
 
         dbOrders = fullSyncOrders.dbOrders;
         cbOrders = fullSyncOrders.cbOrders;
@@ -168,7 +166,6 @@ async function fullSync(userID) {
   // IF FULL SYNC, compare all trades that should be on CB, and do other less frequent maintenance tasks
   return new Promise(async (resolve, reject) => {
     try {
-      console.log('---FULL SYNC---');
       // initiate empty object to hold arrays that will be returned to the sync loop
       let fullSyncOrders = {
         dbOrders: [],
@@ -180,28 +177,25 @@ async function fullSync(userID) {
       const results = await Promise.all([
         // get all open orders from db and cb
         databaseClient.getLimitedTrades(userID, 100),
-        // databaseClient.getUnsettledTrades('all', userID),
-        coinbaseClient.getOpenOrders(userID)
+        coinbaseClient.getOpenOrders(userID),
+        // get fees
+        coinbaseClient.getFees(userID)
       ]);
       // store the lists of orders in the corresponding arrays so they can be compared
       fullSyncOrders.dbOrders = results[0];
       fullSyncOrders.cbOrders = results[1];
+      const fees = results[2];
 
       // console.log('updating funds in full sync');
       updateFunds(userID);
 
       // need to get the fees for more accurate Available funds reporting
       // fees don't change frequently so only need to do this during full sync
-      const fees = await coinbaseClient.getFees(userID);
-      // console.log('Fees during full sync:', fees);
       await databaseClient.saveFees(fees, userID);
 
       // compare the arrays and remove any where the ids match in both,
       // leaving a list of orders that are open in the db, but not on cb. Probably settled
-      // console.log('dbOrders', dbOrders.length);
       fullSyncOrders.ordersToCheck = await orderElimination(fullSyncOrders.dbOrders, fullSyncOrders.cbOrders);
-
-      // DONE GETTING ORDERS
 
       resolve(fullSyncOrders);
     } catch (err) {
