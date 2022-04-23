@@ -187,7 +187,7 @@ async function fullSync(userID) {
       const fees = results[2];
 
       // console.log('updating funds in full sync');
-      updateFunds(userID);
+      await updateFunds(userID);
 
       // need to get the fees for more accurate Available funds reporting
       // fees don't change frequently so only need to do this during full sync
@@ -858,7 +858,7 @@ async function autoSetup(user, parameters) {
   }
 }
 
-async function getAvailableFunds(userID) {
+async function getAvailableFunds(userID, userSettings) {
   // console.log('getting available funds');
   return new Promise(async (resolve, reject) => {
     try {
@@ -866,30 +866,35 @@ async function getAvailableFunds(userID) {
       const results = await Promise.all([
         coinbaseClient.getAccounts(userID),
         databaseClient.getSpentUSD(userID),
-        databaseClient.getSpentBTC(userID),
-        databaseClient.getUserAndSettings(userID)
+        databaseClient.getSpentBTC(userID)
+        // databaseClient.getUserAndSettings(userID)
       ]);
 
-      const userSettings = results[3];
+      // const userSettings = results[3];
       const makerFee = userSettings.maker_fee;
-
+      
       const [USD] = results[0].filter(account => account.currency === 'USD')
       const availableUSD = USD.available;
+      const balanceUSD = USD.balance;
       const spentUSD = results[1].sum;
       const actualAvailableUSD = (availableUSD - (spentUSD * (1 + Number(makerFee)))).toFixed(16);
-
+      
       const [BTC] = results[0].filter(account => account.currency === 'BTC')
       const availableBTC = BTC.available;
+      const balanceBTC = BTC.balance;
       const spentBTC = results[2].sum;
       const actualAvailableBTC = Number((availableBTC - spentBTC).toFixed(16));
-
+      
       const availableFunds = {
         availableBTC: availableBTC,
+        balanceBTC: balanceBTC,
         availableUSD: availableUSD,
+        balanceUSD: balanceUSD,
         actualAvailableBTC: actualAvailableBTC,
         actualAvailableUSD: actualAvailableUSD
       }
-
+      console.log('avail:', availableFunds);
+      
       resolve(availableFunds)
     } catch (err) { reject(err) }
   })
@@ -898,8 +903,8 @@ async function getAvailableFunds(userID) {
 async function updateFunds(userID) {
   return new Promise(async (resolve, reject) => {
     try {
-      const available = await getAvailableFunds(userID);
       const userSettings = await databaseClient.getUserAndSettings(userID);
+      const available = await getAvailableFunds(userID, userSettings);
 
       await databaseClient.saveFunds(available, userID);
 
