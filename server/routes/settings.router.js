@@ -86,7 +86,7 @@ router.put('/fullSync', rejectUnauthenticated, async (req, res) => {
  */
 router.put('/orderSyncQuantity', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
-  let orders_to_sync = Math.round(req.body.orders_to_sync);
+  let orders_to_sync = Math.round(req.body.syncQuantity);
 
   if (orders_to_sync < 1) {
     orders_to_sync = 1;
@@ -100,15 +100,19 @@ router.put('/orderSyncQuantity', rejectUnauthenticated, async (req, res) => {
     try {
       console.log('orders_to_sync route hit', orders_to_sync);
       const queryText = `UPDATE "bot_settings" SET "orders_to_sync" = $1;`;
-      // await pool.query(queryText, [orders_to_sync]);
+      await pool.query(queryText, [orders_to_sync]);
       res.sendStatus(200);
     } catch (err) {
       console.log('error with loop speed route', err);
       res.sendStatus(500);
     }
   } else {
-    console.log('user is not admin!');
-    res.sendStatus(403)
+    if (!user.admin) {
+      console.log('user is not admin!');
+      res.sendStatus(403)
+    } else {
+      res.sendStatus(500)
+    }
   }
 });
 

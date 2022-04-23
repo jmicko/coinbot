@@ -24,7 +24,7 @@ async function syncOrders(userID, count) {
   let botSettings;
   try {
     botSettings = await databaseClient.getBotSettings();
-    console.log(botSettings);
+    // console.log(botSettings);
     user = await databaseClient.getUserAndSettings(userID);
     if (count > botSettings.full_sync - 1) {
       count = 0
