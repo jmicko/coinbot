@@ -219,7 +219,6 @@ const getSpentBTC = (userID) => {
 const getReorders = (userID, limit) => {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log('LIMIT IS', limit);
       // first select the closest trades on either side according to the limit (which is in the bot settings table)
       // then select from the results any that need to be reordered
       let sqlText = `SELECT * FROM (

@@ -94,11 +94,8 @@ router.put('/orderSyncQuantity', rejectUnauthenticated, async (req, res) => {
     orders_to_sync = 200;
   }
 
-  console.log('FULL SYNC', orders_to_sync);
-
   if (user.admin && orders_to_sync <= 200 && orders_to_sync >= 1) {
     try {
-      console.log('orders_to_sync route hit', orders_to_sync);
       const queryText = `UPDATE "bot_settings" SET "orders_to_sync" = $1;`;
       await pool.query(queryText, [orders_to_sync]);
       res.sendStatus(200);
