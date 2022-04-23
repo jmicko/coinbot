@@ -864,39 +864,39 @@ async function getAvailableFunds(userID, userSettings) {
     try {
       const makerFee = Number(userSettings.maker_fee) + 1;
 
-      // console.log(makerFee);
-
       const results = await Promise.all([
         coinbaseClient.getAccounts(userID),
+        // funds are withheld in usd when a buy is placed, so the maker fee is needed to subtract fees
         databaseClient.getSpentUSD(userID, makerFee),
+        // funds are taken from the sale once settled, so the maker fee is not needed on the buys
         databaseClient.getSpentBTC(userID),
       ]);
 
-      
+      // calculate USD balances
       const [USD] = results[0].filter(account => account.currency === 'USD')
       const availableUSD = USD.available;
       const balanceUSD = USD.balance;
       const spentUSD = results[1].sum;
+      // subtract the total amount spent from the total balanc
       const actualAvailableUSD = (balanceUSD - spentUSD).toFixed(16);
       
+      // calculate BTC balances
       const [BTC] = results[0].filter(account => account.currency === 'BTC')
       const availableBTC = BTC.available;
       const balanceBTC = BTC.balance;
       const spentBTC = results[2].sum;
+      // subtract the total amount spent from the total balanc
       const actualAvailableBTC = Number((balanceBTC - spentBTC).toFixed(16));
-      
+
       const availableFunds = {
         availableBTC: availableBTC,
         balanceBTC: balanceBTC,
         availableUSD: availableUSD,
-        spentUSD: spentUSD,
         balanceUSD: balanceUSD,
         actualAvailableBTC: actualAvailableBTC,
         actualAvailableUSD: actualAvailableUSD
-        // allActualAvailableUSD: allActualAvailableUSD
       }
-      console.log('avail:', availableFunds);
-      
+
       resolve(availableFunds)
     } catch (err) { reject(err) }
   })
