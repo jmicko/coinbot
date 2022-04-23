@@ -216,19 +216,20 @@ const getSpentBTC = (userID) => {
 }
 
 
-const getReorders = (userID) => {
+const getReorders = (userID, limit) => {
   return new Promise(async (resolve, reject) => {
     try {
-      // first select the closest 100 trades on either side 
+      console.log('LIMIT IS', limit);
+      // first select the closest trades on either side according to the limit (which is in the bot settings table)
       // then select from the results any that need to be reordered
       let sqlText = `SELECT * FROM (
-        (SELECT * FROM "orders" WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT 100)
+        (SELECT * FROM "orders" WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT $2)
         UNION
-        (SELECT * FROM "orders" WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT 100)
+        (SELECT * FROM "orders" WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT $2)
         ORDER BY "price" DESC
         ) as reorders
         WHERE "reorder"=true;`;
-      const results = await pool.query(sqlText, [userID])
+      const results = await pool.query(sqlText, [userID, limit])
       // .then((results) => {
       const reorders = results.rows;
       // promise returns promise from pool if success

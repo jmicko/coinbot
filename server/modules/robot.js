@@ -24,6 +24,7 @@ async function syncOrders(userID, count) {
   let botSettings;
   try {
     botSettings = await databaseClient.getBotSettings();
+    console.log(botSettings);
     user = await databaseClient.getUserAndSettings(userID);
     if (count > botSettings.full_sync - 1) {
       count = 0
@@ -39,7 +40,7 @@ async function syncOrders(userID, count) {
 
       if (count === 0) {
         // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
-        const fullSyncOrders = await fullSync(userID);
+        const fullSyncOrders = await fullSync(userID, botSettings);
 
         dbOrders = fullSyncOrders.dbOrders;
         cbOrders = fullSyncOrders.cbOrders;
@@ -47,7 +48,7 @@ async function syncOrders(userID, count) {
 
       } else {
         //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
-        ordersToCheck = await quickSync(userID);
+        ordersToCheck = await quickSync(userID, botSettings);
       }
 
       // also get a list of orders that are open on cb, but not stored in the db. 
@@ -162,7 +163,7 @@ async function syncOrders(userID, count) {
   }
 }
 
-async function fullSync(userID) {
+async function fullSync(userID, botSettings) {
   // IF FULL SYNC, compare all trades that should be on CB, and do other less frequent maintenance tasks
   return new Promise(async (resolve, reject) => {
     try {
@@ -204,7 +205,7 @@ async function fullSync(userID) {
   });
 }
 
-async function quickSync(userID) {
+async function quickSync(userID, botSettings) {
   // IF QUICK SYNC, only get fills
   return new Promise(async (resolve, reject) => {
     try {
@@ -233,7 +234,7 @@ async function quickSync(userID) {
       // console.log('checking reorders in quick sync');
       // todo - this does not look like it is doing anything? 
       // The db hasn't been changed so there would be nothing to reorder, correct?
-      const reorders = await databaseClient.getReorders(userID)
+      const reorders = await databaseClient.getReorders(userID, botSettings.orders_to_sync)
       if (reorders.length >= 1) {
         // console.log('!!!!! reordering reorders in quick sync robot.js quick sync function');
         reorders.forEach(order => toCheck.push(order))
