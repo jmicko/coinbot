@@ -862,36 +862,38 @@ async function getAvailableFunds(userID, userSettings) {
   // console.log('getting available funds');
   return new Promise(async (resolve, reject) => {
     try {
+      const makerFee = Number(userSettings.maker_fee) + 1;
+
+      // console.log(makerFee);
 
       const results = await Promise.all([
         coinbaseClient.getAccounts(userID),
-        databaseClient.getSpentUSD(userID),
-        databaseClient.getSpentBTC(userID)
-        // databaseClient.getUserAndSettings(userID)
+        databaseClient.getSpentUSD(userID, makerFee),
+        databaseClient.getSpentBTC(userID),
       ]);
 
-      // const userSettings = results[3];
-      const makerFee = userSettings.maker_fee;
       
       const [USD] = results[0].filter(account => account.currency === 'USD')
       const availableUSD = USD.available;
       const balanceUSD = USD.balance;
       const spentUSD = results[1].sum;
-      const actualAvailableUSD = (availableUSD - (spentUSD * (1 + Number(makerFee)))).toFixed(16);
+      const actualAvailableUSD = (balanceUSD - spentUSD).toFixed(16);
       
       const [BTC] = results[0].filter(account => account.currency === 'BTC')
       const availableBTC = BTC.available;
       const balanceBTC = BTC.balance;
       const spentBTC = results[2].sum;
-      const actualAvailableBTC = Number((availableBTC - spentBTC).toFixed(16));
+      const actualAvailableBTC = Number((balanceBTC - spentBTC).toFixed(16));
       
       const availableFunds = {
         availableBTC: availableBTC,
         balanceBTC: balanceBTC,
         availableUSD: availableUSD,
+        spentUSD: spentUSD,
         balanceUSD: balanceUSD,
         actualAvailableBTC: actualAvailableBTC,
         actualAvailableUSD: actualAvailableUSD
+        // allActualAvailableUSD: allActualAvailableUSD
       }
       console.log('avail:', availableFunds);
       

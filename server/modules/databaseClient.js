@@ -178,20 +178,12 @@ const getSingleTrade = (id) => {
 }
 
 
-const getSpentUSD = (userID) => {
+const getSpentUSD = (userID, makerFee) => {
   return new Promise((resolve, reject) => {
-    let sqlText;
-    // put sql stuff here, extending the pool promise to the parent function
-    // sqlText = `SELECT sum("price"*"size" + "price"*"size"*0.002)
-    sqlText = `SELECT sum("price"*"size")
-    FROM (
-      SELECT "price", "size"
-      FROM "orders" 
-        WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
-      ORDER BY "price" DESC
-      OFFSET 100
-      ) as volume_usd;`;
-    pool.query(sqlText, [userID])
+    let sqlText = `SELECT sum("price"*"size"*$1)
+    FROM "orders"
+    WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$2;`;
+    pool.query(sqlText, [makerFee, userID])
       .then((results) => {
         const [volume_usd] = results.rows;
         // promise returns promise from pool if success
@@ -207,17 +199,9 @@ const getSpentUSD = (userID) => {
 
 const getSpentBTC = (userID) => {
   return new Promise((resolve, reject) => {
-    let sqlText;
-    // put sql stuff here, extending the pool promise to the parent function
-    // sqlText = `SELECT sum("price"*"size" + "price"*"size"*0.002)
-    sqlText = `SELECT sum("size")
-    FROM (
-      SELECT "price", "size"
-      FROM "orders" 
-        WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
-      ORDER BY "price" ASC
-      OFFSET 100
-      ) as volume_btc;`;
+    let sqlText = `SELECT sum("size")
+    FROM "orders"
+    WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
     pool.query(sqlText, [userID])
       .then((results) => {
         const [volume_btc] = results.rows;
@@ -434,6 +418,7 @@ const databaseClient = {
   getUnsettledTradeCounts: getUnsettledTradeCounts,
   getSingleTrade: getSingleTrade,
   getSpentUSD: getSpentUSD,
+  // getAllSpentUSD: getAllSpentUSD,
   getSpentBTC: getSpentBTC,
   getReorders: getReorders,
   deleteTrade: deleteTrade,
