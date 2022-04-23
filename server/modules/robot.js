@@ -177,7 +177,7 @@ async function fullSync(userID, botSettings) {
       // get lists of trades to compare which have been settled
       const results = await Promise.all([
         // get all open orders from db and cb
-        databaseClient.getLimitedTrades(userID, 100),
+        databaseClient.getLimitedTrades(userID, botSettings.orders_to_sync),
         coinbaseClient.getOpenOrders(userID),
         // get fees
         coinbaseClient.getFees(userID)
