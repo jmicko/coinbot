@@ -231,9 +231,10 @@ async function quickSync(userID, botSettings) {
           }
         }
       }
-      // console.log('checking reorders in quick sync');
-      // todo - this does not look like it is doing anything? 
-      // The db hasn't been changed so there would be nothing to reorder, correct?
+      // this will check the specified number of trades to sync on either side to see if any 
+      // need to be reordered. It will only find them on a loop after a loop where trades have been placed
+      // This could be faster? But still currently faster than waiting for a full sync
+      // todo - maybe this should go after the settleMultipleOrders function so it will fire on same loop
       const reorders = await databaseClient.getReorders(userID, botSettings.orders_to_sync)
       if (reorders.length >= 1) {
         // console.log('!!!!! reordering reorders in quick sync robot.js quick sync function');
@@ -767,9 +768,14 @@ function orderElimination(dbOrders, cbOrders) {
 async function autoSetup(user, parameters) {
   // stop bot from adding more trades if 10000 already placed
   let totalOrders = await databaseClient.getUnsettledTrades('all', user.id);
+  const orderCounts = await databaseClient.getUnsettledTradeCounts(user.id);
+  const unsettledCounts = Number(orderCounts.totalOpenOrders.count);
   const userAndSettings = await databaseClient.getUserAndSettings(user.id);
   console.log('userAndSettings', userAndSettings.actualavailable_usd);
-  if ((totalOrders.length >= 10000) || (Number(userAndSettings.actualavailable_usd) <= 0)) {
+  console.log('totalOrders.length', totalOrders.length);
+  console.log('unsettledCounts', unsettledCounts);
+  if ((unsettledCounts >= 10000) || (Number(userAndSettings.actualavailable_usd) <= 0)) {
+    console.log('too many trades');
     return;
   }
 
@@ -842,15 +848,19 @@ async function autoSetup(user, parameters) {
 
   } catch (err) {
     if (err.response?.status === 400) {
-      console.log(err, 'Insufficient funds! Or too small order or some similar problem');
-      socketClient.emit('message', {
-        error: `Insufficient funds!`,
-        orderUpdate: true
-      });
+      console.log(err.response?.data?.message, 'Insufficient funds! Or too small order or some similar problem');
+      if (err.response?.data?.message) {
+        
+        socketClient.emit('message', {
+          error: err.response.data.message + " - Auto setup done",
+          orderUpdate: true,
+          userID: Number(user.id)
+        });
+      }
     } else if (err.code && err.code === 'ETIMEDOUT') {
       console.log('Timed out!!!!!');
       socketClient.emit('message', {
-        error: `Connection timed out, consider synching all orders to prevent duplicates. This will not be done for you.`,
+        error: `Connection timed out - Auto setup done to prevent gaps. You may want to start again.`,
         orderUpdate: true
       });
     } else {
