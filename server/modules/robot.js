@@ -37,6 +37,7 @@ async function syncOrders(userID, count) {
       let dbOrders = [];
       let cbOrders = [];
       let ordersToCheck = [];
+      let ordersToCancel = [];
 
       if (count === 0) {
         // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
@@ -45,6 +46,7 @@ async function syncOrders(userID, count) {
         dbOrders = fullSyncOrders.dbOrders;
         cbOrders = fullSyncOrders.cbOrders;
         ordersToCheck = fullSyncOrders.ordersToCheck;
+        ordersToCancel = await orderElimination(cbOrders, dbOrders);
 
       } else {
         //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
@@ -52,8 +54,6 @@ async function syncOrders(userID, count) {
       }
 
       // also get a list of orders that are open on cb, but not stored in the db. 
-      let ordersToCancel = [];
-      ordersToCancel = await orderElimination(cbOrders, dbOrders);
 
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
       if (ordersToCancel.length) {
@@ -231,12 +231,13 @@ async function quickSync(userID, botSettings) {
           }
         }
       }
-      // console.log('checking reorders in quick sync');
-      // todo - this does not look like it is doing anything? 
-      // The db hasn't been changed so there would be nothing to reorder, correct?
+      // this will check the specified number of trades to sync on either side to see if any 
+      // need to be reordered. It will only find them on a loop after a loop where trades have been placed
+      // This could be faster? But still currently faster than waiting for a full sync
+      // todo - maybe this should go after the settleMultipleOrders function so it will fire on same loop
       const reorders = await databaseClient.getReorders(userID, botSettings.orders_to_sync)
       if (reorders.length >= 1) {
-        // console.log('!!!!! reordering reorders in quick sync robot.js quick sync function');
+        // console.log('!!!!! reordering reorders in quick sync robot.js quick sync function', reorders);
         reorders.forEach(order => toCheck.push(order))
       }
       resolve(toCheck);
@@ -553,29 +554,31 @@ async function settleMultipleOrders(ordersArray, userID) {
 
 async function reorder(orderToReorder) {
   return new Promise(async (resolve, reject) => {
+    let upToDateDbOrder;
     try {
       const userID = orderToReorder.userID;
-      let upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.id);
+      upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.id);
 
       // if the order is marked for reordering, it was deleted already and there is no need to wait to double check
       if (upToDateDbOrder.reorder) {
+        // also need to ensure that the order was not supposed to be canceled 
         if (!upToDateDbOrder.will_cancel) {
           try {
             const tradeDetails = {
-              original_sell_price: orderToReorder.original_sell_price,
-              original_buy_price: orderToReorder.original_buy_price,
-              side: orderToReorder.side,
-              price: orderToReorder.price, // USD
-              size: orderToReorder.size, // BTC
-              product_id: orderToReorder.product_id,
-              trade_pair_ratio: orderToReorder.trade_pair_ratio,
+              original_sell_price: upToDateDbOrder.original_sell_price,
+              original_buy_price: upToDateDbOrder.original_buy_price,
+              side: upToDateDbOrder.side,
+              price: upToDateDbOrder.price, // USD
+              size: upToDateDbOrder.size, // BTC
+              product_id: upToDateDbOrder.product_id,
+              trade_pair_ratio: upToDateDbOrder.trade_pair_ratio,
               stp: 'cn',
-              userID: orderToReorder.userID,
+              userID: upToDateDbOrder.userID,
             };
             // send the new order with the trade details
             let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
             // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
-            tradeDetails.fill_fees = orderToReorder.previous_fill_fees;
+            tradeDetails.fill_fees = upToDateDbOrder.previous_fill_fees;
             // store the new trade in the db. the trade details are also sent to store trade position prices
             let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
 
@@ -586,7 +589,7 @@ async function reorder(orderToReorder) {
             socketClient.emit('message', {
               message: `trade was reordered`,
               orderUpdate: true,
-              userID: Number(orderToReorder.userID)
+              userID: Number(upToDateDbOrder.userID)
             });
             resolve({
               results: results,
@@ -609,28 +612,29 @@ async function reorder(orderToReorder) {
       } else {
         await sleep(1000);
         // check again. if it finds it, don't do anything. If not found, error handling will reorder
-        // console.log('checking again before reordering', orderToReorder);
+        console.log('checking again before reordering', orderToReorder);
         let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID);
       }
     } catch (err) {
       let cancelling = await databaseClient.checkIfCancelling(orderToReorder.id);
       if ((err.response?.status === 404) && (!cancelling)) {
+        console.log('reordering', upToDateDbOrder);
         try {
           const tradeDetails = {
-            original_sell_price: orderToReorder.original_sell_price,
-            original_buy_price: orderToReorder.original_buy_price,
-            side: orderToReorder.side,
-            price: orderToReorder.price, // USD
-            size: orderToReorder.size, // BTC
-            product_id: orderToReorder.product_id,
-            trade_pair_ratio: orderToReorder.trade_pair_ratio,
+            original_sell_price: upToDateDbOrder.original_sell_price,
+            original_buy_price: upToDateDbOrder.original_buy_price,
+            side: upToDateDbOrder.side,
+            price: upToDateDbOrder.price, // USD
+            size: upToDateDbOrder.size, // BTC
+            product_id: upToDateDbOrder.product_id,
+            trade_pair_ratio: upToDateDbOrder.trade_pair_ratio,
             stp: 'cn',
             userID: orderToReorder.userID,
           };
           // send the new order with the trade details
           let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
           // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
-          tradeDetails.fill_fees = orderToReorder.previous_fill_fees;
+          tradeDetails.fill_fees = upToDateDbOrder.previous_fill_fees;
           // store the new trade in the db. the trade details are also sent to store trade position prices
           let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
 
@@ -766,10 +770,13 @@ function orderElimination(dbOrders, cbOrders) {
 // auto setup trades until run out of money
 async function autoSetup(user, parameters) {
   // stop bot from adding more trades if 10000 already placed
-  let totalOrders = await databaseClient.getUnsettledTrades('all', user.id);
+  const orderCounts = await databaseClient.getUnsettledTradeCounts(user.id);
+  const unsettledCounts = Number(orderCounts.totalOpenOrders.count);
   const userAndSettings = await databaseClient.getUserAndSettings(user.id);
   console.log('userAndSettings', userAndSettings.actualavailable_usd);
-  if ((totalOrders.length >= 10000) || (Number(userAndSettings.actualavailable_usd) <= 0)) {
+  console.log('unsettledCounts', unsettledCounts);
+  if ((unsettledCounts >= 10000) || (Number(userAndSettings.actualavailable_usd) <= 0)) {
+    console.log('too many trades');
     return;
   }
 
@@ -842,15 +849,19 @@ async function autoSetup(user, parameters) {
 
   } catch (err) {
     if (err.response?.status === 400) {
-      console.log(err, 'Insufficient funds! Or too small order or some similar problem');
-      socketClient.emit('message', {
-        error: `Insufficient funds!`,
-        orderUpdate: true
-      });
+      console.log(err.response?.data?.message, 'Insufficient funds! Or too small order or some similar problem');
+      if (err.response?.data?.message) {
+        
+        socketClient.emit('message', {
+          error: err.response.data.message + " - Auto setup done",
+          orderUpdate: true,
+          userID: Number(user.id)
+        });
+      }
     } else if (err.code && err.code === 'ETIMEDOUT') {
       console.log('Timed out!!!!!');
       socketClient.emit('message', {
-        error: `Connection timed out, consider synching all orders to prevent duplicates. This will not be done for you.`,
+        error: `Connection timed out - Auto setup done to prevent gaps. You may want to start again.`,
         orderUpdate: true
       });
     } else {
