@@ -100,3 +100,7 @@ CREATE TABLE IF NOT EXISTS "session" (
 WITH (OIDS=FALSE);
 ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
 CREATE INDEX "IDX_session_expire" ON "session" ("expire");
+
+-- this will index the orders table so it is much faster to look for reorders and unsettled trades
+CREATE INDEX reorders
+ON "orders" ("side", "flipped", "will_cancel", "userID", "settled");
