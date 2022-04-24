@@ -33,7 +33,7 @@ function Home(props) {
   const [priceTicker, setPriceTicker] = useState(0);
 
   // for checkbox to auto scroll
-  const [isAutoScroll, setIsAutoScroll] = useState(false);
+  const [isAutoScroll, setIsAutoScroll] = useState(true);
 
   const handleAutoScrollChange = () => {
     setIsAutoScroll(!isAutoScroll);

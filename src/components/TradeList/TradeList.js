@@ -75,7 +75,7 @@ function TradeList(props) {
         {lowestSell !== 0 && highestBuy !== 0 && <p>&#9650; ${(lowestSell - props.priceTicker).toFixed(2)}<br />
           &#9660; ${(props.priceTicker - highestBuy).toFixed(2)}</p>}
         <img className="coinbot-image" src={coinbotFilled} alt="coinbot" />
-        {lowestSell !== 0 && highestBuy !== 0 && <p><center><strong>Margin</strong><br />${(lowestSell - highestBuy).toFixed(2)}</center></p>}
+        {lowestSell !== 0 && highestBuy !== 0 && <center><p><strong>Margin</strong><br />${(lowestSell - highestBuy).toFixed(2)}</p></center>}
       </div>
       {buys}
     </div>
