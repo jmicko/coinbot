@@ -164,7 +164,7 @@ function AutoSetup(props) {
               name='startingValue'
               type='number'
               value={startingValue}
-              step={1000}
+              // step={10}
               required
               onChange={(event) => setStartingValue(Number(event.target.value))}
             />

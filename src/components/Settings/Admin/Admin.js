@@ -10,6 +10,7 @@ function Admin(props) {
   const dispatch = useDispatch();
   const [loopSpeed, setLoopSpeed] = useState(1);
   const [fullSync, setFullSync] = useState(10);
+  const [syncQuantity, setSyncQuantity] = useState(100);
   const [resettingOrders, setResettingOrders] = useState(false);
   const [factoryResetting, setFactoryResetting] = useState(false);
 
@@ -48,6 +49,15 @@ function Admin(props) {
     })
   }
 
+  function sendSyncQuantity() {
+    dispatch({
+      type: 'SEND_SYNC_QUANTITY',
+      payload: {
+        syncQuantity: syncQuantity
+      }
+    })
+  }
+
   function toggleMaintenance() {
     dispatch({
       type: 'TOGGLE_MAINTENANCE',
@@ -65,6 +75,10 @@ function Admin(props) {
     setFullSync(speed);
   }
 
+  function handleSyncQuantityChange(quantity) {
+    setSyncQuantity(quantity);
+  }
+
   useEffect(() => {
     if (props.store.settingsReducer.allSettingsReducer.loop_speed) {
       handleLoopSpeedChange(props.store.settingsReducer.allSettingsReducer.loop_speed);
@@ -77,6 +91,13 @@ function Admin(props) {
     }
 
   }, [props.store.settingsReducer.allSettingsReducer.full_sync]);
+
+  useEffect(() => {
+    if (props.store.settingsReducer.allSettingsReducer.orders_to_sync) {
+      handleSyncQuantityChange(props.store.settingsReducer.allSettingsReducer.orders_to_sync);
+    }
+
+  }, [props.store.settingsReducer.allSettingsReducer.orders_to_sync]);
 
   useEffect(() => {
     getUsers();
@@ -150,7 +171,36 @@ function Admin(props) {
       />
       <br />
       <br />
-      <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendFullSync() }}>Save frequency</button>
+      <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendFullSync() }}>Save Frequency</button>
+
+      <div className="divider" />
+
+      {/* SET ORDER SYNC QUANTITY */}
+
+      <h4>Set Synced Order Quantity</h4>
+      {/* {JSON.stringify(props.store.settingsReducer.allSettingsReducer)} */}
+      <p>
+        This adjusts how many trades per side to keep in sync with Coinbase Pro (How many buys, how many sells). There is a max of 200, which 
+        keeps the total under the 500 order limit on Coinbase pro, while also allowing a margin for flipping trades. Putting a low number here
+        may slightly increase the speed of the bot or lower CPU usage, but risks that all trades on one side will settle before the bot has the chance to sync more.
+      </p>
+      <p>Current quantity: {props.store.settingsReducer.allSettingsReducer.orders_to_sync}</p>
+      <label htmlFor="fullSync">
+        Set Sync Quantity:
+      </label>
+      <input
+        type="number"
+        name="syncQuantity"
+        value={syncQuantity}
+        step={1}
+        max={200}
+        min={1}
+        required
+        onChange={(event) => handleSyncQuantityChange(Number(event.target.value))}
+      />
+      <br />
+      <br />
+      <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendSyncQuantity() }}>Save Quantity</button>
 
       <div className="divider" />
 

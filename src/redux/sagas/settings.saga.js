@@ -39,6 +39,18 @@ function* fullSync(action) {
   }
 }
 
+function* syncQuantity(action) {
+  try {
+    yield axios.put(`/api/settings/orderSyncQuantity`, action.payload);
+    yield put({ type: 'FETCH_SETTINGS' })
+  } catch (error) {
+    console.log('setting bot speed has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 function* toggleMaintenance(action) {
   try {
     yield axios.put(`/api/settings/toggleMaintenance`, action.payload);
@@ -129,6 +141,7 @@ function* settingsSaga() {
   yield takeLatest('FETCH_SETTINGS', getAllSettings);
   yield takeLatest('SEND_LOOP_SPEED', loopSpeed);
   yield takeLatest('SEND_FULL_SYNC', fullSync);
+  yield takeLatest('SEND_SYNC_QUANTITY', syncQuantity);
   yield takeLatest('SET_BULK_PAIR_RATIO', bulkPairRatio);
   yield takeLatest('SET_PROFIT_ACCURACY', sendProfitAccuracy);
   yield takeLatest('SET_MAX_TRADE_LOAD', sendTradeLoadMax);

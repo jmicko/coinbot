@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS "user_settings"
 CREATE TABLE IF NOT EXISTS "bot_settings"
 (
   "loop_speed" integer DEFAULT 1,
+  "orders_to_sync" integer DEFAULT 100,
   "full_sync" integer DEFAULT 10,
   "maintenance" boolean DEFAULT false
 );

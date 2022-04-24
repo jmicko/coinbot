@@ -24,6 +24,7 @@ async function syncOrders(userID, count) {
   let botSettings;
   try {
     botSettings = await databaseClient.getBotSettings();
+    // console.log(botSettings);
     user = await databaseClient.getUserAndSettings(userID);
     if (count > botSettings.full_sync - 1) {
       count = 0
@@ -38,92 +39,16 @@ async function syncOrders(userID, count) {
       let ordersToCheck = [];
 
       if (count === 0) {
-        // console.log('---FULL SYNC---');
+        // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
+        const fullSyncOrders = await fullSync(userID, botSettings);
 
-        // get lists of trades to compare which have been settled
-        const results = await Promise.all([
-          // get all open orders from db and cb
-          databaseClient.getLimitedTrades(userID, 100),
-          // databaseClient.getUnsettledTrades('all', userID),
-          coinbaseClient.getOpenOrders(userID)
-        ]);
-
-
-        // store the lists of orders in the corresponding arrays so they can be compared
-        dbOrders = results[0];
-        cbOrders = results[1];
-
-        const getMoreOrders = async () => {
-          let moreOrdersTimer = true;
-
-          // get smallest possible time between full sync
-          // if it is more than 1 second, ignore the timer because 
-          // with max 10k trades, cb will only be called up to 11 times
-          // this is within the 15/sec rate limit 
-          // and this is the only part of the loop that calls that endpoint
-          let time = ((botSettings.loop_speed * 10) + 100) * botSettings.full_sync;
-
-          if (time < 1000) {
-            //  console.log('need to use full sync timer'); 
-            setTimeout(() => {
-              moreOrdersTimer = false;
-            }, 80);
-          }
-          // find the oldest date in the returned orders
-          const oldestDate = cbOrders[cbOrders.length - 1].created_at;
-
-          // await sleep(80); // avoid rate limit
-          // use the oldest date to get open orders before that date
-          const olderOrders = await coinbaseClient.getOpenOrdersBeforeDate(userID, oldestDate);
-
-          // check to make sure the last and first object of the arrays are the same and then remove one to prevent duplicates
-          if (cbOrders[cbOrders.length - 1].id === olderOrders[0].id) {
-            cbOrders.pop();
-          }
-
-          // Combine the arrays
-          cbOrders = cbOrders.concat(olderOrders);
-
-          if (time < 1000) {
-
-            while (moreOrdersTimer) {
-              await sleep(10);
-            }
-          }
-          // console.log('HAS BEEN 100ms more orders timer yet!');
-
-          // if just pulled 1000 older orders, there may be more so check again
-          if (olderOrders.length >= 1000) {
-            await getMoreOrders();
-          }
-
-        }
-
-        // CHECK IF THERE ARE 1000 OPEN ORDERS AND GET MORE FROM CB IF NEEDED
-        if (cbOrders.length >= 1000) {
-          console.log('!!!!!!!!!getting more orders. This should not happen anymore');
-          await getMoreOrders();
-        }
-
-        // console.log('updating funds in full sync');
-        updateFunds(userID);
-
-        // need to get the fees for more accurate Available funds reporting
-        // fees don't change frequently so only need to do this during full sync
-        const fees = await coinbaseClient.getFees(userID);
-        // console.log('Fees during full sync:', fees);
-        await databaseClient.saveFees(fees, userID);
-
-        // compare the arrays and remove any where the ids match in both,
-        // leaving a list of orders that are open in the db, but not on cb. Probably settled
-        // console.log('dbOrders', dbOrders.length);
-        ordersToCheck = await orderElimination(dbOrders, cbOrders);
-
-        // DONE GETTING ORDERS
+        dbOrders = fullSyncOrders.dbOrders;
+        cbOrders = fullSyncOrders.cbOrders;
+        ordersToCheck = fullSyncOrders.ordersToCheck;
 
       } else {
         //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
-        ordersToCheck = await quickSync(userID);
+        ordersToCheck = await quickSync(userID, botSettings);
       }
 
       // also get a list of orders that are open on cb, but not stored in the db. 
@@ -238,20 +163,56 @@ async function syncOrders(userID, count) {
   }
 }
 
-async function quickSync(userID) {
+async function fullSync(userID, botSettings) {
+  // IF FULL SYNC, compare all trades that should be on CB, and do other less frequent maintenance tasks
   return new Promise(async (resolve, reject) => {
     try {
+      // initiate empty object to hold arrays that will be returned to the sync loop
+      let fullSyncOrders = {
+        dbOrders: [],
+        cbOrders: [],
+        ordersToCheck: []
+      };
 
+      // get lists of trades to compare which have been settled
+      const results = await Promise.all([
+        // get all open orders from db and cb
+        databaseClient.getLimitedTrades(userID, botSettings.orders_to_sync),
+        coinbaseClient.getOpenOrders(userID),
+        // get fees
+        coinbaseClient.getFees(userID)
+      ]);
+      // store the lists of orders in the corresponding arrays so they can be compared
+      fullSyncOrders.dbOrders = results[0];
+      fullSyncOrders.cbOrders = results[1];
+      const fees = results[2];
 
-      // IF QUICK SYNC, only get fills
-      // checks for orders if it finds any fills 
+      // console.log('updating funds in full sync');
+      await updateFunds(userID);
 
+      // need to get the fees for more accurate Available funds reporting
+      // fees don't change frequently so only need to do this during full sync
+      await databaseClient.saveFees(fees, userID);
+
+      // compare the arrays and remove any where the ids match in both,
+      // leaving a list of orders that are open in the db, but not on cb. Probably settled
+      fullSyncOrders.ordersToCheck = await orderElimination(fullSyncOrders.dbOrders, fullSyncOrders.cbOrders);
+
+      resolve(fullSyncOrders);
+    } catch (err) {
+      reject(err)
+    }
+  });
+}
+
+async function quickSync(userID, botSettings) {
+  // IF QUICK SYNC, only get fills
+  return new Promise(async (resolve, reject) => {
+    try {
       // initiate empty array to hold orders that need to be checked for settlement
       let toCheck = [];
-
       // get the 500 most recent fills for the account
       const fills = await coinbaseClient.getLimitedFills(userID, 500);
-
       // look at each fill and find the order in the db associated with it
       for (let i = 0; i < fills.length; i++) {
         const fill = fills[i];
@@ -273,15 +234,11 @@ async function quickSync(userID) {
       // console.log('checking reorders in quick sync');
       // todo - this does not look like it is doing anything? 
       // The db hasn't been changed so there would be nothing to reorder, correct?
-      const reorders = await databaseClient.getReorders(userID)
+      const reorders = await databaseClient.getReorders(userID, botSettings.orders_to_sync)
       if (reorders.length >= 1) {
         // console.log('!!!!! reordering reorders in quick sync robot.js quick sync function');
         reorders.forEach(order => toCheck.push(order))
       }
-
-
-
-
       resolve(toCheck);
     } catch (err) {
       reject(err)
@@ -902,34 +859,41 @@ async function autoSetup(user, parameters) {
   }
 }
 
-async function getAvailableFunds(userID) {
+async function getAvailableFunds(userID, userSettings) {
   // console.log('getting available funds');
   return new Promise(async (resolve, reject) => {
     try {
+      const makerFee = Number(userSettings.maker_fee) + 1;
 
       const results = await Promise.all([
         coinbaseClient.getAccounts(userID),
-        databaseClient.getSpentUSD(userID),
+        // funds are withheld in usd when a buy is placed, so the maker fee is needed to subtract fees
+        databaseClient.getSpentUSD(userID, makerFee),
+        // funds are taken from the sale once settled, so the maker fee is not needed on the buys
         databaseClient.getSpentBTC(userID),
-        databaseClient.getUserAndSettings(userID)
       ]);
 
-      const userSettings = results[3];
-      const makerFee = userSettings.maker_fee;
-
+      // calculate USD balances
       const [USD] = results[0].filter(account => account.currency === 'USD')
       const availableUSD = USD.available;
+      const balanceUSD = USD.balance;
       const spentUSD = results[1].sum;
-      const actualAvailableUSD = (availableUSD - (spentUSD * (1 + Number(makerFee)))).toFixed(16);
-
+      // subtract the total amount spent from the total balanc
+      const actualAvailableUSD = (balanceUSD - spentUSD).toFixed(16);
+      
+      // calculate BTC balances
       const [BTC] = results[0].filter(account => account.currency === 'BTC')
       const availableBTC = BTC.available;
+      const balanceBTC = BTC.balance;
       const spentBTC = results[2].sum;
-      const actualAvailableBTC = Number((availableBTC - spentBTC).toFixed(16));
+      // subtract the total amount spent from the total balanc
+      const actualAvailableBTC = Number((balanceBTC - spentBTC).toFixed(16));
 
       const availableFunds = {
         availableBTC: availableBTC,
+        balanceBTC: balanceBTC,
         availableUSD: availableUSD,
+        balanceUSD: balanceUSD,
         actualAvailableBTC: actualAvailableBTC,
         actualAvailableUSD: actualAvailableUSD
       }
@@ -942,8 +906,8 @@ async function getAvailableFunds(userID) {
 async function updateFunds(userID) {
   return new Promise(async (resolve, reject) => {
     try {
-      const available = await getAvailableFunds(userID);
       const userSettings = await databaseClient.getUserAndSettings(userID);
+      const available = await getAvailableFunds(userID, userSettings);
 
       await databaseClient.saveFunds(available, userID);
 
