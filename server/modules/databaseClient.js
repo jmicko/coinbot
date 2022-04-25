@@ -1,9 +1,6 @@
 const pool = require('./pool');
-const socketClient = require('./socketClient');
 
-// store an array of orders that need to be updated after filling
-let updateSpool = [];
-
+// stores the details of a trade-pair. The originalDetails are details that stay with a trade-pair when it is flipped
 const storeTrade = (newOrder, originalDetails) => {
   return new Promise((resolve, reject) => {
     // add new order to the database
@@ -37,10 +34,6 @@ const storeTrade = (newOrder, originalDetails) => {
           results: results,
           success: true
         }
-        // socketClient.emit('message', {
-        //   orderUpdate: true,
-        //   userID: Number(originalDetails.userID)
-        // });
         resolve(success);
       })
       .catch((err) => {
@@ -49,6 +42,8 @@ const storeTrade = (newOrder, originalDetails) => {
   });
 }
 
+// gets all open orders in db based on a specified limit. 
+// The limit is for each side, so the results will potentially double that
 const getLimitedTrades = (userID, limit) => {
   return new Promise(async (resolve, reject) => {
     // get limit of buys
@@ -68,7 +63,10 @@ const getLimitedTrades = (userID, limit) => {
   });
 }
 
-
+// get a number of open orders in DB based on side. This will return them whether or not they are synced with CBP
+// can be limited by how many should be synced, or how many should be shown on the interface 
+// depending on where it is being called from
+// this is very similar to the function above, but gets only one side at a time
 const getUnsettledTrades = (side, userID, max_trade_load) => {
   return new Promise(async (resolve, reject) => {
     let sqlText;
@@ -109,6 +107,7 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
           reject(err);
         })
     } else if (side == 'all') {
+      console.log('does this ever happen anymore? it should not');
       // gets all unsettled trades
       sqlText = `SELECT * FROM "orders" WHERE "settled"=false AND "userID"=$1;`;
       pool.query(sqlText, [userID])
@@ -142,7 +141,7 @@ const getUnsettledTradeCounts = (userID) => {
       const [totalOpenSells] = totals[1].rows;
 
       // combine buys and sells for total
-      const totalOpenOrders = {count: Number(totalOpenBuys.count) + Number(totalOpenSells.count)};
+      const totalOpenOrders = { count: Number(totalOpenBuys.count) + Number(totalOpenSells.count) };
 
       const unsettledOrderCounts = {
         totalOpenOrders,
