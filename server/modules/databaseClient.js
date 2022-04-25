@@ -66,7 +66,7 @@ const getLimitedTrades = (userID, limit) => {
 // get a number of open orders in DB based on side. This will return them whether or not they are synced with CBP
 // can be limited by how many should be synced, or how many should be shown on the interface 
 // depending on where it is being called from
-// this is very similar to the function above, but gets only one side at a time
+// this is very similar to the function above, but gets only one side at a time so they are easier to split
 const getUnsettledTrades = (side, userID, max_trade_load) => {
   return new Promise(async (resolve, reject) => {
     let sqlText;
