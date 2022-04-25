@@ -104,9 +104,8 @@ async function syncOrders(userID, count) {
       // DELETE ALL ORDERS MARKED FOR DELETE
       await deleteMarkedOrders(userID);
 
-      // const available = await getAvailableFunds(userID);
-      // console.log('avail funds', available);
-      // await databaseClient.saveFunds(available, userID);
+      console.log('where there orders to check?', ordersToCheck);
+      await deSync(userID, botSettings);
 
     } else {
       // if the user is not active or is paused, loop every 5 seconds
@@ -241,6 +240,29 @@ async function quickSync(userID, botSettings) {
         reorders.forEach(order => toCheck.push(order))
       }
       resolve(toCheck);
+    } catch (err) {
+      reject(err)
+    }
+  });
+}
+
+
+async function deSync(userID, botSettings) {
+  // IF QUICK SYNC, only get fills
+  return new Promise(async (resolve, reject) => {
+    try {
+      console.log('in deSync function', botSettings.orders_to_sync);
+
+      let buysToDeSync = await databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'buys')
+      console.log('buys to deSync', buysToDeSync.length);
+      await cancelMultipleOrders(buysToDeSync, userID, true);
+      
+      let sellsToDeSync = await databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'sells')
+      console.log('sells to deSync', sellsToDeSync.length);
+      await cancelMultipleOrders(sellsToDeSync, userID, true);
+
+
+      resolve();
     } catch (err) {
       reject(err)
     }
@@ -671,15 +693,18 @@ async function reorder(orderToReorder) {
 
 
 
-async function cancelMultipleOrders(ordersArray, userID) {
+async function cancelMultipleOrders(ordersArray, userID, ignoreSleep) {
   return new Promise(async (resolve, reject) => {
     // set variable to track how many orders were actually canceled
     let quantity = 0;
     // console.log('ordersArray', ordersArray);
     if (ordersArray.length > 0) {
-      // need to wait and double check db before deleting because they take time to store and show up on cb first
-      // only need to wait once because as the loop runs nothing will be added to it. Only wait for most recent order
-      await sleep(2000);
+      if (!ignoreSleep) {
+        console.log('need to sleep');
+        // need to wait and double check db before deleting because they take time to store and show up on cb first
+        // only need to wait once because as the loop runs nothing will be added to it. Only wait for most recent order
+        await sleep(2000);
+      }
 
       for (let i = 0; i < ordersArray.length; i++) {
         const orderToCancel = ordersArray[i];
@@ -691,8 +716,10 @@ async function cancelMultipleOrders(ordersArray, userID) {
             // if it is in the db, it should cancel but set it to reorder because it is out of range
             // that way it will reorder faster when it moves back in range
             // console.log('canceling order', orderToCancel);
-            await coinbaseClient.cancelOrder(orderToCancel.id, userID);
-            await databaseClient.setSingleReorder(orderToCancel.id);
+            await Promise.all([
+              await coinbaseClient.cancelOrder(orderToCancel.id, userID),
+              await databaseClient.setSingleReorder(orderToCancel.id)
+            ]);
             // console.log('old trade was set to reorder when back in range');
             quantity++;
           } else {
@@ -851,7 +878,7 @@ async function autoSetup(user, parameters) {
     if (err.response?.status === 400) {
       console.log(err.response?.data?.message, 'Insufficient funds! Or too small order or some similar problem');
       if (err.response?.data?.message) {
-        
+
         socketClient.emit('message', {
           error: err.response.data.message + " - Auto setup done",
           orderUpdate: true,
@@ -891,7 +918,7 @@ async function getAvailableFunds(userID, userSettings) {
       const spentUSD = results[1].sum;
       // subtract the total amount spent from the total balanc
       const actualAvailableUSD = (balanceUSD - spentUSD).toFixed(16);
-      
+
       // calculate BTC balances
       const [BTC] = results[0].filter(account => account.currency === 'BTC')
       const availableBTC = BTC.available;

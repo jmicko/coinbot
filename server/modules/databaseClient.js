@@ -337,6 +337,36 @@ async function toggleMaintenance() {
   })
 }
 
+async function getDeSyncs(id, limit, side) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlTextBuys = `SELECT * FROM "orders" 
+      WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1
+      ORDER BY "price" DESC
+	    OFFSET $2;`;
+      const sqlTextSells = `SELECT * FROM "orders" 
+      WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1
+      ORDER BY "price" ASC
+	    OFFSET $2;`;
+
+      let results = []
+        if (side === 'buys') {
+          
+          results = await pool.query(sqlTextBuys, [id, limit]);
+        } else {
+          
+          results = await pool.query(sqlTextSells, [id, limit]);
+        }
+        
+      
+
+      resolve(results.rows);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 async function setSingleReorder(id) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -428,6 +458,7 @@ const databaseClient = {
   getUserAPI: getUserAPI,
   getBotSettings: getBotSettings,
   toggleMaintenance: toggleMaintenance,
+  getDeSyncs: getDeSyncs,
   setSingleReorder: setSingleReorder,
   setReorder: setReorder,
   setPause: setPause,
