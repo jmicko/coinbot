@@ -1,9 +1,6 @@
 const pool = require('./pool');
-const socketClient = require('./socketClient');
 
-// store an array of orders that need to be updated after filling
-let updateSpool = [];
-
+// stores the details of a trade-pair. The originalDetails are details that stay with a trade-pair when it is flipped
 const storeTrade = (newOrder, originalDetails) => {
   return new Promise((resolve, reject) => {
     // add new order to the database
@@ -37,10 +34,6 @@ const storeTrade = (newOrder, originalDetails) => {
           results: results,
           success: true
         }
-        // socketClient.emit('message', {
-        //   orderUpdate: true,
-        //   userID: Number(originalDetails.userID)
-        // });
         resolve(success);
       })
       .catch((err) => {
@@ -49,6 +42,8 @@ const storeTrade = (newOrder, originalDetails) => {
   });
 }
 
+// gets all open orders in db based on a specified limit. 
+// The limit is for each side, so the results will potentially double that
 const getLimitedTrades = (userID, limit) => {
   return new Promise(async (resolve, reject) => {
     // get limit of buys
@@ -68,12 +63,13 @@ const getLimitedTrades = (userID, limit) => {
   });
 }
 
-
+// get a number of open orders in DB based on side. This will return them whether or not they are synced with CBP
+// can be limited by how many should be synced, or how many should be shown on the interface 
+// depending on where it is being called from
+// this is very similar to the function above, but gets only one side at a time so they are easier to split
 const getUnsettledTrades = (side, userID, max_trade_load) => {
   return new Promise(async (resolve, reject) => {
     let sqlText;
-    // put sql stuff here, extending the pool promise to the parent function
-
     // the only time 'buy' or 'sell' is passed is when the frontend is calling for all trades. 
     // can request a limited amount of data to save on network costs
     if (side == 'buy') {
@@ -108,40 +104,29 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
           // or promise relays errors from pool to parent
           reject(err);
         })
-    } else if (side == 'all') {
-      // gets all unsettled trades
-      sqlText = `SELECT * FROM "orders" WHERE "settled"=false AND "userID"=$1;`;
-      pool.query(sqlText, [userID])
-        .then((results) => {
-          // promise returns promise from pool if success
-          resolve(results.rows);
-        })
-        .catch((err) => {
-          // or promise relays errors from pool to parent
-          reject(err);
-        })
     }
   });
 }
 
+// get the number of open orders from the DB
 const getUnsettledTradeCounts = (userID) => {
   return new Promise(async (resolve, reject) => {
     try {
-
-      // get total open orders
-      let sqlTextTotal = `SELECT COUNT(*) FROM "orders" WHERE "userID"=$1 AND settled=false;`;
-      let totalResult = await pool.query(sqlTextTotal, [userID]);
-      const totalOpenOrders = totalResult.rows[0];
-
       // get total open buys
       let sqlTextBuys = `SELECT COUNT(*) FROM "orders" WHERE "userID"=$1 AND settled=false AND side='buy';`;
-      let buysResult = await pool.query(sqlTextBuys, [userID]);
-      const totalOpenBuys = buysResult.rows[0];
 
       // get total open sells
       let sqlTextSells = `SELECT COUNT(*) FROM "orders" WHERE "userID"=$1 AND settled=false AND side='sell';`;
-      let sellsResult = await pool.query(sqlTextSells, [userID]);
-      const totalOpenSells = sellsResult.rows[0];
+
+      const totals = await Promise.all([
+        pool.query(sqlTextBuys, [userID]),
+        pool.query(sqlTextSells, [userID])
+      ])
+      const [totalOpenBuys] = totals[0].rows;
+      const [totalOpenSells] = totals[1].rows;
+
+      // combine buys and sells for total
+      const totalOpenOrders = { count: Number(totalOpenBuys.count) + Number(totalOpenSells.count) };
 
       const unsettledOrderCounts = {
         totalOpenOrders,
@@ -158,7 +143,7 @@ const getUnsettledTradeCounts = (userID) => {
   });
 }
 
-
+// get all details of an order
 const getSingleTrade = (id) => {
   return new Promise((resolve, reject) => {
     let sqlText;
@@ -177,7 +162,8 @@ const getSingleTrade = (id) => {
   });
 }
 
-
+// get the total USD that is on trade-pairs in the DB. This should be higher or the same as what is reported by CBP
+// because the bot stores more "open" orders than CBP will allow for
 const getSpentUSD = (userID, makerFee) => {
   return new Promise((resolve, reject) => {
     let sqlText = `SELECT sum("price"*"size"*$1)
@@ -196,7 +182,8 @@ const getSpentUSD = (userID, makerFee) => {
   });
 }
 
-
+// get the total BTC that is on trade-pairs in the DB. This should be higher or the same as what is reported by CBP
+// because the bot stores more "open" orders than CBP will allow for
 const getSpentBTC = (userID) => {
   return new Promise((resolve, reject) => {
     let sqlText = `SELECT sum("size")
@@ -215,7 +202,7 @@ const getSpentBTC = (userID) => {
   });
 }
 
-
+// get a list of orders that need to be resynced with CBP
 const getReorders = (userID, limit) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -241,6 +228,10 @@ const getReorders = (userID, limit) => {
   });
 }
 
+// check to see if a trade is being canceled by the user
+// when the user kills a trade-pair, the current open order is first set to will_cancel=true 
+// this is because it can take a few seconds to connect and cancel on CBP, so the order should be ignored while this is happening
+// connecting to the DB and setting will_cancel to true is much faster
 const checkIfCancelling = async (id) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -258,6 +249,8 @@ const checkIfCancelling = async (id) => {
   });
 }
 
+// delete a trade from the DB. Generally this should be done in combination with cancelling a trade on CB
+// unless it is a settled trade
 const deleteTrade = async (id) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -270,6 +263,7 @@ const deleteTrade = async (id) => {
   });
 }
 
+// get user information
 async function getUser(userID) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -283,6 +277,8 @@ async function getUser(userID) {
   })
 }
 
+// get all user information and settings except for the API details. 
+// Keeping them separate helps prevent accidentally sending an API outside the server
 async function getUserAndSettings(userID) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -298,6 +294,7 @@ async function getUserAndSettings(userID) {
   })
 }
 
+// get the API details for a user
 async function getUserAPI(userID) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -311,7 +308,7 @@ async function getUserAPI(userID) {
   })
 }
 
-
+// get all bot settings
 async function getBotSettings() {
   return new Promise(async (resolve, reject) => {
     try {
@@ -325,6 +322,8 @@ async function getBotSettings() {
   })
 }
 
+// turns maintenance mode on and off to stop trading on all accounts.
+// This prevents loss of data if the bot needs to be shut down 
 async function toggleMaintenance() {
   return new Promise(async (resolve, reject) => {
     try {
@@ -337,6 +336,34 @@ async function toggleMaintenance() {
   })
 }
 
+// get all the trades that are outside the limit of the synced orders qty setting, 
+// but all still probably synced with CB (based on reorder=false)
+async function getDeSyncs(userID, limit, side) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let results = []
+      if (side === 'buys') {
+        const sqlTextBuys = `SELECT * FROM "orders" 
+        WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1
+        ORDER BY "price" DESC
+        OFFSET $2;`;
+        results = await pool.query(sqlTextBuys, [userID, limit]);
+      } else {
+        const sqlTextSells = `SELECT * FROM "orders" 
+        WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1
+        ORDER BY "price" ASC
+        OFFSET $2;`;
+        results = await pool.query(sqlTextSells, [userID, limit]);
+      }
+      resolve(results.rows);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+// setting an order to reorder will bypass some functions in the bot that check if the order needs to be reordered.
+// setting this to true for trades that are desynced from CB will save time later
 async function setSingleReorder(id) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -349,6 +376,8 @@ async function setSingleReorder(id) {
   })
 }
 
+// this will set all trades to be reordered. Used when resyncing all orders
+// all orders should be cancelled on CB when doing this
 async function setReorder(userID) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -361,6 +390,7 @@ async function setReorder(userID) {
   })
 }
 
+// pause the bot for a user. Actually causes the bot to ignore all functions and continue looping while doing nothing
 async function setPause(status, userID) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -373,6 +403,8 @@ async function setPause(status, userID) {
   })
 }
 
+// toggles the kill button on the tradelist on the interface
+// turning it on will not show the kill button, preventing accidental trade-pair cancellation
 async function setKillLock(status, userID) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -385,6 +417,7 @@ async function setKillLock(status, userID) {
   })
 }
 
+// update the fund balances
 async function saveFunds(funds, userID) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -397,6 +430,7 @@ async function saveFunds(funds, userID) {
   })
 }
 
+// update the fees and 30 day trade volume
 async function saveFees(fees, userID) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -428,6 +462,7 @@ const databaseClient = {
   getUserAPI: getUserAPI,
   getBotSettings: getBotSettings,
   toggleMaintenance: toggleMaintenance,
+  getDeSyncs: getDeSyncs,
   setSingleReorder: setSingleReorder,
   setReorder: setReorder,
   setPause: setPause,
