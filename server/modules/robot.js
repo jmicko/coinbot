@@ -104,8 +104,10 @@ async function syncOrders(userID, count) {
       // DELETE ALL ORDERS MARKED FOR DELETE
       await deleteMarkedOrders(userID);
 
-      console.log('where there orders to check?', ordersToCheck);
-      await deSync(userID, botSettings);
+      if (ordersToCheck.length > 0) {
+        console.log('where there orders to check?', ordersToCheck.length);
+        await deSync(userID, botSettings);
+      }
 
     } else {
       // if the user is not active or is paused, loop every 5 seconds
@@ -256,7 +258,7 @@ async function deSync(userID, botSettings) {
       let buysToDeSync = await databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'buys')
       console.log('buys to deSync', buysToDeSync.length);
       await cancelMultipleOrders(buysToDeSync, userID, true);
-      
+
       let sellsToDeSync = await databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'sells')
       console.log('sells to deSync', sellsToDeSync.length);
       await cancelMultipleOrders(sellsToDeSync, userID, true);
