@@ -130,20 +130,16 @@ const getUnsettledTradeCounts = (userID) => {
     try {
       // get total open buys
       let sqlTextBuys = `SELECT COUNT(*) FROM "orders" WHERE "userID"=$1 AND settled=false AND side='buy';`;
-      let buysResult = await pool.query(sqlTextBuys, [userID]);
-      const totalOpenBuys = buysResult.rows[0];
 
       // get total open sells
       let sqlTextSells = `SELECT COUNT(*) FROM "orders" WHERE "userID"=$1 AND settled=false AND side='sell';`;
-      let sellsResult = await pool.query(sqlTextSells, [userID]);
-      const totalOpenSells = sellsResult.rows[0];
 
       const totals = await Promise.all([
         pool.query(sqlTextBuys, [userID]),
         pool.query(sqlTextSells, [userID])
       ])
-
-      console.log('totals', totals);
+      const [totalOpenBuys] = totals[0].rows;
+      const [totalOpenSells] = totals[1].rows;
 
       // combine buys and sells for total
       const totalOpenOrders = {count: Number(totalOpenBuys.count) + Number(totalOpenSells.count)};
