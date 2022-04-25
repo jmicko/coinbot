@@ -381,34 +381,36 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
   } else {
     // if it is a sell turning into a buy, check if user wants to reinvest the funds
     if (user.reinvest) {
-      console.log('all flips', allFlips);
-      console.log('user will reinvest. available:', user.actualavailable_usd, 'order:', dbOrder.executed_value);
       const orderSize = Number(dbOrder.size);
 
+      // find out how much profit there was
       const BTCprofit = calculateProfitBTC(dbOrder);
-      // console.log('testing calculateProfitBTC', BTCprofit);
 
       let amountToReinvest = BTCprofit * reinvestRatio;
       if (amountToReinvest <= 0) {
         console.log('negative profit');
         amountToReinvest = 0;
+        socketClient.emit('message', {
+          error: `Just saw a negative profit! Maybe increase your trade-pair ratio? 
+          This may also be due to fees that were charged during setup or at a different fee tier.`,
+          orderUpdate: false,
+          userID: Number(dbOrder.userID)
+        });
       }
-      // console.log('to reinvest', amountToReinvest);
 
+      // safer to round down the investment amount. 
+      // If user invest 100%, it should not round up and potentially take their balance negative
       const newSize = Math.floor((orderSize + amountToReinvest) * 100000000) / 100000000;
 
       const buyPrice = dbOrder.original_buy_price;
       const maxSizeBTC = Number((maxTradeSize / buyPrice).toFixed(8));
 
+      // now check if the new size after reinvesting is higher than the user set max
       if ((newSize > maxSizeBTC) && (maxTradeSize > 0)) {
-
-
-
         // add up all values of trades that just settled and subtract that from "actualavailable_usd"
         let allFlipsValue = 0;
         allFlips.forEach(trade => {
           if (trade.side === "sell") {
-            console.log('adding sell value to all flips total', user);
             allFlipsValue += (maxSizeBTC * trade.original_buy_price)
           }
         });
@@ -416,23 +418,14 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
         // calculate what funds will be leftover after all pending flips go through
         const leftoverFunds = (Number(user.actualavailable_usd) - (allFlipsValue * (1 + Number(user.maker_fee))));
 
-
-
-
         // only set the new size if it will stay above the reserve
         if (leftoverFunds > user.reserve) {
-          console.log('there is enough money left to reinvest IN MAX SIZE ADJUSTED FLIP');
-          // tradeDetails.size = newSize.toFixed(8);
-          // if the new size is bigger than the user set max, just use the user set max instead
+          // if there is enough money left in the account to reinvest, set the size to the max size
           tradeDetails.size = maxSizeBTC;
-        } else {
-          console.log('there is NOT enough money left to reinvest IN MAX SIZE ADJUSTED FLIP');
         }
 
-
-
+        // check if the new size has already surpassed the user set max. If it has, reinvest based on the user set post-max settings
         if ((orderSize >= maxSizeBTC) && (postMaxReinvestRatio > 0)) {
-          // console.log('the old size is the same as or bigger than the max!');
           // at this point, the post max ratio should be used
           const postMaxAmountToReinvest = BTCprofit * postMaxReinvestRatio;
           // console.log('postMaxAmountToReinvest', postMaxAmountToReinvest);
@@ -441,6 +434,9 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
           tradeDetails.size = postMaxNewSize;
         }
       } else if (newSize < 0.000016) {
+        // todo - this should maybe not be in an else if statement.
+        // the user could potentially set a max size in USD that is smaller than 0.000016, and the bot would skip this check
+        // or maybe switch the order so this comes first? or maybe put it last as a regular if statement?
         // need to stay above minimum order size
         tradeDetails.size = 0.000016;
       } else {
@@ -448,7 +444,6 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
         let allFlipsValue = 0;
         allFlips.forEach(trade => {
           if (trade.side === "sell") {
-            console.log('adding sell value to all flips total', user);
             allFlipsValue += (trade.size * trade.original_buy_price)
           }
         });
