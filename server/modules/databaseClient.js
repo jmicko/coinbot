@@ -337,7 +337,7 @@ async function toggleMaintenance() {
   })
 }
 
-async function getDeSyncs(id, limit, side) {
+async function getDeSyncs(userID, limit, side) {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlTextBuys = `SELECT * FROM "orders" 
@@ -352,10 +352,10 @@ async function getDeSyncs(id, limit, side) {
       let results = []
         if (side === 'buys') {
           
-          results = await pool.query(sqlTextBuys, [id, limit]);
+          results = await pool.query(sqlTextBuys, [userID, limit]);
         } else {
           
-          results = await pool.query(sqlTextSells, [id, limit]);
+          results = await pool.query(sqlTextSells, [userID, limit]);
         }
         
       
