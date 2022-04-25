@@ -97,12 +97,13 @@ async function syncOrders(userID, count) {
         }
       }
 
-
-      // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
-      await processOrders(userID);
-
-      // DELETE ALL ORDERS MARKED FOR DELETE
-      await deleteMarkedOrders(userID);
+      // these two can run at the same time because they are mutually exclusive based on the will_cancel column
+      await Promise.all([
+        // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
+        processOrders(userID),
+        // DELETE ALL ORDERS MARKED FOR DELETE
+        deleteMarkedOrders(userID)
+      ]);
 
       if (ordersToCheck.length > 0) {
         console.log('where there orders to check?', ordersToCheck.length);
@@ -719,8 +720,8 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep) {
             // that way it will reorder faster when it moves back in range
             // console.log('canceling order', orderToCancel);
             await Promise.all([
-              await coinbaseClient.cancelOrder(orderToCancel.id, userID),
-              await databaseClient.setSingleReorder(orderToCancel.id)
+              coinbaseClient.cancelOrder(orderToCancel.id, userID),
+              databaseClient.setSingleReorder(orderToCancel.id)
             ]);
             // console.log('old trade was set to reorder when back in range');
             quantity++;
