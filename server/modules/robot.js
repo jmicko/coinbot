@@ -705,7 +705,7 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep) {
         console.log('need to sleep');
         // need to wait and double check db before deleting because they take time to store and show up on cb first
         // only need to wait once because as the loop runs nothing will be added to it. Only wait for most recent order
-        await sleep(2000);
+        await sleep(500);
       }
 
       for (let i = 0; i < ordersArray.length; i++) {
