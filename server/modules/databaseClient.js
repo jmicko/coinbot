@@ -70,8 +70,6 @@ const getLimitedTrades = (userID, limit) => {
 const getUnsettledTrades = (side, userID, max_trade_load) => {
   return new Promise(async (resolve, reject) => {
     let sqlText;
-    // put sql stuff here, extending the pool promise to the parent function
-
     // the only time 'buy' or 'sell' is passed is when the frontend is calling for all trades. 
     // can request a limited amount of data to save on network costs
     if (side == 'buy') {
@@ -98,19 +96,6 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
       ORDER BY "price" ASC
       LIMIT $2;`;
       pool.query(sqlText, [userID, max_trade_load])
-        .then((results) => {
-          // promise returns promise from pool if success
-          resolve(results.rows);
-        })
-        .catch((err) => {
-          // or promise relays errors from pool to parent
-          reject(err);
-        })
-    } else if (side == 'all') {
-      console.log('does this ever happen anymore? it should not');
-      // gets all unsettled trades
-      sqlText = `SELECT * FROM "orders" WHERE "settled"=false AND "userID"=$1;`;
-      pool.query(sqlText, [userID])
         .then((results) => {
           // promise returns promise from pool if success
           resolve(results.rows);
