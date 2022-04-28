@@ -1,6 +1,7 @@
 const pool = require('./pool');
 
 // stores the details of a trade-pair. The originalDetails are details that stay with a trade-pair when it is flipped
+// flipped_at is the "Time" shown on the interface. It has no other function
 const storeTrade = (newOrder, originalDetails, flipped_at) => {
   return new Promise((resolve, reject) => {
     // add new order to the database
