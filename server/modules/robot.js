@@ -315,6 +315,7 @@ async function processOrders(userID) {
           if (!cancelling) {
             let cbOrder = await coinbaseClient.placeOrder(tradeDetails);
             // ...store the new trade
+            // take the time the new order was created, and use it as the flipped_at value
             await databaseClient.storeTrade(cbOrder, dbOrder, cbOrder.created_at);
             // ...mark the old trade as flipped
             const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
@@ -600,6 +601,7 @@ async function reorder(orderToReorder) {
             // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
             tradeDetails.fill_fees = upToDateDbOrder.previous_fill_fees;
             // store the new trade in the db. the trade details are also sent to store trade position prices
+            // when reordering a trade, bring the old flipped_at value through so it doesn't change the "Time" on screen
             let results = await databaseClient.storeTrade(pendingTrade, tradeDetails, upToDateDbOrder.flipped_at);
 
             // delete the old order from the db
@@ -656,6 +658,7 @@ async function reorder(orderToReorder) {
           // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
           tradeDetails.fill_fees = upToDateDbOrder.previous_fill_fees;
           // store the new trade in the db. the trade details are also sent to store trade position prices
+          // when reordering a trade, bring the old flipped_at value through so it doesn't change the "Time" on screen
           let results = await databaseClient.storeTrade(pendingTrade, tradeDetails, upToDateDbOrder.flipped_at);
 
           // delete the old order from the db
@@ -839,6 +842,7 @@ async function autoSetup(user, parameters) {
     // even after returning the details. robot.syncOrders will think it settled if it sees it in the db first
     await robot.sleep(100);
     // store the new trade in the db. the trade details are also sent to store trade position prices
+    // storing the created_at value in the flipped_at field will fix issues where the time would change when resyncing
     await databaseClient.storeTrade(pendingTrade, tradeDetails, pendingTrade.created_at);
 
     // update current funds
