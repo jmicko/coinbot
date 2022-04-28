@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS "orders"
   product_id character varying COLLATE pg_catalog."default",
   time_in_force character varying COLLATE pg_catalog."default",
   created_at timestamptz,
+  flipped_at timestamptz,
   done_at timestamptz,
   done_reason character varying COLLATE pg_catalog."default",
   fill_fees numeric(32,16),
