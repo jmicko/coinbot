@@ -18,8 +18,8 @@ const storeTrade = (newOrder, originalDetails, flipped_at) => {
       newOrder.settled,
       newOrder.product_id,
       newOrder.time_in_force,
-      flipped_at,
       newOrder.created_at,
+      flipped_at,
       newOrder.done_at,
       newOrder.fill_fees,
       // bring the fees from the previous order to the new one for more accurate profit calculation
