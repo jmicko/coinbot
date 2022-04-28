@@ -372,6 +372,7 @@ router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
       product_id character varying COLLATE pg_catalog."default",
       time_in_force character varying COLLATE pg_catalog."default",
       created_at timestamptz,
+      flipped_at timestamptz,
       done_at timestamptz,
       done_reason character varying COLLATE pg_catalog."default",
       fill_fees numeric(32,16),
@@ -438,6 +439,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
     CREATE TABLE IF NOT EXISTS "bot_settings"
     (
       "loop_speed" integer DEFAULT 1,
+      "orders_to_sync" integer DEFAULT 100,
       "full_sync" integer DEFAULT 10,
       "maintenance" boolean DEFAULT false
     );
@@ -463,6 +465,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       product_id character varying COLLATE pg_catalog."default",
       time_in_force character varying COLLATE pg_catalog."default",
       created_at timestamptz,
+      flipped_at timestamptz,
       done_at timestamptz,
       done_reason character varying COLLATE pg_catalog."default",
       fill_fees numeric(32,16),

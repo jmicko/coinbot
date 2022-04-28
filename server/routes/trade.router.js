@@ -40,7 +40,8 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       // even after returning the details. robot.syncOrders will think it settled if it sees it in the db first
       await robot.sleep(100);
       // store the new trade in the db. the trade details are also sent to store trade position prices
-      await databaseClient.storeTrade(pendingTrade, tradeDetails);
+      // storing the created_at value in the flipped_at field will fix issues where the time would change when resyncing
+      await databaseClient.storeTrade(pendingTrade, tradeDetails, pendingTrade.created_at);
 
       await robot.updateFunds(userID);
 

@@ -96,8 +96,15 @@ function SingleTrade(props) {
           } ~<strong>Size </strong>{Number(props.order.size).toFixed(8)} ~
           <strong>Value</strong> ${numberWithCommas((Math.round((props.order.price * props.order.size) * 100) / 100).toFixed(2))} ~
           <strong>Net Profit</strong> ${profit.toFixed(8)}
-          <strong> ~Time</strong> {new Date(props.order.created_at).toLocaleString('en-US')}
+          {/* <strong> ~Time</strong> {new Date(props.order.created_at).toLocaleString('en-US')} */}
+          <strong> ~Time </strong> {props.order.flipped_at 
+          ? new Date(props.order.flipped_at).toLocaleString('en-US')
+          : new Date(props.order.created_at).toLocaleString('en-US')}
           <br />
+          {/* created: {JSON.stringify(props.order.created_at)} 
+          <br />
+          flipped: {JSON.stringify(props.order.flipped_at)}
+          <br /> */}
           {
             showAll && !deleting && <><strong> Percent Increase:</strong> {Number(props.order.trade_pair_ratio)}</>
           }

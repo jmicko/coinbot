@@ -1,13 +1,14 @@
 const pool = require('./pool');
 
 // stores the details of a trade-pair. The originalDetails are details that stay with a trade-pair when it is flipped
-const storeTrade = (newOrder, originalDetails) => {
+// flipped_at is the "Time" shown on the interface. It has no other function
+const storeTrade = (newOrder, originalDetails, flipped_at) => {
   return new Promise((resolve, reject) => {
     // add new order to the database
     const sqlText = `INSERT INTO "orders" 
       ("id", "userID", "price", "size", "trade_pair_ratio", "side", "settled", "product_id", "time_in_force", 
-      "created_at", "done_at", "fill_fees", "previous_fill_fees", "filled_size", "executed_value", "original_buy_price", "original_sell_price") 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17);`;
+      "created_at", "flipped_at", "done_at", "fill_fees", "previous_fill_fees", "filled_size", "executed_value", "original_buy_price", "original_sell_price") 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18);`;
     pool.query(sqlText, [
       newOrder.id,
       originalDetails.userID,
@@ -19,6 +20,7 @@ const storeTrade = (newOrder, originalDetails) => {
       newOrder.product_id,
       newOrder.time_in_force,
       newOrder.created_at,
+      flipped_at,
       newOrder.done_at,
       newOrder.fill_fees,
       // bring the fees from the previous order to the new one for more accurate profit calculation
