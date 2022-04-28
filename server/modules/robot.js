@@ -315,7 +315,7 @@ async function processOrders(userID) {
           if (!cancelling) {
             let cbOrder = await coinbaseClient.placeOrder(tradeDetails);
             // ...store the new trade
-            await databaseClient.storeTrade(cbOrder, dbOrder);
+            await databaseClient.storeTrade(cbOrder, dbOrder, cbOrder.created_at);
             // ...mark the old trade as flipped
             const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
             let updatedTrade = await pool.query(queryText, [dbOrder.id]);
@@ -600,7 +600,7 @@ async function reorder(orderToReorder) {
             // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
             tradeDetails.fill_fees = upToDateDbOrder.previous_fill_fees;
             // store the new trade in the db. the trade details are also sent to store trade position prices
-            let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
+            let results = await databaseClient.storeTrade(pendingTrade, tradeDetails, upToDateDbOrder.flipped_at);
 
             // delete the old order from the db
             const queryText = `DELETE from "orders" WHERE "id"=$1;`;
@@ -656,7 +656,7 @@ async function reorder(orderToReorder) {
           // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
           tradeDetails.fill_fees = upToDateDbOrder.previous_fill_fees;
           // store the new trade in the db. the trade details are also sent to store trade position prices
-          let results = await databaseClient.storeTrade(pendingTrade, tradeDetails);
+          let results = await databaseClient.storeTrade(pendingTrade, tradeDetails, upToDateDbOrder.flipped_at);
 
           // delete the old order from the db
           const queryText = `DELETE from "orders" WHERE "id"=$1;`;
@@ -839,7 +839,7 @@ async function autoSetup(user, parameters) {
     // even after returning the details. robot.syncOrders will think it settled if it sees it in the db first
     await robot.sleep(100);
     // store the new trade in the db. the trade details are also sent to store trade position prices
-    await databaseClient.storeTrade(pendingTrade, tradeDetails);
+    await databaseClient.storeTrade(pendingTrade, tradeDetails, pendingTrade.created_at);
 
     // update current funds
     await updateFunds(user.id);
