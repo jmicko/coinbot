@@ -38,7 +38,7 @@ function History(props) {
       <div className="divider" />
       <h4>Export .xlsx spreadsheet</h4>
       <p>
-        Export and download your entire trade history as an xlsx spreadsheet. I'm adding extra words here instead of doing proper CSS.
+        Export and download your entire trade history as an xlsx spreadsheet.
       </p>
       <button className={`btn-red medium ${props.theme}`} onClick={() => { exportXlxs() }}>Export</button>
       <div className="divider" />
