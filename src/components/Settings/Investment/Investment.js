@@ -199,7 +199,7 @@ function Investment(props) {
                 {props.tips && <p>How much of the profits should the bot reinvest after the max is hit?
                   Leave this at 0 to stop reinvestment after the max. If set above 0, there is no limit to how large the
                   size will get. Probably a good idea to stay under 100%</p>}
-                {((postMaxReinvestRatio > 100) || (props.store.accountReducer.userReducer.reinvest_ratio > 100)) &&
+                {((postMaxReinvestRatio > 100) || (props.store.accountReducer.userReducer.post_max_reinvest_ratio > 100)) &&
                   <p>** WARNING! ** <br /> Setting the reinvestment ratio higher than 100% will take money from your available funds!</p>
                 }
                 <p>Current post-max reinvestment ratio: {props.store.accountReducer.userReducer.post_max_reinvest_ratio}%</p>
