@@ -38,3 +38,7 @@
 .settings-panel {
   max-height: 65vh;
 }
+
+.tips {
+float: right;
+}
