@@ -124,10 +124,10 @@ function Admin(props) {
       {/* SET LOOP SPEED */}
 
       <h4>Set Loop Speed</h4>
-      <p>
+      {props.tips && <p>
         This will adjust the speed of the loop. You may want to slow it down to use fewer resources and handle more users.
         Higher numbers are slower. 1 is the fastest, and the speed is a multiplier. So 4 is 4x slower than 1 for example.
-      </p>
+      </p>}
       <p>Current loop speed: {props.store.settingsReducer.allSettingsReducer.loop_speed}</p>
       <label htmlFor="loopSpeed">
         Set speed:
@@ -151,10 +151,10 @@ function Admin(props) {
       {/* SET FULL SYNC FREQUENCY */}
 
       <h4>Set Full Sync Frequency</h4>
-      <p>
+      {props.tips && <p>
         This will adjust how often the bot does a full sync. A full sync takes longer and is more CPU intensive,
         but will check for and delete extra trades etc. A quick sync only checks for recently settled trades.
-      </p>
+      </p>}
       <p>Current frequency: Every {props.store.settingsReducer.allSettingsReducer.full_sync} loop{props.store.settingsReducer.allSettingsReducer.full_sync > 1 && 's'}</p>
       <label htmlFor="fullSync">
         Set frequency:
@@ -179,11 +179,11 @@ function Admin(props) {
 
       <h4>Set Synced Order Quantity</h4>
       {/* {JSON.stringify(props.store.settingsReducer.allSettingsReducer)} */}
-      <p>
+      {props.tips && <p>
         This adjusts how many trades per side to keep in sync with Coinbase Pro (How many buys, how many sells). There is a max of 200, which 
         keeps the total under the 500 order limit on Coinbase pro, while also allowing a margin for flipping trades. Putting a low number here
         may slightly increase the speed of the bot or lower CPU usage, but risks that all trades on one side will settle before the bot has the chance to sync more.
-      </p>
+      </p>}
       <p>Current quantity: {props.store.settingsReducer.allSettingsReducer.orders_to_sync}</p>
       <label htmlFor="fullSync">
         Set Sync Quantity:
@@ -208,9 +208,9 @@ function Admin(props) {
 
       <h4>Toggle Maintenance Mode</h4>
       {/* {JSON.stringify(props.store.settingsReducer.allSettingsReducer.maintenance)} */}
-      <p>
+      {props.tips && <p>
         This essentially pauses all user loops. Can be useful when migrating the bot to another server for example.
-      </p>
+      </p>}
       {props.store.settingsReducer.allSettingsReducer.maintenance
         ?
         <p>Maintenance mode is currently ON</p>
@@ -234,11 +234,11 @@ function Admin(props) {
               ignore={() => setFactoryResetting(false)}
             />}
           <h4>Factory Reset</h4>
-          <p>
+          {props.tips && <p>
             This will delete everything! Use with caution!
             Do not depend on being able to press this button after a git pull as a way to reset the database.
             You may not be able to log back in after the pull.
-          </p>
+          </p>}
           <p>
             CAUTION <button
               className="btn-logout btn-red"
@@ -254,9 +254,9 @@ function Admin(props) {
                 // if cancel, toggle boolean so message goes away
                 ignore={() => setResettingOrders(false)}
               />}
-          <p>
+          {props.tips && <p>
             This button will only reset the orders table. This will clear the orders for ALL USERS! If you mean to just clear your own, do that in the "Reset" tab
-          </p>
+          </p>}
           <p>
             CAUTION <button
               className="btn-logout btn-red"

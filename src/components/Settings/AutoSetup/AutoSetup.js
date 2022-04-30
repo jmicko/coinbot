@@ -140,17 +140,18 @@ function AutoSetup(props) {
     <div className="AutoSetup settings-panel scrollable">
       <div className="divider" />
       <h4>Auto Setup</h4>
-      {/* <p>{props.priceTicker} avail {availableFundsUSD}</p> */}
-      <p>
-        Enter the parameters you want and the bot will keep placing trades for you based on
-        those parameters until you run out of cash, or until you have 10,000 trade-pairs.
-        This is much easier than manually placing dozens of trades if they are following a basic pattern.
-      </p>
-      <p>
-        Please be aware that the bot will slow down slightly with every 999 trades.
-      </p>
+      {props.tips && <>
+        <p>
+          Enter the parameters you want and the bot will keep placing trades for you based on
+          those parameters until you run out of cash, or until you have 10,000 trade-pairs.
+          This is much easier than manually placing dozens of trades if they are following a basic pattern.
+        </p>
+        <p>
+          Please be aware that the bot will slow down slightly with every 999 trades.
+        </p>
 
-      <div className="divider" />
+        <div className="divider" />
+      </>}
       <div className='auto-setup-form-and-results'>
 
         <form className='auto-setup-form' onSubmit={submitAutoSetup}>
@@ -233,20 +234,20 @@ function AutoSetup(props) {
           <p>
             <strong>{numberWithCommas(setupResults.toFixed(2))}</strong>
           </p>
-          <p>
+          {props.tips && <p>
             This calculation isn't perfect but it will get close. It can also change if the price of BTC moves up or down significantly while the
             trades are being set up.
-          </p>
+          </p>}
           <p>
-            Approximate number of trades the setup process will create:
+            Approximate number of trades to create:
           </p>
           <p>
             <strong>{numberWithCommas(totalTrades)}</strong>
           </p>
-          <p>
+          {props.tips && <p>
             However, there is a total limit of 10,000 trades placed per user. Latency may cause it to
             create more, in which case you got lucky.
-          </p>
+          </p>}
 
         </div>
       </div>

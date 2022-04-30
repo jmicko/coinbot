@@ -102,9 +102,9 @@ function Investment(props) {
 
       {/* REINVEST */}
       <h4>Reinvestment</h4>
-      <p>Coinbot can try to reinvest your profits for you. Be aware that this may not
+      {props.tips && <p>Coinbot can try to reinvest your profits for you. Be aware that this may not
         work if the profit is too small.
-      </p>
+      </p>}
       {(props.store.accountReducer.userReducer.reinvest)
         ? <button className={`btn-blue medium ${props.theme}`} onClick={() => { reinvest() }}>Turn off</button>
         : <button className={`btn-blue medium ${props.theme}`} onClick={() => { reinvest() }}>Turn on</button>
@@ -112,8 +112,9 @@ function Investment(props) {
       {props.store.accountReducer.userReducer.reinvest &&
         <>
           {((reinvest_ratio > 100) || (props.store.accountReducer.userReducer.reinvest_ratio > 100)) &&
-            <p>** WARNING! ** <br /> Setting the reinvestment ratio higher than 100% will take money from your available funds!
-              You will need to keep an eye on the bot and make sure you don't run out!</p>
+            <><p>** WARNING! ** </p>
+            {props.tips && <p> Setting the reinvestment ratio higher than 100% will take money from your available funds!
+              You will need to keep an eye on the bot and make sure you don't run out!</p>}</>
           }
           <p>Current reinvestment ratio: {props.store.accountReducer.userReducer.reinvest_ratio}%</p>
           <label htmlFor="reinvest_ratio">
@@ -137,10 +138,10 @@ function Investment(props) {
 
       {/* RESERVE */}
       <h4>Reserve</h4>
-      <p>
+      {props.tips && <p>
         Automatically turn off reinvestment when the available funds fall below a set amount.
         This will not be automatically turned back on for you.
-      </p>
+      </p>}
       <>
         <p>Current reserve: {props.store.accountReducer.userReducer.reserve}</p>
         <label htmlFor="reserve">
@@ -168,11 +169,11 @@ function Investment(props) {
         props.store.accountReducer.userReducer.reinvest &&
         <>
           <h4>Max Trade Size</h4>
-          <p>
+          {props.tips && <p>
             Coinbot can try to limit the size of your trades. This is useful in case you want to
             stop reinvesting after a certain point, but keep reinvestment turned on for all other trades.
             Size cap is in USD. If set to 0, the bot will ignore it and default to the reinvestment ratio.
-          </p>
+          </p>}
           {(props.store.accountReducer.userReducer.max_trade)
             ? <button className={`btn-blue medium ${props.theme}`} onClick={() => { tradeMax() }}>Turn off</button>
             : <button className={`btn-blue medium ${props.theme}`} onClick={() => { tradeMax() }}>Turn on</button>
@@ -195,12 +196,11 @@ function Investment(props) {
               <br />
               <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { storeMaxTradeSize(event) }}>Save Max</button>
               <>
-                <p>How much of the profits should the bot reinvest after the max is hit?
+                {props.tips && <p>How much of the profits should the bot reinvest after the max is hit?
                   Leave this at 0 to stop reinvestment after the max. If set above 0, there is no limit to how large the
-                  size will get. Probably a good idea to stay under 100%</p>
+                  size will get. Probably a good idea to stay under 100%</p>}
                 {((postMaxReinvestRatio > 100) || (props.store.accountReducer.userReducer.reinvest_ratio > 100)) &&
-                  <p>** WARNING! ** <br /> Setting the reinvestment ratio higher than 100% will take money from your available funds!
-                    You will need to keep an eye on the bot and make sure you don't run out!</p>
+                  <p>** WARNING! ** <br /> Setting the reinvestment ratio higher than 100% will take money from your available funds!</p>
                 }
                 <p>Current post-max reinvestment ratio: {props.store.accountReducer.userReducer.post_max_reinvest_ratio}%</p>
                 <label htmlFor="postMaxReinvestRatio">
@@ -227,9 +227,9 @@ function Investment(props) {
 
       {/* BULK PERCENTAGE CHANGE */}
       <h4>Bulk Percentage Change</h4>
-      <p>
-        EXPERIMENTAL FEATURE. This will change the trade pair ratio for ALL trades to a uniform percentage. This can be useful for when your fees change due to trade volume and you want to change the ratio accordingly.
-      </p>
+      {props.tips && <p>
+        This will change the trade pair ratio for ALL trades to a uniform percentage. This can be useful for when your fees change due to trade volume and you want to change the ratio accordingly.
+      </p>}
       <>
         <label htmlFor="bulk_pair_ratio">
           New Ratio:

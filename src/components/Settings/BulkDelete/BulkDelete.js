@@ -36,17 +36,19 @@ function BulkDelete(props) {
       {/* SYNC ALL TRADES */}
       <div className="divider" />
       <h4>Synchronize All Trades</h4>
-      <p>
+      {props.tips && <p>
         This will delete all open orders from coinbase and replace them based on the trades stored in the
-        database. It can sometimes fix issues that cause repeated errors, and may take a few minutes to complete
-      </p>
+        database. It can sometimes fix issues that cause repeated errors, and may take a few minutes to complete.
+      </p>}
       <button className={`btn-blue medium ${props.theme}`} onClick={() => dispatch({ type: 'SYNC_ORDERS' })}>Sync All Trades</button>
 
       {/* DELETE RANGE */}
       <div className="divider" />
       <h4>Delete Range</h4>
-      <p>Delete all trades that fall within a price range, inclusive of the numbers set. This is based on the current price,
-        so if the trade is a buy, it will look at the buy price. If it is a sell, it will look at the sell price.</p>
+      {props.tips && <p>
+        Delete all trades that fall within a price range, inclusive of the numbers set. This is based on the current price,
+        so if the trade is a buy, it will look at the buy price. If it is a sell, it will look at the sell price.
+      </p>}
 
       <label htmlFor="upper_limit">
         Upper Limit:
