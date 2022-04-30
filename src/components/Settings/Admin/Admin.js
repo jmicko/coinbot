@@ -110,6 +110,29 @@ function Admin(props) {
         <p>Admin Settings Page</p>
       </center> */}
       <div className="divider" />
+      {/* TOGGLE MAINTENANCE */}
+
+      <h4>Toggle Maintenance Mode</h4>
+      {/* {JSON.stringify(props.store.settingsReducer.allSettingsReducer.maintenance)} */}
+      {props.tips && <p>
+        This essentially pauses all user loops. Can be useful when migrating the bot to another server for example.
+      </p>}
+      {props.store.settingsReducer.allSettingsReducer.maintenance
+        ?
+        <p>Maintenance mode is currently ON</p>
+        :
+        <p>Maintenance mode is currently OFF</p>
+      }
+      {props.store.settingsReducer.allSettingsReducer.maintenance
+        ?
+        <button className={`btn-green btn-reinvest medium ${props.theme}`} onClick={() => { toggleMaintenance() }}>Turn off</button>
+        :
+        <button className={`btn-red btn-reinvest medium ${props.theme}`} onClick={() => { toggleMaintenance() }}>Turn on</button>
+      }
+
+      <div className="divider" />
+
+      {/* MANAGE USERS */}
       {(props.store.accountReducer.userReducer.admin)
         ? <div>
           <h4>Manage Users</h4>
@@ -180,7 +203,7 @@ function Admin(props) {
       <h4>Set Synced Order Quantity</h4>
       {/* {JSON.stringify(props.store.settingsReducer.allSettingsReducer)} */}
       {props.tips && <p>
-        This adjusts how many trades per side to keep in sync with Coinbase Pro (How many buys, how many sells). There is a max of 200, which 
+        This adjusts how many trades per side to keep in sync with Coinbase Pro (How many buys, how many sells). There is a max of 200, which
         keeps the total under the 500 order limit on Coinbase pro, while also allowing a margin for flipping trades. Putting a low number here
         may slightly increase the speed of the bot or lower CPU usage, but risks that all trades on one side will settle before the bot has the chance to sync more.
       </p>}
@@ -204,35 +227,16 @@ function Admin(props) {
 
       <div className="divider" />
 
-      {/* TOGGLE MAINTENANCE */}
 
-      <h4>Toggle Maintenance Mode</h4>
-      {/* {JSON.stringify(props.store.settingsReducer.allSettingsReducer.maintenance)} */}
-      {props.tips && <p>
-        This essentially pauses all user loops. Can be useful when migrating the bot to another server for example.
-      </p>}
-      {props.store.settingsReducer.allSettingsReducer.maintenance
-        ?
-        <p>Maintenance mode is currently ON</p>
-        :
-        <p>Maintenance mode is currently OFF</p>
-      }
-      {props.store.settingsReducer.allSettingsReducer.maintenance
-        ?
-        <button className={`btn-green btn-reinvest medium ${props.theme}`} onClick={() => { toggleMaintenance() }}>Turn off</button>
-        :
-        <button className={`btn-red btn-reinvest medium ${props.theme}`} onClick={() => { toggleMaintenance() }}>Turn on</button>
-      }
-
-      <div className="divider" />
+      {/* FACTORY RESET */}
       {(props.store.accountReducer.userReducer.admin)
         ? <>
-            {factoryResetting && <Confirm
-              // if confirm, dispatch to factory reset bot
-              execute={() => { dispatch({ type: 'FACTORY_RESET' }); setFactoryResetting(false) }}
-              // if cancel, toggle boolean so message goes away
-              ignore={() => setFactoryResetting(false)}
-            />}
+          {factoryResetting && <Confirm
+            // if confirm, dispatch to factory reset bot
+            execute={() => { dispatch({ type: 'FACTORY_RESET' }); setFactoryResetting(false) }}
+            // if cancel, toggle boolean so message goes away
+            ignore={() => setFactoryResetting(false)}
+          />}
           <h4>Factory Reset</h4>
           {props.tips && <p>
             This will delete everything! Use with caution!
@@ -243,17 +247,17 @@ function Admin(props) {
             CAUTION <button
               className="btn-logout btn-red"
               onClick={() => setFactoryResetting(true)}
-              >
+            >
               Factory Reset
             </button> CAUTION
           </p>
 
-              {resettingOrders && <Confirm
-                // if confirm, dispatch to reset orders table
-                execute={() => { dispatch({ type: 'ORDERS_RESET' }); setResettingOrders(false) }}
-                // if cancel, toggle boolean so message goes away
-                ignore={() => setResettingOrders(false)}
-              />}
+          {resettingOrders && <Confirm
+            // if confirm, dispatch to reset orders table
+            execute={() => { dispatch({ type: 'ORDERS_RESET' }); setResettingOrders(false) }}
+            // if cancel, toggle boolean so message goes away
+            ignore={() => setResettingOrders(false)}
+          />}
           {props.tips && <p>
             This button will only reset the orders table. This will clear the orders for ALL USERS! If you mean to just clear your own, do that in the "Reset" tab
           </p>}
