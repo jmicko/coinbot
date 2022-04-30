@@ -64,9 +64,9 @@ function General(props) {
       {/* KILL PREVENTION */}
 
       <h4>Kill Prevention</h4>
-      <p>
+      {props.tips && <p>
         Removes the kill button from the trade pairs. This helps prevent accidental deletion of trades. Highly recommended to leave this on.
-      </p>
+      </p>}
       {props.store.accountReducer.userReducer.kill_locked
         ? <button className={`btn-blue medium ${props.theme}`} onClick={() => { killLock() }}>Unlock</button>
         : <button className={`btn-blue medium ${props.theme}`} onClick={() => { killLock() }}>Lock</button>
@@ -75,10 +75,10 @@ function General(props) {
 
       {/* PAUSE */}
       <h4>Pause</h4>
-      <p>
+      {props.tips && <p>
         Pauses the bot. Trades will stay in place, but the bot will not check on them or flip them. If they are cancelled on Coinbase, the bot will not notice until it is unpaused.
         Be careful not to trade funds away manually while the bot is paused, or there might be an insufficient funds error.
-      </p>
+      </p>}
       {props.store.accountReducer.userReducer.paused
         ? <button className={`btn-blue medium ${props.theme}`} onClick={() => { pause() }}>Unpause</button>
         : <button className={`btn-blue medium ${props.theme}`} onClick={() => { pause() }}>Pause</button>
@@ -87,7 +87,7 @@ function General(props) {
 
       {/* MAX TRADES ON SCREEN */}
       <h4>Max Trades on Screen</h4>
-      <p>
+      {props.tips && <p>
         Limit the number of trades to load per side (buy/sell). This can make load times shorter and limit the amount of scrolling
         needed to get to the split.
         <br />
@@ -96,7 +96,7 @@ function General(props) {
         <br />
         <br />
         There is a hard limit of 10,000 open trades per user, so there is no reason to set the value higher than that.
-      </p>
+      </p>}
       <p>Current max trades to load per side: {Number(props.store.accountReducer.userReducer.max_trade_load)}</p>
       <label htmlFor="reinvest_ratio">
         Set Max:
@@ -114,9 +114,9 @@ function General(props) {
 
       {/* PROFIT ACCURACY */}
       <h4>Profit accuracy</h4>
-      <p>
+      {props.tips && <p>
         How many decimals to display on screen for profits.
-      </p>
+      </p>}
       <p>Current accuracy: {Number(props.store.accountReducer.userReducer.profit_accuracy)}</p>
       <label htmlFor="profit_accuracy">
         Set Max:
