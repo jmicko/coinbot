@@ -21,6 +21,7 @@ async function syncOrders(userID, count, newUserAPI) {
     timer = false;
   }, 100);
   let user;
+  // store user API separate from user so it is not accidentally sent outside the server
   let userAPI = newUserAPI;
   let botSettings;
   try {
@@ -42,12 +43,14 @@ async function syncOrders(userID, count, newUserAPI) {
       let ordersToCancel = [];
 
       if (count === 0) {
+        // update the user API every full sync so the loop is not calling the db for this info constantly
+        // This allows for potentially allowing users to change their API in the future
         userAPI = await databaseClient.getUserAPI(userID);
         console.log('user api in FULL SYNC loop', userAPI);
 
 
         // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
-        const fullSyncOrders = await fullSync(userID, botSettings);
+        const fullSyncOrders = await fullSync(userID, botSettings, userAPI);
 
         dbOrders = fullSyncOrders.dbOrders;
         cbOrders = fullSyncOrders.cbOrders;
@@ -56,7 +59,7 @@ async function syncOrders(userID, count, newUserAPI) {
 
       } else {
         //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
-        ordersToCheck = await quickSync(userID, botSettings);
+        ordersToCheck = await quickSync(userID, botSettings, userAPI);
       }
 
       // also get a list of orders that are open on cb, but not stored in the db. 
@@ -163,7 +166,7 @@ async function syncOrders(userID, count, newUserAPI) {
       }
       // console.log('time between full sync', time < 1000, time);
       setTimeout(() => {
-        syncOrders(userID, count + 1);
+        syncOrders(userID, count + 1, userAPI);
       }, (botSettings.loop_speed * 10));
     } else {
       console.log('user is NOT THERE, stopping loop for user');
@@ -171,7 +174,7 @@ async function syncOrders(userID, count, newUserAPI) {
   }
 }
 
-async function fullSync(userID, botSettings) {
+async function fullSync(userID, botSettings, userAPI) {
   // IF FULL SYNC, compare all trades that should be on CB, and do other less frequent maintenance tasks
   return new Promise(async (resolve, reject) => {
     try {
@@ -182,6 +185,7 @@ async function fullSync(userID, botSettings) {
         ordersToCheck: []
       };
 
+      console.log('user api fed into fullsync function', userAPI);
       // get lists of trades to compare which have been settled
       const results = await Promise.all([
         // get all open orders from db and cb
@@ -213,10 +217,11 @@ async function fullSync(userID, botSettings) {
   });
 }
 
-async function quickSync(userID, botSettings) {
+async function quickSync(userID, botSettings, userAPI) {
   // IF QUICK SYNC, only get fills
   return new Promise(async (resolve, reject) => {
     try {
+      console.log('user api passed into quicksync function', userAPI);
       // initiate empty array to hold orders that need to be checked for settlement
       let toCheck = [];
       // get the 500 most recent fills for the account
