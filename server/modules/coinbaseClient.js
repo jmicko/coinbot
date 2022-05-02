@@ -59,7 +59,6 @@ async function getFees(userID, quickAPI) {
       // // sign the request
       let userAPI;
       if (quickAPI) {
-        console.log('get fees can use quick api');
         userAPI = quickAPI;
       } else {
         console.log('get fees need to get api from db');
@@ -196,12 +195,11 @@ async function getLimitedFills(userID, limit, quickAPI) {
 async function getOpenOrders(userID, quickAPI) {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log('quick api', quickAPI);
+      // console.log('quick api', quickAPI);
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
       let userAPI;
       if (quickAPI) {
-        console.log('get open orders can use quick api');
         userAPI = quickAPI;
       } else {
         console.log('get open orders need to get api from db');
@@ -295,6 +293,7 @@ async function getOrder(orderId, userID, quickAPI) {
       if (quickAPI) {
         userAPI = quickAPI;
       } else {
+        console.log('GET ORDER need to get api from db');
         userAPI = await databaseClient.getUserAPI(userID);
       }
       const secret = userAPI.CB_SECRET;
@@ -339,7 +338,6 @@ async function placeOrder(data, quickAPI) {
       // // sign the request
       let userAPI;
       if (quickAPI) {
-        console.log('placeOrder can use quick api');
         userAPI = quickAPI;
       } else {
         console.log('placeOrder need to get api from db');

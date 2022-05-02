@@ -185,7 +185,7 @@ async function fullSync(userID, botSettings, userAPI) {
         ordersToCheck: []
       };
 
-      console.log('user api fed into fullsync function', userAPI);
+      // console.log('user api fed into fullsync function', userAPI);
       // get lists of trades to compare which have been settled
       const results = await Promise.all([
         // get all open orders from db and cb
@@ -552,7 +552,7 @@ async function settleMultipleOrders(ordersArray, userID, userAPI) {
             // if the order was not supposed to be canceled, reorder it
             else {
               try {
-                await reorder(orderToCheck, userID);
+                await reorder(orderToCheck, userAPI);
               } catch (err) {
                 console.log(err, 'error reordering trade');
               }
@@ -584,8 +584,9 @@ async function settleMultipleOrders(ordersArray, userID, userAPI) {
   })
 }
 
-async function reorder(orderToReorder) {
+async function reorder(orderToReorder, userAPI) {
   return new Promise(async (resolve, reject) => {
+    console.log('reorder userAPI', userAPI);
     let upToDateDbOrder;
     try {
       const userID = orderToReorder.userID;
@@ -608,7 +609,7 @@ async function reorder(orderToReorder) {
               userID: upToDateDbOrder.userID,
             };
             // send the new order with the trade details
-            let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
+            let pendingTrade = await coinbaseClient.placeOrder(tradeDetails, userAPI);
             // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
             tradeDetails.fill_fees = upToDateDbOrder.previous_fill_fees;
             // store the new trade in the db. the trade details are also sent to store trade position prices
@@ -646,7 +647,7 @@ async function reorder(orderToReorder) {
         await sleep(1000);
         // check again. if it finds it, don't do anything. If not found, error handling will reorder
         console.log('checking again before reordering', orderToReorder);
-        let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID);
+        let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID, userAPI);
       }
     } catch (err) {
       let cancelling = await databaseClient.checkIfCancelling(orderToReorder.id);
@@ -665,7 +666,7 @@ async function reorder(orderToReorder) {
             userID: orderToReorder.userID,
           };
           // send the new order with the trade details
-          let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
+          let pendingTrade = await coinbaseClient.placeOrder(tradeDetails, userAPI);
           // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
           tradeDetails.fill_fees = upToDateDbOrder.previous_fill_fees;
           // store the new trade in the db. the trade details are also sent to store trade position prices
