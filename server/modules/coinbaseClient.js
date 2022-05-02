@@ -380,12 +380,18 @@ async function placeOrder(data, quickAPI) {
   });
 }
 
-async function cancelOrder(orderId, userID) {
+async function cancelOrder(orderId, userID, quickAPI) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const userAPI = await databaseClient.getUserAPI(userID);
+      let userAPI;
+      if (quickAPI) {
+        userAPI = quickAPI;
+      } else {
+        console.log('cancelOrder need to get api from db');
+        userAPI = await databaseClient.getUserAPI(userID);
+      }
       const secret = userAPI.CB_SECRET;
       const key = userAPI.CB_ACCESS_KEY;
       const passphrase = userAPI.CB_ACCESS_PASSPHRASE;

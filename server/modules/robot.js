@@ -68,7 +68,10 @@ async function syncOrders(userID, count, newUserAPI) {
       if (ordersToCancel.length) {
         console.log(' deleting extra orders', ordersToCancel.length);
         try {
-          let result = await cancelMultipleOrders(ordersToCancel, userID);
+          // the 'false' in the third param is telling the function to sleep for a little bit.
+          // this is needed during full sync because full sync deletes all orders on CB that are not in DB,
+          // but they show up on cb first and the bot may detect and accidentally cancel them if it doesn't wait for the db
+          let result = await cancelMultipleOrders(ordersToCancel, userID, false, userAPI);
           // console.log('updating funds');
           await updateFunds(userID);
           if (result.ordersCanceled && (result.quantity > 0)) {
@@ -116,7 +119,7 @@ async function syncOrders(userID, count, newUserAPI) {
 
       if (ordersToCheck.length > 0) {
         console.log('where there orders to check?', ordersToCheck.length);
-        await deSync(userID, botSettings);
+        await deSync(userID, botSettings, userAPI);
       }
 
     } else {
@@ -261,7 +264,7 @@ async function quickSync(userID, botSettings, userAPI) {
 }
 
 
-async function deSync(userID, botSettings) {
+async function deSync(userID, botSettings, userAPI) {
   // IF QUICK SYNC, only get fills
   return new Promise(async (resolve, reject) => {
     try {
@@ -269,11 +272,11 @@ async function deSync(userID, botSettings) {
 
       let buysToDeSync = await databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'buys')
       console.log('buys to deSync', buysToDeSync.length);
-      await cancelMultipleOrders(buysToDeSync, userID, true);
+      await cancelMultipleOrders(buysToDeSync, userID, true, userAPI);
 
       let sellsToDeSync = await databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'sells')
       console.log('sells to deSync', sellsToDeSync.length);
-      await cancelMultipleOrders(sellsToDeSync, userID, true);
+      await cancelMultipleOrders(sellsToDeSync, userID, true, userAPI);
 
 
       resolve();
@@ -706,7 +709,7 @@ async function reorder(orderToReorder, userAPI) {
 
 
 
-async function cancelMultipleOrders(ordersArray, userID, ignoreSleep) {
+async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
   return new Promise(async (resolve, reject) => {
     // set variable to track how many orders were actually canceled
     let quantity = 0;
@@ -730,14 +733,14 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep) {
             // that way it will reorder faster when it moves back in range
             // console.log('canceling order', orderToCancel);
             await Promise.all([
-              coinbaseClient.cancelOrder(orderToCancel.id, userID),
+              coinbaseClient.cancelOrder(orderToCancel.id, userID, userAPI),
               databaseClient.setSingleReorder(orderToCancel.id)
             ]);
             // console.log('old trade was set to reorder when back in range');
             quantity++;
           } else {
             // cancel the order if nothing comes back from db
-            await coinbaseClient.cancelOrder(orderToCancel.id, userID);
+            await coinbaseClient.cancelOrder(orderToCancel.id, userID, userAPI);
             quantity++;
           }
         } catch (err) {
