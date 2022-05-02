@@ -25,7 +25,6 @@ async function syncOrders(userID, count, newUserAPI) {
   let userAPI = newUserAPI;
   let botSettings;
   try {
-    // userAPI = await databaseClient.getUserAPI(userID);
     botSettings = await databaseClient.getBotSettings();
     user = await databaseClient.getUserAndSettings(userID);
     if (count > botSettings.full_sync - 1) {
@@ -33,7 +32,7 @@ async function syncOrders(userID, count, newUserAPI) {
     }
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
       
-      // console.log('user api in loop', userAPI);
+
       // *** GET ORDERS THAT NEED PROCESSING ***
 
       // start with two empty arrays
@@ -46,8 +45,6 @@ async function syncOrders(userID, count, newUserAPI) {
         // update the user API every full sync so the loop is not calling the db for this info constantly
         // This allows for potentially allowing users to change their API in the future
         userAPI = await databaseClient.getUserAPI(userID);
-        // console.log('user api in FULL SYNC loop', userAPI);
-
 
         // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
         const fullSyncOrders = await fullSync(userID, botSettings, userAPI);
@@ -66,13 +63,11 @@ async function syncOrders(userID, count, newUserAPI) {
 
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
       if (ordersToCancel.length) {
-        console.log(' deleting extra orders', ordersToCancel.length);
         try {
           // the 'false' in the third param is telling the function to sleep for a little bit.
           // this is needed during full sync because full sync deletes all orders on CB that are not in DB,
           // but they show up on cb first and the bot may detect and accidentally cancel them if it doesn't wait for the db
           let result = await cancelMultipleOrders(ordersToCancel, userID, false, userAPI);
-          // console.log('updating funds');
           await updateFunds(userID);
           if (result.ordersCanceled && (result.quantity > 0)) {
             socketClient.emit('message', {
@@ -118,7 +113,6 @@ async function syncOrders(userID, count, newUserAPI) {
       ]);
 
       if (ordersToCheck.length > 0) {
-        console.log('where there orders to check?', ordersToCheck.length);
         await deSync(userID, botSettings, userAPI);
       }
 
@@ -187,8 +181,6 @@ async function fullSync(userID, botSettings, userAPI) {
         cbOrders: [],
         ordersToCheck: []
       };
-
-      // console.log('user api fed into fullsync function', userAPI);
       // get lists of trades to compare which have been settled
       const results = await Promise.all([
         // get all open orders from db and cb
@@ -202,7 +194,6 @@ async function fullSync(userID, botSettings, userAPI) {
       fullSyncOrders.cbOrders = results[1];
       const fees = results[2];
 
-      // console.log('updating funds in full sync');
       await updateFunds(userID);
 
       // need to get the fees for more accurate Available funds reporting
@@ -224,7 +215,6 @@ async function quickSync(userID, botSettings, userAPI) {
   // IF QUICK SYNC, only get fills
   return new Promise(async (resolve, reject) => {
     try {
-      // console.log('user api passed into quicksync function', userAPI);
       // initiate empty array to hold orders that need to be checked for settlement
       let toCheck = [];
       // get the 500 most recent fills for the account
@@ -589,7 +579,6 @@ async function settleMultipleOrders(ordersArray, userID, userAPI) {
 
 async function reorder(orderToReorder, userAPI) {
   return new Promise(async (resolve, reject) => {
-    console.log('reorder userAPI', userAPI);
     let upToDateDbOrder;
     try {
       const userID = orderToReorder.userID;
@@ -649,7 +638,6 @@ async function reorder(orderToReorder, userAPI) {
       } else {
         await sleep(1000);
         // check again. if it finds it, don't do anything. If not found, error handling will reorder
-        console.log('checking again before reordering', orderToReorder);
         let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID, userAPI);
       }
     } catch (err) {
