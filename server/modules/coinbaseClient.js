@@ -286,12 +286,17 @@ async function getOpenOrdersBeforeDate(userID, date) {
   });
 }
 
-async function getOrder(orderId, userID) {
+async function getOrder(orderId, userID, quickAPI) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const userAPI = await databaseClient.getUserAPI(userID);
+      let userAPI;
+      if (quickAPI) {
+        userAPI = quickAPI;
+      } else {
+        userAPI = await databaseClient.getUserAPI(userID);
+      }
       const secret = userAPI.CB_SECRET;
       const key = userAPI.CB_ACCESS_KEY;
       const passphrase = userAPI.CB_ACCESS_PASSPHRASE;

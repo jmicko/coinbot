@@ -89,7 +89,7 @@ async function syncOrders(userID, count, newUserAPI) {
       // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
       if (ordersToCheck.length) {
         try {
-          let result = await settleMultipleOrders(ordersToCheck, userID);
+          let result = await settleMultipleOrders(ordersToCheck, userID, userAPI);
           // console.log('updating funds');
           await updateFunds(userID);
         } catch (err) {
@@ -501,7 +501,7 @@ function sleep(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
-async function settleMultipleOrders(ordersArray, userID) {
+async function settleMultipleOrders(ordersArray, userID, userAPI) {
   return new Promise(async (resolve, reject) => {
     if (ordersArray.length > 0) {
       socketClient.emit('message', {
@@ -527,7 +527,7 @@ async function settleMultipleOrders(ordersArray, userID) {
           // console.log('ORDER TO CHECK:', orderToCheck);
           // await sleep(80); // avoid rate limiting
           // console.log('checking order:', orderToCheck);
-          let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID);
+          let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID, userAPI);
           // console.log('full details:', fullSettledDetails);
           // update the order in the db
           const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
