@@ -6,10 +6,8 @@ const socketClient = require("./socketClient");
 // start a sync loop for each active user
 async function startSync() {
   // get all users from the db
-  const sqlText = `SELECT "id" FROM "user";`
-  const result = await pool.query(sqlText);
-  const userlist = result.rows;
-  userlist.forEach(user => {
+  const userList = await databaseClient.getAllUsers();
+  userList.forEach(user => {
     syncOrders(user.id, 0);
   });
 }
@@ -643,7 +641,7 @@ async function reorder(orderToReorder, userAPI) {
     } catch (err) {
       let cancelling = await databaseClient.checkIfCancelling(orderToReorder.id);
       if ((err.response?.status === 404) && (!cancelling)) {
-        console.log('reordering', upToDateDbOrder);
+        // console.log('reordering', upToDateDbOrder);
         try {
           const tradeDetails = {
             original_sell_price: upToDateDbOrder.original_sell_price,
@@ -665,8 +663,7 @@ async function reorder(orderToReorder, userAPI) {
           let results = await databaseClient.storeTrade(pendingTrade, tradeDetails, upToDateDbOrder.flipped_at);
 
           // delete the old order from the db
-          const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-          await pool.query(queryText, [orderToReorder.id]);
+          await databaseClient.deleteTrade(orderToReorder.id);
           // tell the DOM to update
           socketClient.emit('message', {
             message: `trade was reordered`,

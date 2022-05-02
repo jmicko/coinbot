@@ -279,6 +279,20 @@ async function getUser(userID) {
   })
 }
 
+// get all user information minus password
+async function getAllUsers() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      sqlText = `SELECT "id", "username", "active", "admin", "approved", "joined_at" FROM "user";`;
+      let result = await pool.query(sqlText);
+      const users = result.rows;
+      resolve(users);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 // get all user information and settings except for the API details. 
 // Keeping them separate helps prevent accidentally sending an API outside the server
 async function getUserAndSettings(userID) {
@@ -459,6 +473,7 @@ const databaseClient = {
   getReorders: getReorders,
   deleteTrade: deleteTrade,
   getUser: getUser,
+  getAllUsers: getAllUsers,
   getUserAndSettings: getUserAndSettings,
   checkIfCancelling: checkIfCancelling,
   getUserAPI: getUserAPI,
