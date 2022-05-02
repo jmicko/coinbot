@@ -33,7 +33,7 @@ async function syncOrders(userID, count, newUserAPI) {
     }
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
       
-      console.log('user api in loop', userAPI);
+      // console.log('user api in loop', userAPI);
       // *** GET ORDERS THAT NEED PROCESSING ***
 
       // start with two empty arrays
@@ -46,7 +46,7 @@ async function syncOrders(userID, count, newUserAPI) {
         // update the user API every full sync so the loop is not calling the db for this info constantly
         // This allows for potentially allowing users to change their API in the future
         userAPI = await databaseClient.getUserAPI(userID);
-        console.log('user api in FULL SYNC loop', userAPI);
+        // console.log('user api in FULL SYNC loop', userAPI);
 
 
         // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
@@ -190,7 +190,7 @@ async function fullSync(userID, botSettings, userAPI) {
       const results = await Promise.all([
         // get all open orders from db and cb
         databaseClient.getLimitedTrades(userID, botSettings.orders_to_sync),
-        coinbaseClient.getOpenOrders(userID),
+        coinbaseClient.getOpenOrders(userID, userAPI),
         // get fees
         coinbaseClient.getFees(userID)
       ]);
@@ -221,7 +221,7 @@ async function quickSync(userID, botSettings, userAPI) {
   // IF QUICK SYNC, only get fills
   return new Promise(async (resolve, reject) => {
     try {
-      console.log('user api passed into quicksync function', userAPI);
+      // console.log('user api passed into quicksync function', userAPI);
       // initiate empty array to hold orders that need to be checked for settlement
       let toCheck = [];
       // get the 500 most recent fills for the account

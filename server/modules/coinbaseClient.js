@@ -182,12 +182,20 @@ async function getLimitedFills(userID, limit) {
 }
 
 
-async function getOpenOrders(userID) {
+async function getOpenOrders(userID, quickAPI) {
   return new Promise(async (resolve, reject) => {
     try {
+      console.log('quick api', quickAPI);
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const userAPI = await databaseClient.getUserAPI(userID);
+      let userAPI;
+      if (quickAPI) {
+        console.log('can use quick api');
+        userAPI = quickAPI;
+      } else {
+        console.log('need to get api from db');
+        userAPI = await databaseClient.getUserAPI(userID);
+      }
       const secret = userAPI.CB_SECRET;
       const key = userAPI.CB_ACCESS_KEY;
       const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
