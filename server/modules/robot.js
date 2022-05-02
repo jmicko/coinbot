@@ -192,7 +192,7 @@ async function fullSync(userID, botSettings, userAPI) {
         databaseClient.getLimitedTrades(userID, botSettings.orders_to_sync),
         coinbaseClient.getOpenOrders(userID, userAPI),
         // get fees
-        coinbaseClient.getFees(userID)
+        coinbaseClient.getFees(userID, userAPI)
       ]);
       // store the lists of orders in the corresponding arrays so they can be compared
       fullSyncOrders.dbOrders = results[0];
