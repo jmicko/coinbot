@@ -109,7 +109,7 @@ async function syncOrders(userID, count, newUserAPI) {
       // these two can run at the same time because they are mutually exclusive based on the will_cancel column
       await Promise.all([
         // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
-        processOrders(userID),
+        processOrders(userID, userAPI),
         // DELETE ALL ORDERS MARKED FOR DELETE
         deleteMarkedOrders(userID)
       ]);
@@ -225,7 +225,7 @@ async function quickSync(userID, botSettings, userAPI) {
       // initiate empty array to hold orders that need to be checked for settlement
       let toCheck = [];
       // get the 500 most recent fills for the account
-      const fills = await coinbaseClient.getLimitedFills(userID, 500);
+      const fills = await coinbaseClient.getLimitedFills(userID, 500, userAPI);
       // look at each fill and find the order in the db associated with it
       for (let i = 0; i < fills.length; i++) {
         const fill = fills[i];
@@ -303,7 +303,7 @@ async function deleteMarkedOrders(userID) {
 }
 
 // process orders that have been settled
-async function processOrders(userID) {
+async function processOrders(userID, userAPI) {
   return new Promise(async (resolve, reject) => {
     // check all trades in db that are both settled and NOT flipped
     sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
@@ -324,7 +324,7 @@ async function processOrders(userID) {
         try {
           let cancelling = await databaseClient.checkIfCancelling(dbOrder.id);
           if (!cancelling) {
-            let cbOrder = await coinbaseClient.placeOrder(tradeDetails);
+            let cbOrder = await coinbaseClient.placeOrder(tradeDetails, userAPI);
             // ...store the new trade
             // take the time the new order was created, and use it as the flipped_at value
             await databaseClient.storeTrade(cbOrder, dbOrder, cbOrder.created_at);

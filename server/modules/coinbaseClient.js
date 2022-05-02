@@ -144,12 +144,17 @@ async function getAllOrders(userID) {
 
 
 
-async function getLimitedFills(userID, limit) {
+async function getLimitedFills(userID, limit, quickAPI) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const userAPI = await databaseClient.getUserAPI(userID);
+      let userAPI;
+      if (quickAPI) {
+        userAPI = quickAPI;
+      } else {
+        userAPI = await databaseClient.getUserAPI(userID);
+      }
       const secret = userAPI.CB_SECRET;
       const key = userAPI.CB_ACCESS_KEY;
       const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
@@ -179,7 +184,6 @@ async function getLimitedFills(userID, limit) {
       };
 
       let response = await axios.request(options);
-      // console.log('resolving getLimitedFills');
       resolve(response.data);
     } catch (err) {
       console.log(err, 'error in coinbaseClient.getLimitedFills');
@@ -197,10 +201,10 @@ async function getOpenOrders(userID, quickAPI) {
       // // sign the request
       let userAPI;
       if (quickAPI) {
-        console.log('can use quick api');
+        console.log('get open orders can use quick api');
         userAPI = quickAPI;
       } else {
-        console.log('need to get api from db');
+        console.log('get open orders need to get api from db');
         userAPI = await databaseClient.getUserAPI(userID);
       }
       const secret = userAPI.CB_SECRET;
@@ -323,12 +327,19 @@ async function getOrder(orderId, userID) {
   });
 }
 
-async function placeOrder(data) {
+async function placeOrder(data, quickAPI) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const userAPI = await databaseClient.getUserAPI(data.userID);
+      let userAPI;
+      if (quickAPI) {
+        console.log('placeOrder can use quick api');
+        userAPI = quickAPI;
+      } else {
+        console.log('placeOrder need to get api from db');
+        userAPI = await databaseClient.getUserAPI(data.userID);
+      }
       const secret = userAPI.CB_SECRET;
       const key = userAPI.CB_ACCESS_KEY;
       const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
