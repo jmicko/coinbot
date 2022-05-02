@@ -15,22 +15,24 @@ async function startSync() {
 }
 
 // REST protocol to find orders that have settled on coinbase
-async function syncOrders(userID, count) {
+async function syncOrders(userID, count, newUserAPI) {
   let timer = true;
   setTimeout(() => {
     timer = false;
   }, 100);
   let user;
+  let userAPI = newUserAPI;
   let botSettings;
   try {
+    // userAPI = await databaseClient.getUserAPI(userID);
     botSettings = await databaseClient.getBotSettings();
-    // console.log(botSettings);
     user = await databaseClient.getUserAndSettings(userID);
     if (count > botSettings.full_sync - 1) {
       count = 0
     }
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
-
+      
+      console.log('user api in loop', userAPI);
       // *** GET ORDERS THAT NEED PROCESSING ***
 
       // start with two empty arrays
@@ -40,6 +42,10 @@ async function syncOrders(userID, count) {
       let ordersToCancel = [];
 
       if (count === 0) {
+        userAPI = await databaseClient.getUserAPI(userID);
+        console.log('user api in FULL SYNC loop', userAPI);
+
+
         // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
         const fullSyncOrders = await fullSync(userID, botSettings);
 
