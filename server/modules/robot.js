@@ -607,8 +607,7 @@ async function reorder(orderToReorder, userAPI) {
             let results = await databaseClient.storeTrade(pendingTrade, tradeDetails, upToDateDbOrder.flipped_at);
 
             // delete the old order from the db
-            const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-            await pool.query(queryText, [orderToReorder.id]);
+            await databaseClient.deleteTrade(orderToReorder.id);
             // tell the DOM to update
             socketClient.emit('message', {
               message: `trade was reordered`,
