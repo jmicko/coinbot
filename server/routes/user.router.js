@@ -5,6 +5,7 @@ const encryptLib = require('../modules/encryption');
 const pool = require('../modules/pool');
 const userStrategy = require('../strategies/user.strategy');
 const robot = require('../modules/robot');
+const databaseClient = require('../modules/databaseClient');
 
 const router = express.Router();
 
@@ -23,14 +24,10 @@ async function anyAdmins() {
 
 // Handles Ajax request for user information if user is authenticated
 router.get('/all', rejectUnauthenticated, async (req, res) => {
-  console.log('get all users route was hit!!!!!!!!');
   const isAdmin = req.user.admin;
-  console.log('are you admin?', isAdmin);
   if (isAdmin) {
     try {
-      const queryText = `SELECT "id", "username", "active", "approved" FROM "user";`;
-      let result = await pool.query(queryText);
-      let userList = result.rows
+      const userList = await databaseClient.getAllUsers();
       res.send(userList);
     } catch (err) {
       console.log('error sending list of users to admin', err);

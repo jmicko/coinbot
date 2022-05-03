@@ -107,6 +107,9 @@ function AutoSetup(props) {
     setAutoTradeStarted(true);
     console.log('automatically setting up bot');
     autoTrader();
+    setTimeout(() => {
+      setAutoTradeStarted(false);
+    }, 5000);
   }
 
   function changeSizeType(event) {
@@ -126,6 +129,8 @@ function AutoSetup(props) {
 
     dispatch({
       type: 'AUTO_SETUP', payload: {
+        availableFunds: availableFunds,
+        tradingPrice: props.priceTicker,
         startingValue: startingValue,
         increment: increment,
         trade_pair_ratio: tradePairRatio,

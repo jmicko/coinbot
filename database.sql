@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS "user_settings"
   "max_trade_size" numeric(32,8) DEFAULT 0,
   "max_trade_load" integer DEFAULT 1000,
   "profit_accuracy" integer DEFAULT 16,
+  "auto_setup_number" integer DEFAULT 1,
   "profit_reset" timestamp
 );
 

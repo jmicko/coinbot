@@ -44,6 +44,51 @@ const storeTrade = (newOrder, originalDetails, flipped_at) => {
   });
 }
 
+// same as above, only set reorder = true so that the bot knows not to check coinbase for it. 
+// this is used in the autoSetup function to speed up the process
+const storeReorderTrade = (newOrder, originalDetails, flipped_at) => {
+  return new Promise((resolve, reject) => {
+    // add new order to the database
+    const sqlText = `INSERT INTO "orders" 
+      ("id", "userID", "price", "size", "trade_pair_ratio", "side", "settled", "product_id", "time_in_force", 
+      "created_at", "flipped_at", "done_at", "fill_fees", "previous_fill_fees", "filled_size", "executed_value", "original_buy_price", "original_sell_price", "reorder") 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19);`;
+    pool.query(sqlText, [
+      newOrder.id,
+      originalDetails.userID,
+      newOrder.price,
+      newOrder.size,
+      originalDetails.trade_pair_ratio,
+      newOrder.side,
+      false,
+      newOrder.product_id,
+      newOrder.time_in_force,
+      newOrder.created_at,
+      flipped_at,
+      newOrder.done_at,
+      newOrder.fill_fees,
+      // bring the fees from the previous order to the new one for more accurate profit calculation
+      originalDetails.fill_fees,
+      newOrder.filled_size,
+      newOrder.executed_value,
+      originalDetails.original_buy_price,
+      originalDetails.original_sell_price,
+      true
+    ])
+      .then((results) => {
+        const success = {
+          message: `order ${newOrder.id} was successfully stored in db`,
+          results: results,
+          success: true
+        }
+        resolve(success);
+      })
+      .catch((err) => {
+        reject(err);
+      });
+  });
+}
+
 // gets all open orders in db based on a specified limit. 
 // The limit is for each side, so the results will potentially double that
 const getLimitedTrades = (userID, limit) => {
@@ -279,6 +324,20 @@ async function getUser(userID) {
   })
 }
 
+// get all user information minus password
+async function getAllUsers() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      sqlText = `SELECT "id", "username", "active", "admin", "approved", "joined_at" FROM "user";`;
+      let result = await pool.query(sqlText);
+      const users = result.rows;
+      resolve(users);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 // get all user information and settings except for the API details. 
 // Keeping them separate helps prevent accidentally sending an API outside the server
 async function getUserAndSettings(userID) {
@@ -419,6 +478,19 @@ async function setKillLock(status, userID) {
   })
 }
 
+
+async function setAutoSetupNumber(number, userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `UPDATE "user_settings" SET "auto_setup_number" = $1 WHERE "userID" = $2`;
+      let result = await pool.query(sqlText, [number, userID]);
+      resolve(result);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 // update the fund balances
 async function saveFunds(funds, userID) {
   return new Promise(async (resolve, reject) => {
@@ -449,6 +521,7 @@ async function saveFees(fees, userID) {
 
 const databaseClient = {
   storeTrade: storeTrade,
+  storeReorderTrade: storeReorderTrade,
   getLimitedTrades: getLimitedTrades,
   getUnsettledTrades: getUnsettledTrades,
   getUnsettledTradeCounts: getUnsettledTradeCounts,
@@ -459,6 +532,7 @@ const databaseClient = {
   getReorders: getReorders,
   deleteTrade: deleteTrade,
   getUser: getUser,
+  getAllUsers: getAllUsers,
   getUserAndSettings: getUserAndSettings,
   checkIfCancelling: checkIfCancelling,
   getUserAPI: getUserAPI,
@@ -469,6 +543,7 @@ const databaseClient = {
   setReorder: setReorder,
   setPause: setPause,
   setKillLock: setKillLock,
+  setAutoSetupNumber: setAutoSetupNumber,
   saveFunds: saveFunds,
   saveFees: saveFees
 }

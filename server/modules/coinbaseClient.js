@@ -52,12 +52,18 @@ async function getAccounts(userID) {
   })
 }
 
-async function getFees(userID) {
+async function getFees(userID, quickAPI) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const userAPI = await databaseClient.getUserAPI(userID);
+      let userAPI;
+      if (quickAPI) {
+        userAPI = quickAPI;
+      } else {
+        console.log('get fees need to get api from db');
+        userAPI = await databaseClient.getUserAPI(userID);
+      }
       const secret = userAPI.CB_SECRET;
       const key = userAPI.CB_ACCESS_KEY;
       const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
@@ -137,12 +143,17 @@ async function getAllOrders(userID) {
 
 
 
-async function getLimitedFills(userID, limit) {
+async function getLimitedFills(userID, limit, quickAPI) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const userAPI = await databaseClient.getUserAPI(userID);
+      let userAPI;
+      if (quickAPI) {
+        userAPI = quickAPI;
+      } else {
+        userAPI = await databaseClient.getUserAPI(userID);
+      }
       const secret = userAPI.CB_SECRET;
       const key = userAPI.CB_ACCESS_KEY;
       const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
@@ -172,7 +183,6 @@ async function getLimitedFills(userID, limit) {
       };
 
       let response = await axios.request(options);
-      // console.log('resolving getLimitedFills');
       resolve(response.data);
     } catch (err) {
       console.log(err, 'error in coinbaseClient.getLimitedFills');
@@ -182,12 +192,19 @@ async function getLimitedFills(userID, limit) {
 }
 
 
-async function getOpenOrders(userID) {
+async function getOpenOrders(userID, quickAPI) {
   return new Promise(async (resolve, reject) => {
     try {
+      // console.log('quick api', quickAPI);
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const userAPI = await databaseClient.getUserAPI(userID);
+      let userAPI;
+      if (quickAPI) {
+        userAPI = quickAPI;
+      } else {
+        console.log('get open orders need to get api from db');
+        userAPI = await databaseClient.getUserAPI(userID);
+      }
       const secret = userAPI.CB_SECRET;
       const key = userAPI.CB_ACCESS_KEY;
       const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
@@ -267,12 +284,18 @@ async function getOpenOrdersBeforeDate(userID, date) {
   });
 }
 
-async function getOrder(orderId, userID) {
+async function getOrder(orderId, userID, quickAPI) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const userAPI = await databaseClient.getUserAPI(userID);
+      let userAPI;
+      if (quickAPI) {
+        userAPI = quickAPI;
+      } else {
+        console.log('GET ORDER need to get api from db');
+        userAPI = await databaseClient.getUserAPI(userID);
+      }
       const secret = userAPI.CB_SECRET;
       const key = userAPI.CB_ACCESS_KEY;
       const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
@@ -308,12 +331,18 @@ async function getOrder(orderId, userID) {
   });
 }
 
-async function placeOrder(data) {
+async function placeOrder(data, quickAPI) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const userAPI = await databaseClient.getUserAPI(data.userID);
+      let userAPI;
+      if (quickAPI) {
+        userAPI = quickAPI;
+      } else {
+        console.log('placeOrder need to get api from db');
+        userAPI = await databaseClient.getUserAPI(data.userID);
+      }
       const secret = userAPI.CB_SECRET;
       const key = userAPI.CB_ACCESS_KEY;
       const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
@@ -351,12 +380,18 @@ async function placeOrder(data) {
   });
 }
 
-async function cancelOrder(orderId, userID) {
+async function cancelOrder(orderId, userID, quickAPI) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const userAPI = await databaseClient.getUserAPI(userID);
+      let userAPI;
+      if (quickAPI) {
+        userAPI = quickAPI;
+      } else {
+        console.log('cancelOrder need to get api from db');
+        userAPI = await databaseClient.getUserAPI(userID);
+      }
       const secret = userAPI.CB_SECRET;
       const key = userAPI.CB_ACCESS_KEY;
       const passphrase = userAPI.CB_ACCESS_PASSPHRASE;

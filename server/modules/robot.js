@@ -6,30 +6,30 @@ const socketClient = require("./socketClient");
 // start a sync loop for each active user
 async function startSync() {
   // get all users from the db
-  const sqlText = `SELECT "id" FROM "user";`
-  const result = await pool.query(sqlText);
-  const userlist = result.rows;
-  userlist.forEach(user => {
+  const userList = await databaseClient.getAllUsers();
+  userList.forEach(user => {
     syncOrders(user.id, 0);
   });
 }
 
 // REST protocol to find orders that have settled on coinbase
-async function syncOrders(userID, count) {
+async function syncOrders(userID, count, newUserAPI) {
   let timer = true;
   setTimeout(() => {
     timer = false;
   }, 100);
   let user;
+  // store user API separate from user so it is not accidentally sent outside the server
+  let userAPI = newUserAPI;
   let botSettings;
   try {
     botSettings = await databaseClient.getBotSettings();
-    // console.log(botSettings);
     user = await databaseClient.getUserAndSettings(userID);
     if (count > botSettings.full_sync - 1) {
       count = 0
     }
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
+
 
       // *** GET ORDERS THAT NEED PROCESSING ***
 
@@ -40,8 +40,12 @@ async function syncOrders(userID, count) {
       let ordersToCancel = [];
 
       if (count === 0) {
+        // update the user API every full sync so the loop is not calling the db for this info constantly
+        // This allows for potentially allowing users to change their API in the future
+        userAPI = await databaseClient.getUserAPI(userID);
+
         // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
-        const fullSyncOrders = await fullSync(userID, botSettings);
+        const fullSyncOrders = await fullSync(userID, botSettings, userAPI);
 
         dbOrders = fullSyncOrders.dbOrders;
         cbOrders = fullSyncOrders.cbOrders;
@@ -50,17 +54,18 @@ async function syncOrders(userID, count) {
 
       } else {
         //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
-        ordersToCheck = await quickSync(userID, botSettings);
+        ordersToCheck = await quickSync(userID, botSettings, userAPI);
       }
 
       // also get a list of orders that are open on cb, but not stored in the db. 
 
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
       if (ordersToCancel.length) {
-        console.log(' deleting extra orders', ordersToCancel.length);
         try {
-          let result = await cancelMultipleOrders(ordersToCancel, userID);
-          // console.log('updating funds');
+          // the 'false' in the third param is telling the function to sleep for a little bit.
+          // this is needed during full sync because full sync deletes all orders on CB that are not in DB,
+          // but they show up on cb first and the bot may detect and accidentally cancel them if it doesn't wait for the db
+          let result = await cancelMultipleOrders(ordersToCancel, userID, false, userAPI);
           await updateFunds(userID);
           if (result.ordersCanceled && (result.quantity > 0)) {
             socketClient.emit('message', {
@@ -80,7 +85,7 @@ async function syncOrders(userID, count) {
       // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
       if (ordersToCheck.length) {
         try {
-          let result = await settleMultipleOrders(ordersToCheck, userID);
+          let result = await settleMultipleOrders(ordersToCheck, userID, userAPI);
           // console.log('updating funds');
           await updateFunds(userID);
         } catch (err) {
@@ -100,14 +105,13 @@ async function syncOrders(userID, count) {
       // these two can run at the same time because they are mutually exclusive based on the will_cancel column
       await Promise.all([
         // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
-        processOrders(userID),
+        processOrders(userID, userAPI),
         // DELETE ALL ORDERS MARKED FOR DELETE
         deleteMarkedOrders(userID)
       ]);
 
       if (ordersToCheck.length > 0) {
-        console.log('where there orders to check?', ordersToCheck.length);
-        await deSync(userID, botSettings);
+        await deSync(userID, botSettings, userAPI);
       }
 
     } else {
@@ -157,7 +161,7 @@ async function syncOrders(userID, count) {
       }
       // console.log('time between full sync', time < 1000, time);
       setTimeout(() => {
-        syncOrders(userID, count + 1);
+        syncOrders(userID, count + 1, userAPI);
       }, (botSettings.loop_speed * 10));
     } else {
       console.log('user is NOT THERE, stopping loop for user');
@@ -165,7 +169,7 @@ async function syncOrders(userID, count) {
   }
 }
 
-async function fullSync(userID, botSettings) {
+async function fullSync(userID, botSettings, userAPI) {
   // IF FULL SYNC, compare all trades that should be on CB, and do other less frequent maintenance tasks
   return new Promise(async (resolve, reject) => {
     try {
@@ -175,21 +179,19 @@ async function fullSync(userID, botSettings) {
         cbOrders: [],
         ordersToCheck: []
       };
-
       // get lists of trades to compare which have been settled
       const results = await Promise.all([
         // get all open orders from db and cb
         databaseClient.getLimitedTrades(userID, botSettings.orders_to_sync),
-        coinbaseClient.getOpenOrders(userID),
+        coinbaseClient.getOpenOrders(userID, userAPI),
         // get fees
-        coinbaseClient.getFees(userID)
+        coinbaseClient.getFees(userID, userAPI)
       ]);
       // store the lists of orders in the corresponding arrays so they can be compared
       fullSyncOrders.dbOrders = results[0];
       fullSyncOrders.cbOrders = results[1];
       const fees = results[2];
 
-      // console.log('updating funds in full sync');
       await updateFunds(userID);
 
       // need to get the fees for more accurate Available funds reporting
@@ -207,14 +209,14 @@ async function fullSync(userID, botSettings) {
   });
 }
 
-async function quickSync(userID, botSettings) {
+async function quickSync(userID, botSettings, userAPI) {
   // IF QUICK SYNC, only get fills
   return new Promise(async (resolve, reject) => {
     try {
       // initiate empty array to hold orders that need to be checked for settlement
       let toCheck = [];
       // get the 500 most recent fills for the account
-      const fills = await coinbaseClient.getLimitedFills(userID, 500);
+      const fills = await coinbaseClient.getLimitedFills(userID, 500, userAPI);
       // look at each fill and find the order in the db associated with it
       for (let i = 0; i < fills.length; i++) {
         const fill = fills[i];
@@ -250,19 +252,19 @@ async function quickSync(userID, botSettings) {
 }
 
 
-async function deSync(userID, botSettings) {
+async function deSync(userID, botSettings, userAPI) {
   // IF QUICK SYNC, only get fills
   return new Promise(async (resolve, reject) => {
     try {
-      console.log('in deSync function', botSettings.orders_to_sync);
+      // console.log('in deSync function', botSettings.orders_to_sync);
 
       let buysToDeSync = await databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'buys')
-      console.log('buys to deSync', buysToDeSync.length);
-      await cancelMultipleOrders(buysToDeSync, userID, true);
+      // console.log('buys to deSync', buysToDeSync.length);
+      await cancelMultipleOrders(buysToDeSync, userID, true, userAPI);
 
       let sellsToDeSync = await databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'sells')
-      console.log('sells to deSync', sellsToDeSync.length);
-      await cancelMultipleOrders(sellsToDeSync, userID, true);
+      // console.log('sells to deSync', sellsToDeSync.length);
+      await cancelMultipleOrders(sellsToDeSync, userID, true, userAPI);
 
 
       resolve();
@@ -292,7 +294,7 @@ async function deleteMarkedOrders(userID) {
 }
 
 // process orders that have been settled
-async function processOrders(userID) {
+async function processOrders(userID, userAPI) {
   return new Promise(async (resolve, reject) => {
     // check all trades in db that are both settled and NOT flipped
     sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
@@ -313,7 +315,7 @@ async function processOrders(userID) {
         try {
           let cancelling = await databaseClient.checkIfCancelling(dbOrder.id);
           if (!cancelling) {
-            let cbOrder = await coinbaseClient.placeOrder(tradeDetails);
+            let cbOrder = await coinbaseClient.placeOrder(tradeDetails, userAPI);
             // ...store the new trade
             // take the time the new order was created, and use it as the flipped_at value
             await databaseClient.storeTrade(cbOrder, dbOrder, cbOrder.created_at);
@@ -490,7 +492,7 @@ function sleep(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
-async function settleMultipleOrders(ordersArray, userID) {
+async function settleMultipleOrders(ordersArray, userID, userAPI) {
   return new Promise(async (resolve, reject) => {
     if (ordersArray.length > 0) {
       socketClient.emit('message', {
@@ -515,20 +517,25 @@ async function settleMultipleOrders(ordersArray, userID) {
           // get all the order details from cb
           // console.log('ORDER TO CHECK:', orderToCheck);
           // await sleep(80); // avoid rate limiting
-          // console.log('checking order:', orderToCheck);
-          let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID);
-          // console.log('full details:', fullSettledDetails);
-          // update the order in the db
-          const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
-          await pool.query(queryText, [
-            fullSettledDetails.settled,
-            fullSettledDetails.done_at,
-            fullSettledDetails.fill_fees,
-            fullSettledDetails.filled_size,
-            fullSettledDetails.executed_value,
-            fullSettledDetails.done_reason,
-            orderToCheck.id
-          ]);
+          if (!orderToCheck.reorder) {
+
+            console.log('checking order:', orderToCheck);
+            let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID, userAPI);
+            // console.log('full details:', fullSettledDetails);
+            // update the order in the db
+            const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
+            await pool.query(queryText, [
+              fullSettledDetails.settled,
+              fullSettledDetails.done_at,
+              fullSettledDetails.fill_fees,
+              fullSettledDetails.filled_size,
+              fullSettledDetails.executed_value,
+              fullSettledDetails.done_reason,
+              orderToCheck.id
+            ]);
+          } else {
+            await reorder(orderToCheck, userAPI);
+          }
         } catch (err) {
           // console.log(err);
           // handle not found order
@@ -541,7 +548,7 @@ async function settleMultipleOrders(ordersArray, userID) {
             // if the order was not supposed to be canceled, reorder it
             else {
               try {
-                await reorder(orderToCheck, userID);
+                await reorder(orderToCheck, userAPI);
               } catch (err) {
                 console.log(err, 'error reordering trade');
               }
@@ -573,7 +580,7 @@ async function settleMultipleOrders(ordersArray, userID) {
   })
 }
 
-async function reorder(orderToReorder) {
+async function reorder(orderToReorder, userAPI) {
   return new Promise(async (resolve, reject) => {
     let upToDateDbOrder;
     try {
@@ -597,7 +604,7 @@ async function reorder(orderToReorder) {
               userID: upToDateDbOrder.userID,
             };
             // send the new order with the trade details
-            let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
+            let pendingTrade = await coinbaseClient.placeOrder(tradeDetails, userAPI);
             // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
             tradeDetails.fill_fees = upToDateDbOrder.previous_fill_fees;
             // store the new trade in the db. the trade details are also sent to store trade position prices
@@ -605,8 +612,7 @@ async function reorder(orderToReorder) {
             let results = await databaseClient.storeTrade(pendingTrade, tradeDetails, upToDateDbOrder.flipped_at);
 
             // delete the old order from the db
-            const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-            await pool.query(queryText, [orderToReorder.id]);
+            await databaseClient.deleteTrade(orderToReorder.id);
             // tell the DOM to update
             socketClient.emit('message', {
               message: `trade was reordered`,
@@ -634,13 +640,12 @@ async function reorder(orderToReorder) {
       } else {
         await sleep(1000);
         // check again. if it finds it, don't do anything. If not found, error handling will reorder
-        console.log('checking again before reordering', orderToReorder);
-        let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID);
+        let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID, userAPI);
       }
     } catch (err) {
       let cancelling = await databaseClient.checkIfCancelling(orderToReorder.id);
       if ((err.response?.status === 404) && (!cancelling)) {
-        console.log('reordering', upToDateDbOrder);
+        // console.log('reordering', upToDateDbOrder);
         try {
           const tradeDetails = {
             original_sell_price: upToDateDbOrder.original_sell_price,
@@ -654,7 +659,7 @@ async function reorder(orderToReorder) {
             userID: orderToReorder.userID,
           };
           // send the new order with the trade details
-          let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
+          let pendingTrade = await coinbaseClient.placeOrder(tradeDetails, userAPI);
           // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
           tradeDetails.fill_fees = upToDateDbOrder.previous_fill_fees;
           // store the new trade in the db. the trade details are also sent to store trade position prices
@@ -662,8 +667,7 @@ async function reorder(orderToReorder) {
           let results = await databaseClient.storeTrade(pendingTrade, tradeDetails, upToDateDbOrder.flipped_at);
 
           // delete the old order from the db
-          const queryText = `DELETE from "orders" WHERE "id"=$1;`;
-          await pool.query(queryText, [orderToReorder.id]);
+          await databaseClient.deleteTrade(orderToReorder.id);
           // tell the DOM to update
           socketClient.emit('message', {
             message: `trade was reordered`,
@@ -694,7 +698,7 @@ async function reorder(orderToReorder) {
 
 
 
-async function cancelMultipleOrders(ordersArray, userID, ignoreSleep) {
+async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
   return new Promise(async (resolve, reject) => {
     // set variable to track how many orders were actually canceled
     let quantity = 0;
@@ -718,14 +722,14 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep) {
             // that way it will reorder faster when it moves back in range
             // console.log('canceling order', orderToCancel);
             await Promise.all([
-              coinbaseClient.cancelOrder(orderToCancel.id, userID),
+              coinbaseClient.cancelOrder(orderToCancel.id, userID, userAPI),
               databaseClient.setSingleReorder(orderToCancel.id)
             ]);
             // console.log('old trade was set to reorder when back in range');
             quantity++;
           } else {
             // cancel the order if nothing comes back from db
-            await coinbaseClient.cancelOrder(orderToCancel.id, userID);
+            await coinbaseClient.cancelOrder(orderToCancel.id, userID, userAPI);
             quantity++;
           }
         } catch (err) {
@@ -796,7 +800,160 @@ function orderElimination(dbOrders, cbOrders) {
 
 
 // auto setup trades until run out of money
+// this version of autoSetup will put trades directly into the db and let resync order what it needs
+// much less cb calls for orders that will just desync, also much faster
 async function autoSetup(user, parameters) {
+  // console.log('in new autoSetup function', user, parameters);
+  let availableFunds = parameters.availableFunds;
+  let loopPrice = parameters.startingValue;
+  let tradingPrice = parameters.tradingPrice;
+  let btcToBuy = 0;
+  let count = 0;
+  // array to hold all the orders that will be made
+  let orderList = [];
+
+  const sizeType = parameters.sizeType;
+  const size = parameters.size;
+  const increment = parameters.increment;
+
+  if (sizeType === "USD") {
+    // logic for when size is in USD
+    // make sure there are enough funds, and don't make more than 10000 orders
+    while ((size <= availableFunds) && (count < 10000)) {
+      let actualSize = size;
+      let convertedAmount = Number(Math.floor((size / loopPrice) * 100000000)) / 100000000;
+      let original_sell_price = (Math.round((loopPrice * (Number(parameters.trade_pair_ratio) + 100))) / 100);
+      let side = 'buy';
+      // if the loop price is higher than the trading price,
+      // need to find actual cost of the trade at that volume
+      if (loopPrice >= tradingPrice) {
+        side = 'sell';
+        // if selling, need to add up the total amount of btc that needs to be bought to keep the balances above 0
+        btcToBuy += convertedAmount;
+        // find cost of BTCSize at current price. Something seems wrong here and it's repetitive but it works so I'm not touching it
+        let actualUSDSize = tradingPrice * convertedAmount;
+        // set the actual USD size to be the cost of the BTC size at the current trade price
+        actualSize = actualUSDSize;
+      }
+
+      // set the price based on if it's a buy or sell
+      let price = () => {
+        if (side === 'buy') {
+          return loopPrice
+        } else {
+          return original_sell_price
+        }
+      }
+
+      // create a single order object
+      const singleOrder = {
+        original_sell_price: original_sell_price,
+        original_buy_price: loopPrice,
+        side: side,
+        price: price(),
+        sizeUSD: actualSize,
+        size: convertedAmount,
+        product_id: parameters.product_id,
+        stp: 'cn',
+        userID: user.id,
+        trade_pair_ratio: parameters.trade_pair_ratio
+      }
+      orderList.push(singleOrder);
+      // each loop needs to buy BTC with the USD size
+      // this will lower the value of available funds by the size
+      availableFunds -= actualSize;
+      // then it will increase the final price by the increment value
+      loopPrice += increment;
+      count++;
+    }
+  } else {
+    // logic for when size is in btc
+    // need a variable for usd size since it will change
+    let USDSize = size * loopPrice;
+    while ((USDSize <= availableFunds) && (count < 10000)) {
+      let original_sell_price = (Math.round((loopPrice * (Number(parameters.trade_pair_ratio) + 100))) / 100);
+      let side = 'buy';
+      // if the loop price is higher than the trading price,
+      // need to find current cost of the trade at that volume
+      if (loopPrice >= tradingPrice) {
+        side = 'sell';
+        // if selling, need to add up the total amount of btc that needs to be bought to keep the balances above 0
+        btcToBuy += size;
+        // change to size at trading price. Need this number to subtract from available funds
+        USDSize = tradingPrice * size;
+      }
+
+      // set the price based on if it's a buy or sell
+      let price = () => {
+        if (side === 'buy') {
+          return loopPrice
+        } else {
+          return original_sell_price
+        }
+      }
+
+      // create a single order object
+      const singleOrder = {
+        original_sell_price: original_sell_price,
+        original_buy_price: loopPrice,
+        side: side,
+        price: price(),
+        size: size,
+        product_id: parameters.product_id,
+        stp: 'cn',
+        userID: user.id,
+        trade_pair_ratio: parameters.trade_pair_ratio
+      }
+      orderList.push(singleOrder);
+      // each loop needs to buy BTC with the USD size
+      // this will lower the value of available funds by the USD size
+      availableFunds -= USDSize;
+      // then it will increase the final price by the increment value
+      loopPrice += increment;
+      USDSize = size * loopPrice;
+      count++;
+    }
+  }
+  // need unique IDs for each trade, but need to also get IDs from CB, so DB has no default.
+  // store a number that counts up every time autoSetup is used, and increase it before using it in case of error
+  // then use it here and increase it by the number of trades being put through this way
+  try {
+    const number = (Number(user.auto_setup_number) + orderList.length)
+    await databaseClient.setAutoSetupNumber(number, user.id);
+
+    // put a market order in for how much BTC need to be purchase for all the sell orders
+    if (btcToBuy >= 0.000016) {
+      const tradeDetails = {
+        side: 'buy',
+        size: btcToBuy.toFixed(8), // BTC
+        product_id: 'BTC-USD',
+        stp: 'cn',
+        userID: user.id,
+        type: 'market'
+      };
+      await coinbaseClient.placeOrder(tradeDetails);
+      await robot.updateFunds(user.id);
+    }
+    // put each trade into the db as a reorder so the sync loop can sync the right amount
+    for (let i = 0; i < orderList.length; i++) {
+      const order = orderList[i];
+      // adding a bunch of 0s allows easy sorting by id in the DB which might be useful later so better to start now
+      order.id = '0000000000' + (Number(user.auto_setup_number) + i).toString();
+      // use the current time for the created time 
+      const time = new Date();
+      order.created_at = time;
+      // console.log('order', order);
+      await databaseClient.storeReorderTrade(order, order, time);
+    }
+  } catch (err) {
+    console.log(err, 'problem in autoSetup ');
+  }
+}
+
+
+
+// auto setup trades until run out of money. Keeping this old version for a while until the new one is well tested
+async function oldautoSetup(user, parameters) {
   // stop bot from adding more trades if 10000 already placed
   const orderCounts = await databaseClient.getUnsettledTradeCounts(user.id);
   const unsettledCounts = Number(orderCounts.totalOpenOrders.count);
