@@ -256,14 +256,14 @@ async function deSync(userID, botSettings, userAPI) {
   // IF QUICK SYNC, only get fills
   return new Promise(async (resolve, reject) => {
     try {
-      console.log('in deSync function', botSettings.orders_to_sync);
+      // console.log('in deSync function', botSettings.orders_to_sync);
 
       let buysToDeSync = await databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'buys')
-      console.log('buys to deSync', buysToDeSync.length);
+      // console.log('buys to deSync', buysToDeSync.length);
       await cancelMultipleOrders(buysToDeSync, userID, true, userAPI);
 
       let sellsToDeSync = await databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'sells')
-      console.log('sells to deSync', sellsToDeSync.length);
+      // console.log('sells to deSync', sellsToDeSync.length);
       await cancelMultipleOrders(sellsToDeSync, userID, true, userAPI);
 
 
