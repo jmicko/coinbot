@@ -868,6 +868,61 @@ async function autoSetup(user, parameters) {
       loopPrice += increment;
       count++;
     }
+  } else {
+    // logic for when size is in btc
+    // need a variable for usd size since it will change
+    let USDSize = size * loopPrice;
+    while ((USDSize <= availableFunds) && (count < 10000)) {
+
+      let actualSize = size;
+      // let convertedAmount = Number(Math.floor((size / loopPrice) * 100000000)) / 100000000;
+      let original_sell_price = (Math.round((loopPrice * (Number(parameters.trade_pair_ratio) + 100))) / 100);
+      let side = 'buy';
+
+
+      // if the loop price is higher than the trading price,
+      // need to find current cost of the trade at that volume
+      if (loopPrice >= tradingPrice) {
+        side = 'sell';
+        btcToBuy += size;
+
+        // change to size at trading price
+        USDSize = tradingPrice * size;
+        // USDSize = actualUSDSize;
+      }
+
+      let price = () => {
+        if (side === 'buy') {
+          return loopPrice
+        } else {
+          return original_sell_price
+        }
+      }
+
+      // create a single order object
+      const singleOrder = {
+        original_sell_price: original_sell_price,
+        original_buy_price: loopPrice,
+        side: side,
+        price: price(),
+        // sizeUSD: actualSize,
+        size: size,
+        product_id: parameters.product_id,
+        stp: 'cn',
+        userID: user.id,
+        trade_pair_ratio: parameters.trade_pair_ratio
+      }
+      orderList.push(singleOrder);
+      // each loop needs to buy BTC with the USD size
+      // this will lower the value of available funds by the USD size
+      availableFunds -= USDSize;
+      // then it will increase the final price by the increment value
+      // setSetupResults(loopPrice);
+      loopPrice += increment;
+      USDSize = size * loopPrice;
+      count++;
+    }
+    // setTotalTrades(count);
   }
 
 
@@ -883,10 +938,10 @@ async function autoSetup(user, parameters) {
 
     // put a market order in for how much BTC need to be purchase for all the sell orders
     if (btcToBuy >= 0.000016) {
-      
+
       const tradeDetails = {
         side: 'buy',
-        size: btcToBuy, // BTC
+        size: btcToBuy.toFixed(8), // BTC
         product_id: 'BTC-USD',
         stp: 'cn',
         userID: user.id,
@@ -904,7 +959,7 @@ async function autoSetup(user, parameters) {
       // console.log('time', time);
       order.id = '000000000000000000000000' + (Number(user.auto_setup_number) + i).toString();
       order.created_at = time;
-      // console.log('order', order);
+      console.log('order', order);
       await databaseClient.storeReorderTrade(order, order, time);
     }
 
