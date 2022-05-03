@@ -60,7 +60,7 @@ const storeReorderTrade = (newOrder, originalDetails, flipped_at) => {
       newOrder.size,
       originalDetails.trade_pair_ratio,
       newOrder.side,
-      newOrder.settled,
+      false,
       newOrder.product_id,
       newOrder.time_in_force,
       newOrder.created_at,

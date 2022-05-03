@@ -882,16 +882,19 @@ async function autoSetup(user, parameters) {
     await databaseClient.setAutoSetupNumber(number, user.id);
 
     // put a market order in for how much BTC need to be purchase for all the sell orders
-    const tradeDetails = {
-      side: 'buy',
-      size: btcToBuy, // BTC
-      product_id: 'BTC-USD',
-      stp: 'cn',
-      userID: user.id,
-      type: 'market'
-    };
-    await coinbaseClient.placeOrder(tradeDetails);
-    await robot.updateFunds(user.id);
+    if (btcToBuy >= 0.000016) {
+      
+      const tradeDetails = {
+        side: 'buy',
+        size: btcToBuy, // BTC
+        product_id: 'BTC-USD',
+        stp: 'cn',
+        userID: user.id,
+        type: 'market'
+      };
+      await coinbaseClient.placeOrder(tradeDetails);
+      await robot.updateFunds(user.id);
+    }
 
 
     for (let i = 0; i < orderList.length; i++) {
