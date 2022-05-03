@@ -227,6 +227,12 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
   const previousPauseStatus = req.user.paused;
   const bulk_pair_ratio = req.body.bulk_pair_ratio;
   try {
+    // pause trading before cancelling all orders or it will reorder them before done, making it take longer
+    await databaseClient.setPause(true, userID)
+    
+    // wait 5 seconds to give the sync loop more time to finish
+    await robot.sleep(5000);
+
     // update the trade-pair ratio for all trades for that user
     const updateTradesQueryText = `UPDATE orders
     SET "trade_pair_ratio" = $1
@@ -235,7 +241,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
     await pool.query(updateTradesQueryText, [
       bulk_pair_ratio,
       user.id
-    ]);
+    ]);  
 
     // update original sell price after ratio is set
     const updateOGSellPriceQueryText = `UPDATE orders
@@ -244,7 +250,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
 
     await pool.query(updateOGSellPriceQueryText, [
       user.id
-    ]);
+    ]);  
 
     // need to update the current price on all sells after changing numbers on all trades
     const updateSellsPriceQueryText = `UPDATE orders
@@ -253,17 +259,11 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
 
     await pool.query(updateSellsPriceQueryText, [
       user.id
-    ]);
+    ]);  
 
     // Now cancel all trades so they can be reordered with the new numbers
-    // pause trading before cancelling all orders or it will reorder them before done, making it take longer
-    await databaseClient.setPause(true, userID)
-
-    // wait 5 seconds to give the synch loop more time to finish
-    await robot.sleep(5000);
-
     // mark all open orders as reorder
-    await databaseClient.setReorder();
+    await databaseClient.setReorder(userID);
 
     // cancel all orders. The sync loop will take care of replacing them
     await coinbaseClient.cancelAllOrders(userID);

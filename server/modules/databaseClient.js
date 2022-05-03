@@ -442,6 +442,7 @@ async function setSingleReorder(id) {
 async function setReorder(userID) {
   return new Promise(async (resolve, reject) => {
     try {
+      console.log('setting reorder for all unsettled');
       const sqlText = `UPDATE "orders" SET "reorder" = true WHERE "settled"=false AND "userID" = $1;`;
       await pool.query(sqlText, [userID]);
       resolve();
