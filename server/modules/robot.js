@@ -29,7 +29,7 @@ async function syncOrders(userID, count, newUserAPI) {
       count = 0
     }
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
-      
+
 
       // *** GET ORDERS THAT NEED PROCESSING ***
 
@@ -517,20 +517,25 @@ async function settleMultipleOrders(ordersArray, userID, userAPI) {
           // get all the order details from cb
           // console.log('ORDER TO CHECK:', orderToCheck);
           // await sleep(80); // avoid rate limiting
-          // console.log('checking order:', orderToCheck);
-          let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID, userAPI);
-          // console.log('full details:', fullSettledDetails);
-          // update the order in the db
-          const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
-          await pool.query(queryText, [
-            fullSettledDetails.settled,
-            fullSettledDetails.done_at,
-            fullSettledDetails.fill_fees,
-            fullSettledDetails.filled_size,
-            fullSettledDetails.executed_value,
-            fullSettledDetails.done_reason,
-            orderToCheck.id
-          ]);
+          if (!orderToCheck.reorder) {
+
+            console.log('checking order:', orderToCheck);
+            let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID, userAPI);
+            // console.log('full details:', fullSettledDetails);
+            // update the order in the db
+            const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
+            await pool.query(queryText, [
+              fullSettledDetails.settled,
+              fullSettledDetails.done_at,
+              fullSettledDetails.fill_fees,
+              fullSettledDetails.filled_size,
+              fullSettledDetails.executed_value,
+              fullSettledDetails.done_reason,
+              orderToCheck.id
+            ]);
+          } else {
+            await reorder(orderToCheck, userAPI);
+          }
         } catch (err) {
           // console.log(err);
           // handle not found order
@@ -795,7 +800,123 @@ function orderElimination(dbOrders, cbOrders) {
 
 
 // auto setup trades until run out of money
+// this version of autoSetup will put trades directly into the db and let resync order what it needs
+// much less cb calls for orders that will just desync, also much faster
 async function autoSetup(user, parameters) {
+  console.log('in new autoSetup function', user, parameters);
+  let availableFunds = parameters.availableFunds;
+  let loopPrice = parameters.startingValue;
+  let tradingPrice = parameters.tradingPrice;
+  let btcToBuy = 0;
+  let count = 0;
+
+  let orderList = [];
+
+  const sizeType = parameters.sizeType;
+  const size = parameters.size;
+  const increment = parameters.increment;
+
+
+  if (sizeType === "USD") {
+    // logic for when size is in USD
+    // make sure there are enough funds, and don't make more than 10000 orders
+    while ((size <= availableFunds) && (count < 10000)) {
+      let actualSize = size;
+      let convertedAmount = Number(Math.floor((size / loopPrice) * 100000000)) / 100000000;
+      let original_sell_price = (Math.round((loopPrice * (Number(parameters.trade_pair_ratio) + 100))) / 100);
+      let side = 'buy';
+      // if the loop price is higher than the trading price,
+      // need to find actual cost of the trade at that volume
+      if (loopPrice >= tradingPrice) {
+        side = 'sell';
+        btcToBuy += convertedAmount;
+        // convert size at loop price to BTC
+        // let BTCSize = convertedAmount;
+        // find cost of BTCSize at current price
+        let actualUSDSize = tradingPrice * convertedAmount;
+        // set the actual USD size to be the cost of the BTC size at the current trade price
+        actualSize = actualUSDSize;
+      }
+
+      let price = () => {
+        if (side === 'buy') {
+          return loopPrice
+        } else {
+          return original_sell_price
+        }
+      }
+
+      // create a single order object
+      const singleOrder = {
+        original_sell_price: original_sell_price,
+        original_buy_price: loopPrice,
+        side: side,
+        price: price(),
+        sizeUSD: actualSize,
+        size: convertedAmount,
+        product_id: parameters.product_id,
+        stp: 'cn',
+        userID: user.id,
+        trade_pair_ratio: parameters.trade_pair_ratio
+      }
+      orderList.push(singleOrder);
+      // each loop needs to buy BTC with the USD size
+      // this will lower the value of available funds by the size
+      availableFunds -= actualSize;
+      // then it will increase the final price by the increment value
+      // setSetupResults(loopPrice);
+      loopPrice += increment;
+      count++;
+    }
+  }
+
+
+
+  console.log('need to buy this much btc', btcToBuy);
+  console.log('this many trades will be made', count);
+
+  // need unique IDs for each trade, but need to also get IDs from CB, so DB has no default.
+  // store a number that counts up every time autoSetup is used, and increase it before using it in case of error
+  try {
+    const number = (Number(user.auto_setup_number) + orderList.length)
+    await databaseClient.setAutoSetupNumber(number, user.id);
+
+    // put a market order in for how much BTC need to be purchase for all the sell orders
+    const tradeDetails = {
+      side: 'buy',
+      size: btcToBuy, // BTC
+      product_id: 'BTC-USD',
+      stp: 'cn',
+      userID: user.id,
+      type: 'market'
+    };
+    await coinbaseClient.placeOrder(tradeDetails);
+    await robot.updateFunds(user.id);
+
+
+    for (let i = 0; i < orderList.length; i++) {
+      const order = orderList[i];
+      // console.log(order);
+      const time = new Date();
+      // console.log('time', time);
+      order.id = '000000000000000000000000' + (Number(user.auto_setup_number) + i).toString();
+      order.created_at = time;
+      // console.log('order', order);
+      await databaseClient.storeReorderTrade(order, order, time);
+    }
+
+  } catch (err) {
+    console.log(err, 'problem in autoSetup ');
+  }
+
+
+
+}
+
+
+
+// auto setup trades until run out of money
+async function oldautoSetup(user, parameters) {
   // stop bot from adding more trades if 10000 already placed
   const orderCounts = await databaseClient.getUnsettledTradeCounts(user.id);
   const unsettledCounts = Number(orderCounts.totalOpenOrders.count);
