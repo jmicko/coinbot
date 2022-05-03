@@ -803,19 +803,18 @@ function orderElimination(dbOrders, cbOrders) {
 // this version of autoSetup will put trades directly into the db and let resync order what it needs
 // much less cb calls for orders that will just desync, also much faster
 async function autoSetup(user, parameters) {
-  console.log('in new autoSetup function', user, parameters);
+  // console.log('in new autoSetup function', user, parameters);
   let availableFunds = parameters.availableFunds;
   let loopPrice = parameters.startingValue;
   let tradingPrice = parameters.tradingPrice;
   let btcToBuy = 0;
   let count = 0;
-
+  // array to hold all the orders that will be made
   let orderList = [];
 
   const sizeType = parameters.sizeType;
   const size = parameters.size;
   const increment = parameters.increment;
-
 
   if (sizeType === "USD") {
     // logic for when size is in USD
@@ -829,15 +828,15 @@ async function autoSetup(user, parameters) {
       // need to find actual cost of the trade at that volume
       if (loopPrice >= tradingPrice) {
         side = 'sell';
+        // if selling, need to add up the total amount of btc that needs to be bought to keep the balances above 0
         btcToBuy += convertedAmount;
-        // convert size at loop price to BTC
-        // let BTCSize = convertedAmount;
-        // find cost of BTCSize at current price
+        // find cost of BTCSize at current price. Something seems wrong here and it's repetitive but it works so I'm not touching it
         let actualUSDSize = tradingPrice * convertedAmount;
         // set the actual USD size to be the cost of the BTC size at the current trade price
         actualSize = actualUSDSize;
       }
 
+      // set the price based on if it's a buy or sell
       let price = () => {
         if (side === 'buy') {
           return loopPrice
@@ -864,7 +863,6 @@ async function autoSetup(user, parameters) {
       // this will lower the value of available funds by the size
       availableFunds -= actualSize;
       // then it will increase the final price by the increment value
-      // setSetupResults(loopPrice);
       loopPrice += increment;
       count++;
     }
@@ -873,24 +871,19 @@ async function autoSetup(user, parameters) {
     // need a variable for usd size since it will change
     let USDSize = size * loopPrice;
     while ((USDSize <= availableFunds) && (count < 10000)) {
-
-      let actualSize = size;
-      // let convertedAmount = Number(Math.floor((size / loopPrice) * 100000000)) / 100000000;
       let original_sell_price = (Math.round((loopPrice * (Number(parameters.trade_pair_ratio) + 100))) / 100);
       let side = 'buy';
-
-
       // if the loop price is higher than the trading price,
       // need to find current cost of the trade at that volume
       if (loopPrice >= tradingPrice) {
         side = 'sell';
+        // if selling, need to add up the total amount of btc that needs to be bought to keep the balances above 0
         btcToBuy += size;
-
-        // change to size at trading price
+        // change to size at trading price. Need this number to subtract from available funds
         USDSize = tradingPrice * size;
-        // USDSize = actualUSDSize;
       }
 
+      // set the price based on if it's a buy or sell
       let price = () => {
         if (side === 'buy') {
           return loopPrice
@@ -905,7 +898,6 @@ async function autoSetup(user, parameters) {
         original_buy_price: loopPrice,
         side: side,
         price: price(),
-        // sizeUSD: actualSize,
         size: size,
         product_id: parameters.product_id,
         stp: 'cn',
@@ -917,28 +909,20 @@ async function autoSetup(user, parameters) {
       // this will lower the value of available funds by the USD size
       availableFunds -= USDSize;
       // then it will increase the final price by the increment value
-      // setSetupResults(loopPrice);
       loopPrice += increment;
       USDSize = size * loopPrice;
       count++;
     }
-    // setTotalTrades(count);
   }
-
-
-
-  console.log('need to buy this much btc', btcToBuy);
-  console.log('this many trades will be made', count);
-
   // need unique IDs for each trade, but need to also get IDs from CB, so DB has no default.
   // store a number that counts up every time autoSetup is used, and increase it before using it in case of error
+  // then use it here and increase it by the number of trades being put through this way
   try {
     const number = (Number(user.auto_setup_number) + orderList.length)
     await databaseClient.setAutoSetupNumber(number, user.id);
 
     // put a market order in for how much BTC need to be purchase for all the sell orders
     if (btcToBuy >= 0.000016) {
-
       const tradeDetails = {
         side: 'buy',
         size: btcToBuy.toFixed(8), // BTC
@@ -950,30 +934,25 @@ async function autoSetup(user, parameters) {
       await coinbaseClient.placeOrder(tradeDetails);
       await robot.updateFunds(user.id);
     }
-
-
+    // put each trade into the db as a reorder so the sync loop can sync the right amount
     for (let i = 0; i < orderList.length; i++) {
       const order = orderList[i];
-      // console.log(order);
+      // adding a bunch of 0s allows easy sorting by id in the DB which might be useful later so better to start now
+      order.id = '0000000000' + (Number(user.auto_setup_number) + i).toString();
+      // use the current time for the created time 
       const time = new Date();
-      // console.log('time', time);
-      order.id = '000000000000000000000000' + (Number(user.auto_setup_number) + i).toString();
       order.created_at = time;
-      console.log('order', order);
+      // console.log('order', order);
       await databaseClient.storeReorderTrade(order, order, time);
     }
-
   } catch (err) {
     console.log(err, 'problem in autoSetup ');
   }
-
-
-
 }
 
 
 
-// auto setup trades until run out of money
+// auto setup trades until run out of money. Keeping this old version for a while until the new one is well tested
 async function oldautoSetup(user, parameters) {
   // stop bot from adding more trades if 10000 already placed
   const orderCounts = await databaseClient.getUnsettledTradeCounts(user.id);
