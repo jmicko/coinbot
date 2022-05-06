@@ -35,10 +35,10 @@ async function syncOrders(userID, count, newUserAPI) {
       // *** GET ORDERS THAT NEED PROCESSING ***
 
       // start with two empty arrays
-      let dbOrders = [];
-      let cbOrders = [];
+      // let dbOrders = [];
+      // let cbOrders = [];
       let ordersToCheck = [];
-      let ordersToCancel = [];
+      // let ordersToCancel = [];
 
       if (count === 0) {
         // *** FULL SYNC ***
@@ -61,36 +61,10 @@ async function syncOrders(userID, count, newUserAPI) {
 
         const fullSyncOrders = full[0]
 
-        dbOrders = fullSyncOrders.dbOrders;
-        cbOrders = fullSyncOrders.cbOrders;
+        // dbOrders = fullSyncOrders.dbOrders;
+        // cbOrders = fullSyncOrders.cbOrders;
         ordersToCheck = fullSyncOrders.ordersToCheck;
-        ordersToCancel = fullSyncOrders.ordersToCancel // await orderElimination(cbOrders, dbOrders);
-
-        // // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
-        // if (ordersToCancel.length) {
-        //   try {
-        //     // the 'false' in the third param is telling the function to sleep for a little bit.
-        //     // this is needed during full sync because full sync deletes all orders on CB that are not in DB,
-        //     // but they show up on cb first and the bot may detect and accidentally cancel them if it doesn't wait for the db
-
-        //     // API ENDPOINTS USED: orders
-        //     let result = await cancelMultipleOrders(ordersToCancel, userID, false, userAPI);
-
-        //     // API ENDPOINTS USED: accounts
-        //     await updateFunds(userID);
-        //     if (result.ordersCanceled && (result.quantity > 0)) {
-        //       socketClient.emit('message', {
-        //         error: `${result.quantity} Extra orders were found and canceled for user ${userID}`,
-        //         orderUpdate: true,
-        //         userID: Number(userID)
-        //       });
-        //     }
-        //   } catch (err) {
-        //     console.log('error deleting extra order', err);
-        //   }
-        //   // wait for a second to allow cancels to go through so bot doesn't cancel twice
-        //   await sleep(1000);
-        // }
+        // ordersToCancel = fullSyncOrders.ordersToCancel // await orderElimination(cbOrders, dbOrders);
 
       } else {
         // *** QUICK SYNC ***
@@ -834,7 +808,7 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
       } //end for loop
       // if all goes well, send message to user and resolve promise with success message
       socketClient.emit('message', {
-        error: `${quantity} Extra orders were found and canceled`,
+        message: `${quantity} Extra orders were found and canceled`,
         orderUpdate: true,
         userID: Number(userID)
       });
