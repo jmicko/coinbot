@@ -34,11 +34,7 @@ async function syncOrders(userID, count, newUserAPI) {
 
       // *** GET ORDERS THAT NEED PROCESSING ***
 
-      // start with two empty arrays
-      // let dbOrders = [];
-      // let cbOrders = [];
       let ordersToCheck = [];
-      // let ordersToCancel = [];
 
       if (count === 0) {
         // *** FULL SYNC ***
@@ -47,24 +43,19 @@ async function syncOrders(userID, count, newUserAPI) {
         // This allows for potentially allowing users to change their API in the future
         userAPI = await databaseClient.getUserAPI(userID);
 
-        // these two can run at the same time because they are mutually exclusive based on the will_cancel column
         const full = await Promise.all([
           // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
           // API ENDPOINTS USED: orders, fees
           fullSync(userID, botSettings, userAPI),
+          // these two can run at the same time because they are mutually exclusive based on the will_cancel column
           // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
           processOrders(userID, userAPI),
           // DELETE ALL ORDERS MARKED FOR DELETE
           deleteMarkedOrders(userID)
         ]);
 
-
         const fullSyncOrders = full[0]
-
-        // dbOrders = fullSyncOrders.dbOrders;
-        // cbOrders = fullSyncOrders.cbOrders;
         ordersToCheck = fullSyncOrders.ordersToCheck;
-        // ordersToCancel = fullSyncOrders.ordersToCancel // await orderElimination(cbOrders, dbOrders);
 
       } else {
         // *** QUICK SYNC ***
@@ -110,16 +101,6 @@ async function syncOrders(userID, count, newUserAPI) {
           }
         }
       }
-
-      // attempting to move this into the full/quick sync sections so they can maybe run at same time?
-      // ---- since it is independent of finding new settled orders? They should already be marked as settled
-      // // these two can run at the same time because they are mutually exclusive based on the will_cancel column
-      // await Promise.all([
-      //   // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
-      //   processOrders(userID, userAPI),
-      //   // DELETE ALL ORDERS MARKED FOR DELETE
-      //   deleteMarkedOrders(userID)
-      // ]);
 
     } else {
       // if the user is not active or is paused, loop every 5 seconds
@@ -177,7 +158,7 @@ async function syncOrders(userID, count, newUserAPI) {
 }
 
 async function deSyncOrderLoop(userID) {
-  // console.log('desync loop', userID);
+  // console.log('deSync loop', userID);
 
   let botSettings;
   let userAPI;
@@ -270,11 +251,9 @@ async function fullSync(userID, botSettings, userAPI) {
         // this is needed during full sync because full sync deletes all orders on CB that are not in DB,
         // but they show up on cb first and the bot may detect and accidentally cancel them if it doesn't wait for the db
         console.log('canceling extra orders in fullSync', fullSyncOrders.ordersToCancel);
-        // API ENDPOINTS USED: orders
+        // API ENDPOINTS USED: orders, accounts
         await cancelMultipleOrders(fullSyncOrders.ordersToCancel, userID, false, userAPI);
-
-        // API ENDPOINTS USED: accounts
-        await updateFunds(userID);
+        
         // wait for a second to allow cancels to go through so bot doesn't cancel twice
         await sleep(1000);
       }
@@ -803,6 +782,7 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
             console.log(err, 'unknown error in cancelMultipleOrders for loop');
           }
         }
+        await updateFunds(userID);
         // wait to prevent rate limiting
         await sleep(80);
       } //end for loop
