@@ -184,20 +184,24 @@ async function deSyncOrderLoop(userID) {
 
 
 async function deSync(userID, botSettings, userAPI) {
-  // IF QUICK SYNC, only get fills
   return new Promise(async (resolve, reject) => {
     try {
-      // console.log('in deSync function', botSettings.orders_to_sync);
+      let allToDeSync = [];
+      // get the buys and sells that need to desync
+      const ordersToDeSync = await Promise.all([
+        databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'buys'),
+        databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'sells')
+      ]);
+      let buysToDeSync = ordersToDeSync[0];
+      let sellsToDeSync = ordersToDeSync[1];
 
-      let buysToDeSync = await databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'buys')
-      // console.log('buys to deSync', buysToDeSync.length);
-      await cancelMultipleOrders(buysToDeSync, userID, true, userAPI);
+      // push them into the all array
+      allToDeSync.push(...buysToDeSync);
+      allToDeSync.push(...sellsToDeSync);
 
-      let sellsToDeSync = await databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'sells')
-      // console.log('sells to deSync', sellsToDeSync.length);
-      await cancelMultipleOrders(sellsToDeSync, userID, true, userAPI);
-
-
+      // cancel them all
+      await cancelMultipleOrders(allToDeSync, userID, true, userAPI);
+      
       resolve();
     } catch (err) {
       reject(err)
@@ -253,7 +257,7 @@ async function fullSync(userID, botSettings, userAPI) {
         console.log('canceling extra orders in fullSync', fullSyncOrders.ordersToCancel);
         // API ENDPOINTS USED: orders, accounts
         await cancelMultipleOrders(fullSyncOrders.ordersToCancel, userID, false, userAPI);
-        
+
         // wait for a second to allow cancels to go through so bot doesn't cancel twice
         await sleep(1000);
       }
