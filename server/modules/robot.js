@@ -64,8 +64,7 @@ async function syncOrders(userID, count, newUserAPI) {
         dbOrders = fullSyncOrders.dbOrders;
         cbOrders = fullSyncOrders.cbOrders;
         ordersToCheck = fullSyncOrders.ordersToCheck;
-        ordersToCancel = await orderElimination(cbOrders, dbOrders);
-
+        ordersToCancel = fullSyncOrders.ordersToCancel // await orderElimination(cbOrders, dbOrders);
 
         // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
         if (ordersToCancel.length) {
@@ -287,6 +286,8 @@ async function fullSync(userID, botSettings, userAPI) {
       // compare the arrays and remove any where the ids match in both,
       // leaving a list of orders that are open in the db, but not on cb. Probably settled
       fullSyncOrders.ordersToCheck = await orderElimination(fullSyncOrders.dbOrders, fullSyncOrders.cbOrders);
+      // also get a list of orders that are open on cb, but not in the db. Need to cancel them
+      fullSyncOrders.ordersToCancel = await orderElimination(fullSyncOrders.cbOrders, fullSyncOrders.dbOrders);
 
       resolve(fullSyncOrders);
     } catch (err) {
