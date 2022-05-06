@@ -67,6 +67,32 @@ async function syncOrders(userID, count, newUserAPI) {
         ordersToCancel = await orderElimination(cbOrders, dbOrders);
 
 
+        // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
+        if (ordersToCancel.length) {
+          try {
+            // the 'false' in the third param is telling the function to sleep for a little bit.
+            // this is needed during full sync because full sync deletes all orders on CB that are not in DB,
+            // but they show up on cb first and the bot may detect and accidentally cancel them if it doesn't wait for the db
+
+            // API ENDPOINTS USED: orders
+            let result = await cancelMultipleOrders(ordersToCancel, userID, false, userAPI);
+
+            // API ENDPOINTS USED: accounts
+            await updateFunds(userID);
+            if (result.ordersCanceled && (result.quantity > 0)) {
+              socketClient.emit('message', {
+                error: `${result.quantity} Extra orders were found and canceled for user ${userID}`,
+                orderUpdate: true,
+                userID: Number(userID)
+              });
+            }
+          } catch (err) {
+            console.log('error deleting extra order', err);
+          }
+          // wait for a second to allow cancels to go through so bot doesn't cancel twice
+          await sleep(1000);
+        }
+
       } else {
         // *** QUICK SYNC ***
 
@@ -87,34 +113,6 @@ async function syncOrders(userID, count, newUserAPI) {
 
         ordersToCheck = quick[0];
 
-      }
-
-      // also get a list of orders that are open on cb, but not stored in the db. 
-
-      // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
-      if (ordersToCancel.length) {
-        try {
-          // the 'false' in the third param is telling the function to sleep for a little bit.
-          // this is needed during full sync because full sync deletes all orders on CB that are not in DB,
-          // but they show up on cb first and the bot may detect and accidentally cancel them if it doesn't wait for the db
-
-          // API ENDPOINTS USED: orders
-          let result = await cancelMultipleOrders(ordersToCancel, userID, false, userAPI);
-
-          // API ENDPOINTS USED: accounts
-          await updateFunds(userID);
-          if (result.ordersCanceled && (result.quantity > 0)) {
-            socketClient.emit('message', {
-              error: `${result.quantity} Extra orders were found and canceled for user ${userID}`,
-              orderUpdate: true,
-              userID: Number(userID)
-            });
-          }
-        } catch (err) {
-          console.log('error deleting extra order', err);
-        }
-        // wait for a second to allow cancels to go through so bot doesn't cancel twice
-        await sleep(1000);
       }
 
 
