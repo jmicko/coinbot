@@ -41,11 +41,14 @@ async function syncOrders(userID, count, newUserAPI) {
       let ordersToCancel = [];
 
       if (count === 0) {
+        // *** FULL SYNC ***
+
         // update the user API every full sync so the loop is not calling the db for this info constantly
         // This allows for potentially allowing users to change their API in the future
         userAPI = await databaseClient.getUserAPI(userID);
 
         // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
+        // API ENDPOINTS USED: orders, fees
         const fullSyncOrders = await fullSync(userID, botSettings, userAPI);
 
         dbOrders = fullSyncOrders.dbOrders;
@@ -53,9 +56,32 @@ async function syncOrders(userID, count, newUserAPI) {
         ordersToCheck = fullSyncOrders.ordersToCheck;
         ordersToCancel = await orderElimination(cbOrders, dbOrders);
 
+
+
+
+        // these two can run at the same time because they are mutually exclusive based on the will_cancel column
+        await Promise.all([
+          // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
+          processOrders(userID, userAPI),
+          // DELETE ALL ORDERS MARKED FOR DELETE
+          deleteMarkedOrders(userID)
+        ]);
       } else {
+        // *** QUICK SYNC ***
+
         //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
+        // API ENDPOINTS USED: fills
         ordersToCheck = await quickSync(userID, botSettings, userAPI);
+
+
+
+        // these two can run at the same time because they are mutually exclusive based on the will_cancel column
+        await Promise.all([
+          // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
+          processOrders(userID, userAPI),
+          // DELETE ALL ORDERS MARKED FOR DELETE
+          deleteMarkedOrders(userID)
+        ]);
       }
 
       // also get a list of orders that are open on cb, but not stored in the db. 
@@ -66,7 +92,11 @@ async function syncOrders(userID, count, newUserAPI) {
           // the 'false' in the third param is telling the function to sleep for a little bit.
           // this is needed during full sync because full sync deletes all orders on CB that are not in DB,
           // but they show up on cb first and the bot may detect and accidentally cancel them if it doesn't wait for the db
+
+          // API ENDPOINTS USED: orders
           let result = await cancelMultipleOrders(ordersToCancel, userID, false, userAPI);
+
+          // API ENDPOINTS USED: accounts
           await updateFunds(userID);
           if (result.ordersCanceled && (result.quantity > 0)) {
             socketClient.emit('message', {
@@ -86,6 +116,8 @@ async function syncOrders(userID, count, newUserAPI) {
       // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
       if (ordersToCheck.length) {
         try {
+
+          // API ENDPOINTS USED: orders
           let result = await settleMultipleOrders(ordersToCheck, userID, userAPI);
           // console.log('updating funds');
           await updateFunds(userID);
@@ -103,17 +135,15 @@ async function syncOrders(userID, count, newUserAPI) {
         }
       }
 
-      // these two can run at the same time because they are mutually exclusive based on the will_cancel column
-      await Promise.all([
-        // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
-        processOrders(userID, userAPI),
-        // DELETE ALL ORDERS MARKED FOR DELETE
-        deleteMarkedOrders(userID)
-      ]);
-
-      // if (ordersToCheck.length > 0) {
-      //   await deSync(userID, botSettings, userAPI);
-      // }
+      // attempting to move this into the full/quick sync sections so they can maybe run at same time?
+      // ---- since it is independent of finding new settled orders? They should already be marked as settled
+      // // these two can run at the same time because they are mutually exclusive based on the will_cancel column
+      // await Promise.all([
+      //   // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
+      //   processOrders(userID, userAPI),
+      //   // DELETE ALL ORDERS MARKED FOR DELETE
+      //   deleteMarkedOrders(userID)
+      // ]);
 
     } else {
       // if the user is not active or is paused, loop every 5 seconds
@@ -175,11 +205,13 @@ async function deSyncOrderLoop(userID) {
 
   let botSettings;
   let userAPI;
+  let user;
 
 
   try {
     botSettings = await databaseClient.getBotSettings();
     userAPI = await databaseClient.getUserAPI(userID);
+    user = await databaseClient.getUserAndSettings(userID);
 
     await deSync(userID, botSettings, userAPI);
 
@@ -190,7 +222,30 @@ async function deSyncOrderLoop(userID) {
 
   setTimeout(() => {
     deSyncOrderLoop(userID);
-  }, 500);
+  }, 1000);
+}
+
+
+async function deSync(userID, botSettings, userAPI) {
+  // IF QUICK SYNC, only get fills
+  return new Promise(async (resolve, reject) => {
+    try {
+      // console.log('in deSync function', botSettings.orders_to_sync);
+
+      let buysToDeSync = await databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'buys')
+      // console.log('buys to deSync', buysToDeSync.length);
+      await cancelMultipleOrders(buysToDeSync, userID, true, userAPI);
+
+      let sellsToDeSync = await databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'sells')
+      // console.log('sells to deSync', sellsToDeSync.length);
+      await cancelMultipleOrders(sellsToDeSync, userID, true, userAPI);
+
+
+      resolve();
+    } catch (err) {
+      reject(err)
+    }
+  });
 }
 
 
@@ -207,7 +262,10 @@ async function fullSync(userID, botSettings, userAPI) {
       // get lists of trades to compare which have been settled
       const results = await Promise.all([
         // get all open orders from db and cb
-        databaseClient.getLimitedTrades(userID, botSettings.orders_to_sync),
+
+        // databaseClient.getLimitedTrades(userID, botSettings.orders_to_sync),
+        // not sure this should be getting trades whether or not they are settled. Made new db function where settled=false
+        databaseClient.getLimitedUnsettledTrades(userID, botSettings.orders_to_sync),
         coinbaseClient.getOpenOrders(userID, userAPI),
         // get fees
         coinbaseClient.getFees(userID, userAPI)
@@ -266,33 +324,9 @@ async function quickSync(userID, botSettings, userAPI) {
       // todo - maybe this should go after the settleMultipleOrders function so it will fire on same loop
       const reorders = await databaseClient.getReorders(userID, botSettings.orders_to_sync)
       if (reorders.length >= 1) {
-        // console.log('!!!!! reordering reorders in quick sync robot.js quick sync function', reorders);
         reorders.forEach(order => toCheck.push(order))
       }
       resolve(toCheck);
-    } catch (err) {
-      reject(err)
-    }
-  });
-}
-
-
-async function deSync(userID, botSettings, userAPI) {
-  // IF QUICK SYNC, only get fills
-  return new Promise(async (resolve, reject) => {
-    try {
-      // console.log('in deSync function', botSettings.orders_to_sync);
-
-      let buysToDeSync = await databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'buys')
-      // console.log('buys to deSync', buysToDeSync.length);
-      await cancelMultipleOrders(buysToDeSync, userID, true, userAPI);
-
-      let sellsToDeSync = await databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'sells')
-      // console.log('sells to deSync', sellsToDeSync.length);
-      await cancelMultipleOrders(sellsToDeSync, userID, true, userAPI);
-
-
-      resolve();
     } catch (err) {
       reject(err)
     }
@@ -544,7 +578,7 @@ async function settleMultipleOrders(ordersArray, userID, userAPI) {
           // await sleep(80); // avoid rate limiting
           if (!orderToCheck.reorder) {
 
-            console.log('checking order:', orderToCheck);
+            // console.log('checking order:', orderToCheck);
             let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID, userAPI);
             // console.log('full details:', fullSettledDetails);
             // update the order in the db
