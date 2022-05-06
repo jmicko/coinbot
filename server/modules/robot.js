@@ -259,7 +259,8 @@ async function fullSync(userID, botSettings, userAPI) {
       let fullSyncOrders = {
         dbOrders: [],
         cbOrders: [],
-        ordersToCheck: []
+        ordersToCheck: [],
+        ordersToCancel: []
       };
       // get lists of trades to compare which have been settled
       const results = await Promise.all([
