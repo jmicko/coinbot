@@ -9,6 +9,7 @@ async function startSync() {
   const userList = await databaseClient.getAllUsers();
   userList.forEach(user => {
     syncOrders(user.id, 0);
+    deSyncOrderLoop(user.id);
   });
 }
 
@@ -110,9 +111,9 @@ async function syncOrders(userID, count, newUserAPI) {
         deleteMarkedOrders(userID)
       ]);
 
-      if (ordersToCheck.length > 0) {
-        await deSync(userID, botSettings, userAPI);
-      }
+      // if (ordersToCheck.length > 0) {
+      //   await deSync(userID, botSettings, userAPI);
+      // }
 
     } else {
       // if the user is not active or is paused, loop every 5 seconds
@@ -168,6 +169,30 @@ async function syncOrders(userID, count, newUserAPI) {
     }
   }
 }
+
+async function deSyncOrderLoop(userID) {
+  // console.log('desync loop', userID);
+
+  let botSettings;
+  let userAPI;
+
+
+  try {
+    botSettings = await databaseClient.getBotSettings();
+    userAPI = await databaseClient.getUserAPI(userID);
+
+    await deSync(userID, botSettings, userAPI);
+
+  } catch (err) {
+    console.log(err, 'deSync loop error');
+  }
+
+
+  setTimeout(() => {
+    deSyncOrderLoop(userID);
+  }, 500);
+}
+
 
 async function fullSync(userID, botSettings, userAPI) {
   // IF FULL SYNC, compare all trades that should be on CB, and do other less frequent maintenance tasks
