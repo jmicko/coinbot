@@ -63,7 +63,7 @@ function Status(props) {
     // return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
     // for now, use this
     if (x !== null) {
-      
+
       let parts = x.toString().split(".");
       parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
       return parts.join(".");
@@ -211,6 +211,7 @@ function Status(props) {
         </p>
       </center>
 
+
       <center>
         <p className="info status-ticker">
           <strong>Total Open Orders</strong>
@@ -237,7 +238,11 @@ function Status(props) {
             checked={props.isAutoScroll}
             onChange={props.handleAutoScrollChange}
           />
-        </p>
+            <br />
+            {props.store.accountReducer.userReducer.paused &&
+              <strong className='red'>~~~PAUSED~~~</strong>
+            }
+          </p>
       </center>
     </div>
   )
