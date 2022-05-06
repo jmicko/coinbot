@@ -47,9 +47,19 @@ async function syncOrders(userID, count, newUserAPI) {
         // This allows for potentially allowing users to change their API in the future
         userAPI = await databaseClient.getUserAPI(userID);
 
-        // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
-        // API ENDPOINTS USED: orders, fees
-        const fullSyncOrders = await fullSync(userID, botSettings, userAPI);
+        // these two can run at the same time because they are mutually exclusive based on the will_cancel column
+        const full = await Promise.all([
+          // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
+          // API ENDPOINTS USED: orders, fees
+          fullSync(userID, botSettings, userAPI),
+          // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
+          processOrders(userID, userAPI),
+          // DELETE ALL ORDERS MARKED FOR DELETE
+          deleteMarkedOrders(userID)
+        ]);
+
+
+        const fullSyncOrders = full[0]
 
         dbOrders = fullSyncOrders.dbOrders;
         cbOrders = fullSyncOrders.cbOrders;
@@ -57,31 +67,26 @@ async function syncOrders(userID, count, newUserAPI) {
         ordersToCancel = await orderElimination(cbOrders, dbOrders);
 
 
-
-
-        // these two can run at the same time because they are mutually exclusive based on the will_cancel column
-        await Promise.all([
-          // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
-          processOrders(userID, userAPI),
-          // DELETE ALL ORDERS MARKED FOR DELETE
-          deleteMarkedOrders(userID)
-        ]);
       } else {
         // *** QUICK SYNC ***
 
-        //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
-        // API ENDPOINTS USED: fills
-        ordersToCheck = await quickSync(userID, botSettings, userAPI);
-
-
-
-        // these two can run at the same time because they are mutually exclusive based on the will_cancel column
-        await Promise.all([
+        // can run all three of these at the same time. 
+        // Process orders looks for orders that are settled and not flipped,
+        // and quickSync check if they are settled before acting on them
+        // so processOrders will flip trades from the previous cycle while quickSync gets new ones
+        const quick = await Promise.all([
+          //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
+          // API ENDPOINTS USED: fills
+          quickSync(userID, botSettings, userAPI),
+          // these two can run at the same time because they are mutually exclusive based on the will_cancel column
           // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
           processOrders(userID, userAPI),
           // DELETE ALL ORDERS MARKED FOR DELETE
           deleteMarkedOrders(userID)
         ]);
+
+        ordersToCheck = quick[0];
+
       }
 
       // also get a list of orders that are open on cb, but not stored in the db. 
