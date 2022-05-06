@@ -66,31 +66,31 @@ async function syncOrders(userID, count, newUserAPI) {
         ordersToCheck = fullSyncOrders.ordersToCheck;
         ordersToCancel = fullSyncOrders.ordersToCancel // await orderElimination(cbOrders, dbOrders);
 
-        // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
-        if (ordersToCancel.length) {
-          try {
-            // the 'false' in the third param is telling the function to sleep for a little bit.
-            // this is needed during full sync because full sync deletes all orders on CB that are not in DB,
-            // but they show up on cb first and the bot may detect and accidentally cancel them if it doesn't wait for the db
+        // // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
+        // if (ordersToCancel.length) {
+        //   try {
+        //     // the 'false' in the third param is telling the function to sleep for a little bit.
+        //     // this is needed during full sync because full sync deletes all orders on CB that are not in DB,
+        //     // but they show up on cb first and the bot may detect and accidentally cancel them if it doesn't wait for the db
 
-            // API ENDPOINTS USED: orders
-            let result = await cancelMultipleOrders(ordersToCancel, userID, false, userAPI);
+        //     // API ENDPOINTS USED: orders
+        //     let result = await cancelMultipleOrders(ordersToCancel, userID, false, userAPI);
 
-            // API ENDPOINTS USED: accounts
-            await updateFunds(userID);
-            if (result.ordersCanceled && (result.quantity > 0)) {
-              socketClient.emit('message', {
-                error: `${result.quantity} Extra orders were found and canceled for user ${userID}`,
-                orderUpdate: true,
-                userID: Number(userID)
-              });
-            }
-          } catch (err) {
-            console.log('error deleting extra order', err);
-          }
-          // wait for a second to allow cancels to go through so bot doesn't cancel twice
-          await sleep(1000);
-        }
+        //     // API ENDPOINTS USED: accounts
+        //     await updateFunds(userID);
+        //     if (result.ordersCanceled && (result.quantity > 0)) {
+        //       socketClient.emit('message', {
+        //         error: `${result.quantity} Extra orders were found and canceled for user ${userID}`,
+        //         orderUpdate: true,
+        //         userID: Number(userID)
+        //       });
+        //     }
+        //   } catch (err) {
+        //     console.log('error deleting extra order', err);
+        //   }
+        //   // wait for a second to allow cancels to go through so bot doesn't cancel twice
+        //   await sleep(1000);
+        // }
 
       } else {
         // *** QUICK SYNC ***
@@ -289,6 +289,21 @@ async function fullSync(userID, botSettings, userAPI) {
       fullSyncOrders.ordersToCheck = await orderElimination(fullSyncOrders.dbOrders, fullSyncOrders.cbOrders);
       // also get a list of orders that are open on cb, but not in the db. Need to cancel them
       fullSyncOrders.ordersToCancel = await orderElimination(fullSyncOrders.cbOrders, fullSyncOrders.dbOrders);
+
+      // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
+      if (fullSyncOrders.ordersToCancel.length) {
+        // the 'false' in the third param is telling the function to sleep for a little bit.
+        // this is needed during full sync because full sync deletes all orders on CB that are not in DB,
+        // but they show up on cb first and the bot may detect and accidentally cancel them if it doesn't wait for the db
+        console.log('canceling extra orders in fullSync', fullSyncOrders.ordersToCancel);
+        // API ENDPOINTS USED: orders
+        await cancelMultipleOrders(fullSyncOrders.ordersToCancel, userID, false, userAPI);
+
+        // API ENDPOINTS USED: accounts
+        await updateFunds(userID);
+        // wait for a second to allow cancels to go through so bot doesn't cancel twice
+        await sleep(1000);
+      }
 
       resolve(fullSyncOrders);
     } catch (err) {
@@ -797,6 +812,7 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
             quantity++;
           }
         } catch (err) {
+          // Do not resolve the error because this is in a for loop which needs to continue. If error, handle it here
           if (err.response?.status === 404) {
             // console.log(err.response.data, 'order not found when cancelling');
             // if not found, cancel all orders may have been done, so get out of the loop
@@ -816,7 +832,14 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
         // wait to prevent rate limiting
         await sleep(80);
       } //end for loop
-      // if all goes well, resolve promise with success message
+      // if all goes well, send message to user and resolve promise with success message
+      socketClient.emit('message', {
+        error: `${quantity} Extra orders were found and canceled`,
+        orderUpdate: true,
+        userID: Number(userID)
+      });
+
+
       resolve({
         message: `${quantity} Extra orders were canceled`,
         ordersCanceled: true,
