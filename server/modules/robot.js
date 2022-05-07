@@ -9,7 +9,7 @@ async function startSync() {
   const userList = await databaseClient.getAllUsers();
   userList.forEach(user => {
     syncOrders(user.id, 0);
-    deSyncOrderLoop(user.id);
+    deSyncOrderLoop(user, 0);
   });
 }
 
@@ -157,18 +157,21 @@ async function syncOrders(userID, count, newUserAPI) {
   }
 }
 
-async function deSyncOrderLoop(userID) {
-  // console.log('deSync loop', userID);
+async function deSyncOrderLoop(user, count, settings) {
 
-  let botSettings;
-  let userAPI;
-  let user;
+  let userID = user.id;
+  let botSettings = settings?.botSettings;
+  let userAPI = settings?.userAPI;
 
-
+  if (count > 15) {
+    count = 0
+  }
   try {
-    botSettings = await databaseClient.getBotSettings();
-    userAPI = await databaseClient.getUserAPI(userID);
-    user = await databaseClient.getUserAndSettings(userID);
+    if (count === 0) {
+      botSettings = await databaseClient.getBotSettings();
+      userAPI = await databaseClient.getUserAPI(userID);
+      user = await databaseClient.getUserAndSettings(userID);
+    }
 
     await deSync(userID, botSettings, userAPI);
 
@@ -176,10 +179,14 @@ async function deSyncOrderLoop(userID) {
     console.log(err, 'deSync loop error');
   }
 
+  const newSettings = {
+    botSettings: botSettings,
+    userAPI: userAPI,
+  }
 
   setTimeout(() => {
-    deSyncOrderLoop(userID);
-  }, 1000);
+    deSyncOrderLoop(user, (count + 1), newSettings);
+  }, 500);
 }
 
 
@@ -201,7 +208,7 @@ async function deSync(userID, botSettings, userAPI) {
 
       // cancel them all
       await cancelMultipleOrders(allToDeSync, userID, true, userAPI);
-      
+
       resolve();
     } catch (err) {
       reject(err)
