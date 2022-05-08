@@ -14,9 +14,9 @@ const coinbaseClient = require('../modules/coinbaseClient');
 router.post('/', rejectUnauthenticated, async (req, res) => {
   // POST route code here
   const user = req.user;
+  const userID = req.user.id;
+  const order = req.body;
   if (user.active && user.approved) {
-    const userID = req.user.id;
-    const order = req.body;
     // tradeDetails const should take in values sent from trade component form
     const tradeDetails = {
       original_sell_price: order.original_sell_price,
@@ -47,11 +47,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
 
       // send OK status
       res.sendStatus(200);
-
-      // check if order went through
-      // await robot.sleep(1000);
-      // let success = await coinbaseClient.repeatedCheck(pendingTrade, userID, 0);
-      // console.log('did the order go through?', success);
+      
     } catch (err) {
       if (err.response?.status === 400) {
         console.log('Insufficient funds!');
@@ -85,12 +81,11 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
  */
 router.post('/basic', rejectUnauthenticated, async (req, res) => {
   console.log('basic trade post route hit', req.body);
-  // res.sendStatus(200);
   // POST route code here
   const user = req.user;
+  const userID = req.user.id;
+  const order = req.body;
   if (user.active && user.approved) {
-    const userID = req.user.id;
-    const order = req.body;
     // tradeDetails const should take in values sent from trade component form
     const tradeDetails = {
       side: order.side,
@@ -114,12 +109,14 @@ router.post('/basic', rejectUnauthenticated, async (req, res) => {
         console.log('Insufficient funds!');
         socketClient.emit('message', {
           error: `Insufficient funds!`,
-          orderUpdate: true
+          orderUpdate: true,
+          userID: Number(userID)
         });
       } else if (err.code && err.code === 'ETIMEDOUT') {
         console.log('Timed out');
         socketClient.emit('message', {
           error: `Connection timed out`,
+          userID: Number(userID)
           // orderUpdate: true
         });
       } else {
