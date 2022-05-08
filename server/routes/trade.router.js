@@ -57,13 +57,15 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
         console.log('Insufficient funds!');
         socketClient.emit('message', {
           error: `Insufficient funds!`,
-          orderUpdate: true
+          orderUpdate: true,
+          userID: Number(userID)
         });
       } else if (err.code && err.code === 'ETIMEDOUT') {
         console.log('Timed out!!!!! Synching orders just in case');
         socketClient.emit('message', {
           error: `Connection timed out, consider synching all orders to prevent duplicates. This will not be done for you.`,
-          orderUpdate: true
+          orderUpdate: true,
+          userID: Number(userID)
         });
       } else {
         console.log(err, 'problem in sending trade post route');
