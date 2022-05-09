@@ -136,12 +136,11 @@ function Status(props) {
     <div className="Status boxed fit">
       {/* todo - maybe style in some divider lines here or something */}
       {/* <p className="info status-ticker"><strong>~~~ user ~~~</strong><br />{JSON.stringify(props.store.accountReducer.userReducer)}</p> */}
-
+      {/* <p>{JSON.stringify(props.store.accountReducer.userReducer.botMaintenance)}</p> */}
       <center onClick={() => { setProfitDisplay(profitDisplay + 1) }}>
         {profitDisplay === 1
           ? <p className="info status-ticker">
             <strong>24 hour Profit</strong>
-            {/* {JSON.stringify(props.store.accountReducer.userReducer.actualavailable_usd)} */}
             <br />
             ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[0].sum).toFixed(profitAccuracy))}
           </p>
@@ -238,11 +237,11 @@ function Status(props) {
             checked={props.isAutoScroll}
             onChange={props.handleAutoScrollChange}
           />
-            <br />
-            {props.store.accountReducer.userReducer.paused &&
-              <strong className='red'>~~~PAUSED~~~</strong>
-            }
-          </p>
+          <br />
+          {props.store.accountReducer.userReducer.paused &&
+            <strong className='red'>~~~PAUSED~~~</strong>
+          }
+        </p>
       </center>
     </div>
   )
