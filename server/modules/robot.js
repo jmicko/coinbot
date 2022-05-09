@@ -897,6 +897,15 @@ async function autoSetup(user, parameters) {
         }
       }
 
+      let prevFees = () => {
+        if (side === 'buy') {
+          return 0
+        } else {
+          return loopPrice * convertedAmount * user.taker_fee
+        }
+      }
+      console.log('previous fees', prevFees(), 'loop price', loopPrice, 'convertedAmount', convertedAmount, 'taker fee', user.taker_fee);
+
       // create a single order object
       const singleOrder = {
         original_sell_price: original_sell_price,
@@ -905,6 +914,7 @@ async function autoSetup(user, parameters) {
         price: price(),
         sizeUSD: actualSize,
         size: convertedAmount,
+        fill_fees: prevFees(),
         product_id: parameters.product_id,
         stp: 'cn',
         userID: user.id,
@@ -944,6 +954,16 @@ async function autoSetup(user, parameters) {
         }
       }
 
+      let prevFees = () => {
+        if (side === 'buy') {
+          return 0
+        } else {
+          return loopPrice * size * user.taker_fee
+        }
+      }
+      console.log('previous fees', prevFees());
+      console.log('previous fees', prevFees(), 'loop price', loopPrice, 'size', size, 'taker fee', user.taker_fee);
+
       // create a single order object
       const singleOrder = {
         original_sell_price: original_sell_price,
@@ -951,6 +971,7 @@ async function autoSetup(user, parameters) {
         side: side,
         price: price(),
         size: size,
+        fill_fees: prevFees(),
         product_id: parameters.product_id,
         stp: 'cn',
         userID: user.id,
@@ -983,7 +1004,8 @@ async function autoSetup(user, parameters) {
         userID: user.id,
         type: 'market'
       };
-      await coinbaseClient.placeOrder(tradeDetails);
+      let bigOrder = await coinbaseClient.placeOrder(tradeDetails);
+      console.log('big order to balance btc avail', bigOrder.size, 'user', user.taker_fee);
       await robot.updateFunds(user.id);
     }
     // put each trade into the db as a reorder so the sync loop can sync the right amount
