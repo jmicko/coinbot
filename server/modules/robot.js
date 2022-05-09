@@ -194,19 +194,27 @@ async function deSyncOrderLoop(user, count, settings) {
   } else {
     // if the user should not be trading for some reason, update the params and restart loop
     // console.log('user paused or something');
-    botSettings = await databaseClient.getBotSettings();
-    const newSettings = {
-      botSettings: botSettings,
-      userAPI: userAPI,
-    }
-    const user = await databaseClient.getUserAndSettings(userID);
+    try {
 
-    if (user) {
+      botSettings = await databaseClient.getBotSettings();
+      const newSettings = {
+        botSettings: botSettings,
+        userAPI: userAPI,
+      }
+      const user = await databaseClient.getUserAndSettings(userID);
+
+      if (user) {
+        setTimeout(() => {
+          deSyncOrderLoop(user, 0, newSettings);
+        }, 5000);
+      } else {
+        console.log('stopping desync loop for user');
+      }
+    } catch (err) {
+      console.log(err, 'error in desync loop');
       setTimeout(() => {
-        deSyncOrderLoop(user, 0, newSettings);
+        deSyncOrderLoop(user, 0);
       }, 5000);
-    } else {
-      console.log('stopping desync loop for user');
     }
   }
 }
