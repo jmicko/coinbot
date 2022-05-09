@@ -159,12 +159,13 @@ async function syncOrders(userID, count, newUserAPI) {
 
 async function deSyncOrderLoop(user, count, settings) {
 
-
   let userID = user?.id;
   let botSettings = settings?.botSettings;
   let userAPI = settings?.userAPI;
+
+  // make sure the user should be trading just like in syncOrders loop
   if (user?.active && user?.approved && !user.paused && !botSettings?.maintenance) {
-    console.log('desync loop user', userID);
+    // console.log('desync loop user', userID);
 
     if (count > 15) {
       count = 0
@@ -186,16 +187,22 @@ async function deSyncOrderLoop(user, count, settings) {
       botSettings: botSettings,
       userAPI: userAPI,
     }
-    
+
     setTimeout(() => {
       deSyncOrderLoop(user, (count + 1), newSettings);
     }, 500);
   } else {
-
+    // if the user should not be trading for some reason, update the params and restart loop
+    // console.log('user paused or something');
+    botSettings = await databaseClient.getBotSettings();
+    const newSettings = {
+      botSettings: botSettings,
+      userAPI: userAPI,
+    }
     const user = await databaseClient.getUserAndSettings(userID);
     setTimeout(() => {
-      deSyncOrderLoop(user, 0, settings);
-    }, 500);
+      deSyncOrderLoop(user, 0, newSettings);
+    }, 5000);
   }
 }
 
