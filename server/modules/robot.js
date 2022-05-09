@@ -159,34 +159,44 @@ async function syncOrders(userID, count, newUserAPI) {
 
 async function deSyncOrderLoop(user, count, settings) {
 
-  let userID = user.id;
+
+  let userID = user?.id;
   let botSettings = settings?.botSettings;
   let userAPI = settings?.userAPI;
+  if (user?.active && user?.approved && !user.paused && !botSettings?.maintenance) {
+    console.log('desync loop user', userID);
 
-  if (count > 15) {
-    count = 0
-  }
-  try {
-    if (count === 0) {
-      botSettings = await databaseClient.getBotSettings();
-      userAPI = await databaseClient.getUserAPI(userID);
-      user = await databaseClient.getUserAndSettings(userID);
+    if (count > 15) {
+      count = 0
+    }
+    try {
+      if (count === 0) {
+        botSettings = await databaseClient.getBotSettings();
+        userAPI = await databaseClient.getUserAPI(userID);
+        user = await databaseClient.getUserAndSettings(userID);
+      }
+
+      await deSync(userID, botSettings, userAPI);
+
+    } catch (err) {
+      console.log(err, 'deSync loop error');
     }
 
-    await deSync(userID, botSettings, userAPI);
+    const newSettings = {
+      botSettings: botSettings,
+      userAPI: userAPI,
+    }
+    
+    setTimeout(() => {
+      deSyncOrderLoop(user, (count + 1), newSettings);
+    }, 500);
+  } else {
 
-  } catch (err) {
-    console.log(err, 'deSync loop error');
+    const user = await databaseClient.getUserAndSettings(userID);
+    setTimeout(() => {
+      deSyncOrderLoop(user, 0, settings);
+    }, 500);
   }
-
-  const newSettings = {
-    botSettings: botSettings,
-    userAPI: userAPI,
-  }
-
-  setTimeout(() => {
-    deSyncOrderLoop(user, (count + 1), newSettings);
-  }, 500);
 }
 
 
@@ -1200,6 +1210,7 @@ const robot = {
   sleep: sleep,
   flipTrade: flipTrade,
   syncOrders: syncOrders,
+  deSyncOrderLoop: deSyncOrderLoop,
   processOrders: processOrders,
   syncEverything: syncEverything,
   startSync: startSync,
