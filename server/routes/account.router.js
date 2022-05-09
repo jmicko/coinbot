@@ -382,7 +382,9 @@ router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
       original_buy_price numeric(32,16),
       original_sell_price numeric(32,16),
       CONSTRAINT orders_pkey PRIMARY KEY (id)
-    );`;
+    );
+    CREATE INDEX reorders
+    ON "orders" ("side", "flipped", "will_cancel", "userID", "settled");`;
     let result = await pool.query(queryText);
     res.sendStatus(200);
   } else {
