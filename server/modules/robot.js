@@ -934,7 +934,7 @@ async function autoSetup(user, parameters) {
           return loopPrice * convertedAmount * user.taker_fee
         }
       }
-      console.log('previous fees', prevFees(), 'loop price', loopPrice, 'convertedAmount', convertedAmount, 'taker fee', user.taker_fee);
+      // console.log('previous fees', prevFees(), 'loop price', loopPrice, 'convertedAmount', convertedAmount, 'taker fee', user.taker_fee);
 
       // create a single order object
       const singleOrder = {
@@ -991,8 +991,8 @@ async function autoSetup(user, parameters) {
           return loopPrice * size * user.taker_fee
         }
       }
-      console.log('previous fees', prevFees());
-      console.log('previous fees', prevFees(), 'loop price', loopPrice, 'size', size, 'taker fee', user.taker_fee);
+      // console.log('previous fees', prevFees());
+      // console.log('previous fees', prevFees(), 'loop price', loopPrice, 'size', size, 'taker fee', user.taker_fee);
 
       // create a single order object
       const singleOrder = {
