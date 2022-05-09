@@ -40,8 +40,15 @@ router.get('/all', rejectUnauthenticated, async (req, res) => {
 });
 
 // Handles Ajax request for user information if user is authenticated
-router.get('/', rejectUnauthenticated, (req, res) => {
+router.get('/', rejectUnauthenticated, async (req, res) => {
   // console.log('get user route');
+  try {
+    const botSettings = await databaseClient.getBotSettings();
+    console.log(botSettings.maintenance);
+    req.user.botMaintenance = botSettings.maintenance;
+  } catch (err) {
+    console.log(err, 'error in user route');
+  }
   // Send back user object from the session (previously queried from the database)
   res.send(req.user);
 });
@@ -62,6 +69,7 @@ router.post('/register', userCount, async (req, res, next) => {
       let queryText = `INSERT INTO "user" (username, password, joined_at)
       VALUES ($1, $2, $3) RETURNING id;`;
       let result = await pool.query(queryText, [username, password, joined_at]);
+      const user = result.rows[0];
       const userID = result.rows[0].id;
 
       // create entry in api table
@@ -75,12 +83,14 @@ router.post('/register', userCount, async (req, res, next) => {
       let thirdResult = await pool.query(thirdQueryText, [userID]);
 
       // start a sync loop for the new user
-      robot.syncOrders(userID);
+      robot.syncOrders(userID, 0);
+      robot.deSyncOrderLoop(user, 0);
     } else {
       // create the user
       let queryText = `INSERT INTO "user" (username, password, admin, approved, joined_at)
       VALUES ($1, $2, true, true, $3) RETURNING id`;
       let result = await pool.query(queryText, [username, password, joined_at]);
+      const user = result.rows[0];
       const userID = result.rows[0].id;
 
       // create entry in api table
@@ -94,7 +104,8 @@ router.post('/register', userCount, async (req, res, next) => {
       let thirdResult = await pool.query(thirdQueryText, [userID]);
 
       // start a sync loop for the new user
-      robot.syncOrders(userID);
+      robot.syncOrders(userID, 0);
+      robot.deSyncOrderLoop(user, 0);
     }
 
     res.sendStatus(201);

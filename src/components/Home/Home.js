@@ -45,6 +45,15 @@ function Home(props) {
     }, [dispatch]
   )
 
+  const updateUser = () => {
+    dispatch({ type: 'FETCH_PROFITS' });
+    dispatch({ type: 'FETCH_ACCOUNT' });
+    dispatch({ type: 'FETCH_FEES' });
+    dispatch({ type: 'FETCH_ORDERS' });
+    // looks like this is happening twice, but might only happen once if there are no orders in the account?
+    dispatch({ type: 'FETCH_USER' });
+  }
+
   useEffect(() => {
     getOpenOrders();
   }, [getOpenOrders]);
@@ -60,6 +69,10 @@ function Home(props) {
       if ((update.orderUpdate != null) && (update.userID === props.store.accountReducer.userReducer.id)) {
         // do api call for all open orders
         getOpenOrders()
+      }
+      if ((update.userUpdate != null) && (update.userID === props.store.accountReducer.userReducer.id)) {
+        // do api call for all open orders
+        updateUser()
       }
     });
     // this will remove the listener when component rerenders

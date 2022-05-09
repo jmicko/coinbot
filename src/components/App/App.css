@@ -39,7 +39,8 @@ body {
 }
 
 .title.darkTheme {
-  background-color: rgb(51, 59, 59);
+  /* background-color: rgb(51, 59, 59); */
+  background-color: rgb(33, 36, 36);
   margin          : 0;
   text-align      : center;
   border-bottom   : 1px solid black;

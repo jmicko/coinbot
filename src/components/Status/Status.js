@@ -27,6 +27,7 @@ function Status(props) {
     dispatch({ type: 'FETCH_ACCOUNT' });
     dispatch({ type: 'FETCH_FEES' });
     dispatch({ type: 'FETCH_ORDERS' });
+    // looks like this is happening twice, but might only happen once if there are no orders in the account?
     dispatch({ type: 'FETCH_USER' });
   }
 
@@ -63,7 +64,7 @@ function Status(props) {
     // return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
     // for now, use this
     if (x !== null) {
-      
+
       let parts = x.toString().split(".");
       parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
       return parts.join(".");
@@ -136,12 +137,11 @@ function Status(props) {
     <div className="Status boxed fit">
       {/* todo - maybe style in some divider lines here or something */}
       {/* <p className="info status-ticker"><strong>~~~ user ~~~</strong><br />{JSON.stringify(props.store.accountReducer.userReducer)}</p> */}
-
+      {/* <p>{JSON.stringify(props.store.accountReducer.userReducer.botMaintenance)}</p> */}
       <center onClick={() => { setProfitDisplay(profitDisplay + 1) }}>
         {profitDisplay === 1
           ? <p className="info status-ticker">
             <strong>24 hour Profit</strong>
-            {/* {JSON.stringify(props.store.accountReducer.userReducer.actualavailable_usd)} */}
             <br />
             ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[0].sum).toFixed(profitAccuracy))}
           </p>
@@ -211,6 +211,7 @@ function Status(props) {
         </p>
       </center>
 
+
       <center>
         <p className="info status-ticker">
           <strong>Total Open Orders</strong>
@@ -237,6 +238,10 @@ function Status(props) {
             checked={props.isAutoScroll}
             onChange={props.handleAutoScrollChange}
           />
+          <br />
+          {props.store.accountReducer.userReducer.paused &&
+            <strong className='red'>~~~PAUSED~~~</strong>
+          }
         </p>
       </center>
     </div>

@@ -91,6 +91,27 @@ const storeReorderTrade = (newOrder, originalDetails, flipped_at) => {
 
 // gets all open orders in db based on a specified limit. 
 // The limit is for each side, so the results will potentially double that
+const getLimitedUnsettledTrades = (userID, limit) => {
+  return new Promise(async (resolve, reject) => {
+    // get limit of buys
+    // get limit of sells
+    try {
+
+      let sqlText = `(SELECT * FROM "orders" WHERE "side"='sell' AND "flipped"=false AND "settled"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT $2)
+      UNION
+      (SELECT * FROM "orders" WHERE "side"='buy' AND "flipped"=false AND "settled"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT $2)
+      ORDER BY "price" DESC;`;
+      const results = await pool.query(sqlText, [userID, limit]);
+
+      resolve(results.rows);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+// gets all open orders in db based on a specified limit. 
+// The limit is for each side, so the results will potentially double that
 const getLimitedTrades = (userID, limit) => {
   return new Promise(async (resolve, reject) => {
     // get limit of buys
@@ -523,6 +544,7 @@ const databaseClient = {
   storeTrade: storeTrade,
   storeReorderTrade: storeReorderTrade,
   getLimitedTrades: getLimitedTrades,
+  getLimitedUnsettledTrades: getLimitedUnsettledTrades,
   getUnsettledTrades: getUnsettledTrades,
   getUnsettledTradeCounts: getUnsettledTradeCounts,
   getSingleTrade: getSingleTrade,

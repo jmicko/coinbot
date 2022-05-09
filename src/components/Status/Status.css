@@ -9,6 +9,10 @@
     /* width: fit-content; */
 }
 
+.red {
+    color: rgb(233, 63, 45);
+}
+
 .blue {
     color: rgb(29, 120, 180);
 }
