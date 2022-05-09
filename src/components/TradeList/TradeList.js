@@ -39,7 +39,7 @@ function TradeList(props) {
         }
       });
     }
-    
+
   }, [props.store.ordersReducer.openOrdersInOrder.sells, props.store.ordersReducer.openOrdersInOrder.buys]);
 
   const robotRef = useRef()
@@ -57,7 +57,7 @@ function TradeList(props) {
     // setAlreadyScrolled(true);
 
     if (!props.store.settingsReducer.scrollingReducer.canScroll || props.isAutoScroll) {
-      
+
       // alreadyScrolled = true;
       scrollToRobot();
     }
@@ -74,7 +74,10 @@ function TradeList(props) {
       <div className='robot' ref={robotRef}>
         {lowestSell !== 0 && highestBuy !== 0 && <p>&#9650; ${(lowestSell - props.priceTicker).toFixed(2)}<br />
           &#9660; ${(props.priceTicker - highestBuy).toFixed(2)}</p>}
-        <img className="coinbot-image" src={coinbotFilled} alt="coinbot" />
+        {props.store.accountReducer.userReducer.botMaintenance
+          ? <strong className='red'>~~~UNDER MAINTENANCE~~~</strong>
+          : <img className="coinbot-image" src={coinbotFilled} alt="coinbot" />
+        }
         {lowestSell !== 0 && highestBuy !== 0 && <center><p><strong>Margin</strong><br />${(lowestSell - highestBuy).toFixed(2)}</p></center>}
       </div>
       {buys}

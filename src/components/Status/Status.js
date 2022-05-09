@@ -27,6 +27,7 @@ function Status(props) {
     dispatch({ type: 'FETCH_ACCOUNT' });
     dispatch({ type: 'FETCH_FEES' });
     dispatch({ type: 'FETCH_ORDERS' });
+    // looks like this is happening twice, but might only happen once if there are no orders in the account?
     dispatch({ type: 'FETCH_USER' });
   }
 

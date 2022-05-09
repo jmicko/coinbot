@@ -1225,6 +1225,23 @@ async function updateFunds(userID) {
   })
 }
 
+async function alertAllUsers(alertMessage) {
+  // console.log('alerting all users of change');
+  try {
+    const userList = await databaseClient.getAllUsers();
+    userList.forEach(user => {
+      console.log(user);
+      socketClient.emit('message', {
+        message: alertMessage,
+        orderUpdate: true,
+        userID: Number(user.id)
+      });
+    });
+  } catch (err) {
+    console.log(err, 'error while alerting all users of change');
+  }
+}
+
 
 const robot = {
   sleep: sleep,
@@ -1237,6 +1254,7 @@ const robot = {
   autoSetup: autoSetup,
   getAvailableFunds: getAvailableFunds,
   updateFunds: updateFunds,
+  alertAllUsers: alertAllUsers,
 }
 
 

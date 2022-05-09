@@ -121,6 +121,7 @@ router.put('/toggleMaintenance', rejectUnauthenticated, async (req, res) => {
   if (user.admin) {
     try {
       await databaseClient.toggleMaintenance();
+      robot.alertAllUsers('Toggling maintenance mode!');
       res.sendStatus(200);
     } catch (err) {
       console.log(err, 'error with toggleMaintenance route');
