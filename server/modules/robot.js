@@ -575,8 +575,7 @@ async function settleMultipleOrders(ordersArray, userID, userAPI) {
       // loop over the array and flip each trade
       for (let i = 0; i < ordersArray.length; i++) {
         const orderToCheck = ordersArray[i];
-
-
+        // this timer will serve to prevent rate limiting
         let reorderTimer = true;
         setTimeout(() => {
           reorderTimer = false;
@@ -587,14 +586,9 @@ async function settleMultipleOrders(ordersArray, userID, userAPI) {
           userID: Number(userID)
         });
         try {
-          // get all the order details from cb
-          // console.log('ORDER TO CHECK:', orderToCheck);
-          // await sleep(80); // avoid rate limiting
+          // get all the order details from cb unless it is supposed to be reordered
           if (!orderToCheck.reorder) {
-
-            // console.log('checking order:', orderToCheck);
             let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID, userAPI);
-            // console.log('full details:', fullSettledDetails);
             // update the order in the db
             const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
             await pool.query(queryText, [
@@ -610,7 +604,6 @@ async function settleMultipleOrders(ordersArray, userID, userAPI) {
             await reorder(orderToCheck, userAPI);
           }
         } catch (err) {
-          // console.log(err);
           // handle not found order
           if (err.response?.status === 404) {
             // if the order was supposed to be canceled, cancel it
@@ -633,9 +626,7 @@ async function settleMultipleOrders(ordersArray, userID, userAPI) {
         } // end catch
         while (reorderTimer) {
           await sleep(10);
-          // console.log('not 100ms reorder timer yet!');
         }
-        // console.log('======reorder timer is up');
       } // end for loop
 
       // if all goes well, resolve promise with success message
@@ -1230,7 +1221,7 @@ async function alertAllUsers(alertMessage) {
   try {
     const userList = await databaseClient.getAllUsers();
     userList.forEach(user => {
-      console.log(user);
+      // console.log(user);
       socketClient.emit('message', {
         message: alertMessage,
         orderUpdate: true,

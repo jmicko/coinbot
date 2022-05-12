@@ -44,7 +44,6 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
   // console.log('get user route');
   try {
     const botSettings = await databaseClient.getBotSettings();
-    console.log(botSettings.maintenance);
     req.user.botMaintenance = botSettings.maintenance;
   } catch (err) {
     console.log(err, 'error in user route');
