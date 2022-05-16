@@ -49,9 +49,9 @@ async function syncOrders(userID, count, newUserAPI) {
           fullSync(userID, botSettings, userAPI),
           // these two can run at the same time because they are mutually exclusive based on the will_cancel column
           // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
-          processOrders(userID, userAPI),
+          processOrders(userID, userAPI)
           // desync extra orders
-          deSync(userID, botSettings, userAPI)
+          // deSync(userID, botSettings, userAPI)
           // DELETE ALL ORDERS MARKED FOR DELETE
           // deleteMarkedOrders(userID)
         ]);
