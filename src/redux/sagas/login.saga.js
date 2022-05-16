@@ -4,17 +4,13 @@ import axios from 'axios';
 // worker Saga: will be fired on "LOGIN" actions
 function* loginUser(action) {
   try {
-    /* most of this code is from a previous project. Don't need errors showing on dom for now. 
-    todo - delete later if not needed or use */
-
     // clear any existing error on the login page
-    // yield put({ type: 'CLEAR_LOGIN_ERROR' });
+    yield put({ type: 'CLEAR_LOGIN_ERROR' });
 
     const config = {
       headers: { 'Content-Type': 'application/json' },
       withCredentials: true,
     };
-
     // send the action.payload as the body
     // the config includes credentials which
     // allow the server session to recognize the user
@@ -29,17 +25,13 @@ function* loginUser(action) {
       // The 401 is the error status sent from passport
       // if user isn't in the database or
       // if the email and password don't match in the database
-      /* most of this code is from a previous project. Don't need errors showing on dom for now. 
-        todo - delete later if not needed or use */
-      // yield put({ type: 'LOGIN_FAILED' });
+      yield put({ type: 'LOGIN_FAILED' });
       console.log('login failed');
     } else {
       console.log('login failed, not 401');
       // Got an error that wasn't a 401
       // Could be anything, but most common cause is the server is not started
-      /* most of this code is from a previous project. Don't need errors showing on dom for now. 
-        todo - delete later if not needed or use */
-      // yield put({ type: 'LOGIN_FAILED_NO_CODE' });
+      yield put({ type: 'LOGIN_FAILED_NO_CODE' });
     }
   }
 }
