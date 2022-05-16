@@ -47,7 +47,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
 
       // send OK status
       res.sendStatus(200);
-      
+
     } catch (err) {
       if (err.response?.status === 400) {
         console.log('Insufficient funds!');
@@ -190,7 +190,7 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
       console.log('order not found in account', orderId);
       res.sendStatus(400)
     } else {
-      console.log('something failed in the delete trade route', error);
+      console.log('something failed in the sync trade route', error);
       res.sendStatus(500)
     }
   };
@@ -208,10 +208,14 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
 
   // mark as canceled in db
   try {
-    const queryText = `UPDATE "orders" SET "will_cancel" = true WHERE "id"=$1;`;
-    await pool.query(queryText, [orderId]);
-    // send cancelOrder to cb
-    await coinbaseClient.cancelOrder(orderId, userID);
+    const queryText = `UPDATE "orders" SET "will_cancel" = true WHERE "id"=$1 RETURNING *;`;
+    const result = await pool.query(queryText, [orderId]);
+    const order = result.rows[0];
+    // if it is a reorder, there is no reason to cancel on CB
+    if (!order.reorder) {
+      // send cancelOrder to cb
+      await coinbaseClient.cancelOrder(orderId, userID);
+    }
     res.sendStatus(200)
   } catch (error) {
     if (error.data?.message) {
@@ -237,6 +241,8 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       });
       console.log('order not found in account', orderId);
       res.sendStatus(400)
+    } else if (error.response?.status === 400) {
+      console.log('bad request', error.response?.data);
     } else {
       console.log(error, 'something failed in the delete trade route');
       res.sendStatus(500)
