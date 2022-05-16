@@ -193,12 +193,12 @@ function Status(props) {
           ? <p className="info status-ticker">
             <strong>Maker Fee</strong>
             <br />
-            {Number((props.store.accountReducer.feeReducer.maker_fee_rate * 100).toFixed(2))}%
+            {Number((props.store.accountReducer.userReducer.maker_fee * 100).toFixed(2))}%
           </p>
           : <p className="info status-ticker">
             <strong>Taker Fee</strong>
             <br />
-            {Number((props.store.accountReducer.feeReducer.taker_fee_rate * 100).toFixed(2))}%
+            {Number((props.store.accountReducer.userReducer.taker_fee * 100).toFixed(2))}%
           </p>
         }
       </center>
@@ -207,7 +207,7 @@ function Status(props) {
         <p className="info status-ticker">
           <strong>30 Day Volume</strong>
           <br />
-          ${numberWithCommas(props.store.accountReducer.feeReducer.usd_volume)}
+          ${numberWithCommas(Number(props.store.accountReducer.userReducer.usd_volume).toFixed(2))}
         </p>
       </center>
 

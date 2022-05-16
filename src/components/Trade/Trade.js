@@ -127,8 +127,8 @@ function Trade(props) {
 
   // once the account fees load into redux, 
   useEffect(() => {
-    setFees(props.store.accountReducer.feeReducer.maker_fee_rate)
-  }, [props.store.accountReducer.feeReducer])
+    setFees(props.store.accountReducer.userReducer.maker_fee)
+  }, [props.store.accountReducer.userReducer])
 
   function amountTypeHandler(event, type) {
     if (event) {

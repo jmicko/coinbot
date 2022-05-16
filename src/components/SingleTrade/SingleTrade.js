@@ -18,7 +18,7 @@ function SingleTrade(props) {
     let original_sell_price = props.order.original_sell_price;
     let size = props.order.size;
     let original_buy_price = props.order.original_buy_price;
-    let maker_fee_rate = props.store.accountReducer.feeReducer.maker_fee_rate;
+    let maker_fee_rate = props.store.accountReducer.userReducer.maker_fee;
 
     // calculate fees
     let sellFee = (maker_fee_rate * original_sell_price * size)
