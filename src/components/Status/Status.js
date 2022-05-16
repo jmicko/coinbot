@@ -23,12 +23,7 @@ function Status(props) {
   const socket = useSocket();
 
   const refresh = () => {
-    dispatch({ type: 'FETCH_PROFITS' });
-    dispatch({ type: 'FETCH_ACCOUNT' });
-    dispatch({ type: 'FETCH_FEES' });
-    dispatch({ type: 'FETCH_ORDERS' });
-    // looks like this is happening twice, but might only happen once if there are no orders in the account?
-    dispatch({ type: 'FETCH_USER' });
+    props.updateUser();
   }
 
   const getProfits = useCallback(
@@ -46,12 +41,6 @@ function Status(props) {
       });
     }, [dispatch]
   )
-
-
-  // when the page loads, get the account fees 
-  useEffect(() => {
-    dispatch({ type: 'FETCH_FEES' });
-  }, [dispatch])
 
   // watch to see if accuracy changes
   useEffect(() => {
@@ -193,12 +182,12 @@ function Status(props) {
           ? <p className="info status-ticker">
             <strong>Maker Fee</strong>
             <br />
-            {Number((props.store.accountReducer.feeReducer.maker_fee_rate * 100).toFixed(2))}%
+            {Number((props.store.accountReducer.userReducer.maker_fee * 100).toFixed(2))}%
           </p>
           : <p className="info status-ticker">
             <strong>Taker Fee</strong>
             <br />
-            {Number((props.store.accountReducer.feeReducer.taker_fee_rate * 100).toFixed(2))}%
+            {Number((props.store.accountReducer.userReducer.taker_fee * 100).toFixed(2))}%
           </p>
         }
       </center>
@@ -207,7 +196,7 @@ function Status(props) {
         <p className="info status-ticker">
           <strong>30 Day Volume</strong>
           <br />
-          ${numberWithCommas(props.store.accountReducer.feeReducer.usd_volume)}
+          ${numberWithCommas(Number(props.store.accountReducer.userReducer.usd_volume).toFixed(2))}
         </p>
       </center>
 

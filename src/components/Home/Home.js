@@ -48,9 +48,9 @@ function Home(props) {
   const updateUser = () => {
     dispatch({ type: 'FETCH_PROFITS' });
     dispatch({ type: 'FETCH_ACCOUNT' });
-    dispatch({ type: 'FETCH_FEES' });
     dispatch({ type: 'FETCH_ORDERS' });
-    // looks like this is happening twice, but might only happen once if there are no orders in the account?
+    // todo - looks like this is happening twice, but might only happen once if there are no orders in the account?
+    // any way to only make it happen once?
     dispatch({ type: 'FETCH_USER' });
   }
 
@@ -192,8 +192,19 @@ function Home(props) {
         ? <Messages theme={theme} messages={messages} messagesCount={messagesCount} errors={errors} errorCount={errorCount} />
         : width > 800 && <Messages theme={theme} messages={messages} messagesCount={messagesCount} errors={errors} errorCount={errorCount} />}
 
-      <Status theme={theme} priceTicker={priceTicker} isAutoScroll={isAutoScroll} handleAutoScrollChange={handleAutoScrollChange} />
-      <Settings showSettings={showSettings} clickSettings={clickSettings} theme={theme} priceTicker={priceTicker} />
+      <Status
+        theme={theme}
+        priceTicker={priceTicker}
+        isAutoScroll={isAutoScroll}
+        handleAutoScrollChange={handleAutoScrollChange}
+        updateUser={updateUser}
+      />
+      <Settings
+        showSettings={showSettings}
+        clickSettings={clickSettings}
+        theme={theme}
+        priceTicker={priceTicker}
+      />
       {width < 800 && <MobileNav theme={theme} setMobilePage={setMobilePage} />}
     </div>
   );

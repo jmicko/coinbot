@@ -3,18 +3,6 @@ import axios from 'axios';
 
 
 
-function* fetchFees(action) {
-  try {
-    const response = yield axios.get(`/api/account/fees`);
-    yield put({ type: 'SET_FEES', payload: response.data })
-  } catch (error) {
-    // console.log('GET fees route has failed', error);
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
-
 function* fetchProfits() {
   try {
     const response = yield axios.get(`/api/account/profits`);
@@ -161,7 +149,7 @@ function* exportXlsx() {
 }
 
 function* accountSaga() {
-  yield takeLatest('FETCH_FEES', fetchFees);
+  // yield takeLatest('FETCH_FEES', fetchFees);
   yield takeLatest('FETCH_PROFITS', fetchProfits);
   yield takeLatest('STORE_API', storeApi);
   yield takeLatest('RESET_PROFIT', resetProfit);

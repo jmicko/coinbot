@@ -299,7 +299,7 @@ async function fullSync(userID, botSettings, userAPI) {
         // the 'false' in the third param is telling the function to sleep for a little bit.
         // this is needed during full sync because full sync deletes all orders on CB that are not in DB,
         // but they show up on cb first and the bot may detect and accidentally cancel them if it doesn't wait for the db
-        console.log('canceling extra orders in fullSync', fullSyncOrders.ordersToCancel);
+        // console.log('canceling extra orders in fullSync', fullSyncOrders.ordersToCancel);
         // API ENDPOINTS USED: orders, accounts
         await cancelMultipleOrders(fullSyncOrders.ordersToCancel, userID, false, userAPI);
 
@@ -777,7 +777,7 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
     // console.log('ordersArray', ordersArray);
     if (ordersArray.length > 0) {
       if (!ignoreSleep) {
-        console.log('need to sleep');
+        // console.log('need to sleep');
         // need to wait and double check db before deleting because they take time to store and show up on cb first
         // only need to wait once because as the loop runs nothing will be added to it. Only wait for most recent order
         await sleep(500);
