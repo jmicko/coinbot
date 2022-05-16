@@ -4,6 +4,7 @@ import accountReducer from './account.reducer';
 import ordersReducer from './orders.reducer';
 import usersReducer from './users.reducer';
 import settingsReducer from './settings.reducer';
+import errorsReducer from './errors.reducer';
 
 
 // rootReducer is the primary reducer for our entire project
@@ -18,6 +19,7 @@ const rootReducer = combineReducers({
   ordersReducer,
   usersReducer,
   settingsReducer,
+  errorsReducer,
 });
 
 export default rootReducer;

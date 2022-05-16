@@ -32,6 +32,11 @@ function Login(props) {
     }
   }
 
+  function clearErrors() {
+    dispatch({ type: 'CLEAR_REGISTRATION_ERROR', });
+    dispatch({ type: 'CLEAR_LOGIN_ERROR', });
+  }
+
   function registerAccount(event) {
     event.preventDefault();
     console.log('registering new user', username, password);
@@ -45,7 +50,7 @@ function Login(props) {
         },
       });
     } else {
-      // this.props.dispatch({ type: 'LOGIN_INPUT_ERROR' });
+      dispatch({ type: 'REGISTRATION_INPUT_ERROR' });
       console.log('problem: put in your cred');
     }
   }
@@ -96,20 +101,27 @@ function Login(props) {
             />
             <input className="btn-blue" type="submit" name="submit" value="Register" />
             <br></br>
-            <button className="btn-blue" onClick={() => { setRegister(false) }}>
+            <button className="btn-blue" onClick={() => { setRegister(false); clearErrors() }}>
               Back to login
             </button>
           </>
           : <>
             <input className="btn-blue login-button" type="submit" name="submit" value="Log in" />
             <br></br>
-            <button className="btn-blue" onClick={() => { setRegister(true) }}>
+            <button className="btn-blue" onClick={() => { setRegister(true); clearErrors() }}>
               Register New
             </button>
           </>
         }
       </form>
       {/* </center> */}
+      {/* {JSON.stringify(props.store.errorsReducer)} */}
+      {(props.store.errorsReducer.loginMessage || props.store.errorsReducer.registrationMessage) &&
+        <div className='error-box notched'>
+          {props.store.errorsReducer.loginMessage && <p>{props.store.errorsReducer.loginMessage}</p>}
+          {props.store.errorsReducer.registrationMessage && <p>{props.store.errorsReducer.registrationMessage}</p>}
+        </div>
+      }
     </div>
   );
 }
