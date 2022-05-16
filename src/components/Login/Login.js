@@ -33,12 +33,8 @@ function Login(props) {
   }
 
   function clearErrors() {
-    dispatch({
-      type: 'CLEAR_REGISTRATION_ERROR',
-    });
-    dispatch({
-      type: 'CLEAR_LOGIN_ERROR',
-    });
+    dispatch({ type: 'CLEAR_REGISTRATION_ERROR', });
+    dispatch({ type: 'CLEAR_LOGIN_ERROR', });
   }
 
   function registerAccount(event) {
@@ -54,7 +50,7 @@ function Login(props) {
         },
       });
     } else {
-      // this.props.dispatch({ type: 'LOGIN_INPUT_ERROR' });
+      dispatch({ type: 'REGISTRATION_INPUT_ERROR' });
       console.log('problem: put in your cred');
     }
   }
