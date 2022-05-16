@@ -39,31 +39,31 @@ It also does not take into account market volumes, or the bird-themed social med
 ## `Features`
 
 ### Web-based Interface
-
 Use and configuration for the coinbot is done from a react app in the browser. This included user registration, and api settings which can be input from the settings menu.
 
 ### Create New Trade Pairs
-
 New trade-pair values can be created from the interface. There is a calculator to determine both sides of the trade-pair, and estimate fees and profits. Note that these are an estimation, and nothing is guaranteed.
+
+### Auto Setup
+There is a function in the settings that will allow you to input the desired parameters, and automatically place up to 10,000 trades (the maximum allowed) for you. This is much easier than manually entering them when they will all have similar values.
 
 ### Auto Fee Detection
 Coinbot will check the current fees for the connected account and adjust the numbers in the calculator to match. This makes it easier to calculate profits before starting a trade-pair. Fee detection returns the fee exactly as it is reported from Coinbase, which can sometimes be a very long decimal. This is not a rounding issue or a problem with coinbot. This is coming directly from the Coinbase Pro API.
 
 ### Total Profit Estimation
-This is somewhat of a work in progress, but there is an estimation of how much profit the bot has generated since it was first run (assuming you don't drop the tables). It is currently based on the limit prices of the trades, not the executed prices. It also doubles the fee on the sell trade of each pair, instead of accurately calculating the fees on both the buy and the sell. The trade-pairs are intended to be fairly close together, which means the fees will be almost identical. So the calculation may be off just a bit, but it should be close.
+There is an estimation of how much "profit" the bot has generated since it was first run (assuming you don't drop the tables). This is a total of the difference between the buy and sell values for all trade-pairs that have completed a full buy/flip cycle. It is not reflective of how much money is in your account.
 
 ### Open Order Book
-A list of all open orders is shown as the main content of the page. This list will update live as the bot makes trades.
+A list of all open orders is shown as the main content of the page. This list will update live as the bot makes trades. Coinbase only allows a certain number of orders to be placed at any time, so the bot handles synchronization automatically and shows you your full order book.
 
-### Profit reinvestment
-Users can set a percentage of profits from each trade-pair that will be automatically reinvested back into the pair.
+### Profit Reinvestment
+Users can set a percentage of profits from each trade-pair that will be automatically reinvested back into the pair. This can be above 100%, which can help distribute a new deposit amongst many trades that have already been placed.
 
-### Multi-user authentication
+### Multi-user Authentication
 The bot can handle multiple users at once. The first user created will be the admin and can approve and manage the other users.
 
-### More to Come
-- Safe order cancellation from interface
-    - Currently, cancelling a sell order will potentially result in a profit loss. Adding a safe cancel button to sell orders will tell the bot to wait to cancel the trade-pair until the order goes through. Buy orders will still be canceled immediately. This ensures that a position will only be cancelled after a profit has been made, and helps to prevent losses due to trading fees.
+### Admin Controls
+The admin account can control settings that affect resource usage, as well as approving or deleting users.
 
 ## `Important notes`
 - The coinbot will detect any trading action placed on the Coinbase website manually from the connected Coinbase account, and cancel those orders. Orders cannot be placed or deleted on Coinbase. That must be done from the coinbot interface. It is recommended to create a separate profile on Coinbase exclusively for Coinbot or you will not be able to do anything on your own.
