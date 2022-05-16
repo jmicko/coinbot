@@ -109,6 +109,20 @@ body::-webkit-scrollbar-thumb,
   border: 1px solid black;
 }
 
+.notched {
+  /* css for notched corners taken from https://css-tricks.com/notched-boxes/ */
+  /* this variable is the size of the notch */
+  --notchSize: 1rem;
+  /* clip-path shows whatever is inside the specified region. Everything else is hidden */
+  clip-path: /* the region is a polygon. 8 points are defined, one for each corner */
+  polygon( 0% var(--notchSize), var(--notchSize) 0%, /* to keep corner sizes the same, the position is calculated as the 
+      difference between the notch size (1rem), and the total length of the 
+      side our point is on */
+  calc(100% - var(--notchSize)) 0%, 100% var(--notchSize), 100% calc(100% - var(--notchSize)), calc(100% - var(--notchSize)) 100%, var(--notchSize) 100%, 0% calc(100% - var(--notchSize)));
+  /* 1rem of padding to more than account for the size of the notch */
+  padding: 1rem;
+}
+
 .fit {
   height: fit-content;
 }

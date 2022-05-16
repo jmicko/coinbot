@@ -116,8 +116,12 @@ function Login(props) {
       </form>
       {/* </center> */}
       {/* {JSON.stringify(props.store.errorsReducer)} */}
-      {props.store.errorsReducer.loginMessage && <p>{props.store.errorsReducer.loginMessage}</p>}
-      {props.store.errorsReducer.registrationMessage && <p>{props.store.errorsReducer.registrationMessage}</p>}
+      {(props.store.errorsReducer.loginMessage || props.store.errorsReducer.registrationMessage) &&
+        <div className='error-box notched'>
+          {props.store.errorsReducer.loginMessage && <p>{props.store.errorsReducer.loginMessage}</p>}
+          {props.store.errorsReducer.registrationMessage && <p>{props.store.errorsReducer.registrationMessage}</p>}
+        </div>
+      }
     </div>
   );
 }
