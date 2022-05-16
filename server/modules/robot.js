@@ -9,7 +9,7 @@ async function startSync() {
   const userList = await databaseClient.getAllUsers();
   userList.forEach(user => {
     syncOrders(user.id, 0);
-    deSyncOrderLoop(user, 0);
+    // deSyncOrderLoop(user, 0);
   });
 }
 
@@ -50,8 +50,10 @@ async function syncOrders(userID, count, newUserAPI) {
           // these two can run at the same time because they are mutually exclusive based on the will_cancel column
           // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
           processOrders(userID, userAPI),
+          // desync extra orders
+          deSync(userID, botSettings, userAPI)
           // DELETE ALL ORDERS MARKED FOR DELETE
-          deleteMarkedOrders(userID)
+          // deleteMarkedOrders(userID)
         ]);
 
         const fullSyncOrders = full[0]
@@ -71,8 +73,10 @@ async function syncOrders(userID, count, newUserAPI) {
           // these two can run at the same time because they are mutually exclusive based on the will_cancel column
           // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
           processOrders(userID, userAPI),
+          // desync extra orders
+          deSync(userID, botSettings, userAPI)
           // DELETE ALL ORDERS MARKED FOR DELETE
-          deleteMarkedOrders(userID)
+          // deleteMarkedOrders(userID)
         ]);
 
         ordersToCheck = quick[0];
@@ -101,6 +105,10 @@ async function syncOrders(userID, count, newUserAPI) {
           }
         }
       }
+
+      // move this back down here because orders need to stay in the db even if canceled until processOrders is done
+      // the problem being that it might replace the order based on something stored in an array
+      await deleteMarkedOrders(userID);
 
     } else {
       // if the user is not active or is paused, loop every 5 seconds
@@ -157,67 +165,67 @@ async function syncOrders(userID, count, newUserAPI) {
   }
 }
 
-async function deSyncOrderLoop(user, count, settings) {
+// async function deSyncOrderLoop(user, count, settings) {
 
-  let userID = user?.id;
-  let botSettings = settings?.botSettings;
-  let userAPI = settings?.userAPI;
-  // console.log('desync loop user', userID);
+//   let userID = user?.id;
+//   let botSettings = settings?.botSettings;
+//   let userAPI = settings?.userAPI;
+//   // console.log('desync loop user', userID);
 
-  // make sure the user should be trading just like in syncOrders loop
-  if (user?.active && user?.approved && !user.paused && !botSettings?.maintenance) {
+//   // make sure the user should be trading just like in syncOrders loop
+//   if (user?.active && user?.approved && !user.paused && !botSettings?.maintenance) {
 
-    if (count > 15) {
-      count = 0
-    }
-    try {
-      if (count === 0) {
-        botSettings = await databaseClient.getBotSettings();
-        userAPI = await databaseClient.getUserAPI(userID);
-        user = await databaseClient.getUserAndSettings(userID);
-      }
+//     if (count > 15) {
+//       count = 0
+//     }
+//     try {
+//       if (count === 0) {
+//         botSettings = await databaseClient.getBotSettings();
+//         userAPI = await databaseClient.getUserAPI(userID);
+//         user = await databaseClient.getUserAndSettings(userID);
+//       }
 
-      await deSync(userID, botSettings, userAPI);
+//       await deSync(userID, botSettings, userAPI);
 
-    } catch (err) {
-      console.log(err, 'deSync loop error');
-    }
+//     } catch (err) {
+//       console.log(err, 'deSync loop error');
+//     }
 
-    const newSettings = {
-      botSettings: botSettings,
-      userAPI: userAPI,
-    }
+//     const newSettings = {
+//       botSettings: botSettings,
+//       userAPI: userAPI,
+//     }
 
-    setTimeout(() => {
-      deSyncOrderLoop(user, (count + 1), newSettings);
-    }, 500);
-  } else {
-    // if the user should not be trading for some reason, update the params and restart loop
-    // console.log('user paused or something');
-    try {
+//     setTimeout(() => {
+//       deSyncOrderLoop(user, (count + 1), newSettings);
+//     }, 500);
+//   } else {
+//     // if the user should not be trading for some reason, update the params and restart loop
+//     // console.log('user paused or something');
+//     try {
 
-      botSettings = await databaseClient.getBotSettings();
-      const newSettings = {
-        botSettings: botSettings,
-        userAPI: userAPI,
-      }
-      const user = await databaseClient.getUserAndSettings(userID);
+//       botSettings = await databaseClient.getBotSettings();
+//       const newSettings = {
+//         botSettings: botSettings,
+//         userAPI: userAPI,
+//       }
+//       const user = await databaseClient.getUserAndSettings(userID);
 
-      if (user) {
-        setTimeout(() => {
-          deSyncOrderLoop(user, 0, newSettings);
-        }, 5000);
-      } else {
-        console.log('stopping desync loop for user');
-      }
-    } catch (err) {
-      console.log(err, 'error in desync loop');
-      setTimeout(() => {
-        deSyncOrderLoop(user, 0);
-      }, 5000);
-    }
-  }
-}
+//       if (user) {
+//         setTimeout(() => {
+//           deSyncOrderLoop(user, 0, newSettings);
+//         }, 5000);
+//       } else {
+//         console.log('stopping desync loop for user');
+//       }
+//     } catch (err) {
+//       console.log(err, 'error in desync loop');
+//       setTimeout(() => {
+//         deSyncOrderLoop(user, 0);
+//       }, 5000);
+//     }
+//   }
+// }
 
 
 async function deSync(userID, botSettings, userAPI) {
@@ -575,8 +583,7 @@ async function settleMultipleOrders(ordersArray, userID, userAPI) {
       // loop over the array and flip each trade
       for (let i = 0; i < ordersArray.length; i++) {
         const orderToCheck = ordersArray[i];
-
-
+        // this timer will serve to prevent rate limiting
         let reorderTimer = true;
         setTimeout(() => {
           reorderTimer = false;
@@ -587,14 +594,9 @@ async function settleMultipleOrders(ordersArray, userID, userAPI) {
           userID: Number(userID)
         });
         try {
-          // get all the order details from cb
-          // console.log('ORDER TO CHECK:', orderToCheck);
-          // await sleep(80); // avoid rate limiting
+          // get all the order details from cb unless it is supposed to be reordered
           if (!orderToCheck.reorder) {
-
-            // console.log('checking order:', orderToCheck);
             let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID, userAPI);
-            // console.log('full details:', fullSettledDetails);
             // update the order in the db
             const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
             await pool.query(queryText, [
@@ -610,7 +612,6 @@ async function settleMultipleOrders(ordersArray, userID, userAPI) {
             await reorder(orderToCheck, userAPI);
           }
         } catch (err) {
-          // console.log(err);
           // handle not found order
           if (err.response?.status === 404) {
             // if the order was supposed to be canceled, cancel it
@@ -633,9 +634,7 @@ async function settleMultipleOrders(ordersArray, userID, userAPI) {
         } // end catch
         while (reorderTimer) {
           await sleep(10);
-          // console.log('not 100ms reorder timer yet!');
         }
-        // console.log('======reorder timer is up');
       } // end for loop
 
       // if all goes well, resolve promise with success message
@@ -1230,7 +1229,7 @@ async function alertAllUsers(alertMessage) {
   try {
     const userList = await databaseClient.getAllUsers();
     userList.forEach(user => {
-      console.log(user);
+      // console.log(user);
       socketClient.emit('message', {
         message: alertMessage,
         orderUpdate: true,
@@ -1247,7 +1246,7 @@ const robot = {
   sleep: sleep,
   flipTrade: flipTrade,
   syncOrders: syncOrders,
-  deSyncOrderLoop: deSyncOrderLoop,
+  // deSyncOrderLoop: deSyncOrderLoop,
   processOrders: processOrders,
   syncEverything: syncEverything,
   startSync: startSync,

@@ -44,7 +44,6 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
   // console.log('get user route');
   try {
     const botSettings = await databaseClient.getBotSettings();
-    console.log(botSettings.maintenance);
     req.user.botMaintenance = botSettings.maintenance;
   } catch (err) {
     console.log(err, 'error in user route');
@@ -84,7 +83,7 @@ router.post('/register', userCount, async (req, res, next) => {
 
       // start a sync loop for the new user
       robot.syncOrders(userID, 0);
-      robot.deSyncOrderLoop(user, 0);
+      // robot.deSyncOrderLoop(user, 0);
     } else {
       // create the user
       let queryText = `INSERT INTO "user" (username, password, admin, approved, joined_at)
@@ -105,7 +104,7 @@ router.post('/register', userCount, async (req, res, next) => {
 
       // start a sync loop for the new user
       robot.syncOrders(userID, 0);
-      robot.deSyncOrderLoop(user, 0);
+      // robot.deSyncOrderLoop(user, 0);
     }
 
     res.sendStatus(201);
