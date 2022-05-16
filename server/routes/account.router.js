@@ -69,7 +69,7 @@ router.get('/', async (req, res) => {
 * GET route to get the fees when the user loads the page
 */
 router.get('/fees', rejectUnauthenticated, (req, res) => {
-  // console.log('fees get route');
+  console.log('fees get route');
   const user = req.user;
   const userID = req.user.id;
   if (user.active) {
