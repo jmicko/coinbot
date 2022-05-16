@@ -12,22 +12,16 @@ const robot = require('../modules/robot');
 
 /**
  * GET route to get all accounts info
- * For now this just wants to return usd account available balance
- * todo - fix this, it's horrible
  */
 router.get('/', async (req, res) => {
 
   const user = req.user;
-  // console.log('!!!!!!!!!!!!!ACCOUNT ROUTE', user);
   const userID = req.user.id;
+  // user needs to be active or they will not have an API key to use
   if (user.active) {
-
     try {
-
       let accounts = await coinbaseClient.getAccounts(userID);
-
       let spentUSD = await databaseClient.getSpentUSD(userID);
-      console.log('spent', spentUSD.sum);
 
       res.send(
         {
@@ -35,9 +29,7 @@ router.get('/', async (req, res) => {
           spentUSD: spentUSD
         }
       );
-      // console.log('accounts on cb are', result);
     }
-
     catch (err) {
       if (err.response?.status === 500) {
         console.log('internal server error from coinbase');
@@ -57,35 +49,11 @@ router.get('/', async (req, res) => {
       }
       res.sendStatus(500)
     }
-
-
-
   } else {
     res.sendStatus(404)
   }
 });
 
-/**
-* GET route to get the fees when the user loads the page
-*/
-router.get('/fees', rejectUnauthenticated, (req, res) => {
-  console.log('fees get route');
-  const user = req.user;
-  const userID = req.user.id;
-  if (user.active) {
-    coinbaseClient.getFees(userID)
-      .then((result) => {
-        res.send(result)
-      })
-      .catch((error) => {
-        console.log(error, 'error getting fees:');
-        res.sendStatus(500)
-      })
-  } else {
-    res.sendStatus(404)
-  }
-
-});
 
 /**
 * GET route to get total profit estimate
