@@ -15,6 +15,14 @@ const cache = {
     cache.storage[userID].botStatus.length = 30;
   },
 
+  getStatus: (userID) => {
+    return cache.storage[userID].botStatus;
+  },
+
+  clearStatus: (userID) => {
+    cache.storage[userID].botStatus.length = 0;
+  },
+
   // store and fetch API details for a user
   storeAPI: (userID, api) => {
     cache.storage[userID].api = api;
