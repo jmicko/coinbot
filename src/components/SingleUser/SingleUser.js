@@ -27,7 +27,7 @@ function SingleUser(props) {
     setDeleting(false)
     // deleteUser()
   }
-  
+
   function approveUser() {
     setApproving(true)
     dispatch({
@@ -36,7 +36,7 @@ function SingleUser(props) {
       }
     })
   }
-  
+
   function confirmDelete(params) {
     setDeleting(true)
     // deleteUser()
@@ -50,7 +50,7 @@ function SingleUser(props) {
       }
     })
   }
-  
+
   return (
     <div className={`Single-trade`}>
       <button className={`btn-blue expand-single-trade ${props.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>
@@ -85,7 +85,13 @@ function SingleUser(props) {
         </p>
       </div>
       <div>
-        <p>{JSON.stringify(props.store.accountReducer.debugReducer[props.user.id]?.userStatus)}</p>
+        <ol>
+
+          {/* <p>{JSON.stringify(props.store.accountReducer.debugReducer[props.user.id]?.userStatus)}</p> */}
+          {props.store.accountReducer.debugReducer[props.user.id]?.userStatus.slice(0).reverse().map(statusItem => {
+            return <li key={statusItem}>{statusItem}</li>
+          })}
+        </ol>
       </div>
     </div>
   )
