@@ -85,7 +85,7 @@ function SingleUser(props) {
         </p>
       </div>
       <div>
-        <p>{JSON.stringify(props.store.accountReducer.debugReducer[props.user.id])}</p>
+        <p>{JSON.stringify(props.store.accountReducer.debugReducer[props.user.id]?.userStatus)}</p>
       </div>
     </div>
   )
