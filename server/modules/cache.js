@@ -17,7 +17,9 @@ const cache = {
 
   updateStatus: (userID, update) => {
     cache.storage[userID].botStatus.unshift(update);
-    cache.storage[userID].botStatus.length = 100;
+    if (cache.storage[userID].botStatus.length > 100) {
+      cache.storage[userID].botStatus.length = 100;
+    }
   },
 
   getStatus: (userID) => {
