@@ -12,11 +12,15 @@ const cache = require("./cache")
 async function startSync() {
   // get all users from the db
   const userList = await databaseClient.getAllUsers();
-  userList.forEach(user => {
+  userList.forEach(async user => {
+    const userID = user.id
     // set up cache for user
-    cache.newUser(user.id);
+    cache.newUser(userID);
+    // paused users won't have cached API so get it here first
+    userAPI = await databaseClient.getUserAPI(userID);
+    cache.storeAPI(userID, userAPI);
     // start the loop
-    syncOrders(user.id, 0);
+    syncOrders(userID, 0);
     // deSyncOrderLoop(user, 0);
   });
 }
