@@ -183,7 +183,7 @@ async function syncOrders(userID, count, newUserAPI) {
         // console.log('100ms is up');
       }
       // console.log('time between full sync', time < 1000, time);
-      console.log('bot status history for user', userID, cache.getStatus(userID));
+      // console.log('bot status history for user', userID, cache.getStatus(userID));
       cache.clearStatus(userID);
       setTimeout(() => {
         syncOrders(userID, count + 1, userAPI);

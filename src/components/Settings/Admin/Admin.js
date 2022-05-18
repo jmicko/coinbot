@@ -67,6 +67,15 @@ function Admin(props) {
     })
   }
 
+  function debug() {
+    dispatch({
+      type: 'DEBUG',
+      // payload: {
+      //   loopSpeed: loopSpeed
+      // }
+    })
+  }
+
   function handleLoopSpeedChange(speed) {
     setLoopSpeed(speed);
   }
@@ -130,6 +139,15 @@ function Admin(props) {
         <button className={`btn-red btn-reinvest medium ${props.theme}`} onClick={() => { toggleMaintenance() }}>Turn on</button>
       }
 
+      <div className="divider" />
+
+      {/* DEBUG */}
+      <h4>Debug</h4>
+      {props.tips && <p>
+        Clicking this will log the cache on the server side, 
+        which can help in finding what may have stopped the bot or caused an error.
+      </p>}
+      <button className={`btn-red btn-reinvest medium ${props.theme}`} onClick={() => { debug() }}>log status</button>
       <div className="divider" />
 
       {/* MANAGE USERS */}
