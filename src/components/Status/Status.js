@@ -232,7 +232,7 @@ function Status(props) {
           onChange={props.handleAutoScrollChange}
         />
         <br />
-        {botStatus}
+        {/* {botStatus} */}
         {props.store.accountReducer.userReducer.paused &&
           <strong className='red'>~~~PAUSED~~~</strong>
         }
