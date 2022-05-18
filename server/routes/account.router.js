@@ -7,6 +7,7 @@ const socketClient = require('../modules/socketClient');
 const xlsx = require('json-as-xlsx');
 const databaseClient = require('../modules/databaseClient');
 const robot = require('../modules/robot');
+const cache = require('../modules/cache');
 // const databaseClient = require('../modules/databaseClient/databaseClient');
 
 
@@ -159,7 +160,7 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
 router.get('/debug', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   try {
-    console.log('heyo debug');
+    console.log('heyo debug', cache.getStatus(userID));
     res.sendStatus(200);
   } catch (err) {
     console.log('problem getting all orders');
