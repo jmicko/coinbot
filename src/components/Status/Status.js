@@ -8,6 +8,7 @@ import { useSocket } from "../../contexts/SocketProvider";
 function Status(props) {
   const dispatch = useDispatch();
   const [loopStatus, setLoopStatus] = useState(true);
+  const [botStatus, setBotStatus] = useState('loading...');
   const [fullSync, setFullSync] = useState("");
   const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
   const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
@@ -87,6 +88,9 @@ function Status(props) {
           // console.log('previous error count', prevErrorCount);
           return !prevLoopStatus;
         });
+      }
+      if (message.heartbeatStatus && message.userID === props.store.accountReducer.userReducer.id) {
+        setBotStatus(message.status)
       }
     });
 
@@ -216,23 +220,24 @@ function Status(props) {
         </p>
       </center>
 
-      <center>
-        <p className="info status-ticker auto-scroll"><strong>Auto Scroll</strong>
-          {/* <br /> */}
-          <input
-            type="checkbox"
-            id="topping"
-            name="topping"
-            value="Paneer"
-            checked={props.isAutoScroll}
-            onChange={props.handleAutoScrollChange}
-          />
-          <br />
-          {props.store.accountReducer.userReducer.paused &&
-            <strong className='red'>~~~PAUSED~~~</strong>
-          }
-        </p>
-      </center>
+      {/* <center> */}
+      <p className="info status-ticker auto-scroll"><strong>Auto Scroll</strong>
+        {/* <br /> */}
+        <input
+          type="checkbox"
+          id="topping"
+          name="topping"
+          value="Paneer"
+          checked={props.isAutoScroll}
+          onChange={props.handleAutoScrollChange}
+        />
+        <br />
+        {botStatus}
+        {props.store.accountReducer.userReducer.paused &&
+          <strong className='red'>~~~PAUSED~~~</strong>
+        }
+      </p>
+      {/* </center> */}
     </div>
   )
 }

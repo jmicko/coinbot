@@ -3,6 +3,10 @@ const databaseClient = require("./databaseClient");
 const pool = require("./pool");
 const socketClient = require("./socketClient");
 
+// const startTime = performance.now();
+// const endTime = performance.now();
+// console.log(`getFees redis took ${endTime - startTime} milliseconds`)
+
 // start a sync loop for each active user
 async function startSync() {
   // get all users from the db
@@ -15,6 +19,7 @@ async function startSync() {
 
 // REST protocol to find orders that have settled on coinbase
 async function syncOrders(userID, count, newUserAPI) {
+  heartBeat(userID, 'begin main loop');
   let timer = true;
   setTimeout(() => {
     timer = false;
@@ -24,6 +29,7 @@ async function syncOrders(userID, count, newUserAPI) {
   let userAPI = newUserAPI;
   let botSettings;
   try {
+    heartBeat(userID, 'getting settings');
     botSettings = await databaseClient.getBotSettings();
     user = await databaseClient.getUserAndSettings(userID);
     if (count > botSettings.full_sync - 1) {
@@ -38,6 +44,7 @@ async function syncOrders(userID, count, newUserAPI) {
 
       if (count === 0) {
         // *** FULL SYNC ***
+        heartBeat(userID, 'start full sync');
 
         // update the user API every full sync so the loop is not calling the db for this info constantly
         // This allows for potentially allowing users to change their API in the future
@@ -55,12 +62,14 @@ async function syncOrders(userID, count, newUserAPI) {
           // DELETE ALL ORDERS MARKED FOR DELETE
           // deleteMarkedOrders(userID)
         ]);
+        heartBeat(userID, 'end all full sync');
 
         const fullSyncOrders = full[0]
         ordersToCheck = fullSyncOrders.ordersToCheck;
 
       } else {
         // *** QUICK SYNC ***
+        heartBeat(userID, 'start quick sync');
 
         // can run all three of these at the same time. 
         // Process orders looks for orders that are settled and not flipped,
@@ -78,6 +87,7 @@ async function syncOrders(userID, count, newUserAPI) {
           // DELETE ALL ORDERS MARKED FOR DELETE
           // deleteMarkedOrders(userID)
         ]);
+        heartBeat(userID, 'end all quick sync');
 
         ordersToCheck = quick[0];
 
@@ -90,6 +100,7 @@ async function syncOrders(userID, count, newUserAPI) {
 
           // API ENDPOINTS USED: orders
           let result = await settleMultipleOrders(ordersToCheck, userID, userAPI);
+          heartBeat(userID, 'end settle orders');
           // console.log('updating funds');
           await updateFunds(userID);
         } catch (err) {
@@ -109,6 +120,7 @@ async function syncOrders(userID, count, newUserAPI) {
       // move this back down here because orders need to stay in the db even if canceled until processOrders is done
       // the problem being that it might replace the order based on something stored in an array
       await deleteMarkedOrders(userID);
+      heartBeat(userID, 'end delete orders');
 
     } else {
       // if the user is not active or is paused, loop every 5 seconds
@@ -141,11 +153,7 @@ async function syncOrders(userID, count, newUserAPI) {
       console.log(err, 'unknown error at end of syncOrders');
     }
   } finally {
-    socketClient.emit('message', {
-      heartbeat: true,
-      count: botSettings.full_sync - count,
-      userID: Number(userID)
-    });
+    heartBeat(userID, 'end main loop', true);
     // when everything is done, call the sync again if the user still exists
     if (user) {
       while (timer) {
@@ -277,12 +285,14 @@ async function fullSync(userID, botSettings, userAPI) {
         // get fees
         coinbaseClient.getFees(userID, userAPI)
       ]);
+      heartBeat(userID, 'done getting trade to compare');
       // store the lists of orders in the corresponding arrays so they can be compared
       fullSyncOrders.dbOrders = results[0];
       fullSyncOrders.cbOrders = results[1];
       const fees = results[2];
 
       await updateFunds(userID);
+      heartBeat(userID, 'done updating funds full sync');
 
       // need to get the fees for more accurate Available funds reporting
       // fees don't change frequently so only need to do this during full sync
@@ -306,6 +316,7 @@ async function fullSync(userID, botSettings, userAPI) {
         // wait for a second to allow cancels to go through so bot doesn't cancel twice
         await sleep(1000);
       }
+      heartBeat(userID, 'will resolve full sync');
 
       resolve(fullSyncOrders);
     } catch (err) {
@@ -322,6 +333,7 @@ async function quickSync(userID, botSettings, userAPI) {
       let toCheck = [];
       // get the 500 most recent fills for the account
       const fills = await coinbaseClient.getLimitedFills(userID, 500, userAPI);
+      heartBeat(userID, 'done getting fills');
       // look at each fill and find the order in the db associated with it
       for (let i = 0; i < fills.length; i++) {
         const fill = fills[i];
@@ -340,6 +352,7 @@ async function quickSync(userID, botSettings, userAPI) {
           }
         }
       }
+      heartBeat(userID, 'done checking fills');
       // this will check the specified number of trades to sync on either side to see if any 
       // need to be reordered. It will only find them on a loop after a loop where trades have been placed
       // This could be faster? But still currently faster than waiting for a full sync
@@ -348,6 +361,7 @@ async function quickSync(userID, botSettings, userAPI) {
       if (reorders.length >= 1) {
         reorders.forEach(order => toCheck.push(order))
       }
+      heartBeat(userID, 'will resolve quick sync');
       resolve(toCheck);
     } catch (err) {
       reject(err)
@@ -382,6 +396,7 @@ async function processOrders(userID, userAPI) {
     // store the trades in an object
     const result = await pool.query(sqlText, [userID]);
     const tradeList = result.rows;
+    heartBeat(userID, 'got all orders to process');
     // if there is at least one trade...
     if (tradeList.length > 0) {
       // loop through all the settled orders and flip them
@@ -428,6 +443,7 @@ async function processOrders(userID, userAPI) {
         await sleep(150)
       }
     } else {
+      heartBeat(userID, 'will resolve processOrders');
       resolve();
     }
     resolve();
@@ -1239,6 +1255,15 @@ async function alertAllUsers(alertMessage) {
   } catch (err) {
     console.log(err, 'error while alerting all users of change');
   }
+}
+
+function heartBeat(userID, status, mainHeart) {
+  socketClient.emit('message', {
+    heartbeatStatus: true,
+    heartbeat: mainHeart,
+    userID: Number(userID),
+    status: status
+  });
 }
 
 
