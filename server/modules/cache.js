@@ -1,13 +1,18 @@
+const databaseClient = require("./databaseClient");
+
 const cache = {
   // the storage array will store an object of different things at the index of the user id
   storage: [],
 
   // set up a storage cache for a new user
-  newUser: (userID) => {
+  newUser: async (userID) => {
     cache.storage[userID] = {
       botStatus: ['setup'],
       api: null
     };
+    // cache the API from the db
+    userAPI = await databaseClient.getUserAPI(userID);
+    cache.storeAPI(userID, userAPI);
   },
 
   updateStatus: (userID, update) => {

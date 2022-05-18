@@ -16,9 +16,6 @@ async function startSync() {
     const userID = user.id
     // set up cache for user
     cache.newUser(userID);
-    // paused users won't have cached API so get it here first
-    userAPI = await databaseClient.getUserAPI(userID);
-    cache.storeAPI(userID, userAPI);
     // start the loop
     syncOrders(userID, 0);
     // deSyncOrderLoop(user, 0);
