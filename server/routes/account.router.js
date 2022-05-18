@@ -160,12 +160,15 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
 */
 router.get('/debug', rejectUnauthenticated, async (req, res) => {
   const userID = req.query.id;
-  console.log(req.query);
   if (req.user.admin) {
-
     try {
-      console.log('debug', cache.getStatus(userID));
-      res.sendStatus(200);
+      const userStatus = cache.getStatus(userID);
+      const userInfo = {
+        userID: userID,
+        userStatus: userStatus
+      }
+      console.log('debug - user status', userStatus);
+      res.send(userInfo);
     } catch (err) {
       console.log('problem debug route');
       res.sendStatus(500)

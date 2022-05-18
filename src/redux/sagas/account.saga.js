@@ -150,13 +150,8 @@ function* exportXlsx() {
 
 function* debug(action) {
   try {
-    console.log(action.payload);
-    // const params = {
-    //   payload: action.payload
-    // };
     const response = yield axios.get(`/api/account/debug`, {params:{ id: action.payload.id}});
-    console.log(response);
-    // yield put({ type: 'SET_XLSX', payload: response })
+    console.log(response.data);
   } catch (error) {
     console.log('debug route has failed', error);
     if (error.response.status === 403) {
