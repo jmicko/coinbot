@@ -10,6 +10,11 @@ const cache = {
     };
   },
 
+  updateStatus: (userID, update) => {
+    cache.storage[userID].botStatus.unshift(update);
+    cache.storage[userID].botStatus.length = 30;
+  },
+
   // store and fetch API details for a user
   storeAPI: (userID, api) => {
     cache.storage[userID].api = api;

@@ -50,7 +50,7 @@ async function syncOrders(userID, count, newUserAPI) {
       if (count === 0) {
         // *** FULL SYNC ***
         heartBeat(userID, 'start full sync');
-        cache.storage[userID].botStatus = 'full sync'
+        cache.updateStatus(userID, 'full sync')
 
         // update the user API every full sync so the loop is not calling the db for this info constantly
         // This allows for potentially allowing users to change their API in the future
@@ -77,6 +77,7 @@ async function syncOrders(userID, count, newUserAPI) {
       } else {
         // *** QUICK SYNC ***
         heartBeat(userID, 'start quick sync');
+        cache.updateStatus(userID, 'quick sync')
 
         // can run all three of these at the same time. 
         // Process orders looks for orders that are settled and not flipped,
