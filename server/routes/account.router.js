@@ -151,19 +151,28 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
     res.status(200).send(data);
   } catch (err) {
     console.log('problem getting all orders');
+    res.sendStatus(500);
   }
 });
 
 /**
-* GET route to export xlsx history of orders
+* GET route to log status of a user's loop
 */
 router.get('/debug', rejectUnauthenticated, async (req, res) => {
-  const userID = req.user.id;
-  try {
-    console.log('heyo debug', cache.getStatus(userID));
-    res.sendStatus(200);
-  } catch (err) {
-    console.log('problem getting all orders');
+  const userID = req.query.id;
+  console.log(req.query);
+  if (req.user.admin) {
+
+    try {
+      console.log('debug', cache.getStatus(userID));
+      res.sendStatus(200);
+    } catch (err) {
+      console.log('problem debug route');
+      res.sendStatus(500)
+    }
+  } else {
+    console.log('error debug user route - not admin');
+    res.sendStatus(403);
   }
 });
 

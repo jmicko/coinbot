@@ -148,9 +148,13 @@ function* exportXlsx() {
   }
 }
 
-function* debug() {
+function* debug(action) {
   try {
-    const response = yield axios.get(`/api/account/debug`);
+    console.log(action.payload);
+    // const params = {
+    //   payload: action.payload
+    // };
+    const response = yield axios.get(`/api/account/debug`, {params:{ id: action.payload.id}});
     console.log(response);
     // yield put({ type: 'SET_XLSX', payload: response })
   } catch (error) {
