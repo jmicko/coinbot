@@ -8,6 +8,7 @@ const cache = {
   newUser: async (userID) => {
     cache.storage[userID] = {
       botStatus: ['setup'],
+      loopNumber: 0,
       api: null
     };
     // cache the API from the db
@@ -28,6 +29,14 @@ const cache = {
 
   clearStatus: (userID) => {
     cache.storage[userID].botStatus.length = 0;
+  },
+
+  increaseLoopNumber: (userID) => {
+    cache.storage[userID].loopNumber++;
+  },
+
+  getLoopNumber: (userID) => {
+    return cache.storage[userID].loopNumber;
   },
 
   // store and fetch API details for a user
