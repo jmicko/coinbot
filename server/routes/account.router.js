@@ -7,6 +7,7 @@ const socketClient = require('../modules/socketClient');
 const xlsx = require('json-as-xlsx');
 const databaseClient = require('../modules/databaseClient');
 const robot = require('../modules/robot');
+const cache = require('../modules/cache');
 // const databaseClient = require('../modules/databaseClient/databaseClient');
 
 
@@ -66,7 +67,7 @@ router.get('/profits', rejectUnauthenticated, async (req, res) => {
     // console.log('update funds before profits');
     await robot.updateFunds(userID)
   } catch (err) {
-    console.log('problem updating funds in account/profits route');
+    console.log(err, 'problem updating funds in account/profits route');
   }
 
   // for sum since a day ago
@@ -150,6 +151,27 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
     res.status(200).send(data);
   } catch (err) {
     console.log('problem getting all orders');
+    res.sendStatus(500);
+  }
+});
+
+/**
+* GET route to log status of a user's loop
+*/
+router.get('/debug', rejectUnauthenticated, async (req, res) => {
+  const userID = req.query.id;
+  if (req.user.admin) {
+    try {
+      const userInfo = cache.getSafeStorage(userID);
+        // console.log('debug - full storage', userInfo);
+      res.send(userInfo);
+    } catch (err) {
+      console.log(err, 'problem debug route');
+      res.sendStatus(500)
+    }
+  } else {
+    console.log('error debug user route - not admin');
+    res.sendStatus(403);
   }
 });
 

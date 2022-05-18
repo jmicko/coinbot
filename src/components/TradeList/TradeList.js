@@ -23,7 +23,7 @@ function TradeList(props) {
   useEffect(() => {
     if (props.store.ordersReducer.openOrdersInOrder.sells !== undefined) {
       setLowestSell(Number(props.store.ordersReducer.openOrdersInOrder.sells[0]?.price || 0))
-      setSells(props.store.ordersReducer.openOrdersInOrder.sells.reverse().map((sell) => {
+      setSells(props.store.ordersReducer.openOrdersInOrder.sells.slice(0).reverse().map((sell) => {
         return <SingleTrade key={sell.id} order={sell} theme={props.theme} />
       }))
     }

@@ -148,6 +148,19 @@ function* exportXlsx() {
   }
 }
 
+function* debug(action) {
+  try {
+    const response = yield axios.get(`/api/account/debug`, {params:{ id: action.payload.id}});
+    console.log(response.data);
+    yield put({ type: 'SET_DEBUG', payload: response.data })
+  } catch (error) {
+    console.log('debug route has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 function* accountSaga() {
   // yield takeLatest('FETCH_FEES', fetchFees);
   yield takeLatest('FETCH_PROFITS', fetchProfits);
@@ -162,6 +175,7 @@ function* accountSaga() {
   yield takeLatest('FACTORY_RESET', factoryReset);
   yield takeLatest('ORDERS_RESET', ordersReset);
   yield takeLatest('EXPORT_XLSX', exportXlsx);
+  yield takeLatest('DEBUG', debug);
 }
 
 export default accountSaga;

@@ -6,6 +6,7 @@ const pool = require('../modules/pool');
 const userStrategy = require('../strategies/user.strategy');
 const robot = require('../modules/robot');
 const databaseClient = require('../modules/databaseClient');
+const cache = require('../modules/cache');
 
 const router = express.Router();
 
@@ -81,6 +82,8 @@ router.post('/register', userCount, async (req, res, next) => {
       VALUES ($1);`;
       let thirdResult = await pool.query(thirdQueryText, [userID]);
 
+      // set up cache storage for new user
+      cache.newUser(user);
       // start a sync loop for the new user
       robot.syncOrders(userID, 0);
       // robot.deSyncOrderLoop(user, 0);
@@ -102,6 +105,8 @@ router.post('/register', userCount, async (req, res, next) => {
       VALUES ($1);`;
       let thirdResult = await pool.query(thirdQueryText, [userID]);
 
+      // set up cache storage for new user
+      cache.newUser(userID);
       // start a sync loop for the new user
       robot.syncOrders(userID, 0);
       // robot.deSyncOrderLoop(user, 0);
