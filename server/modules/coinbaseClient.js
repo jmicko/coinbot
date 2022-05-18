@@ -312,7 +312,8 @@ async function placeOrder(data, quickAPI) {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       // // sign the request
-      const userAPI = cache.getAPI(userID);
+      // console.log('place order data', data);
+      const userAPI = cache.getAPI(data.userID);
       const secret = userAPI.CB_SECRET;
       const key = userAPI.CB_ACCESS_KEY;
       const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
