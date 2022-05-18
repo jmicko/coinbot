@@ -15,7 +15,7 @@ async function startSync() {
   userList.forEach(async user => {
     const userID = user.id
     // set up cache for user
-    cache.newUser(userID);
+    cache.newUser(user);
     // start the loop
     syncOrders(userID, 0);
     // deSyncOrderLoop(user, 0);
@@ -26,7 +26,7 @@ async function startSync() {
 async function syncOrders(userID, count, newUserAPI) {
   // console.log('cache for user', userID, cache.storage[userID]);
   heartBeat(userID, 'begin main loop');
-  console.log('loop number', cache.getLoopNumber(userID))
+  // console.log('loop number', cache.getLoopNumber(userID))
   cache.increaseLoopNumber(userID);
   cache.updateStatus(userID, 'begin main loop');
   let timer = true;
