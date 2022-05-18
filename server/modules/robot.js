@@ -14,10 +14,7 @@ async function startSync() {
   const userList = await databaseClient.getAllUsers();
   userList.forEach(user => {
     // set up cache for user
-    cache.storage[user.id] = {
-      botStatus: ['setup'],
-      api: null
-    };
+    cache.newUser(user.id);
     // start the loop
     syncOrders(user.id, 0);
     // deSyncOrderLoop(user, 0);
@@ -26,7 +23,7 @@ async function startSync() {
 
 // REST protocol to find orders that have settled on coinbase
 async function syncOrders(userID, count, newUserAPI) {
-  // console.log('cache for user', userID, cache.storage[userID]);
+  console.log('cache for user', userID, cache.storage[userID]);
   heartBeat(userID, 'begin main loop');
   let timer = true;
   setTimeout(() => {
