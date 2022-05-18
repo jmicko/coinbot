@@ -3,6 +3,7 @@ const axios = require("axios").default;
 const crypto = require('crypto');
 const pool = require('./pool');
 const databaseClient = require("./databaseClient");
+const cache = require("./cache");
 
 function sleep(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
@@ -56,14 +57,9 @@ async function getFees(userID, quickAPI) {
   return new Promise(async (resolve, reject) => {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
-      // // sign the request
-      let userAPI;
-      if (quickAPI) {
-        userAPI = quickAPI;
-      } else {
-        console.log('get fees need to get api from db');
-        userAPI = await databaseClient.getUserAPI(userID);
-      }
+
+      userAPI = cache.getAPI(userID);
+
       const secret = userAPI.CB_SECRET;
       const key = userAPI.CB_ACCESS_KEY;
       const passphrase = userAPI.CB_ACCESS_PASSPHRASE;

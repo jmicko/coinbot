@@ -2,19 +2,11 @@ const coinbaseClient = require("./coinbaseClient");
 const databaseClient = require("./databaseClient");
 const pool = require("./pool");
 const socketClient = require("./socketClient");
+const cache = require("./cache")
 
 // const startTime = performance.now();
 // const endTime = performance.now();
 // console.log(`getFees redis took ${endTime - startTime} milliseconds`)
-
-const cache = {
-  // the storage array will store an object of different things at the index of the user id
-  storage: [],
-  storeAPI: (userID, api) => {
-    console.log(this, 'storing api', userID, api);
-    cache.storage[userID].api = api;
-  }
-}
 
 // start a sync loop for each active user
 async function startSync() {
@@ -23,7 +15,8 @@ async function startSync() {
   userList.forEach(user => {
     // set up cache for user
     cache.storage[user.id] = {
-      botStatus: 'setup'
+      botStatus: ['setup'],
+      api: null
     };
     // start the loop
     syncOrders(user.id, 0);
@@ -33,7 +26,7 @@ async function startSync() {
 
 // REST protocol to find orders that have settled on coinbase
 async function syncOrders(userID, count, newUserAPI) {
-  console.log('cache for user', userID, cache.storage[userID]);
+  // console.log('cache for user', userID, cache.storage[userID]);
   heartBeat(userID, 'begin main loop');
   let timer = true;
   setTimeout(() => {
