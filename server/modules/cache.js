@@ -10,12 +10,21 @@ const cache = {
     cache.storage[userID] = {
       user: user,
       botStatus: ['setup'],
+      keyValuePairs: {},
       loopNumber: 0,
       api: null
     };
     // cache the API from the db
     userAPI = await databaseClient.getUserAPI(userID);
     cache.storeAPI(userID, userAPI);
+  },
+
+  setKey: (userID, key, value) => {
+    cache.storage[userID].keyValuePairs[key] = value;
+  },
+
+  getKey: (userID, key) => {
+    return cache.storage[userID].keyValuePairs[key];
   },
 
   updateStatus: (userID, update) => {
