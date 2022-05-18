@@ -7,11 +7,21 @@ const socketClient = require("./socketClient");
 // const endTime = performance.now();
 // console.log(`getFees redis took ${endTime - startTime} milliseconds`)
 
+const cache = {
+  // the storage array will store an object of different things at the index of the user id
+  storage: []
+}
+
 // start a sync loop for each active user
 async function startSync() {
   // get all users from the db
   const userList = await databaseClient.getAllUsers();
   userList.forEach(user => {
+    // set up cache for user
+    cache.storage[user.id] = {
+      botStatus: 'setup'
+    };
+    // start the loop
     syncOrders(user.id, 0);
     // deSyncOrderLoop(user, 0);
   });
@@ -19,6 +29,7 @@ async function startSync() {
 
 // REST protocol to find orders that have settled on coinbase
 async function syncOrders(userID, count, newUserAPI) {
+  console.log('cache for user', userID, cache.storage[userID]);
   heartBeat(userID, 'begin main loop');
   let timer = true;
   setTimeout(() => {
@@ -45,6 +56,7 @@ async function syncOrders(userID, count, newUserAPI) {
       if (count === 0) {
         // *** FULL SYNC ***
         heartBeat(userID, 'start full sync');
+        cache.storage[userID].botStatus = 'full sync'
 
         // update the user API every full sync so the loop is not calling the db for this info constantly
         // This allows for potentially allowing users to change their API in the future
