@@ -89,11 +89,13 @@ function SingleUser(props) {
           {/* BOT STATUS LIST */}
           <h4>User Bot Status</h4>
           <ol>
-            {/* <p>{JSON.stringify(props.store.accountReducer.debugReducer[props.user.id]?.userStatus)}</p> */}
-            {props.store.accountReducer.debugReducer[props.user.id]?.userStatus.slice(0).reverse().map(statusItem => {
+            <li>Loop #{props.store.accountReducer.debugReducer[props.user.id]?.loopNumber}</li>
+            {/* <p>{JSON.stringify(props.store.accountReducer)}</p> */}
+            {props.store.accountReducer.debugReducer[props.user.id]?.botStatus.slice(0).reverse().map(statusItem => {
               return <li key={statusItem}>{statusItem}</li>
             }) || <p>Click debug to get info. This will return a snapshot of the user, and does not update live.</p>}
           </ol>
+          {/* <h4></h4> */}
         </div>
       }
     </div>

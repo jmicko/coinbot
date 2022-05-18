@@ -54,7 +54,7 @@ const debugReducer = (state = [], action) => {
 
       const newState = [...state];
 
-      newState[userInfo.userID] = userInfo;
+      newState[userInfo.user.id] = userInfo;
 
       
       return newState;

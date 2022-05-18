@@ -162,13 +162,8 @@ router.get('/debug', rejectUnauthenticated, async (req, res) => {
   const userID = req.query.id;
   if (req.user.admin) {
     try {
-      console.log(cache.getSafeStorage(userID));
-      const userStatus = cache.getStatus(userID);
-      const userInfo = {
-        userID: userID,
-        userStatus: userStatus
-      }
-      // console.log('debug - user status', userStatus);
+      const userInfo = cache.getSafeStorage(userID);
+        console.log('debug - full storage', userInfo);
       res.send(userInfo);
     } catch (err) {
       console.log(err, 'problem debug route');
