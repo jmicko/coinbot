@@ -66,7 +66,7 @@ router.get('/profits', rejectUnauthenticated, async (req, res) => {
     // console.log('update funds before profits');
     await robot.updateFunds(userID)
   } catch (err) {
-    console.log('problem updating funds in account/profits route');
+    console.log(err, 'problem updating funds in account/profits route');
   }
 
   // for sum since a day ago
