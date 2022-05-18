@@ -45,10 +45,31 @@ const xlsxReducer = (state = [], action) => {
   }
 };
 
+const debugReducer = (state = [], action) => {
+  switch (action.type) {
+    case 'SET_DEBUG':
+      console.log('action.payload', action.payload);
+
+      const userInfo = action.payload;
+
+      const newState = [...state];
+
+      newState[userInfo.userID] = userInfo;
+
+      
+      return newState;
+    case 'UNSET_ALL_DEBUG':
+      return [];
+    default:
+      return state;
+  }
+};
+
 export default combineReducers({
   userReducer,
   // feeReducer,
   profitsReducer,
   accountReducer,
   xlsxReducer,
+  debugReducer,
 });

@@ -84,6 +84,9 @@ function SingleUser(props) {
           {JSON.stringify(props.user.approved)} */}
         </p>
       </div>
+      <div>
+        <p>{JSON.stringify(props.store.accountReducer.debugReducer[props.user.id])}</p>
+      </div>
     </div>
   )
 }
