@@ -84,15 +84,18 @@ function SingleUser(props) {
           {JSON.stringify(props.user.approved)} */}
         </p>
       </div>
-      <div>
-        <ol>
-
-          {/* <p>{JSON.stringify(props.store.accountReducer.debugReducer[props.user.id]?.userStatus)}</p> */}
-          {props.store.accountReducer.debugReducer[props.user.id]?.userStatus.slice(0).reverse().map(statusItem => {
-            return <li key={statusItem}>{statusItem}</li>
-          })}
-        </ol>
-      </div>
+      {showAll &&
+        <div className='user-info'>
+          {/* BOT STATUS LIST */}
+          <h4>User Bot Status</h4>
+          <ol>
+            {/* <p>{JSON.stringify(props.store.accountReducer.debugReducer[props.user.id]?.userStatus)}</p> */}
+            {props.store.accountReducer.debugReducer[props.user.id]?.userStatus.slice(0).reverse().map(statusItem => {
+              return <li key={statusItem}>{statusItem}</li>
+            })}
+          </ol>
+        </div>
+      }
     </div>
   )
 }
