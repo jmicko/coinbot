@@ -9,7 +9,11 @@ const socketClient = require("./socketClient");
 
 const cache = {
   // the storage array will store an object of different things at the index of the user id
-  storage: []
+  storage: [],
+  storeAPI: (userID, api) => {
+    console.log(this, 'storing api', userID, api);
+    cache.storage[userID].api = api;
+  }
 }
 
 // start a sync loop for each active user
@@ -61,6 +65,7 @@ async function syncOrders(userID, count, newUserAPI) {
         // update the user API every full sync so the loop is not calling the db for this info constantly
         // This allows for potentially allowing users to change their API in the future
         userAPI = await databaseClient.getUserAPI(userID);
+        cache.storeAPI(userID, userAPI);
 
         const full = await Promise.all([
           // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
