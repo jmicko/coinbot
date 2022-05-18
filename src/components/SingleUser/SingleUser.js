@@ -92,7 +92,7 @@ function SingleUser(props) {
             {/* <p>{JSON.stringify(props.store.accountReducer.debugReducer[props.user.id]?.userStatus)}</p> */}
             {props.store.accountReducer.debugReducer[props.user.id]?.userStatus.slice(0).reverse().map(statusItem => {
               return <li key={statusItem}>{statusItem}</li>
-            })}
+            }) || <p>Click debug to get info. This will return a snapshot of the user, and does not update live.</p>}
           </ol>
         </div>
       }
