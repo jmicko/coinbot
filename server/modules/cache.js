@@ -24,7 +24,7 @@ const cache = {
   },
 
   getKey: (userID, key) => {
-    return cache.storage[userID].keyValuePairs[key];
+    return JSON.parse(JSON.stringify(cache.storage[userID].keyValuePairs[key]))
   },
 
   updateStatus: (userID, update) => {
