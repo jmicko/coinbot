@@ -8,6 +8,31 @@ const cache = require("./cache")
 // const endTime = performance.now();
 // console.log(`getFees redis took ${endTime - startTime} milliseconds`)
 
+// runAtStart()
+function runAtStart(userID) {
+  console.log('first');
+  const many = countMany(1000000000)
+  console.log(many)
+  console.log('third');
+  cache.setKey(userID, 'name', 'thomas');
+  cache.setKey(userID, 'name', 'dan');
+  cache.setKey(userID, 'age', 23);
+  cache.setKey(userID, 'friends', ['jane', 'mark', 'julia']);
+  const name = cache.getKey(userID, 'name')
+  console.log('stored name is:', name);
+}
+
+function countMany(num) {
+  // return new Promise((resolve, reject) => {
+    let count = 0;
+    while (count < num) {
+      count++;
+    }
+    return 'second'
+    // resolve('second');
+  // })
+}
+
 // start a sync loop for each active user
 async function startSync() {
   // get all users from the db
@@ -38,10 +63,19 @@ async function syncOrders(userID, count, newUserAPI) {
   let userAPI = newUserAPI;
   let botSettings;
   try {
+
     heartBeat(userID, 'getting settings');
     cache.updateStatus(userID, 'getting settings');
     botSettings = await databaseClient.getBotSettings();
     user = await databaseClient.getUserAndSettings(userID);
+
+
+    const loopNumber = cache.getLoopNumber(userID);
+    if (loopNumber === 1 && user.admin) {
+      runAtStart(userID);
+    }
+
+
     if (count > botSettings.full_sync - 1) {
       count = 0
     }
@@ -146,32 +180,48 @@ async function syncOrders(userID, count, newUserAPI) {
       await sleep(5000);
     }
   } catch (err) {
+    let errorData;
+    let errorText;
+    if (err.response?.data) {
+      errorData = err.response.data
+    }
     cache.updateStatus(userID, 'error in the main loop');
     if (err.code === 'ECONNRESET') {
+      errorText = 'Connection reset by Coinbase server';
       console.log('Connection reset by Coinbase server');
     } else if (err.response?.status === 500) {
       console.log('internal server error from coinbase');
+      errorText = 'internal server error from coinbase';
       socketClient.emit('message', {
         error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
         orderUpdate: true,
         userID: Number(userID)
       });
     } else if (err.response?.status === 401) {
-      console.log('Invalid API key');
+      console.log('Invalid Signature');
+      errorText = 'Invalid Signature';
       socketClient.emit('message', {
-        error: `Invalid API key end of syncOrders!`,
+        error: `Invalid Signature end of syncOrders!`,
         orderUpdate: false,
         userID: Number(userID)
       });
     } else if (err.response?.statusText === 'Bad Gateway') {
       console.log('bad gateway');
+      errorText = 'Bad Gateway';
     } else if (err.response?.statusText === 'Gateway Timeout') {
       console.log('Gateway Timeout');
+      errorText = 'Gateway Timeout';
     } else if (err.code === 'ECONNABORTED') {
       console.log('10 sec timeout');
+      errorText = '10 second timeout';
     } else {
       console.log(err, 'unknown error at end of syncOrders');
+      errorText = 'Unknown error at end of syncOrders';
     }
+    cache.storeError(userID, {
+      errorData: errorData,
+      errorText: errorText
+    })
   } finally {
     heartBeat(userID, 'end main loop', true);
     cache.updateStatus(userID, 'end main loop finally');

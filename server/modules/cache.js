@@ -10,6 +10,7 @@ const cache = {
     cache.storage[userID] = {
       user: user,
       botStatus: ['setup'],
+      errors: [],
       keyValuePairs: {},
       loopNumber: 0,
       api: null
@@ -19,6 +20,7 @@ const cache = {
     cache.storeAPI(userID, userAPI);
   },
 
+  // KEY VALUE STORAGE
   setKey: (userID, key, value) => {
     cache.storage[userID].keyValuePairs[key] = value;
   },
@@ -27,6 +29,7 @@ const cache = {
     return JSON.parse(JSON.stringify(cache.storage[userID].keyValuePairs[key]))
   },
 
+  // LOOP STATUS UPDATES
   updateStatus: (userID, update) => {
     cache.storage[userID].botStatus.unshift(update);
     if (cache.storage[userID].botStatus.length > 100) {
@@ -42,6 +45,28 @@ const cache = {
     cache.storage[userID].botStatus.length = 0;
   },
 
+  // ERROR STORAGE - store 1000 most recent errors
+  storeError: (userID, error) => {
+    const errorData = {
+      errorData: error.errorData,
+      errorText: error.errorText,
+      timeStamp: new Date()
+    }
+    cache.storage[userID].errors.unshift(errorData);
+    if (cache.storage[userID].errors.length > 1000) {
+      cache.storage[userID].errors.length = 1000;
+    }
+  },
+
+  getErrors: (userID) => {
+    return cache.storage[userID].errors;
+  },
+
+  clearErrors: (userID) => {
+    cache.storage[userID].errors.length = 0;
+  },
+
+  // LOOP COUNTER
   increaseLoopNumber: (userID) => {
     cache.storage[userID].loopNumber++;
   },
@@ -50,7 +75,7 @@ const cache = {
     return cache.storage[userID].loopNumber;
   },
 
-  // store and fetch API details for a user
+  // API STORAGE
   storeAPI: (userID, api) => {
     cache.storage[userID].api = api;
   },
