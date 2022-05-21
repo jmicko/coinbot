@@ -24,12 +24,12 @@ function runAtStart(userID) {
 
 function countMany(num) {
   // return new Promise((resolve, reject) => {
-    let count = 0;
-    while (count < num) {
-      count++;
-    }
-    return 'second'
-    // resolve('second');
+  let count = 0;
+  while (count < num) {
+    count++;
+  }
+  return 'second'
+  // resolve('second');
   // })
 }
 
@@ -145,27 +145,26 @@ async function syncOrders(userID, count, newUserAPI) {
 
       // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
       if (ordersToCheck.length) {
-        try {
-
-          cache.updateStatus(userID, 'start SMO from main loop');
-          // API ENDPOINTS USED: orders
-          let result = await settleMultipleOrders(ordersToCheck, userID, userAPI);
-          heartBeat(userID, 'end settle orders');
-          cache.updateStatus(userID, 'end settle multiple orders, in main loop');
-          // console.log('updating funds');
-          await updateFunds(userID);
-        } catch (err) {
-          if (err.response?.status === 500) {
-            console.log('internal server error from coinbase');
-            socketClient.emit('message', {
-              error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
-              orderUpdate: true,
-              userID: Number(userID)
-            });
-          } else {
-            console.log(err, 'Error settling all settled orders');
-          }
-        }
+        // try {
+        cache.updateStatus(userID, 'start SMO from main loop');
+        // API ENDPOINTS USED: orders
+        await settleMultipleOrders(ordersToCheck, userID, userAPI);
+        heartBeat(userID, 'end settle orders');
+        cache.updateStatus(userID, 'end settle multiple orders, in main loop');
+        // console.log('updating funds');
+        await updateFunds(userID);
+        // } catch (err) {
+        //   if (err.response?.status === 500) {
+        //     console.log('internal server error from coinbase');
+        //     socketClient.emit('message', {
+        //       error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
+        //       orderUpdate: true,
+        //       userID: Number(userID)
+        //     });
+        //   } else {
+        //     console.log(err, 'Error settling all settled orders');
+        //   }
+        // }
       }
 
       // move this back down here because orders need to stay in the db even if canceled until processOrders is done
