@@ -145,35 +145,26 @@ async function syncOrders(userID, count) {
 
       }
 
+      if (ordersToCheck.length) {
+        console.log('orders to check cache:', cache.getKey(userID, 'ordersToCheck'));
+        console.log('orders to check robot:', ordersToCheck);
+      }
 
       // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
       // if (ordersToCheck.length) {
-      // try {
       cache.updateStatus(userID, 'start SMO from main loop');
       // API ENDPOINTS USED: orders
       await settleMultipleOrders(ordersToCheck, userID);
       cache.updateStatus(userID, 'end settle multiple orders, in main loop');
       // console.log('updating funds');
       await updateFunds(userID);
-      // } catch (err) {
-      //   if (err.response?.status === 500) {
-      //     console.log('internal server error from coinbase');
-      //     socketClient.emit('message', {
-      //       error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
-      //       orderUpdate: true,
-      //       userID: Number(userID)
-      //     });
-      //   } else {
-      //     console.log(err, 'Error settling all settled orders');
-      //   }
-      // }
-      // }
+
 
       // move this back down here because orders need to stay in the db even if canceled until processOrders is done
       // the problem being that it might replace the order based on something stored in an array
       cache.updateStatus(userID, 'main loop - delete marked orders');
       await deleteMarkedOrders(userID);
-      cache.updateStatus(userID, 'end delete orders');
+      cache.updateStatus(userID, 'end delete marked orders');
 
     } else {
       // if the user is not active or is paused, loop every 5 seconds
@@ -225,6 +216,8 @@ async function syncOrders(userID, count) {
   } finally {
     heartBeat(userID, botSettings, true);
     cache.updateStatus(userID, 'end main loop finally');
+    cache.deleteKey(userID, 'ordersToCheck');
+
     // when everything is done, call the sync again if the user still exists
     if (user) {
       while (timer) {
@@ -249,7 +242,7 @@ async function syncOrders(userID, count) {
 
 async function deSync(userID) {
   cache.updateStatus(userID, 'begin desync');
-  
+
   const userAPI = cache.getAPI(userID);
   const botSettings = cache.getKey(0, 'botSettings');
 
@@ -342,6 +335,7 @@ async function fullSync(userID) {
       }
       cache.updateStatus(userID, 'will resolve full sync');
 
+      cache.setKey(userID, 'ordersToCheck', fullSyncOrders.ordersToCheck);
       resolve(fullSyncOrders);
     } catch (err) {
       cache.updateStatus(userID, 'error in full sync');
@@ -368,21 +362,42 @@ async function quickSync(userID) {
       // look at each fill and find the order in the db associated with it
       for (let i = 0; i < fills.length; i++) {
         const fill = fills[i];
+        const recentFill = cache.getKey(userID, 'recentFill')
+        // console.log('recent fill', recentFill);
         // get order from db
-        const singleDbOrder = await databaseClient.getSingleTrade(fill.order_id);
-        // only need to check it if there is an order in the db. Otherwise it might be a basic trade
-        if (singleDbOrder) {
-          // check if the order has already been settled in the db
-          if (singleDbOrder && !singleDbOrder?.settled) {
-            // if it has not been settled in the db, it needs to be checked with coinbase if it settled
-            // push it into the array
-            toCheck.push(singleDbOrder);
+        if (fill.settled) {
+          if (recentFill != fill.order_id) {
+            console.log('they are NOT the same')
+
+            const singleDbOrder = await databaseClient.getSingleTrade(fill.order_id);
+            console.log('SINGLE ORDER', fill.order_id);
+
+            // only need to check it if there is an order in the db. Otherwise it might be a basic trade
+            if (singleDbOrder) {
+              // check if the order has already been settled in the db
+              console.log('SINGLE ORDER', fill.settled);
+              // if (!fill.settled) {
+
+              // }
+              if (singleDbOrder && !singleDbOrder?.settled) {
+                // if it has not been settled in the db, it needs to be checked with coinbase if it settled
+                // push it into the array
+                toCheck.push(singleDbOrder);
+              } else {
+                // if it has been settled, we can stop looping because we will have already check all previous fills
+                // i += fills.length;
+                break;
+              }
+            }
           } else {
-            // if it has been settled, we can stop looping because we will have already check all previous fills
-            i += fills.length;
+            break;
           }
-        }
-      }
+        } // end if (fill.settled)
+      } // end for loop
+      // console.log('HERE IS THE FILL', fills[0]);
+      // after checking fills, store the most recent so don't need to check it later
+      cache.setKey(userID, 'recentFill', fills[0].order_id);
+
       cache.updateStatus(userID, 'done checking fills');
       // this will check the specified number of trades to sync on either side to see if any 
       // need to be reordered. It will only find them on a loop after a loop where trades have been placed
@@ -393,6 +408,8 @@ async function quickSync(userID) {
         reorders.forEach(order => toCheck.push(order))
       }
       cache.updateStatus(userID, 'will resolve quick sync');
+
+      cache.setKey(userID, 'ordersToCheck', toCheck);
       resolve(toCheck);
     } catch (err) {
       cache.updateStatus(userID, 'error in quick sync');
@@ -657,6 +674,7 @@ async function settleMultipleOrders(ordersArray, userID) {
           if (!orderToCheck.reorder) {
             cache.updateStatus(userID, 'SMO loop get order');
             let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID, userAPI);
+            // console.log('fully settled:', fullSettledDetails);
             // update the order in the db
             const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
             await pool.query(queryText, [
