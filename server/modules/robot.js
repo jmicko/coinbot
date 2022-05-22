@@ -145,18 +145,15 @@ async function syncOrders(userID, count) {
 
       }
 
-      if (ordersToCheck.length) {
-        console.log('orders to check cache:', cache.getKey(userID, 'ordersToCheck'));
-        console.log('orders to check robot:', ordersToCheck);
-      }
+      // if (ordersToCheck.length) {
+      //   console.log('orders to check cache:', cache.getKey(userID, 'ordersToCheck'));
+      //   console.log('orders to check robot:', ordersToCheck);
+      // }
 
       // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
       // if (ordersToCheck.length) {
-      cache.updateStatus(userID, 'start SMO from main loop');
       // API ENDPOINTS USED: orders
-      await settleMultipleOrders(ordersToCheck, userID);
-      cache.updateStatus(userID, 'end settle multiple orders, in main loop');
-      // console.log('updating funds');
+      await settleMultipleOrders(userID);
       await updateFunds(userID);
 
 
@@ -645,9 +642,10 @@ function sleep(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
-async function settleMultipleOrders(ordersArray, userID) {
+async function settleMultipleOrders(userID) {
   cache.updateStatus(userID, 'start settleMultipleOrders (SMO)');
   const userAPI = cache.getAPI(userID);
+  const ordersArray = cache.getKey(userID, 'ordersToCheck');
 
   return new Promise(async (resolve, reject) => {
     if (ordersArray.length > 0) {
