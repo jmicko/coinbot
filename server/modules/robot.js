@@ -114,7 +114,7 @@ async function syncOrders(userID, count) {
           fullSync(userID),
           // these two can run at the same time because they are mutually exclusive based on the will_cancel column
           // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
-          processOrders(userID, userAPI)
+          processOrders(userID)
         ]);
         const fullSyncOrders = full[0]
         ordersToCheck = fullSyncOrders.ordersToCheck;
@@ -130,10 +130,10 @@ async function syncOrders(userID, count) {
         const quick = await Promise.all([
           //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
           // API ENDPOINTS USED: fills
-          quickSync(userID, botSettings, userAPI),
+          quickSync(userID),
           // these two can run at the same time because they are mutually exclusive based on the will_cancel column
           // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
-          processOrders(userID, userAPI),
+          processOrders(userID),
           // desync extra orders
           deSync(userID, botSettings, userAPI)
           // DELETE ALL ORDERS MARKED FOR DELETE
@@ -278,10 +278,10 @@ async function deSync(userID, botSettings, userAPI) {
 
 
 async function fullSync(userID) {
+  cache.updateStatus(userID, 'begin full sync');
+
   const userAPI = cache.getAPI(userID);
   const botSettings = cache.getKey(0, 'botSettings');
-
-  cache.updateStatus(userID, 'begin full sync');
   // IF FULL SYNC, compare all trades that should be on CB, and do other less frequent maintenance tasks
   return new Promise(async (resolve, reject) => {
     try {
@@ -348,8 +348,11 @@ async function fullSync(userID) {
   });
 }
 
-async function quickSync(userID, botSettings, userAPI) {
+async function quickSync(userID) {
   cache.updateStatus(userID, 'begin quick sync');
+
+  const userAPI = cache.getAPI(userID);
+  const botSettings = cache.getKey(0, 'botSettings');
   // IF QUICK SYNC, only get fills
   return new Promise(async (resolve, reject) => {
     try {
@@ -414,7 +417,9 @@ async function deleteMarkedOrders(userID) {
 }
 
 // process orders that have been settled
-async function processOrders(userID, userAPI) {
+async function processOrders(userID) {
+  cache.updateStatus(userID, 'start process orders');
+  const userAPI = cache.getAPI(userID);
   return new Promise(async (resolve, reject) => {
     // check all trades in db that are both settled and NOT flipped
     sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
@@ -467,11 +472,12 @@ async function processOrders(userID, userAPI) {
         }
         // avoid rate limiting and give orders time to settle before checking again
         await sleep(150)
-      }
+      } // end for loop
     } else {
       cache.updateStatus(userID, 'end resolve processOrders');
       resolve();
     }
+    cache.updateStatus(userID, 'end resolve processOrders');
     resolve();
   });
 }
