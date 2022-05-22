@@ -31,7 +31,11 @@ const cache = {
   },
 
   getKey: (userID, key) => {
-    return JSON.parse(JSON.stringify(cache.storage[userID].keyValuePairs[key]))
+    if (cache.storage[userID].keyValuePairs[key]) {
+      return JSON.parse(JSON.stringify(cache.storage[userID].keyValuePairs[key]))
+    } else {
+      return null;
+    }
   },
 
   // LOOP STATUS UPDATES
