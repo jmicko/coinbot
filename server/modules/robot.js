@@ -33,14 +33,38 @@ function countMany(num) {
   // })
 }
 
+// this will keep track of and update general bot settings
+async function botLoop() {
+  userID = 0
+  // console.log('botLoop');
+  try {
+    botSettings = await databaseClient.getBotSettings();
+    // console.log(botSettings);
+    cache.setKey(userID, 'botSettings', botSettings);
+    // console.log(cache.getKey(0, 'botSettings'));
+  } catch (err) {
+    console.log(err, 'error in botLoop');
+  } finally {
+    setTimeout(() => {
+      botLoop();
+    }, 5000);
+  }
+}
+
 // start a sync loop for each active user
 async function startSync() {
+  robotUser = {
+    // user table starts at 1 so bot can be user 0 since storage array starts at 0
+    id: 0
+  }
+  cache.newUser(robotUser);
+  await botLoop();
   // get all users from the db
   const userList = await databaseClient.getAllUsers();
   userList.forEach(async user => {
     const userID = user.id
     // set up cache for user
-    cache.newUser(user);
+    await cache.newUser(user);
     // start the loop
     syncOrders(userID, 0);
     // deSyncOrderLoop(user, 0);
@@ -59,16 +83,14 @@ async function syncOrders(userID, count, newUserAPI) {
   }, 100);
   let user;
   // store user API separate from user so it is not accidentally sent outside the server
-  let userAPI = newUserAPI;
-  let botSettings;
+  const userAPI = cache.getAPI(userID);
+  // console.log('user API', userAPI);
+  const botSettings = cache.getKey(0, 'botSettings');
   try {
-
     cache.updateStatus(userID, 'getting settings');
-    botSettings = await databaseClient.getBotSettings();
     user = await databaseClient.getUserAndSettings(userID);
-
-
     const loopNumber = cache.getLoopNumber(userID);
+    
     if (loopNumber === 1 && user.admin) {
       runAtStart(userID);
     }
@@ -90,8 +112,8 @@ async function syncOrders(userID, count, newUserAPI) {
 
         // update the user API every full sync so the loop is not calling the db for this info constantly
         // This allows for potentially allowing users to change their API in the future
-        userAPI = await databaseClient.getUserAPI(userID);
-        cache.storeAPI(userID, userAPI);
+        // userAPI = await databaseClient.getUserAPI(userID);
+        // cache.storeAPI(userID, userAPI);
 
         const full = await Promise.all([
           // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
@@ -226,7 +248,7 @@ async function syncOrders(userID, count, newUserAPI) {
         // console.log('100ms is up');
       }
       // console.log('time between full sync', time < 1000, time);
-      // console.log('bot status history for user', userID, cache.getStatus(userID));
+      // console.log('cache', userID, cache.storage);
       setTimeout(() => {
         cache.clearStatus(userID);
         syncOrders(userID, count + 1, userAPI);

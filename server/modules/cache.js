@@ -17,8 +17,12 @@ const cache = {
       api: null
     };
     // cache the API from the db
-    userAPI = await databaseClient.getUserAPI(userID);
-    cache.storeAPI(userID, userAPI);
+    try {
+      userAPI = await databaseClient.getUserAPI(userID);
+      cache.storeAPI(userID, userAPI);
+    } catch (err) {
+      console.log(err, 'error creating new user');
+    }
   },
 
   // KEY VALUE STORAGE
