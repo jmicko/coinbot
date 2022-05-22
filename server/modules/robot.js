@@ -151,7 +151,7 @@ async function syncOrders(userID, count) {
       // try {
       cache.updateStatus(userID, 'start SMO from main loop');
       // API ENDPOINTS USED: orders
-      await settleMultipleOrders(ordersToCheck, userID, userAPI);
+      await settleMultipleOrders(ordersToCheck, userID);
       cache.updateStatus(userID, 'end settle multiple orders, in main loop');
       // console.log('updating funds');
       await updateFunds(userID);
@@ -628,8 +628,10 @@ function sleep(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
-async function settleMultipleOrders(ordersArray, userID, userAPI) {
+async function settleMultipleOrders(ordersArray, userID) {
   cache.updateStatus(userID, 'start settleMultipleOrders (SMO)');
+  const userAPI = cache.getAPI(userID);
+
   return new Promise(async (resolve, reject) => {
     if (ordersArray.length > 0) {
       socketClient.emit('message', {
