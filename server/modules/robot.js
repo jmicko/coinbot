@@ -108,27 +108,14 @@ async function syncOrders(userID, count) {
 
       if (count === 0) {
         // *** FULL SYNC ***
-        cache.updateStatus(userID, 'start full sync');
-
-        // update the user API every full sync so the loop is not calling the db for this info constantly
-        // This allows for potentially allowing users to change their API in the future
-        // newUserAPI = await databaseClient.getUserAPI(userID);
-        // cache.storeAPI(userID, newUserAPI);
-
         const full = await Promise.all([
           // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
           // API ENDPOINTS USED: orders, fees
-          fullSync(userID, botSettings, userAPI),
+          fullSync(userID),
           // these two can run at the same time because they are mutually exclusive based on the will_cancel column
           // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
           processOrders(userID, userAPI)
-          // desync extra orders
-          // deSync(userID, botSettings, userAPI)
-          // DELETE ALL ORDERS MARKED FOR DELETE
-          // deleteMarkedOrders(userID)
         ]);
-        cache.updateStatus(userID, 'end all full sync');
-
         const fullSyncOrders = full[0]
         ordersToCheck = fullSyncOrders.ordersToCheck;
 
@@ -259,68 +246,6 @@ async function syncOrders(userID, count) {
   }
 }
 
-// async function deSyncOrderLoop(user, count, settings) {
-
-//   let userID = user?.id;
-//   let botSettings = settings?.botSettings;
-//   let userAPI = settings?.userAPI;
-//   // console.log('desync loop user', userID);
-
-//   // make sure the user should be trading just like in syncOrders loop
-//   if (user?.active && user?.approved && !user.paused && !botSettings?.maintenance) {
-
-//     if (count > 15) {
-//       count = 0
-//     }
-//     try {
-//       if (count === 0) {
-//         botSettings = await databaseClient.getBotSettings();
-//         userAPI = await databaseClient.getUserAPI(userID);
-//         user = await databaseClient.getUserAndSettings(userID);
-//       }
-
-//       await deSync(userID, botSettings, userAPI);
-
-//     } catch (err) {
-//       console.log(err, 'deSync loop error');
-//     }
-
-//     const newSettings = {
-//       botSettings: botSettings,
-//       userAPI: userAPI,
-//     }
-
-//     setTimeout(() => {
-//       deSyncOrderLoop(user, (count + 1), newSettings);
-//     }, 500);
-//   } else {
-//     // if the user should not be trading for some reason, update the params and restart loop
-//     // console.log('user paused or something');
-//     try {
-
-//       botSettings = await databaseClient.getBotSettings();
-//       const newSettings = {
-//         botSettings: botSettings,
-//         userAPI: userAPI,
-//       }
-//       const user = await databaseClient.getUserAndSettings(userID);
-
-//       if (user) {
-//         setTimeout(() => {
-//           deSyncOrderLoop(user, 0, newSettings);
-//         }, 5000);
-//       } else {
-//         console.log('stopping desync loop for user');
-//       }
-//     } catch (err) {
-//       console.log(err, 'error in desync loop');
-//       setTimeout(() => {
-//         deSyncOrderLoop(user, 0);
-//       }, 5000);
-//     }
-//   }
-// }
-
 
 async function deSync(userID, botSettings, userAPI) {
   cache.updateStatus(userID, 'begin desync');
@@ -352,7 +277,10 @@ async function deSync(userID, botSettings, userAPI) {
 }
 
 
-async function fullSync(userID, botSettings, userAPI) {
+async function fullSync(userID) {
+  const userAPI = cache.getAPI(userID);
+  const botSettings = cache.getKey(0, 'botSettings');
+
   cache.updateStatus(userID, 'begin full sync');
   // IF FULL SYNC, compare all trades that should be on CB, and do other less frequent maintenance tasks
   return new Promise(async (resolve, reject) => {
@@ -414,6 +342,8 @@ async function fullSync(userID, botSettings, userAPI) {
     } catch (err) {
       cache.updateStatus(userID, 'error in full sync');
       reject(err)
+    } finally {
+      cache.updateStatus(userID, 'done full sync');
     }
   });
 }
