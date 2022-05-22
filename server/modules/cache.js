@@ -1,4 +1,5 @@
 const databaseClient = require("./databaseClient");
+const socketClient = require("./socketClient");
 
 const cache = {
   // the storage array will store an object of different things at the index of the user id
@@ -48,14 +49,25 @@ const cache = {
   // ERROR STORAGE - store 1000 most recent errors
   storeError: (userID, error) => {
     const errorData = {
-      errorData: error.errorData,
+      // error text is to store a custom error message to show the user
       errorText: error.errorText,
+      // error data is intended to store actual chunks of data from the error response.
+      // keep in mind that the response includes headers that hold the API details, 
+      // so don't store the whole thing because it gets sent outside the server
+      errorData: error.errorData,
+      // automatically store the timestamp
       timeStamp: new Date()
     }
     cache.storage[userID].errors.unshift(errorData);
     if (cache.storage[userID].errors.length > 1000) {
       cache.storage[userID].errors.length = 1000;
     }
+    // tell Dom to update errors
+    socketClient.emit('message', {
+      // error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
+      errorUpdate: true,
+      userID: Number(userID)
+    });
   },
 
   getErrors: (userID) => {

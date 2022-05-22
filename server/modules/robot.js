@@ -144,28 +144,28 @@ async function syncOrders(userID, count, newUserAPI) {
 
 
       // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
-      if (ordersToCheck.length) {
-        // try {
-        cache.updateStatus(userID, 'start SMO from main loop');
-        // API ENDPOINTS USED: orders
-        await settleMultipleOrders(ordersToCheck, userID, userAPI);
-        heartBeat(userID, 'end settle orders');
-        cache.updateStatus(userID, 'end settle multiple orders, in main loop');
-        // console.log('updating funds');
-        await updateFunds(userID);
-        // } catch (err) {
-        //   if (err.response?.status === 500) {
-        //     console.log('internal server error from coinbase');
-        //     socketClient.emit('message', {
-        //       error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
-        //       orderUpdate: true,
-        //       userID: Number(userID)
-        //     });
-        //   } else {
-        //     console.log(err, 'Error settling all settled orders');
-        //   }
-        // }
-      }
+      // if (ordersToCheck.length) {
+      // try {
+      cache.updateStatus(userID, 'start SMO from main loop');
+      // API ENDPOINTS USED: orders
+      await settleMultipleOrders(ordersToCheck, userID, userAPI);
+      heartBeat(userID, 'end settle orders');
+      cache.updateStatus(userID, 'end settle multiple orders, in main loop');
+      // console.log('updating funds');
+      await updateFunds(userID);
+      // } catch (err) {
+      //   if (err.response?.status === 500) {
+      //     console.log('internal server error from coinbase');
+      //     socketClient.emit('message', {
+      //       error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
+      //       orderUpdate: true,
+      //       userID: Number(userID)
+      //     });
+      //   } else {
+      //     console.log(err, 'Error settling all settled orders');
+      //   }
+      // }
+      // }
 
       // move this back down here because orders need to stay in the db even if canceled until processOrders is done
       // the problem being that it might replace the order based on something stored in an array
@@ -222,7 +222,9 @@ async function syncOrders(userID, count, newUserAPI) {
       errorText: errorText
     })
   } finally {
-    heartBeat(userID, 'end main loop', true);
+    const loopNumber = cache.getLoopNumber(userID);
+    console.log('heartbeat count', loopNumber % botSettings.full_sync);
+    heartBeat(userID, loopNumber % botSettings.full_sync +1, true);
     cache.updateStatus(userID, 'end main loop finally');
     // when everything is done, call the sync again if the user still exists
     if (user) {
@@ -1369,12 +1371,12 @@ async function alertAllUsers(alertMessage) {
   }
 }
 
-function heartBeat(userID, status, mainHeart) {
+function heartBeat(userID, count, mainHeart) {
   socketClient.emit('message', {
     heartbeatStatus: true,
     heartbeat: mainHeart,
     userID: Number(userID),
-    status: status
+    count: count
   });
 }
 
