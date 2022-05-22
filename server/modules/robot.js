@@ -135,7 +135,7 @@ async function syncOrders(userID, count) {
           // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
           processOrders(userID),
           // desync extra orders
-          deSync(userID, botSettings, userAPI)
+          deSync(userID)
           // DELETE ALL ORDERS MARKED FOR DELETE
           // deleteMarkedOrders(userID)
         ]);
@@ -247,8 +247,12 @@ async function syncOrders(userID, count) {
 }
 
 
-async function deSync(userID, botSettings, userAPI) {
+async function deSync(userID) {
   cache.updateStatus(userID, 'begin desync');
+  
+  const userAPI = cache.getAPI(userID);
+  const botSettings = cache.getKey(0, 'botSettings');
+
   return new Promise(async (resolve, reject) => {
     try {
       let allToDeSync = [];
