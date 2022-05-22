@@ -29,13 +29,17 @@ const cache = {
   setKey: (userID, key, value) => {
     cache.storage[userID].keyValuePairs[key] = value;
   },
-
+  
   getKey: (userID, key) => {
     if (cache.storage[userID].keyValuePairs[key]) {
       return JSON.parse(JSON.stringify(cache.storage[userID].keyValuePairs[key]))
     } else {
       return null;
     }
+  },
+
+  deleteKey: (userID, key) => {
+    delete cache.storage[userID].keyValuePairs[key];
   },
 
   // LOOP STATUS UPDATES
