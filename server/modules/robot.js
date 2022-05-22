@@ -72,7 +72,7 @@ async function startSync() {
 }
 
 // REST protocol to find orders that have settled on coinbase
-async function syncOrders(userID, count, newUserAPI) {
+async function syncOrders(userID, count) {
   // console.log('cache for user', userID, cache.storage[userID]);
   // console.log('loop number', cache.getLoopNumber(userID))
   cache.increaseLoopNumber(userID);
@@ -90,7 +90,7 @@ async function syncOrders(userID, count, newUserAPI) {
     cache.updateStatus(userID, 'getting settings');
     user = await databaseClient.getUserAndSettings(userID);
     const loopNumber = cache.getLoopNumber(userID);
-    
+
     if (loopNumber === 1 && user.admin) {
       runAtStart(userID);
     }
@@ -112,8 +112,8 @@ async function syncOrders(userID, count, newUserAPI) {
 
         // update the user API every full sync so the loop is not calling the db for this info constantly
         // This allows for potentially allowing users to change their API in the future
-        // userAPI = await databaseClient.getUserAPI(userID);
-        // cache.storeAPI(userID, userAPI);
+        // newUserAPI = await databaseClient.getUserAPI(userID);
+        // cache.storeAPI(userID, newUserAPI);
 
         const full = await Promise.all([
           // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
@@ -251,7 +251,7 @@ async function syncOrders(userID, count, newUserAPI) {
       // console.log('cache', userID, cache.storage);
       setTimeout(() => {
         cache.clearStatus(userID);
-        syncOrders(userID, count + 1, userAPI);
+        syncOrders(userID, count + 1);
       }, (botSettings.loop_speed * 10));
     } else {
       console.log('user is NOT THERE, stopping loop for user');
