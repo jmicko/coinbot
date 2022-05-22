@@ -6,6 +6,7 @@ const databaseClient = require('../modules/databaseClient');
 const socketClient = require('../modules/socketClient');
 const robot = require('../modules/robot');
 const coinbaseClient = require('../modules/coinbaseClient');
+const cache = require('../modules/cache');
 
 
 /**
@@ -39,6 +40,11 @@ router.put('/loopSpeed', rejectUnauthenticated, async (req, res) => {
     try {
       const queryText = `UPDATE "bot_settings" SET "loop_speed" = $1;`;
       await pool.query(queryText, [loopSpeed]);
+
+      botSettings = await databaseClient.getBotSettings();
+      // console.log(botSettings);
+      cache.setKey(0, 'botSettings', botSettings);
+      
       res.sendStatus(200);
     } catch (err) {
       console.log('error with loop speed route', err);
@@ -70,6 +76,11 @@ router.put('/fullSync', rejectUnauthenticated, async (req, res) => {
       console.log('full_sync rroute hit', fullSync);
       const queryText = `UPDATE "bot_settings" SET "full_sync" = $1;`;
       await pool.query(queryText, [fullSync]);
+
+      botSettings = await databaseClient.getBotSettings();
+      // console.log(botSettings);
+      cache.setKey(0, 'botSettings', botSettings);
+
       res.sendStatus(200);
     } catch (err) {
       console.log('error with loop speed route', err);
@@ -98,6 +109,11 @@ router.put('/orderSyncQuantity', rejectUnauthenticated, async (req, res) => {
     try {
       const queryText = `UPDATE "bot_settings" SET "orders_to_sync" = $1;`;
       await pool.query(queryText, [orders_to_sync]);
+
+      botSettings = await databaseClient.getBotSettings();
+      // console.log(botSettings);
+      cache.setKey(0, 'botSettings', botSettings);
+
       res.sendStatus(200);
     } catch (err) {
       console.log('error with loop speed route', err);
@@ -122,6 +138,11 @@ router.put('/toggleMaintenance', rejectUnauthenticated, async (req, res) => {
     try {
       await databaseClient.toggleMaintenance();
       robot.alertAllUsers('Toggling maintenance mode!');
+
+      botSettings = await databaseClient.getBotSettings();
+      // console.log(botSettings);
+      cache.setKey(0, 'botSettings', botSettings);
+
       res.sendStatus(200);
     } catch (err) {
       console.log(err, 'error with toggleMaintenance route');

@@ -33,14 +33,19 @@ function countMany(num) {
   // })
 }
 
+let firstRun = true;
+
 // this will keep track of and update general bot settings
 async function botLoop() {
   userID = 0
   // console.log('botLoop');
   try {
-    botSettings = await databaseClient.getBotSettings();
-    // console.log(botSettings);
-    cache.setKey(userID, 'botSettings', botSettings);
+    if (firstRun) {
+      botSettings = await databaseClient.getBotSettings();
+      // console.log(botSettings);
+      firstRun = false;
+      cache.setKey(userID, 'botSettings', botSettings);
+    }
     // console.log(cache.getKey(0, 'botSettings'));
   } catch (err) {
     console.log(err, 'error in botLoop');
@@ -144,11 +149,6 @@ async function syncOrders(userID, count) {
         ordersToCheck = quick[0];
 
       }
-
-      // if (ordersToCheck.length) {
-      //   console.log('orders to check cache:', cache.getKey(userID, 'ordersToCheck'));
-      //   console.log('orders to check robot:', ordersToCheck);
-      // }
 
       // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
       // if (ordersToCheck.length) {
