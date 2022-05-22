@@ -50,7 +50,6 @@ async function startSync() {
 // REST protocol to find orders that have settled on coinbase
 async function syncOrders(userID, count, newUserAPI) {
   // console.log('cache for user', userID, cache.storage[userID]);
-  heartBeat(userID, 'begin main loop');
   // console.log('loop number', cache.getLoopNumber(userID))
   cache.increaseLoopNumber(userID);
   cache.updateStatus(userID, 'begin main loop');
@@ -64,7 +63,6 @@ async function syncOrders(userID, count, newUserAPI) {
   let botSettings;
   try {
 
-    heartBeat(userID, 'getting settings');
     cache.updateStatus(userID, 'getting settings');
     botSettings = await databaseClient.getBotSettings();
     user = await databaseClient.getUserAndSettings(userID);
@@ -88,7 +86,6 @@ async function syncOrders(userID, count, newUserAPI) {
 
       if (count === 0) {
         // *** FULL SYNC ***
-        heartBeat(userID, 'start full sync');
         cache.updateStatus(userID, 'start full sync');
 
         // update the user API every full sync so the loop is not calling the db for this info constantly
@@ -108,7 +105,6 @@ async function syncOrders(userID, count, newUserAPI) {
           // DELETE ALL ORDERS MARKED FOR DELETE
           // deleteMarkedOrders(userID)
         ]);
-        heartBeat(userID, 'end all full sync');
         cache.updateStatus(userID, 'end all full sync');
 
         const fullSyncOrders = full[0]
@@ -116,7 +112,6 @@ async function syncOrders(userID, count, newUserAPI) {
 
       } else {
         // *** QUICK SYNC ***
-        heartBeat(userID, 'start all quick sync');
         cache.updateStatus(userID, 'start all quick sync')
 
         // can run all three of these at the same time. 
@@ -135,7 +130,6 @@ async function syncOrders(userID, count, newUserAPI) {
           // DELETE ALL ORDERS MARKED FOR DELETE
           // deleteMarkedOrders(userID)
         ]);
-        heartBeat(userID, 'end all quick sync');
         cache.updateStatus(userID, 'end all quick sync');
 
         ordersToCheck = quick[0];
@@ -149,7 +143,6 @@ async function syncOrders(userID, count, newUserAPI) {
       cache.updateStatus(userID, 'start SMO from main loop');
       // API ENDPOINTS USED: orders
       await settleMultipleOrders(ordersToCheck, userID, userAPI);
-      heartBeat(userID, 'end settle orders');
       cache.updateStatus(userID, 'end settle multiple orders, in main loop');
       // console.log('updating funds');
       await updateFunds(userID);
@@ -171,7 +164,6 @@ async function syncOrders(userID, count, newUserAPI) {
       // the problem being that it might replace the order based on something stored in an array
       cache.updateStatus(userID, 'main loop - delete marked orders');
       await deleteMarkedOrders(userID);
-      heartBeat(userID, 'end delete orders');
       cache.updateStatus(userID, 'end delete orders');
 
     } else {
@@ -222,9 +214,7 @@ async function syncOrders(userID, count, newUserAPI) {
       errorText: errorText
     })
   } finally {
-    const loopNumber = cache.getLoopNumber(userID);
-    console.log('heartbeat count', loopNumber % botSettings.full_sync);
-    heartBeat(userID, loopNumber % botSettings.full_sync +1, true);
+    heartBeat(userID, botSettings, true);
     cache.updateStatus(userID, 'end main loop finally');
     // when everything is done, call the sync again if the user still exists
     if (user) {
@@ -363,7 +353,6 @@ async function fullSync(userID, botSettings, userAPI) {
         // get fees
         coinbaseClient.getFees(userID, userAPI)
       ]);
-      heartBeat(userID, 'done getting trades to compare');
       cache.updateStatus(userID, 'done getting trades to compare');
       // store the lists of orders in the corresponding arrays so they can be compared
       fullSyncOrders.dbOrders = results[0];
@@ -371,7 +360,6 @@ async function fullSync(userID, botSettings, userAPI) {
       const fees = results[2];
 
       await updateFunds(userID);
-      heartBeat(userID, 'done updating funds full sync');
       cache.updateStatus(userID, 'done updating funds full sync');
 
       // need to get the fees for more accurate Available funds reporting
@@ -398,7 +386,6 @@ async function fullSync(userID, botSettings, userAPI) {
         // wait for a second to allow cancels to go through so bot doesn't cancel twice
         await sleep(1000);
       }
-      heartBeat(userID, 'will resolve full sync');
       cache.updateStatus(userID, 'will resolve full sync');
 
       resolve(fullSyncOrders);
@@ -418,7 +405,6 @@ async function quickSync(userID, botSettings, userAPI) {
       let toCheck = [];
       // get the 500 most recent fills for the account
       const fills = await coinbaseClient.getLimitedFills(userID, 500, userAPI);
-      heartBeat(userID, 'done getting fills');
       cache.updateStatus(userID, 'done getting quick sync fills');
       // look at each fill and find the order in the db associated with it
       for (let i = 0; i < fills.length; i++) {
@@ -438,7 +424,6 @@ async function quickSync(userID, botSettings, userAPI) {
           }
         }
       }
-      heartBeat(userID, 'done checking fills');
       cache.updateStatus(userID, 'done checking fills');
       // this will check the specified number of trades to sync on either side to see if any 
       // need to be reordered. It will only find them on a loop after a loop where trades have been placed
@@ -448,7 +433,6 @@ async function quickSync(userID, botSettings, userAPI) {
       if (reorders.length >= 1) {
         reorders.forEach(order => toCheck.push(order))
       }
-      heartBeat(userID, 'will resolve quick sync');
       cache.updateStatus(userID, 'will resolve quick sync');
       resolve(toCheck);
     } catch (err) {
@@ -485,7 +469,6 @@ async function processOrders(userID, userAPI) {
     // store the trades in an object
     const result = await pool.query(sqlText, [userID]);
     const tradeList = result.rows;
-    heartBeat(userID, 'got all orders to process');
     cache.updateStatus(userID, 'got all orders to process');
     // if there is at least one trade...
     if (tradeList.length > 0) {
@@ -534,7 +517,6 @@ async function processOrders(userID, userAPI) {
         await sleep(150)
       }
     } else {
-      heartBeat(userID, 'will resolve processOrders');
       cache.updateStatus(userID, 'end resolve processOrders');
       resolve();
     }
@@ -1371,12 +1353,13 @@ async function alertAllUsers(alertMessage) {
   }
 }
 
-function heartBeat(userID, count, mainHeart) {
+function heartBeat(userID, botSettings, mainHeart) {
+  const loopNumber = cache.getLoopNumber(userID);
   socketClient.emit('message', {
     heartbeatStatus: true,
     heartbeat: mainHeart,
     userID: Number(userID),
-    count: count
+    count: loopNumber % botSettings.full_sync + 1
   });
 }
 
