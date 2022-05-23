@@ -461,20 +461,28 @@ async function processOrders(userID) {
             });
           }
         } catch (err) {
+          let errorData;
+          let errorText;
           cache.updateStatus(userID, 'error in process orders loop');
           if (err.code && err.code === 'ETIMEDOUT') {
             console.log('Timed out!!!!! from processOrders');
+            errorText = 'Coinbase timed out while flipping an order';
+            errorData = dbOrder;
           } else if (err.response?.status === 400) {
             console.log(err.response, 'Insufficient funds! from processOrders');
-            socketClient.emit('message', {
-              error: `Insufficient funds in processOrders!`,
-              userID: Number(dbOrder.userID)
-            });
+            errorText = 'Insufficient funds while trying to flip a trade!';
+            errorData = dbOrder;
             // todo - check funds to make sure there is enough for 
             // all of them to be replaced, and balance if needed
           } else {
             console.log(err, 'unknown error in processOrders');
+            errorText = 'unknown error while flipping an order';
+            errorData = dbOrder;
           }
+          cache.storeError(userID, {
+            errorData: errorData,
+            errorText: errorText
+          })
         }
         // avoid rate limiting and give orders time to settle before checking again
         await sleep(150)
