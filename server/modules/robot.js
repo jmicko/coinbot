@@ -141,8 +141,6 @@ async function syncOrders(userID, count) {
           processOrders(userID),
           // desync extra orders
           deSync(userID)
-          // DELETE ALL ORDERS MARKED FOR DELETE
-          // deleteMarkedOrders(userID)
         ]);
         cache.updateStatus(userID, 'end all quick sync');
 
@@ -176,35 +174,25 @@ async function syncOrders(userID, count) {
     cache.updateStatus(userID, 'error in the main loop');
     if (err.code === 'ECONNRESET') {
       errorText = 'Connection reset by Coinbase server';
-      console.log('Connection reset by Coinbase server');
+      console.log('Connection reset by Coinbase server. Probably nothing to worry about unless it keeps happening quickly.');
     } else if (err.response?.status === 500) {
       console.log('internal server error from coinbase');
-      errorText = 'internal server error from coinbase';
-      socketClient.emit('message', {
-        error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
-        orderUpdate: true,
-        userID: Number(userID)
-      });
+      errorText = 'Internal server error from coinbase';
     } else if (err.response?.status === 401) {
       console.log('Invalid Signature');
-      errorText = 'Invalid Signature';
-      socketClient.emit('message', {
-        error: `Invalid Signature end of syncOrders!`,
-        orderUpdate: false,
-        userID: Number(userID)
-      });
+      errorText = 'Invalid Signature. Probably nothing to worry about unless it keeps happening quickly.';
     } else if (err.response?.statusText === 'Bad Gateway') {
       console.log('bad gateway');
-      errorText = 'Bad Gateway';
+      errorText = 'Bad Gateway. Probably nothing to worry about unless it keeps happening quickly.';
     } else if (err.response?.statusText === 'Gateway Timeout') {
       console.log('Gateway Timeout');
-      errorText = 'Gateway Timeout';
+      errorText = 'Gateway Timeout. Nothing to worry about. Coinbase probably lost the connection';
     } else if (err.code === 'ECONNABORTED') {
       console.log('10 sec timeout');
-      errorText = '10 second timeout';
+      errorText = '10 second timeout. Nothing to worry about, Coinbase was just slow to respond.';
     } else {
       console.log(err, 'unknown error at end of syncOrders');
-      errorText = 'Unknown error at end of syncOrders';
+      errorText = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???';
     }
     cache.storeError(userID, {
       errorData: errorData,
