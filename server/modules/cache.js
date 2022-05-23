@@ -12,6 +12,7 @@ const cache = {
       user: user,
       botStatus: ['setup'],
       errors: [],
+      messages: [],
       keyValuePairs: {},
       loopNumber: 0,
       api: null
@@ -29,7 +30,6 @@ const cache = {
   setKey: (userID, key, value) => {
     cache.storage[userID].keyValuePairs[key] = value;
   },
-  
   getKey: (userID, key) => {
     if (cache.storage[userID].keyValuePairs[key]) {
       return JSON.parse(JSON.stringify(cache.storage[userID].keyValuePairs[key]))
@@ -37,7 +37,6 @@ const cache = {
       return null;
     }
   },
-
   deleteKey: (userID, key) => {
     delete cache.storage[userID].keyValuePairs[key];
   },
@@ -49,11 +48,9 @@ const cache = {
       cache.storage[userID].botStatus.length = 100;
     }
   },
-
   getStatus: (userID) => {
     return cache.storage[userID].botStatus;
   },
-
   clearStatus: (userID) => {
     cache.storage[userID].botStatus.length = 0;
   },
@@ -81,13 +78,39 @@ const cache = {
       userID: Number(userID)
     });
   },
-
   getErrors: (userID) => {
     return cache.storage[userID].errors;
   },
-
   clearErrors: (userID) => {
     cache.storage[userID].errors.length = 0;
+  },
+
+  // MESSAGE STORAGE - store 1000 most recent messages
+  storeMessage: (userID, message) => {
+    const messageData = {
+      // message text is to store a custom message message to show the user
+      messageText: message.messageText,
+      // automatically store the timestamp
+      timeStamp: new Date()
+    }
+    cache.storage[userID].messages.unshift(messageData);
+    if (cache.storage[userID].messages.length > 1000) {
+      cache.storage[userID].messages.length = 1000;
+    }
+    // tell Dom to update messages
+    socketClient.emit('message', {
+      // message: `Internal server message from coinbase! Is the Coinbase Pro website down?`,
+      messageUpdate: true,
+      userID: Number(userID)
+    });
+  },
+
+  getMessages: (userID) => {
+    return cache.storage[userID].messages;
+  },
+
+  clearMessages: (userID) => {
+    cache.storage[userID].messages.length = 0;
   },
 
   // LOOP COUNTER
