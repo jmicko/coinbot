@@ -119,6 +119,9 @@ function Home(props) {
             return [datedError, ...prevErrors]
           });
         }
+        if (message.errorUpdate) {
+          dispatch({type: 'FETCH_ERRORS'});
+        }
       }
     });
     // this will remove the listener when component rerenders

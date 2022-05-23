@@ -15,6 +15,19 @@ function* fetchProfits() {
   }
 }
 
+function* fetchErrors(action) {
+  try {
+    const response = yield axios.get(`/api/account/errors`);
+    // yield put({ type: 'SET_PROFITS', payload: response.data })
+    console.log(response.data);
+  } catch (error) {
+    // console.log('GET profits route has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 function* storeApi(action) {
   try {
     yield axios.post(`/api/account/storeApi`, action.payload);
@@ -139,6 +152,7 @@ function* debug(action) {
 
 function* accountSaga() {
   yield takeLatest('FETCH_PROFITS', fetchProfits);
+  yield takeLatest('FETCH_ERRORS', fetchErrors);
   yield takeLatest('STORE_API', storeApi);
   yield takeLatest('RESET_PROFIT', resetProfit);
   yield takeLatest('PAUSE', pause);
