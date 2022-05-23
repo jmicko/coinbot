@@ -178,6 +178,21 @@ router.get('/debug', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
+* GET route to get user's errors from cache
+*/
+router.get('/errors', rejectUnauthenticated, async (req, res) => {
+  const userID = req.user.id;
+  try {
+    const userErrors = cache.getErrors(userID);
+    console.log('getting errors', userErrors);
+    res.send(userErrors);
+  } catch (err) {
+    console.log(err, 'problem debug route');
+    res.sendStatus(500)
+  }
+});
+
+/**
  * PUT route to change status of pause
  */
 router.put('/pause', rejectUnauthenticated, async (req, res) => {
