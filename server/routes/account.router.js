@@ -198,7 +198,8 @@ router.get('/errors', rejectUnauthenticated, async (req, res) => {
 router.put('/pause', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
-    databaseClient.setPause(!user.paused, user.id)
+    await databaseClient.setPause(!user.paused, user.id);
+    await cache.refreshUser(user.id);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in PAUSE ROUTE');
@@ -214,6 +215,7 @@ router.put('/theme', rejectUnauthenticated, async (req, res) => {
   try {
     const queryText = `UPDATE "user_settings" SET "theme" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.theme, user.id]);
+    await cache.refreshUser(user.id);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in THEME ROUTE');
@@ -228,7 +230,8 @@ router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
     const queryText = `UPDATE "user_settings" SET "reinvest" = $1 WHERE "userID" = $2`;
-    let result = await pool.query(queryText, [!user.reinvest, user.id]);
+    await pool.query(queryText, [!user.reinvest, user.id]);
+    await cache.refreshUser(user.id);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in REINVEST ROUTE');
@@ -244,6 +247,7 @@ router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
   try {
     const queryText = `UPDATE "user_settings" SET "reinvest_ratio" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.reinvest_ratio, user.id]);
+    await cache.refreshUser(user.id);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in REINVEST ROUTE');
@@ -258,7 +262,8 @@ router.put('/tradeMax', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
     const queryText = `UPDATE "user_settings" SET "max_trade" = $1 WHERE "userID" = $2`;
-    let result = await pool.query(queryText, [!user.max_trade, user.id]);
+    await pool.query(queryText, [!user.max_trade, user.id]);
+    await cache.refreshUser(user.id);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in tradeMax ROUTE');
@@ -279,6 +284,7 @@ router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
       const queryText = `UPDATE "user_settings" SET "max_trade_size" = $1 WHERE "userID" = $2`;
       await pool.query(queryText, [0, user.id]);
     }
+    await cache.refreshUser(user.id);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in maxTradeSize ROUTE');
@@ -297,6 +303,7 @@ router.post('/resetProfit', rejectUnauthenticated, async (req, res) => {
   try {
     await pool.query(queryText, [userID]);
     await pool.query(timeQuery, [profit_reset, userID]);
+    await cache.refreshUser(user.id);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem resetting profit');
@@ -337,6 +344,7 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
 
     // set the account as active
     let result = await pool.query(queryText, [userID]);
+    await cache.refreshUser(user.id);
 
     res.sendStatus(200);
   } catch (err) {

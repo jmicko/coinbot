@@ -162,6 +162,7 @@ router.put('/tradeLoadMax', rejectUnauthenticated, async (req, res) => {
   try {
     const queryText = `UPDATE "user_settings" SET "max_trade_load" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.max_trade_load, user.id]);
+    await cache.refreshUser(user.id);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'error with tradeLoadMax route');
@@ -178,6 +179,7 @@ router.put('/postMaxReinvestRatio', rejectUnauthenticated, async (req, res) => {
     console.log("postMaxReinvestRatio route hit", req.body);
     const queryText = `UPDATE "user_settings" SET "post_max_reinvest_ratio" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.postMaxReinvestRatio, user.id]);
+    await cache.refreshUser(user.id);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in postMaxReinvestRatio ROUTE');
@@ -193,6 +195,7 @@ router.put('/reserve', rejectUnauthenticated, async (req, res) => {
   try {
     const queryText = `UPDATE "user_settings" SET "reserve" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.reserve, user.id]);
+    await cache.refreshUser(user.id);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in reserve ROUTE');
@@ -218,6 +221,7 @@ router.put('/profitAccuracy', rejectUnauthenticated, async (req, res) => {
     console.log('profit_accuracy route hit', req.body);
     const queryText = `UPDATE "user_settings" SET "profit_accuracy" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [accuracy(), user.id]);
+    await cache.refreshUser(user.id);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'error with profit accuracy route');
@@ -231,7 +235,8 @@ router.put('/profitAccuracy', rejectUnauthenticated, async (req, res) => {
 router.put('/killLock', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
-    databaseClient.setKillLock(!user.kill_locked, user.id)
+    databaseClient.setKillLock(!user.kill_locked, user.id);
+    await cache.refreshUser(user.id);
     console.log('kill lock route hit', user);
     res.sendStatus(200);
   } catch (err) {
@@ -250,7 +255,8 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
   const bulk_pair_ratio = req.body.bulk_pair_ratio;
   try {
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
-    await databaseClient.setPause(true, userID)
+    await databaseClient.setPause(true, userID);
+    await cache.refreshUser(user.id);
 
     // wait 5 seconds to give the sync loop more time to finish
     await robot.sleep(5000);
@@ -279,9 +285,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
     SET "price" = "original_sell_price"
     WHERE "side" = 'sell' AND "userID" = $1;`;
 
-    await pool.query(updateSellsPriceQueryText, [
-      user.id
-    ]);
+    await pool.query(updateSellsPriceQueryText, [user.id]);
 
     // Now cancel all trades so they can be reordered with the new numbers
     // mark all open orders as reorder
@@ -291,7 +295,8 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
     await coinbaseClient.cancelAllOrders(userID);
 
     // set pause status to what it was before route was hit
-    await databaseClient.setPause(previousPauseStatus, userID)
+    await databaseClient.setPause(previousPauseStatus, userID);
+    await cache.refreshUser(user.id);
 
     res.sendStatus(200);
   } catch (err) {

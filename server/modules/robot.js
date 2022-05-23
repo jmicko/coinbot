@@ -57,6 +57,7 @@ async function syncOrders(userID, count) {
 
   // get the user settings from cache;
   const user = cache.getUser(userID);
+  console.log('user from cache:', user);
   // get the bot settings
   const botSettings = cache.getKey(0, 'botSettings');
   try {
