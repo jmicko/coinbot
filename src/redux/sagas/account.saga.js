@@ -18,7 +18,7 @@ function* fetchProfits() {
 function* fetchErrors(action) {
   try {
     const response = yield axios.get(`/api/account/errors`);
-    // yield put({ type: 'SET_PROFITS', payload: response.data })
+    yield put({ type: 'SET_BOT_ERRORS', payload: response.data })
     console.log(response.data);
   } catch (error) {
     // console.log('GET profits route has failed', error);
@@ -152,7 +152,7 @@ function* debug(action) {
 
 function* accountSaga() {
   yield takeLatest('FETCH_PROFITS', fetchProfits);
-  yield takeLatest('FETCH_ERRORS', fetchErrors);
+  yield takeLatest('FETCH_BOT_ERRORS', fetchErrors);
   yield takeLatest('STORE_API', storeApi);
   yield takeLatest('RESET_PROFIT', resetProfit);
   yield takeLatest('PAUSE', pause);

@@ -1,16 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { connect } from 'react-redux';
+import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 import { useSocket } from "../../contexts/SocketProvider";
 import './Messages.css'
 
 
 function Messages(props) {
+  const dispatch = useDispatch();
   const [collapsed, setCollapsed] = useState(false);
 
   function toggleCollapse() {
     setCollapsed(!collapsed);
   }
+
+  useEffect(() => {
+    dispatch({type: 'FETCH_BOT_ERRORS'})
+  }, [])
+  
 
   return (
     // show messages on screen
@@ -27,8 +33,12 @@ function Messages(props) {
         {/* ERRORS */}
         <div className="errors-section scrollable">
           <h3 className={`title ${props.theme}`}>{collapsed && props.errorCount} Errors</h3>
-          {!collapsed && props.errors.map((error, i) => {
+          {/* {!collapsed && props.errors.map((error, i) => {
             return <p key={i}><strong>Err #{props.errorCount - i} {error.date}</strong> <br /> {error.error}</p>
+          })} */}
+          {/* <p>{JSON.stringify(props.store.errorsReducer.botErrors)}</p> */}
+          {!collapsed && props.store.errorsReducer.botErrors.map((error, i) => {
+            return <p key={i}><strong>Err #{props.store.errorsReducer.botErrors.length - i} {new Date(error.timeStamp).toLocaleString('en-US')}</strong> <br /> {error.errorText}</p>
           })}
         </div>
       </div>
