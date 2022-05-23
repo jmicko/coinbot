@@ -8,51 +8,18 @@ const cache = require("./cache")
 // const endTime = performance.now();
 // console.log(`getFees redis took ${endTime - startTime} milliseconds`)
 
-// runAtStart()
-function runAtStart(userID) {
-  console.log('first');
-  const many = countMany(1000000000)
-  console.log(many)
-  console.log('third');
-  cache.setKey(userID, 'name', 'thomas');
-  cache.setKey(userID, 'name', 'dan');
-  cache.setKey(userID, 'age', 23);
-  cache.setKey(userID, 'friends', ['jane', 'mark', 'julia']);
-  const name = cache.getKey(userID, 'name')
-  console.log('stored name is:', name);
-}
-
-function countMany(num) {
-  // return new Promise((resolve, reject) => {
-  let count = 0;
-  while (count < num) {
-    count++;
-  }
-  return 'second'
-  // resolve('second');
-  // })
-}
-
-let firstRun = true;
 
 // this will keep track of and update general bot settings
 async function botLoop() {
   userID = 0
   // console.log('botLoop');
   try {
-    if (firstRun) {
-      botSettings = await databaseClient.getBotSettings();
-      // console.log(botSettings);
-      firstRun = false;
-      cache.setKey(userID, 'botSettings', botSettings);
-    }
-    // console.log(cache.getKey(0, 'botSettings'));
+    botSettings = await databaseClient.getBotSettings();
+
+    cache.setKey(userID, 'botSettings', botSettings);
+
   } catch (err) {
     console.log(err, 'error in botLoop');
-  } finally {
-    setTimeout(() => {
-      botLoop();
-    }, 5000);
   }
 }
 
@@ -78,28 +45,23 @@ async function startSync() {
 
 // REST protocol to find orders that have settled on coinbase
 async function syncOrders(userID, count) {
-  // console.log('cache for user', userID, cache.storage[userID]);
-  // console.log('loop number', cache.getLoopNumber(userID))
+  // increase the loop number tracker at the beginning of the loop
   cache.increaseLoopNumber(userID);
   cache.updateStatus(userID, 'begin main loop');
+  // keep track of how long the loop is running. Helps prevent rate limiting
+  // todo - there is a better way to do this
   let timer = true;
   setTimeout(() => {
     timer = false;
   }, 100);
-  let user;
-  // store user API separate from user so it is not accidentally sent outside the server
-  const userAPI = cache.getAPI(userID);
-  // console.log('user API', userAPI);
+
+  // get the user settings from cache;
+  const user = cache.getUser(userID);
+  // get the bot settings
   const botSettings = cache.getKey(0, 'botSettings');
   try {
     cache.updateStatus(userID, 'getting settings');
-    user = await databaseClient.getUserAndSettings(userID);
     const loopNumber = cache.getLoopNumber(userID);
-
-    if (loopNumber === 1 && user.admin) {
-      runAtStart(userID);
-    }
-
 
     if (count > botSettings.full_sync - 1) {
       count = 0
@@ -356,6 +318,7 @@ async function quickSync(userID) {
 
             const singleDbOrder = await databaseClient.getSingleTrade(fill.order_id);
             console.log('SINGLE ORDER', fill.order_id);
+            console.log('RECENT FILL', recentFill);
 
             // only need to check it if there is an order in the db. Otherwise it might be a basic trade
             if (singleDbOrder) {

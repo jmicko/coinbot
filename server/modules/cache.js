@@ -21,9 +21,20 @@ const cache = {
     try {
       userAPI = await databaseClient.getUserAPI(userID);
       cache.storeAPI(userID, userAPI);
+      await cache.refreshUser(userID);
     } catch (err) {
       console.log(err, 'error creating new user');
     }
+  },
+
+  // USER SETTINGS STORAGE
+  refreshUser: async (userID) => {
+    user = await databaseClient.getUserAndSettings(userID);
+    cache.storage[userID].user = user;
+  },
+
+  getUser: (userID) => {
+    return JSON.parse(JSON.stringify(cache.storage[userID].user))
   },
 
   // KEY VALUE STORAGE
