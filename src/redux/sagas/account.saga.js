@@ -112,30 +112,6 @@ function* storeMaxTradeSize(action) {
   }
 }
 
-function* factoryReset() {
-  try {
-    yield axios.post(`/api/account/factoryReset`);
-    yield put({ type: 'UNSET_USER' });
-  } catch (error) {
-    console.log('post account route factoryReset has failed', error);
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
-
-function* ordersReset() {
-  try {
-    yield axios.post(`/api/account/ordersReset`);
-    yield put({ type: 'FETCH_ORDERS' });
-  } catch (error) {
-    console.log('post account route factoryReset has failed', error);
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
-
 function* exportXlsx() {
   try {
     const response = yield axios.get(`/api/account/exportXlsx`);
@@ -162,7 +138,6 @@ function* debug(action) {
 }
 
 function* accountSaga() {
-  // yield takeLatest('FETCH_FEES', fetchFees);
   yield takeLatest('FETCH_PROFITS', fetchProfits);
   yield takeLatest('STORE_API', storeApi);
   yield takeLatest('RESET_PROFIT', resetProfit);
@@ -172,8 +147,6 @@ function* accountSaga() {
   yield takeLatest('REINVEST_RATIO', reinvestRatio);
   yield takeLatest('TOGGLE_TRADE_MAX', tradeMax);
   yield takeLatest('STORE_MAX_TRADE_SIZE', storeMaxTradeSize);
-  yield takeLatest('FACTORY_RESET', factoryReset);
-  yield takeLatest('ORDERS_RESET', ordersReset);
   yield takeLatest('EXPORT_XLSX', exportXlsx);
   yield takeLatest('DEBUG', debug);
 }
