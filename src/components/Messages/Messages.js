@@ -26,7 +26,11 @@ function Messages(props) {
       <div className="message-board">
         {/* MESSAGES */}
         <div className="message-section scrollable">
-          <h3 className={`title ${props.theme}`}>{collapsed && props.messagesCount} General Messages</h3>
+          <h3 className={`title ${props.theme}`}>
+            {collapsed && props.messagesCount} General Messages 
+            {/* <button className='btn-red'><span className='gg-trash'></span></button> */}
+          </h3>
+
           {/* {!collapsed && props.messages.map((message, i) => {
             return <p key={i}><strong>Msg #{props.messagesCount - i} {message.date}</strong> <br /> {message.message}</p>
           })} */}
