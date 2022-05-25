@@ -120,7 +120,7 @@ function Home(props) {
           });
         }
         if (message.errorUpdate) {
-          dispatch({type: 'FETCH_ERRORS'});
+          dispatch({type: 'FETCH_BOT_ERRORS'});
         }
       }
     });

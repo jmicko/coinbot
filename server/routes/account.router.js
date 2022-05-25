@@ -184,7 +184,7 @@ router.get('/errors', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   try {
     const userErrors = cache.getErrors(userID);
-    console.log('getting errors', userErrors);
+    // console.log('getting errors', userErrors);
     res.send(userErrors);
   } catch (err) {
     console.log(err, 'problem debug route');
