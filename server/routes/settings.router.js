@@ -73,7 +73,7 @@ router.put('/fullSync', rejectUnauthenticated, async (req, res) => {
 
   if (user.admin && fullSync <= 100 && fullSync >= 1) {
     try {
-      console.log('full_sync rroute hit', fullSync);
+      console.log('full_sync route hit', fullSync);
       const queryText = `UPDATE "bot_settings" SET "full_sync" = $1;`;
       await pool.query(queryText, [fullSync]);
 

@@ -164,7 +164,7 @@ async function syncOrders(userID, count) {
       errorText: errorText
     })
   } finally {
-    heartBeat(userID, botSettings, true);
+    heartBeat(userID, true);
     cache.updateStatus(userID, 'end main loop finally');
     cache.deleteKey(userID, 'ordersToCheck');
 
@@ -375,12 +375,10 @@ async function deleteMarkedOrders(userID) {
       const queryText = `DELETE from "orders" WHERE "will_cancel"=true AND "userID"=$1;`;
       let result = await pool.query(queryText, [userID]);
       if (result.rowCount > 0) {
-        socketClient.emit('message', {
-          // message: `orders marked for cancel were deleted from db`,
-          orderUpdate: true,
-          userID: Number(userID)
+        cache.storeMessage(userID, {
+          messageText: `Orders marked for cancel were canceled`,
+          orderUpdate: true
         });
-        cache.storeMessage(userID, { messageText: `Orders marked for cancel were canceled` });
       }
       resolve(result);
     } catch (err) {
@@ -422,9 +420,8 @@ async function processOrders(userID) {
             const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
             let updatedTrade = await pool.query(queryText, [dbOrder.id]);
             // tell the frontend that an update was made so the DOM can update
-            socketClient.emit('message', {
-              orderUpdate: true,
-              userID: Number(dbOrder.userID)
+            cache.storeMessage(Number(userID), {
+              orderUpdate: true
             });
           }
         } catch (err) {
@@ -489,10 +486,6 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     // if it was a buy, sell for more. multiply old price
     tradeDetails.side = "sell"
     tradeDetails.price = dbOrder.original_sell_price;
-    // socketClient.emit('message', {
-    //   message: `Selling for $${Number(tradeDetails.price)}`,
-    //   userID: Number(dbOrder.userID)
-    // });
     cache.storeMessage(userID, { messageText: `Selling for $${Number(tradeDetails.price)}` });
   } else {
     // if it is a sell turning into a buy, check if user wants to reinvest the funds
@@ -506,12 +499,11 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
       if (amountToReinvest <= 0) {
         console.log('negative profit');
         amountToReinvest = 0;
-        socketClient.emit('message', {
-          error: `Just saw a negative profit! Maybe increase your trade-pair ratio? 
-          This may also be due to fees that were charged during setup or at a different fee tier.`,
-          orderUpdate: false,
-          userID: Number(dbOrder.userID)
-        });
+        cache.storeError(userID, {
+          errorData: dbOrder,
+          errorText: `Just saw a negative profit! Maybe increase your trade-pair ratio? 
+          This may also be due to fees that were charged during setup or at a different fee tier.`
+        })
       }
 
       // safer to round down the investment amount. 
@@ -580,10 +572,6 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "buy"
     tradeDetails.price = dbOrder.original_buy_price;
-    // socketClient.emit('message', {
-    //   message: `Buying for $${Number(tradeDetails.price)}`,
-    //   userID: Number(dbOrder.userID)
-    // });
     cache.storeMessage(userID, { messageText: `Buying for $${Number(tradeDetails.price)}` });
   }
   // return the tradeDetails object
@@ -614,10 +602,6 @@ async function settleMultipleOrders(userID) {
 
   return new Promise(async (resolve, reject) => {
     if (ordersArray.length > 0) {
-      // socketClient.emit('message', {
-      //   message: `There are ${ordersArray.length} orders that need to be synced`,
-      //   userID: Number(userID)
-      // });
       cache.storeMessage(userID, { messageText: `There are ${ordersArray.length} orders that need to be synced` });
 
       // loop over the array and flip each trade
@@ -630,10 +614,7 @@ async function settleMultipleOrders(userID) {
           reorderTimer = false;
         }, 80);
         // send heartbeat for each loop
-        socketClient.emit('message', {
-          heartbeat: true,
-          userID: Number(userID)
-        });
+        heartBeat(userID, true);
         try {
           // get all the order details from cb unless it is supposed to be reordered
           if (!orderToCheck.reorder) {
@@ -733,12 +714,10 @@ async function reorder(orderToReorder, userAPI) {
             // delete the old order from the db
             await databaseClient.deleteTrade(orderToReorder.id);
             // tell the DOM to update
-            socketClient.emit('message', {
-              // message: `trade was reordered`,
+            cache.storeMessage(userID, {
+              messageText: `trade was reordered`,
               orderUpdate: true,
-              userID: Number(upToDateDbOrder.userID)
             });
-            cache.storeMessage(Number(upToDateDbOrder.userID), { messageText: `trade was reordered` });
 
             resolve({
               results: results,
@@ -746,13 +725,10 @@ async function reorder(orderToReorder, userAPI) {
             })
           } catch (err) {
             if (err.response?.status === 400) {
-              // console.log('Insufficient funds when reordering missing trade in the loop!');
-              socketClient.emit('message', {
-                error: `Insufficient funds!`,
-                orderUpdate: true,
-                userID: Number(orderToReorder.userID)
-              });
-              reject('Insufficient funds')
+              cache.storeError(userID, {
+                errorData: orderToReorder,
+                errorText: `Insufficient funds when trying to reorder an order! Do you have a negative balance?`
+              })
             }
             console.log(err, 'error in reorder function in robot.js');
             reject(err)
@@ -790,11 +766,6 @@ async function reorder(orderToReorder, userAPI) {
           // delete the old order from the db
           await databaseClient.deleteTrade(orderToReorder.id);
           // tell the DOM to update
-          // socketClient.emit('message', {
-          //   message: `trade was reordered`,
-          //   orderUpdate: true,
-          //   userID: Number(orderToReorder.userID)
-          // });
           cache.storeMessage(userID, {
             messageText: `trade was reordered`,
             orderUpdate: true
@@ -806,12 +777,10 @@ async function reorder(orderToReorder, userAPI) {
           })
         } catch (err) {
           if (err.response?.status === 400) {
-            socketClient.emit('message', {
-              error: `Insufficient funds!`,
-              orderUpdate: true,
-              userID: Number(orderToReorder.userID)
-            });
-            reject('Insufficient funds')
+            cache.storeError(userID, {
+              errorData: orderToReorder,
+              errorText: `Insufficient funds when trying to reorder an order! Do you have a negative balance?`
+            })
           }
           console.log('error in reorder function in robot.js');
           reject(err)
@@ -867,12 +836,11 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
             // new array will be made on next loop
             i += ordersArray.length; // don't use break because need current loop iteration to finish
           } else if (err.response?.status === 401 || err.response?.status === 502) {
-            console.log('connection issue in cancel orders loop. Probably nothing to worry about');
-            socketClient.emit('message', {
-              error: `Connection issue in cancel orders loop. Probably nothing to worry about unless it keeps repeating.`,
-              orderUpdate: true,
-              userID: Number(userID)
-            });
+            cache.storeError(Number(userID), {
+              errorData: orderToCancel,
+              errorText: `Connection issue in cancel orders loop. 
+              Probably nothing to worry about unless it keeps repeating.`
+            })
           } else {
             console.log(err, 'unknown error in cancelMultipleOrders for loop');
           }
@@ -882,11 +850,6 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
         await sleep(80);
       } //end for loop
       // if all goes well, send message to user and resolve promise with success message
-      // socketClient.emit('message', {
-      //   message: `${quantity} Extra orders were found and canceled`,
-      //   orderUpdate: true,
-      //   userID: Number(userID)
-      // });
       cache.storeMessage(Number(userID), {
         messageText: `${quantity} Extra orders were found and canceled`,
         orderUpdate: true
@@ -1102,6 +1065,7 @@ async function autoSetup(user, parameters) {
 
 // auto setup trades until run out of money. Keeping this old version for a while until the new one is well tested
 async function oldautoSetup(user, parameters) {
+  const userID = user.id;
   // stop bot from adding more trades if 10000 already placed
   const orderCounts = await databaseClient.getUnsettledTradeCounts(user.id);
   const unsettledCounts = Number(orderCounts.totalOpenOrders.count);
@@ -1154,16 +1118,11 @@ async function oldautoSetup(user, parameters) {
     await updateFunds(user.id);
 
     // tell the DOM to update
-    socketClient.emit('message', {
-      message: `trade was auto-placed`,
-      orderUpdate: true,
-      userID: Number(user.id)
-    });
-    cache.storeMessage(userID, {
+    cache.storeMessage(Number(user.id), {
       messageText: `trade was auto-placed`,
       orderUpdate: true
     });
-    
+
 
     await robot.sleep(500);
 
@@ -1190,21 +1149,23 @@ async function oldautoSetup(user, parameters) {
     if (err.response?.status === 400) {
       console.log(err.response?.data?.message, 'Insufficient funds! Or too small order or some similar problem');
       if (err.response?.data?.message) {
-
-        socketClient.emit('message', {
-          error: err.response.data.message + " - Auto setup done",
+        // update DOM
+        cache.storeMessage(userID, {
           orderUpdate: true,
-          userID: Number(user.id)
-        });
+          messageText: err.response.data.message + " - Auto setup done"
+        })
       }
     } else if (err.code && err.code === 'ETIMEDOUT') {
-      console.log('Timed out!!!!!');
-      socketClient.emit('message', {
-        error: `Connection timed out - Auto setup done to prevent gaps. You may want to start again.`,
-        orderUpdate: true
-      });
+      // update DOM
+      cache.storeMessage(userID, {
+        orderUpdate: true,
+        messageText: `Connection timed out - Auto setup done to prevent gaps. You may want to start again.`
+      })
     } else {
       console.log(err, 'problem in autoSetup');
+      cache.storeError(userID, {
+        errorText: `unknown error in auto setup`
+      })
     }
   }
 }
@@ -1229,7 +1190,7 @@ async function getAvailableFunds(userID, userSettings) {
       const availableUSD = USD.available;
       const balanceUSD = USD.balance;
       const spentUSD = results[1].sum;
-      // subtract the total amount spent from the total balanc
+      // subtract the total amount spent from the total balance
       const actualAvailableUSD = (balanceUSD - spentUSD).toFixed(16);
 
       // calculate BTC balances
@@ -1237,7 +1198,7 @@ async function getAvailableFunds(userID, userSettings) {
       const availableBTC = BTC.available;
       const balanceBTC = BTC.balance;
       const spentBTC = results[2].sum;
-      // subtract the total amount spent from the total balanc
+      // subtract the total amount spent from the total balance
       const actualAvailableBTC = Number((balanceBTC - spentBTC).toFixed(16));
 
       const availableFunds = {
@@ -1267,14 +1228,9 @@ async function updateFunds(userID) {
 
       await databaseClient.saveFunds(available, userID);
 
+      // check if the funds have changed and update the DOM if needed
       if (Number(userSettings.actualavailable_usd) !== Number(available.actualAvailableUSD)) {
-        // console.log('usd available did change');
-        // socketClient.emit('message', {
-        //   orderUpdate: true,
-        //   userID: Number(userID)
-        // });
         cache.storeMessage(Number(userID), {
-          // messageText: ``,
           orderUpdate: true
         });
       }
@@ -1304,8 +1260,10 @@ async function alertAllUsers(alertMessage) {
   }
 }
 
-function heartBeat(userID, botSettings, mainHeart) {
+function heartBeat(userID, mainHeart) {
   const loopNumber = cache.getLoopNumber(userID);
+  const botSettings = cache.getKey(0, 'botSettings');
+  
   socketClient.emit('message', {
     heartbeatStatus: true,
     heartbeat: mainHeart,
@@ -1315,11 +1273,11 @@ function heartBeat(userID, botSettings, mainHeart) {
 }
 
 
+
 const robot = {
   sleep: sleep,
   flipTrade: flipTrade,
   syncOrders: syncOrders,
-  // deSyncOrderLoop: deSyncOrderLoop,
   processOrders: processOrders,
   startSync: startSync,
   autoSetup: autoSetup,
