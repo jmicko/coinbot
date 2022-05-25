@@ -13,6 +13,7 @@ const cache = {
       botStatus: ['setup'],
       errors: [],
       messages: [],
+      willCancel: [],
       keyValuePairs: {},
       loopNumber: 0,
       api: null,
@@ -26,6 +27,26 @@ const cache = {
       await cache.refreshUser(userID);
     } catch (err) {
       console.log(err, 'error creating new user');
+    }
+  },
+
+  // KEEP TRACK OF ORDERS TO CANCEL
+  setCancel: (userID, orderID) => {
+    cache.storage[userID].willCancel.unshift(orderID);
+    if (cache.storage[userID].willCancel.length > 100) {
+      cache.storage[userID].willCancel.length = 100;
+    }
+  },
+
+  checkIfCanceling: (userID, orderID) => {
+    console.log(
+      'in check cancel',
+      cache.storage[userID].willCancel.indexOf(orderID)
+    );
+    if (cache.storage[userID].willCancel.indexOf(orderID) == -1) {
+      return false;
+    } else {
+      return true;
     }
   },
 

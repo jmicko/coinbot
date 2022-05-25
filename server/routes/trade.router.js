@@ -6,6 +6,7 @@ const databaseClient = require('../modules/databaseClient');
 const socketClient = require('../modules/socketClient');
 const robot = require('../modules/robot');
 const coinbaseClient = require('../modules/coinbaseClient');
+const cache = require('../modules/cache');
 
 
 /**
@@ -204,7 +205,14 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
   // DELETE route code here
   const userID = req.user.id;
   const orderId = req.body.id;
-  console.log('in the server trade DELETE route')
+  console.log('in the server trade DELETE route', orderId);
+
+  cache.setCancel(userID, orderId);
+
+  console.log(cache.storage[userID].willCancel);
+
+  const willCancel = cache.checkIfCanceling(userID, orderId);
+  console.log('will it cancel?', willCancel);
 
   // mark as canceled in db
   try {
