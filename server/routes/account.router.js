@@ -193,6 +193,21 @@ router.get('/errors', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
+* GET route to get user's messages from cache
+*/
+router.get('/messages', rejectUnauthenticated, async (req, res) => {
+  const userID = req.user.id;
+  try {
+    const userMessages = cache.getMessages(userID);
+    // console.log('getting Messages', userMessages);
+    res.send(userMessages);
+  } catch (err) {
+    console.log(err, 'problem debug route');
+    res.sendStatus(500)
+  }
+});
+
+/**
  * PUT route to change status of pause
  */
 router.put('/pause', rejectUnauthenticated, async (req, res) => {

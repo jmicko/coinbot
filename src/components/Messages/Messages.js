@@ -14,9 +14,10 @@ function Messages(props) {
   }
 
   useEffect(() => {
-    dispatch({type: 'FETCH_BOT_ERRORS'})
+    dispatch({ type: 'FETCH_BOT_ERRORS' });
+    dispatch({ type: 'FETCH_BOT_MESSAGES' });
   }, [])
-  
+
 
   return (
     // show messages on screen
@@ -26,8 +27,11 @@ function Messages(props) {
         {/* MESSAGES */}
         <div className="message-section scrollable">
           <h3 className={`title ${props.theme}`}>{collapsed && props.messagesCount} General Messages</h3>
-          {!collapsed && props.messages.map((message, i) => {
+          {/* {!collapsed && props.messages.map((message, i) => {
             return <p key={i}><strong>Msg #{props.messagesCount - i} {message.date}</strong> <br /> {message.message}</p>
+          })} */}
+          {!collapsed && props.store.accountReducer.botMessages.map((message, i) => {
+            return <p key={i}><strong>Err #{props.store.accountReducer.botMessages.length - i} {new Date(message.timeStamp).toLocaleString('en-US')}</strong> <br /> {message.messageText}</p>
           })}
         </div>
         {/* ERRORS */}

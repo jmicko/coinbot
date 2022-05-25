@@ -65,6 +65,18 @@ const debugReducer = (state = [], action) => {
   }
 };
 
+const botMessages = (state = [], action) => {
+  switch (action.type) {
+    case 'CLEAR_BOT_MESSAGES':
+      return [];
+    case 'SET_BOT_MESSAGES':
+      return action.payload;
+    default:
+      return state;
+  }
+};
+
+
 export default combineReducers({
   userReducer,
   // feeReducer,
@@ -72,4 +84,5 @@ export default combineReducers({
   accountReducer,
   xlsxReducer,
   debugReducer,
+  botMessages,
 });

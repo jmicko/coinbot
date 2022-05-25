@@ -64,6 +64,8 @@ async function syncOrders(userID, count) {
     cache.updateStatus(userID, 'getting settings');
     const loopNumber = cache.getLoopNumber(userID);
 
+    cache.storeMessage(userID, {messageText: `starting loop #${loopNumber}`});
+
     if (count > botSettings.full_sync - 1) {
       count = 0
     }

@@ -15,10 +15,23 @@ function* fetchProfits() {
   }
 }
 
-function* fetchErrors(action) {
+function* fetchErrors() {
   try {
     const response = yield axios.get(`/api/account/errors`);
     yield put({ type: 'SET_BOT_ERRORS', payload: response.data })
+    console.log(response.data);
+  } catch (error) {
+    // console.log('GET profits route has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
+function* fetchMessages() {
+  try {
+    const response = yield axios.get(`/api/account/messages`);
+    yield put({ type: 'SET_BOT_MESSAGES', payload: response.data })
     console.log(response.data);
   } catch (error) {
     // console.log('GET profits route has failed', error);
@@ -153,6 +166,7 @@ function* debug(action) {
 function* accountSaga() {
   yield takeLatest('FETCH_PROFITS', fetchProfits);
   yield takeLatest('FETCH_BOT_ERRORS', fetchErrors);
+  yield takeLatest('FETCH_BOT_MESSAGES', fetchMessages);
   yield takeLatest('STORE_API', storeApi);
   yield takeLatest('RESET_PROFIT', resetProfit);
   yield takeLatest('PAUSE', pause);
