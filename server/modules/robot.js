@@ -317,16 +317,16 @@ async function quickSync(userID) {
         // get order from db
         if (fill.settled) {
           if (recentFill != fill.order_id) {
-            console.log('they are NOT the same')
+            // console.log('they are NOT the same')
 
             const singleDbOrder = await databaseClient.getSingleTrade(fill.order_id);
-            console.log('SINGLE ORDER', fill.order_id);
-            console.log('RECENT FILL', recentFill);
+            // console.log('SINGLE ORDER', fill.order_id);
+            // console.log('RECENT FILL', recentFill);
 
             // only need to check it if there is an order in the db. Otherwise it might be a basic trade
             if (singleDbOrder) {
               // check if the order has already been settled in the db
-              console.log('SINGLE ORDER', fill.settled);
+              // console.log('SINGLE ORDER', fill.settled);
               // if (!fill.settled) {
 
               // }
@@ -425,26 +425,22 @@ async function processOrders(userID) {
             });
           }
         } catch (err) {
-          let errorData;
           let errorText;
           cache.updateStatus(userID, 'error in process orders loop');
           if (err.code && err.code === 'ETIMEDOUT') {
             console.log('Timed out!!!!! from processOrders');
             errorText = 'Coinbase timed out while flipping an order';
-            errorData = dbOrder;
           } else if (err.response?.status === 400) {
             console.log(err.response, 'Insufficient funds! from processOrders');
             errorText = 'Insufficient funds while trying to flip a trade!';
-            errorData = dbOrder;
             // todo - check funds to make sure there is enough for 
             // all of them to be replaced, and balance if needed
           } else {
             console.log(err, 'unknown error in processOrders');
             errorText = 'unknown error while flipping an order';
-            errorData = dbOrder;
           }
           cache.storeError(userID, {
-            errorData: errorData,
+            errorData: dbOrder,
             errorText: errorText
           })
         }
@@ -606,8 +602,10 @@ async function settleMultipleOrders(userID) {
 
       // loop over the array and flip each trade
       for (let i = 0; i < ordersArray.length; i++) {
-        cache.updateStatus(userID, `SMO loop number: ${i}`);
         const orderToCheck = ordersArray[i];
+        cache.updateStatus(userID, `SMO loop number: ${i}`);
+
+        console.log('HERE IS THE ORDER IN SETTLE MULTIPLE ORDERS', orderToCheck);
         // this timer will serve to prevent rate limiting
         let reorderTimer = true;
         setTimeout(() => {
@@ -639,11 +637,14 @@ async function settleMultipleOrders(userID) {
         } catch (err) {
           cache.updateStatus(userID, 'error in SMO loop');
           // handle not found order
+          let errorText = `Error marking order as settled`
           if (err.response?.status === 404) {
+            errorText = `Order not found!`
             // if the order was supposed to be canceled, cancel it
             if (orderToCheck.will_cancel) {
               // delete the trade from the db
               await databaseClient.deleteTrade(orderToCheck.id);
+              errorText = null;
             }
             // if the order was not supposed to be canceled, reorder it
             else {
@@ -651,12 +652,17 @@ async function settleMultipleOrders(userID) {
                 await reorder(orderToCheck, userAPI);
               } catch (err) {
                 console.log(err, 'error reordering trade');
+                errorText = null;
               }
             } // end reorder
           } // end not found
           else {
             console.log(err, 'error in settleMultipleOrders loop');
           }
+          cache.storeError(userID, {
+            errorData: orderToCheck,
+            errorText: errorText
+          })
         } // end catch
         while (reorderTimer) {
           await sleep(10);
@@ -843,6 +849,10 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
             })
           } else {
             console.log(err, 'unknown error in cancelMultipleOrders for loop');
+            cache.storeError(Number(userID), {
+              errorData: orderToCancel,
+              errorText: `unknown error in cancelMultipleOrders for loop`
+            })
           }
         }
         await updateFunds(userID);
@@ -1058,6 +1068,9 @@ async function autoSetup(user, parameters) {
     }
   } catch (err) {
     console.log(err, 'problem in autoSetup ');
+    cache.storeError(userID, {
+      errorText: `problem in auto setup`
+    })
   }
 }
 
@@ -1214,6 +1227,9 @@ async function getAvailableFunds(userID, userSettings) {
       resolve(availableFunds)
     } catch (err) {
       cache.updateStatus(userID, 'error getting available funds');
+      cache.storeError(userID, {
+        errorText: 'error getting available funds'
+      })
       reject(err)
     }
   })
@@ -1239,6 +1255,9 @@ async function updateFunds(userID) {
       resolve()
     } catch (err) {
       cache.updateStatus(userID, 'error updating funds');
+      cache.storeError(userID, {
+        errorText: 'error getting available funds'
+      })
       reject(err)
     }
   })
