@@ -1293,7 +1293,7 @@ async function alertAllUsers(alertMessage) {
   try {
     const userList = await databaseClient.getAllUsers();
     userList.forEach(user => {
-      console.log(user);
+      // console.log(user);
       cache.storeMessage(Number(user.id), {
         messageText: alertMessage,
         orderUpdate: true

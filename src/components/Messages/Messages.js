@@ -32,7 +32,7 @@ function Messages(props) {
           })} */}
           {!collapsed && props.store.accountReducer.botMessages.map((message, i) => {
             if (message.messageText) {
-              return <p key={i}><strong>Err #{props.store.accountReducer.botMessages.length - i} {new Date(message.timeStamp).toLocaleString('en-US')}</strong> <br /> {message.messageText}</p>
+              return <p key={i}><strong>Err #{message.count} {new Date(message.timeStamp).toLocaleString('en-US')}</strong> <br /> {message.messageText}</p>
             }
           })}
         </div>
@@ -44,7 +44,7 @@ function Messages(props) {
           })} */}
           {/* <p>{JSON.stringify(props.store.errorsReducer.botErrors)}</p> */}
           {!collapsed && props.store.errorsReducer.botErrors.map((error, i) => {
-            return <p key={i}><strong>Err #{props.store.errorsReducer.botErrors.length - i} {new Date(error.timeStamp).toLocaleString('en-US')}</strong> <br /> {error.errorText}</p>
+            return <p key={i}><strong>Err #{error.count} {new Date(error.timeStamp).toLocaleString('en-US')}</strong> <br /> {error.errorText}</p>
           })}
         </div>
       </div>

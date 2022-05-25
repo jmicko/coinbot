@@ -15,7 +15,9 @@ const cache = {
       messages: [],
       keyValuePairs: {},
       loopNumber: 0,
-      api: null
+      api: null,
+      messageCount: 1,
+      errorCount: 1
     };
     // cache the API from the db
     try {
@@ -76,8 +78,11 @@ const cache = {
       // so don't store the whole thing because it gets sent outside the server
       errorData: error.errorData,
       // automatically store the timestamp
-      timeStamp: new Date()
+      timeStamp: new Date(),
+      count: cache.storage[userID].errorCount
     }
+    cache.storage[userID].errorCount++;
+
     cache.storage[userID].errors.unshift(errorData);
     if (cache.storage[userID].errors.length > 1000) {
       cache.storage[userID].errors.length = 1000;
@@ -102,8 +107,11 @@ const cache = {
       // message text is to store a custom message message to show the user
       messageText: message.messageText,
       // automatically store the timestamp
-      timeStamp: new Date()
+      timeStamp: new Date(),
+      count: cache.storage[userID].messageCount
     }
+    cache.storage[userID].messageCount++;
+
     cache.storage[userID].messages.unshift(messageData);
     if (cache.storage[userID].messages.length > 1000) {
       cache.storage[userID].messages.length = 1000;
