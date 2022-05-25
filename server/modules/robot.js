@@ -164,7 +164,7 @@ async function syncOrders(userID, count) {
       errorText: errorText
     })
   } finally {
-    heartBeat(userID, true);
+    heartBeat(userID);
     cache.updateStatus(userID, 'end main loop finally');
     cache.deleteKey(userID, 'ordersToCheck');
 
@@ -614,7 +614,7 @@ async function settleMultipleOrders(userID) {
           reorderTimer = false;
         }, 80);
         // send heartbeat for each loop
-        heartBeat(userID, true);
+        heartBeat(userID);
         try {
           // get all the order details from cb unless it is supposed to be reordered
           if (!orderToCheck.reorder) {
@@ -1260,13 +1260,12 @@ async function alertAllUsers(alertMessage) {
   }
 }
 
-function heartBeat(userID, mainHeart) {
+function heartBeat(userID) {
   const loopNumber = cache.getLoopNumber(userID);
   const botSettings = cache.getKey(0, 'botSettings');
-  
+
   socketClient.emit('message', {
-    heartbeatStatus: true,
-    heartbeat: mainHeart,
+    heartbeat: true,
     userID: Number(userID),
     count: loopNumber % botSettings.full_sync + 1
   });

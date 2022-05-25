@@ -8,7 +8,6 @@ import { useSocket } from "../../contexts/SocketProvider";
 function Status(props) {
   const dispatch = useDispatch();
   const [loopStatus, setLoopStatus] = useState(true);
-  const [botStatus, setBotStatus] = useState('loading...');
   const [fullSync, setFullSync] = useState("");
   const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
   const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
@@ -88,9 +87,6 @@ function Status(props) {
           // console.log('previous error count', prevErrorCount);
           return !prevLoopStatus;
         });
-      }
-      if (message.heartbeatStatus && message.userID === props.store.accountReducer.userReducer.id) {
-        setBotStatus(message.status)
       }
     });
 
@@ -229,7 +225,6 @@ function Status(props) {
           onChange={props.handleAutoScrollChange}
         />
         <br />
-        {/* {botStatus} */}
         {props.store.accountReducer.userReducer.paused &&
           <strong className='red'>~~~PAUSED~~~</strong>
         }
