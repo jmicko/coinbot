@@ -225,9 +225,6 @@ function Status(props) {
         {/* <br /> */}
         <input
           type="checkbox"
-          id="topping"
-          name="topping"
-          value="Paneer"
           checked={props.isAutoScroll}
           onChange={props.handleAutoScrollChange}
         />
