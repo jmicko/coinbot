@@ -108,10 +108,11 @@ const cache = {
     if (cache.storage[userID].messages.length > 1000) {
       cache.storage[userID].messages.length = 1000;
     }
-    // tell Dom to update messages
+    // tell Dom to update messages and trade list if needed
     socketClient.emit('message', {
       // message: `Internal server message from coinbase! Is the Coinbase Pro website down?`,
       messageUpdate: true,
+      orderUpdate: message.orderUpdate,
       userID: Number(userID)
     });
   },

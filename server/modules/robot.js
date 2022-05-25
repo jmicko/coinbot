@@ -64,7 +64,7 @@ async function syncOrders(userID, count) {
     cache.updateStatus(userID, 'getting settings');
     const loopNumber = cache.getLoopNumber(userID);
 
-    cache.storeMessage(userID, {messageText: `starting loop #${loopNumber}`});
+    // cache.storeMessage(userID, {messageText: ``});
 
     if (count > botSettings.full_sync - 1) {
       count = 0
@@ -376,10 +376,11 @@ async function deleteMarkedOrders(userID) {
       let result = await pool.query(queryText, [userID]);
       if (result.rowCount > 0) {
         socketClient.emit('message', {
-          message: `orders marked for cancel were deleted from db`,
+          // message: `orders marked for cancel were deleted from db`,
           orderUpdate: true,
           userID: Number(userID)
         });
+        cache.storeMessage(userID, { messageText: `Orders marked for cancel were canceled` });
       }
       resolve(result);
     } catch (err) {
@@ -488,10 +489,11 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     // if it was a buy, sell for more. multiply old price
     tradeDetails.side = "sell"
     tradeDetails.price = dbOrder.original_sell_price;
-    socketClient.emit('message', {
-      message: `Selling for $${Number(tradeDetails.price)}`,
-      userID: Number(dbOrder.userID)
-    });
+    // socketClient.emit('message', {
+    //   message: `Selling for $${Number(tradeDetails.price)}`,
+    //   userID: Number(dbOrder.userID)
+    // });
+    cache.storeMessage(userID, { messageText: `Selling for $${Number(tradeDetails.price)}` });
   } else {
     // if it is a sell turning into a buy, check if user wants to reinvest the funds
     if (user.reinvest) {
@@ -578,10 +580,11 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "buy"
     tradeDetails.price = dbOrder.original_buy_price;
-    socketClient.emit('message', {
-      message: `Buying for $${Number(tradeDetails.price)}`,
-      userID: Number(dbOrder.userID)
-    });
+    // socketClient.emit('message', {
+    //   message: `Buying for $${Number(tradeDetails.price)}`,
+    //   userID: Number(dbOrder.userID)
+    // });
+    cache.storeMessage(userID, { messageText: `Buying for $${Number(tradeDetails.price)}` });
   }
   // return the tradeDetails object
   cache.updateStatus(userID, 'end flip trade');
@@ -611,10 +614,12 @@ async function settleMultipleOrders(userID) {
 
   return new Promise(async (resolve, reject) => {
     if (ordersArray.length > 0) {
-      socketClient.emit('message', {
-        message: `There are ${ordersArray.length} orders that need to be synced`,
-        userID: Number(userID)
-      });
+      // socketClient.emit('message', {
+      //   message: `There are ${ordersArray.length} orders that need to be synced`,
+      //   userID: Number(userID)
+      // });
+      cache.storeMessage(userID, { messageText: `There are ${ordersArray.length} orders that need to be synced` });
+
       // loop over the array and flip each trade
       for (let i = 0; i < ordersArray.length; i++) {
         cache.updateStatus(userID, `SMO loop number: ${i}`);
@@ -729,10 +734,12 @@ async function reorder(orderToReorder, userAPI) {
             await databaseClient.deleteTrade(orderToReorder.id);
             // tell the DOM to update
             socketClient.emit('message', {
-              message: `trade was reordered`,
+              // message: `trade was reordered`,
               orderUpdate: true,
               userID: Number(upToDateDbOrder.userID)
             });
+            cache.storeMessage(Number(upToDateDbOrder.userID), { messageText: `trade was reordered` });
+
             resolve({
               results: results,
               reordered: true
@@ -783,11 +790,16 @@ async function reorder(orderToReorder, userAPI) {
           // delete the old order from the db
           await databaseClient.deleteTrade(orderToReorder.id);
           // tell the DOM to update
-          socketClient.emit('message', {
-            message: `trade was reordered`,
-            orderUpdate: true,
-            userID: Number(orderToReorder.userID)
+          // socketClient.emit('message', {
+          //   message: `trade was reordered`,
+          //   orderUpdate: true,
+          //   userID: Number(orderToReorder.userID)
+          // });
+          cache.storeMessage(userID, {
+            messageText: `trade was reordered`,
+            orderUpdate: true
           });
+
           resolve({
             results: results,
             reordered: true
@@ -870,11 +882,16 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
         await sleep(80);
       } //end for loop
       // if all goes well, send message to user and resolve promise with success message
-      socketClient.emit('message', {
-        message: `${quantity} Extra orders were found and canceled`,
-        orderUpdate: true,
-        userID: Number(userID)
+      // socketClient.emit('message', {
+      //   message: `${quantity} Extra orders were found and canceled`,
+      //   orderUpdate: true,
+      //   userID: Number(userID)
+      // });
+      cache.storeMessage(Number(userID), {
+        messageText: `${quantity} Extra orders were found and canceled`,
+        orderUpdate: true
       });
+
 
       cache.updateStatus(userID, 'done CMO');
       resolve({
@@ -891,22 +908,6 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
       })
     }
   });
-}
-
-async function syncEverything() {
-  try {
-    await coinbaseClient.cancelAllOrders();
-    socketClient.emit('message', {
-      message: `synching everything`,
-      orderUpdate: true
-    });
-  } catch (err) {
-    console.log('error at end of syncEverything function');
-    socketClient.emit('message', {
-      error: `unknown error when trying to sync everything`,
-      orderUpdate: true
-    });
-  }
 }
 
 // take in an array and an item to check
@@ -1158,6 +1159,11 @@ async function oldautoSetup(user, parameters) {
       orderUpdate: true,
       userID: Number(user.id)
     });
+    cache.storeMessage(userID, {
+      messageText: `trade was auto-placed`,
+      orderUpdate: true
+    });
+    
 
     await robot.sleep(500);
 
@@ -1263,9 +1269,13 @@ async function updateFunds(userID) {
 
       if (Number(userSettings.actualavailable_usd) !== Number(available.actualAvailableUSD)) {
         // console.log('usd available did change');
-        socketClient.emit('message', {
-          orderUpdate: true,
-          userID: Number(userID)
+        // socketClient.emit('message', {
+        //   orderUpdate: true,
+        //   userID: Number(userID)
+        // });
+        cache.storeMessage(Number(userID), {
+          // messageText: ``,
+          orderUpdate: true
         });
       }
 
@@ -1283,11 +1293,10 @@ async function alertAllUsers(alertMessage) {
   try {
     const userList = await databaseClient.getAllUsers();
     userList.forEach(user => {
-      // console.log(user);
-      socketClient.emit('message', {
-        message: alertMessage,
-        orderUpdate: true,
-        userID: Number(user.id)
+      console.log(user);
+      cache.storeMessage(Number(user.id), {
+        messageText: alertMessage,
+        orderUpdate: true
       });
     });
   } catch (err) {
@@ -1312,7 +1321,6 @@ const robot = {
   syncOrders: syncOrders,
   // deSyncOrderLoop: deSyncOrderLoop,
   processOrders: processOrders,
-  syncEverything: syncEverything,
   startSync: startSync,
   autoSetup: autoSetup,
   getAvailableFunds: getAvailableFunds,

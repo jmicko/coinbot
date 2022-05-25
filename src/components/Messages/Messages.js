@@ -31,7 +31,9 @@ function Messages(props) {
             return <p key={i}><strong>Msg #{props.messagesCount - i} {message.date}</strong> <br /> {message.message}</p>
           })} */}
           {!collapsed && props.store.accountReducer.botMessages.map((message, i) => {
-            return <p key={i}><strong>Err #{props.store.accountReducer.botMessages.length - i} {new Date(message.timeStamp).toLocaleString('en-US')}</strong> <br /> {message.messageText}</p>
+            if (message.messageText) {
+              return <p key={i}><strong>Err #{props.store.accountReducer.botMessages.length - i} {new Date(message.timeStamp).toLocaleString('en-US')}</strong> <br /> {message.messageText}</p>
+            }
           })}
         </div>
         {/* ERRORS */}
