@@ -209,14 +209,15 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
 
   cache.setCancel(userID, orderId);
 
-  console.log(cache.storage[userID].willCancel);
+  // console.log(cache.storage[userID].willCancel);
 
-  const willCancel = cache.checkIfCanceling(userID, orderId);
-  console.log('will it cancel?', willCancel);
+  // const willCancel = cache.checkIfCanceling(userID, orderId);
+  // console.log('will it cancel?', willCancel);
 
   // mark as canceled in db
   try {
     const queryText = `UPDATE "orders" SET "will_cancel" = true WHERE "id"=$1 RETURNING *;`;
+    // const queryText = `UPDATE "orders" SET "will_cancel" = false WHERE "id"=$1 RETURNING *;`;
     const result = await pool.query(queryText, [orderId]);
     const order = result.rows[0];
     // if it is a reorder, there is no reason to cancel on CB

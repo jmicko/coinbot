@@ -82,7 +82,6 @@ async function syncOrders(userID, count) {
           // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
           // API ENDPOINTS USED: orders, fees
           fullSync(userID),
-          // these two can run at the same time because they are mutually exclusive based on the will_cancel column
           // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
           processOrders(userID)
         ]);
@@ -642,6 +641,8 @@ async function settleMultipleOrders(userID) {
             errorText = `Order not found!`
             // if the order was supposed to be canceled, cancel it
             if (orderToCheck.will_cancel) {
+              // todo - is this even used anymore? orders that are will_cancel should not end up in the array
+              console.log('WHY IS THIS STILL IN USE???');
               // delete the trade from the db
               await databaseClient.deleteTrade(orderToCheck.id);
               errorText = null;
