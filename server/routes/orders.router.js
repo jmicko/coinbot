@@ -104,7 +104,7 @@ router.delete('/range', rejectUnauthenticated, async (req, res) => {
 
 
 /**
-* DELETE route - Mark all orders as will_cancel
+* DELETE route - delete all orders from DB, then cancel on CB
 */
 router.delete('/all', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;

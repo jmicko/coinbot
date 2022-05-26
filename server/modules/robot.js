@@ -409,8 +409,9 @@ async function processOrders(userID) {
         let tradeDetails = flipTrade(dbOrder, user, tradeList, i);
         // ...send the new trade
         try {
-          let cancelling = await databaseClient.checkIfCancelling(dbOrder.id);
-          if (!cancelling) {
+          const willCancel = cache.checkIfCanceling(userID, dbOrder.id);
+          // let cancelling = await databaseClient.checkIfCancelling(dbOrder.id);
+          if (!willCancel) {
             let cbOrder = await coinbaseClient.placeOrder(tradeDetails, userAPI);
             // ...store the new trade
             // take the time the new order was created, and use it as the flipped_at value
@@ -630,8 +631,11 @@ async function settleMultipleOrders(userID) {
               orderToCheck.id
             ]);
           } else {
-            cache.updateStatus(userID, 'SMO loop reorder');
-            await reorder(orderToCheck, userAPI);
+            const willCancel = cache.checkIfCanceling(userID, orderToCheck.id);
+            if (!willCancel) {
+              cache.updateStatus(userID, 'SMO loop reorder');
+              await reorder(orderToCheck, userAPI);
+            }
           }
         } catch (err) {
           cache.updateStatus(userID, 'error in SMO loop');
@@ -640,15 +644,16 @@ async function settleMultipleOrders(userID) {
           if (err.response?.status === 404) {
             errorText = `Order not found!`
             // if the order was supposed to be canceled, cancel it
-            if (orderToCheck.will_cancel) {
+            const willCancel = cache.checkIfCanceling(userID, orderToCheck.id);
+            console.log('was the order SUPPOSED to cancel?', willCancel);
+            if (willCancel) {
               // todo - is this even used anymore? orders that are will_cancel should not end up in the array
               console.log('WHY IS THIS STILL IN USE???');
               // delete the trade from the db
               await databaseClient.deleteTrade(orderToCheck.id);
               errorText = null;
-            }
-            // if the order was not supposed to be canceled, reorder it
-            else {
+            } else {
+              // if the order was not supposed to be canceled, reorder it
               try {
                 await reorder(orderToCheck, userAPI);
               } catch (err) {
@@ -686,82 +691,30 @@ async function settleMultipleOrders(userID) {
   })
 }
 
-async function reorder(orderToReorder, userAPI) {
+async function reorder(orderToReorder, userAPI, retry) {
   const userID = orderToReorder.userID;
   cache.updateStatus(userID, 'begin reorder');
   return new Promise(async (resolve, reject) => {
     let upToDateDbOrder;
+    let tradeDetails;
     try {
       upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.id);
 
+      tradeDetails = {
+        original_sell_price: upToDateDbOrder.original_sell_price,
+        original_buy_price: upToDateDbOrder.original_buy_price,
+        side: upToDateDbOrder.side,
+        price: upToDateDbOrder.price, // USD
+        size: upToDateDbOrder.size, // BTC
+        product_id: upToDateDbOrder.product_id,
+        trade_pair_ratio: upToDateDbOrder.trade_pair_ratio,
+        stp: 'cn',
+        userID: upToDateDbOrder.userID,
+      };
       // if the order is marked for reordering, it was deleted already and there is no need to wait to double check
-      if (upToDateDbOrder.reorder) {
-        // also need to ensure that the order was not supposed to be canceled 
-        if (!upToDateDbOrder.will_cancel) {
-          try {
-            const tradeDetails = {
-              original_sell_price: upToDateDbOrder.original_sell_price,
-              original_buy_price: upToDateDbOrder.original_buy_price,
-              side: upToDateDbOrder.side,
-              price: upToDateDbOrder.price, // USD
-              size: upToDateDbOrder.size, // BTC
-              product_id: upToDateDbOrder.product_id,
-              trade_pair_ratio: upToDateDbOrder.trade_pair_ratio,
-              stp: 'cn',
-              userID: upToDateDbOrder.userID,
-            };
-            // send the new order with the trade details
-            let pendingTrade = await coinbaseClient.placeOrder(tradeDetails, userAPI);
-            // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
-            tradeDetails.fill_fees = upToDateDbOrder.previous_fill_fees;
-            // store the new trade in the db. the trade details are also sent to store trade position prices
-            // when reordering a trade, bring the old flipped_at value through so it doesn't change the "Time" on screen
-            let results = await databaseClient.storeTrade(pendingTrade, tradeDetails, upToDateDbOrder.flipped_at);
-
-            // delete the old order from the db
-            await databaseClient.deleteTrade(orderToReorder.id);
-            // tell the DOM to update
-            cache.storeMessage(userID, {
-              messageText: `trade was reordered`,
-              orderUpdate: true,
-            });
-
-            resolve({
-              results: results,
-              reordered: true
-            })
-          } catch (err) {
-            if (err.response?.status === 400) {
-              cache.storeError(userID, {
-                errorData: orderToReorder,
-                errorText: `Insufficient funds when trying to reorder an order! Do you have a negative balance?`
-              })
-            }
-            console.log(err, 'error in reorder function in robot.js');
-            reject(err)
-          }
-        }
-      } else {
-        await sleep(1000);
-        // check again. if it finds it, don't do anything. If not found, error handling will reorder
-        let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID, userAPI);
-      }
-    } catch (err) {
-      let cancelling = await databaseClient.checkIfCancelling(orderToReorder.id);
-      if ((err.response?.status === 404) && (!cancelling)) {
-        // console.log('reordering', upToDateDbOrder);
+      // if retry is passed as true, the bot has already double check CB and not found both times so reorder
+      if (upToDateDbOrder.reorder || retry) {
         try {
-          const tradeDetails = {
-            original_sell_price: upToDateDbOrder.original_sell_price,
-            original_buy_price: upToDateDbOrder.original_buy_price,
-            side: upToDateDbOrder.side,
-            price: upToDateDbOrder.price, // USD
-            size: upToDateDbOrder.size, // BTC
-            product_id: upToDateDbOrder.product_id,
-            trade_pair_ratio: upToDateDbOrder.trade_pair_ratio,
-            stp: 'cn',
-            userID: orderToReorder.userID,
-          };
           // send the new order with the trade details
           let pendingTrade = await coinbaseClient.placeOrder(tradeDetails, userAPI);
           // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
@@ -775,7 +728,7 @@ async function reorder(orderToReorder, userAPI) {
           // tell the DOM to update
           cache.storeMessage(userID, {
             messageText: `trade was reordered`,
-            orderUpdate: true
+            orderUpdate: true,
           });
 
           resolve({
@@ -789,9 +742,19 @@ async function reorder(orderToReorder, userAPI) {
               errorText: `Insufficient funds when trying to reorder an order! Do you have a negative balance?`
             })
           }
-          console.log('error in reorder function in robot.js');
+          console.log(err, 'error in reorder function in robot.js');
           reject(err)
-        }
+        }        
+      } else {
+        await sleep(1000);
+        // check again. if it finds it, don't do anything. If not found, error handling will reorder in the 404
+        let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID, userAPI);
+      }
+    } catch (err) {
+      const willCancel = cache.checkIfCanceling(userID, orderToReorder.id);
+      if ((err.response?.status === 404) && (!willCancel)) {
+        // call reorder again with retry as true so it will reorder right away
+        reorder(orderToReorder, userAPI, true);
       }
     }
     resolve();
