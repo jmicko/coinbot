@@ -614,9 +614,20 @@ async function settleMultipleOrders(userID) {
         // send heartbeat for each loop
         heartBeat(userID);
         try {
-          // get all the order details from cb unless it is supposed to be reordered
-          if (!orderToCheck.reorder) {
+          // if it should be canceled, delete it and skip the rest of the loop iteration
+          const willCancel = cache.checkIfCanceling(userID, orderToCheck.id);
+          if (willCancel) {
+            // delete the trade from the db
+            await databaseClient.deleteTrade(orderToCheck.id);
+            continue;
+          } else if (orderToCheck.reorder) {
+            // if we know it should be reordered, just reorder it
+            cache.updateStatus(userID, 'SMO loop reorder');
+            await reorder(orderToCheck, userAPI);
+          } else {
+            // if not a reorder and not canceled, look up the full settlement details on CB
             cache.updateStatus(userID, 'SMO loop get order');
+            // get all the order details from cb
             let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID, userAPI);
             // console.log('fully settled:', fullSettledDetails);
             // update the order in the db
@@ -630,12 +641,6 @@ async function settleMultipleOrders(userID) {
               fullSettledDetails.done_reason,
               orderToCheck.id
             ]);
-          } else {
-            const willCancel = cache.checkIfCanceling(userID, orderToCheck.id);
-            if (!willCancel) {
-              cache.updateStatus(userID, 'SMO loop reorder');
-              await reorder(orderToCheck, userAPI);
-            }
           }
         } catch (err) {
           cache.updateStatus(userID, 'error in SMO loop');
@@ -643,23 +648,12 @@ async function settleMultipleOrders(userID) {
           let errorText = `Error marking order as settled`
           if (err.response?.status === 404) {
             errorText = `Order not found!`
-            // if the order was supposed to be canceled, cancel it
-            const willCancel = cache.checkIfCanceling(userID, orderToCheck.id);
-            console.log('was the order SUPPOSED to cancel?', willCancel);
-            if (willCancel) {
-              // todo - is this even used anymore? orders that are will_cancel should not end up in the array
-              console.log('WHY IS THIS STILL IN USE???');
-              // delete the trade from the db
-              await databaseClient.deleteTrade(orderToCheck.id);
-              errorText = null;
-            } else {
-              // if the order was not supposed to be canceled, reorder it
-              try {
-                await reorder(orderToCheck, userAPI);
-              } catch (err) {
-                console.log(err, 'error reordering trade');
-                errorText = null;
-              }
+            // reorder it
+            try {
+              await reorder(orderToCheck, userAPI);
+            } catch (err) {
+              console.log(err, 'error reordering trade');
+              errorText = `Error finding order on Coinbase, could not reorder`;
             } // end reorder
           } // end not found
           else {
@@ -675,18 +669,11 @@ async function settleMultipleOrders(userID) {
         }
       } // end for loop
       cache.updateStatus(userID, 'SMO all done');
-      // if all goes well, resolve promise with success message
-      resolve({
-        message: "All settled orders were flipped successfully",
-        ordersSettled: true
-      });
+      resolve();
     } else {
-      cache.updateStatus(userID, 'SMO all done');
+      cache.updateStatus(userID, 'SMO all done, no orders to settle');
       // if no orders to settle, resolve
-      resolve({
-        message: "No orders to settle",
-        ordersSettled: false
-      });
+      resolve();
     }
   })
 }
@@ -744,7 +731,7 @@ async function reorder(orderToReorder, userAPI, retry) {
           }
           console.log(err, 'error in reorder function in robot.js');
           reject(err)
-        }        
+        }
       } else {
         await sleep(1000);
         // check again. if it finds it, don't do anything. If not found, error handling will reorder in the 404
