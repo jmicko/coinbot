@@ -92,10 +92,11 @@ Postgresql should be setup and a new database should be created with the name "c
 ### .env file
 - A .env file should be created at the base of the file tree. Copy the following into the file and replace the info inside the quotes with the correct info for your setup. PG info is the username and password used for access to Postgres. Server session secret should be a long string that is not easily guessed. If you do not change it, anyone with this repo will be able to guess it.
 
-    PGUSER='postgresUsernameGoesHere'\
-    PGPASSWORD='postgresPasswordGoesHere'\
+```
+    PGUSER='postgresUsernameGoesHere'
+    PGPASSWORD='postgresPasswordGoesHere'
     SERVER_SESSION_SECRET='pleaseForTheLoveOfMoneyPutADifferentSecretHere'
-    
+```    
 
 ## Available Scripts
 

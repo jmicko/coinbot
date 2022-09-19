@@ -174,6 +174,7 @@ const cache = {
   // get all cache storage for a user but remove API before returning
   getSafeStorage: (userID) => {
     // create a deep copy of the user's storage object so that it can be changed
+    // this threw an error when the bot froze up
     const safeStorage = JSON.parse(JSON.stringify(cache.storage[userID]));
     // remove the api so sensitive details are not sent off server
     delete safeStorage.api;

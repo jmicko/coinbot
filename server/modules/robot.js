@@ -74,7 +74,7 @@ async function syncOrders(userID, count) {
 
       // *** GET ORDERS THAT NEED PROCESSING ***
 
-      let ordersToCheck = [];
+      // let ordersToCheck = [];
 
       if (count === 0) {
         // *** FULL SYNC ***
@@ -85,8 +85,8 @@ async function syncOrders(userID, count) {
           // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
           processOrders(userID)
         ]);
-        const fullSyncOrders = full[0]
-        ordersToCheck = fullSyncOrders.ordersToCheck;
+        // const fullSyncOrders = full[0]
+        // ordersToCheck = fullSyncOrders.ordersToCheck;
 
       } else {
         // *** QUICK SYNC ***
@@ -108,7 +108,7 @@ async function syncOrders(userID, count) {
         ]);
         cache.updateStatus(userID, 'end all quick sync');
 
-        ordersToCheck = quick[0];
+        // ordersToCheck = quick[0];
 
       }
 
@@ -605,7 +605,7 @@ async function settleMultipleOrders(userID) {
         const orderToCheck = ordersArray[i];
         cache.updateStatus(userID, `SMO loop number: ${i}`);
 
-        console.log('HERE IS THE ORDER IN SETTLE MULTIPLE ORDERS', orderToCheck);
+        // console.log('HERE IS THE ORDER IN SETTLE MULTIPLE ORDERS', orderToCheck);
         // this timer will serve to prevent rate limiting
         let reorderTimer = true;
         setTimeout(() => {
