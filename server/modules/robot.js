@@ -392,10 +392,11 @@ async function processOrders(userID) {
   const userAPI = cache.getAPI(userID);
   return new Promise(async (resolve, reject) => {
     // check all trades in db that are both settled and NOT flipped
-    sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
+    // sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
     // store the trades in an object
-    const result = await pool.query(sqlText, [userID]);
-    const tradeList = result.rows;
+    // const result = await pool.query(sqlText, [userID]);
+    // const tradeList = result.rows;
+    const tradeList = await databaseClient.getSettledTrades(userID);
     cache.updateStatus(userID, 'got all orders to process');
     // if there is at least one trade...
     if (tradeList.length > 0) {
