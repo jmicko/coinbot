@@ -348,7 +348,7 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   try {
     // check if the api works first
     await coinbaseClient.testAPI(api.secret, api.key, api.passphrase, URI)
-    // store the api
+    // store the api in the db
     let userAPIResult = await pool.query(userAPIQueryText, [
       api.secret,
       api.key,
@@ -359,6 +359,7 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
 
     // set the account as active
     let result = await pool.query(queryText, [userID]);
+    // refresh the user's cache
     await cache.refreshUser(user.id);
 
     res.sendStatus(200);

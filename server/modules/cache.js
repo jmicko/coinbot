@@ -54,6 +54,8 @@ const cache = {
   refreshUser: async (userID) => {
     user = await databaseClient.getUserAndSettings(userID);
     cache.storage[userID].user = user;
+    userAPI = await databaseClient.getUserAPI(userID);
+    cache.storeAPI(userID, userAPI);
   },
 
   getUser: (userID) => {
