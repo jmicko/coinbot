@@ -391,69 +391,76 @@ async function processOrders(userID) {
   cache.updateStatus(userID, 'start process orders');
   const userAPI = cache.getAPI(userID);
   return new Promise(async (resolve, reject) => {
-    // check all trades in db that are both settled and NOT flipped
-    // sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
-    // store the trades in an object
-    // const result = await pool.query(sqlText, [userID]);
-    // const tradeList = result.rows;
-    const tradeList = await databaseClient.getSettledTrades(userID);
-    cache.updateStatus(userID, 'got all orders to process');
-    // if there is at least one trade...
-    if (tradeList.length > 0) {
-      // loop through all the settled orders and flip them
-      for (let i = 0; i < tradeList.length; i++) {
-        // ...take the first trade that needs to be flipped, 
-        let dbOrder = tradeList[i];
-        // get the user of the trade
-        let user = await databaseClient.getUserAndSettings(dbOrder.userID);
-        // ...flip the trade details
-        let tradeDetails = flipTrade(dbOrder, user, tradeList, i);
-        // ...send the new trade
-        try {
-          const willCancel = cache.checkIfCanceling(userID, dbOrder.id);
-          // let cancelling = await databaseClient.checkIfCancelling(dbOrder.id);
-          if (!willCancel) {
-            let cbOrder = await coinbaseClient.placeOrder(tradeDetails, userAPI);
-            // ...store the new trade
-            // take the time the new order was created, and use it as the flipped_at value
-            await databaseClient.storeTrade(cbOrder, dbOrder, cbOrder.created_at);
-            // ...mark the old trade as flipped
-            const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
-            let updatedTrade = await pool.query(queryText, [dbOrder.id]);
-            // tell the frontend that an update was made so the DOM can update
-            cache.storeMessage(Number(userID), {
-              orderUpdate: true
-            });
+    try {
+
+
+      // check all trades in db that are both settled and NOT flipped
+      // sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
+      // store the trades in an object
+      // const result = await pool.query(sqlText, [userID]);
+      // const tradeList = result.rows;
+      const tradeList = await databaseClient.getSettledTrades(userID);
+      cache.updateStatus(userID, 'got all orders to process');
+      // if there is at least one trade...
+      if (tradeList.length > 0) {
+        // loop through all the settled orders and flip them
+        for (let i = 0; i < tradeList.length; i++) {
+          // ...take the first trade that needs to be flipped, 
+          let dbOrder = tradeList[i];
+          // get the user of the trade
+          let user = await databaseClient.getUserAndSettings(dbOrder.userID);
+          // ...flip the trade details
+          let tradeDetails = flipTrade(dbOrder, user, tradeList, i);
+          // ...send the new trade
+          try {
+            const willCancel = cache.checkIfCanceling(userID, dbOrder.id);
+            // let cancelling = await databaseClient.checkIfCancelling(dbOrder.id);
+            if (!willCancel) {
+              let cbOrder = await coinbaseClient.placeOrder(tradeDetails, userAPI);
+              // ...store the new trade
+              // take the time the new order was created, and use it as the flipped_at value
+              await databaseClient.storeTrade(cbOrder, dbOrder, cbOrder.created_at);
+              // ...mark the old trade as flipped
+              const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
+              let updatedTrade = await pool.query(queryText, [dbOrder.id]);
+              // tell the frontend that an update was made so the DOM can update
+              cache.storeMessage(Number(userID), {
+                orderUpdate: true
+              });
+            }
+          } catch (err) {
+            let errorText;
+            cache.updateStatus(userID, 'error in process orders loop');
+            if (err.code && err.code === 'ETIMEDOUT') {
+              console.log('Timed out!!!!! from processOrders');
+              errorText = 'Coinbase timed out while flipping an order';
+            } else if (err.response?.status === 400) {
+              console.log(err.response, 'Insufficient funds! from processOrders');
+              errorText = 'Insufficient funds while trying to flip a trade!';
+              // todo - check funds to make sure there is enough for 
+              // all of them to be replaced, and balance if needed
+            } else {
+              console.log(err, 'unknown error in processOrders');
+              errorText = 'unknown error while flipping an order';
+            }
+            cache.storeError(userID, {
+              errorData: dbOrder,
+              errorText: errorText
+            })
           }
-        } catch (err) {
-          let errorText;
-          cache.updateStatus(userID, 'error in process orders loop');
-          if (err.code && err.code === 'ETIMEDOUT') {
-            console.log('Timed out!!!!! from processOrders');
-            errorText = 'Coinbase timed out while flipping an order';
-          } else if (err.response?.status === 400) {
-            console.log(err.response, 'Insufficient funds! from processOrders');
-            errorText = 'Insufficient funds while trying to flip a trade!';
-            // todo - check funds to make sure there is enough for 
-            // all of them to be replaced, and balance if needed
-          } else {
-            console.log(err, 'unknown error in processOrders');
-            errorText = 'unknown error while flipping an order';
-          }
-          cache.storeError(userID, {
-            errorData: dbOrder,
-            errorText: errorText
-          })
-        }
-        // avoid rate limiting and give orders time to settle before checking again
-        await sleep(150)
-      } // end for loop
-    } else {
+          // avoid rate limiting and give orders time to settle before checking again
+          await sleep(150)
+        } // end for loop
+      } else {
+        cache.updateStatus(userID, 'end resolve processOrders');
+        resolve();
+      }
       cache.updateStatus(userID, 'end resolve processOrders');
       resolve();
+    } catch (err) {
+      console.log(err, '!!!!!!!!!!!!!!!!!error at end of processOrders');
+      reject(err);
     }
-    cache.updateStatus(userID, 'end resolve processOrders');
-    resolve();
   });
 }
 
