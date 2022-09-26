@@ -106,7 +106,7 @@ router.post('/register', userCount, async (req, res, next) => {
       let thirdResult = await pool.query(thirdQueryText, [userID]);
 
       // set up cache storage for new user
-      cache.newUser(userID);
+      cache.newUser(user);
       // start a sync loop for the new user
       robot.syncOrders(userID, 0);
       // robot.deSyncOrderLoop(user, 0);
