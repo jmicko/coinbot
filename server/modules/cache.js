@@ -39,10 +39,10 @@ const cache = {
   },
 
   checkIfCanceling: (userID, orderID) => {
-    console.log(
-      'in check cancel',
-      cache.storage[userID].willCancel.indexOf(orderID)
-    );
+    // console.log(
+    //   'in check cancel',
+    //   cache.storage[userID].willCancel.indexOf(orderID)
+    // );
     if (cache.storage[userID].willCancel.indexOf(orderID) == -1) {
       return false;
     } else {

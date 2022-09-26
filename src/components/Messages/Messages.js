@@ -36,7 +36,7 @@ function Messages(props) {
           })} */}
           {!collapsed && props.store.accountReducer.botMessages.map((message, i) => {
             if (message.messageText) {
-              return <p key={i}><strong>Err #{message.count} {new Date(message.timeStamp).toLocaleString('en-US')}</strong> <br /> {message.messageText}</p>
+              return <p key={i}><strong>Msg #{message.count} {new Date(message.timeStamp).toLocaleString('en-US')}</strong> <br /> {message.messageText}</p>
             }
           })}
         </div>
