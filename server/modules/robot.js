@@ -1139,6 +1139,13 @@ async function getAvailableFunds(userID, userSettings) {
   cache.updateStatus(userID, 'get available funds');
   return new Promise(async (resolve, reject) => {
     try {
+      // console.log(userSettings.active);
+      if (!userSettings.active) {
+        console.log('not active!');
+        reject('user is not active')
+        return;
+      }
+      // console.log('user is active');
       const makerFee = Number(userSettings.maker_fee) + 1;
 
       const results = await Promise.all([
