@@ -156,6 +156,7 @@ const cache = {
 
   // LOOP COUNTER
   increaseLoopNumber: (userID) => {
+    // throwing an error here on 1st user creation
     cache.storage[userID].loopNumber++;
   },
 
