@@ -8,6 +8,11 @@ function History(props) {
   const dispatch = useDispatch();
 
   const [jsonImport, setJSONImport] = useState('');
+  const [ignoreDuplicates, setIgnoreDuplicates] = useState(false);
+
+  function handleIgnoreDuplicates() {
+    setIgnoreDuplicates(!ignoreDuplicates)
+  }
 
   async function exportXlxs() {
     dispatch({
@@ -28,11 +33,16 @@ function History(props) {
   }
 
   async function importCurrentJSON() {
-    console.log('json import:', jsonImport);
-    dispatch({
-      type: 'IMPORT_CURRENT_JSON',
-      payload: { jsonImport: jsonImport }
-    })
+    if (jsonImport) {
+
+      dispatch({
+        type: 'IMPORT_CURRENT_JSON',
+        payload: {
+          jsonImport: jsonImport,
+          ignoreDuplicates: ignoreDuplicates
+        }
+      })
+    }
   }
 
   function copyToClipboard() {
@@ -105,17 +115,6 @@ function History(props) {
 
       <div className='left-border'>
 
-        <input
-          name="ignore_duplicates"
-          type="checkbox"
-          checked={props.isAutoScroll}
-          onChange={props.handleAutoScrollChange}
-        />
-        <label htmlFor="ignore_duplicates">
-          Ignore Duplicates:
-        </label>
-        <br />
-
         <label htmlFor="json_input">
           JSON String:
         </label>
@@ -129,7 +128,18 @@ function History(props) {
         />
         <br />
 
-        <button className={`btn-red medium ${props.theme}`} onClick={() => { importCurrentJSON() }}>Import</button>
+        <input
+          name="ignore_duplicates"
+          type="checkbox"
+          checked={ignoreDuplicates}
+          onChange={handleIgnoreDuplicates}
+        />
+        <label htmlFor="ignore_duplicates">
+          Ignore Duplicates:
+        </label>
+        <br />
+
+        <button className={`import-button btn-red medium ${props.theme}`} onClick={() => { importCurrentJSON() }}>Import</button>
         <br />
       </div>
       <div className="divider" />
