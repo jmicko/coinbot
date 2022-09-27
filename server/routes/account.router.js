@@ -181,6 +181,8 @@ router.get('/exportCurrentJSON', rejectUnauthenticated, async (req, res) => {
 router.post('/importCurrentJSON', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   try {
+    console.log(req.body);
+    const IGNORE_DUPLICATES = req.body.ignoreDuplicates
     const JSON_IMPORT = req.body.jsonImport
     console.log(JSON.parse(JSON_IMPORT));
     const TRADES_TO_IMPORT = JSON.parse(JSON_IMPORT);
@@ -200,6 +202,10 @@ router.post('/importCurrentJSON', rejectUnauthenticated, async (req, res) => {
       if (typeof trade.id == "string") {
         console.log('id is a valid string', trade.id);
         newTrade.id = trade.id;
+        // if duplicated trades should be ignored, add the current time to the id so they are different
+        if (IGNORE_DUPLICATES) {
+          newTrade.id = trade.id + Date.now();
+        }
       } else {
         console.log('price is NOT a valid string', trade.price);
         errors = true;
