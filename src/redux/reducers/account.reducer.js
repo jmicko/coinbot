@@ -45,12 +45,12 @@ const xlsxReducer = (state = [], action) => {
   }
 };
 
-const currentJSONReducer = (state = [], action) => {
+const currentJSONReducer = (state = false, action) => {
   switch (action.type) {
     case 'SET_CURRENT_JSON':
       return action.payload;
     case 'UNSET_CURRENT_JSON':
-      return [];
+      return false;
     default:
       return state;
   }
