@@ -46,6 +46,17 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
   try {
     const botSettings = await databaseClient.getBotSettings();
     req.user.botMaintenance = botSettings.maintenance;
+
+    const URI = cache.getAPI(req.user.id).API_URI;
+    sandbox = () => {
+      if (URI === 'https://api-public.sandbox.exchange.coinbase.com') {
+        return true;
+      }
+      return false;
+    }
+    console.log('sandbox', sandbox());
+    req.user.sandbox = sandbox();
+
   } catch (err) {
     console.log(err, 'error in user route');
   }
