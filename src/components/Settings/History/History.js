@@ -103,18 +103,35 @@ function History(props) {
         Just past the entire string into that text box and press the Import button.
       </p>
 
-      <label htmlFor="json_input">
-        Import:
-      </label>
-      <input
-        type="text"
-        name="json_input"
-        value={jsonImport}
-        required
-        onChange={(event) => setJSONImport(event.target.value)}
-      />
+      <div className='left-border'>
 
-      <button className={`btn-red medium ${props.theme}`} onClick={() => { importCurrentJSON() }}>Import</button>
+        <input
+          name="ignore_duplicates"
+          type="checkbox"
+          checked={props.isAutoScroll}
+          onChange={props.handleAutoScrollChange}
+        />
+        <label htmlFor="ignore_duplicates">
+          Ignore Duplicates:
+        </label>
+        <br />
+
+        <label htmlFor="json_input">
+          JSON String:
+        </label>
+        <input
+          className='json_input'
+          type="text"
+          name="json_input"
+          value={jsonImport}
+          required
+          onChange={(event) => setJSONImport(event.target.value)}
+        />
+        <br />
+
+        <button className={`btn-red medium ${props.theme}`} onClick={() => { importCurrentJSON() }}>Import</button>
+        <br />
+      </div>
       <div className="divider" />
     </div>
   );

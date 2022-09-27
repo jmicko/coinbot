@@ -152,22 +152,24 @@ function Admin(props) {
         Higher numbers are slower. 1 is the fastest, and the speed is a multiplier. So 4 is 4x slower than 1 for example.
       </p>}
       <p>Current loop speed: {props.store.settingsReducer.allSettingsReducer.loop_speed}</p>
-      <label htmlFor="loopSpeed">
-        Set speed:
-      </label>
-      <input
-        type="number"
-        name="loopSpeed"
-        value={loopSpeed}
-        step={1}
-        max={100}
-        min={1}
-        required
-        onChange={(event) => handleLoopSpeedChange(Number(event.target.value))}
-      />
-      <br />
-      <br />
-      <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendLoopSpeed() }}>Save speed</button>
+      <div className='left-border'>
+        <label htmlFor="loopSpeed">
+          Set speed:
+        </label>
+        <input
+          type="number"
+          name="loopSpeed"
+          value={loopSpeed}
+          step={1}
+          max={100}
+          min={1}
+          required
+          onChange={(event) => handleLoopSpeedChange(Number(event.target.value))}
+        />
+        <br />
+        <br />
+        <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendLoopSpeed() }}>Save speed</button>
+      </div>
 
       <div className="divider" />
 
@@ -179,22 +181,24 @@ function Admin(props) {
         but will check for and delete extra trades etc. A quick sync only checks for recently settled trades.
       </p>}
       <p>Current frequency: Every {props.store.settingsReducer.allSettingsReducer.full_sync} loop{props.store.settingsReducer.allSettingsReducer.full_sync > 1 && 's'}</p>
-      <label htmlFor="fullSync">
-        Set frequency:
-      </label>
-      <input
-        type="number"
-        name="fullSync"
-        value={fullSync}
-        step={1}
-        max={100}
-        min={1}
-        required
-        onChange={(event) => handleFullSyncChange(Number(event.target.value))}
-      />
-      <br />
-      <br />
-      <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendFullSync() }}>Save Frequency</button>
+      <div className='left-border'>
+        <label htmlFor="fullSync">
+          Set frequency:
+        </label>
+        <input
+          type="number"
+          name="fullSync"
+          value={fullSync}
+          step={1}
+          max={100}
+          min={1}
+          required
+          onChange={(event) => handleFullSyncChange(Number(event.target.value))}
+        />
+        <br />
+        <br />
+        <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendFullSync() }}>Save Frequency</button>
+      </div>
 
       <div className="divider" />
 
@@ -208,25 +212,25 @@ function Admin(props) {
         may slightly increase the speed of the bot or lower CPU usage, but risks that all trades on one side will settle before the bot has the chance to sync more.
       </p>}
       <p>Current quantity: {props.store.settingsReducer.allSettingsReducer.orders_to_sync}</p>
-      <label htmlFor="fullSync">
-        Set Sync Quantity:
-      </label>
-      <input
-        type="number"
-        name="syncQuantity"
-        value={syncQuantity}
-        step={1}
-        max={200}
-        min={1}
-        required
-        onChange={(event) => handleSyncQuantityChange(Number(event.target.value))}
-      />
-      <br />
-      <br />
-      <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendSyncQuantity() }}>Save Quantity</button>
-
+      <div className='left-border'>
+        <label htmlFor="fullSync">
+          Set Sync Quantity:
+        </label>
+        <input
+          type="number"
+          name="syncQuantity"
+          value={syncQuantity}
+          step={1}
+          max={200}
+          min={1}
+          required
+          onChange={(event) => handleSyncQuantityChange(Number(event.target.value))}
+        />
+        <br />
+        <br />
+        <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendSyncQuantity() }}>Save Quantity</button>
+      </div>
       <div className="divider" />
-
 
       {/* FACTORY RESET */}
       {(props.store.accountReducer.userReducer.admin)
