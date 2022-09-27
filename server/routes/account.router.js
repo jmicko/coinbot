@@ -184,10 +184,11 @@ router.post('/importCurrentJSON', rejectUnauthenticated, async (req, res) => {
     const JSON_IMPORT = req.body.jsonImport
     // console.log(JSON.parse(JSON_IMPORT));
     const TRADES_TO_IMPORT = JSON.parse(JSON_IMPORT);
-    TRADES_TO_IMPORT.forEach(trade => {
+    TRADES_TO_IMPORT.forEach(async trade => {
       console.log(Date.now());
+      console.log(trade.id);
       try {
-        databaseClient.importTrade(trade, userID);
+        await databaseClient.importTrade(trade, userID);
       } catch (error) {
         console.log(error);
       }

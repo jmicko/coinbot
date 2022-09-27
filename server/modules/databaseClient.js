@@ -93,6 +93,7 @@ const storeReorderTrade = (newOrder, originalDetails, flipped_at) => {
 // IT MUST USE THE USER ID FROM PASSPORT AUTHENTICATION!!!
 // otherwise you could import false trades for someone else!
 const importTrade = (details, userID) => {
+  console.log(details.id);
   return new Promise((resolve, reject) => {
     // add new order to the database
     const sqlText = `INSERT INTO "orders" 
@@ -100,7 +101,7 @@ const importTrade = (details, userID) => {
       "created_at", "flipped_at", "done_at", "fill_fees", "previous_fill_fees", "filled_size", "executed_value", "original_buy_price", "original_sell_price", "reorder") 
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19);`;
     pool.query(sqlText, [
-      details.id + 'imported' + Date.now(),
+      details.id,
       userID,
       details.price,
       details.size,
