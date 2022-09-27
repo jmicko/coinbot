@@ -148,10 +148,16 @@ function Home(props) {
 
   // to get price of bitcoin updated on dom
   function ticker(data) {
-    console.log(props.store.accountReducer.userReducer);
+
+    console.log(props.store.accountReducer.userReducer.sandbox);
+    let URI = 'https://api.exchange.coinbase.com/products/BTC-USD/ticker';
+    if (props.store.accountReducer.userReducer.sandbox) {
+      URI = 'https://api-public.sandbox.exchange.coinbase.com/products/BTC-USD/ticker';
+    }
+
     const options = {
       method: 'GET',
-      url: 'https://api.exchange.coinbase.com/products/BTC-USD/ticker',
+      url: URI,
       headers: { Accept: 'application/json' }
     };
 
