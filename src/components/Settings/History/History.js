@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { connect, useDispatch } from 'react-redux';
 import mapStoreToProps from '../../../redux/mapStoreToProps';
 import './History.css'
@@ -6,6 +6,8 @@ import xlsx from 'json-as-xlsx'
 
 function History(props) {
   const dispatch = useDispatch();
+
+  const [jsonImport, setJSONImport] = useState('');
 
   async function exportXlxs() {
     dispatch({
@@ -23,6 +25,12 @@ function History(props) {
         type: 'EXPORT_CURRENT_JSON'
       })
     }
+  }
+
+  async function importCurrentJSON(params) {
+    dispatch({
+      type: 'IMPORT_CURRENT_JSON'
+    })
   }
 
   useEffect(() => {
@@ -70,6 +78,34 @@ function History(props) {
         ? <code>{JSON.stringify(props.store.accountReducer.currentJSONReducer)}</code>
         : <></>
       }
+      <div className="divider" />
+
+      <h4>Import current trade-pairs</h4>
+      <p>
+        Import a JSON string that has previously been exported. It is recommended not to import old
+        trades that have already been processed as this will mess up your history and throw off
+        your profit calculation.
+      </p>
+      <p>
+        Generally you don't want to do this if your bot has been unpaused and running for a while 
+        since you exported.
+      </p>
+      <p>
+        Just past the entire string into that text box and press the Import button.
+      </p>
+
+      <label htmlFor="json_input">
+        Import:
+      </label>
+      <input
+        type="text"
+        name="json_input"
+        value={jsonImport}
+        required
+        onChange={(event) => setJSONImport(event.target.value)}
+      />
+
+      <button className={`btn-red medium ${props.theme}`} onClick={() => { importCurrentJSON() }}>Import</button>
       <div className="divider" />
     </div>
   );
