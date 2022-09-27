@@ -27,9 +27,11 @@ function History(props) {
     }
   }
 
-  async function importCurrentJSON(params) {
+  async function importCurrentJSON() {
+    console.log('json import:', jsonImport);
     dispatch({
-      type: 'IMPORT_CURRENT_JSON'
+      type: 'IMPORT_CURRENT_JSON',
+      payload: { jsonImport: jsonImport }
     })
   }
 
@@ -87,7 +89,7 @@ function History(props) {
         your profit calculation.
       </p>
       <p>
-        Generally you don't want to do this if your bot has been unpaused and running for a while 
+        Generally you don't want to do this if your bot has been unpaused and running for a while
         since you exported.
       </p>
       <p>

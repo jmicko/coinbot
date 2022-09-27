@@ -163,11 +163,27 @@ router.get('/exportCurrentJSON', rejectUnauthenticated, async (req, res) => {
   try {
     let sqlText = `SELECT * FROM "orders" WHERE "userID"=$1;`;
     let result = await pool.query(sqlText, [userID]);
-    const allOrders = result.rows;
+    const allOrders = JSON.stringify(result.rows);
 
     console.log(allOrders);
 
-    res.status(200).send(allOrders);
+    res.send(allOrders);
+  } catch (err) {
+    console.log('problem getting all orders');
+    res.sendStatus(500);
+  }
+});
+
+/**
+* POST route to import JSON of current orders
+*/
+router.post('/importCurrentJSON', rejectUnauthenticated, async (req, res) => {
+  const userID = req.user.id;
+  try {
+    const JSON_IMPORT = req.body.jsonImport
+    console.log(JSON.parse(JSON_IMPORT));
+
+    res.sendStatus(200);
   } catch (err) {
     console.log('problem getting all orders');
     res.sendStatus(500);
