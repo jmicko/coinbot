@@ -89,6 +89,51 @@ const storeReorderTrade = (newOrder, originalDetails, flipped_at) => {
   });
 }
 
+// This function is used when importing trades from the user interface
+// IT MUST USE THE USER ID FROM PASSPORT AUTHENTICATION!!!
+// otherwise you could import false trades for someone else!
+const importTrade = ( details, userID) => {
+  return new Promise((resolve, reject) => {
+    // add new order to the database
+    const sqlText = `INSERT INTO "orders" 
+      ("id", "userID", "price", "size", "trade_pair_ratio", "side", "settled", "product_id", "time_in_force", 
+      "created_at", "flipped_at", "done_at", "fill_fees", "previous_fill_fees", "filled_size", "executed_value", "original_buy_price", "original_sell_price", "reorder") 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19);`;
+    pool.query(sqlText, [
+      details.id,
+      userID,
+      details.price,
+      details.size,
+      details.trade_pair_ratio,
+      details.side,
+      details.settled, // todo - maybe force this to false or you could falsify your profit
+      details.product_id,
+      details.time_in_force,
+      details.created_at,
+      details.flipped_at,
+      details.done_at,
+      details.fill_fees,
+      details.fill_fees,
+      details.filled_size,
+      details.executed_value,
+      details.original_buy_price,
+      details.original_sell_price,
+      true
+    ])
+      .then((results) => {
+        const success = {
+          message: `order ${details.id} was successfully stored in db`,
+          results: results,
+          success: true
+        }
+        resolve(success);
+      })
+      .catch((err) => {
+        reject(err);
+      });
+  });
+}
+
 // gets all open orders in db based on a specified limit. 
 // The limit is for each side, so the results will potentially double that
 const getLimitedUnsettledTrades = (userID, limit) => {
@@ -562,6 +607,7 @@ async function saveFees(fees, userID) {
 const databaseClient = {
   storeTrade: storeTrade,
   storeReorderTrade: storeReorderTrade,
+  importTrade: importTrade,
   getLimitedTrades: getLimitedTrades,
   getLimitedUnsettledTrades: getLimitedUnsettledTrades,
   getUnsettledTrades: getUnsettledTrades,

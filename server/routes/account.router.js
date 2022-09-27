@@ -182,6 +182,10 @@ router.post('/importCurrentJSON', rejectUnauthenticated, async (req, res) => {
   try {
     const JSON_IMPORT = req.body.jsonImport
     console.log(JSON.parse(JSON_IMPORT));
+    const TRADES_TO_IMPORT = JSON.parse(JSON_IMPORT);
+    TRADES_TO_IMPORT.forEach(trade => {
+      console.log(trade);
+    });
 
     res.sendStatus(200);
   } catch (err) {
