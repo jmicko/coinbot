@@ -29,9 +29,6 @@ function Settings(props) {
           {/* <br /> */}
           <input
             type="checkbox"
-            id="topping"
-            name="topping"
-            value="Paneer"
             checked={tips}
             onChange={() => setTips(!tips)}
           />

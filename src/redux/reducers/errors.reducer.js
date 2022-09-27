@@ -32,10 +32,22 @@ const registrationMessage = (state = '', action) => {
   }
 };
 
+const botErrors = (state = [], action) => {
+  switch (action.type) {
+    case 'CLEAR_BOT_ERRORS':
+      return [];
+    case 'SET_BOT_ERRORS':
+      return action.payload;
+    default:
+      return state;
+  }
+};
+
 // make one object that has keys loginMessage, registrationMessage
 // these will be on the redux state at:
 // state.errors.loginMessage and state.errors.registrationMessage
 export default combineReducers({
   loginMessage,
   registrationMessage,
+  botErrors,
 });

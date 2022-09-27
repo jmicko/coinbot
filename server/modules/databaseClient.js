@@ -176,6 +176,25 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
   });
 }
 
+// This will get trades that have settled but not yet been flipped, meaning they need to be processed
+const getSettledTrades = (userID) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // check all trades in db that are both settled and NOT flipped
+      sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
+
+      const results = await pool.query(sqlText, [userID])
+      // .then((results) => {
+      const settled = results.rows;
+      // promise returns promise from pool if success
+      resolve(settled);
+    } catch (err) {
+      // or promise relays errors from pool to parent
+      reject(err);
+    }
+  });
+}
+
 // get the number of open orders from the DB
 const getUnsettledTradeCounts = (userID) => {
   return new Promise(async (resolve, reject) => {
@@ -546,6 +565,7 @@ const databaseClient = {
   getLimitedTrades: getLimitedTrades,
   getLimitedUnsettledTrades: getLimitedUnsettledTrades,
   getUnsettledTrades: getUnsettledTrades,
+  getSettledTrades: getSettledTrades,
   getUnsettledTradeCounts: getUnsettledTradeCounts,
   getSingleTrade: getSingleTrade,
   getSpentUSD: getSpentUSD,

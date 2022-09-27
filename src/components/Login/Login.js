@@ -17,7 +17,7 @@ function Login(props) {
   function loginAccount(event) {
     event.preventDefault();
     // send login credentials
-    console.log('loging in user', username, password);
+    console.log('logging in user', username, password);
     if (username && password) {
       dispatch({
         type: 'LOGIN',

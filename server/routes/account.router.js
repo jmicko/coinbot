@@ -163,7 +163,9 @@ router.get('/debug', rejectUnauthenticated, async (req, res) => {
   if (req.user.admin) {
     try {
       const userInfo = cache.getSafeStorage(userID);
-        // console.log('debug - full storage', userInfo);
+      const userErrors = cache.getErrors(userID);
+      console.log('debug - full storage', userInfo);
+      console.log('errors', userErrors);
       res.send(userInfo);
     } catch (err) {
       console.log(err, 'problem debug route');
@@ -176,12 +178,43 @@ router.get('/debug', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
+* GET route to get user's errors from cache
+*/
+router.get('/errors', rejectUnauthenticated, async (req, res) => {
+  const userID = req.user.id;
+  try {
+    const userErrors = cache.getErrors(userID);
+    // console.log('getting errors', userErrors);
+    res.send(userErrors);
+  } catch (err) {
+    console.log(err, 'problem debug route');
+    res.sendStatus(500)
+  }
+});
+
+/**
+* GET route to get user's messages from cache
+*/
+router.get('/messages', rejectUnauthenticated, async (req, res) => {
+  const userID = req.user.id;
+  try {
+    const userMessages = cache.getMessages(userID);
+    // console.log('getting Messages', userMessages);
+    res.send(userMessages);
+  } catch (err) {
+    console.log(err, 'problem debug route');
+    res.sendStatus(500)
+  }
+});
+
+/**
  * PUT route to change status of pause
  */
 router.put('/pause', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
-    databaseClient.setPause(!user.paused, user.id)
+    await databaseClient.setPause(!user.paused, user.id);
+    await cache.refreshUser(user.id);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in PAUSE ROUTE');
@@ -197,6 +230,7 @@ router.put('/theme', rejectUnauthenticated, async (req, res) => {
   try {
     const queryText = `UPDATE "user_settings" SET "theme" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.theme, user.id]);
+    await cache.refreshUser(user.id);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in THEME ROUTE');
@@ -211,7 +245,8 @@ router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
     const queryText = `UPDATE "user_settings" SET "reinvest" = $1 WHERE "userID" = $2`;
-    let result = await pool.query(queryText, [!user.reinvest, user.id]);
+    await pool.query(queryText, [!user.reinvest, user.id]);
+    await cache.refreshUser(user.id);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in REINVEST ROUTE');
@@ -227,6 +262,7 @@ router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
   try {
     const queryText = `UPDATE "user_settings" SET "reinvest_ratio" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.reinvest_ratio, user.id]);
+    await cache.refreshUser(user.id);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in REINVEST ROUTE');
@@ -241,7 +277,8 @@ router.put('/tradeMax', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
     const queryText = `UPDATE "user_settings" SET "max_trade" = $1 WHERE "userID" = $2`;
-    let result = await pool.query(queryText, [!user.max_trade, user.id]);
+    await pool.query(queryText, [!user.max_trade, user.id]);
+    await cache.refreshUser(user.id);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in tradeMax ROUTE');
@@ -262,6 +299,7 @@ router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
       const queryText = `UPDATE "user_settings" SET "max_trade_size" = $1 WHERE "userID" = $2`;
       await pool.query(queryText, [0, user.id]);
     }
+    await cache.refreshUser(user.id);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in maxTradeSize ROUTE');
@@ -280,6 +318,7 @@ router.post('/resetProfit', rejectUnauthenticated, async (req, res) => {
   try {
     await pool.query(queryText, [userID]);
     await pool.query(timeQuery, [profit_reset, userID]);
+    await cache.refreshUser(user.id);
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem resetting profit');
@@ -309,7 +348,7 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   try {
     // check if the api works first
     await coinbaseClient.testAPI(api.secret, api.key, api.passphrase, URI)
-    // store the api
+    // store the api in the db
     let userAPIResult = await pool.query(userAPIQueryText, [
       api.secret,
       api.key,
@@ -320,6 +359,8 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
 
     // set the account as active
     let result = await pool.query(queryText, [userID]);
+    // refresh the user's cache
+    await cache.refreshUser(user.id);
 
     res.sendStatus(200);
   } catch (err) {
@@ -337,166 +378,6 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
     }
   }
 });
-
-/**
-* POST route to factory reset the bot
-*/
-router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
-  if (req.user.admin) {
-    const queryText = `DROP TABLE IF EXISTS "orders";
-    CREATE TABLE IF NOT EXISTS "orders"
-    (
-      id character varying COLLATE pg_catalog."default" NOT NULL,
-      "userID" integer,
-      "API_ID" character varying,
-      price numeric(32,8),
-      size numeric(32,8),
-      trade_pair_ratio numeric(32,8),
-      side character varying COLLATE pg_catalog."default",
-      pending boolean DEFAULT true,
-      settled boolean DEFAULT false,
-      flipped boolean DEFAULT false,
-      will_cancel boolean DEFAULT false,
-      reorder boolean DEFAULT false,
-      include_in_profit boolean DEFAULT true,
-      product_id character varying COLLATE pg_catalog."default",
-      time_in_force character varying COLLATE pg_catalog."default",
-      created_at timestamptz,
-      flipped_at timestamptz,
-      done_at timestamptz,
-      done_reason character varying COLLATE pg_catalog."default",
-      fill_fees numeric(32,16),
-      previous_fill_fees numeric(32,16),
-      filled_size numeric(32,8),
-      executed_value numeric(32,16),
-      original_buy_price numeric(32,16),
-      original_sell_price numeric(32,16),
-      CONSTRAINT orders_pkey PRIMARY KEY (id)
-    );
-    CREATE INDEX reorders
-    ON "orders" ("side", "flipped", "will_cancel", "userID", "settled");`;
-    let result = await pool.query(queryText);
-    res.sendStatus(200);
-  } else {
-    res.sendStatus(403)
-  }
-});
-
-/**
-* POST route to factory reset the bot
-*/
-router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
-  if (req.user.admin) {
-    const queryText = `DROP TABLE IF EXISTS "orders";
-    DROP TABLE IF EXISTS "user";
-    DROP TABLE IF EXISTS "session";
-    DROP TABLE IF EXISTS "user_api";
-    DROP TABLE IF EXISTS "user_settings";
-    DROP TABLE IF EXISTS "bot_settings";
-    CREATE TABLE IF NOT EXISTS "user_api"
-    (
-      "API_ID" SERIAL PRIMARY KEY,
-      "userID" integer,
-      "CB_SECRET" VARCHAR (1000),
-      "CB_ACCESS_KEY" VARCHAR (1000),
-      "CB_ACCESS_PASSPHRASE" VARCHAR (1000),
-      "API_URI" VARCHAR (1000),
-      "bot_type" VARCHAR NOT NULL DEFAULT 'grid'
-    );
-
-    CREATE TABLE IF NOT EXISTS "user_settings"
-    (
-      "userID" integer,
-      "paused" boolean DEFAULT false,
-      "kill_locked" boolean DEFAULT false,
-      "theme" character varying DEFAULT 'original',
-      "reinvest" boolean DEFAULT false,
-      "reinvest_ratio" integer DEFAULT 0,
-      "post_max_reinvest_ratio" integer DEFAULT 0,
-      "reserve" numeric(32,8) DEFAULT 0,
-      "maker_fee" numeric(32,8) DEFAULT 0,
-      "taker_fee" numeric(32,8) DEFAULT 0,
-      "usd_volume" numeric(32,8) DEFAULT 0,
-      "available_btc" numeric(32,16) DEFAULT 0,
-      "available_usd" numeric(32,16) DEFAULT 0,
-      "actualavailable_btc" numeric(32,16) DEFAULT 0,
-      "actualavailable_usd" numeric(32,16) DEFAULT 0,
-      "max_trade" boolean DEFAULT false,
-      "max_trade_size" numeric(32,8) DEFAULT 0,
-      "max_trade_load" integer DEFAULT 1000,
-      "profit_accuracy" integer DEFAULT 16,
-      "auto_setup_number" integer DEFAULT 1,
-      "profit_reset" timestamp
-    );
-
-    CREATE TABLE IF NOT EXISTS "bot_settings"
-    (
-      "loop_speed" integer DEFAULT 1,
-      "orders_to_sync" integer DEFAULT 100,
-      "full_sync" integer DEFAULT 10,
-      "maintenance" boolean DEFAULT false
-    );
-    INSERT INTO "bot_settings" 
-      ("loop_speed")
-      VALUES (1);
-
-    CREATE TABLE IF NOT EXISTS "orders"
-    (
-      id character varying COLLATE pg_catalog."default" NOT NULL,
-      "userID" integer,
-      "API_ID" character varying,
-      price numeric(32,8),
-      size numeric(32,8),
-      trade_pair_ratio numeric(32,8),
-      side character varying COLLATE pg_catalog."default",
-      pending boolean DEFAULT true,
-      settled boolean DEFAULT false,
-      flipped boolean DEFAULT false,
-      will_cancel boolean DEFAULT false,
-      reorder boolean DEFAULT false,
-      include_in_profit boolean DEFAULT true,
-      product_id character varying COLLATE pg_catalog."default",
-      time_in_force character varying COLLATE pg_catalog."default",
-      created_at timestamptz,
-      flipped_at timestamptz,
-      done_at timestamptz,
-      done_reason character varying COLLATE pg_catalog."default",
-      fill_fees numeric(32,16),
-      previous_fill_fees numeric(32,16),
-      filled_size numeric(32,8),
-      executed_value numeric(32,16),
-      original_buy_price numeric(32,16),
-      original_sell_price numeric(32,16),
-      CONSTRAINT orders_pkey PRIMARY KEY (id)
-    );
-
-    CREATE TABLE IF NOT EXISTS "user" (
-      "id" SERIAL PRIMARY KEY,
-      "username" VARCHAR (80) UNIQUE NOT NULL,
-      "password" VARCHAR (1000) NOT NULL,
-      "active" boolean DEFAULT false,
-      "admin" boolean DEFAULT false,
-      "approved" boolean DEFAULT false,
-      "will_delete" boolean DEFAULT false,
-      "joined_at" timestamp
-    );
-
-    -- this will create the required table for connect-pg to store session data
-    CREATE TABLE IF NOT EXISTS "session" (
-      "sid" varchar NOT NULL COLLATE "default",
-      "sess" json NOT NULL,
-      "expire" timestamp(6) NOT NULL
-    )
-    WITH (OIDS=FALSE);
-    ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
-    CREATE INDEX "IDX_session_expire" ON "session" ("expire");`;
-    let result = await pool.query(queryText);
-    res.sendStatus(200);
-  } else {
-    res.sendStatus(403)
-  }
-});
-
 
 
 module.exports = router;

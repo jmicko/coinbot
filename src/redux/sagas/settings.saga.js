@@ -136,6 +136,29 @@ function* killLock(action) {
   }
 }
 
+function* ordersReset() {
+  try {
+    yield axios.post(`/api/settings/ordersReset`);
+    yield put({ type: 'FETCH_ORDERS' });
+  } catch (error) {
+    console.log('post account route factoryReset has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
+function* factoryReset() {
+  try {
+    yield axios.post(`/api/settings/factoryReset`);
+    yield put({ type: 'UNSET_USER' });
+  } catch (error) {
+    console.log('post account route factoryReset has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
 
 function* settingsSaga() {
   yield takeLatest('FETCH_SETTINGS', getAllSettings);
@@ -149,6 +172,8 @@ function* settingsSaga() {
   yield takeLatest('SAVE_RESERVE', reserve);
   yield takeLatest('TOGGLE_MAINTENANCE', toggleMaintenance);
   yield takeLatest('KILL_LOCK', killLock);
+  yield takeLatest('ORDERS_RESET', ordersReset);
+  yield takeLatest('FACTORY_RESET', factoryReset);
 }
 
 export default settingsSaga;

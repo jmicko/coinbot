@@ -1,4 +1,5 @@
 const databaseClient = require("./databaseClient");
+const socketClient = require("./socketClient");
 
 const cache = {
   // the storage array will store an object of different things at the index of the user id
@@ -10,30 +11,154 @@ const cache = {
     cache.storage[userID] = {
       user: user,
       botStatus: ['setup'],
+      errors: [],
+      messages: [],
+      willCancel: [],
+      keyValuePairs: {},
       loopNumber: 0,
-      api: null
+      api: null,
+      messageCount: 1,
+      errorCount: 1
     };
     // cache the API from the db
+    try {
+      userAPI = await databaseClient.getUserAPI(userID);
+      cache.storeAPI(userID, userAPI);
+      await cache.refreshUser(userID);
+    } catch (err) {
+      console.log(err, 'error creating new user');
+    }
+  },
+
+  // KEEP TRACK OF ORDERS TO CANCEL
+  setCancel: (userID, orderID) => {
+    cache.storage[userID].willCancel.unshift(orderID);
+    if (cache.storage[userID].willCancel.length > 100) {
+      cache.storage[userID].willCancel.length = 100;
+    }
+  },
+
+  checkIfCanceling: (userID, orderID) => {
+    // console.log(
+    //   'in check cancel',
+    //   cache.storage[userID].willCancel.indexOf(orderID)
+    // );
+    if (cache.storage[userID].willCancel.indexOf(orderID) == -1) {
+      return false;
+    } else {
+      return true;
+    }
+  },
+
+  // USER SETTINGS STORAGE
+  refreshUser: async (userID) => {
+    user = await databaseClient.getUserAndSettings(userID);
+    cache.storage[userID].user = user;
     userAPI = await databaseClient.getUserAPI(userID);
     cache.storeAPI(userID, userAPI);
   },
 
+  getUser: (userID) => {
+    return JSON.parse(JSON.stringify(cache.storage[userID].user))
+  },
+
+  // KEY VALUE STORAGE
+  setKey: (userID, key, value) => {
+    cache.storage[userID].keyValuePairs[key] = value;
+  },
+  getKey: (userID, key) => {
+    if (cache.storage[userID].keyValuePairs[key]) {
+      return JSON.parse(JSON.stringify(cache.storage[userID].keyValuePairs[key]))
+    } else {
+      return null;
+    }
+  },
+  deleteKey: (userID, key) => {
+    delete cache.storage[userID].keyValuePairs[key];
+  },
+
+  // LOOP STATUS UPDATES
   updateStatus: (userID, update) => {
     cache.storage[userID].botStatus.unshift(update);
     if (cache.storage[userID].botStatus.length > 100) {
       cache.storage[userID].botStatus.length = 100;
     }
   },
-
   getStatus: (userID) => {
     return cache.storage[userID].botStatus;
   },
-
   clearStatus: (userID) => {
     cache.storage[userID].botStatus.length = 0;
   },
 
+  // ERROR STORAGE - store 1000 most recent errors
+  storeError: (userID, error) => {
+    const errorData = {
+      // error text is to store a custom error message to show the user
+      errorText: error.errorText,
+      // error data is intended to store actual chunks of data from the error response.
+      // keep in mind that the response includes headers that hold the API details, 
+      // so don't store the whole thing because it gets sent outside the server
+      errorData: error.errorData,
+      // automatically store the timestamp
+      timeStamp: new Date(),
+      count: cache.storage[userID].errorCount
+    }
+    cache.storage[userID].errorCount++;
+
+    cache.storage[userID].errors.unshift(errorData);
+    if (cache.storage[userID].errors.length > 1000) {
+      cache.storage[userID].errors.length = 1000;
+    }
+    // tell Dom to update errors
+    socketClient.emit('message', {
+      // error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
+      errorUpdate: true,
+      userID: Number(userID)
+    });
+  },
+  getErrors: (userID) => {
+    return cache.storage[userID].errors;
+  },
+  clearErrors: (userID) => {
+    cache.storage[userID].errors.length = 0;
+  },
+
+  // MESSAGE STORAGE - store 1000 most recent messages
+  storeMessage: (userID, message) => {
+    const messageData = {
+      // message text is to store a custom message message to show the user
+      messageText: message.messageText,
+      // automatically store the timestamp
+      timeStamp: new Date(),
+      count: cache.storage[userID].messageCount
+    }
+    cache.storage[userID].messageCount++;
+
+    cache.storage[userID].messages.unshift(messageData);
+    if (cache.storage[userID].messages.length > 1000) {
+      cache.storage[userID].messages.length = 1000;
+    }
+    // tell Dom to update messages and trade list if needed
+    socketClient.emit('message', {
+      // message: `Internal server message from coinbase! Is the Coinbase Pro website down?`,
+      messageUpdate: true,
+      orderUpdate: message.orderUpdate,
+      userID: Number(userID)
+    });
+  },
+
+  getMessages: (userID) => {
+    return cache.storage[userID].messages;
+  },
+
+  clearMessages: (userID) => {
+    cache.storage[userID].messages.length = 0;
+  },
+
+  // LOOP COUNTER
   increaseLoopNumber: (userID) => {
+    // throwing an error here on 1st user creation
     cache.storage[userID].loopNumber++;
   },
 
@@ -41,7 +166,7 @@ const cache = {
     return cache.storage[userID].loopNumber;
   },
 
-  // store and fetch API details for a user
+  // API STORAGE
   storeAPI: (userID, api) => {
     cache.storage[userID].api = api;
   },
@@ -52,6 +177,7 @@ const cache = {
   // get all cache storage for a user but remove API before returning
   getSafeStorage: (userID) => {
     // create a deep copy of the user's storage object so that it can be changed
+    // this threw an error when the bot froze up
     const safeStorage = JSON.parse(JSON.stringify(cache.storage[userID]));
     // remove the api so sensitive details are not sent off server
     delete safeStorage.api;
