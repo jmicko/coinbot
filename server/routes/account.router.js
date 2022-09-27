@@ -373,18 +373,30 @@ router.post('/importCurrentJSON', rejectUnauthenticated, async (req, res) => {
     }
     console.log('errors in import?', errors);
 
-    // import the trades into the db
-    newTradeList.forEach(async trade => {
-      // console.log(Date.now());
-      // console.log(trade.id);
-      try {
-        // await databaseClient.importTrade(trade, userID);
-      } catch (error) {
-        console.log(error);
+    // if there are no errors, import the new trades into the db
+    if (!errors) {
+      // there may still be db errors, so keep track of that
+      let dbErrors = false;
+      // import the trades into the db
+      newTradeList.forEach(async trade => {
+        // console.log(Date.now());
+        // console.log(trade.id);
+        try {
+          await databaseClient.importTrade(trade, userID);
+        } catch (error) {
+          console.log('problem importing a trade');
+          dbErrors = true;
+        }
+      });
+      if (dbErrors) {
+        res.sendStatus(500);
+      } else {
+        res.sendStatus(200);
       }
-    });
+    } else {
+      res.sendStatus(500);
+    }
 
-    res.sendStatus(200);
   } catch (err) {
     console.log('problem getting all orders');
     res.sendStatus(500);
