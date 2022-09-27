@@ -143,7 +143,19 @@ function* exportXlsx() {
     const response = yield axios.get(`/api/account/exportXlsx`);
     yield put({ type: 'SET_XLSX', payload: response })
   } catch (error) {
-    console.log('post account route factoryReset has failed', error);
+    console.log('export xlsx route has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
+function* exportCurrentJSON() {
+  try {
+    const response = yield axios.get(`/api/account/exportCurrentJSON`);
+    yield put({ type: 'SET_CURRENT_JSON', payload: response })
+  } catch (error) {
+    console.log('get current JSON route has failed', error);
     if (error.response.status === 403) {
       yield put({ type: 'UNSET_USER' });
     }
@@ -176,6 +188,7 @@ function* accountSaga() {
   yield takeLatest('TOGGLE_TRADE_MAX', tradeMax);
   yield takeLatest('STORE_MAX_TRADE_SIZE', storeMaxTradeSize);
   yield takeLatest('EXPORT_XLSX', exportXlsx);
+  yield takeLatest('EXPORT_CURRENT_JSON', exportCurrentJSON);
   yield takeLatest('DEBUG', debug);
 }
 

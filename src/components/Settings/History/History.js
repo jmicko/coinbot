@@ -13,6 +13,12 @@ function History(props) {
     })
   }
 
+  async function exportCurrentJSON() {
+    dispatch({
+      type: 'EXPORT_CURRENT_JSON'
+    })
+  }
+
   useEffect(() => {
 
     if (props?.store?.accountReducer?.xlsxReducer?.data) {
@@ -41,6 +47,17 @@ function History(props) {
         Export and download your entire trade history as an xlsx spreadsheet.
       </p>
       <button className={`btn-red medium ${props.theme}`} onClick={() => { exportXlxs() }}>Export</button>
+      <div className="divider" />
+      <h4>Export current trade-pairs</h4>
+      <p>
+        Export all your current trade-pairs in JSON format. You can copy this to a text document 
+        and use it later to import the same trades. This is useful if you want to transfer your
+        trades to a different bot and can't or don't want to mess around with the database.
+      </p>
+      <button className={`btn-red medium ${props.theme}`} onClick={() => { exportCurrentJSON() }}>Export</button>
+      <br></br>
+      <br></br>
+      <code>{JSON.stringify(props.store.accountReducer.currentJSONReducer)}</code>
       <div className="divider" />
     </div>
   );

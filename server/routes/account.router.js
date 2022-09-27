@@ -156,6 +156,25 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
+* GET route to export JSON of current orders
+*/
+router.get('/exportCurrentJSON', rejectUnauthenticated, async (req, res) => {
+  const userID = req.user.id;
+  try {
+    let sqlText = `SELECT * FROM "orders" WHERE "userID"=$1;`;
+    let result = await pool.query(sqlText, [userID]);
+    const allOrders = result.rows;
+
+    console.log(allOrders);
+
+    res.status(200).send(allOrders);
+  } catch (err) {
+    console.log('problem getting all orders');
+    res.sendStatus(500);
+  }
+});
+
+/**
 * GET route to log status of a user's loop
 */
 router.get('/debug', rejectUnauthenticated, async (req, res) => {
