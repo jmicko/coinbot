@@ -163,7 +163,8 @@ router.get('/exportCurrentJSON', rejectUnauthenticated, async (req, res) => {
   try {
     let sqlText = `SELECT * FROM "orders" WHERE "userID"=$1;`;
     let result = await pool.query(sqlText, [userID]);
-    const allOrders = JSON.stringify(result.rows);
+    // const allOrders = JSON.stringify(result.rows);
+    const allOrders = await databaseClient.getUnsettledTrades('all', userID);
 
     console.log(allOrders);
 

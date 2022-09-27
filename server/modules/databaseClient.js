@@ -212,6 +212,20 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
           // or promise relays errors from pool to parent
           reject(err);
         })
+    } else if (side == 'all') {
+      // gets all unsettled trades, sorted by price
+      sqlText = `SELECT * FROM "orders" 
+      WHERE "flipped"=false AND "will_cancel"=false AND "userID"=$1
+      ORDER BY "price" ASC;`;
+      pool.query(sqlText, [userID])
+        .then((results) => {
+          // promise returns promise from pool if success
+          resolve(results.rows);
+        })
+        .catch((err) => {
+          // or promise relays errors from pool to parent
+          reject(err);
+        })
     }
   });
 }
