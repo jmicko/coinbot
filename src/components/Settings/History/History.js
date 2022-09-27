@@ -35,6 +35,10 @@ function History(props) {
     })
   }
 
+  function copyToClipboard() {
+    navigator.clipboard.writeText(jsonImport);
+  }
+
   useEffect(() => {
 
     if (props?.store?.accountReducer?.xlsxReducer?.data) {
@@ -77,8 +81,11 @@ function History(props) {
       <br></br>
       <br></br>
       {props.store.accountReducer.currentJSONReducer
-        ? <code>{JSON.stringify(props.store.accountReducer.currentJSONReducer)}</code>
-        : <></>
+        && <button className={`btn-blue medium ${props.theme}`} onClick={() => { copyToClipboard() }}>copy</button>
+      }
+      <br></br>
+      {props.store.accountReducer.currentJSONReducer
+        && <code>{JSON.stringify(props.store.accountReducer.currentJSONReducer)}</code>
       }
       <div className="divider" />
 
