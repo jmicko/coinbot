@@ -54,7 +54,6 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
       }
       return false;
     }
-    console.log('sandbox', sandbox());
     req.user.sandbox = sandbox();
 
   } catch (err) {

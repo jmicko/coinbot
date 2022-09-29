@@ -113,8 +113,8 @@ function Investment(props) {
         <>
           {((reinvest_ratio > 100) || (props.store.accountReducer.userReducer.reinvest_ratio > 100)) &&
             <><p>** WARNING! ** </p>
-            {props.tips && <p> Setting the reinvestment ratio higher than 100% will take money from your available funds!
-              You will need to keep an eye on the bot and make sure you don't run out!</p>}</>
+              {props.tips && <p> Setting the reinvestment ratio higher than 100% will take money from your available funds!
+                You will need to keep an eye on the bot and make sure you don't run out!</p>}</>
           }
           <p>Current reinvestment ratio: {props.store.accountReducer.userReducer.reinvest_ratio}%</p>
           <label htmlFor="reinvest_ratio">
@@ -142,7 +142,7 @@ function Investment(props) {
         Automatically turn off reinvestment when the available funds fall below a set amount.
         This will not be automatically turned back on for you.
       </p>}
-      <>
+      <div className='left-border'>
         <p>Current reserve: {props.store.accountReducer.userReducer.reserve}</p>
         <label htmlFor="reserve">
           Set Reserve:
@@ -158,8 +158,8 @@ function Investment(props) {
         />
         <br />
         <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { saveReserve(event) }}>Save reserve</button>
-        <div className="divider" />
-      </>
+      </div>
+      <div className="divider" />
 
 
 
@@ -230,7 +230,7 @@ function Investment(props) {
       {props.tips && <p>
         This will change the trade pair ratio for ALL trades to a uniform percentage. This can be useful for when your fees change due to trade volume and you want to change the ratio accordingly.
       </p>}
-      <>
+      <div className='left-border'>
         <label htmlFor="bulk_pair_ratio">
           New Ratio:
         </label>
@@ -246,8 +246,8 @@ function Investment(props) {
         />
         <br />
         <button className={`btn-blue btn-bulk-pair-ratio medium ${props.theme}`} onClick={(event) => { bulkPairRatio(event) }}>Set all trades to new ratio</button>
-        <div className="divider" />
-      </>
+      </div>
+      <div className="divider" />
 
     </div>
   );

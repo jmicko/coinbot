@@ -49,35 +49,36 @@ function BulkDelete(props) {
         Delete all trades that fall within a price range, inclusive of the numbers set. This is based on the current price,
         so if the trade is a buy, it will look at the buy price. If it is a sell, it will look at the sell price.
       </p>}
+      <div className='left-border'>
+        <label htmlFor="upper_limit">
+          Upper Limit:
+        </label>
+        <input
+          type="number"
+          name="upper_limit"
+          value={upperLimit}
+          required
+          onChange={(event) => setUpperLimit(Number(event.target.value))}
+        />
 
-      <label htmlFor="upper_limit">
-        Upper Limit:
-      </label>
-      <input
-        type="number"
-        name="upper_limit"
-        value={upperLimit}
-        required
-        onChange={(event) => setUpperLimit(Number(event.target.value))}
-      />
+        <br />
 
-      <br />
+        <label htmlFor="lower_limit">
+          Lower Limit:
+        </label>
+        <input
+          type="number"
+          name="lower_limit"
+          value={lowerLimit}
+          required
+          onChange={(event) => setLowerLimit(Number(event.target.value))}
+        />
 
-      <label htmlFor="lower_limit">
-        Lower Limit:
-      </label>
-      <input
-        type="number"
-        name="lower_limit"
-        value={lowerLimit}
-        required
-        onChange={(event) => setLowerLimit(Number(event.target.value))}
-      />
+        <br />
+        <br />
 
-      <br />
-      <br />
-
-      <button className={`btn-red medium ${props.theme}`} onClick={() => { deleteRange() }}>Delete Range</button>
+        <button className={`btn-red medium ${props.theme}`} onClick={() => { deleteRange() }}>Delete Range</button>
+      </div>
 
       {/* DELETE ALL TRADES */}
       <div className="divider" />

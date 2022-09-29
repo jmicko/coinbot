@@ -89,6 +89,47 @@ const storeReorderTrade = (newOrder, originalDetails, flipped_at) => {
   });
 }
 
+// This function is used when importing trades from the user interface
+// IT MUST USE THE USER ID FROM PASSPORT AUTHENTICATION!!!
+// otherwise you could import false trades for someone else!
+const importTrade = (details, userID) => {
+  console.log(details.id);
+  return new Promise((resolve, reject) => {
+    // add new order to the database
+    const sqlText = `INSERT INTO "orders" 
+      ("id", "userID", "price", "size", "trade_pair_ratio", "side", "settled", "product_id", "time_in_force", 
+      "created_at", "flipped_at", "done_at", "fill_fees", "previous_fill_fees", "filled_size", "executed_value", "original_buy_price", "original_sell_price", "reorder") 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19);`;
+    pool.query(sqlText, [
+      details.id,
+      userID,
+      details.price,
+      details.size,
+      details.trade_pair_ratio,
+      details.side,
+      details.settled, 
+      details.product_id,
+      details.time_in_force,
+      details.created_at,
+      details.flipped_at,
+      details.done_at,
+      details.fill_fees,
+      details.previous_fill_fees,
+      details.filled_size,
+      details.executed_value,
+      details.original_buy_price,
+      details.original_sell_price,
+      true
+    ])
+      .then((results) => {
+        resolve(results);
+      })
+      .catch((err) => {
+        reject(err);
+      });
+  });
+}
+
 // gets all open orders in db based on a specified limit. 
 // The limit is for each side, so the results will potentially double that
 const getLimitedUnsettledTrades = (userID, limit) => {
@@ -164,6 +205,20 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
       ORDER BY "price" ASC
       LIMIT $2;`;
       pool.query(sqlText, [userID, max_trade_load])
+        .then((results) => {
+          // promise returns promise from pool if success
+          resolve(results.rows);
+        })
+        .catch((err) => {
+          // or promise relays errors from pool to parent
+          reject(err);
+        })
+    } else if (side == 'all') {
+      // gets all unsettled trades, sorted by price
+      sqlText = `SELECT * FROM "orders" 
+      WHERE "flipped"=false AND "will_cancel"=false AND "userID"=$1
+      ORDER BY "price" ASC;`;
+      pool.query(sqlText, [userID])
         .then((results) => {
           // promise returns promise from pool if success
           resolve(results.rows);
@@ -562,6 +617,7 @@ async function saveFees(fees, userID) {
 const databaseClient = {
   storeTrade: storeTrade,
   storeReorderTrade: storeReorderTrade,
+  importTrade: importTrade,
   getLimitedTrades: getLimitedTrades,
   getLimitedUnsettledTrades: getLimitedUnsettledTrades,
   getUnsettledTrades: getUnsettledTrades,

@@ -98,18 +98,20 @@ function General(props) {
         There is a hard limit of 10,000 open trades per user, so there is no reason to set the value higher than that.
       </p>}
       <p>Current max trades to load per side: {Number(props.store.accountReducer.userReducer.max_trade_load)}</p>
-      <label htmlFor="reinvest_ratio">
-        Set Max:
-      </label>
-      <input
-        type="number"
-        name="reinvest_ratio"
-        value={max_trade_load}
-        required
-        onChange={(event) => setMaxTradeLoad(Number(event.target.value))}
-      />
-      <br />
-      <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { sendTradeLoadMax(event) }}>Save Max</button>
+      <div className='left-border'>
+        <label htmlFor="reinvest_ratio">
+          Set Max:
+        </label>
+        <input
+          type="number"
+          name="reinvest_ratio"
+          value={max_trade_load}
+          required
+          onChange={(event) => setMaxTradeLoad(Number(event.target.value))}
+        />
+        <br />
+        <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { sendTradeLoadMax(event) }}>Save Max</button>
+      </div>
       <div className="divider" />
 
       {/* PROFIT ACCURACY */}
@@ -118,18 +120,20 @@ function General(props) {
         How many decimals to display on screen for profits.
       </p>}
       <p>Current accuracy: {Number(props.store.accountReducer.userReducer.profit_accuracy)}</p>
-      <label htmlFor="profit_accuracy">
-        Set Max:
-      </label>
-      <input
-        type="number"
-        name="profit_accuracy"
-        value={profit_accuracy}
-        required
-        onChange={(event) => setProfit_accuracy(Number(event.target.value))}
-      />
-      <br />
-      <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { sendProfitAccuracy(event) }}>Save</button>
+      <div className='left-border'>
+        <label htmlFor="profit_accuracy">
+          Set Max:
+        </label>
+        <input
+          type="number"
+          name="profit_accuracy"
+          value={profit_accuracy}
+          required
+          onChange={(event) => setProfit_accuracy(Number(event.target.value))}
+        />
+        <br />
+        <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { sendProfitAccuracy(event) }}>Save</button>
+      </div>
       <div className="divider" />
     </div>
   );

@@ -45,6 +45,17 @@ const xlsxReducer = (state = [], action) => {
   }
 };
 
+const currentJSONReducer = (state = false, action) => {
+  switch (action.type) {
+    case 'SET_CURRENT_JSON':
+      return action.payload;
+    case 'UNSET_CURRENT_JSON':
+      return false;
+    default:
+      return state;
+  }
+};
+
 const debugReducer = (state = [], action) => {
   switch (action.type) {
     case 'SET_DEBUG':
@@ -83,6 +94,7 @@ export default combineReducers({
   profitsReducer,
   accountReducer,
   xlsxReducer,
+  currentJSONReducer,
   debugReducer,
   botMessages,
 });
