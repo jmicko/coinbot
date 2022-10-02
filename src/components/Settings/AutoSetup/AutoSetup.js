@@ -8,7 +8,10 @@ function AutoSetup(props) {
   const dispatch = useDispatch();
 
   const [startingValue, setStartingValue] = useState(1000);
+  const [endingValue, setEndingValue] = useState(100000);
+  const [ignoreFunds, setIgnoreFunds] = useState(false);
   const [increment, setIncrement] = useState(100);
+  const [incrementType, setIncrementType] = useState('dollars');
   const [size, setSize] = useState(10);
   const [sizeType, setSizeType] = useState('USD');
   const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
@@ -20,6 +23,14 @@ function AutoSetup(props) {
   const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
   const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
 
+
+  function handleIncrementType(event) {
+    setIncrementType(event.target.value)
+  }
+
+  function handleIgnoreFunds() {
+    setIgnoreFunds(!ignoreFunds)
+  }
 
   useEffect(() => {
     if (size) {
@@ -159,7 +170,7 @@ function AutoSetup(props) {
       </>}
       <div className='auto-setup-form-and-results'>
 
-        <form className='auto-setup-form' onSubmit={submitAutoSetup}>
+        <form className='auto-setup-form left-border' onSubmit={submitAutoSetup}>
 
           {/* STARTING VALUE */}
           <p>What dollar amount to start at?</p>
@@ -176,8 +187,63 @@ function AutoSetup(props) {
             />
           </label>
 
+          {/* ENDING VALUE */}
+          <p>What dollar amount to end at? (If not using all of your funds. Checking 'Ignore Funds'
+            will allow the bot to keep adding trades regardless of how much cash you have until this
+            limit is reached.)</p>
+          <label htmlFor='startingValue'>
+            Ending Value:
+            <br />
+            <input
+              name='startingValue'
+              type='number'
+              value={endingValue}
+              // step={10}
+              required
+              onChange={(event) => setEndingValue(Number(event.target.value))}
+            />
+          </label>
+
+          <br />
+          {/* IGNORE FUNDS */}
+          <input
+            name="ignore_funds"
+            type="checkbox"
+            checked={ignoreFunds}
+            onChange={handleIgnoreFunds}
+          />
+          <label htmlFor="ignore_funds">
+            Ignore Available Funds:
+          </label>
+
+          {/* INCREMENT TYPE */}
+          <p>Increment by:</p>
+
+          <input
+            type="radio"
+            name="increment_type"
+            value="dollars"
+            checked={incrementType === "dollars"}
+            onChange={handleIncrementType}
+          />
+          <label htmlFor='dollars'>
+            Dollars
+          </label>
+
+          <input
+            type="radio"
+            name="increment_type"
+            value="percentage"
+            checked={incrementType === "percentage"}
+            onChange={handleIncrementType}
+          />
+          <label htmlFor='percentage'>
+            Percentage
+          </label>
+
+
           {/* INCREMENT */}
-          <p>What dollar amount to increment by?</p>
+          <p>What {incrementType === "dollars" ? "dollar amount" : "percentage"} to increment by?</p>
           <label htmlFor='increment'>
             Increment:
             <br />
