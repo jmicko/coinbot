@@ -8,6 +8,7 @@ function AutoSetup(props) {
   const dispatch = useDispatch();
 
   const [startingValue, setStartingValue] = useState(1000);
+  const [skipFirst, setSkipFirst] = useState(false);
   const [endingValue, setEndingValue] = useState(100000);
   const [ignoreFunds, setIgnoreFunds] = useState(false);
   const [increment, setIncrement] = useState(100);
@@ -26,6 +27,10 @@ function AutoSetup(props) {
 
   function handleIncrementType(event) {
     setIncrementType(event.target.value)
+  }
+
+  function handleSkipFirst() {
+    setSkipFirst(!skipFirst)
   }
 
   function handleIgnoreFunds() {
@@ -186,6 +191,18 @@ function AutoSetup(props) {
               onChange={(event) => setStartingValue(Number(event.target.value))}
             />
           </label>
+          <br />
+
+          {/* SKIP FIRST */}
+          <input
+            name="skip_first"
+            type="checkbox"
+            checked={skipFirst}
+            onChange={handleSkipFirst}
+          />
+          <label htmlFor="skip_first">
+            Skip first
+          </label>
 
           {/* ENDING VALUE */}
           <p>What dollar amount to end at? (If not using all of your funds. Checking 'Ignore Funds'
@@ -213,7 +230,7 @@ function AutoSetup(props) {
             onChange={handleIgnoreFunds}
           />
           <label htmlFor="ignore_funds">
-            Ignore Available Funds:
+            Ignore Available Funds
           </label>
 
           {/* INCREMENT TYPE */}

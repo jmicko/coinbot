@@ -857,10 +857,15 @@ function orderElimination(dbOrders, cbOrders) {
 }
 
 
+async function autoSetup(user, parameters) {
+  console.log('the user and params', user.id, parameters);
+}
+
+
 // auto setup trades until run out of money
 // this version of autoSetup will put trades directly into the db and let resync order what it needs
 // much less cb calls for orders that will just desync, also much faster
-async function autoSetup(user, parameters) {
+async function autoSetupBackup(user, parameters) {
   // console.log('in new autoSetup function', user, parameters);
   let availableFunds = parameters.availableFunds;
   let loopPrice = parameters.startingValue;
