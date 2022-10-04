@@ -859,6 +859,84 @@ function orderElimination(dbOrders, cbOrders) {
 
 async function autoSetup(user, parameters) {
   console.log('the user and params', user.id, parameters);
+
+  // create an array to hold the new trades to put in
+  const orderList = [];
+  let count = 0;
+
+  // SHORTEN PARAMS for better readability
+  let availableFunds = parameters.availableFunds;
+  let size = parameters.size;
+  let startingValue = parameters.startingValue;
+  let buyPrice = startingValue;
+  let endingValue = parameters.endingValue;
+  let increment = parameters.increment;
+  let incrementType = parameters.incrementType;
+  let loopDirection = "up";
+  if (endingValue - startingValue < 0) {
+    loopDirection = "down";
+  }
+
+  console.log('loop direction', loopDirection);
+
+  // loop until one of the stop triggers is hit
+  let stop = false;
+  while (!stop) {
+    count++;
+
+
+
+
+    // CREATE ONE ORDER
+    const singleOrder = {
+      original_buy_price: buyPrice,
+    }
+    // push that order into the order list
+    orderList.push(singleOrder);
+
+    // SETUP FOR NEXT LOOP - do some math to figure out next iteration, and if we should keep looping
+
+    // subtract the buy size USD from the available funds
+    availableFunds -= size;
+
+    // increment the buy price
+    // can have either percentage or dollar amount increment
+    if (incrementType == 'dollars') {
+      // if incrementing by dollar amount
+      if (loopDirection == 'up') {
+        buyPrice += increment;
+      } else {
+        buyPrice -= increment;
+      }
+    } else {
+      // if incrementing by percentage
+      if (loopDirection == 'up') {
+        buyPrice = buyPrice * (1 + (increment / 100));
+      } else {
+        buyPrice = buyPrice / (1 + (increment / 100));
+      }
+    }
+
+
+    // STOP TRADING IF...
+
+    // stop if run out of funds unless user specifies to ignore that
+    console.log('ignore funds:', parameters.ignoreFunds);
+    if (availableFunds < 0 && !parameters.ignoreFunds) {
+      stop = true;
+    }
+    console.log('available funds is', availableFunds);
+
+    // stop if the buy price passes the ending value
+    if (loopDirection == 'up' && buyPrice >= endingValue) {
+      stop = true;
+    } else if (loopDirection == 'down' && buyPrice <= endingValue) {
+      stop = true;
+    }
+  }
+
+  console.log('count is', count);
+  console.log('orderList', orderList);
 }
 
 
