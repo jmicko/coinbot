@@ -870,8 +870,10 @@ async function autoSetup(user, parameters) {
   let startingValue = parameters.startingValue;
   let buyPrice = startingValue;
   let endingValue = parameters.endingValue;
+  let tradingPrice = parameters.tradingPrice;
   let increment = parameters.increment;
   let incrementType = parameters.incrementType;
+  let trade_pair_ratio = parameters.trade_pair_ratio;
   let loopDirection = "up";
   if (endingValue - startingValue < 0) {
     loopDirection = "down";
@@ -884,13 +886,44 @@ async function autoSetup(user, parameters) {
   while (!stop) {
     count++;
 
+    // get the sell price with the same math as is used by the bot when flipping
+    let original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + 100))) / 100);
 
+    // figure out if it is going to be a buy or a sell. Buys will be below current trade price, sells above.
+    let side = 'buy';
+    if (buyPrice > tradingPrice) {
+      side = 'sell';
+    }
+
+    // sett the current price based on if it is a buy or sell
+    let price = buyPrice;
+    if (side == 'sell') {
+      price = original_sell_price;
+    }
+
+    // if it is a sell, it will need to be flipped.
+
+    // console.log('buy price', buyPrice);
+    // console.log('is it a buy or sell?', side);
+
+    // if the size is in BTC, it will never change. 
+    let actualSize = size;
+    // If it is in USD, need to convert
+    if (parameters.sizeType == 'USD') {
+      // use the buy price and the size to get the real size
+      actualSize = Number(Math.floor((size / buyPrice) * 100000000)) / 100000000;
+    }
 
 
     // CREATE ONE ORDER
     const singleOrder = {
       original_buy_price: buyPrice,
+      original_sell_price: original_sell_price,
+      side: side,
+      price: price,
+      size: actualSize
     }
+
     // push that order into the order list
     orderList.push(singleOrder);
 
@@ -921,11 +954,11 @@ async function autoSetup(user, parameters) {
     // STOP TRADING IF...
 
     // stop if run out of funds unless user specifies to ignore that
-    console.log('ignore funds:', parameters.ignoreFunds);
+    // console.log('ignore funds:', parameters.ignoreFunds);
     if (availableFunds < 0 && !parameters.ignoreFunds) {
       stop = true;
     }
-    console.log('available funds is', availableFunds);
+    // console.log('available funds is', availableFunds);
 
     // stop if the buy price passes the ending value
     if (loopDirection == 'up' && buyPrice >= endingValue) {
