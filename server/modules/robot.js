@@ -858,7 +858,6 @@ function orderElimination(dbOrders, cbOrders) {
 
 
 async function autoSetup(user, parameters) {
-  console.log('the user and params', user.id, parameters);
 
   // create an array to hold the new trades to put in
   const orderList = [];
@@ -879,8 +878,6 @@ async function autoSetup(user, parameters) {
   if (endingValue - startingValue < 0) {
     loopDirection = "down";
   }
-
-  // console.log('loop direction', loopDirection);
 
   let btcToBuy = 0;
 
@@ -990,9 +987,6 @@ async function autoSetup(user, parameters) {
       stop = true;
     }
   }
-
-  console.log('count is', count);
-  console.log('orderList', orderList);
 
   return {
     orderList: orderList,
