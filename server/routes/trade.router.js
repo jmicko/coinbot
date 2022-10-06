@@ -140,7 +140,8 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
   // POST route code here
   const user = req.user;
   if (user.active && user.approved) {
-    robot.autoSetup(user, req.body)
+    let setup = await robot.autoSetup(user, req.body)
+    console.log('setup is:', setup);
     res.sendStatus(200);
   } else {
     console.log('user is not active and cannot trade!');
