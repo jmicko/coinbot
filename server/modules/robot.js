@@ -874,12 +874,15 @@ async function autoSetup(user, parameters) {
   let increment = parameters.increment;
   let incrementType = parameters.incrementType;
   let trade_pair_ratio = parameters.trade_pair_ratio;
+  let sizeType = parameters.sizeType;
   let loopDirection = "up";
   if (endingValue - startingValue < 0) {
     loopDirection = "down";
   }
 
-  console.log('loop direction', loopDirection);
+  // console.log('loop direction', loopDirection);
+
+  let btcToBuy = 0;
 
   // loop until one of the stop triggers is hit
   let stop = false;
@@ -895,23 +898,32 @@ async function autoSetup(user, parameters) {
       side = 'sell';
     }
 
-    // sett the current price based on if it is a buy or sell
+    // set the current price based on if it is a buy or sell
     let price = buyPrice;
     if (side == 'sell') {
       price = original_sell_price;
     }
 
-    // if it is a sell, it will need to be flipped.
-
-    // console.log('buy price', buyPrice);
-    // console.log('is it a buy or sell?', side);
-
     // if the size is in BTC, it will never change. 
     let actualSize = size;
     // If it is in USD, need to convert
-    if (parameters.sizeType == 'USD') {
+    if (sizeType == 'USD') {
       // use the buy price and the size to get the real size
       actualSize = Number(Math.floor((size / buyPrice) * 100000000)) / 100000000;
+    }
+
+    // count up how much BTC will need to be purchased to reserve for all the sell orders
+    if (side == 'sell') {
+      btcToBuy += actualSize
+    }
+
+    // calculate the previous fees on sell orders
+    let prevFees = () => {
+      if (side === 'buy') {
+        return 0
+      } else {
+        return buyPrice * actualSize * user.taker_fee
+      }
     }
 
 
@@ -921,7 +933,12 @@ async function autoSetup(user, parameters) {
       original_sell_price: original_sell_price,
       side: side,
       price: price,
-      size: actualSize
+      size: actualSize,
+      fill_fees: prevFees(),
+      product_id: parameters.product_id,
+      stp: 'cn',
+      userID: user.id,
+      trade_pair_ratio: parameters.trade_pair_ratio,
     }
 
     // push that order into the order list
@@ -930,7 +947,13 @@ async function autoSetup(user, parameters) {
     // SETUP FOR NEXT LOOP - do some math to figure out next iteration, and if we should keep looping
 
     // subtract the buy size USD from the available funds
-    availableFunds -= size;
+    // if sizeType is BTC, then we need to convert
+    if (sizeType = 'BTC') {
+      let USDSize = size * buyPrice;
+      availableFunds -= USDSize;
+    } else {
+      availableFunds -= size;
+    }
 
     // increment the buy price
     // can have either percentage or dollar amount increment
@@ -970,6 +993,11 @@ async function autoSetup(user, parameters) {
 
   console.log('count is', count);
   console.log('orderList', orderList);
+
+  return {
+    orderList: orderList,
+    btcToBuy: btcToBuy,
+  }
 }
 
 
@@ -1030,17 +1058,17 @@ async function autoSetupBackup(user, parameters) {
 
       // create a single order object
       const singleOrder = {
-        original_sell_price: original_sell_price,
-        original_buy_price: loopPrice,
-        side: side,
-        price: price(),
-        sizeUSD: actualSize,
-        size: convertedAmount,
+        original_sell_price: original_sell_price,//
+        original_buy_price: loopPrice,//
+        side: side,//
+        price: price(),//
+        sizeUSD: actualSize,//
+        size: convertedAmount,//
         fill_fees: prevFees(),
-        product_id: parameters.product_id,
-        stp: 'cn',
-        userID: user.id,
-        trade_pair_ratio: parameters.trade_pair_ratio
+        product_id: parameters.product_id,//
+        stp: 'cn',//
+        userID: user.id,//
+        trade_pair_ratio: parameters.trade_pair_ratio//
       }
       orderList.push(singleOrder);
       // each loop needs to buy BTC with the USD size
