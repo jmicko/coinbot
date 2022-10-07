@@ -164,13 +164,17 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
           type: 'market'
         };
         console.log('BIG order', tradeDetails);
-        // let bigOrder = await coinbaseClient.placeOrder(tradeDetails);
+        let bigOrder = await coinbaseClient.placeOrder(tradeDetails);
         // console.log('big order to balance btc avail', bigOrder.size, 'user', user.taker_fee);
         await robot.updateFunds(user.id);
       }
 
       // put each trade into the db as a reorder so the sync loop can sync the right amount
       for (let i = 0; i < setup.orderList.length; i++) {
+        if (i==0 && req.body.skipFirst) {
+          console.log('Skip one!');
+          continue;
+        }
         const order = setup.orderList[i];
         // adding a bunch of 0s allows easy sorting by id in the DB which might be useful later so better to start now
         order.id = '0000000000' + (Number(user.auto_setup_number) + i).toString();
@@ -178,7 +182,7 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
         const time = new Date();
         order.created_at = time;
         console.log('order to store', order);
-        // await databaseClient.storeReorderTrade(order, order, time);
+        await databaseClient.storeReorderTrade(order, order, time);
       }
 
 
