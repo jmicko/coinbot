@@ -942,13 +942,13 @@ async function autoSetup(user, parameters) {
     orderList.push(singleOrder);
 
     // SETUP FOR NEXT LOOP - do some math to figure out next iteration, and if we should keep looping
-
     // subtract the buy size USD from the available funds
     // if sizeType is BTC, then we need to convert
-    if (sizeType = 'BTC') {
+    if (sizeType == 'BTC') {
       let USDSize = size * buyPrice;
       availableFunds -= USDSize;
     } else {
+      console.log('current funds', availableFunds);
       availableFunds -= size;
     }
 
@@ -976,6 +976,7 @@ async function autoSetup(user, parameters) {
     // stop if run out of funds unless user specifies to ignore that
     // console.log('ignore funds:', parameters.ignoreFunds);
     if (availableFunds < 0 && !parameters.ignoreFunds) {
+      console.log('ran out of funds!', availableFunds);
       stop = true;
     }
     // console.log('available funds is', availableFunds);

@@ -142,6 +142,55 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
   if (user.active && user.approved) {
     let setup = await robot.autoSetup(user, req.body)
     console.log('setup is:', setup);
+
+    try {
+      // need unique IDs for each trade, but need to also get IDs from CB, so DB has no default.
+      // store a number that counts up every time autoSetup is used, and increase it before using it in case of error
+      // then use it here and increase it by the number of trades being put through this way
+      const number = (Number(user.auto_setup_number) + setup.orderList.length)
+      await databaseClient.setAutoSetupNumber(number, user.id);
+
+
+      console.log('setup params:', req.body);
+      // put a market order in for how much BTC need to be purchase for all the sell orders
+      // if (false) {
+        if (setup.btcToBuy >= 0.000016) {
+        const tradeDetails = {
+          side: 'buy',
+          size: setup.btcToBuy.toFixed(8), // BTC
+          product_id: 'BTC-USD',
+          stp: 'cn',
+          userID: user.id,
+          type: 'market'
+        };
+        console.log('BIG order', tradeDetails);
+        // let bigOrder = await coinbaseClient.placeOrder(tradeDetails);
+        // console.log('big order to balance btc avail', bigOrder.size, 'user', user.taker_fee);
+        await robot.updateFunds(user.id);
+      }
+
+      // put each trade into the db as a reorder so the sync loop can sync the right amount
+      for (let i = 0; i < setup.orderList.length; i++) {
+        const order = setup.orderList[i];
+        // adding a bunch of 0s allows easy sorting by id in the DB which might be useful later so better to start now
+        order.id = '0000000000' + (Number(user.auto_setup_number) + i).toString();
+        // use the current time for the created time 
+        const time = new Date();
+        order.created_at = time;
+        console.log('order to store', order);
+        // await databaseClient.storeReorderTrade(order, order, time);
+      }
+
+
+
+    } catch (err) {
+      console.log(err, 'problem in autoSetup ');
+      cache.storeError(userID, {
+        errorText: `problem in auto setup`
+      })
+    }
+
+
     res.sendStatus(200);
   } else {
     console.log('user is not active and cannot trade!');
