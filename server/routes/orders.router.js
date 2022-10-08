@@ -32,8 +32,8 @@ router.get('/', rejectUnauthenticated, (req, res) => {
       }
       res.send(openOrdersInOrder)
     })
-    .catch((error) => {
-      console.log(error, 'error in get orders route');
+    .catch((err) => {
+      console.log(err, 'error in get orders route');
       res.sendStatus(500)
     })
 });

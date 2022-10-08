@@ -280,13 +280,13 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       await coinbaseClient.cancelOrder(orderId, userID);
     }
     res.sendStatus(200)
-  } catch (error) {
-    if (error.data?.message) {
-      console.log(error.data.message, 'error message, trade router DELETE');
+  } catch (err) {
+    if (err.data?.message) {
+      console.log(err.data.message, 'error message, trade router DELETE');
       // orders that have been canceled are deleted from coinbase and return a 404.
       // error handling should delete them from db and not worry about coinbase since there is no other way to delete
       // but also send one last delete message to Coinbase just in case it finds it again, but with no error checking
-      if (error.data.message === 'order not found') {
+      if (err.data.message === 'order not found') {
         socketClient.emit('message', {
           error: `Order was not found when delete was requested`,
           orderUpdate: true
@@ -295,7 +295,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
         res.sendStatus(400)
       }
     }
-    if (error.response?.status === 404) {
+    if (err.response?.status === 404) {
       databaseClient.deleteTrade(orderId);
       socketClient.emit('message', {
         error: `Order was not found when delete was requested`,
@@ -304,10 +304,10 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       });
       console.log('order not found in account', orderId);
       res.sendStatus(400)
-    } else if (error.response?.status === 400) {
-      console.log('bad request', error.response?.data);
+    } else if (err.response?.status === 400) {
+      console.log('bad request', err.response?.data);
     } else {
-      console.log(error, 'something failed in the delete trade route');
+      console.log(err, 'something failed in the delete trade route');
       res.sendStatus(500)
     }
   };

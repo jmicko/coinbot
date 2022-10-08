@@ -631,7 +631,7 @@ async function settleMultipleOrders(userID) {
           } else if (orderToCheck.reorder) {
             // if we know it should be reordered, just reorder it
             cache.updateStatus(userID, 'SMO loop reorder');
-            await reorder(orderToCheck, userAPI);
+            await reorder(orderToCheck);
           } else {
             // if not a reorder and not canceled, look up the full settlement details on CB
             cache.updateStatus(userID, 'SMO loop get order');
@@ -658,7 +658,7 @@ async function settleMultipleOrders(userID) {
             errorText = `Order not found!`
             // reorder it
             try {
-              await reorder(orderToCheck, userAPI);
+              await reorder(orderToCheck);
             } catch (err) {
               console.log(err, 'error reordering trade');
               errorText = `Error finding order on Coinbase, could not reorder`;
@@ -686,7 +686,7 @@ async function settleMultipleOrders(userID) {
   })
 }
 
-async function reorder(orderToReorder, userAPI, retry) {
+async function reorder(orderToReorder, retry) {
   const userID = orderToReorder.userID;
   cache.updateStatus(userID, 'begin reorder');
   return new Promise(async (resolve, reject) => {
@@ -737,7 +737,7 @@ async function reorder(orderToReorder, userAPI, retry) {
               errorText: `Insufficient funds when trying to reorder an order! Do you have a negative balance?`
             })
           }
-          console.log(err, 'error in reorder function in robot.js');
+          console.log( 'error in reorder function in robot.js');
           reject(err)
         }
       } else {
@@ -749,7 +749,11 @@ async function reorder(orderToReorder, userAPI, retry) {
       const willCancel = cache.checkIfCanceling(userID, orderToReorder.id);
       if ((err.response?.status === 404) && (!willCancel)) {
         // call reorder again with retry as true so it will reorder right away
-        reorder(orderToReorder, userAPI, true);
+        try {
+          await reorder(orderToReorder, true);
+        } catch (error) {
+          console.log("this is that error in the reorder function that you don't ever expect to see again. Hope it worked!");
+        }
       }
     }
     resolve();
@@ -885,6 +889,8 @@ async function autoSetup(user, parameters) {
   let stop = false;
   while (!stop) {
     count++;
+
+    buyPrice = Number(buyPrice.toFixed(2));
 
     // get the sell price with the same math as is used by the bot when flipping
     let original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + 100))) / 100);

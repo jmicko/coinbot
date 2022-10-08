@@ -42,8 +42,8 @@ async function getAccounts(userID) {
 
       axios.request(options).then(function (response) {
         resolve(response.data)
-      }).catch(function (error) {
-        reject(error)
+      }).catch(function (err) {
+        reject(err)
       });
     } catch (err) {
       reject(err);
@@ -347,6 +347,7 @@ async function placeOrder(data, quickAPI) {
       resolve(response.data);
     } catch (err) {
       reject(err);
+      console.log('ERROR in place order function in coinbaseClient');
     }
   });
 }
