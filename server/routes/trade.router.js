@@ -140,7 +140,8 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
   // POST route code here
   const user = req.user;
   if (user.active && user.approved) {
-    let setup = await robot.autoSetup(user, req.body)
+    let setupParams = req.body;
+    let setup = await robot.autoSetup(user, setupParams)
     console.log('setup is:', setup);
 
     try {
@@ -151,10 +152,10 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
       await databaseClient.setAutoSetupNumber(number, user.id);
 
 
-      console.log('setup params:', req.body);
+      console.log('setup params:', setupParams);
       // put a market order in for how much BTC need to be purchase for all the sell orders
       // if (false) {
-        if (setup.btcToBuy >= 0.000016) {
+      if (setup.btcToBuy >= 0.000016) {
         const tradeDetails = {
           side: 'buy',
           size: setup.btcToBuy.toFixed(8), // BTC
@@ -164,14 +165,16 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
           type: 'market'
         };
         console.log('BIG order', tradeDetails);
-        let bigOrder = await coinbaseClient.placeOrder(tradeDetails);
-        // console.log('big order to balance btc avail', bigOrder.size, 'user', user.taker_fee);
+        if (!setupParams.ignoreFunds) {
+          let bigOrder = await coinbaseClient.placeOrder(tradeDetails);
+          // console.log('big order to balance btc avail', bigOrder.size, 'user', user.taker_fee);
+        }
         await robot.updateFunds(user.id);
       }
 
       // put each trade into the db as a reorder so the sync loop can sync the right amount
       for (let i = 0; i < setup.orderList.length; i++) {
-        if (i==0 && req.body.skipFirst) {
+        if (i == 0 && req.body.skipFirst) {
           console.log('Skip one!');
           continue;
         }
