@@ -8,7 +8,11 @@ function AutoSetup(props) {
   const dispatch = useDispatch();
 
   const [startingValue, setStartingValue] = useState(1000);
+  const [skipFirst, setSkipFirst] = useState(false);
+  const [endingValue, setEndingValue] = useState(100000);
+  const [ignoreFunds, setIgnoreFunds] = useState(false);
   const [increment, setIncrement] = useState(100);
+  const [incrementType, setIncrementType] = useState('dollars');
   const [size, setSize] = useState(10);
   const [sizeType, setSizeType] = useState('USD');
   const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
@@ -20,6 +24,18 @@ function AutoSetup(props) {
   const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
   const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
 
+
+  function handleIncrementType(event) {
+    setIncrementType(event.target.value)
+  }
+
+  function handleSkipFirst() {
+    setSkipFirst(!skipFirst)
+  }
+
+  function handleIgnoreFunds() {
+    setIgnoreFunds(!ignoreFunds)
+  }
 
   useEffect(() => {
     if (size) {
@@ -53,51 +69,171 @@ function AutoSetup(props) {
     // this is how many times the loop has looped
     let count = 0;
 
-    if (sizeType === "USD") {
-      // logic for when size is in USD
-      while ((size <= availableFunds) && (count < 10000)) {
-        let actualSize = size;
-        // if the loop price is higher than the trading price,
-        // need to find actual cost of the trade at that volume
-        if (loopPrice >= tradingPrice) {
-          // convert size at loop price to BTC
-          let BTCSize = size / loopPrice;
-          // find cost of BTCSize at current price
-          let actualUSDSize = tradingPrice * BTCSize;
-          // set the actual USD size to be the cost of the BTC size at the current trade price
-          actualSize = actualUSDSize;
-        }
-        // each loop needs to buy BTC with the USD size
-        // this will lower the value of available funds by the size
-        availableFunds -= actualSize;
-        // then it will increase the final price by the increment value
-        setSetupResults(loopPrice);
-        loopPrice += increment;
-        count++;
+
+    let payload = {
+      availableFunds: availableFundsUSD,
+      tradingPrice: props.priceTicker,
+      startingValue: startingValue,
+      skipFirst: skipFirst,
+      endingValue: endingValue,
+      ignoreFunds: ignoreFunds,
+      incrementType: incrementType,
+      increment: increment,
+      trade_pair_ratio: tradePairRatio,
+      size: size,
+      sizeType: sizeType,
+      product_id: transactionProduct,
+    }
+
+    let setup = autoSetup(props.store.accountReducer.userReducer, payload);
+
+    // this will be the buy price of the last trade pair
+    setSetupResults(setup.orderList[setup.orderList.length - 1].original_buy_price);
+
+    // this will be the total number of trades made
+    setTotalTrades(setup.orderList.length);
+
+    console.log(setup);
+
+  }
+
+  function autoSetup(user, parameters) {
+
+    // create an array to hold the new trades to put in
+    const orderList = [];
+    let count = 0;
+
+    // SHORTEN PARAMS for better readability
+    let availableFunds = parameters.availableFunds;
+    let size = parameters.size;
+    let startingValue = parameters.startingValue;
+    let buyPrice = startingValue;
+    let endingValue = parameters.endingValue;
+    let tradingPrice = parameters.tradingPrice;
+    let increment = parameters.increment;
+    let incrementType = parameters.incrementType;
+    let trade_pair_ratio = parameters.trade_pair_ratio;
+    let sizeType = parameters.sizeType;
+    let loopDirection = "up";
+    if (endingValue - startingValue < 0) {
+      loopDirection = "down";
+    }
+
+    let btcToBuy = 0;
+
+    // loop until one of the stop triggers is hit
+    let stop = false;
+    while (!stop) {
+      count++;
+
+      buyPrice = Number(buyPrice.toFixed(2));
+
+      // get the sell price with the same math as is used by the bot when flipping
+      let original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + 100))) / 100);
+
+      // figure out if it is going to be a buy or a sell. Buys will be below current trade price, sells above.
+      let side = 'buy';
+      if (buyPrice > tradingPrice) {
+        side = 'sell';
       }
-      setTotalTrades(count);
-    } else {
-      // logic for when size is in btc
-      // need a variable for usd size since it will change
-      let USDSize = size * loopPrice;
-      while ((USDSize <= availableFunds) && (count < 10000)) {
-        // if the loop price is higher than the trading price,
-        // need to find current cost of the trade at that volume
-        if (loopPrice >= tradingPrice) {
-          // change to size at trading price
-          USDSize = tradingPrice * size;
-          // USDSize = actualUSDSize;
+
+      // set the current price based on if it is a buy or sell
+      let price = buyPrice;
+      if (side == 'sell') {
+        price = original_sell_price;
+      }
+
+      // if the size is in BTC, it will never change. 
+      let actualSize = size;
+      // If it is in USD, need to convert
+      if (sizeType == 'USD') {
+        // use the buy price and the size to get the real size
+        actualSize = Number(Math.floor((size / buyPrice) * 100000000)) / 100000000;
+      }
+
+      // count up how much BTC will need to be purchased to reserve for all the sell orders
+      if (side == 'sell') {
+        btcToBuy += actualSize
+      }
+
+      // calculate the previous fees on sell orders
+      let prevFees = () => {
+        if (side === 'buy') {
+          return 0
+        } else {
+          return buyPrice * actualSize * user.taker_fee
         }
-        // each loop needs to buy BTC with the USD size
-        // this will lower the value of available funds by the USD size
+      }
+
+
+      // CREATE ONE ORDER
+      const singleOrder = {
+        original_buy_price: buyPrice,
+        original_sell_price: original_sell_price,
+        side: side,
+        price: price,
+        size: actualSize,
+        fill_fees: prevFees(),
+        product_id: parameters.product_id,
+        stp: 'cn',
+        userID: user.id,
+        trade_pair_ratio: parameters.trade_pair_ratio,
+      }
+
+      // push that order into the order list
+      orderList.push(singleOrder);
+
+      // SETUP FOR NEXT LOOP - do some math to figure out next iteration, and if we should keep looping
+      // subtract the buy size USD from the available funds
+      // if sizeType is BTC, then we need to convert
+      if (sizeType == 'BTC') {
+        let USDSize = size * buyPrice;
         availableFunds -= USDSize;
-        // then it will increase the final price by the increment value
-        setSetupResults(loopPrice);
-        loopPrice += increment;
-        USDSize = size * loopPrice;
-        count++;
+      } else {
+        console.log('current funds', availableFunds);
+        availableFunds -= size;
       }
-      setTotalTrades(count);
+
+      // increment the buy price
+      // can have either percentage or dollar amount increment
+      if (incrementType == 'dollars') {
+        // if incrementing by dollar amount
+        if (loopDirection == 'up') {
+          buyPrice += increment;
+        } else {
+          buyPrice -= increment;
+        }
+      } else {
+        // if incrementing by percentage
+        if (loopDirection == 'up') {
+          buyPrice = buyPrice * (1 + (increment / 100));
+        } else {
+          buyPrice = buyPrice / (1 + (increment / 100));
+        }
+      }
+
+
+      // STOP TRADING IF...
+
+      // stop if run out of funds unless user specifies to ignore that
+      // console.log('ignore funds:', parameters.ignoreFunds);
+      if (availableFunds < 0 && !parameters.ignoreFunds) {
+        console.log('ran out of funds!', availableFunds);
+        stop = true;
+      }
+      // console.log('available funds is', availableFunds);
+
+      // stop if the buy price passes the ending value
+      if (loopDirection == 'up' && buyPrice >= endingValue) {
+        stop = true;
+      } else if (loopDirection == 'down' && buyPrice <= endingValue) {
+        stop = true;
+      }
+    }
+
+    return {
+      orderList: orderList,
+      btcToBuy: btcToBuy,
     }
   }
 
@@ -125,13 +261,17 @@ function AutoSetup(props) {
 
   function autoTrader() {
     let availableFunds = availableFundsUSD;
-    console.log('here is the current available funds', availableFunds);
+    // console.log('here is the current available funds', availableFunds);
 
     dispatch({
       type: 'AUTO_SETUP', payload: {
         availableFunds: availableFunds,
         tradingPrice: props.priceTicker,
         startingValue: startingValue,
+        skipFirst: skipFirst,
+        endingValue: endingValue,
+        ignoreFunds: ignoreFunds,
+        incrementType: incrementType,
         increment: increment,
         trade_pair_ratio: tradePairRatio,
         size: size,
@@ -145,6 +285,7 @@ function AutoSetup(props) {
     <div className="AutoSetup settings-panel scrollable">
       <div className="divider" />
       <h4>Auto Setup</h4>
+      {JSON.stringify(props.store.accountReducer.userReducer)}
       {props.tips && <>
         <p>
           Enter the parameters you want and the bot will keep placing trades for you based on
@@ -159,7 +300,7 @@ function AutoSetup(props) {
       </>}
       <div className='auto-setup-form-and-results'>
 
-        <form className='auto-setup-form' onSubmit={submitAutoSetup}>
+        <form className='auto-setup-form left-border' onSubmit={submitAutoSetup}>
 
           {/* STARTING VALUE */}
           <p>What dollar amount to start at?</p>
@@ -175,9 +316,76 @@ function AutoSetup(props) {
               onChange={(event) => setStartingValue(Number(event.target.value))}
             />
           </label>
+          <br />
+
+          {/* SKIP FIRST */}
+          <input
+            name="skip_first"
+            type="checkbox"
+            checked={skipFirst}
+            onChange={handleSkipFirst}
+          />
+          <label htmlFor="skip_first">
+            Skip first
+          </label>
+
+          {/* ENDING VALUE */}
+          <p>What dollar amount to end at? (If not using all of your funds. Checking 'Ignore Funds'
+            will allow the bot to keep adding trades regardless of how much cash you have until this
+            limit is reached.)</p>
+          <label htmlFor='startingValue'>
+            Ending Value:
+            <br />
+            <input
+              name='startingValue'
+              type='number'
+              value={endingValue}
+              // step={10}
+              required
+              onChange={(event) => setEndingValue(Number(event.target.value))}
+            />
+          </label>
+
+          <br />
+          {/* IGNORE FUNDS */}
+          <input
+            name="ignore_funds"
+            type="checkbox"
+            checked={ignoreFunds}
+            onChange={handleIgnoreFunds}
+          />
+          <label htmlFor="ignore_funds">
+            Ignore Available Funds
+          </label>
+
+          {/* INCREMENT TYPE */}
+          <p>Increment by:</p>
+
+          <input
+            type="radio"
+            name="increment_type"
+            value="dollars"
+            checked={incrementType === "dollars"}
+            onChange={handleIncrementType}
+          />
+          <label htmlFor='dollars'>
+            Dollars
+          </label>
+
+          <input
+            type="radio"
+            name="increment_type"
+            value="percentage"
+            checked={incrementType === "percentage"}
+            onChange={handleIncrementType}
+          />
+          <label htmlFor='percentage'>
+            Percentage
+          </label>
+
 
           {/* INCREMENT */}
-          <p>What dollar amount to increment by?</p>
+          <p>What {incrementType === "dollars" ? "dollar amount" : "percentage"} to increment by?</p>
           <label htmlFor='increment'>
             Increment:
             <br />

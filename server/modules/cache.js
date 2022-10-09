@@ -178,6 +178,9 @@ const cache = {
   getSafeStorage: (userID) => {
     // create a deep copy of the user's storage object so that it can be changed
     // this threw an error when the bot froze up
+    // maybe because there was no storage object for the user so it threw undefined?
+    // error says unexpected character "u"
+    console.log('getting safe storage');
     const safeStorage = JSON.parse(JSON.stringify(cache.storage[userID]));
     // remove the api so sensitive details are not sent off server
     delete safeStorage.api;

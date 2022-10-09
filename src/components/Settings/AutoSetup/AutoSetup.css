@@ -1,11 +1,12 @@
 .auto-setup-results {
   /* float: right; */
-  width: 50%;
+  /* width: 50%; */
 }
 
 .auto-setup-form {
   /* float: left; */
   /* width: 50%; */
+  padding-right: 1rem;
 }
 
 .auto-setup-form-and-results{

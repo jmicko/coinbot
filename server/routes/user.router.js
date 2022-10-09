@@ -163,7 +163,7 @@ router.put('/approve', rejectUnauthenticated, async (req, res) => {
       res.sendStatus(403);
     }
   } catch (err) {
-    console.log(err);
+    console.log(err, 'error in approve put route');
     res.sendStatus(500);
   }
 });
@@ -222,7 +222,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       res.sendStatus(200);
     }
   } catch (err) {
-    console.log(err);
+    console.log(err, 'error in delete user route');
     res.sendStatus(500);
   }
 });

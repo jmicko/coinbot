@@ -631,7 +631,7 @@ async function settleMultipleOrders(userID) {
           } else if (orderToCheck.reorder) {
             // if we know it should be reordered, just reorder it
             cache.updateStatus(userID, 'SMO loop reorder');
-            await reorder(orderToCheck, userAPI);
+            await reorder(orderToCheck);
           } else {
             // if not a reorder and not canceled, look up the full settlement details on CB
             cache.updateStatus(userID, 'SMO loop get order');
@@ -658,7 +658,7 @@ async function settleMultipleOrders(userID) {
             errorText = `Order not found!`
             // reorder it
             try {
-              await reorder(orderToCheck, userAPI);
+              await reorder(orderToCheck);
             } catch (err) {
               console.log(err, 'error reordering trade');
               errorText = `Error finding order on Coinbase, could not reorder`;
@@ -686,7 +686,7 @@ async function settleMultipleOrders(userID) {
   })
 }
 
-async function reorder(orderToReorder, userAPI, retry) {
+async function reorder(orderToReorder, retry) {
   const userID = orderToReorder.userID;
   cache.updateStatus(userID, 'begin reorder');
   return new Promise(async (resolve, reject) => {
@@ -737,7 +737,7 @@ async function reorder(orderToReorder, userAPI, retry) {
               errorText: `Insufficient funds when trying to reorder an order! Do you have a negative balance?`
             })
           }
-          console.log(err, 'error in reorder function in robot.js');
+          console.log( 'error in reorder function in robot.js');
           reject(err)
         }
       } else {
@@ -749,7 +749,11 @@ async function reorder(orderToReorder, userAPI, retry) {
       const willCancel = cache.checkIfCanceling(userID, orderToReorder.id);
       if ((err.response?.status === 404) && (!willCancel)) {
         // call reorder again with retry as true so it will reorder right away
-        reorder(orderToReorder, userAPI, true);
+        try {
+          await reorder(orderToReorder, true);
+        } catch (error) {
+          console.log("this is that error in the reorder function that you don't ever expect to see again. Hope it worked!");
+        }
       }
     }
     resolve();
@@ -857,10 +861,151 @@ function orderElimination(dbOrders, cbOrders) {
 }
 
 
+async function autoSetup(user, parameters) {
+
+  // create an array to hold the new trades to put in
+  const orderList = [];
+  let count = 0;
+
+  // SHORTEN PARAMS for better readability
+  let availableFunds = parameters.availableFunds;
+  let size = parameters.size;
+  let startingValue = parameters.startingValue;
+  let buyPrice = startingValue;
+  let endingValue = parameters.endingValue;
+  let tradingPrice = parameters.tradingPrice;
+  let increment = parameters.increment;
+  let incrementType = parameters.incrementType;
+  let trade_pair_ratio = parameters.trade_pair_ratio;
+  let sizeType = parameters.sizeType;
+  let loopDirection = "up";
+  if (endingValue - startingValue < 0) {
+    loopDirection = "down";
+  }
+
+  let btcToBuy = 0;
+
+  // loop until one of the stop triggers is hit
+  let stop = false;
+  while (!stop) {
+    count++;
+
+    buyPrice = Number(buyPrice.toFixed(2));
+
+    // get the sell price with the same math as is used by the bot when flipping
+    let original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + 100))) / 100);
+
+    // figure out if it is going to be a buy or a sell. Buys will be below current trade price, sells above.
+    let side = 'buy';
+    if (buyPrice > tradingPrice) {
+      side = 'sell';
+    }
+
+    // set the current price based on if it is a buy or sell
+    let price = buyPrice;
+    if (side == 'sell') {
+      price = original_sell_price;
+    }
+
+    // if the size is in BTC, it will never change. 
+    let actualSize = size;
+    // If it is in USD, need to convert
+    if (sizeType == 'USD') {
+      // use the buy price and the size to get the real size
+      actualSize = Number(Math.floor((size / buyPrice) * 100000000)) / 100000000;
+    }
+
+    // count up how much BTC will need to be purchased to reserve for all the sell orders
+    if (side == 'sell') {
+      btcToBuy += actualSize
+    }
+
+    // calculate the previous fees on sell orders
+    let prevFees = () => {
+      if (side === 'buy') {
+        return 0
+      } else {
+        return buyPrice * actualSize * user.taker_fee
+      }
+    }
+
+
+    // CREATE ONE ORDER
+    const singleOrder = {
+      original_buy_price: buyPrice,
+      original_sell_price: original_sell_price,
+      side: side,
+      price: price,
+      size: actualSize,
+      fill_fees: prevFees(),
+      product_id: parameters.product_id,
+      stp: 'cn',
+      userID: user.id,
+      trade_pair_ratio: parameters.trade_pair_ratio,
+    }
+
+    // push that order into the order list
+    orderList.push(singleOrder);
+
+    // SETUP FOR NEXT LOOP - do some math to figure out next iteration, and if we should keep looping
+    // subtract the buy size USD from the available funds
+    // if sizeType is BTC, then we need to convert
+    if (sizeType == 'BTC') {
+      let USDSize = size * buyPrice;
+      availableFunds -= USDSize;
+    } else {
+      console.log('current funds', availableFunds);
+      availableFunds -= size;
+    }
+
+    // increment the buy price
+    // can have either percentage or dollar amount increment
+    if (incrementType == 'dollars') {
+      // if incrementing by dollar amount
+      if (loopDirection == 'up') {
+        buyPrice += increment;
+      } else {
+        buyPrice -= increment;
+      }
+    } else {
+      // if incrementing by percentage
+      if (loopDirection == 'up') {
+        buyPrice = buyPrice * (1 + (increment / 100));
+      } else {
+        buyPrice = buyPrice / (1 + (increment / 100));
+      }
+    }
+
+
+    // STOP TRADING IF...
+
+    // stop if run out of funds unless user specifies to ignore that
+    // console.log('ignore funds:', parameters.ignoreFunds);
+    if (availableFunds < 0 && !parameters.ignoreFunds) {
+      console.log('ran out of funds!', availableFunds);
+      stop = true;
+    }
+    // console.log('available funds is', availableFunds);
+
+    // stop if the buy price passes the ending value
+    if (loopDirection == 'up' && buyPrice >= endingValue) {
+      stop = true;
+    } else if (loopDirection == 'down' && buyPrice <= endingValue) {
+      stop = true;
+    }
+  }
+
+  return {
+    orderList: orderList,
+    btcToBuy: btcToBuy,
+  }
+}
+
+
 // auto setup trades until run out of money
 // this version of autoSetup will put trades directly into the db and let resync order what it needs
 // much less cb calls for orders that will just desync, also much faster
-async function autoSetup(user, parameters) {
+async function autoSetupBackup(user, parameters) {
   // console.log('in new autoSetup function', user, parameters);
   let availableFunds = parameters.availableFunds;
   let loopPrice = parameters.startingValue;
@@ -914,17 +1059,17 @@ async function autoSetup(user, parameters) {
 
       // create a single order object
       const singleOrder = {
-        original_sell_price: original_sell_price,
-        original_buy_price: loopPrice,
-        side: side,
-        price: price(),
-        sizeUSD: actualSize,
-        size: convertedAmount,
+        original_sell_price: original_sell_price,//
+        original_buy_price: loopPrice,//
+        side: side,//
+        price: price(),//
+        sizeUSD: actualSize,//
+        size: convertedAmount,//
         fill_fees: prevFees(),
-        product_id: parameters.product_id,
-        stp: 'cn',
-        userID: user.id,
-        trade_pair_ratio: parameters.trade_pair_ratio
+        product_id: parameters.product_id,//
+        stp: 'cn',//
+        userID: user.id,//
+        trade_pair_ratio: parameters.trade_pair_ratio//
       }
       orderList.push(singleOrder);
       // each loop needs to buy BTC with the USD size
@@ -1033,114 +1178,6 @@ async function autoSetup(user, parameters) {
   }
 }
 
-
-
-// auto setup trades until run out of money. Keeping this old version for a while until the new one is well tested
-async function oldautoSetup(user, parameters) {
-  const userID = user.id;
-  // stop bot from adding more trades if 10000 already placed
-  const orderCounts = await databaseClient.getUnsettledTradeCounts(user.id);
-  const unsettledCounts = Number(orderCounts.totalOpenOrders.count);
-  const userAndSettings = await databaseClient.getUserAndSettings(user.id);
-  console.log('userAndSettings', userAndSettings.actualavailable_usd);
-  console.log('unsettledCounts', unsettledCounts);
-  if ((unsettledCounts >= 10000) || (Number(userAndSettings.actualavailable_usd) <= 0)) {
-    console.log('too many trades');
-    return;
-  }
-
-  // assume size is in btc
-  let convertedAmount = parameters.size;
-
-  // if size is in usd, convert it to btc
-  if (parameters.sizeType === "USD") {
-    // console.log('need to convert to btc!');
-    // get the BTC size from the entered USD size
-    convertedAmount = Number(Math.floor((parameters.size / parameters.startingValue) * 100000000)) / 100000000;
-  }
-
-  // calculate original sell price
-  let original_sell_price = (Math.round((parameters.startingValue * (Number(parameters.trade_pair_ratio) + 100))) / 100);
-
-  const tradeDetails = {
-    original_sell_price: original_sell_price, //done
-    original_buy_price: parameters.startingValue, //done
-    side: "buy", //done
-    price: parameters.startingValue, // USD done
-    size: convertedAmount, // BTC done
-    product_id: parameters.product_id, //done
-    stp: 'cn',
-    userID: user.id,
-    trade_pair_ratio: parameters.trade_pair_ratio
-  };
-
-  // send the order through
-  try {
-    // send the new order with the trade details
-    let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
-    // console.log('pending trade', pendingTrade);
-    // wait a second before storing the trade. Sometimes it takes a second for coinbase to register the trade,
-    // even after returning the details. robot.syncOrders will think it settled if it sees it in the db first
-    await robot.sleep(100);
-    // store the new trade in the db. the trade details are also sent to store trade position prices
-    // storing the created_at value in the flipped_at field will fix issues where the time would change when resyncing
-    await databaseClient.storeTrade(pendingTrade, tradeDetails, pendingTrade.created_at);
-
-    // update current funds
-    await updateFunds(user.id);
-
-    // tell the DOM to update
-    cache.storeMessage(Number(user.id), {
-      messageText: `trade was auto-placed`,
-      orderUpdate: true
-    });
-
-
-    await robot.sleep(500);
-
-    // create new parameters 
-
-    const newStartingValue = (Number(parameters.startingValue) + Number(parameters.increment)).toFixed(2);
-
-    const newParameters = {
-      startingValue: newStartingValue, // done
-      increment: parameters.increment, // done
-      trade_pair_ratio: parameters.trade_pair_ratio, // done
-      size: parameters.size, // done
-      sizeType: parameters.sizeType,
-      product_id: parameters.product_id // done
-    }
-
-
-    // call the function again with the new parameters
-    setTimeout(() => {
-      autoSetup(user, newParameters);
-    }, 100);
-
-  } catch (err) {
-    if (err.response?.status === 400) {
-      console.log(err.response?.data?.message, 'Insufficient funds! Or too small order or some similar problem');
-      if (err.response?.data?.message) {
-        // update DOM
-        cache.storeMessage(userID, {
-          orderUpdate: true,
-          messageText: err.response.data.message + " - Auto setup done"
-        })
-      }
-    } else if (err.code && err.code === 'ETIMEDOUT') {
-      // update DOM
-      cache.storeMessage(userID, {
-        orderUpdate: true,
-        messageText: `Connection timed out - Auto setup done to prevent gaps. You may want to start again.`
-      })
-    } else {
-      console.log(err, 'problem in autoSetup');
-      cache.storeError(userID, {
-        errorText: `unknown error in auto setup`
-      })
-    }
-  }
-}
 
 async function getAvailableFunds(userID, userSettings) {
   // console.log('getting available funds');
