@@ -285,7 +285,6 @@ function AutoSetup(props) {
     <div className="AutoSetup settings-panel scrollable">
       <div className="divider" />
       <h4>Auto Setup</h4>
-      {JSON.stringify(props.store.accountReducer.userReducer)}
       {props.tips && <>
         <p>
           Enter the parameters you want and the bot will keep placing trades for you based on
