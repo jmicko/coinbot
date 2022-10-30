@@ -751,8 +751,8 @@ async function reorder(orderToReorder, retry) {
         // call reorder again with retry as true so it will reorder right away
         try {
           await reorder(orderToReorder, true);
-        } catch (error) {
-          console.log("this is that error in the reorder function that you don't ever expect to see again. Hope it worked!");
+        } catch (err) {
+          console.log(err, "this is that error in the reorder function that you don't ever expect to see again. Hope it worked!");
         }
       }
     }
