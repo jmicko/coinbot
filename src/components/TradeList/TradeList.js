@@ -72,12 +72,26 @@ function TradeList(props) {
       {sells}
       {/* {JSON.stringify(props.store.settingsReducer.scrollingReducer.canScroll)} */}
       <div className='robot' ref={robotRef}>
-        {lowestSell !== 0 && highestBuy !== 0 && <p>&#9650; ${(lowestSell - props.priceTicker).toFixed(2)}<br />
-          &#9660; ${(props.priceTicker - highestBuy).toFixed(2)}</p>}
+
+        <div className='live-price'>
+          <meter className="price-meter"
+            min={highestBuy} max={lowestSell}
+            // low="33" high="66" optimum="80"
+            value={Number(props.priceTicker).toFixed(0) || 0}>
+            at 50/100
+          </meter>
+
+          {lowestSell !== 0 && highestBuy !== 0 && <p className='price'>&#9650; ${(lowestSell - props.priceTicker).toFixed(2)}<br />
+            &#9660; ${(props.priceTicker - highestBuy).toFixed(2)}</p>}
+        </div>
+
+
         {props.store.accountReducer.userReducer.botMaintenance
           ? <strong className='red'>~~~UNDER MAINTENANCE~~~</strong>
           : <img className="coinbot-image" src={coinbotFilled} alt="coinbot" />
         }
+
+
         {lowestSell !== 0 && highestBuy !== 0 && <center><p><strong>Margin</strong><br />${(lowestSell - highestBuy).toFixed(2)}</p></center>}
       </div>
       {buys}
