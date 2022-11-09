@@ -17,7 +17,7 @@ function Login(props) {
   function loginAccount(event) {
     event.preventDefault();
     // send login credentials
-    console.log('logging in user', username, password);
+    // console.log('logging in user');
     if (username && password) {
       dispatch({
         type: 'LOGIN',
@@ -39,7 +39,7 @@ function Login(props) {
 
   function registerAccount(event) {
     event.preventDefault();
-    console.log('registering new user', username, password);
+    // console.log('registering new user');
     // send registration stuff
     if (username && password && confirmPassword && (password === confirmPassword)) {
       dispatch({

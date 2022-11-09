@@ -5,6 +5,7 @@ import SingleTrade from '../SingleTrade/SingleTrade'
 import coinbotFilled from "../../../src/coinbotFilled.png";
 // import coinbotFilledGif from "../../../src/coinbotFilled.gif";
 import './TradeList.css'
+import Meter from '../Meter/Meter';
 
 
 function TradeList(props) {
@@ -72,13 +73,36 @@ function TradeList(props) {
       {sells}
       {/* {JSON.stringify(props.store.settingsReducer.scrollingReducer.canScroll)} */}
       <div className='robot' ref={robotRef}>
-        {lowestSell !== 0 && highestBuy !== 0 && <p>&#9650; ${(lowestSell - props.priceTicker).toFixed(2)}<br />
-          &#9660; ${(props.priceTicker - highestBuy).toFixed(2)}</p>}
+
+        <div className='live-price'>
+          <Meter
+            max={lowestSell}
+            min={highestBuy}
+            current={props.priceTicker}
+          />
+          <div>
+
+            {lowestSell !== 0 && highestBuy >= 0 
+              ?<p className='price'>&#9650; ${(lowestSell - props.priceTicker).toFixed(2)}
+                <br />
+                &#9660; ${(props.priceTicker - highestBuy).toFixed(2)}
+              </p>
+              : <p>No Sells!</p>
+              }
+          </div>
+        </div>
+
+
         {props.store.accountReducer.userReducer.botMaintenance
           ? <strong className='red'>~~~UNDER MAINTENANCE~~~</strong>
           : <img className="coinbot-image" src={coinbotFilled} alt="coinbot" />
         }
-        {lowestSell !== 0 && highestBuy !== 0 && <center><p><strong>Margin</strong><br />${(lowestSell - highestBuy).toFixed(2)}</p></center>}
+
+
+        {lowestSell !== 0 && highestBuy >= 0
+          ? <center><p><strong>Margin</strong><br />${(lowestSell - highestBuy).toFixed(2)}</p></center>
+          : <p>No Sells!</p>
+        }
       </div>
       {buys}
     </div>

@@ -13,6 +13,7 @@ import mapStoreToProps from '../../redux/mapStoreToProps';
 import Home from '../Home/Home';
 import Login from '../Login/Login';
 import { SocketProvider } from '../../contexts/SocketProvider';
+import { TickerProvider } from '../../contexts/TickerProvider';
 
 function App(props) {
   const dispatch = useDispatch();
@@ -31,12 +32,15 @@ function App(props) {
       <Router>
         <Switch>
           <SocketProvider>
-            <Route
-              exact path="/"
-              component={props.store.accountReducer.userReducer.id
-                ? Home
-                : Login}
-            />
+            <TickerProvider>
+
+              <Route
+                exact path="/"
+                component={props.store.accountReducer.userReducer.id
+                  ? Home
+                  : Login}
+              />
+            </TickerProvider>
           </SocketProvider>
           <Route
             exact path="/login"

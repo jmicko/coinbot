@@ -14,6 +14,7 @@ import { SocketProvider } from '../../contexts/SocketProvider.js';
 import axios from 'axios';
 import MobileNav from '../MobileNav/MobileNav.js';
 import { useSocket } from "../../contexts/SocketProvider";
+import { useTickerSocket } from "../../contexts/TickerProvider";
 import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 
 function Home(props) {
@@ -21,6 +22,7 @@ function Home(props) {
   const { height, width } = useWindowDimensions();
 
   const socket = useSocket();
+  const ticker = useTickerSocket();
   const [messages, setMessages] = useState([]);
   const [messagesCount, setMessagesCount] = useState(0);
   const [errors, setErrors] = useState([]);
@@ -45,6 +47,10 @@ function Home(props) {
     }, [dispatch]
   )
 
+  useEffect(() => {
+    getOpenOrders();
+  }, [getOpenOrders]);
+
   const updateUser = () => {
     dispatch({ type: 'FETCH_PROFITS' });
     dispatch({ type: 'FETCH_ACCOUNT' });
@@ -54,16 +60,20 @@ function Home(props) {
     dispatch({ type: 'FETCH_USER' });
   }
 
+  // choose between real or sandbox websocket price ticker
   useEffect(() => {
-    getOpenOrders();
-  }, [getOpenOrders]);
+    if (props.store.accountReducer.userReducer.sandbox) {
+      setPriceTicker(ticker.sandboxTicker)
+    } else {
+      setPriceTicker(ticker.ticker)
+    }
+  }, [ticker])
+
 
   // need use effect to prevent multiplying connections every time component renders
   useEffect(() => {
     // socket may not exist on page load because it hasn't connected yet
     if (socket == null) return;
-
-
     socket.on('message', update => {
       // check if the update is an order update, meaning there is something to change on dom
       if ((update.orderUpdate != null) && (update.userID === props.store.accountReducer.userReducer.id)) {
@@ -120,10 +130,10 @@ function Home(props) {
           });
         }
         if (message.errorUpdate) {
-          dispatch({type: 'FETCH_BOT_ERRORS'});
+          dispatch({ type: 'FETCH_BOT_ERRORS' });
         }
         if (message.messageUpdate) {
-          dispatch({type: 'FETCH_BOT_MESSAGES'});
+          dispatch({ type: 'FETCH_BOT_MESSAGES' });
         }
       }
     });
@@ -146,8 +156,11 @@ function Home(props) {
     }
   }, [props.store.accountReducer.userReducer.theme])
 
+
+  // todo - get rid of this when more confident in websocket ticker.
+  // might be nice to find a way to use this if the websocket ever fails
   // to get price of bitcoin updated on dom
-  function ticker(data) {
+  function timedTicker(data) {
 
     let URI = 'https://api.exchange.coinbase.com/products/BTC-USD/ticker';
     if (props.store.accountReducer.userReducer.sandbox) {
@@ -170,8 +183,8 @@ function Home(props) {
   // calls the ticker at regular intervals
   useEffect(() => {
     const interval = setInterval(() => {
-      ticker();
-    }, 1000);
+      timedTicker();
+    }, 2000);
     // need to clear on return or it will make dozens of calls per second
     return () => clearInterval(interval);
   }, []);

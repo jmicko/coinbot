@@ -1,31 +1,32 @@
 .TradeList {
     grid-row     : 3 / 5;
     grid-column  : 3 / 5;
-    /* overflow-y: auto; */
     display      : block;
 }
+
 @media (max-width: 800px) {
     .TradeList {
-        grid-row     : 5;
-        grid-column  : 2;
-        margin-bottom: .4rem;
-        /* overflow-y: auto; */
-        /* display      : block; */
-        /* max-height: 50vh; */
-        /* max-height: unset; */
+        grid-row        : 5;
+        grid-column     : 2;
+        margin-bottom   : .4rem;
     }
 
 }
 
+.live-price{
+    display: flex;
+    align-items: center;
+}
+
 .coinbot-image {
-    height: 5rem;
+    height          : 5rem;
     background-color: transparent;
 }
 
-.robot{
-    display: flex;
+.robot {
+    display        : flex;
     justify-content: space-evenly;
-    align-items: center;
-    max-width: 40rem;
-    margin: auto;
+    align-items    : center;
+    max-width      : 40rem;
+    margin         : auto;
 }
