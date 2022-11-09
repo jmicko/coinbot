@@ -22,7 +22,7 @@ function Meter(props) {
   useEffect(() => {
     setCurrent(props.current);
     // do not make these calculations unless there are props coming in
-    if (props.max > 0 && props.min > 0) {
+    if (props.max > 0 && props.min >= 0) {
 
       setDifference((props.max - props.min).toFixed(0));
       let adjustedCurrent = props.current - props.min;
@@ -73,7 +73,6 @@ function Meter(props) {
   return (
     <div className="Meter">
       {segmentMap}
-      {/* <Segment id={5} percentage={percentage} /> */}
     </div>
   )
 }
