@@ -19,7 +19,7 @@ function* fetchErrors() {
   try {
     const response = yield axios.get(`/api/account/errors`);
     yield put({ type: 'SET_BOT_ERRORS', payload: response.data })
-    console.log(response.data);
+    // console.log(response.data);
   } catch (error) {
     // console.log('GET profits route has failed', error);
     if (error.response.status === 403) {
@@ -32,7 +32,7 @@ function* fetchMessages() {
   try {
     const response = yield axios.get(`/api/account/messages`);
     yield put({ type: 'SET_BOT_MESSAGES', payload: response.data })
-    console.log(response.data);
+    // console.log(response.data);
   } catch (error) {
     // console.log('GET profits route has failed', error);
     if (error.response.status === 403) {
@@ -177,7 +177,7 @@ function* importCurrentJSON(action) {
 function* debug(action) {
   try {
     const response = yield axios.get(`/api/account/debug`, {params:{ id: action.payload.id}});
-    console.log(response.data);
+    // console.log(response.data);
     yield put({ type: 'SET_DEBUG', payload: response.data })
   } catch (error) {
     console.log('debug route has failed', error);

@@ -47,6 +47,10 @@ function Home(props) {
     }, [dispatch]
   )
 
+  useEffect(() => {
+    getOpenOrders();
+  }, [getOpenOrders]);
+
   const updateUser = () => {
     dispatch({ type: 'FETCH_PROFITS' });
     dispatch({ type: 'FETCH_ACCOUNT' });
@@ -56,28 +60,20 @@ function Home(props) {
     dispatch({ type: 'FETCH_USER' });
   }
 
+  // choose between real or sandbox websocket price ticker
   useEffect(() => {
-    setPriceTicker(ticker.ticker)
     if (props.store.accountReducer.userReducer.sandbox) {
       setPriceTicker(ticker.sandboxTicker)
-    }
-  
-    return () => {
-      
+    } else {
+      setPriceTicker(ticker.ticker)
     }
   }, [ticker])
-  
 
-  useEffect(() => {
-    getOpenOrders();
-  }, [getOpenOrders]);
 
   // need use effect to prevent multiplying connections every time component renders
   useEffect(() => {
     // socket may not exist on page load because it hasn't connected yet
     if (socket == null) return;
-
-
     socket.on('message', update => {
       // check if the update is an order update, meaning there is something to change on dom
       if ((update.orderUpdate != null) && (update.userID === props.store.accountReducer.userReducer.id)) {
@@ -178,20 +174,20 @@ function Home(props) {
     };
 
     axios.request(options).then(function (response) {
-      // setPriceTicker(response.data.price)
+      setPriceTicker(response.data.price)
     }).catch(function (error) {
       console.error(error);
     });
   }
 
-  // // calls the ticker at regular intervals
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     timedTicker();
-  //   }, 1000);
-  //   // need to clear on return or it will make dozens of calls per second
-  //   return () => clearInterval(interval);
-  // }, []);
+  // calls the ticker at regular intervals
+  useEffect(() => {
+    const interval = setInterval(() => {
+      timedTicker();
+    }, 2000);
+    // need to clear on return or it will make dozens of calls per second
+    return () => clearInterval(interval);
+  }, []);
 
 
   return (
