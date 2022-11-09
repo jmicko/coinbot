@@ -80,17 +80,15 @@ function TradeList(props) {
             min={highestBuy}
             current={props.priceTicker}
           />
-
-          {/* <meter className="price-meter"
-            min={highestBuy} max={lowestSell}
-            // low="33" high="66" optimum="80"
-            value={Number(props.priceTicker).toFixed(0) || 0}>
-            at 50/100
-          </meter> */}
           <div>
 
-            {lowestSell !== 0 && highestBuy !== 0 && <p className='price'>&#9650; ${(lowestSell - props.priceTicker).toFixed(2)}<br />
-              &#9660; ${(props.priceTicker - highestBuy).toFixed(2)}</p>}
+            {lowestSell !== 0 && highestBuy >= 0 
+              ?<p className='price'>&#9650; ${(lowestSell - props.priceTicker).toFixed(2)}
+                <br />
+                &#9660; ${(props.priceTicker - highestBuy).toFixed(2)}
+              </p>
+              : <p>No Sells!</p>
+              }
           </div>
         </div>
 
@@ -101,7 +99,10 @@ function TradeList(props) {
         }
 
 
-        {lowestSell !== 0 && highestBuy !== 0 && <center><p><strong>Margin</strong><br />${(lowestSell - highestBuy).toFixed(2)}</p></center>}
+        {lowestSell !== 0 && highestBuy >= 0
+          ? <center><p><strong>Margin</strong><br />${(lowestSell - highestBuy).toFixed(2)}</p></center>
+          : <p>No Sells!</p>
+        }
       </div>
       {buys}
     </div>

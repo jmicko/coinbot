@@ -47,15 +47,6 @@ function Meter(props) {
   }, [props])
 
   function Segment(props) {
-    // const [active, setActive] = useState(false);
-
-    // useEffect(() => {
-
-
-    // }, [])
-
-
-
     return (
       <div
         className={
@@ -72,7 +63,7 @@ function Meter(props) {
 
   return (
     <div className="Meter">
-      {segmentMap}
+      {props.max > 0 && segmentMap}
     </div>
   )
 }
