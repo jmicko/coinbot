@@ -1191,12 +1191,13 @@ async function getAvailableFunds(userID, userSettings) {
         return;
       }
       // console.log('user is active');
-      const makerFee = Number(userSettings.maker_fee) + 1;
+      const takerFee = Number(userSettings.taker_fee) + 1;
+      // console.log('maker fee', takerFee);
 
       const results = await Promise.all([
         coinbaseClient.getAccounts(userID),
         // funds are withheld in usd when a buy is placed, so the maker fee is needed to subtract fees
-        databaseClient.getSpentUSD(userID, makerFee),
+        databaseClient.getSpentUSD(userID, takerFee),
         // funds are taken from the sale once settled, so the maker fee is not needed on the buys
         databaseClient.getSpentBTC(userID),
       ]);
@@ -1206,6 +1207,7 @@ async function getAvailableFunds(userID, userSettings) {
       const availableUSD = USD.available;
       const balanceUSD = USD.balance;
       const spentUSD = results[1].sum;
+      // console.log('spent usd', spentUSD);
       // subtract the total amount spent from the total balance
       const actualAvailableUSD = (balanceUSD - spentUSD).toFixed(16);
 
