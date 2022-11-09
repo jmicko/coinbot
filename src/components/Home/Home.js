@@ -11,9 +11,11 @@ import './Home.css'
 import NotApproved from '../NotApproved/NotApproved.js';
 import NotActive from '../NotActive/NotActive.js';
 import { SocketProvider } from '../../contexts/SocketProvider.js';
+// import { TickerProvider } from '../../contexts/TickerProvider.js';
 import axios from 'axios';
 import MobileNav from '../MobileNav/MobileNav.js';
 import { useSocket } from "../../contexts/SocketProvider";
+import { useTickerSocket } from "../../contexts/TickerProvider";
 import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 
 function Home(props) {
@@ -21,6 +23,7 @@ function Home(props) {
   const { height, width } = useWindowDimensions();
 
   const socket = useSocket();
+  const tickerSocket = useTickerSocket();
   const [messages, setMessages] = useState([]);
   const [messagesCount, setMessagesCount] = useState(0);
   const [errors, setErrors] = useState([]);
@@ -80,6 +83,7 @@ function Home(props) {
     // useEffect will depend on socket because the connection will 
     // not be there right when the page loads
   }, [socket, getOpenOrders])
+  // console.log('hello', tickerSocket);
 
   // need use effect to prevent multiplying connections every time component renders
   useEffect(() => {
@@ -152,49 +156,49 @@ function Home(props) {
   // https://embed.plnkr.co/dQYa07bmPF8vZscW/
 
   // Subscription message to send
-  let msg = {
-    "type": "subscribe",
-    "product_ids": [
-      // "ETH-USD",
-      "BTC-USD"
-    ],
-    "channels": [
-      {
-        "name": "ticker",
-        "product_ids": [
-          // "ETH-USD",
-          "BTC-USD"
-        ]
-      }
-    ]
-  };
+  // let msg = {
+  //   "type": "subscribe",
+  //   "product_ids": [
+  //     // "ETH-USD",
+  //     "BTC-USD"
+  //   ],
+  //   "channels": [
+  //     {
+  //       "name": "ticker",
+  //       "product_ids": [
+  //         // "ETH-USD",
+  //         "BTC-USD"
+  //       ]
+  //     }
+  //   ]
+  // };
 
   // Create WebSocket connection.
-  const coinbaseSocket = new WebSocket('wss://ws-feed.pro.coinbase.com');
+  // const coinbaseSocket = new WebSocket('wss://ws-feed.pro.coinbase.com');
 
-  // Connection opened
-  coinbaseSocket.addEventListener('open', function (event) {
-    console.log('Successfully connected to Coinbase Websocket API!');
-    coinbaseSocket.send(JSON.stringify(msg));
-  });
+  // // Connection opened
+  // coinbaseSocket.addEventListener('open', function (event) {
+  //   console.log('Successfully connected to Coinbase Websocket API!');
+  //   coinbaseSocket.send(JSON.stringify(msg));
+  // });
 
   // Listen for messages
-  coinbaseSocket.addEventListener('message', function (event) {
-    let priceData = JSON.parse(event.data);
+  // tickerSocket.addEventListener('message', function (event) {
+  //   let priceData = JSON.parse(event.data);
 
-    switch (priceData.product_id) {
-      case 'BTC-USD':
-        setPriceTicker(priceData.price);
-        // document.getElementById('btc-price').innerHTML = priceData.price;
-        break;
-      case 'ETH-USD':
-        // document.getElementById('eth-price').innerHTML = priceData.price;
-        break;
-      default:
-        console.log('something happened', priceData);
-    }
+  //   switch (priceData.product_id) {
+  //     case 'BTC-USD':
+  //       setPriceTicker(priceData.price);
+  //       // document.getElementById('btc-price').innerHTML = priceData.price;
+  //       break;
+  //     case 'ETH-USD':
+  //       // document.getElementById('eth-price').innerHTML = priceData.price;
+  //       break;
+  //     default:
+  //       console.log('something happened', priceData);
+  //   }
 
-  });
+  // });
 
 
   // to get price of bitcoin updated on dom
