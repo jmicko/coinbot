@@ -23,7 +23,7 @@ function Home(props) {
   const { height, width } = useWindowDimensions();
 
   const socket = useSocket();
-  const tickerSocket = useTickerSocket();
+  const priceTicker = useTickerSocket();
   const [messages, setMessages] = useState([]);
   const [messagesCount, setMessagesCount] = useState(0);
   const [errors, setErrors] = useState([]);
@@ -33,7 +33,7 @@ function Home(props) {
   const [theme, setTheme] = useState('original');
   const [mobilePage, setMobilePage] = useState('tradeList');
   const [tradeType, setTradeType] = useState('pair');
-  const [priceTicker, setPriceTicker] = useState(0);
+  // const [priceTicker, setPriceTicker] = useState(0);
 
   // for checkbox to auto scroll
   const [isAutoScroll, setIsAutoScroll] = useState(true);

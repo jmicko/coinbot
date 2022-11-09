@@ -47,23 +47,16 @@ export function TickerProvider({ children }) {
       switch (priceData.product_id) {
         case 'BTC-USD':
           setSocket(priceData.price);
-          console.log(priceData.price);
-          // document.getElementById('btc-price').innerHTML = priceData.price;
+          // console.log(priceData.price);
           break;
         case 'ETH-USD':
           // document.getElementById('eth-price').innerHTML = priceData.price;
           break;
         default:
-          console.log('something happened', priceData);
+          console.log('CB Socket update:', priceData);
       }
 
     });
-
-
-    // const newSocket = io(
-    //   ENDPOINT,
-    //   { transports: ['websocket'] }
-    // );
 
 
     // save the new socket and close the old one
