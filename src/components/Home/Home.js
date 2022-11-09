@@ -120,10 +120,10 @@ function Home(props) {
           });
         }
         if (message.errorUpdate) {
-          dispatch({type: 'FETCH_BOT_ERRORS'});
+          dispatch({ type: 'FETCH_BOT_ERRORS' });
         }
         if (message.messageUpdate) {
-          dispatch({type: 'FETCH_BOT_MESSAGES'});
+          dispatch({ type: 'FETCH_BOT_MESSAGES' });
         }
       }
     });
@@ -146,6 +146,57 @@ function Home(props) {
     }
   }, [props.store.accountReducer.userReducer.theme])
 
+
+  // **** WEBSOCKET PRICE TICKER **** //
+  // I can't believe I'm trying this again but I found an example here
+  // https://embed.plnkr.co/dQYa07bmPF8vZscW/
+
+  // Subscription message to send
+  let msg = {
+    "type": "subscribe",
+    "product_ids": [
+      // "ETH-USD",
+      "BTC-USD"
+    ],
+    "channels": [
+      {
+        "name": "ticker",
+        "product_ids": [
+          // "ETH-USD",
+          "BTC-USD"
+        ]
+      }
+    ]
+  };
+
+  // Create WebSocket connection.
+  const coinbaseSocket = new WebSocket('wss://ws-feed.pro.coinbase.com');
+
+  // Connection opened
+  coinbaseSocket.addEventListener('open', function (event) {
+    console.log('Successfully connected to Coinbase Websocket API!');
+    coinbaseSocket.send(JSON.stringify(msg));
+  });
+
+  // Listen for messages
+  coinbaseSocket.addEventListener('message', function (event) {
+    let priceData = JSON.parse(event.data);
+
+    switch (priceData.product_id) {
+      case 'BTC-USD':
+        setPriceTicker(priceData.price);
+        // document.getElementById('btc-price').innerHTML = priceData.price;
+        break;
+      case 'ETH-USD':
+        // document.getElementById('eth-price').innerHTML = priceData.price;
+        break;
+      default:
+        console.log('something happened', priceData);
+    }
+
+  });
+
+
   // to get price of bitcoin updated on dom
   function ticker(data) {
 
@@ -161,7 +212,7 @@ function Home(props) {
     };
 
     axios.request(options).then(function (response) {
-      setPriceTicker(response.data.price)
+      // setPriceTicker(response.data.price)
     }).catch(function (error) {
       console.error(error);
     });
