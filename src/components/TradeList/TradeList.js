@@ -74,22 +74,24 @@ function TradeList(props) {
       {/* {JSON.stringify(props.store.settingsReducer.scrollingReducer.canScroll)} */}
       <div className='robot' ref={robotRef}>
 
-        <Meter
-          max={lowestSell}
-          min={highestBuy}
-          current={props.priceTicker}
-        />
-
         <div className='live-price'>
-          <meter className="price-meter"
+          <Meter
+            max={lowestSell}
+            min={highestBuy}
+            current={props.priceTicker}
+          />
+
+          {/* <meter className="price-meter"
             min={highestBuy} max={lowestSell}
             // low="33" high="66" optimum="80"
             value={Number(props.priceTicker).toFixed(0) || 0}>
             at 50/100
-          </meter>
+          </meter> */}
+          <div>
 
-          {lowestSell !== 0 && highestBuy !== 0 && <p className='price'>&#9650; ${(lowestSell - props.priceTicker).toFixed(2)}<br />
-            &#9660; ${(props.priceTicker - highestBuy).toFixed(2)}</p>}
+            {lowestSell !== 0 && highestBuy !== 0 && <p className='price'>&#9650; ${(lowestSell - props.priceTicker).toFixed(2)}<br />
+              &#9660; ${(props.priceTicker - highestBuy).toFixed(2)}</p>}
+          </div>
         </div>
 
 
