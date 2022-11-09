@@ -10,7 +10,8 @@ export function useTickerSocket() {
 }
 
 export function TickerProvider({ children }) {
-  const [socket, setSocket] = useState("bad")
+  const [ticker, setTicker] = useState()
+  const [sandboxTicker, setSandboxTicker] = useState(420)
   // useEffect to prevent from multiple connections
   useEffect(() => {
 
@@ -32,42 +33,56 @@ export function TickerProvider({ children }) {
       ]
     };
 
-    const newCoinbaseSocket = new WebSocket('wss://ws-feed.pro.coinbase.com');
+    // this should change when user is in sandbox mode, but not sure how to do that right now
+    // MAYBE just use two feeds?
+    let URI = 'wss://ws-feed.pro.coinbase.com';
+    // if (props?.sandbox) {
+    let sandboxURI = 'wss://ws-feed-public.sandbox.exchange.coinbase.com';
+    // }
+
+
+    const newCoinbaseSocket = new WebSocket(URI);
+    const newSandboxCoinbaseSocket = new WebSocket(sandboxURI);
 
     // Connection opened
     newCoinbaseSocket.addEventListener('open', function (event) {
       console.log('Successfully connected to Coinbase Websocket API!');
       newCoinbaseSocket.send(JSON.stringify(msg));
     });
+    // Connection opened for sandbox feed, use same message
+    newSandboxCoinbaseSocket.addEventListener('open', function (event) {
+      console.log('Successfully connected to Coinbase Sandbox Websocket API!');
+      newSandboxCoinbaseSocket.send(JSON.stringify(msg));
+    });
 
     // Listen for messages
     newCoinbaseSocket.addEventListener('message', function (event) {
       let priceData = JSON.parse(event.data);
-
-      switch (priceData.product_id) {
-        case 'BTC-USD':
-          setSocket(priceData.price);
-          // console.log(priceData.price);
-          break;
-        case 'ETH-USD':
-          // document.getElementById('eth-price').innerHTML = priceData.price;
-          break;
-        default:
-          console.log('CB Socket update:', priceData);
+      if (priceData.product_id === 'BTC-USD') {
+          setTicker(priceData.price);
       }
-
+    });
+    // Listen for messages
+    newSandboxCoinbaseSocket.addEventListener('message', function (event) {
+      let priceData = JSON.parse(event.data);
+      if (priceData.product_id === 'BTC-USD') {
+          setSandboxTicker(priceData.price);
+      }
     });
 
-
-    // save the new socket and close the old one
-    // setSocket(newCoinbaseSocket);
-    return () => newCoinbaseSocket.close();
+    // close the socket on component reload
+    return () => {
+      newCoinbaseSocket.close()
+      newSandboxCoinbaseSocket.close()
+    };
   }, []);
 
 
   return (
-    <TickerSocketContext.Provider value={socket}>
-      {/* <>{JSON.stringify()}</> */}
+    <TickerSocketContext.Provider value={{
+      ticker: ticker,
+      sandboxTicker: sandboxTicker
+    }}>
       {children}
     </TickerSocketContext.Provider>
   )

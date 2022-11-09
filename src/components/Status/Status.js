@@ -158,6 +158,7 @@ function Status(props) {
         <p className="info status-ticker">
           <strong> BTC-USD Price</strong>
           <br />
+          {}
           ${numberWithCommas(Number(props.priceTicker).toFixed(2))}
         </p>
       </center>

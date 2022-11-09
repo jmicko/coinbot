@@ -11,7 +11,6 @@ import './Home.css'
 import NotApproved from '../NotApproved/NotApproved.js';
 import NotActive from '../NotActive/NotActive.js';
 import { SocketProvider } from '../../contexts/SocketProvider.js';
-// import { TickerProvider } from '../../contexts/TickerProvider.js';
 import axios from 'axios';
 import MobileNav from '../MobileNav/MobileNav.js';
 import { useSocket } from "../../contexts/SocketProvider";
@@ -23,7 +22,7 @@ function Home(props) {
   const { height, width } = useWindowDimensions();
 
   const socket = useSocket();
-  const priceTicker = useTickerSocket();
+  const ticker = useTickerSocket();
   const [messages, setMessages] = useState([]);
   const [messagesCount, setMessagesCount] = useState(0);
   const [errors, setErrors] = useState([]);
@@ -33,7 +32,7 @@ function Home(props) {
   const [theme, setTheme] = useState('original');
   const [mobilePage, setMobilePage] = useState('tradeList');
   const [tradeType, setTradeType] = useState('pair');
-  // const [priceTicker, setPriceTicker] = useState(0);
+  const [priceTicker, setPriceTicker] = useState(0);
 
   // for checkbox to auto scroll
   const [isAutoScroll, setIsAutoScroll] = useState(true);
@@ -56,6 +55,18 @@ function Home(props) {
     // any way to only make it happen once?
     dispatch({ type: 'FETCH_USER' });
   }
+
+  useEffect(() => {
+    setPriceTicker(ticker.ticker)
+    if (props.store.accountReducer.userReducer.sandbox) {
+      setPriceTicker(ticker.sandboxTicker)
+    }
+  
+    return () => {
+      
+    }
+  }, [ticker])
+  
 
   useEffect(() => {
     getOpenOrders();
@@ -83,7 +94,6 @@ function Home(props) {
     // useEffect will depend on socket because the connection will 
     // not be there right when the page loads
   }, [socket, getOpenOrders])
-  // console.log('hello', tickerSocket);
 
   // need use effect to prevent multiplying connections every time component renders
   useEffect(() => {
@@ -151,58 +161,10 @@ function Home(props) {
   }, [props.store.accountReducer.userReducer.theme])
 
 
-  // **** WEBSOCKET PRICE TICKER **** //
-  // I can't believe I'm trying this again but I found an example here
-  // https://embed.plnkr.co/dQYa07bmPF8vZscW/
-
-  // Subscription message to send
-  // let msg = {
-  //   "type": "subscribe",
-  //   "product_ids": [
-  //     // "ETH-USD",
-  //     "BTC-USD"
-  //   ],
-  //   "channels": [
-  //     {
-  //       "name": "ticker",
-  //       "product_ids": [
-  //         // "ETH-USD",
-  //         "BTC-USD"
-  //       ]
-  //     }
-  //   ]
-  // };
-
-  // Create WebSocket connection.
-  // const coinbaseSocket = new WebSocket('wss://ws-feed.pro.coinbase.com');
-
-  // // Connection opened
-  // coinbaseSocket.addEventListener('open', function (event) {
-  //   console.log('Successfully connected to Coinbase Websocket API!');
-  //   coinbaseSocket.send(JSON.stringify(msg));
-  // });
-
-  // Listen for messages
-  // tickerSocket.addEventListener('message', function (event) {
-  //   let priceData = JSON.parse(event.data);
-
-  //   switch (priceData.product_id) {
-  //     case 'BTC-USD':
-  //       setPriceTicker(priceData.price);
-  //       // document.getElementById('btc-price').innerHTML = priceData.price;
-  //       break;
-  //     case 'ETH-USD':
-  //       // document.getElementById('eth-price').innerHTML = priceData.price;
-  //       break;
-  //     default:
-  //       console.log('something happened', priceData);
-  //   }
-
-  // });
-
-
+  // todo - get rid of this when more confident in websocket ticker.
+  // might be nice to find a way to use this if the websocket ever fails
   // to get price of bitcoin updated on dom
-  function ticker(data) {
+  function timedTicker(data) {
 
     let URI = 'https://api.exchange.coinbase.com/products/BTC-USD/ticker';
     if (props.store.accountReducer.userReducer.sandbox) {
@@ -222,14 +184,14 @@ function Home(props) {
     });
   }
 
-  // calls the ticker at regular intervals
-  useEffect(() => {
-    const interval = setInterval(() => {
-      ticker();
-    }, 1000);
-    // need to clear on return or it will make dozens of calls per second
-    return () => clearInterval(interval);
-  }, []);
+  // // calls the ticker at regular intervals
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     timedTicker();
+  //   }, 1000);
+  //   // need to clear on return or it will make dozens of calls per second
+  //   return () => clearInterval(interval);
+  // }, []);
 
 
   return (
