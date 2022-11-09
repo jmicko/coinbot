@@ -5,6 +5,7 @@ import SingleTrade from '../SingleTrade/SingleTrade'
 import coinbotFilled from "../../../src/coinbotFilled.png";
 // import coinbotFilledGif from "../../../src/coinbotFilled.gif";
 import './TradeList.css'
+import Meter from '../Meter/Meter';
 
 
 function TradeList(props) {
@@ -72,6 +73,12 @@ function TradeList(props) {
       {sells}
       {/* {JSON.stringify(props.store.settingsReducer.scrollingReducer.canScroll)} */}
       <div className='robot' ref={robotRef}>
+
+        <Meter
+          max={lowestSell}
+          min={highestBuy}
+          current={props.priceTicker}
+        />
 
         <div className='live-price'>
           <meter className="price-meter"

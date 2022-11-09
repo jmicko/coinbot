@@ -1,0 +1,51 @@
+.TradeList {
+    grid-row     : 3 / 5;
+    grid-column  : 3 / 5;
+    /* overflow-y: auto; */
+    display      : block;
+}
+
+@media (max-width: 800px) {
+    .TradeList {
+        grid-row        : 5;
+        grid-column     : 2;
+        margin-bottom   : .4rem;
+        /* overflow-y   : auto; */
+        /* display      : block; */
+        /* max-height   : 50vh; */
+        /* max-height   : unset; */
+    }
+
+}
+
+.live-price{
+    display: flex;
+}
+
+.price{
+    width: max-content;
+}
+
+.price-meter {
+    transform: rotate(270deg);
+    /* float: left; */
+    height: auto;
+    width: 4rem;
+    /* height: 1rem; */
+    margin: 1.5rem 0;
+    /* border: 10px solid red; */
+    /* border-radius: 20px; */
+}
+
+.coinbot-image {
+    height          : 5rem;
+    background-color: transparent;
+}
+
+.robot {
+    display        : flex;
+    justify-content: space-evenly;
+    align-items    : center;
+    max-width      : 40rem;
+    margin         : auto;
+}
