@@ -23,10 +23,6 @@ function Home(props) {
 
   const socket = useSocket();
   const ticker = useTickerSocket();
-  const [messages, setMessages] = useState([]);
-  const [messagesCount, setMessagesCount] = useState(0);
-  const [errors, setErrors] = useState([]);
-  const [errorCount, setErrorCount] = useState(0);
 
   const [showSettings, setShowSettings] = useState(false);
   const [theme, setTheme] = useState('original');
@@ -97,38 +93,6 @@ function Home(props) {
     if (socket == null) return;
     socket.on('message', message => {
       if (message.userID === props.store.accountReducer.userReducer.id) {
-        if (message.message) {
-          setMessagesCount(prevMessagesCount => {
-            return prevMessagesCount + 1;
-          });
-          setMessages(prevMessages => {
-            // keep max messages down to 3 by checking if more than 2 before adding new message
-            if (prevMessages.length > 999) {
-              prevMessages.pop();
-            }
-            let datedMessage = {
-              date: `${new Date().toLocaleString('en-US')}`,
-              message: `${message.message}`
-            }
-            return [datedMessage, ...prevMessages]
-          });
-        }
-        if (message.error) {
-          setErrorCount(prevErrorCount => {
-            return prevErrorCount + 1;
-          });
-          setErrors(prevErrors => {
-            // keep max messages down to 3 by checking if more than 2 before adding new message
-            if (prevErrors.length > 999) {
-              prevErrors.pop();
-            }
-            let datedError = {
-              date: `${new Date().toLocaleString('en-US')}`,
-              error: `${message.error}`
-            }
-            return [datedError, ...prevErrors]
-          });
-        }
         if (message.errorUpdate) {
           dispatch({ type: 'FETCH_BOT_ERRORS' });
         }
@@ -214,8 +178,8 @@ function Home(props) {
       }
 
       {width < 800 && mobilePage === 'messages'
-        ? <Messages theme={theme} messages={messages} messagesCount={messagesCount} errors={errors} errorCount={errorCount} />
-        : width > 800 && <Messages theme={theme} messages={messages} messagesCount={messagesCount} errors={errors} errorCount={errorCount} />}
+        ? <Messages theme={theme} />
+        : width > 800 && <Messages theme={theme} />}
 
       <Status
         theme={theme}

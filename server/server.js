@@ -8,7 +8,7 @@ const options = {
   }
 };
 const io = require("socket.io")(server, options);
-const sessionMiddleware = require('./modules/session-middleware');
+const { sessionMiddleware, wrap } = require('./modules/session-middleware');
 const passport = require('./strategies/user.strategy');
 
 // Route includes
@@ -20,6 +20,7 @@ const settingsRouter = require('./routes/settings.router');
 
 const robot = require('./modules/robot');
 const coinbaseClient = require('./modules/coinbaseClient');
+// const { wrap } = require('module');
 
 // Start the syncOrders loop
 robot.startSync();
@@ -43,11 +44,23 @@ app.use('/api/orders', ordersRouter);
 app.use('/api/settings', settingsRouter);
 
 /* socket.io */
+// *** SOCKET AUTH *** //
+io.use(wrap(sessionMiddleware));
 // this triggers on a new client connection
 /* websocket is being used to alert when something has happened, but currently does not 
     authenticate, and should not be used to send sensitive data */
 io.on('connection', (socket) => {
   let id = socket.id;
+  let userID = socket.request.session.passport?.user;
+
+  if (!userID) {
+    console.log('user is not logged in');
+    // socket.disconnect();
+  } else {
+    console.log(`user id ${userID} connected!`);
+    // socket.disconnect();
+  }
+
   console.log(`client with id: ${id} connected!`);
   // console.log('the socket is', socket.handshake);
   // message to client confirming connection
@@ -87,10 +100,10 @@ io.on('connection', (socket) => {
 
 // handle abnormal disconnects
 io.engine.on("connection_error", (err) => {
-  console.log(err.req);	     // the request object
-  console.log(err.code);     // the error code, for example 1
-  console.log(err.message);  // the error message, for example "Session ID unknown"
-  console.log(err.context);  // some additional error context
+  // console.log(err.req, 'error request object');	     // the request object
+  console.log(err.code, 'the error code');     // the error code, for example 1
+  console.log(err.message, 'the error message');  // the error message, for example "Session ID unknown"
+  console.log(err.context, 'some additional error context');  // some additional error context
 });
 /* end socket.io */
 

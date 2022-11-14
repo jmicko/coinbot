@@ -2,7 +2,7 @@ const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const pool = require('./pool');
 
-module.exports = session({
+const sessionMiddleware = session({
   store: new pgSession({
     pool: pool, // Connection pool
   }),
@@ -22,3 +22,7 @@ module.exports = session({
   // jk who even knows what PRISM can still do
   cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } // 1 week (7 days * 24 hr * 60 min * 60 sec * 1000 msec)
 });
+
+const wrap = (expressMiddleware) => (socket, next) => expressMiddleware(socket.request, {}, next);
+
+module.exports = { sessionMiddleware, wrap };

@@ -27,13 +27,9 @@ function Messages(props) {
         {/* MESSAGES */}
         <div className="message-section scrollable">
           <h3 className={`title ${props.theme}`}>
-            {collapsed && props.messagesCount} General Messages 
+            {collapsed && props.store.accountReducer.botMessages.length} General Messages 
             {/* <button className='btn-red'><span className='gg-trash'></span></button> */}
           </h3>
-
-          {/* {!collapsed && props.messages.map((message, i) => {
-            return <p key={i}><strong>Msg #{props.messagesCount - i} {message.date}</strong> <br /> {message.message}</p>
-          })} */}
           {!collapsed && props.store.accountReducer.botMessages.map((message, i) => {
             if (message.messageText) {
               return <p key={i}><strong>Msg #{message.count} {new Date(message.timeStamp).toLocaleString('en-US')}</strong> <br /> {message.messageText}</p>
@@ -42,11 +38,7 @@ function Messages(props) {
         </div>
         {/* ERRORS */}
         <div className="errors-section scrollable">
-          <h3 className={`title ${props.theme}`}>{collapsed && props.errorCount} Errors</h3>
-          {/* {!collapsed && props.errors.map((error, i) => {
-            return <p key={i}><strong>Err #{props.errorCount - i} {error.date}</strong> <br /> {error.error}</p>
-          })} */}
-          {/* <p>{JSON.stringify(props.store.errorsReducer.botErrors)}</p> */}
+          <h3 className={`title ${props.theme}`}>{collapsed && props.store.errorsReducer.botErrors.length} Errors</h3>
           {!collapsed && props.store.errorsReducer.botErrors.map((error, i) => {
             return <p key={i}><strong>Err #{error.count} {new Date(error.timeStamp).toLocaleString('en-US')}</strong> <br /> {error.errorText}</p>
           })}
