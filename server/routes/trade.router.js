@@ -7,6 +7,7 @@ const socketClient = require('../modules/socketClient');
 const robot = require('../modules/robot');
 const coinbaseClient = require('../modules/coinbaseClient');
 const cache = require('../modules/cache');
+const { v4: uuidv4 } = require('uuid');
 
 
 /**
@@ -44,6 +45,11 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       await robot.sleep(100);
       // store the new trade in the db. the trade details are also sent to store trade position prices
       // storing the created_at value in the flipped_at field will fix issues where the time would change when resyncing
+      if (pendingTrade.success) {
+        console.log('SUCESS with new api');
+      } else {
+        console.log("FAILURE with new api");
+      }
       // await databaseClient.storeTrade(pendingTrade, tradeDetails, pendingTrade.created_at);
 
       await robot.updateFunds(userID);
@@ -53,7 +59,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
 
     } catch (err) {
       if (err.response?.status === 400) {
-        console.log('Insufficient funds!');
+        console.log(err, 'Insufficient funds!');
         socketClient.emit('message', {
           error: `Insufficient funds!`,
           orderUpdate: true,

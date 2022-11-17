@@ -8,7 +8,7 @@ function Trade(props) {
 
   // todo - default price value should automatically start out at the current price
   // of bitcoin, rounded to the closest $100
-  const [transactionSide, setTransactionSide] = useState('buy');
+  const [transactionSide, setTransactionSide] = useState('BUY');
   const [price, setTransactionPrice] = useState(0);
   const [sellPrice, setSellPrice] = useState(0);
   const [priceMargin, setPriceMargin] = useState(0);
@@ -28,7 +28,7 @@ function Trade(props) {
 
   const [tradeType, setTradeType] = useState(true);
   const [basicAmount, setBasicAmount] = useState(0);
-  const [basicSide, setBasicSide] = useState('buy');
+  const [basicSide, setBasicSide] = useState('BUY');
   const dispatch = useDispatch();
 
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
@@ -355,12 +355,12 @@ function Trade(props) {
 
         <form className="basic-trade-form" onSubmit={submitBasicTransaction} >
 
-          <input className={`btn-green ${props.theme}`} onClick={(event) => setBasicSide('buy')} type="button" name="submit" value="BUY" />
-          <input className={`btn-red ${props.theme}`} onClick={(event) => setBasicSide('sell')} type="button" name="submit" value="SELL" />
+          <input className={`btn-green ${props.theme}`} onClick={(event) => setBasicSide('BUY')} type="button" name="submit" value="BUY" />
+          <input className={`btn-red ${props.theme}`} onClick={(event) => setBasicSide('SELL')} type="button" name="submit" value="SELL" />
           <br />
           <p><strong>
             {
-              basicSide === 'buy'
+              basicSide === 'BUY'
                 ? 'Buying'
                 : 'Selling'
             }

@@ -3,6 +3,7 @@ const fetch = import("node-fetch");
 const axios = require("axios").default;
 // const crypto = require('crypto');
 const cache = require("./cache");
+const { v4: uuidv4 } = require('uuid');
 
 function sleep(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
@@ -483,11 +484,26 @@ async function placeOrder(data, quickAPI) {
   });
 }
 
-async function placeOrderNew(userID, data) {
+async function placeOrderNew(userID, order) {
   return new Promise(async (resolve, reject) => {
     try {
+
+      const data = {
+        side: order.side,
+        order_configuration: {
+          limit_limit_gtc: {
+            base_size: JSON.stringify(order.size),
+            limit_price: JSON.stringify(order.price),
+            // post_only: false
+          },
+        },
+        product_id: order.product_id,
+        client_order_id: uuidv4()
+      }
+
+
       const userAPI = cache.getAPI(userID);
-      console.log(userAPI, 'user api');
+      // console.log(userAPI, 'user api');
       const secret = userAPI.CB_SECRET;
       const key = userAPI.CB_ACCESS_KEY;
 
