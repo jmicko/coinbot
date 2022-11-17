@@ -25,9 +25,9 @@ function NotActive(props) {
     });
 
     // clear the form
-    setKey('');
-    setPassphrase('');
-    setSecret('');
+    // setKey('');
+    // setPassphrase('');
+    // setSecret('');
   }
 
   return (

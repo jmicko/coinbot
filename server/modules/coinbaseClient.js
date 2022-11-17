@@ -1,4 +1,5 @@
 const CryptoJS = require("crypto-js");
+const fetch = import("node-fetch");
 const axios = require("axios").default;
 // const crypto = require('crypto');
 const cache = require("./cache");
@@ -471,33 +472,64 @@ async function repeatedCheck(order, userID, tries) {
 async function testAPI(secret, key, passphrase, API_URI) {
   return new Promise(async (resolve, reject) => {
     try {
-      const timestamp = Math.floor(Date.now() / 1000);
+      // const timestamp = Math.floor(Date.now() / 1000);
+
+      const method = 'GET';
+      const path = "/api/v3/brokerage/accounts";
+      const body = "";
+
+
+
+
+      // const CryptoJS = require('crypto-js');
+      function sign(str, apiSecret) {
+        const hash = CryptoJS.HmacSHA256(str, apiSecret);
+        return hash.toString();
+      }
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const str = timestamp + method + path + body
+      const sig = sign(str, secret)
+
+
+
+
+
+
 
       // sign the request
       function computeSignature() {
         const method = 'GET';
-        const path = "/fees";
+        const path = "/api/v3/brokerage/accounts";
+        // const path = "/fees";
         const message = timestamp + method + path;
         const key = CryptoJS.enc.Base64.parse(secret);
         const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
         return hash;
       }
 
+      // signature = OpenSSL
+
+      const url = 'https://coinbase.com/api/v3/brokerage/accounts';
+
       const options = {
         method: 'GET',
         timeout: 10000,
-        url: `${API_URI}/fees`,
+        url: 'https://coinbase.com/api/v3/brokerage/accounts',
         headers: {
           Accept: 'application/json',
-          'cb-access-key': key,
-          'cb-access-passphrase': passphrase,
-          'cb-access-sign': computeSignature(),
-          'cb-access-timestamp': timestamp
+          'CB-ACCESS-KEY': key,
+          // 'cb-access-passphrase': passphrase,
+          // 'CB-ACCESS-SIGN': computeSignature(),
+          'CB-ACCESS-SIGN': sig,
+          'CB-ACCESS-TIMESTAMP': timestamp
         }
       };
+      // let response = await fetch(url, options);
       let response = await axios.request(options);
+      console.log('SUCCESSFUL RESPONSE FROM NEW API:', response);
       resolve(response.data);
     } catch (err) {
+      console.log(err, 'unsuccessful call to new api');
       reject(err);
     }
   })
