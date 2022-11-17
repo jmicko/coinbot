@@ -483,6 +483,49 @@ async function placeOrder(data, quickAPI) {
   });
 }
 
+async function placeOrderNew(userID, data) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const userAPI = cache.getAPI(userID);
+      console.log(userAPI, 'user api');
+      const secret = userAPI.CB_SECRET;
+      const key = userAPI.CB_ACCESS_KEY;
+
+      const method = 'POST';
+      const path = "/api/v3/brokerage/orders";
+      const body = JSON.stringify(data);
+
+      // const CryptoJS = require('crypto-js');
+      function sign(str, apiSecret) {
+        const hash = CryptoJS.HmacSHA256(str, apiSecret);
+        return hash.toString();
+      }
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const str = timestamp + method + path + body
+      const sig = sign(str, secret)
+
+      const options = {
+        method: 'POST',
+        timeout: 10000,
+        url: `https://coinbase.com/api/v3/brokerage/orders`,
+        headers: {
+          Accept: 'application/json',
+          'cb-access-key': key,
+          'cb-access-sign': sig,
+          'cb-access-timestamp': timestamp
+        },
+        // body: data,
+        data: data
+      };
+      let response = await axios.request(options);
+      resolve(response.data);
+    } catch (err) {
+      reject(err);
+      console.log('ERROR in place order function in coinbaseClient');
+    }
+  });
+}
+
 async function cancelOrder(orderId, userID, quickAPI) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -672,6 +715,7 @@ module.exports = {
   getOpenOrders: getOpenOrders,
   cancelOrder: cancelOrder,
   placeOrder: placeOrder,
+  placeOrderNew: placeOrderNew,
   getOrder: getOrder,
   cancelAllOrders: cancelAllOrders,
   getFees: getFees,
