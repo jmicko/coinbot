@@ -45,6 +45,7 @@ app.use('/api/settings', settingsRouter);
 
 /* socket.io */
 // *** SOCKET AUTH *** //
+// use wrap to wrap socket with express middleware
 io.use(wrap(sessionMiddleware));
 // this triggers on a new client connection
 /* websocket is being used to alert when something has happened, but currently does not 
