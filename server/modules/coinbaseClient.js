@@ -52,6 +52,54 @@ async function getAccounts(userID) {
   })
 }
 
+async function getAccountsNew(userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const userAPI = cache.getAPI(userID);
+      const secret = userAPI.CB_SECRET;
+      const key = userAPI.CB_ACCESS_KEY;
+      // const API_URI = userAPI.API_URI;
+
+
+      const method = 'GET';
+      const path = "/api/v3/brokerage/accounts";
+      const body = "";
+
+      // const CryptoJS = require('crypto-js');
+      function sign(str, apiSecret) {
+        const hash = CryptoJS.HmacSHA256(str, apiSecret);
+        return hash.toString();
+      }
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const str = timestamp + method + path + body
+      const sig = sign(str, secret)
+
+
+      const options = {
+        method: 'GET',
+        timeout: 10000,
+        url: `https://coinbase.com/api/v3/brokerage/accounts?limit=250`,
+        headers: {
+          Accept: 'application/json',
+          'cb-access-key': key,
+          'cb-access-sign': sig,
+          'cb-access-timestamp': timestamp
+        }
+      };
+
+      let response = await axios.request(options);
+      // console.log('SUCCESSFUL RESPONSE FROM NEW API:', response.data);
+      resolve(response.data.accounts);
+
+
+
+
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 async function getFees(userID, quickAPI) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -496,20 +544,20 @@ async function testAPI(secret, key, passphrase, API_URI) {
 
 
 
-      // sign the request
-      function computeSignature() {
-        const method = 'GET';
-        const path = "/api/v3/brokerage/accounts";
-        // const path = "/fees";
-        const message = timestamp + method + path;
-        const key = CryptoJS.enc.Base64.parse(secret);
-        const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-        return hash;
-      }
+      // // sign the request
+      // function computeSignature() {
+      //   const method = 'GET';
+      //   const path = "/api/v3/brokerage/accounts";
+      //   // const path = "/fees";
+      //   const message = timestamp + method + path;
+      //   const key = CryptoJS.enc.Base64.parse(secret);
+      //   const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
+      //   return hash;
+      // }
 
       // signature = OpenSSL
 
-      const url = 'https://coinbase.com/api/v3/brokerage/accounts';
+      // const url = 'https://coinbase.com/api/v3/brokerage/accounts';
 
       const options = {
         method: 'GET',
@@ -518,16 +566,16 @@ async function testAPI(secret, key, passphrase, API_URI) {
         headers: {
           Accept: 'application/json',
           'CB-ACCESS-KEY': key,
-          // 'cb-access-passphrase': passphrase,
-          // 'CB-ACCESS-SIGN': computeSignature(),
           'CB-ACCESS-SIGN': sig,
           'CB-ACCESS-TIMESTAMP': timestamp
         }
       };
       // let response = await fetch(url, options);
       let response = await axios.request(options);
-      console.log('SUCCESSFUL RESPONSE FROM NEW API:', response);
+      console.log('SUCCESSFUL RESPONSE FROM NEW API:', response.data);
       resolve(response.data);
+
+
     } catch (err) {
       console.log(err, 'unsuccessful call to new api');
       reject(err);
@@ -545,6 +593,7 @@ module.exports = {
   cancelAllOrders: cancelAllOrders,
   getFees: getFees,
   getAccounts: getAccounts,
+  getAccountsNew: getAccountsNew,
   repeatedCheck: repeatedCheck,
   testAPI: testAPI,
   getOpenOrdersBeforeDate: getOpenOrdersBeforeDate,

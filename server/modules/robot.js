@@ -1195,17 +1195,21 @@ async function getAvailableFunds(userID, userSettings) {
       // console.log('maker fee', takerFee);
 
       const results = await Promise.all([
-        coinbaseClient.getAccounts(userID),
+        coinbaseClient.getAccountsNew(userID),
         // funds are withheld in usd when a buy is placed, so the maker fee is needed to subtract fees
         databaseClient.getSpentUSD(userID, takerFee),
         // funds are taken from the sale once settled, so the maker fee is not needed on the buys
         databaseClient.getSpentBTC(userID),
       ]);
 
+      // todo - figure out how to take unsynced trades and subtract from available balance
+
       // calculate USD balances
       const [USD] = results[0].filter(account => account.currency === 'USD')
-      const availableUSD = USD.available;
-      const balanceUSD = USD.balance;
+      // const availableUSD = USD.available;
+      const availableUSD = USD.available_balance.value;
+      // const balanceUSD = USD.balance;
+      const balanceUSD = Number(availableUSD) + Number(USD.hold.value);
       const spentUSD = results[1].sum;
       // console.log('spent usd', spentUSD);
       // subtract the total amount spent from the total balance
@@ -1213,8 +1217,11 @@ async function getAvailableFunds(userID, userSettings) {
 
       // calculate BTC balances
       const [BTC] = results[0].filter(account => account.currency === 'BTC')
-      const availableBTC = BTC.available;
-      const balanceBTC = BTC.balance;
+      // const availableBTC = BTC.available;
+      const availableBTC = BTC.available_balance.value;
+      // const balanceBTC = BTC.balance;
+      // console.log(BTC.available_balance);
+      const balanceBTC = Number(availableBTC) + Number(BTC.hold.value);
       const spentBTC = results[2].sum;
       // subtract the total amount spent from the total balance
       const actualAvailableBTC = Number((balanceBTC - spentBTC).toFixed(16));
@@ -1227,6 +1234,8 @@ async function getAvailableFunds(userID, userSettings) {
         actualAvailableBTC: actualAvailableBTC,
         actualAvailableUSD: actualAvailableUSD
       }
+
+      console.log(availableFunds, 'available funds');
 
       cache.updateStatus(userID, 'done getting available funds');
       resolve(availableFunds)

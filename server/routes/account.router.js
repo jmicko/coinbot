@@ -16,13 +16,17 @@ const cache = require('../modules/cache');
  */
 router.get('/', async (req, res) => {
 
+  // todo - DOES THIS ROUTE EVER GET HIT??
+
   const user = req.user;
   const userID = req.user.id;
   // user needs to be active or they will not have an API key to use
   if (user.active) {
     try {
-      let accounts = await coinbaseClient.getAccounts(userID);
+      let accounts = await coinbaseClient.getAccountsNew(userID);
       let spentUSD = await databaseClient.getSpentUSD(userID);
+
+      console.log(accounts, 'accounts from new api');
 
       res.send(
         {
@@ -60,11 +64,17 @@ router.get('/', async (req, res) => {
 * GET route to get total profit estimate
 */
 router.get('/profits', rejectUnauthenticated, async (req, res) => {
-  // console.log('profits get route');
+  console.log('profits get route');
   const userID = req.user.id;
 
   try {
     // console.log('update funds before profits');
+    const accounts = await coinbaseClient.getAccountsNew(userID);
+    const [USD] = accounts.filter(account => account.currency === 'USD')
+    const [BTC] = accounts.filter(account => account.currency === 'BTC')
+    // console.log(accounts, 'all accounts');
+    // console.log(USD, 'usd');
+    // console.log(BTC, 'btc');
     await robot.updateFunds(userID)
   } catch (err) {
     console.log(err, 'problem updating funds in account/profits route');
