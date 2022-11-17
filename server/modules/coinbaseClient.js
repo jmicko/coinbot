@@ -141,6 +141,48 @@ async function getFees(userID, quickAPI) {
   })
 }
 
+async function getFeesNew(userID, quickAPI) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const userAPI = cache.getAPI(userID);
+      const secret = userAPI.CB_SECRET;
+      const key = userAPI.CB_ACCESS_KEY;
+      // const API_URI = userAPI.API_URI;
+
+
+      const method = 'GET';
+      const path = "/api/v3/brokerage/transaction_summary";
+      const body = "";
+
+      // const CryptoJS = require('crypto-js');
+      function sign(str, apiSecret) {
+        const hash = CryptoJS.HmacSHA256(str, apiSecret);
+        return hash.toString();
+      }
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const str = timestamp + method + path + body
+      const sig = sign(str, secret)
+
+
+      const options = {
+        method: 'GET',
+        timeout: 10000,
+        url: `https://coinbase.com/api/v3/brokerage/transaction_summary?user_native_currency=USD`,
+        headers: {
+          Accept: 'application/json',
+          'CB-ACCESS-KEY': key,
+          'CB-ACCESS-SIGN': sig,
+          'CB-ACCESS-TIMESTAMP': timestamp
+        }
+      };
+      let response = await axios.request(options);
+      resolve(response.data);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 async function getAllOrders(userID) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -592,6 +634,7 @@ module.exports = {
   getOrder: getOrder,
   cancelAllOrders: cancelAllOrders,
   getFees: getFees,
+  getFeesNew: getFeesNew,
   getAccounts: getAccounts,
   getAccountsNew: getAccountsNew,
   repeatedCheck: repeatedCheck,

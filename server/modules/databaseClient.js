@@ -603,9 +603,10 @@ async function saveFunds(funds, userID) {
 async function saveFees(fees, userID) {
   return new Promise(async (resolve, reject) => {
     try {
+      const totalVolume = Number(fees.advanced_trade_only_volume) + Number(fees.coinbase_pro_volume);
       // console.log('saving fees', fees);
       const sqlText = `UPDATE "user_settings" SET "maker_fee" = $1, "taker_fee" = $2, "usd_volume" = $3  WHERE "userID" = $4`;
-      let result = await pool.query(sqlText, [fees.maker_fee_rate, fees.taker_fee_rate, fees.usd_volume, userID]);
+      let result = await pool.query(sqlText, [fees.fee_tier.maker_fee_rate, fees.fee_tier.taker_fee_rate, totalVolume, userID]);
       resolve(result);
     } catch (err) {
       reject(err);

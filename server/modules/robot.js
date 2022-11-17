@@ -247,7 +247,7 @@ async function fullSync(userID) {
         databaseClient.getLimitedUnsettledTrades(userID, botSettings.orders_to_sync),
         coinbaseClient.getOpenOrders(userID, userAPI),
         // get fees
-        coinbaseClient.getFees(userID, userAPI)
+        coinbaseClient.getFees(userID)
       ]);
       cache.updateStatus(userID, 'done getting trades to compare');
       // store the lists of orders in the corresponding arrays so they can be compared
@@ -1235,7 +1235,7 @@ async function getAvailableFunds(userID, userSettings) {
         actualAvailableUSD: actualAvailableUSD
       }
 
-      console.log(availableFunds, 'available funds');
+      // console.log(availableFunds, 'available funds');
 
       cache.updateStatus(userID, 'done getting available funds');
       resolve(availableFunds)

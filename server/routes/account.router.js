@@ -69,9 +69,11 @@ router.get('/profits', rejectUnauthenticated, async (req, res) => {
 
   try {
     // console.log('update funds before profits');
-    const accounts = await coinbaseClient.getAccountsNew(userID);
-    const [USD] = accounts.filter(account => account.currency === 'USD')
-    const [BTC] = accounts.filter(account => account.currency === 'BTC')
+    const fees = await coinbaseClient.getFeesNew(userID);
+    await databaseClient.saveFees(fees, userID);
+    // console.log(fees, 'fees from new api');
+    // const [USD] = accounts.filter(account => account.currency === 'USD')
+    // const [BTC] = accounts.filter(account => account.currency === 'BTC')
     // console.log(accounts, 'all accounts');
     // console.log(USD, 'usd');
     // console.log(BTC, 'btc');
