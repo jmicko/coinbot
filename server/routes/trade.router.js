@@ -33,7 +33,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
     };
     if (order.type) {
       tradeDetails.type = 'market';
-      delete tradeDetails.price;
+      // delete tradeDetails.price;
     }
     try {
       // send the new order with the trade details
