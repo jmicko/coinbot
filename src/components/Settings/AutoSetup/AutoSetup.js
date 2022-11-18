@@ -132,14 +132,14 @@ function AutoSetup(props) {
       let original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + 100))) / 100);
 
       // figure out if it is going to be a buy or a sell. Buys will be below current trade price, sells above.
-      let side = 'buy';
+      let side = 'BUY';
       if (buyPrice > tradingPrice) {
-        side = 'sell';
+        side = 'SELL';
       }
 
       // set the current price based on if it is a buy or sell
       let price = buyPrice;
-      if (side == 'sell') {
+      if (side == 'SELL') {
         price = original_sell_price;
       }
 
@@ -152,13 +152,13 @@ function AutoSetup(props) {
       }
 
       // count up how much BTC will need to be purchased to reserve for all the sell orders
-      if (side == 'sell') {
+      if (side == 'SELL') {
         btcToBuy += actualSize
       }
 
       // calculate the previous fees on sell orders
       let prevFees = () => {
-        if (side === 'buy') {
+        if (side === 'BUY') {
           return 0
         } else {
           return buyPrice * actualSize * user.taker_fee

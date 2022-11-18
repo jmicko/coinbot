@@ -47,10 +47,13 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       // storing the created_at value in the flipped_at field will fix issues where the time would change when resyncing
       if (pendingTrade.success) {
         console.log('SUCESS with new api');
+        const newOrder = await coinbaseClient.getOrderNew(userID, pendingTrade.order_id);
+        console.log(newOrder, 'order from new api');
+        console.log(newOrder.order.order_configuration, 'order_configuration from new api');
+        await databaseClient.storeTrade(newOrder.order, tradeDetails, newOrder.order.created_time);
       } else {
         console.log("FAILURE with new api");
       }
-      // await databaseClient.storeTrade(pendingTrade, tradeDetails, pendingTrade.created_at);
 
       await robot.updateFunds(userID);
 
@@ -165,7 +168,7 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
       // if (false) {
       if (setup.btcToBuy >= 0.000016) {
         const tradeDetails = {
-          side: 'buy',
+          side: 'BUY',
           size: setup.btcToBuy.toFixed(8), // BTC
           product_id: 'BTC-USD',
           stp: 'cn',

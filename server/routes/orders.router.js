@@ -14,17 +14,18 @@ const { sleep } = require('../modules/robot');
 */
 router.get('/', rejectUnauthenticated, (req, res) => {
   const userID = req.user.id;
-  // console.log('user in get all orders route', req.user.max_trade_load);
+  console.log('user in get all orders route', req.user.max_trade_load);
   // console.log('getting all orders for...', userID);
   // ask db for an array of buys and an array of sells
   return Promise.all([
     // get all open orders from db and from coinbase
-    databaseClient.getUnsettledTrades('buy', userID, req.user.max_trade_load),
-    databaseClient.getUnsettledTrades('sell', userID, req.user.max_trade_load),
+    databaseClient.getUnsettledTrades('BUY', userID, req.user.max_trade_load),
+    databaseClient.getUnsettledTrades('SELL', userID, req.user.max_trade_load),
     databaseClient.getUnsettledTradeCounts(userID)
   ])
     .then((result) => {
       const buys = result[0], sells = result[1], counts = result[2];
+      console.log('buys', buys);
       const openOrdersInOrder = {
         sells: sells,
         buys: buys,

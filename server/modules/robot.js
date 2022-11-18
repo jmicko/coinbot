@@ -486,9 +486,9 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
   // add buy/sell requirement and price
 
 
-  if (dbOrder.side === "buy") {
-    // if it was a buy, sell for more. multiply old price
-    tradeDetails.side = "sell"
+  if (dbOrder.side === "BUY") {
+    // if it was a BUY, sell for more. multiply old price
+    tradeDetails.side = "SELL"
     tradeDetails.price = dbOrder.original_sell_price;
     cache.storeMessage(userID, { messageText: `Selling for $${Number(tradeDetails.price)}` });
   } else {
@@ -522,7 +522,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
         // add up all values of trades that just settled and subtract that from "actualavailable_usd"
         let allFlipsValue = 0;
         allFlips.forEach(trade => {
-          if (trade.side === "sell") {
+          if (trade.side === "SELL") {
             allFlipsValue += (maxSizeBTC * trade.original_buy_price)
           }
         });
@@ -555,7 +555,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
         // add up all values of trades that just settled and subtract that from "actualavailable_usd"
         let allFlipsValue = 0;
         allFlips.forEach(trade => {
-          if (trade.side === "sell") {
+          if (trade.side === "SELL") {
             allFlipsValue += (trade.size * trade.original_buy_price)
           }
         });
@@ -574,7 +574,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
 
     }
     // if it was a sell, buy for less. divide old price
-    tradeDetails.side = "buy"
+    tradeDetails.side = "BUY"
     tradeDetails.price = dbOrder.original_buy_price;
     cache.storeMessage(userID, { messageText: `Buying for $${Number(tradeDetails.price)}` });
   }
@@ -895,15 +895,15 @@ async function autoSetup(user, parameters) {
     // get the sell price with the same math as is used by the bot when flipping
     let original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + 100))) / 100);
 
-    // figure out if it is going to be a buy or a sell. Buys will be below current trade price, sells above.
-    let side = 'buy';
+    // figure out if it is going to be a BUY or a sell. Buys will be below current trade price, sells above.
+    let side = 'BUY';
     if (buyPrice > tradingPrice) {
-      side = 'sell';
+      side = 'SELL';
     }
 
-    // set the current price based on if it is a buy or sell
+    // set the current price based on if it is a BUY or sell
     let price = buyPrice;
-    if (side == 'sell') {
+    if (side == 'SELL') {
       price = original_sell_price;
     }
 
@@ -911,18 +911,18 @@ async function autoSetup(user, parameters) {
     let actualSize = size;
     // If it is in USD, need to convert
     if (sizeType == 'USD') {
-      // use the buy price and the size to get the real size
+      // use the BUY price and the size to get the real size
       actualSize = Number(Math.floor((size / buyPrice) * 100000000)) / 100000000;
     }
 
     // count up how much BTC will need to be purchased to reserve for all the sell orders
-    if (side == 'sell') {
+    if (side == 'SELL') {
       btcToBuy += actualSize
     }
 
     // calculate the previous fees on sell orders
     let prevFees = () => {
-      if (side === 'buy') {
+      if (side === 'BUY') {
         return 0
       } else {
         return buyPrice * actualSize * user.taker_fee
@@ -1026,11 +1026,11 @@ async function autoSetupBackup(user, parameters) {
       let actualSize = size;
       let convertedAmount = Number(Math.floor((size / loopPrice) * 100000000)) / 100000000;
       let original_sell_price = (Math.round((loopPrice * (Number(parameters.trade_pair_ratio) + 100))) / 100);
-      let side = 'buy';
+      let side = 'BUY';
       // if the loop price is higher than the trading price,
       // need to find actual cost of the trade at that volume
       if (loopPrice >= tradingPrice) {
-        side = 'sell';
+        side = 'SELL';
         // if selling, need to add up the total amount of btc that needs to be bought to keep the balances above 0
         btcToBuy += convertedAmount;
         // find cost of BTCSize at current price. Something seems wrong here and it's repetitive but it works so I'm not touching it
@@ -1039,9 +1039,9 @@ async function autoSetupBackup(user, parameters) {
         actualSize = actualUSDSize;
       }
 
-      // set the price based on if it's a buy or sell
+      // set the price based on if it's a BUY or sell
       let price = () => {
-        if (side === 'buy') {
+        if (side === 'BUY') {
           return loopPrice
         } else {
           return original_sell_price
@@ -1049,7 +1049,7 @@ async function autoSetupBackup(user, parameters) {
       }
 
       let prevFees = () => {
-        if (side === 'buy') {
+        if (side === 'BUY') {
           return 0
         } else {
           return loopPrice * convertedAmount * user.taker_fee
@@ -1085,20 +1085,20 @@ async function autoSetupBackup(user, parameters) {
     let USDSize = size * loopPrice;
     while ((USDSize <= availableFunds) && (count < 10000)) {
       let original_sell_price = (Math.round((loopPrice * (Number(parameters.trade_pair_ratio) + 100))) / 100);
-      let side = 'buy';
+      let side = 'BUY';
       // if the loop price is higher than the trading price,
       // need to find current cost of the trade at that volume
       if (loopPrice >= tradingPrice) {
-        side = 'sell';
+        side = 'SELL';
         // if selling, need to add up the total amount of btc that needs to be bought to keep the balances above 0
         btcToBuy += size;
         // change to size at trading price. Need this number to subtract from available funds
         USDSize = tradingPrice * size;
       }
 
-      // set the price based on if it's a buy or sell
+      // set the price based on if it's a BUY or sell
       let price = () => {
-        if (side === 'buy') {
+        if (side === 'BUY') {
           return loopPrice
         } else {
           return original_sell_price
@@ -1106,7 +1106,7 @@ async function autoSetupBackup(user, parameters) {
       }
 
       let prevFees = () => {
-        if (side === 'buy') {
+        if (side === 'BUY') {
           return 0
         } else {
           return loopPrice * size * user.taker_fee
@@ -1148,7 +1148,7 @@ async function autoSetupBackup(user, parameters) {
     // put a market order in for how much BTC need to be purchase for all the sell orders
     if (btcToBuy >= 0.000016) {
       const tradeDetails = {
-        side: 'buy',
+        side: 'BUY',
         size: btcToBuy.toFixed(8), // BTC
         product_id: 'BTC-USD',
         stp: 'cn',

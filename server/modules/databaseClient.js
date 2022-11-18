@@ -4,27 +4,28 @@ const pool = require('./pool');
 // flipped_at is the "Time" shown on the interface. It has no other function
 const storeTrade = (newOrder, originalDetails, flipped_at) => {
   return new Promise((resolve, reject) => {
+    console.log('NEW ORDER IN STORETRADE', newOrder);
     // add new order to the database
     const sqlText = `INSERT INTO "orders" 
       ("id", "userID", "price", "size", "trade_pair_ratio", "side", "settled", "product_id", "time_in_force", 
       "created_at", "flipped_at", "done_at", "fill_fees", "previous_fill_fees", "filled_size", "executed_value", "original_buy_price", "original_sell_price") 
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18);`;
     pool.query(sqlText, [
-      newOrder.id,
+      newOrder.order_id,
       originalDetails.userID,
-      newOrder.price,
-      newOrder.size,
+      newOrder.order_configuration.limit_limit_gtc.limit_price,
+      newOrder.order_configuration.limit_limit_gtc.base_size,
       originalDetails.trade_pair_ratio,
       newOrder.side,
       newOrder.settled,
       newOrder.product_id,
       newOrder.time_in_force,
-      newOrder.created_at,
+      newOrder.created_time,
       flipped_at,
       newOrder.done_at,
-      newOrder.fill_fees,
+      newOrder.total_fees,
       // bring the fees from the previous order to the new one for more accurate profit calculation
-      originalDetails.fill_fees,
+      originalDetails.total_fees,
       newOrder.filled_size,
       newOrder.executed_value,
       originalDetails.original_buy_price,
@@ -138,9 +139,9 @@ const getLimitedUnsettledTrades = (userID, limit) => {
     // get limit of sells
     try {
 
-      let sqlText = `(SELECT * FROM "orders" WHERE "side"='sell' AND "flipped"=false AND "settled"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT $2)
+      let sqlText = `(SELECT * FROM "orders" WHERE "side"='SELL' AND "flipped"=false AND "settled"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT $2)
       UNION
-      (SELECT * FROM "orders" WHERE "side"='buy' AND "flipped"=false AND "settled"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT $2)
+      (SELECT * FROM "orders" WHERE "side"='BUY' AND "flipped"=false AND "settled"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT $2)
       ORDER BY "price" DESC;`;
       const results = await pool.query(sqlText, [userID, limit]);
 
@@ -159,9 +160,9 @@ const getLimitedTrades = (userID, limit) => {
     // get limit of sells
     try {
 
-      let sqlText = `(SELECT * FROM "orders" WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT $2)
+      let sqlText = `(SELECT * FROM "orders" WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT $2)
       UNION
-      (SELECT * FROM "orders" WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT $2)
+      (SELECT * FROM "orders" WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT $2)
       ORDER BY "price" DESC;`;
       const results = await pool.query(sqlText, [userID, limit]);
 
@@ -179,13 +180,13 @@ const getLimitedTrades = (userID, limit) => {
 const getUnsettledTrades = (side, userID, max_trade_load) => {
   return new Promise(async (resolve, reject) => {
     let sqlText;
-    // the only time 'buy' or 'sell' is passed is when the frontend is calling for all trades. 
+    // the only time 'BUY' or 'SELL' is passed is when the frontend is calling for all trades. 
     // can request a limited amount of data to save on network costs
-    if (side == 'buy') {
-      // console.log('getting buys', max_trade_load);
+    if (side == 'BUY') {
+      console.log('getting buys', max_trade_load);
       // gets all unsettled buys, sorted by price
       sqlText = `SELECT * FROM "orders" 
-      WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
+      WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" DESC
       LIMIT $2;`;
       pool.query(sqlText, [userID, max_trade_load])
@@ -197,11 +198,11 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
           // or promise relays errors from pool to parent
           reject(err);
         })
-    } else if (side == 'sell') {
+    } else if (side == 'SELL') {
       // console.log('getting sells', max_trade_load);
       // gets all unsettled sells, sorted by price
       sqlText = `SELECT * FROM "orders" 
-      WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
+      WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
       ORDER BY "price" ASC
       LIMIT $2;`;
       pool.query(sqlText, [userID, max_trade_load])
@@ -227,6 +228,8 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
           // or promise relays errors from pool to parent
           reject(err);
         })
+    } else {
+      reject({error: 'nothing'})
     }
   });
 }
@@ -255,10 +258,10 @@ const getUnsettledTradeCounts = (userID) => {
   return new Promise(async (resolve, reject) => {
     try {
       // get total open buys
-      let sqlTextBuys = `SELECT COUNT(*) FROM "orders" WHERE "userID"=$1 AND settled=false AND side='buy';`;
+      let sqlTextBuys = `SELECT COUNT(*) FROM "orders" WHERE "userID"=$1 AND settled=false AND side='BUY';`;
 
       // get total open sells
-      let sqlTextSells = `SELECT COUNT(*) FROM "orders" WHERE "userID"=$1 AND settled=false AND side='sell';`;
+      let sqlTextSells = `SELECT COUNT(*) FROM "orders" WHERE "userID"=$1 AND settled=false AND side='SELL';`;
 
       const totals = await Promise.all([
         pool.query(sqlTextBuys, [userID]),
@@ -310,7 +313,7 @@ const getSpentUSD = (userID, makerFee) => {
   return new Promise((resolve, reject) => {
     let sqlText = `SELECT sum("price"*"size"*$1)
     FROM "orders"
-    WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$2;`;
+    WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$2;`;
     pool.query(sqlText, [makerFee, userID])
       .then((results) => {
         const [volume_usd] = results.rows;
@@ -330,7 +333,7 @@ const getSpentBTC = (userID) => {
   return new Promise((resolve, reject) => {
     let sqlText = `SELECT sum("size")
     FROM "orders"
-    WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
+    WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
     pool.query(sqlText, [userID])
       .then((results) => {
         const [volume_btc] = results.rows;
@@ -351,9 +354,9 @@ const getReorders = (userID, limit) => {
       // first select the closest trades on either side according to the limit (which is in the bot settings table)
       // then select from the results any that need to be reordered
       let sqlText = `SELECT * FROM (
-        (SELECT "id", "will_cancel", "userID", "price", "reorder", "userID" FROM "orders" WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT $2)
+        (SELECT "id", "will_cancel", "userID", "price", "reorder", "userID" FROM "orders" WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT $2)
         UNION
-        (SELECT "id", "will_cancel", "userID", "price", "reorder", "userID" FROM "orders" WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT $2)
+        (SELECT "id", "will_cancel", "userID", "price", "reorder", "userID" FROM "orders" WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT $2)
         ORDER BY "price" DESC
         ) as reorders
         WHERE "reorder"=true;`;
@@ -500,13 +503,13 @@ async function getDeSyncs(userID, limit, side) {
       let results = []
       if (side === 'buys') {
         const sqlTextBuys = `SELECT * FROM "orders" 
-        WHERE "side"='buy' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1
+        WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1
         ORDER BY "price" DESC
         OFFSET $2;`;
         results = await pool.query(sqlTextBuys, [userID, limit]);
       } else {
         const sqlTextSells = `SELECT * FROM "orders" 
-        WHERE "side"='sell' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1
+        WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1
         ORDER BY "price" ASC
         OFFSET $2;`;
         results = await pool.query(sqlTextSells, [userID, limit]);
