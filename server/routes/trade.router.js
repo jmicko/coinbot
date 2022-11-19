@@ -29,7 +29,8 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       product_id: order.product_id,
       stp: 'cn',
       userID: userID,
-      trade_pair_ratio: order.trade_pair_ratio
+      trade_pair_ratio: order.trade_pair_ratio,
+      client_order_id: uuidv4()
     };
     if (order.type) {
       tradeDetails.type = 'market';

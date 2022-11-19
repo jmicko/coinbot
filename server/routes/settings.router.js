@@ -14,10 +14,30 @@ const cache = require('../modules/cache');
  */
 router.get('/test', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
+  const userID = user.id
   // only admin can do this
   if (user.admin) {
     try {
       console.log('test route hit');
+
+
+      const tradeDetails = {
+        side: 'BUY',
+        price: JSON.stringify(100), // USD
+        size: JSON.stringify(0.001), // BTC
+        product_id: 'BTC-USD',
+        userID: userID,
+        // client_order_id:
+      };
+
+      // const response = await coinbaseClient.placeOrderNew(userID, tradeDetails);
+      const response = await coinbaseClient.getOrderNew(userID, '');
+      // const response = await coinbaseClient.cancelOrderNew(user.id, ['']);
+      console.log(response,'response');
+
+
+
+
 
       res.sendStatus(200);
     } catch (err) {

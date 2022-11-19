@@ -582,7 +582,7 @@ async function placeOrderNew(userID, order) {
           },
         },
         product_id: order.product_id,
-        client_order_id: uuidv4()
+        client_order_id: order.client_order_id ||uuidv4()
       }
 
 
