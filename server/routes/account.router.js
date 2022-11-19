@@ -73,8 +73,13 @@ router.get('/profits', rejectUnauthenticated, async (req, res) => {
     await databaseClient.saveFees(fees, userID);
 
 
-    // const order = await coinbaseClient.getOrderNew(userID, "f");
-    // console.log(order, 'order from new api');
+    // const orders = await coinbaseClient.getOpenOrders(userID);
+    // console.log(orders, 'orders from new api');
+    // for (let i = 0; i < orders.orders.length; i++) {
+    //   const order = orders.orders[i];
+    //   console.log(order.status, 'order status from new api');
+      
+    // }
     // console.log(fees, 'fees from new api');
     // const [USD] = accounts.filter(account => account.currency === 'USD')
     // const [BTC] = accounts.filter(account => account.currency === 'BTC')

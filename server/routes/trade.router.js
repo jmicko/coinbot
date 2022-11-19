@@ -21,11 +21,11 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
   if (user.active && user.approved) {
     // tradeDetails const should take in values sent from trade component form
     const tradeDetails = {
-      original_sell_price: order.original_sell_price,
-      original_buy_price: order.price,
+      original_sell_price: JSON.stringify(order.original_sell_price),
+      original_buy_price: JSON.stringify(order.price),
       side: order.side,
-      price: order.price, // USD
-      size: order.size, // BTC
+      price: JSON.stringify(order.price), // USD
+      size: JSON.stringify(order.size), // BTC
       product_id: order.product_id,
       stp: 'cn',
       userID: userID,
@@ -291,7 +291,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
     // if it is a reorder, there is no reason to cancel on CB
     if (!order.reorder) {
       // send cancelOrder to cb
-      await coinbaseClient.cancelOrder(orderId, userID);
+      await coinbaseClient.cancelOrderNew(userID, [orderId]);
     }
     res.sendStatus(200)
   } catch (err) {

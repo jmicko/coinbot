@@ -108,7 +108,7 @@ const importTrade = (details, userID) => {
       details.size,
       details.trade_pair_ratio,
       details.side,
-      details.settled, 
+      details.settled,
       details.product_id,
       details.time_in_force,
       details.created_at,
@@ -229,7 +229,7 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
           reject(err);
         })
     } else {
-      reject({error: 'nothing'})
+      reject({ error: 'nothing' })
     }
   });
 }
@@ -617,6 +617,20 @@ async function saveFees(fees, userID) {
   })
 }
 
+// update the fees and 30 day trade volume
+async function markAsFlipped(order_id) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      console.log('marking as flipped', order_id);
+      const sqlText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
+      let result = await pool.query(sqlText, [order_id]);
+      resolve(result);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 
 const databaseClient = {
   storeTrade: storeTrade,
@@ -647,7 +661,8 @@ const databaseClient = {
   setKillLock: setKillLock,
   setAutoSetupNumber: setAutoSetupNumber,
   saveFunds: saveFunds,
-  saveFees: saveFees
+  saveFees: saveFees,
+  markAsFlipped: markAsFlipped
 }
 
 module.exports = databaseClient;

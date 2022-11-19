@@ -25,7 +25,7 @@ router.get('/', rejectUnauthenticated, (req, res) => {
   ])
     .then((result) => {
       const buys = result[0], sells = result[1], counts = result[2];
-      console.log('buys', buys);
+      // console.log('buys', buys);
       const openOrdersInOrder = {
         sells: sells,
         buys: buys,

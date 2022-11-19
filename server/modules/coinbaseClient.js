@@ -1,5 +1,4 @@
 const CryptoJS = require("crypto-js");
-const fetch = import("node-fetch");
 const axios = require("axios").default;
 // const crypto = require('crypto');
 const cache = require("./cache");
@@ -304,13 +303,56 @@ async function getLimitedFillsNew(userID, limit) {
       };
 
       let response = await axios.request(options);
-      resolve(response.data);
+      resolve(response.data.fills);
     } catch (err) {
       reject(err);
     }
   });
 }
 
+
+async function getOpenOrdersNew(userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const userAPI = cache.getAPI(userID);
+      const secret = userAPI.CB_SECRET;
+      const key = userAPI.CB_ACCESS_KEY;
+      // const API_URI = userAPI.API_URI;
+
+
+      const method = 'GET';
+      const path = "/api/v3/brokerage/orders/historical/batch";
+      const body = "";
+
+      // const CryptoJS = require('crypto-js');
+      function sign(str, apiSecret) {
+        const hash = CryptoJS.HmacSHA256(str, apiSecret);
+        return hash.toString();
+      }
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const str = timestamp + method + path + body
+      const sig = sign(str, secret)
+
+
+      const options = {
+        method: 'GET',
+        timeout: 10000,
+        url: `https://coinbase.com/api/v3/brokerage/orders/historical/batch?limit=2&order_status=PENDING`,
+        headers: {
+          Accept: 'application/json',
+          'cb-access-key': key,
+          'cb-access-sign': sig,
+          'cb-access-timestamp': timestamp
+        }
+      };
+
+      let response = await axios.request(options);
+      resolve(response.data);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
 
 async function getOpenOrders(userID, quickAPI) {
   return new Promise(async (resolve, reject) => {
@@ -534,8 +576,8 @@ async function placeOrderNew(userID, order) {
         side: order.side,
         order_configuration: {
           limit_limit_gtc: {
-            base_size: JSON.stringify(order.size),
-            limit_price: JSON.stringify(order.price),
+            base_size: order.size,
+            limit_price: order.price,
             // post_only: false
           },
         },
@@ -572,7 +614,6 @@ async function placeOrderNew(userID, order) {
           'cb-access-sign': sig,
           'cb-access-timestamp': timestamp
         },
-        // body: data,
         data: data
       };
       let response = await axios.request(options);
@@ -582,6 +623,53 @@ async function placeOrderNew(userID, order) {
       console.log('ERROR in place order function in coinbaseClient');
     }
   });
+}
+
+async function cancelOrderNew(userID, orderIdArray) {
+  return new Promise(async (resolve, reject) => {
+    try {
+
+      const data = {order_ids: orderIdArray}
+
+      const userAPI = cache.getAPI(userID);
+      const secret = userAPI.CB_SECRET;
+      const key = userAPI.CB_ACCESS_KEY;
+      // const API_URI = userAPI.API_URI;
+
+
+      const method = 'POST';
+      const path = "/api/v3/brokerage/orders/batch_cancel";
+      const body = JSON.stringify(data);
+
+      // const CryptoJS = require('crypto-js');
+      function sign(str, apiSecret) {
+        const hash = CryptoJS.HmacSHA256(str, apiSecret);
+        return hash.toString();
+      }
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const str = timestamp + method + path + body
+      const sig = sign(str, secret)
+
+
+      const options = {
+        method: 'POST',
+        timeout: 10000,
+        url: `https://coinbase.com/api/v3/brokerage/orders/batch_cancel`,
+        headers: {
+          Accept: 'application/json',
+          'cb-access-key': key,
+          'cb-access-sign': sig,
+          'cb-access-timestamp': timestamp
+        },
+        data: data
+      };
+
+      let response = await axios.request(options);
+      resolve(response.data);
+    } catch (err) {
+      reject(err);
+    }
+  })
 }
 
 async function cancelOrder(orderId, userID, quickAPI) {
@@ -722,26 +810,6 @@ async function testAPI(secret, key, passphrase, API_URI) {
       const sig = sign(str, secret)
 
 
-
-
-
-
-
-      // // sign the request
-      // function computeSignature() {
-      //   const method = 'GET';
-      //   const path = "/api/v3/brokerage/accounts";
-      //   // const path = "/fees";
-      //   const message = timestamp + method + path;
-      //   const key = CryptoJS.enc.Base64.parse(secret);
-      //   const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-      //   return hash;
-      // }
-
-      // signature = OpenSSL
-
-      // const url = 'https://coinbase.com/api/v3/brokerage/accounts';
-
       const options = {
         method: 'GET',
         timeout: 10000,
@@ -753,7 +821,6 @@ async function testAPI(secret, key, passphrase, API_URI) {
           'CB-ACCESS-TIMESTAMP': timestamp
         }
       };
-      // let response = await fetch(url, options);
       let response = await axios.request(options);
       console.log('SUCCESSFUL RESPONSE FROM NEW API:', response.data);
       resolve(response.data);
@@ -767,21 +834,22 @@ async function testAPI(secret, key, passphrase, API_URI) {
 }
 
 module.exports = {
-  getAllOrders: getAllOrders,
-  getLimitedFills: getLimitedFills,
+  // getAllOrders: getAllOrders,
+  // getLimitedFills: getLimitedFills,
   getLimitedFillsNew: getLimitedFillsNew,
-  getOpenOrders: getOpenOrders,
-  cancelOrder: cancelOrder,
-  placeOrder: placeOrder,
+  // getOpenOrders: getOpenOrders,
+  cancelOrderNew: cancelOrderNew,
+  // cancelOrder: cancelOrder,
+  // placeOrder: placeOrder,
   placeOrderNew: placeOrderNew,
-  getOrder: getOrder,
+  // getOrder: getOrder,
   getOrderNew: getOrderNew,
-  cancelAllOrders: cancelAllOrders,
-  getFees: getFees,
+  // cancelAllOrders: cancelAllOrders,
+  // getFees: getFees,
   getFeesNew: getFeesNew,
-  getAccounts: getAccounts,
+  // getAccounts: getAccounts,
   getAccountsNew: getAccountsNew,
-  repeatedCheck: repeatedCheck,
+  // repeatedCheck: repeatedCheck,
   testAPI: testAPI,
-  getOpenOrdersBeforeDate: getOpenOrdersBeforeDate,
+  // getOpenOrdersBeforeDate: getOpenOrdersBeforeDate,
 }
