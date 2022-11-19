@@ -160,6 +160,18 @@ function* factoryReset() {
   }
 }
 
+function* test() {
+  try {
+    const response = yield axios.get(`/api/settings/test`);
+    console.log(response, '<- response from test');
+  } catch (error) {
+    console.log('post account route factoryReset has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 function* settingsSaga() {
   yield takeLatest('FETCH_SETTINGS', getAllSettings);
   yield takeLatest('SEND_LOOP_SPEED', loopSpeed);
@@ -174,6 +186,7 @@ function* settingsSaga() {
   yield takeLatest('KILL_LOCK', killLock);
   yield takeLatest('ORDERS_RESET', ordersReset);
   yield takeLatest('FACTORY_RESET', factoryReset);
+  yield takeLatest('TEST', test);
 }
 
 export default settingsSaga;

@@ -13,6 +13,7 @@ function Menu(props) {
         <p className="greeting">Hello {props.store.accountReducer.userReducer.username}!</p>
       </center>
       <div className="menu-buttons">
+        {process.env.NODE_ENV === 'development' && props.store.accountReducer.userReducer.admin && <button className={`btn-blue btn-logout ${props.theme}`} onClick={() => dispatch({ type: 'TEST' })}>Test</button>}
         <button className={`btn-blue btn-logout ${props.theme}`} onClick={() => { props.clickSettings() }}>Settings</button>
         <button className={`btn-blue btn-logout ${props.theme}`} onClick={() => dispatch({ type: 'LOGOUT' })}>Log Out</button>
       </div>

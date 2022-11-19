@@ -10,6 +10,27 @@ const cache = require('../modules/cache');
 
 
 /**
+ * GET route for testing functions in development
+ */
+router.get('/test', rejectUnauthenticated, async (req, res) => {
+  const user = req.user;
+  // only admin can do this
+  if (user.admin) {
+    try {
+      console.log('test route hit');
+
+      res.sendStatus(200);
+    } catch (err) {
+      console.log(err, 'test route failed');
+      res.sendStatus(500);
+    }
+  } else {
+    console.log('user is not admin!');
+    res.sendStatus(403)
+  }
+});
+
+/**
  * GET route getting all settings
  */
 router.get('/', rejectUnauthenticated, async (req, res) => {
