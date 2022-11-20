@@ -119,7 +119,7 @@ async function syncOrders(userID, count) {
       // if (ordersToCheck.length) {
       // API ENDPOINTS USED: orders
       await settleMultipleOrders(userID); // TEMP COMMENT
-      // await updateFunds(userID); // TEMP COMMENT
+      await updateFunds(userID); // TEMP COMMENT
 
 
       // move this back down here because orders need to stay in the db even if canceled until processOrders is done

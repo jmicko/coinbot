@@ -337,7 +337,7 @@ async function getOpenOrdersNew(userID) {
       const options = {
         method: 'GET',
         timeout: 10000,
-        url: `https://coinbase.com/api/v3/brokerage/orders/historical/batch?limit=2&order_status=PENDING`,
+        url: `https://coinbase.com/api/v3/brokerage/orders/historical/batch?limit=2&order_status=OPEN`,
         headers: {
           Accept: 'application/json',
           'cb-access-key': key,
@@ -838,6 +838,7 @@ module.exports = {
   // getLimitedFills: getLimitedFills,
   getLimitedFillsNew: getLimitedFillsNew,
   // getOpenOrders: getOpenOrders,
+  getOpenOrdersNew: getOpenOrdersNew,
   cancelOrderNew: cancelOrderNew,
   // cancelOrder: cancelOrder,
   // placeOrder: placeOrder,
