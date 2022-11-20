@@ -35,7 +35,7 @@ export function TickerProvider({ children }) {
 
     // this should change when user is in sandbox mode, but not sure how to do that right now
     // MAYBE just use two feeds?
-    let URI = 'wss://advanced-trade-ws.coinbase.com';
+    let URI = 'wss://ws-feed.pro.coinbase.com';
     // if (props?.sandbox) {
     let sandboxURI = 'wss://ws-feed-public.sandbox.exchange.coinbase.com';
     // }
