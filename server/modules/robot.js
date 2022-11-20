@@ -118,7 +118,7 @@ async function syncOrders(userID, count) {
       // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
       // if (ordersToCheck.length) {
       // API ENDPOINTS USED: orders
-      // await settleMultipleOrders(userID); // TEMP COMMENT
+      await settleMultipleOrders(userID); // TEMP COMMENT
       // await updateFunds(userID); // TEMP COMMENT
 
 
@@ -656,17 +656,17 @@ async function settleMultipleOrders(userID) {
             // if not a reorder and not canceled, look up the full settlement details on CB
             cache.updateStatus(userID, 'SMO loop get order');
             // get all the order details from cb
-            let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID, userAPI);
-            // console.log('fully settled:', fullSettledDetails);
+            let fullSettledDetails = await coinbaseClient.getOrderNew(userID, orderToCheck.id);
+            console.log('fully settled:', fullSettledDetails);
             // update the order in the db
             const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
             await pool.query(queryText, [
-              fullSettledDetails.settled,
-              fullSettledDetails.done_at,
-              fullSettledDetails.fill_fees,
-              fullSettledDetails.filled_size,
-              fullSettledDetails.executed_value,
-              fullSettledDetails.done_reason,
+              fullSettledDetails.order.settled,
+              fullSettledDetails.order.done_at,
+              fullSettledDetails.order.total_fees,
+              fullSettledDetails.order.filled_size,
+              fullSettledDetails.order.executed_value,
+              fullSettledDetails.order.done_reason,
               orderToCheck.id
             ]);
           }
@@ -723,7 +723,6 @@ async function reorder(orderToReorder, retry) {
         size: upToDateDbOrder.size, // BTC
         product_id: upToDateDbOrder.product_id,
         trade_pair_ratio: upToDateDbOrder.trade_pair_ratio,
-        stp: 'cn',
         userID: upToDateDbOrder.userID,
       };
       // if the order is marked for reordering, it was deleted already and there is no need to wait to double check
@@ -731,12 +730,14 @@ async function reorder(orderToReorder, retry) {
       if (upToDateDbOrder.reorder || retry) {
         try {
           // send the new order with the trade details
-          let pendingTrade = await coinbaseClient.placeOrder(tradeDetails, userAPI);
+          let pendingTrade = await coinbaseClient.placeOrderNew(upToDateDbOrder.userID, tradeDetails);
+          let newTrade = await coinbaseClient.getOrderNew(userID, pendingTrade.order_id)
+          console.log(newTrade,'newTrade');
           // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
           tradeDetails.fill_fees = upToDateDbOrder.previous_fill_fees;
           // store the new trade in the db. the trade details are also sent to store trade position prices
           // when reordering a trade, bring the old flipped_at value through so it doesn't change the "Time" on screen
-          let results = await databaseClient.storeTrade(pendingTrade, tradeDetails, upToDateDbOrder.flipped_at);
+          let results = await databaseClient.storeTrade(newTrade.order, tradeDetails, upToDateDbOrder.flipped_at);
 
           // delete the old order from the db
           await databaseClient.deleteTrade(orderToReorder.id);
