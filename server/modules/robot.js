@@ -107,7 +107,7 @@ async function syncOrders(userID, count) {
           // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
           processOrders(userID), //TEMP COMMENT
           // desync extra orders
-          // deSync(userID) // TEMP COMMENT
+          deSync(userID) // TEMP COMMENT
         ]);
         cache.updateStatus(userID, 'end all quick sync');
 
@@ -214,6 +214,8 @@ async function deSync(userID) {
       allToDeSync.push(...buysToDeSync);
       allToDeSync.push(...sellsToDeSync);
 
+      // console.log(ordersToDeSync[0], 'all to desync');
+
       // cancel them all
       await cancelMultipleOrders(allToDeSync, userID, true, userAPI);
 
@@ -280,6 +282,7 @@ async function fullSync(userID) {
         // console.log('canceling extra orders in fullSync', fullSyncOrders.ordersToCancel);
         // API ENDPOINTS USED: orders, accounts
         cache.updateStatus(userID, 'will cancel multiple orders');
+        // todo - change this to check if they are in db first, then cancel
         await cancelMultipleOrders(fullSyncOrders.ordersToCancel, userID, false, userAPI);
         cache.updateStatus(userID, 'done canceling multiple orders');
 
@@ -320,34 +323,34 @@ async function quickSync(userID) {
         // console.log('recent fill', recentFill, fill.order_id);
         // get order from db
         // if (fill.settled) {
-          if (recentFill != fill.order_id) {
-            console.log('they are NOT the same')
+        if (recentFill != fill.order_id) {
+          console.log('they are NOT the same')
 
-            const singleDbOrder = await databaseClient.getSingleTrade(fill.order_id);
-            // console.log('SINGLE DB ORDER', singleDbOrder);
-            // console.log('RECENT FILL', recentFill);
+          const singleDbOrder = await databaseClient.getSingleTrade(fill.order_id);
+          // console.log('SINGLE DB ORDER', singleDbOrder);
+          // console.log('RECENT FILL', recentFill);
 
-            // only need to check it if there is an order in the db. Otherwise it might be a basic trade
-            if (singleDbOrder) {
-              // check if the order has already been settled in the db
-              // console.log('SINGLE ORDER', fill.settled);
-              // if (!fill.settled) {
+          // only need to check it if there is an order in the db. Otherwise it might be a basic trade
+          if (singleDbOrder) {
+            // check if the order has already been settled in the db
+            // console.log('SINGLE ORDER', fill.settled);
+            // if (!fill.settled) {
 
-              // }
-              if (singleDbOrder && !singleDbOrder?.settled) {
-                // if it has not been settled in the db, it needs to be checked with coinbase if it settled
-                // push it into the array
-                toCheck.push(singleDbOrder);
-                console.log(toCheck, 'orders to check');
-              } else {
-                // if it has been settled, we can stop looping because we will have already check all previous fills
-                // i += fills.length;
-                break;
-              }
+            // }
+            if (singleDbOrder && !singleDbOrder?.settled) {
+              // if it has not been settled in the db, it needs to be checked with coinbase if it settled
+              // push it into the array
+              toCheck.push(singleDbOrder);
+              console.log(toCheck, 'orders to check');
+            } else {
+              // if it has been settled, we can stop looping because we will have already check all previous fills
+              // i += fills.length;
+              break;
             }
-          } else {
-            break;
           }
+        } else {
+          break;
+        }
         // } // end if (fill.settled)
       } // end for loop
       // console.log('HERE IS THE FILL', fills[0]);
@@ -424,7 +427,7 @@ async function processOrders(userID) {
             if (!willCancel) {
               // console.log(tradeDetails,'trade details');
               let cbOrder = await coinbaseClient.placeOrderNew(userID, tradeDetails);
-              console.log(cbOrder,'cbOrder');
+              console.log(cbOrder, 'cbOrder');
               if (cbOrder.success) {
                 const newOrder = await coinbaseClient.getOrderNew(userID, cbOrder.order_id);
                 console.log(newOrder, 'order from new api');
@@ -808,7 +811,7 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
             // that way it will reorder faster when it moves back in range
             // console.log('canceling order', orderToCancel);
             await Promise.all([
-              coinbaseClient.cancelOrderNew(userID, orderToCancel.id),
+              coinbaseClient.cancelOrderNew(userID, [orderToCancel.id]),
               databaseClient.setSingleReorder(orderToCancel.id)
             ]);
             // console.log('old trade was set to reorder when back in range');
@@ -816,7 +819,7 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
           } else {
             // cancel the order if nothing comes back from db
             coinbaseClient.cancelOrderNew(userID, orderToCancel.id),
-            quantity++;
+              quantity++;
           }
         } catch (err) {
           // Do not resolve the error because this is in a for loop which needs to continue. If error, handle it here

@@ -520,12 +520,14 @@ async function getDeSyncs(userID, limit, side) {
     try {
       let results = []
       if (side === 'buys') {
+        // WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
         const sqlTextBuys = `SELECT * FROM "orders" 
         WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1
         ORDER BY "price" DESC
         OFFSET $2;`;
         results = await pool.query(sqlTextBuys, [userID, limit]);
       } else {
+        // WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
         const sqlTextSells = `SELECT * FROM "orders" 
         WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1
         ORDER BY "price" ASC
