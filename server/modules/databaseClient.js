@@ -307,6 +307,24 @@ const getSingleTrade = (id) => {
   });
 }
 
+// get all details of an array of orders
+const getTradesByIDs = (userID, IDs) => {
+  return new Promise(async (resolve, reject) => {
+    let sqlText;
+    // put sql stuff here, extending the pool promise to the parent function
+    sqlText = `select *
+    from orders
+    where id = ANY ($1) and "userID" = $2;`;
+    try {
+      let result = await pool.query(sqlText, [IDs, userID]);
+      resolve(result.rows);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+
 // get the total USD that is on trade-pairs in the DB. This should be higher or the same as what is reported by CBP
 // because the bot stores more "open" orders than CBP will allow for
 const getSpentUSD = (userID, makerFee) => {
@@ -642,6 +660,7 @@ const databaseClient = {
   getSettledTrades: getSettledTrades,
   getUnsettledTradeCounts: getUnsettledTradeCounts,
   getSingleTrade: getSingleTrade,
+  getTradesByIDs: getTradesByIDs,
   getSpentUSD: getSpentUSD,
   // getAllSpentUSD: getAllSpentUSD,
   getSpentBTC: getSpentBTC,

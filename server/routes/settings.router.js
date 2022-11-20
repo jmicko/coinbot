@@ -21,18 +21,21 @@ router.get('/test', rejectUnauthenticated, async (req, res) => {
       console.log('test route hit');
 
 
-      const tradeDetails = {
-        side: 'BUY',
-        price: JSON.stringify(100), // USD
-        size: JSON.stringify(0.001), // BTC
-        product_id: 'BTC-USD',
-        userID: userID,
-        // client_order_id:
-      };
+      // const tradeDetails = {
+      //   side: 'BUY',
+      //   price: JSON.stringify(100), // USD
+      //   size: JSON.stringify(0.001), // BTC
+      //   product_id: 'BTC-USD',
+      //   userID: userID,
+      //   // client_order_id:
+      // };
+
+      const IDs = ['',''];
 
       // const response = await coinbaseClient.placeOrderNew(userID, tradeDetails);
-      const response = await coinbaseClient.getOrderNew(userID, '');
-      // const response = await coinbaseClient.cancelOrderNew(user.id, ['']);
+      // const response = await coinbaseClient.getOrderNew(userID, '');
+      // const response = await coinbaseClient.cancelOrderNew(userID, ['']);
+      const response = await databaseClient.getTradesByIDs(userID, IDs);
       console.log(response,'response');
 
 
