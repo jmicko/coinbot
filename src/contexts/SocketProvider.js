@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react'
+import { useSelector } from 'react-redux';
 import io from "socket.io-client";
 
 // followed this guide for setting up the socket provider in its own component and not cluttering up App.js
@@ -30,7 +31,7 @@ export function SocketProvider({ children }) {
 
   return (
     <SocketContext.Provider value={socket}>
-      {/* <>{JSON.stringify()}</> */}
+      {/* <>Props: {JSON.stringify()}</> */}
       {children}
     </SocketContext.Provider>
   )

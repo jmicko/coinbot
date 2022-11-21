@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react'
+import { useSelector } from 'react-redux';
 // import io from "socket.io-client";
 
 // followed this guide for setting up the socket provider in its own component and not cluttering up App.js
@@ -12,6 +13,7 @@ export function useTickerSocket() {
 export function TickerProvider({ children }) {
   const [ticker, setTicker] = useState()
   const [sandboxTicker, setSandboxTicker] = useState(420)
+  const sandbox = useSelector((store) => store.accountReducer.userReducer.sandbox)
   // useEffect to prevent from multiple connections
   useEffect(() => {
 
@@ -36,24 +38,29 @@ export function TickerProvider({ children }) {
     // this should change when user is in sandbox mode, but not sure how to do that right now
     // MAYBE just use two feeds?
     let URI = 'wss://ws-feed.pro.coinbase.com';
-    // if (props?.sandbox) {
-    let sandboxURI = 'wss://ws-feed-public.sandbox.exchange.coinbase.com';
-    // }
+    if (sandbox) {
+      URI = 'wss://ws-feed-public.sandbox.exchange.coinbase.com';
+    }
 
 
     const newCoinbaseSocket = new WebSocket(URI);
-    const newSandboxCoinbaseSocket = new WebSocket(sandboxURI);
+    // const newSandboxCoinbaseSocket = new WebSocket(sandboxURI);
 
     // Connection opened
     newCoinbaseSocket.addEventListener('open', function (event) {
       console.log('Successfully connected to Coinbase Websocket API!');
       newCoinbaseSocket.send(JSON.stringify(msg));
     });
-    // Connection opened for sandbox feed, use same message
-    newSandboxCoinbaseSocket.addEventListener('open', function (event) {
-      console.log('Successfully connected to Coinbase Sandbox Websocket API!');
-      newSandboxCoinbaseSocket.send(JSON.stringify(msg));
+    // Connection closed
+    newCoinbaseSocket.addEventListener('close', function (event) {
+      console.log('Disconnected from Coinbase Websocket API!');
+      // newCoinbaseSocket.send(JSON.stringify(msg));
     });
+    // // Connection opened for sandbox feed, use same message
+    // newSandboxCoinbaseSocket.addEventListener('open', function (event) {
+    //   console.log('Successfully connected to Coinbase Sandbox Websocket API!');
+    //   newSandboxCoinbaseSocket.send(JSON.stringify(msg));
+    // });
 
     // Listen for messages
     newCoinbaseSocket.addEventListener('message', function (event) {
@@ -62,18 +69,18 @@ export function TickerProvider({ children }) {
           setTicker(priceData.price);
       }
     });
-    // Listen for messages
-    newSandboxCoinbaseSocket.addEventListener('message', function (event) {
-      let priceData = JSON.parse(event.data);
-      if (priceData.product_id === 'BTC-USD') {
-          setSandboxTicker(priceData.price);
-      }
-    });
+    // // Listen for messages
+    // newSandboxCoinbaseSocket.addEventListener('message', function (event) {
+    //   let priceData = JSON.parse(event.data);
+    //   if (priceData.product_id === 'BTC-USD') {
+    //       setSandboxTicker(priceData.price);
+    //   }
+    // });
 
     // close the socket on component reload
     return () => {
       newCoinbaseSocket.close()
-      newSandboxCoinbaseSocket.close()
+      // newSandboxCoinbaseSocket.close()
     };
   }, []);
 
@@ -83,6 +90,7 @@ export function TickerProvider({ children }) {
       ticker: ticker,
       sandboxTicker: sandboxTicker
     }}>
+      {/* <>Store: {JSON.stringify(sandbox)}</> */}
       {children}
     </TickerSocketContext.Provider>
   )
