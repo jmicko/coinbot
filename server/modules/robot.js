@@ -2,7 +2,8 @@ const coinbaseClient = require("./coinbaseClient");
 const databaseClient = require("./databaseClient");
 const pool = require("./pool");
 const socketClient = require("./socketClient");
-const cache = require("./cache")
+const cache = require("./cache");
+const { startWebsocket } = require("./websocket");
 
 // const startTime = performance.now();
 // const endTime = performance.now();
@@ -39,6 +40,7 @@ async function startSync() {
     await cache.newUser(user);
     // start the loop
     syncOrders(userID, 0);
+    startWebsocket(userID);
     // deSyncOrderLoop(user, 0);
   });
 }
@@ -433,6 +435,8 @@ async function processOrders(userID) {
                 console.log(newOrder, 'order from new api');
                 console.log(newOrder.order.order_configuration, 'order_configuration from new api');
                 // ...store the new trade
+                // need to change the db later, but this will make the profit calc work
+                dbOrder.total_fees = dbOrder.fill_fees;
                 // take the time the new order was created, and use it as the flipped_at value
                 await databaseClient.storeTrade(newOrder.order, dbOrder, newOrder.order.created_time);
                 // await databaseClient.storeTrade(cbOrder, dbOrder, cbOrder.created_at);

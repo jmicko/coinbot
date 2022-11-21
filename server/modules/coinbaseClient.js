@@ -87,6 +87,8 @@ async function getAccountsNew(userID) {
         }
       };
 
+      // console.log('getting accounts');
+
       let response = await axios.request(options);
       // console.log('SUCCESSFUL RESPONSE FROM NEW API:', response.data);
       resolve(response.data.accounts);
@@ -302,6 +304,8 @@ async function getLimitedFillsNew(userID, limit) {
         }
       };
 
+      // console.log('getting fills');
+
       let response = await axios.request(options);
       resolve(response.data.fills);
     } catch (err) {
@@ -310,6 +314,49 @@ async function getLimitedFillsNew(userID, limit) {
   });
 }
 
+
+async function getProducts(userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const userAPI = cache.getAPI(userID);
+      const secret = userAPI.CB_SECRET;
+      const key = userAPI.CB_ACCESS_KEY;
+      // const API_URI = userAPI.API_URI;
+
+
+      const method = 'GET';
+      const path = "/api/v3/brokerage/products";
+      const body = "";
+
+      // const CryptoJS = require('crypto-js');
+      function sign(str, apiSecret) {
+        const hash = CryptoJS.HmacSHA256(str, apiSecret);
+        return hash.toString();
+      }
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const str = timestamp + method + path + body
+      const sig = sign(str, secret)
+
+
+      const options = {
+        method: 'GET',
+        timeout: 10000,
+        url: `https://coinbase.com/api/v3/brokerage/products?new=TRUE`,
+        headers: {
+          Accept: 'application/json',
+          'cb-access-key': key,
+          'cb-access-sign': sig,
+          'cb-access-timestamp': timestamp
+        }
+      };
+
+      let response = await axios.request(options);
+      resolve(response.data);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
 
 async function getOpenOrdersNew(userID) {
   return new Promise(async (resolve, reject) => {
@@ -838,6 +885,7 @@ module.exports = {
   // getLimitedFills: getLimitedFills,
   getLimitedFillsNew: getLimitedFillsNew,
   // getOpenOrders: getOpenOrders,
+  getProducts: getProducts,
   getOpenOrdersNew: getOpenOrdersNew,
   cancelOrderNew: cancelOrderNew,
   // cancelOrder: cancelOrder,

@@ -22,23 +22,31 @@ router.get('/test', rejectUnauthenticated, async (req, res) => {
 
 
       // const tradeDetails = {
-      //   side: 'BUY',
-      //   price: JSON.stringify(100), // USD
-      //   size: JSON.stringify(0.001), // BTC
-      //   product_id: 'BTC-USD',
-      //   userID: userID,
-      //   // client_order_id:
+      //   product_id: "BTC-EUR",
+      //   side: "BUY",
+      //   order_configuration: {
+      //     market_market_ioc: {
+      //       base_size: "0.0001"
+      //     }
+      //   }
       // };
 
       // const IDs = '';
 
       // const response = await coinbaseClient.placeOrderNew(userID, tradeDetails);
-      // const response = await coinbaseClient.getOrderNew(userID, '');
+      const response = await coinbaseClient.getOrderNew(userID, '');
+      // const response = await coinbaseClient.getProducts(userID);
       // const response = await coinbaseClient.cancelOrderNew(userID, [IDs]);
-      const response = await coinbaseClient.getOpenOrdersNew(userID);
+      // const response = await coinbaseClient.getOpenOrdersNew(userID);
       // const response = await databaseClient.getTradesByIDs(userID, IDs);
-      console.log(response,'response');
-
+      // response.products.forEach(product => {
+      //   if (product.new) {
+          
+      //   }
+      //   console.log(product,'response');
+        
+      // });
+      console.log(response, 'response from test');
 
 
 
