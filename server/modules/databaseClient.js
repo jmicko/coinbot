@@ -207,9 +207,9 @@ const getLimitedUnsettledTrades = (userID, limit) => {
     // get limit of sells
     try {
 
-      let sqlText = `(SELECT * FROM "orders" WHERE "side"='SELL' AND "flipped"=false AND "settled"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT $2)
+      let sqlText = `(SELECT * FROM "limit_orders" WHERE "side"='SELL' AND "flipped"=false AND "settled"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "limit_price" ASC LIMIT $2)
       UNION
-      (SELECT * FROM "orders" WHERE "side"='BUY' AND "flipped"=false AND "settled"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT $2)
+      (SELECT * FROM "limit_orders" WHERE "side"='BUY' AND "flipped"=false AND "settled"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "limit_price" DESC LIMIT $2)
       ORDER BY "price" DESC;`;
       const results = await pool.query(sqlText, [userID, limit]);
 
@@ -220,26 +220,26 @@ const getLimitedUnsettledTrades = (userID, limit) => {
   });
 }
 
-// gets all open orders in db based on a specified limit. 
-// The limit is for each side, so the results will potentially double that
-const getLimitedTrades = (userID, limit) => {
-  return new Promise(async (resolve, reject) => {
-    // get limit of buys
-    // get limit of sells
-    try {
+// // gets all open orders in db based on a specified limit. 
+// // The limit is for each side, so the results will potentially double that
+// const getLimitedTrades = (userID, limit) => {
+//   return new Promise(async (resolve, reject) => {
+//     // get limit of buys
+//     // get limit of sells
+//     try {
 
-      let sqlText = `(SELECT * FROM "orders" WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT $2)
-      UNION
-      (SELECT * FROM "orders" WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT $2)
-      ORDER BY "price" DESC;`;
-      const results = await pool.query(sqlText, [userID, limit]);
+//       let sqlText = `(SELECT * FROM "orders" WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT $2)
+//       UNION
+//       (SELECT * FROM "orders" WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT $2)
+//       ORDER BY "price" DESC;`;
+//       const results = await pool.query(sqlText, [userID, limit]);
 
-      resolve(results.rows);
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
+//       resolve(results.rows);
+//     } catch (err) {
+//       reject(err);
+//     }
+//   });
+// }
 
 // get a number of open orders in DB based on side. This will return them whether or not they are synced with CBP
 // can be limited by how many should be synced, or how many should be shown on the interface 
@@ -253,9 +253,9 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
     if (side == 'BUY') {
       console.log('getting buys', max_trade_load);
       // gets all unsettled buys, sorted by price
-      sqlText = `SELECT * FROM "orders" 
+      sqlText = `SELECT * FROM "limit_orders" 
       WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
-      ORDER BY "price" DESC
+      ORDER BY "limit_price" DESC
       LIMIT $2;`;
       pool.query(sqlText, [userID, max_trade_load])
         .then((results) => {
@@ -269,9 +269,9 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
     } else if (side == 'SELL') {
       // console.log('getting sells', max_trade_load);
       // gets all unsettled sells, sorted by price
-      sqlText = `SELECT * FROM "orders" 
+      sqlText = `SELECT * FROM "limit_orders" 
       WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
-      ORDER BY "price" ASC
+      ORDER BY "limit_price" ASC
       LIMIT $2;`;
       pool.query(sqlText, [userID, max_trade_load])
         .then((results) => {
@@ -284,9 +284,9 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
         })
     } else if (side == 'all') {
       // gets all unsettled trades, sorted by price
-      sqlText = `SELECT * FROM "orders" 
+      sqlText = `SELECT * FROM "limit_orders" 
       WHERE "flipped"=false AND "will_cancel"=false AND "userID"=$1
-      ORDER BY "price" ASC;`;
+      ORDER BY "limit_price" ASC;`;
       pool.query(sqlText, [userID])
         .then((results) => {
           // promise returns promise from pool if success
@@ -307,7 +307,7 @@ const getSettledTrades = (userID) => {
   return new Promise(async (resolve, reject) => {
     try {
       // check all trades in db that are both settled and NOT flipped
-      sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
+      sqlText = `SELECT * FROM "limit_orders" WHERE "settled"=true AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
 
       const results = await pool.query(sqlText, [userID])
       // .then((results) => {
@@ -326,10 +326,10 @@ const getUnsettledTradeCounts = (userID) => {
   return new Promise(async (resolve, reject) => {
     try {
       // get total open buys
-      let sqlTextBuys = `SELECT COUNT(*) FROM "orders" WHERE "userID"=$1 AND settled=false AND side='BUY';`;
+      let sqlTextBuys = `SELECT COUNT(*) FROM "limit_orders" WHERE "userID"=$1 AND settled=false AND side='BUY';`;
 
       // get total open sells
-      let sqlTextSells = `SELECT COUNT(*) FROM "orders" WHERE "userID"=$1 AND settled=false AND side='SELL';`;
+      let sqlTextSells = `SELECT COUNT(*) FROM "limit_orders" WHERE "userID"=$1 AND settled=false AND side='SELL';`;
 
       const totals = await Promise.all([
         pool.query(sqlTextBuys, [userID]),
@@ -361,7 +361,7 @@ const getSingleTrade = (id) => {
   return new Promise((resolve, reject) => {
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
-    sqlText = `SELECT * FROM "orders" WHERE "id"=$1;`;
+    sqlText = `SELECT * FROM "limit_orders" WHERE "order_id"=$1;`;
     pool.query(sqlText, [id])
       .then((results) => {
         const [singleTrade] = results.rows;
@@ -382,7 +382,7 @@ const getTradesByIDs = (userID, IDs) => {
     // put sql stuff here, extending the pool promise to the parent function
     sqlText = `select *
     from orders
-    where id = ANY ($1) and "userID" = $2;`;
+    where order_id = ANY ($1) and "userID" = $2;`;
     try {
       let result = await pool.query(sqlText, [IDs, userID]);
       resolve(result.rows);
@@ -397,8 +397,8 @@ const getTradesByIDs = (userID, IDs) => {
 // because the bot stores more "open" orders than CBP will allow for
 const getSpentUSD = (userID, makerFee) => {
   return new Promise((resolve, reject) => {
-    let sqlText = `SELECT sum("price"*"size"*$1)
-    FROM "orders"
+    let sqlText = `SELECT sum("limit_price"*"base_size"*$1)
+    FROM "limit_orders"
     WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$2;`;
     pool.query(sqlText, [makerFee, userID])
       .then((results) => {
@@ -418,7 +418,7 @@ const getSpentUSD = (userID, makerFee) => {
 const getSpentBTC = (userID) => {
   return new Promise((resolve, reject) => {
     let sqlText = `SELECT sum("size")
-    FROM "orders"
+    FROM "limit_orders"
     WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
     pool.query(sqlText, [userID])
       .then((results) => {
@@ -440,9 +440,9 @@ const getReorders = (userID, limit) => {
       // first select the closest trades on either side according to the limit (which is in the bot settings table)
       // then select from the results any that need to be reordered
       let sqlText = `SELECT * FROM (
-        (SELECT "id", "will_cancel", "userID", "price", "reorder", "userID" FROM "orders" WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT $2)
+        (SELECT "order_id", "will_cancel", "userID", "price", "reorder", "userID" FROM "limit_orders" WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT $2)
         UNION
-        (SELECT "id", "will_cancel", "userID", "price", "reorder", "userID" FROM "orders" WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT $2)
+        (SELECT "order_id", "will_cancel", "userID", "price", "reorder", "userID" FROM "limit_orders" WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT $2)
         ORDER BY "price" DESC
         ) as reorders
         WHERE "reorder"=true;`;
@@ -468,7 +468,7 @@ const checkIfCancelling = async (id) => {
     try {
       let sqlText;
       // put sql stuff here, extending the pool promise to the parent function
-      sqlText = `SELECT * FROM "orders" WHERE "id"=$1;`;
+      sqlText = `SELECT * FROM "limit_orders" WHERE "order_id"=$1;`;
       let result = await pool.query(sqlText, [id]);
       const singleTrade = result.rows[0];
       // promise returns promise from pool if success
@@ -485,7 +485,7 @@ const checkIfCancelling = async (id) => {
 const deleteTrade = async (id) => {
   return new Promise(async (resolve, reject) => {
     try {
-      const queryText = `DELETE from "orders" WHERE "id"=$1;`;
+      const queryText = `DELETE from "limit_orders" WHERE "order_id"=$1;`;
       let result = await pool.query(queryText, [id]);
       resolve(result);
     } catch (err) {
@@ -589,16 +589,16 @@ async function getDeSyncs(userID, limit, side) {
       let results = []
       if (side === 'buys') {
         // WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
-        const sqlTextBuys = `SELECT * FROM "orders" 
+        const sqlTextBuys = `SELECT * FROM "limit_orders" 
         WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1
-        ORDER BY "price" DESC
+        ORDER BY "limit_price" DESC
         OFFSET $2;`;
         results = await pool.query(sqlTextBuys, [userID, limit]);
       } else {
         // WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
-        const sqlTextSells = `SELECT * FROM "orders" 
+        const sqlTextSells = `SELECT * FROM "limit_orders" 
         WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1
-        ORDER BY "price" ASC
+        ORDER BY "limit_price" ASC
         OFFSET $2;`;
         results = await pool.query(sqlTextSells, [userID, limit]);
       }
@@ -614,7 +614,7 @@ async function getDeSyncs(userID, limit, side) {
 async function setSingleReorder(id) {
   return new Promise(async (resolve, reject) => {
     try {
-      const sqlText = `UPDATE "orders" SET "reorder" = true WHERE "id" = $1;`;
+      const sqlText = `UPDATE "limit_orders" SET "reorder" = true WHERE "order_id" = $1;`;
       await pool.query(sqlText, [id]);
       resolve();
     } catch (err) {
@@ -628,7 +628,7 @@ async function setSingleReorder(id) {
 async function setReorder(userID) {
   return new Promise(async (resolve, reject) => {
     try {
-      const sqlText = `UPDATE "orders" SET "reorder" = true WHERE "settled"=false AND "userID" = $1;`;
+      const sqlText = `UPDATE "limit_orders" SET "reorder" = true WHERE "settled"=false AND "userID" = $1;`;
       await pool.query(sqlText, [userID]);
       resolve();
     } catch (err) {
@@ -710,7 +710,7 @@ async function markAsFlipped(order_id) {
   return new Promise(async (resolve, reject) => {
     try {
       console.log('marking as flipped', order_id);
-      const sqlText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
+      const sqlText = `UPDATE "limit_orders" SET "flipped" = true WHERE "id"=$1;`;
       let result = await pool.query(sqlText, [order_id]);
       resolve(result);
     } catch (err) {
@@ -724,7 +724,7 @@ const databaseClient = {
   storeTrade: storeTrade,
   // storeReorderTrade: storeReorderTrade,
   importTrade: importTrade,
-  getLimitedTrades: getLimitedTrades,
+  // getLimitedTrades: getLimitedTrades,
   getLimitedUnsettledTrades: getLimitedUnsettledTrades,
   getUnsettledTrades: getUnsettledTrades,
   getSettledTrades: getSettledTrades,

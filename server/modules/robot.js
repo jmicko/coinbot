@@ -1203,8 +1203,9 @@ async function autoSetupBackup(user, parameters) {
       // use the current time for the created time 
       const time = new Date();
       order.created_at = time;
+      order.reorder = true;
       // console.log('order', order);
-      await databaseClient.storeReorderTrade(order, order, time);
+      await databaseClient.storeTrade(order, order, time);
     }
   } catch (err) {
     console.log(err, 'problem in autoSetup ');
