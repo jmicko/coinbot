@@ -16,20 +16,20 @@ function SingleTrade(props) {
 
     // pull from props and make more manageable
     let original_sell_price = props.order.original_sell_price;
-    let size = props.order.size;
+    let base_size = props.order.base_size;
     let original_buy_price = props.order.original_buy_price;
     let maker_fee_rate = user.maker_fee;
 
     // calculate fees
-    let sellFee = (maker_fee_rate * original_sell_price * size)
-    let buyFee = (maker_fee_rate * original_buy_price * size)
+    let sellFee = (maker_fee_rate * original_sell_price * base_size)
+    let buyFee = (maker_fee_rate * original_buy_price * base_size)
 
     // calculate profits
-    const profit = Math.round((((original_sell_price * size - original_buy_price * size)) - (buyFee + sellFee)) * 100000000) / 100000000;
+    const profit = Math.round((((original_sell_price * base_size - original_buy_price * base_size)) - (buyFee + sellFee)) * 100000000) / 100000000;
     setProfit(profit);
     setBuyFee(buyFee)
     setSellFee(sellFee)
-  }, [props.order.original_sell_price, props.order.original_buy_price, props.order.size]);
+  }, [props.order.original_sell_price, props.order.original_buy_price, props.order.base_size]);
 
   // delete the order if the abandon button is clicked.
   // the loop already detects deleted orders, so only need to make a call to coinbase
@@ -38,7 +38,7 @@ function SingleTrade(props) {
     setDeleting(true)
     dispatch({
       type: 'DELETE_TRADE', payload: {
-        id: props.order.id,
+        order_id: props.order.order_id,
       }
     })
   }
@@ -46,7 +46,7 @@ function SingleTrade(props) {
   function syncTrade() {
     dispatch({
       type: 'SYNC_TRADE', payload: {
-        id: props.order.id,
+        order_id: props.order.order_id,
       }
     })
   }
@@ -93,8 +93,8 @@ function SingleTrade(props) {
           {(props.order.side === 'sell')
             ? numberWithCommas(Number(props.order.original_buy_price).toFixed(2))
             : numberWithCommas(Number(props.order.original_sell_price).toFixed(2))
-          } ~<strong>Size </strong>{Number(props.order.size).toFixed(8)} ~
-          <strong>Value</strong> ${numberWithCommas((Math.round((props.order.price * props.order.size) * 100) / 100).toFixed(2))} ~
+          } ~<strong>Size </strong>{Number(props.order.base_size).toFixed(8)} ~
+          <strong>Value</strong> ${numberWithCommas((Math.round((props.order.limit_price * props.order.base_size) * 100) / 100).toFixed(2))} ~
           <strong>Net Profit</strong> ${profit.toFixed(8)}
           {/* <strong> ~Time</strong> {new Date(props.order.created_at).toLocaleString('en-US')} */}
           <strong> ~Time </strong> {props.order.flipped_at 
@@ -118,7 +118,7 @@ function SingleTrade(props) {
             showAll && !deleting && <><strong> Total Fees:</strong> {(Number(sellFee.toFixed(8)) + Number(buyFee.toFixed(8))).toFixed(8)}</>
           }
           {
-            showAll && !deleting && <><strong> Gross Profit:</strong> {(props.order.original_sell_price * props.order.size - props.order.original_buy_price * props.order.size).toFixed(8)}</>
+            showAll && !deleting && <><strong> Gross Profit:</strong> {(props.order.original_sell_price * props.order.base_size - props.order.original_buy_price * props.order.base_size).toFixed(8)}</>
           }
         </p>
       </div>

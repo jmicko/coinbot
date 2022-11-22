@@ -142,8 +142,8 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
         sheet: 'Orders',
         columns: [
           { label: 'Order ID', value: 'order_id' },
-          { label: 'Price', value: 'price' },
-          { label: 'Size', value: 'size' },
+          { label: 'Base size', value: 'base_size' },
+          { label: 'Limit Price', value: 'limit_price' },
           { label: 'Trade pair ratio', value: 'trade_pair_ratio' },
           { label: 'Side', value: 'side' },
           { label: 'Settled', value: 'settled' },
@@ -151,11 +151,11 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
           { label: 'Include in profit', value: 'include_in_profit' },
           { label: 'Product', value: 'product_id' },
           { label: 'Created at', value: 'created_at' },
-          { label: 'Done at', value: 'done_at' },
-          { label: 'Done reason', value: 'done_reason' },
-          { label: 'Fill fees', value: 'fill_fees' },
+          { label: 'Flipped at', value: 'flipped_at' },
+          { label: 'Status', value: 'status' },
+          { label: 'Total fees', value: 'total_fees' },
           { label: 'Filled size', value: 'filled_size' },
-          { label: 'Executed value', value: 'executed_value' },
+          { label: 'Filled value', value: 'filled_value' },
           { label: 'Original buy price', value: 'original_buy_price' },
           { label: 'Original sell price', value: 'original_sell_price' }
         ],
@@ -241,12 +241,12 @@ router.post('/importCurrentJSON', rejectUnauthenticated, async (req, res) => {
         errors = true;
       }
 
-      // size should be a number greater than 0 but not too big
-      if (Number(trade.size) && (Number(trade.size) < 999999999) && (Number(trade.size) > 0)) {
-        // console.log('size is a valid number', trade.size);
-        newTrade.size = trade.size;
+      // base_size should be a number greater than 0 but not too big
+      if (Number(trade.base_size) && (Number(trade.base_size) < 999999999) && (Number(trade.base_size) > 0)) {
+        // console.log('base_size is a valid number', trade.base_size);
+        newTrade.base_size = trade.base_size;
       } else {
-        console.log('size is NOT a valid number', trade.size);
+        console.log('base_size is NOT a valid number', trade.base_size);
         errors = true;
       }
 

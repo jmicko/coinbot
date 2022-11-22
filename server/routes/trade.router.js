@@ -25,7 +25,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       original_buy_price: JSON.stringify(order.price),
       side: order.side,
       limit_price: JSON.stringify(order.price), // USD
-      base_size: JSON.stringify(order.size), // BTC
+      base_size: JSON.stringify(order.base_size), // BTC
       product_id: order.product_id,
       stp: 'cn',
       userID: userID,
@@ -102,9 +102,8 @@ router.post('/basic', rejectUnauthenticated, async (req, res) => {
     // tradeDetails const should take in values sent from trade component form
     const tradeDetails = {
       side: order.side,
-      size: order.size, // BTC
+      base_size: order.base_size, // BTC
       product_id: order.product_id,
-      stp: 'cn',
       userID: userID,
       type: order.type
     };
@@ -170,7 +169,7 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
       if (setup.btcToBuy >= 0.000016) {
         const tradeDetails = {
           side: 'BUY',
-          size: setup.btcToBuy.toFixed(8), // BTC
+          base_size: setup.btcToBuy.toFixed(8), // BTC
           product_id: 'BTC-USD',
           stp: 'cn',
           userID: user.id,
@@ -179,7 +178,7 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
         console.log('BIG order', tradeDetails);
         if (!setupParams.ignoreFunds) {
           let bigOrder = await coinbaseClient.placeOrder(tradeDetails);
-          // console.log('big order to balance btc avail', bigOrder.size, 'user', user.taker_fee);
+          // console.log('big order to balance btc avail', bigOrder.limit_size, 'user', user.taker_fee);
         }
         await robot.updateFunds(user.id);
       }

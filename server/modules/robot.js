@@ -481,8 +481,8 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
   const tradeDetails = {
     side: '',
     limit_price: '', // USD
-    // when flipping a trade, size and product will always be the same
-    size: dbOrder.size, // BTC
+    // when flipping a trade, base_size and product will always be the same
+    base_size: dbOrder.base_size, // BTC
     trade_pair_ratio: dbOrder.trade_pair_ratio,
     product_id: dbOrder.product_id,
     stp: 'cn',
@@ -499,7 +499,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
   } else {
     // if it is a sell turning into a buy, check if user wants to reinvest the funds
     if (user.reinvest) {
-      const orderSize = Number(dbOrder.size);
+      const orderSize = Number(dbOrder.base_size);
 
       // find out how much profit there was
       const BTCprofit = calculateProfitBTC(dbOrder);
@@ -522,7 +522,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
       const buyPrice = dbOrder.original_buy_price;
       const maxSizeBTC = Number((maxTradeSize / buyPrice).toFixed(8));
 
-      // now check if the new size after reinvesting is higher than the user set max
+      // now check if the new base_size after reinvesting is higher than the user set max
       if ((newSize > maxSizeBTC) && (maxTradeSize > 0)) {
         // add up all values of trades that just settled and subtract that from "actualavailable_usd"
         let allFlipsValue = 0;
@@ -535,43 +535,43 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
         // calculate what funds will be leftover after all pending flips go through
         const leftoverFunds = (Number(user.actualavailable_usd) - (allFlipsValue * (1 + Number(user.maker_fee))));
 
-        // only set the new size if it will stay above the reserve
+        // only set the new base_size if it will stay above the reserve
         if (leftoverFunds > user.reserve) {
-          // if there is enough money left in the account to reinvest, set the size to the max size
-          tradeDetails.size = maxSizeBTC;
+          // if there is enough money left in the account to reinvest, set the base_size to the max base_size
+          tradeDetails.base_size = maxSizeBTC;
         }
 
-        // check if the new size has already surpassed the user set max. If it has, reinvest based on the user set post-max settings
+        // check if the new base_size has already surpassed the user set max. If it has, reinvest based on the user set post-max settings
         if ((orderSize >= maxSizeBTC) && (postMaxReinvestRatio > 0)) {
           // at this point, the post max ratio should be used
           const postMaxAmountToReinvest = BTCprofit * postMaxReinvestRatio;
           // console.log('postMaxAmountToReinvest', postMaxAmountToReinvest);
           const postMaxNewSize = Math.floor((orderSize + postMaxAmountToReinvest) * 100000000) / 100000000;
           // console.log('postMaxNewSize', postMaxNewSize);
-          tradeDetails.size = postMaxNewSize;
+          tradeDetails.base_size = postMaxNewSize;
         }
       } else if (newSize < 0.000016) {
         // todo - this should maybe not be in an else if statement.
-        // the user could potentially set a max size in USD that is smaller than 0.000016, and the bot would skip this check
+        // the user could potentially set a max base_size in USD that is smaller than 0.000016, and the bot would skip this check
         // or maybe switch the order so this comes first? or maybe put it last as a regular if statement?
-        // need to stay above minimum order size
-        tradeDetails.size = 0.000016;
+        // need to stay above minimum order base_size
+        tradeDetails.base_size = 0.000016;
       } else {
         // add up all values of trades that just settled and subtract that from "actualavailable_usd"
         let allFlipsValue = 0;
         allFlips.forEach(trade => {
           if (trade.side === "SELL") {
-            allFlipsValue += (trade.size * trade.original_buy_price)
+            allFlipsValue += (trade.base_size * trade.original_buy_price)
           }
         });
 
         // calculate what funds will be leftover after all pending flips go through
         const leftoverFunds = (Number(user.actualavailable_usd) - (allFlipsValue * (1 + Number(user.maker_fee))));
 
-        // only set the new size if it will stay above the reserve
+        // only set the new base_size if it will stay above the reserve
         if (leftoverFunds > user.reserve) {
           console.log('there is enough money left to reinvest');
-          tradeDetails.size = newSize.toFixed(8);
+          tradeDetails.base_size = newSize.toFixed(8);
         } else {
           console.log('there is NOT enough money left to reinvest');
         }
@@ -591,7 +591,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
 function calculateProfitBTC(dbOrder) {
 
   let margin = (dbOrder.original_sell_price - dbOrder.original_buy_price)
-  let grossProfit = Number(margin * dbOrder.size)
+  let grossProfit = Number(margin * dbOrder.base_size)
   let profit = Number(grossProfit - (Number(dbOrder.total_fees) + Number(dbOrder.previous_total_fees)))
   let profitBTC = Number((Math.floor((profit / dbOrder.limit_price) * 100000000) / 100000000))
 
@@ -878,7 +878,7 @@ async function autoSetup(user, parameters) {
 
   // SHORTEN PARAMS for better readability
   let availableFunds = parameters.availableFunds;
-  let size = parameters.size;
+  let base_size = parameters.base_size;
   let startingValue = parameters.startingValue;
   let buyPrice = startingValue;
   let endingValue = parameters.endingValue;
@@ -912,20 +912,20 @@ async function autoSetup(user, parameters) {
 
     // set the current price based on if it is a BUY or sell
     let limit_price = buyPrice;
-    if (side == 'SELL') {
+    if (side === 'SELL') {
       limit_price = original_sell_price;
     }
 
-    // if the size is in BTC, it will never change. 
-    let actualSize = size;
+    // if the base_size is in BTC, it will never change. 
+    let actualSize = base_size;
     // If it is in USD, need to convert
-    if (sizeType == 'USD') {
-      // use the BUY price and the size to get the real size
-      actualSize = Number(Math.floor((size / buyPrice) * 100000000)) / 100000000;
+    if (sizeType === 'USD') {
+      // use the BUY price and the base_size to get the real base_size
+      actualSize = Number(Math.floor((base_size / buyPrice) * 100000000)) / 100000000;
     }
 
     // count up how much BTC will need to be purchased to reserve for all the sell orders
-    if (side == 'SELL') {
+    if (side === 'SELL') {
       btcToBuy += actualSize
     }
 
@@ -945,7 +945,7 @@ async function autoSetup(user, parameters) {
       original_sell_price: original_sell_price,
       side: side,
       limit_price: limit_price,
-      size: actualSize,
+      base_size: actualSize,
       total_fees: prevFees(),
       product_id: parameters.product_id,
       stp: 'cn',
@@ -957,28 +957,28 @@ async function autoSetup(user, parameters) {
     orderList.push(singleOrder);
 
     // SETUP FOR NEXT LOOP - do some math to figure out next iteration, and if we should keep looping
-    // subtract the buy size USD from the available funds
+    // subtract the buy base_size USD from the available funds
     // if sizeType is BTC, then we need to convert
-    if (sizeType == 'BTC') {
-      let USDSize = size * buyPrice;
+    if (sizeType === 'BTC') {
+      let USDSize = base_size * buyPrice;
       availableFunds -= USDSize;
     } else {
       console.log('current funds', availableFunds);
-      availableFunds -= size;
+      availableFunds -= base_size;
     }
 
     // increment the buy price
     // can have either percentage or dollar amount increment
-    if (incrementType == 'dollars') {
+    if (incrementType === 'dollars') {
       // if incrementing by dollar amount
-      if (loopDirection == 'up') {
+      if (loopDirection === 'up') {
         buyPrice += increment;
       } else {
         buyPrice -= increment;
       }
     } else {
       // if incrementing by percentage
-      if (loopDirection == 'up') {
+      if (loopDirection === 'up') {
         buyPrice = buyPrice * (1 + (increment / 100));
       } else {
         buyPrice = buyPrice / (1 + (increment / 100));
@@ -997,9 +997,9 @@ async function autoSetup(user, parameters) {
     // console.log('available funds is', availableFunds);
 
     // stop if the buy price passes the ending value
-    if (loopDirection == 'up' && buyPrice >= endingValue) {
+    if (loopDirection === 'up' && buyPrice >= endingValue) {
       stop = true;
-    } else if (loopDirection == 'down' && buyPrice <= endingValue) {
+    } else if (loopDirection === 'down' && buyPrice <= endingValue) {
       stop = true;
     }
   }

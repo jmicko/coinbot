@@ -81,7 +81,7 @@ function Trade(props) {
         original_buy_price: price,
         side: transactionSide,
         price: price,
-        size: transactionAmountBTC,
+        base_size: transactionAmountBTC,
         product_id: transactionProduct,
         trade_pair_ratio: tradePairRatio,
         type: type
@@ -95,7 +95,7 @@ function Trade(props) {
     dispatch({
       type: 'START_BASIC_TRADE', payload: {
         type: "market",
-        size: basicAmount,
+        base_size: basicAmount,
         product_id: transactionProduct,
         side: basicSide
       }
