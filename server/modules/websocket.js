@@ -47,7 +47,7 @@ function startWebsocket(userID) {
     return { ...message, signature: sig, timestamp: timestamp };
   }
 
-  const ws = new WebSocket(WS_API_URL);
+  let ws = new WebSocket(WS_API_URL);
 
   function subscribeToProducts(products, channelName, ws) {
     console.log('products: %s', products.join(','));
@@ -102,6 +102,7 @@ function startWebsocket(userID) {
 
   ws.on('close', function () {
     console.log('Socket was closed');
+    ws = new WebSocket(WS_API_URL);
   });
 
   ws.on('message', function (data) {
