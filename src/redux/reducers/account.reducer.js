@@ -23,16 +23,17 @@ const profitsReducer = (state = [{ sum: "0" }], action) => {
   }
 };
 
-const accountReducer = (state = 0, action) => {
-  switch (action.type) {
-    case 'SET_ACCOUNT':
-      return action.payload;
-    case 'UNSET_ACCOUNT':
-      return 0;
-    default:
-      return state;
-  }
-};
+// does this do anything?
+// const accountReducer = (state = 0, action) => {
+//   switch (action.type) {
+//     case 'SET_ACCOUNT':
+//       return action.payload;
+//     case 'UNSET_ACCOUNT':
+//       return 0;
+//     default:
+//       return state;
+//   }
+// };
 
 const xlsxReducer = (state = [], action) => {
   switch (action.type) {
@@ -92,7 +93,7 @@ export default combineReducers({
   userReducer,
   // feeReducer,
   profitsReducer,
-  accountReducer,
+  // accountReducer,
   xlsxReducer,
   currentJSONReducer,
   debugReducer,

@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { connect, useDispatch } from 'react-redux';
-import mapStoreToProps from '../../../redux/mapStoreToProps';
+import React, { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import './General.css'
 
 
 function General(props) {
   const dispatch = useDispatch();
+  const user = useSelector((store) => store.accountReducer.userReducer);
 
   const [max_trade_load, setMaxTradeLoad] = useState(100);
   const [profit_accuracy, setProfit_accuracy] = useState(2);
@@ -67,9 +67,9 @@ function General(props) {
       {props.tips && <p>
         Removes the kill button from the trade pairs. This helps prevent accidental deletion of trades. Highly recommended to leave this on.
       </p>}
-      {props.store.accountReducer.userReducer.kill_locked
-        ? <button className={`btn-blue medium ${props.theme}`} onClick={() => { killLock() }}>Unlock</button>
-        : <button className={`btn-blue medium ${props.theme}`} onClick={() => { killLock() }}>Lock</button>
+      {user.kill_locked
+        ? <button className={`btn-blue medium ${user.theme}`} onClick={() => { killLock() }}>Unlock</button>
+        : <button className={`btn-blue medium ${user.theme}`} onClick={() => { killLock() }}>Lock</button>
       }
       <div className="divider" />
 
@@ -79,9 +79,9 @@ function General(props) {
         Pauses the bot. Trades will stay in place, but the bot will not check on them or flip them. If they are cancelled on Coinbase, the bot will not notice until it is unpaused.
         Be careful not to trade funds away manually while the bot is paused, or there might be an insufficient funds error.
       </p>}
-      {props.store.accountReducer.userReducer.paused
-        ? <button className={`btn-blue medium ${props.theme}`} onClick={() => { pause() }}>Unpause</button>
-        : <button className={`btn-blue medium ${props.theme}`} onClick={() => { pause() }}>Pause</button>
+      {user.paused
+        ? <button className={`btn-blue medium ${user.theme}`} onClick={() => { pause() }}>Unpause</button>
+        : <button className={`btn-blue medium ${user.theme}`} onClick={() => { pause() }}>Pause</button>
       }
       <div className="divider" />
 
@@ -97,7 +97,7 @@ function General(props) {
         <br />
         There is a hard limit of 10,000 open trades per user, so there is no reason to set the value higher than that.
       </p>}
-      <p>Current max trades to load per side: {Number(props.store.accountReducer.userReducer.max_trade_load)}</p>
+      <p>Current max trades to load per side: {Number(user.max_trade_load)}</p>
       <div className='left-border'>
         <label htmlFor="reinvest_ratio">
           Set Max:
@@ -110,7 +110,7 @@ function General(props) {
           onChange={(event) => setMaxTradeLoad(Number(event.target.value))}
         />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { sendTradeLoadMax(event) }}>Save Max</button>
+        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={(event) => { sendTradeLoadMax(event) }}>Save Max</button>
       </div>
       <div className="divider" />
 
@@ -119,7 +119,7 @@ function General(props) {
       {props.tips && <p>
         How many decimals to display on screen for profits.
       </p>}
-      <p>Current accuracy: {Number(props.store.accountReducer.userReducer.profit_accuracy)}</p>
+      <p>Current accuracy: {Number(user.profit_accuracy)}</p>
       <div className='left-border'>
         <label htmlFor="profit_accuracy">
           Set Max:
@@ -132,11 +132,11 @@ function General(props) {
           onChange={(event) => setProfit_accuracy(Number(event.target.value))}
         />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { sendProfitAccuracy(event) }}>Save</button>
+        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={(event) => { sendProfitAccuracy(event) }}>Save</button>
       </div>
       <div className="divider" />
     </div>
   );
 }
 
-export default connect(mapStoreToProps)(General);
+export default General;

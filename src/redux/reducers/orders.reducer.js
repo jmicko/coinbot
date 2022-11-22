@@ -7,7 +7,7 @@ const openOrdersInOrder = (state = [], action) => {
     case 'SET_ORDERS':
       return action.payload;
     case 'UNSET_ORDERS':
-      return {};
+      return [];
     default:
       return state;
   }

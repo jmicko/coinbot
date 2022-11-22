@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
-import { connect, useDispatch } from 'react-redux';
-import mapStoreToProps from '../../redux/mapStoreToProps';
+import { useDispatch, useSelector } from 'react-redux';
 import './Login.css'
-// import mapStoreToProps from '../../redux/mapStoreToProps';
 
 
 
-function Login(props) {
+function Login() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [register, setRegister] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
   const dispatch = useDispatch();
+  const errors = useSelector((store) => store.errorsReducer);
 
   function loginAccount(event) {
     event.preventDefault();
@@ -114,16 +113,14 @@ function Login(props) {
           </>
         }
       </form>
-      {/* </center> */}
-      {/* {JSON.stringify(props.store.errorsReducer)} */}
-      {(props.store.errorsReducer.loginMessage || props.store.errorsReducer.registrationMessage) &&
+      {(errors.loginMessage || errors.registrationMessage) &&
         <div className='error-box notched'>
-          {props.store.errorsReducer.loginMessage && <p>{props.store.errorsReducer.loginMessage}</p>}
-          {props.store.errorsReducer.registrationMessage && <p>{props.store.errorsReducer.registrationMessage}</p>}
+          {errors.loginMessage && <p>{errors.loginMessage}</p>}
+          {errors.registrationMessage && <p>{errors.registrationMessage}</p>}
         </div>
       }
     </div>
   );
 }
 
-export default connect(mapStoreToProps)(Login);
+export default Login;

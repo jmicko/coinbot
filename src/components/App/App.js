@@ -1,13 +1,6 @@
 import React, { useEffect } from 'react';
 import './App.css';
-import {
-  HashRouter as Router,
-  Route,
-  Switch,
-  // Redirect,
-} from 'react-router-dom';
-import { connect, useDispatch } from 'react-redux';
-import mapStoreToProps from '../../redux/mapStoreToProps';
+import { useDispatch, useSelector } from 'react-redux';
 
 // Directory imports
 import Home from '../Home/Home';
@@ -15,9 +8,9 @@ import Login from '../Login/Login';
 import { SocketProvider } from '../../contexts/SocketProvider';
 import { TickerProvider } from '../../contexts/TickerProvider';
 
-function App(props) {
+function App() {
   const dispatch = useDispatch();
-
+  const user = useSelector((store) => store.accountReducer.userReducer);
 
   useEffect(() => {
     dispatch({ type: 'FETCH_USER' });
@@ -29,26 +22,15 @@ function App(props) {
 
   return (
     <div className={`App darkTheme`}>
-      <Router>
-        <Switch>
           <SocketProvider>
             <TickerProvider>
-
-              <Route
-                exact path="/"
-                component={props.store.accountReducer.userReducer.id
-                  ? Home
-                  : Login}
-              />
+                  {user.id
+                  ? <Home />
+                  : <Login />}
             </TickerProvider>
           </SocketProvider>
-          <Route
-            exact path="/login"
-            component={Login} />
-        </Switch>
-      </Router>
     </div>
   );
 }
 
-export default connect(mapStoreToProps)(App);
+export default App;

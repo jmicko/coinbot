@@ -12,7 +12,7 @@ export function useTickerSocket() {
 
 export function TickerProvider({ children }) {
   const [ticker, setTicker] = useState()
-  const [sandboxTicker, setSandboxTicker] = useState(420)
+  // const [sandboxTicker, setSandboxTicker] = useState(420)
   const sandbox = useSelector((store) => store.accountReducer.userReducer.sandbox)
   // useEffect to prevent from multiple connections
   useEffect(() => {
@@ -82,15 +82,14 @@ export function TickerProvider({ children }) {
       newCoinbaseSocket.close()
       // newSandboxCoinbaseSocket.close()
     };
-  }, []);
+  }, [sandbox]);
 
 
   return (
     <TickerSocketContext.Provider value={{
       ticker: ticker,
-      sandboxTicker: sandboxTicker
+      // sandboxTicker: sandboxTicker
     }}>
-      {/* <>Store: {JSON.stringify(sandbox)}</> */}
       {children}
     </TickerSocketContext.Provider>
   )

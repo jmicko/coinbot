@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { connect, useDispatch } from 'react-redux';
-import mapStoreToProps from '../../../redux/mapStoreToProps';
+import { useDispatch, useSelector } from 'react-redux';
 import './AutoSetup.css'
 
 
 function AutoSetup(props) {
   const dispatch = useDispatch();
+  const user = useSelector((store) => store.accountReducer.userReducer);
 
   const [startingValue, setStartingValue] = useState(1000);
   const [skipFirst, setSkipFirst] = useState(false);
@@ -44,11 +44,11 @@ function AutoSetup(props) {
   }, [startingValue, increment, size, sizeType, props.priceTicker])
 
   useEffect(() => {
-    if (props.store.accountReducer.userReducer) {
-      setAvailableFundsUSD(props.store.accountReducer.userReducer.actualavailable_usd);
-      setAvailableFundsBTC(props.store.accountReducer.userReducer.actualavailable_btc);
+    if (user) {
+      setAvailableFundsUSD(user.actualavailable_usd);
+      setAvailableFundsBTC(user.actualavailable_btc);
     }
-  }, [props.store.accountReducer.userReducer]);
+  }, [user]);
 
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
   const numberWithCommas = (x) => {
@@ -85,7 +85,7 @@ function AutoSetup(props) {
       product_id: transactionProduct,
     }
 
-    let setup = autoSetup(props.store.accountReducer.userReducer, payload);
+    let setup = autoSetup(user, payload);
 
     // this will be the buy price of the last trade pair
     setSetupResults(setup.orderList[setup.orderList.length - 1].original_buy_price);
@@ -413,8 +413,8 @@ function AutoSetup(props) {
 
           {/* SIZE */}
           <p>What size in {sizeType === "USD" ? "USD" : "BTC"} should each trade-pair be? {sizeType === "USD"
-            ? <button className={`btn-blue ${props.theme}`} onClick={changeSizeType}> Change to BTC</button>
-            : <button className={`btn-blue ${props.theme}`} onClick={changeSizeType}> Change to USD</button>
+            ? <button className={`btn-blue ${user.theme}`} onClick={changeSizeType}> Change to BTC</button>
+            : <button className={`btn-blue ${user.theme}`} onClick={changeSizeType}> Change to USD</button>
           }</p>
 
           <label htmlFor='size'>
@@ -434,7 +434,7 @@ function AutoSetup(props) {
           <br />
           <br />
           {!autoTradeStarted
-            ? <input className={`btn-store-api btn-blue medium ${props.theme}`} type="submit" name="submit" value="Start Trading" />
+            ? <input className={`btn-store-api btn-blue medium ${user.theme}`} type="submit" name="submit" value="Start Trading" />
             : <p>Auto setup started!</p>
           }
         </form>
@@ -469,4 +469,4 @@ function AutoSetup(props) {
   );
 }
 
-export default connect(mapStoreToProps)(AutoSetup);
+export default AutoSetup;

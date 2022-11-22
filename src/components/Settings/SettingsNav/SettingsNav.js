@@ -1,10 +1,10 @@
 import React from 'react';
-import { connect } from 'react-redux';
-import mapStoreToProps from '../../../redux/mapStoreToProps';
+import { useSelector } from 'react-redux';
 import './SettingsNav.css'
 
 
 function SettingsNav(props) {
+  const user = useSelector((store) => store.accountReducer.userReducer);
 
   return (
     <div className="SettingsNav">
@@ -15,10 +15,10 @@ function SettingsNav(props) {
         <button className={`btn-nav ${props.settingsPage === "bulkDelete" && "selected"}`} onClick={() => { props.setSettingsPage('bulkDelete') }}>Bulk Delete</button>
         <button className={`btn-nav ${props.settingsPage === "history" && "selected"}`} onClick={() => { props.setSettingsPage('history') }}>History</button>
         <button className={`btn-nav ${props.settingsPage === "reset" && "selected"}`} onClick={() => { props.setSettingsPage('reset') }}>Reset</button>
-        {props.store.accountReducer.userReducer.admin && <button className={`btn-nav ${props.settingsPage === "admin" && "selected"}`} onClick={() => { props.setSettingsPage('admin') }}>Admin</button>}
+        {user.admin && <button className={`btn-nav ${props.settingsPage === "admin" && "selected"}`} onClick={() => { props.setSettingsPage('admin') }}>Admin</button>}
       </center>
     </div>
   );
 }
 
-export default connect(mapStoreToProps)(SettingsNav);
+export default SettingsNav;

@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { connect, useDispatch } from 'react-redux';
-import mapStoreToProps from '../../../redux/mapStoreToProps';
+import { useDispatch, useSelector } from 'react-redux';
 import './History.css'
 import xlsx from 'json-as-xlsx'
 
 function History(props) {
   const dispatch = useDispatch();
+  const user = useSelector((store) => store.accountReducer.userReducer);
+  const xlsxReducer = useSelector((store) => store.accountReducer.xlsxReducer);
+  const currentJSONReducer = useSelector((store) => store.accountReducer.currentJSONReducer);
 
   const [jsonImport, setJSONImport] = useState('');
   const [ignoreDuplicates, setIgnoreDuplicates] = useState(false);
@@ -51,7 +53,7 @@ function History(props) {
 
   useEffect(() => {
 
-    if (props?.store?.accountReducer?.xlsxReducer?.data) {
+    if (xlsxReducer?.data) {
 
       let settings = {
         fileName: 'Coinbot Orders Export ' + new Date().toLocaleString('en-US'), // Name of the resulting spreadsheet
@@ -59,13 +61,13 @@ function History(props) {
         writeOptions: {} // Style options from https://github.com/SheetJS/sheetjs#writing-options
       }
 
-      xlsx(props.store.accountReducer.xlsxReducer.data, settings);
+      xlsx(xlsxReducer.data, settings);
       dispatch({
         type: 'UNSET_XLSX'
       })
     }
 
-  }, [props.store.accountReducer.xlsxReducer, dispatch])
+  }, [xlsxReducer, dispatch])
 
 
   return (
@@ -76,7 +78,7 @@ function History(props) {
       <p>
         Export and download your entire trade history as an xlsx spreadsheet.
       </p>
-      <button className={`btn-red medium ${props.theme}`} onClick={() => { exportXlxs() }}>Export</button>
+      <button className={`btn-red medium ${user.theme}`} onClick={() => { exportXlxs() }}>Export</button>
       <div className="divider" />
       <h4>Export current trade-pairs</h4>
       <p>
@@ -84,18 +86,18 @@ function History(props) {
         and use it later to import the same trades. This is useful if you want to transfer your
         trades to a different bot and can't or don't want to mess around with the database.
       </p>
-      {props.store.accountReducer.currentJSONReducer
-        ? <button className={`btn-red medium ${props.theme}`} onClick={() => { exportCurrentJSON('clear') }}>Clear</button>
-        : <button className={`btn-red medium ${props.theme}`} onClick={() => { exportCurrentJSON() }}>Export</button>
+      {currentJSONReducer
+        ? <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCurrentJSON('clear') }}>Clear</button>
+        : <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCurrentJSON() }}>Export</button>
       }
       <br></br>
       <br></br>
-      {props.store.accountReducer.currentJSONReducer
-        && <button className={`btn-blue medium ${props.theme}`} onClick={() => { copyToClipboard() }}>copy</button>
+      {currentJSONReducer
+        && <button className={`btn-blue medium ${user.theme}`} onClick={() => { copyToClipboard() }}>copy</button>
       }
       <br></br>
-      {props.store.accountReducer.currentJSONReducer
-        && <code>{JSON.stringify(props.store.accountReducer.currentJSONReducer)}</code>
+      {currentJSONReducer
+        && <code>{JSON.stringify(currentJSONReducer)}</code>
       }
       <div className="divider" />
 
@@ -139,7 +141,7 @@ function History(props) {
         </label>
         <br />
 
-        <button className={`import-button btn-red medium ${props.theme}`} onClick={() => { importCurrentJSON() }}>Import</button>
+        <button className={`import-button btn-red medium ${user.theme}`} onClick={() => { importCurrentJSON() }}>Import</button>
         <br />
       </div>
       <div className="divider" />
@@ -147,4 +149,4 @@ function History(props) {
   );
 }
 
-export default connect(mapStoreToProps)(History);
+export default History;

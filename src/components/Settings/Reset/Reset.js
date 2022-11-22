@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { connect, useDispatch } from 'react-redux';
-import mapStoreToProps from '../../../redux/mapStoreToProps';
+import { useDispatch, useSelector } from 'react-redux';
 import Confirm from '../../Confirm/Confirm';
 import './Reset.css'
 
 
-function Reset(props) {
+function Reset() {
   const dispatch = useDispatch();
+  const user = useSelector((store) => store.accountReducer.userReducer);
 
   const [deleting, setDeleting] = useState(false);
 
@@ -25,7 +25,7 @@ function Reset(props) {
     // setDeleting(true)
     dispatch({
       type: 'DELETE_USER', payload: {
-        id: props.store.accountReducer.userReducer.id,
+        id: user.id,
       }
     })
   }
@@ -35,7 +35,7 @@ function Reset(props) {
     // deleteUser()
   }
 
-  function confirmDelete(params) {
+  function confirmDelete() {
     setDeleting(true)
     // deleteUser()
   }
@@ -51,8 +51,8 @@ function Reset(props) {
       <div className="divider" />
       <h4>Reset Profit</h4>
       <p>This will start the profit calculation back at $0</p>
-      <p>Last reset at: {new Date(props.store.accountReducer.userReducer.profit_reset).toLocaleString('en-US')}</p>
-      <button className={`btn-blue medium ${props.theme}`} onClick={() => { resetProfit() }}>Reset Profit</button>
+      <p>Last reset at: {new Date(user.profit_reset).toLocaleString('en-US')}</p>
+      <button className={`btn-blue medium ${user.theme}`} onClick={() => { resetProfit() }}>Reset Profit</button>
 
       {/* DELETE OWN ACCOUNT */}
       <div className="divider" />
@@ -60,7 +60,7 @@ function Reset(props) {
       <p>Danger! This button will instantly and permanently delete your account and all user data including trades! Press it carefully!</p>
       {(deleting === true)
         ? <p>Confirming...</p>
-        : <button className={`btn-red medium ${props.theme}`} onClick={() => { confirmDelete() }}>Delete Account</button>
+        : <button className={`btn-red medium ${user.theme}`} onClick={() => { confirmDelete() }}>Delete Account</button>
       }
 
       <div className="divider" />
@@ -68,4 +68,4 @@ function Reset(props) {
   );
 }
 
-export default connect(mapStoreToProps)(Reset);
+export default Reset;

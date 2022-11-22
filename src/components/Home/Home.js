@@ -1,31 +1,30 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { connect, useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import Trade from '../Trade/Trade.js';
 import Messages from '../Messages/Messages.js';
 import Menu from '../Menu/Menu'
 import TradeList from '../TradeList/TradeList'
 import Status from '../Status/Status'
 import Settings from '../Settings/Settings'
-import mapStoreToProps from '../../redux/mapStoreToProps';
 import './Home.css'
 import NotApproved from '../NotApproved/NotApproved.js';
 import NotActive from '../NotActive/NotActive.js';
-import { SocketProvider } from '../../contexts/SocketProvider.js';
 import axios from 'axios';
 import MobileNav from '../MobileNav/MobileNav.js';
 import { useSocket } from "../../contexts/SocketProvider";
 import { useTickerSocket } from "../../contexts/TickerProvider";
 import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 
-function Home(props) {
+function Home() {
   const dispatch = useDispatch();
+  const user = useSelector((store) => store.accountReducer.userReducer);
   const { height, width } = useWindowDimensions();
 
   const socket = useSocket();
   const ticker = useTickerSocket();
 
   const [showSettings, setShowSettings] = useState(false);
-  const [theme, setTheme] = useState('original');
+  // const [theme, setTheme] = useState('original');
   const [mobilePage, setMobilePage] = useState('tradeList');
   const [tradeType, setTradeType] = useState('pair');
   const [priceTicker, setPriceTicker] = useState(0);
@@ -38,6 +37,7 @@ function Home(props) {
   };
 
   const getOpenOrders = useCallback(
+    // what is this convoluted mess
     () => {
       dispatch({ type: 'FETCH_ORDERS' });
     }, [dispatch]
@@ -58,7 +58,7 @@ function Home(props) {
 
   // choose between real or sandbox websocket price ticker
   useEffect(() => {
-    if (props.store.accountReducer.userReducer.sandbox) {
+    if (user.sandbox) {
       setPriceTicker(ticker.sandboxTicker)
     } else {
       setPriceTicker(ticker.ticker)
@@ -72,11 +72,11 @@ function Home(props) {
     if (socket == null) return;
     socket.on('message', update => {
       // check if the update is an order update, meaning there is something to change on dom
-      if ((update.orderUpdate != null) && (update.userID === props.store.accountReducer.userReducer.id)) {
+      if ((update.orderUpdate != null) && (update.userID === user.id)) {
         // do api call for all open orders
         getOpenOrders()
       }
-      if ((update.userUpdate != null) && (update.userID === props.store.accountReducer.userReducer.id)) {
+      if ((update.userUpdate != null) && (update.userID === user.id)) {
         // do api call for all open orders
         updateUser()
       }
@@ -92,7 +92,7 @@ function Home(props) {
     // socket may not exist on page load because it hasn't connected yet
     if (socket == null) return;
     socket.on('message', message => {
-      if (message.userID === props.store.accountReducer.userReducer.id) {
+      if (message.userID === user.id) {
         if (message.errorUpdate) {
           dispatch({ type: 'FETCH_BOT_ERRORS' });
         }
@@ -105,21 +105,14 @@ function Home(props) {
     return () => socket.off('message')
     // useEffect will depend on socket because the connection will 
     // not be there right when the page loads
-  }, [socket, props.store.accountReducer.userReducer.id]);
+  }, [socket, user.id]);
 
   const clickSettings = () => {
     setShowSettings(!showSettings);
-    if (props.store.accountReducer.userReducer.admin) {
+    if (user.admin) {
       dispatch({ type: 'FETCH_USERS' });
     }
   }
-
-  useEffect(() => {
-    if (props.store.accountReducer.userReducer.theme) {
-      setTheme(props.store.accountReducer.userReducer.theme);
-    }
-  }, [props.store.accountReducer.userReducer.theme])
-
 
   // todo - get rid of this when more confident in websocket ticker.
   // might be nice to find a way to use this if the websocket ever fails
@@ -127,7 +120,7 @@ function Home(props) {
   function timedTicker(data) {
 
     let URI = 'https://api.exchange.coinbase.com/products/BTC-USD/ticker';
-    if (props.store.accountReducer.userReducer.sandbox) {
+    if (user.sandbox) {
       URI = 'https://api-public.sandbox.exchange.coinbase.com/products/BTC-USD/ticker';
     }
 
@@ -155,34 +148,33 @@ function Home(props) {
 
 
   return (
-    <div className={`Home ${theme}`}>
-      <Menu clickSettings={clickSettings} theme={theme} />
+    <div className={`Home ${user.theme}`}>
+      <Menu clickSettings={clickSettings} />
       {
-        props.store.accountReducer.userReducer.active
+        user.active
           ? width < 800 && mobilePage === 'newPair'
-            ? <Trade theme={theme} priceTicker={priceTicker} setTradeType={setTradeType} tradeType={tradeType} />
-            : width > 800 && <Trade theme={theme} priceTicker={priceTicker} setTradeType={setTradeType} tradeType={tradeType} />
+            ? <Trade priceTicker={priceTicker} setTradeType={setTradeType} tradeType={tradeType} />
+            : width > 800 && <Trade priceTicker={priceTicker} setTradeType={setTradeType} tradeType={tradeType} />
           : width < 800 && mobilePage === 'newPair'
-            ? <NotActive theme={theme} />
-            : width > 800 && <NotActive theme={theme} />
+            ? <NotActive />
+            : width > 800 && <NotActive />
       }
 
       {
-        props.store.accountReducer.userReducer.approved
+        user.approved
           ? width < 800 && mobilePage === 'tradeList'
-            ? <TradeList isAutoScroll={isAutoScroll} priceTicker={priceTicker} theme={theme} />
-            : width > 800 && <TradeList isAutoScroll={isAutoScroll} priceTicker={priceTicker} theme={theme} />
+            ? <TradeList isAutoScroll={isAutoScroll} priceTicker={priceTicker} />
+            : width > 800 && <TradeList isAutoScroll={isAutoScroll} priceTicker={priceTicker} />
           : width < 800 && mobilePage === 'tradeList'
-            ? <NotApproved theme={theme} />
-            : width > 800 && <NotApproved theme={theme} />
+            ? <NotApproved />
+            : width > 800 && <NotApproved />
       }
 
       {width < 800 && mobilePage === 'messages'
-        ? <Messages theme={theme} />
-        : width > 800 && <Messages theme={theme} />}
+        ? <Messages />
+        : width > 800 && <Messages />}
 
       <Status
-        theme={theme}
         priceTicker={priceTicker}
         isAutoScroll={isAutoScroll}
         handleAutoScrollChange={handleAutoScrollChange}
@@ -191,12 +183,11 @@ function Home(props) {
       <Settings
         showSettings={showSettings}
         clickSettings={clickSettings}
-        theme={theme}
         priceTicker={priceTicker}
       />
-      {width < 800 && <MobileNav theme={theme} setMobilePage={setMobilePage} />}
+      {width < 800 && <MobileNav setMobilePage={setMobilePage} />}
     </div>
   );
 }
 
-export default connect(mapStoreToProps)(Home);
+export default Home;

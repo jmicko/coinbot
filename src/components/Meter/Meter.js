@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { connect } from 'react-redux';
-import mapStoreToProps from '../../redux/mapStoreToProps';
 import './Meter.css'
 
 
@@ -59,4 +57,4 @@ function Meter(props) {
   )
 }
 
-export default connect(mapStoreToProps)(Meter);
+export default Meter;

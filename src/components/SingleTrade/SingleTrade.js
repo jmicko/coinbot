@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { connect, useDispatch } from 'react-redux';
-import mapStoreToProps from '../../redux/mapStoreToProps';
+import { useDispatch, useSelector } from 'react-redux';
 import './SingleTrade.css'
 
 function SingleTrade(props) {
   const dispatch = useDispatch();
+  const user = useSelector((store) => store.accountReducer.userReducer);
   const [profit, setProfit] = useState(0);
   const [deleting, setDeleting] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -18,7 +18,7 @@ function SingleTrade(props) {
     let original_sell_price = props.order.original_sell_price;
     let size = props.order.size;
     let original_buy_price = props.order.original_buy_price;
-    let maker_fee_rate = props.store.accountReducer.userReducer.maker_fee;
+    let maker_fee_rate = user.maker_fee;
 
     // calculate fees
     let sellFee = (maker_fee_rate * original_sell_price * size)
@@ -29,7 +29,7 @@ function SingleTrade(props) {
     setProfit(profit);
     setBuyFee(buyFee)
     setSellFee(sellFee)
-  }, [props.store.accountReducer, props.order.original_sell_price, props.order.original_buy_price, props.order.size]);
+  }, [props.order.original_sell_price, props.order.original_buy_price, props.order.size]);
 
   // delete the order if the abandon button is clicked.
   // the loop already detects deleted orders, so only need to make a call to coinbase
@@ -69,17 +69,17 @@ function SingleTrade(props) {
   // postgres is much better at math using exact
 
   return (
-    <div className={`Single-trade ${props.order.side} ${props.theme}`}>
-      <button className={`btn-blue expand-single-trade ${props.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>
-      {showAll && <button className={`btn-blue expand-single-trade ${props.theme}`} onClick={syncTrade}>sync</button>}
+    <div className={`Single-trade ${props.order.side} ${user.theme}`}>
+      <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>
+      {showAll && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={syncTrade}>sync</button>}
       <div className={"overlay"}>
         {(deleting === true)
           ? <p className="deleting">Deleting...</p>
-          : !props.store.accountReducer.userReducer.kill_locked && <button className={`btn-red kill-button ${props.theme}`} onClick={() => { deleteOrder() }}>Kill</button>
+          : !user.kill_locked && <button className={`btn-red kill-button ${user.theme}`} onClick={() => { deleteOrder() }}>Kill</button>
           
         }
         <p className="single-trade-text" >
-          {/* {JSON.stringify(props.theme)} */}
+          {/* {JSON.stringify(user.theme)} */}
           <strong>
             Price: </strong>
           {(props.order.side === 'sell')
@@ -126,4 +126,4 @@ function SingleTrade(props) {
   )
 }
 
-export default connect(mapStoreToProps)(SingleTrade);
+export default SingleTrade;

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { connect, useDispatch } from 'react-redux';
-import mapStoreToProps from '../../../redux/mapStoreToProps';
+import { useDispatch, useSelector } from 'react-redux';
 import Confirm from '../../Confirm/Confirm';
 import SingleUser from '../../SingleUser/SingleUser';
 import './Admin.css'
@@ -8,6 +7,10 @@ import './Admin.css'
 
 function Admin(props) {
   const dispatch = useDispatch();
+  const user = useSelector((store) => store.accountReducer.userReducer);
+  const allSettings = useSelector((store) => store.settingsReducer.allSettingsReducer);
+  const allUsers = useSelector((store) => store.usersReducer.allUsersReducer);
+
   const [loopSpeed, setLoopSpeed] = useState(1);
   const [fullSync, setFullSync] = useState(10);
   const [syncQuantity, setSyncQuantity] = useState(100);
@@ -17,18 +20,18 @@ function Admin(props) {
 
   const getUsers = useCallback(
     () => {
-      if (props.store.accountReducer.userReducer.admin) {
+      if (user.admin) {
         dispatch({ type: 'FETCH_USERS' })
       }
-    }, [dispatch, props.store.accountReducer.userReducer.admin]
+    }, [dispatch, user.admin]
   )
 
   const getAllSettings = useCallback(
     () => {
-      if (props.store.accountReducer.userReducer.admin) {
+      if (user.admin) {
         dispatch({ type: 'FETCH_SETTINGS' })
       }
-    }, [dispatch, props.store.accountReducer.userReducer.admin]
+    }, [dispatch, user.admin]
   )
 
   function sendLoopSpeed() {
@@ -80,24 +83,24 @@ function Admin(props) {
   }
 
   useEffect(() => {
-    if (props.store.settingsReducer.allSettingsReducer.loop_speed) {
-      handleLoopSpeedChange(props.store.settingsReducer.allSettingsReducer.loop_speed);
+    if (allSettings.loop_speed) {
+      handleLoopSpeedChange(allSettings.loop_speed);
     }
-  }, [props.store.settingsReducer.allSettingsReducer.loop_speed]);
+  }, [allSettings.loop_speed]);
 
   useEffect(() => {
-    if (props.store.settingsReducer.allSettingsReducer.full_sync) {
-      handleFullSyncChange(props.store.settingsReducer.allSettingsReducer.full_sync);
+    if (allSettings.full_sync) {
+      handleFullSyncChange(allSettings.full_sync);
     }
 
-  }, [props.store.settingsReducer.allSettingsReducer.full_sync]);
+  }, [allSettings.full_sync]);
 
   useEffect(() => {
-    if (props.store.settingsReducer.allSettingsReducer.orders_to_sync) {
-      handleSyncQuantityChange(props.store.settingsReducer.allSettingsReducer.orders_to_sync);
+    if (allSettings.orders_to_sync) {
+      handleSyncQuantityChange(allSettings.orders_to_sync);
     }
 
-  }, [props.store.settingsReducer.allSettingsReducer.orders_to_sync]);
+  }, [allSettings.orders_to_sync]);
 
   useEffect(() => {
     getUsers();
@@ -113,30 +116,30 @@ function Admin(props) {
       {/* TOGGLE MAINTENANCE */}
 
       <h4>Toggle Maintenance Mode</h4>
-      {/* {JSON.stringify(props.store.settingsReducer.allSettingsReducer.maintenance)} */}
+      {/* {JSON.stringify(allSettings.maintenance)} */}
       {props.tips && <p>
         This essentially pauses all user loops. Can be useful when migrating the bot to another server for example.
       </p>}
-      {props.store.settingsReducer.allSettingsReducer.maintenance
+      {allSettings.maintenance
         ?
         <p>Maintenance mode is currently ON</p>
         :
         <p>Maintenance mode is currently OFF</p>
       }
-      {props.store.settingsReducer.allSettingsReducer.maintenance
+      {allSettings.maintenance
         ?
-        <button className={`btn-green btn-reinvest medium ${props.theme}`} onClick={() => { toggleMaintenance() }}>Turn off</button>
+        <button className={`btn-green btn-reinvest medium ${user.theme}`} onClick={() => { toggleMaintenance() }}>Turn off</button>
         :
-        <button className={`btn-red btn-reinvest medium ${props.theme}`} onClick={() => { toggleMaintenance() }}>Turn on</button>
+        <button className={`btn-red btn-reinvest medium ${user.theme}`} onClick={() => { toggleMaintenance() }}>Turn on</button>
       }
 
       <div className="divider" />
 
       {/* MANAGE USERS */}
-      {(props.store.accountReducer.userReducer.admin)
+      {(user.admin)
         ? <div>
           <h4>Manage Users</h4>
-          {props.store.usersReducer.allUsersReducer.map((user) => {
+          {allUsers.map((user) => {
             return <SingleUser key={user.id} user={user} />
           })}
         </div>
@@ -151,7 +154,7 @@ function Admin(props) {
         This will adjust the speed of the loop. You may want to slow it down to use fewer resources and handle more users.
         Higher numbers are slower. 1 is the fastest, and the speed is a multiplier. So 4 is 4x slower than 1 for example.
       </p>}
-      <p>Current loop speed: {props.store.settingsReducer.allSettingsReducer.loop_speed}</p>
+      <p>Current loop speed: {allSettings.loop_speed}</p>
       <div className='left-border'>
         <label htmlFor="loopSpeed">
           Set speed:
@@ -168,7 +171,7 @@ function Admin(props) {
         />
         <br />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendLoopSpeed() }}>Save speed</button>
+        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { sendLoopSpeed() }}>Save speed</button>
       </div>
 
       <div className="divider" />
@@ -180,7 +183,7 @@ function Admin(props) {
         This will adjust how often the bot does a full sync. A full sync takes longer and is more CPU intensive,
         but will check for and delete extra trades etc. A quick sync only checks for recently settled trades.
       </p>}
-      <p>Current frequency: Every {props.store.settingsReducer.allSettingsReducer.full_sync} loop{props.store.settingsReducer.allSettingsReducer.full_sync > 1 && 's'}</p>
+      <p>Current frequency: Every {allSettings.full_sync} loop{allSettings.full_sync > 1 && 's'}</p>
       <div className='left-border'>
         <label htmlFor="fullSync">
           Set frequency:
@@ -197,7 +200,7 @@ function Admin(props) {
         />
         <br />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendFullSync() }}>Save Frequency</button>
+        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { sendFullSync() }}>Save Frequency</button>
       </div>
 
       <div className="divider" />
@@ -205,13 +208,13 @@ function Admin(props) {
       {/* SET ORDER SYNC QUANTITY */}
 
       <h4>Set Synced Order Quantity</h4>
-      {/* {JSON.stringify(props.store.settingsReducer.allSettingsReducer)} */}
+      {/* {JSON.stringify(allSettings)} */}
       {props.tips && <p>
         This adjusts how many trades per side to keep in sync with Coinbase Pro (How many buys, how many sells). There is a max of 200, which
         keeps the total under the 500 order limit on Coinbase pro, while also allowing a margin for flipping trades. Putting a low number here
         may slightly increase the speed of the bot or lower CPU usage, but risks that all trades on one side will settle before the bot has the chance to sync more.
       </p>}
-      <p>Current quantity: {props.store.settingsReducer.allSettingsReducer.orders_to_sync}</p>
+      <p>Current quantity: {allSettings.orders_to_sync}</p>
       <div className='left-border'>
         <label htmlFor="fullSync">
           Set Sync Quantity:
@@ -228,12 +231,12 @@ function Admin(props) {
         />
         <br />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={() => { sendSyncQuantity() }}>Save Quantity</button>
+        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { sendSyncQuantity() }}>Save Quantity</button>
       </div>
       <div className="divider" />
 
       {/* FACTORY RESET */}
-      {(props.store.accountReducer.userReducer.admin)
+      {(user.admin)
         ? <>
           {factoryResetting && <Confirm
             // if confirm, dispatch to factory reset bot
@@ -280,4 +283,4 @@ function Admin(props) {
   );
 }
 
-export default connect(mapStoreToProps)(Admin);
+export default Admin;

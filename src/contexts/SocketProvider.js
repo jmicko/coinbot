@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react'
-import { useSelector } from 'react-redux';
+// import { useSelector } from 'react-redux';
 import io from "socket.io-client";
 
 // followed this guide for setting up the socket provider in its own component and not cluttering up App.js

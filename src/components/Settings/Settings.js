@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { connect } from 'react-redux';
-import mapStoreToProps from '../../redux/mapStoreToProps';
+import { useSelector } from 'react-redux';
 import Admin from './Admin/Admin';
 import AutoSetup from './AutoSetup/AutoSetup';
 import General from './General/General';
@@ -16,13 +15,14 @@ import BulkDelete from './BulkDelete/BulkDelete';
 function Settings(props) {
   const [settingsPage, setSettingsPage] = useState('general');
   const [tips, setTips] = useState(false);
+  const user = useSelector((store) => store.accountReducer.userReducer);
 
 
 
   if (props.showSettings) {
     return (
-      <div className={`Settings ${props.theme}`}>
-        <button className={`btn-logout btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={() => { props.clickSettings() }}>X</button>
+      <div className={`Settings ${user.theme}`}>
+        <button className={`btn-logout btn-red ${user.theme}`} onClick={() => { props.clickSettings() }}>X</button>
 
         <p className="info tips">
           <strong>Show Tips</strong>
@@ -39,13 +39,13 @@ function Settings(props) {
         <SettingsNav setSettingsPage={setSettingsPage} settingsPage={settingsPage} />
         {
           {
-            'general': <General theme={props.theme} tips={tips} />,
-            'investment': <Investment theme={props.theme} tips={tips} />,
-            'autoSetup': <AutoSetup theme={props.theme} tips={tips} priceTicker={props.priceTicker} />,
-            'bulkDelete': <BulkDelete theme={props.theme} tips={tips} />,
-            'history': <History theme={props.theme} tips={tips} />,
-            'reset': <Reset theme={props.theme} tips={tips} />,
-            'admin': <Admin theme={props.theme} tips={tips} />
+            'general': <General theme={user.theme} tips={tips} />,
+            'investment': <Investment theme={user.theme} tips={tips} />,
+            'autoSetup': <AutoSetup theme={user.theme} tips={tips} priceTicker={props.priceTicker} />,
+            'bulkDelete': <BulkDelete theme={user.theme} tips={tips} />,
+            'history': <History theme={user.theme} tips={tips} />,
+            'reset': <Reset theme={user.theme} tips={tips} />,
+            'admin': <Admin theme={user.theme} tips={tips} />
           }[settingsPage]
         }
       </div>
@@ -57,4 +57,4 @@ function Settings(props) {
   }
 }
 
-export default connect(mapStoreToProps)(Settings);
+export default Settings;

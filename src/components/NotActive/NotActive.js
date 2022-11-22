@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { connect, useDispatch, useSelector } from 'react-redux';
-import mapStoreToProps from '../../redux/mapStoreToProps';
+import { useDispatch, useSelector } from 'react-redux';
 import './NotActive.css';
 
 
-function NotActive(props) {
+function NotActive() {
   const dispatch = useDispatch();
   const user = useSelector((store) => store.accountReducer.userReducer);
 
@@ -33,11 +32,11 @@ function NotActive(props) {
       <div className="scrollable boxed">
         <h3 className={`title ${user.theme}`}>You are not active!</h3>
         <p>
-          You must store your API details from Coinbase Pro before you can trade. <br/>
-          - You can create an API key by clicking your name on Coinbase Pro, and clicking <strong>API</strong>. <br/>
-          - Then click <strong>+ New API Key</strong>, and go through the process. <br/>
+          You must store your API details from Coinbase Pro before you can trade. <br />
+          - You can create an API key by clicking your name on Coinbase Pro, and clicking <strong>API</strong>. <br />
+          - Then click <strong>+ New API Key</strong>, and go through the process. <br />
           - Enter the details below.
-          </p>
+        </p>
 
 
 
@@ -49,27 +48,27 @@ function NotActive(props) {
           <form className="api-form" onSubmit={submitApi} >
             <label htmlFor="key">
               API Key:
-            </label><br/>
+            </label><br />
             <input
               type="text"
               name="key"
               value={key}
               required
               onChange={(event) => setKey(event.target.value)}
-            /><br/>
+            /><br />
             <label htmlFor="secret">
               API Secret:
-            </label><br/>
+            </label><br />
             <input
               type="password"
               name="secret"
               value={secret}
               required
               onChange={(event) => setSecret(event.target.value)}
-            /><br/>
+            /><br />
             <label htmlFor="URI">
               Real money or sandbox?
-            </label><br/>
+            </label><br />
             {(URI === "real")
               ? <button className={`btn-green btn-sandbox-api medium ${user.theme}`} onClick={(event) => { event.preventDefault(); setURI("sandbox") }}>Real Money API</button>
               : <button className={`btn-green btn-sandbox-api medium ${user.theme}`} onClick={(event) => { event.preventDefault(); setURI("real") }}>Sandbox API</button>
@@ -81,10 +80,9 @@ function NotActive(props) {
           </form>
         </div>
       </div>
-      {/* <div className="spacer" > jgdsf</div> */}
     </div>
   );
 }
 
 
-export default connect(mapStoreToProps)(NotActive);
+export default NotActive;

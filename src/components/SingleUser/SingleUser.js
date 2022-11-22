@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { connect, useDispatch } from 'react-redux';
-import mapStoreToProps from '../../redux/mapStoreToProps';
+import { useDispatch, useSelector } from 'react-redux';
 import Confirm from '../Confirm/Confirm';
 import './SingleUser.css'
 
 function SingleUser(props) {
   const dispatch = useDispatch();
+  const userReducer = useSelector((store) => store.accountReducer.userReducer);
+  const debugReducer = useSelector((store) => store.accountReducer.debugReducer);
   const [deleting, setDeleting] = useState(false);
   const [approving, setApproving] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -53,8 +54,8 @@ function SingleUser(props) {
 
   return (
     <div className={`Single-trade`}>
-      <button className={`btn-blue expand-single-trade ${props.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>
-      {showAll && <button className={`btn-blue expand-single-trade ${props.theme}`} onClick={debug}>debug</button>}
+      <button className={`btn-blue expand-single-trade ${userReducer.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>
+      {showAll && <button className={`btn-blue expand-single-trade ${userReducer.theme}`} onClick={debug}>debug</button>}
       {deleting && <Confirm execute={deleteUser} ignore={cancelDeleteUser} />}
       <div className={"overlay"}>
         {/* Delete a user */}
@@ -89,9 +90,9 @@ function SingleUser(props) {
           {/* BOT STATUS LIST */}
           <h4>User Bot Status</h4>
           <ol>
-            <li>Loop #{props.store.accountReducer.debugReducer[props.user.id]?.loopNumber}</li>
-            {/* <p>{JSON.stringify(props.store.accountReducer)}</p> */}
-            {props.store.accountReducer.debugReducer[props.user.id]?.botStatus.slice(0).reverse().map(statusItem => {
+            <li>Loop #{debugReducer[props.user.id]?.loopNumber}</li>
+            {/* <p>{JSON.stringify(}</p> */}
+            {debugReducer[props.user.id]?.botStatus.slice(0).reverse().map(statusItem => {
               return <li key={statusItem}>{statusItem}</li>
             }) || <p>Click debug to get info. This will return a snapshot of the user, and does not update live.</p>}
           </ol>
@@ -102,4 +103,4 @@ function SingleUser(props) {
   )
 }
 
-export default connect(mapStoreToProps)(SingleUser);
+export default SingleUser;
