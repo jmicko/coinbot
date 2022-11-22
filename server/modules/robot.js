@@ -408,8 +408,7 @@ async function processOrders(userID) {
           let tradeDetails = flipTrade(dbOrder, user, tradeList, i);
           // ...send the new trade
           try {
-            const willCancel = cache.checkIfCanceling(userID, dbOrder.id);
-            // let cancelling = await databaseClient.checkIfCancelling(dbOrder.id);
+            const willCancel = cache.checkIfCanceling(userID, dbOrder.order_id);
             if (!willCancel) {
               // console.log(tradeDetails,'trade details');
               let cbOrder = await coinbaseClient.placeOrderNew(userID, tradeDetails);
@@ -698,7 +697,7 @@ async function reorder(orderToReorder, retry) {
     let upToDateDbOrder;
     let tradeDetails;
     try {
-      upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.id);
+      upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.order_id);
 
       tradeDetails = {
         // original_sell_price: upToDateDbOrder.original_sell_price,
@@ -725,7 +724,7 @@ async function reorder(orderToReorder, retry) {
           let results = await databaseClient.storeTrade(newTrade.order, upToDateDbOrder, upToDateDbOrder.flipped_at);
 
           // delete the old order from the db
-          await databaseClient.deleteTrade(orderToReorder.id);
+          await databaseClient.deleteTrade(orderToReorder.order_id);
           // tell the DOM to update
           cache.storeMessage(userID, {
             messageText: `trade was reordered`,
@@ -749,10 +748,10 @@ async function reorder(orderToReorder, retry) {
       } else {
         await sleep(1000);
         // check again. if it finds it, don't do anything. If not found, error handling will reorder in the 404
-        let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID, userAPI);
+        await coinbaseClient.getOrder(orderToReorder.userID, orderToReorder.order_id);
       }
     } catch (err) {
-      const willCancel = cache.checkIfCanceling(userID, orderToReorder.id);
+      const willCancel = cache.checkIfCanceling(userID, orderToReorder.order_id);
       if ((err.response?.status === 404) && (!willCancel)) {
         // call reorder again with retry as true so it will reorder right away
         try {
