@@ -12,6 +12,7 @@ function startWebsocket(userID) {
   //  SIGNING_KEY: the signing key provided as a part of your API key. Also called the "SECRET KEY"
   //  API_KEY: the api key provided as a part of your API key. also called the "PUBLIC KEY"
   const userAPI = cache.getAPI(userID)
+
   const SIGNING_KEY = userAPI.CB_SECRET;
   const API_KEY = userAPI.CB_ACCESS_KEY;
 
@@ -28,7 +29,7 @@ function startWebsocket(userID) {
     ticker_batch: 'ticker_batch',
     status: 'status',
   };
-  const products = ['BTC-USD'];
+  const products = ['BTC-USD', 'ETH-USD'];
 
   // The base URL of the API
   const WS_API_URL = 'wss://advanced-trade-ws.coinbase.com';
@@ -94,18 +95,28 @@ function startWebsocket(userID) {
 
   ws.on('open', function () {
     console.log('OPENING');
-    const products = ['BTC-USD', 'ETH-USD'];
     subscribeToProducts(products, CHANNEL_NAMES.status, ws);
     subscribeToProducts(products, CHANNEL_NAMES.tickers, ws);
     subscribeToUser(products, ws);
   });
 
+  ws.on('close', function () {
+    console.log('Socket was closed');
+  });
+
   ws.on('message', function (data) {
     const parsedData = JSON.parse(data);
-    console.log(parsedData, 'data from ws');
+    // console.log(parsedData, 'data from ws');
     if (parsedData.events) {
       parsedData.events.forEach(event => {
-        console.log(event, 'event from ws');
+        if (event.tickers) {
+          event.tickers.forEach(ticker => {
+            console.log(ticker);
+            return
+          });
+        } else {
+          console.log(event, 'event from ws');
+        }
       });
     }
     console.log('');

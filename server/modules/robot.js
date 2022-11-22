@@ -40,7 +40,12 @@ async function startSync() {
     await cache.newUser(user);
     // start the loop
     syncOrders(userID, 0);
-    startWebsocket(userID);
+    try {
+      startWebsocket(userID);
+      
+    } catch (error) {
+      
+    }
     // deSyncOrderLoop(user, 0);
   });
 }
