@@ -29,7 +29,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       product_id: order.product_id,
       stp: 'cn',
       userID: userID,
-      trade_pair_ratio: order.trade_pair_ratio,
+      trade_pair_ratio: Number(order.trade_pair_ratio),
       client_order_id: uuidv4()
     };
     if (order.type) {
@@ -40,7 +40,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       // send the new order with the trade details
       let pendingTrade = await coinbaseClient.placeOrderNew(userID, tradeDetails);
 
-      console.log(pendingTrade, 'pending trade from new api');
+      console.log(tradeDetails, 'pending trade details from new api');
       // wait a second before storing the trade. Sometimes it takes a second for coinbase to register the trade,
       // even after returning the details. robot.syncOrders will think it settled if it sees it in the db first
       await robot.sleep(100);

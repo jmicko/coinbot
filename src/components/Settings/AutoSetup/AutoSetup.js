@@ -173,7 +173,7 @@ function AutoSetup(props) {
         side: side,
         price: price,
         size: actualSize,
-        fill_fees: prevFees(),
+        total_fees: prevFees(),
         product_id: parameters.product_id,
         stp: 'cn',
         userID: user.id,

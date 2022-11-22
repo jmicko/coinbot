@@ -140,7 +140,7 @@ function startWebsocket(userID) {
         parsedData.events.forEach(event => {
           if (event.tickers) {
             event.tickers.forEach(ticker => {
-              console.log(ticker);
+              // console.log(ticker);
               return
             });
           } else {
@@ -148,7 +148,7 @@ function startWebsocket(userID) {
           }
         });
       }
-      console.log('');
+      // console.log('');
     });
 
   }

@@ -12,7 +12,7 @@ const storeTrade = (newOrder, originalDetails, flipped_at) => {
       "order_id",
       "userID",
       "original_buy_price",
-      "original_sell_price"
+      "original_sell_price",
       "trade_pair_ratio",
       "flipped_at",
       "reorder",
@@ -45,7 +45,7 @@ const storeTrade = (newOrder, originalDetails, flipped_at) => {
       "settled",
       "product_type",
       "reject_message",
-      "cancel_message",
+      "cancel_message"
       ) 
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37);`;
     try {
@@ -71,7 +71,7 @@ const storeTrade = (newOrder, originalDetails, flipped_at) => {
         newOrder.completion_percentage,
         newOrder.filled_size,
         newOrder.average_filled_price,
-        newOrder.fee,
+        Number(newOrder.fee),
         newOrder.number_of_fills,
         newOrder.filled_value,
         newOrder.pending_cancel,

@@ -419,8 +419,6 @@ async function processOrders(userID) {
                 console.log(newOrder, 'order from new api');
                 console.log(newOrder.order.order_configuration, 'order_configuration from new api');
                 // ...store the new trade
-                // need to change the db later, but this will make the profit calc work
-                // dbOrder.total_fees = dbOrder.fill_fees;
                 // take the time the new order was created, and use it as the flipped_at value
                 const flipped_at = newOrder.order.created_time
                 await databaseClient.storeTrade(newOrder.order, dbOrder, flipped_at);
@@ -594,7 +592,7 @@ function calculateProfitBTC(dbOrder) {
 
   let margin = (dbOrder.original_sell_price - dbOrder.original_buy_price)
   let grossProfit = Number(margin * dbOrder.size)
-  let profit = Number(grossProfit - (Number(dbOrder.fill_fees) + Number(dbOrder.previous_fill_fees)))
+  let profit = Number(grossProfit - (Number(dbOrder.total_fees) + Number(dbOrder.previous_total_fees)))
   let profitBTC = Number((Math.floor((profit / dbOrder.limit_price) * 100000000) / 100000000))
 
   return profitBTC;
@@ -948,7 +946,7 @@ async function autoSetup(user, parameters) {
       side: side,
       limit_price: limit_price,
       size: actualSize,
-      fill_fees: prevFees(),
+      total_fees: prevFees(),
       product_id: parameters.product_id,
       stp: 'cn',
       userID: user.id,
