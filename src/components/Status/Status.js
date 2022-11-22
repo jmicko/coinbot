@@ -7,6 +7,7 @@ import { useSocket } from "../../contexts/SocketProvider";
 function Status(props) {
   const dispatch = useDispatch();
   const user = useSelector((store) => store.accountReducer.userReducer);
+  const ticker = useSelector((store) => store.statusReducer.tickers);
   const profitsReducer = useSelector((store) => store.accountReducer.profitsReducer);
   const openOrdersInOrder = useSelector((store) => store.ordersReducer.openOrdersInOrder);
   const [loopStatus, setLoopStatus] = useState(true);
@@ -151,8 +152,8 @@ function Status(props) {
         <p className="info status-ticker">
           <strong> BTC-USD Price</strong>
           <br />
-          {}
-          ${numberWithCommas(Number(props.priceTicker).toFixed(2))}
+          {/* {JSON.stringify(ticker)} */}
+          ${numberWithCommas(Number(ticker.btc).toFixed(2))}
         </p>
       </center>
 

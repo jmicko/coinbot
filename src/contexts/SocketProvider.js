@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react'
+import { useDispatch } from 'react-redux';
 // import { useSelector } from 'react-redux';
 import io from "socket.io-client";
 
@@ -11,7 +12,8 @@ export function useSocket() {
 }
 
 export function SocketProvider({ children }) {
-  const [socket, setSocket] = useState()
+  const [socket, setSocket] = useState();
+  const dispatch = useDispatch();
   // useEffect to prevent from multiple connections
   useEffect(() => {
     // check if on dev server or build, and set endpoint appropriately
@@ -23,9 +25,20 @@ export function SocketProvider({ children }) {
       ENDPOINT,
       { transports: ['websocket'] }
     );
+    newSocket.on('message', message => {
+      if (message.type === 'ticker') {
+        const ticker = message.ticker
+        // console.log(ticker,'message from socket.io');
+        dispatch({ type: 'SET_TICKER_PRICE', payload: ticker })
+      }
+    });
+    
     // save the new socket and close the old one
     setSocket(newSocket);
-    return () => newSocket.close();
+    return () => {
+      newSocket.off('message')
+      newSocket.close();
+    }
   }, []);
 
 

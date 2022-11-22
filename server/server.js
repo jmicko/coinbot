@@ -20,6 +20,7 @@ const settingsRouter = require('./routes/settings.router');
 
 const robot = require('./modules/robot');
 const coinbaseClient = require('./modules/coinbaseClient');
+const cache = require('./modules/cache');
 // const { wrap } = require('module');
 
 // Start the syncOrders loop
@@ -49,10 +50,20 @@ app.use('/api/settings', settingsRouter);
 io.use(wrap(sessionMiddleware));
 // this triggers on a new client connection
 /* websocket is being used to alert when something has happened, but currently does not 
-    authenticate, and should not be used to send sensitive data */
+    authenticate, and should not be used to send sensitive data. Jk it should be authenticating now */
+// const sockets = new Set();
+
+setInterval(() => {
+  // console.log(cache.sockets,'sockets set');
+  // cache.sockets.forEach(socket => console.log(socket.userID))
+}, 2000);
 io.on('connection', (socket) => {
   let id = socket.id;
-  let userID = socket.request.session.passport?.user;
+  // console.log(socket.request.session.passport?.user,'user id');
+  const userID = socket.request.session.passport?.user;
+  socket.userID = userID
+  cache.sockets.add(socket)
+  // cache.sockets.add(3)
 
   if (!userID) {
     console.log('user is not logged in');
@@ -65,7 +76,7 @@ io.on('connection', (socket) => {
   console.log(`client with id: ${id} connected!`);
   // console.log('the socket is', socket.handshake);
   // message to client confirming connection
-  socket.emit('message', { message: 'welcome!' });
+  // socket.emit('message', { message: 'welcome!' });
   socket.emit('message', { message: 'trade a coin or two!' });
   socket.emit('message', {
     connection: {
@@ -95,6 +106,7 @@ io.on('connection', (socket) => {
 
   socket.on("disconnect", (reason) => {
     console.log(`client with id: ${id} disconnected, reason:`, reason);
+    cache.sockets.delete(socket);
   });
 
 });

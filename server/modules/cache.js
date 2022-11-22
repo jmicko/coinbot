@@ -185,7 +185,10 @@ const cache = {
     // remove the api so sensitive details are not sent off server
     delete safeStorage.api;
     return safeStorage;
-  }
+  },
+
+  // socket.io connections
+  sockets: new Set()
 }
 
 module.exports = cache;

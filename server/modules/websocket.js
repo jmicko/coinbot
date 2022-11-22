@@ -108,39 +108,51 @@ function startWebsocket(userID) {
   // });
 
   open();
-  
-  function open () {
-    
-    fs.appendFile('Output1.txt', 'attempting to reopen socket \r\n', (err) => {
-      // In case of a error log err.
-      if (err) console.log(err, 'error writing to file');;
-    });
-    
+
+  function open() {
+
     ws = new WebSocket(WS_API_URL);
-    
-    
+
+
     ws.on('open', function () {
       console.log('OPENING');
       subscribeToProducts(products, CHANNEL_NAMES.status, ws);
       subscribeToProducts(products, CHANNEL_NAMES.tickers, ws);
       subscribeToUser(products, ws);
     });
-    
-      ws.on('close', function () {
-        console.log('Socket was closed');
-    
-        open();
-    
+
+    ws.on('close', function () {
+      console.log('Socket was closed');
+
+      fs.appendFile('Output1.txt', 'attempting to reopen socket \r\n', (err) => {
+        // In case of a error log err.
+        if (err) console.log(err, 'error writing to file');;
       });
-  
+
+      open();
+
+    });
+
     ws.on('message', function (data) {
       const parsedData = JSON.parse(data);
       // console.log(parsedData, 'data from ws');
       if (parsedData.events) {
         parsedData.events.forEach(event => {
           if (event.tickers) {
+            // every tick, send an update to open consoles for the user
             event.tickers.forEach(ticker => {
-              // console.log(ticker);
+
+              cache.sockets.forEach(socket => {
+                // find all open sockets for the user
+                if (socket.userID === userID) {
+                  // console.log(socket.userID, userID)
+                  const msg = {
+                    type: 'ticker',
+                    ticker: ticker
+                  }
+                  socket.emit('message', msg);
+                }
+              })
               return
             });
           } else {
