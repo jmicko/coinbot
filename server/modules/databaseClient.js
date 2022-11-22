@@ -499,12 +499,6 @@ async function deleteMarkedOrders(userID) {
     try {
       const queryText = `DELETE from "limit_orders" WHERE "will_cancel"=true AND "userID"=$1;`;
       let result = await pool.query(queryText, [userID]);
-      if (result.rowCount > 0) {
-        cache.storeMessage(userID, {
-          messageText: `Orders marked for cancel were canceled`,
-          orderUpdate: true
-        });
-      }
       resolve(result);
     } catch (err) {
       reject(err)

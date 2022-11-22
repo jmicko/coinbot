@@ -191,7 +191,7 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
         }
         const order = setup.orderList[i];
         // adding a bunch of 0s allows easy sorting by id in the DB which might be useful later so better to start now
-        order.id = '0000000000' + (Number(user.auto_setup_number) + i).toString();
+        order.order_id = '0000000000' + (Number(user.auto_setup_number) + i).toString();
         // use the current time for the created time 
         const time = new Date();
         order.created_at = time;
@@ -225,7 +225,7 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
 router.put('/', rejectUnauthenticated, async (req, res) => {
   // sync route code here
   const userID = req.user.id;
-  const orderId = req.body.id;
+  const orderId = req.body.order_id;
 
   try {
     await coinbaseClient.cancelOrder(orderId, userID)
@@ -273,7 +273,7 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
 router.delete('/', rejectUnauthenticated, async (req, res) => {
   // DELETE route code here
   const userID = req.user.id;
-  const orderId = req.body.id;
+  const orderId = req.body.order_id;
   console.log('in the server trade DELETE route', orderId);
 
   cache.setCancel(userID, orderId);
