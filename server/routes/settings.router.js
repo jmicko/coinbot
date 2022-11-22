@@ -41,10 +41,10 @@ router.get('/test', rejectUnauthenticated, async (req, res) => {
       // const response = await databaseClient.getTradesByIDs(userID, IDs);
       // response.products.forEach(product => {
       //   if (product.new) {
-          
+
       //   }
       //   console.log(product,'response');
-        
+
       // });
       console.log(response, 'response from test');
 
@@ -363,35 +363,53 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
 */
 router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
   if (req.user.admin) {
-    const queryText = `DROP TABLE IF EXISTS "orders";
-    CREATE TABLE IF NOT EXISTS "orders"
+    const queryText = `DROP TABLE IF EXISTS "limit_orders";
+    DROP TABLE IF EXISTS "orders";
+    CREATE TABLE IF NOT EXISTS "limit_orders"
     (
-      id character varying COLLATE pg_catalog."default" NOT NULL,
       "userID" integer,
-      "API_ID" character varying,
-      price numeric(32,8),
-      size numeric(32,8),
-      trade_pair_ratio numeric(32,8),
-      side character varying COLLATE pg_catalog."default",
-      pending boolean DEFAULT true,
-      settled boolean DEFAULT false,
-      flipped boolean DEFAULT false,
-      will_cancel boolean DEFAULT false,
-      reorder boolean DEFAULT false,
-      include_in_profit boolean DEFAULT true,
-      product_id character varying COLLATE pg_catalog."default",
-      time_in_force character varying COLLATE pg_catalog."default",
-      created_at timestamptz,
-      flipped_at timestamptz,
-      done_at timestamptz,
-      done_reason character varying COLLATE pg_catalog."default",
-      fill_fees numeric(32,16),
-      previous_fill_fees numeric(32,16),
-      filled_size numeric(32,8),
-      executed_value numeric(32,16),
       original_buy_price numeric(32,16),
       original_sell_price numeric(32,16),
-      CONSTRAINT orders_pkey PRIMARY KEY (id)
+      trade_pair_ratio numeric(32,8),
+      flipped boolean DEFAULT false,
+      flipped_at timestamptz,
+      reorder boolean DEFAULT false,
+      include_in_profit boolean DEFAULT true,
+      will_cancel boolean DEFAULT false,
+
+      order_id character varying COLLATE pg_catalog."default" NOT NULL,
+      product_id character varying COLLATE pg_catalog."default",
+      coinbase_user_id character varying COLLATE pg_catalog."default",
+      base_size numeric(32,8),
+      limit_price numeric(32,8),
+      post_only boolean,
+      side character varying COLLATE pg_catalog."default",
+      client_order_id character varying COLLATE pg_catalog."default",
+      next_client_order_id character varying COLLATE pg_catalog."default",
+      "status" character varying COLLATE pg_catalog."default",
+      time_in_force character varying COLLATE pg_catalog."default",
+      created_time timestamptz,
+      completion_percentage numeric(32,8),
+      filled_size numeric(32,8),
+      average_filled_price numeric(32,8),
+      fee numeric(32,8),
+      number_of_fills numeric(32,8),
+      filled_value numeric(32,8),
+      pending_cancel boolean,
+      size_in_quote boolean,
+      total_fees numeric(32,16),
+      previous_total_fees numeric(32,16),
+      size_inclusive_of_fees boolean,
+      total_value_after_fees numeric(32,16),
+      trigger_status character varying COLLATE pg_catalog."default",
+      order_type character varying COLLATE pg_catalog."default",
+      reject_reason character varying COLLATE pg_catalog."default",
+      settled boolean DEFAULT false,
+      product_type character varying COLLATE pg_catalog."default",
+      reject_message character varying COLLATE pg_catalog."default",
+      cancel_message character varying COLLATE pg_catalog."default",
+
+      CONSTRAINT orders_pkey PRIMARY KEY (order_id)
     );
     CREATE INDEX reorders
     ON "orders" ("side", "flipped", "will_cancel", "userID", "settled");`;
@@ -407,7 +425,8 @@ router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
 */
 router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
   if (req.user.admin) {
-    const queryText = `DROP TABLE IF EXISTS "orders";
+    const queryText = `DROP TABLE IF EXISTS "limit_orders";
+    DROP TABLE IF EXISTS "orders";
     DROP TABLE IF EXISTS "user";
     DROP TABLE IF EXISTS "session";
     DROP TABLE IF EXISTS "user_api";
@@ -423,7 +442,6 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       "API_URI" VARCHAR (1000),
       "bot_type" VARCHAR NOT NULL DEFAULT 'grid'
     );
-
     CREATE TABLE IF NOT EXISTS "user_settings"
     (
       "userID" integer,
@@ -448,7 +466,6 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       "auto_setup_number" integer DEFAULT 1,
       "profit_reset" timestamp
     );
-
     CREATE TABLE IF NOT EXISTS "bot_settings"
     (
       "loop_speed" integer DEFAULT 1,
@@ -459,37 +476,63 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
     INSERT INTO "bot_settings" 
       ("loop_speed")
       VALUES (1);
-
-    CREATE TABLE IF NOT EXISTS "orders"
+    CREATE TABLE IF NOT EXISTS "limit_orders"
     (
-      id character varying COLLATE pg_catalog."default" NOT NULL,
       "userID" integer,
-      "API_ID" character varying,
-      price numeric(32,8),
-      size numeric(32,8),
-      trade_pair_ratio numeric(32,8),
-      side character varying COLLATE pg_catalog."default",
-      pending boolean DEFAULT true,
-      settled boolean DEFAULT false,
-      flipped boolean DEFAULT false,
-      will_cancel boolean DEFAULT false,
-      reorder boolean DEFAULT false,
-      include_in_profit boolean DEFAULT true,
-      product_id character varying COLLATE pg_catalog."default",
-      time_in_force character varying COLLATE pg_catalog."default",
-      created_at timestamptz,
-      flipped_at timestamptz,
-      done_at timestamptz,
-      done_reason character varying COLLATE pg_catalog."default",
-      fill_fees numeric(32,16),
-      previous_fill_fees numeric(32,16),
-      filled_size numeric(32,8),
-      executed_value numeric(32,16),
       original_buy_price numeric(32,16),
       original_sell_price numeric(32,16),
-      CONSTRAINT orders_pkey PRIMARY KEY (id)
+      trade_pair_ratio numeric(32,8),
+      flipped boolean DEFAULT false,
+      flipped_at timestamptz,
+      reorder boolean DEFAULT false,
+      include_in_profit boolean DEFAULT true,
+      will_cancel boolean DEFAULT false,
+    
+      order_id character varying COLLATE pg_catalog."default" NOT NULL,
+      product_id character varying COLLATE pg_catalog."default",
+      coinbase_user_id character varying COLLATE pg_catalog."default",
+      base_size numeric(32,8),
+      limit_price numeric(32,8),
+      post_only boolean,
+      side character varying COLLATE pg_catalog."default",
+      client_order_id character varying COLLATE pg_catalog."default",
+      next_client_order_id character varying COLLATE pg_catalog."default",
+      "status" character varying COLLATE pg_catalog."default",
+      time_in_force character varying COLLATE pg_catalog."default",
+      created_time timestamptz,
+      completion_percentage numeric(32,8),
+      filled_size numeric(32,8),
+      average_filled_price numeric(32,8),
+      fee numeric(32,8),
+      number_of_fills numeric(32,8),
+      filled_value numeric(32,8),
+      pending_cancel boolean,
+      size_in_quote boolean,
+      total_fees numeric(32,16),
+      previous_total_fees numeric(32,16),
+      size_inclusive_of_fees boolean,
+      total_value_after_fees numeric(32,16),
+      trigger_status character varying COLLATE pg_catalog."default",
+      order_type character varying COLLATE pg_catalog."default",
+      reject_reason character varying COLLATE pg_catalog."default",
+      settled boolean DEFAULT false,
+      product_type character varying COLLATE pg_catalog."default",
+      reject_message character varying COLLATE pg_catalog."default",
+      cancel_message character varying COLLATE pg_catalog."default",
+    
+      -- price numeric(32,8),
+      -- size numeric(32,8),
+      -- pending boolean DEFAULT true,
+      -- created_at timestamptz,
+      -- done_at timestamptz,
+      -- done_reason character varying COLLATE pg_catalog."default",
+      -- fill_fees numeric(32,16),
+      -- previous_fill_fees numeric(32,16),
+      -- executed_value numeric(32,16),
+      -- "API_ID" character varying,
+      CONSTRAINT orders_pkey PRIMARY KEY (order_id)
     );
-
+    
     CREATE TABLE IF NOT EXISTS "user" (
       "id" SERIAL PRIMARY KEY,
       "username" VARCHAR (80) UNIQUE NOT NULL,
@@ -500,7 +543,8 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       "will_delete" boolean DEFAULT false,
       "joined_at" timestamp
     );
-
+    
+    -- this will create the required table for connect-pg to store session data
     CREATE TABLE IF NOT EXISTS "session" (
       "sid" varchar NOT NULL COLLATE "default",
       "sess" json NOT NULL,
@@ -509,7 +553,8 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
     WITH (OIDS=FALSE);
     ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
     CREATE INDEX "IDX_session_expire" ON "session" ("expire");
-
+    
+    -- this will index the orders table so it is much faster to look for reorders and unsettled trades
     CREATE INDEX reorders
     ON "orders" ("side", "flipped", "will_cancel", "userID", "settled");`;
     await pool.query(queryText);
