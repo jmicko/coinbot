@@ -312,7 +312,7 @@ async function fullSync(userID) {
 async function quickSync(userID) {
   cache.updateStatus(userID, 'begin quick sync');
 
-  const userAPI = cache.getAPI(userID);
+  // const userAPI = cache.getAPI(userID);
   const botSettings = cache.getKey(0, 'botSettings');
   // IF QUICK SYNC, only get fills
   return new Promise(async (resolve, reject) => {
@@ -482,7 +482,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
   // set up the object to be sent
   const tradeDetails = {
     side: '',
-    price: '', // USD
+    limit_price: '', // USD
     // when flipping a trade, size and product will always be the same
     size: dbOrder.size, // BTC
     trade_pair_ratio: dbOrder.trade_pair_ratio,
@@ -496,8 +496,8 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
   if (dbOrder.side === "BUY") {
     // if it was a BUY, sell for more. multiply old price
     tradeDetails.side = "SELL"
-    tradeDetails.price = dbOrder.original_sell_price;
-    cache.storeMessage(userID, { messageText: `Selling for $${Number(tradeDetails.price)}` });
+    tradeDetails.limit_price = dbOrder.original_sell_price;
+    cache.storeMessage(userID, { messageText: `Selling for $${Number(tradeDetails.limit_price)}` });
   } else {
     // if it is a sell turning into a buy, check if user wants to reinvest the funds
     if (user.reinvest) {
@@ -582,8 +582,8 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     }
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "BUY"
-    tradeDetails.price = dbOrder.original_buy_price;
-    cache.storeMessage(userID, { messageText: `Buying for $${Number(tradeDetails.price)}` });
+    tradeDetails.limit_price = dbOrder.original_buy_price;
+    cache.storeMessage(userID, { messageText: `Buying for $${Number(tradeDetails.limit_price)}` });
   }
   // return the tradeDetails object
   cache.updateStatus(userID, 'end flip trade');
@@ -595,7 +595,7 @@ function calculateProfitBTC(dbOrder) {
   let margin = (dbOrder.original_sell_price - dbOrder.original_buy_price)
   let grossProfit = Number(margin * dbOrder.size)
   let profit = Number(grossProfit - (Number(dbOrder.fill_fees) + Number(dbOrder.previous_fill_fees)))
-  let profitBTC = Number((Math.floor((profit / dbOrder.price) * 100000000) / 100000000))
+  let profitBTC = Number((Math.floor((profit / dbOrder.limit_price) * 100000000) / 100000000))
 
   return profitBTC;
 }
@@ -913,9 +913,9 @@ async function autoSetup(user, parameters) {
     }
 
     // set the current price based on if it is a BUY or sell
-    let price = buyPrice;
+    let limit_price = buyPrice;
     if (side == 'SELL') {
-      price = original_sell_price;
+      limit_price = original_sell_price;
     }
 
     // if the size is in BTC, it will never change. 
@@ -946,7 +946,7 @@ async function autoSetup(user, parameters) {
       original_buy_price: buyPrice,
       original_sell_price: original_sell_price,
       side: side,
-      price: price,
+      limit_price: limit_price,
       size: actualSize,
       fill_fees: prevFees(),
       product_id: parameters.product_id,
@@ -1009,184 +1009,6 @@ async function autoSetup(user, parameters) {
   return {
     orderList: orderList,
     btcToBuy: btcToBuy,
-  }
-}
-
-
-// auto setup trades until run out of money
-// this version of autoSetup will put trades directly into the db and let resync order what it needs
-// much less cb calls for orders that will just desync, also much faster
-async function autoSetupBackup(user, parameters) {
-  // console.log('in new autoSetup function', user, parameters);
-  let availableFunds = parameters.availableFunds;
-  let loopPrice = parameters.startingValue;
-  let tradingPrice = parameters.tradingPrice;
-  let btcToBuy = 0;
-  let count = 0;
-  // array to hold all the orders that will be made
-  let orderList = [];
-
-  const sizeType = parameters.sizeType;
-  const size = parameters.size;
-  const increment = parameters.increment;
-
-  if (sizeType === "USD") {
-    // logic for when size is in USD
-    // make sure there are enough funds, and don't make more than 10000 orders
-    while ((size <= availableFunds) && (count < 10000)) {
-      let actualSize = size;
-      let convertedAmount = Number(Math.floor((size / loopPrice) * 100000000)) / 100000000;
-      let original_sell_price = (Math.round((loopPrice * (Number(parameters.trade_pair_ratio) + 100))) / 100);
-      let side = 'BUY';
-      // if the loop price is higher than the trading price,
-      // need to find actual cost of the trade at that volume
-      if (loopPrice >= tradingPrice) {
-        side = 'SELL';
-        // if selling, need to add up the total amount of btc that needs to be bought to keep the balances above 0
-        btcToBuy += convertedAmount;
-        // find cost of BTCSize at current price. Something seems wrong here and it's repetitive but it works so I'm not touching it
-        let actualUSDSize = tradingPrice * convertedAmount;
-        // set the actual USD size to be the cost of the BTC size at the current trade price
-        actualSize = actualUSDSize;
-      }
-
-      // set the price based on if it's a BUY or sell
-      let price = () => {
-        if (side === 'BUY') {
-          return loopPrice
-        } else {
-          return original_sell_price
-        }
-      }
-
-      let prevFees = () => {
-        if (side === 'BUY') {
-          return 0
-        } else {
-          return loopPrice * convertedAmount * user.taker_fee
-        }
-      }
-      // console.log('previous fees', prevFees(), 'loop price', loopPrice, 'convertedAmount', convertedAmount, 'taker fee', user.taker_fee);
-
-      // create a single order object
-      const singleOrder = {
-        original_sell_price: original_sell_price,//
-        original_buy_price: loopPrice,//
-        side: side,//
-        price: price(),//
-        sizeUSD: actualSize,//
-        size: convertedAmount,//
-        fill_fees: prevFees(),
-        product_id: parameters.product_id,//
-        stp: 'cn',//
-        userID: user.id,//
-        trade_pair_ratio: parameters.trade_pair_ratio//
-      }
-      orderList.push(singleOrder);
-      // each loop needs to buy BTC with the USD size
-      // this will lower the value of available funds by the size
-      availableFunds -= actualSize;
-      // then it will increase the final price by the increment value
-      loopPrice += increment;
-      count++;
-    }
-  } else {
-    // logic for when size is in btc
-    // need a variable for usd size since it will change
-    let USDSize = size * loopPrice;
-    while ((USDSize <= availableFunds) && (count < 10000)) {
-      let original_sell_price = (Math.round((loopPrice * (Number(parameters.trade_pair_ratio) + 100))) / 100);
-      let side = 'BUY';
-      // if the loop price is higher than the trading price,
-      // need to find current cost of the trade at that volume
-      if (loopPrice >= tradingPrice) {
-        side = 'SELL';
-        // if selling, need to add up the total amount of btc that needs to be bought to keep the balances above 0
-        btcToBuy += size;
-        // change to size at trading price. Need this number to subtract from available funds
-        USDSize = tradingPrice * size;
-      }
-
-      // set the price based on if it's a BUY or sell
-      let price = () => {
-        if (side === 'BUY') {
-          return loopPrice
-        } else {
-          return original_sell_price
-        }
-      }
-
-      let prevFees = () => {
-        if (side === 'BUY') {
-          return 0
-        } else {
-          return loopPrice * size * user.taker_fee
-        }
-      }
-      // console.log('previous fees', prevFees());
-      // console.log('previous fees', prevFees(), 'loop price', loopPrice, 'size', size, 'taker fee', user.taker_fee);
-
-      // create a single order object
-      const singleOrder = {
-        original_sell_price: original_sell_price,
-        original_buy_price: loopPrice,
-        side: side,
-        price: price(),
-        size: size,
-        fill_fees: prevFees(),
-        product_id: parameters.product_id,
-        stp: 'cn',
-        userID: user.id,
-        trade_pair_ratio: parameters.trade_pair_ratio
-      }
-      orderList.push(singleOrder);
-      // each loop needs to buy BTC with the USD size
-      // this will lower the value of available funds by the USD size
-      availableFunds -= USDSize;
-      // then it will increase the final price by the increment value
-      loopPrice += increment;
-      USDSize = size * loopPrice;
-      count++;
-    }
-  }
-  // need unique IDs for each trade, but need to also get IDs from CB, so DB has no default.
-  // store a number that counts up every time autoSetup is used, and increase it before using it in case of error
-  // then use it here and increase it by the number of trades being put through this way
-  try {
-    const number = (Number(user.auto_setup_number) + orderList.length)
-    await databaseClient.setAutoSetupNumber(number, user.id);
-
-    // put a market order in for how much BTC need to be purchase for all the sell orders
-    if (btcToBuy >= 0.000016) {
-      const tradeDetails = {
-        side: 'BUY',
-        size: btcToBuy.toFixed(8), // BTC
-        product_id: 'BTC-USD',
-        stp: 'cn',
-        userID: user.id,
-        type: 'market'
-      };
-      let bigOrder = await coinbaseClient.placeOrder(tradeDetails);
-      console.log('big order to balance btc avail', bigOrder.size, 'user', user.taker_fee);
-      await robot.updateFunds(user.id);
-    }
-    // put each trade into the db as a reorder so the sync loop can sync the right amount
-    for (let i = 0; i < orderList.length; i++) {
-      const order = orderList[i];
-      // adding a bunch of 0s allows easy sorting by id in the DB which might be useful later so better to start now
-      order.id = '0000000000' + (Number(user.auto_setup_number) + i).toString();
-      // use the current time for the created time 
-      const time = new Date();
-      order.created_at = time;
-      order.reorder = true;
-      // console.log('order', order);
-      await databaseClient.storeTrade(order, order, time);
-    }
-  } catch (err) {
-    console.log(err, 'problem in autoSetup ');
-    cache.storeError(userID, {
-      errorText: `problem in auto setup`
-    })
   }
 }
 

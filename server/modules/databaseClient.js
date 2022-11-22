@@ -210,7 +210,7 @@ const getLimitedUnsettledTrades = (userID, limit) => {
       let sqlText = `(SELECT * FROM "limit_orders" WHERE "side"='SELL' AND "flipped"=false AND "settled"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "limit_price" ASC LIMIT $2)
       UNION
       (SELECT * FROM "limit_orders" WHERE "side"='BUY' AND "flipped"=false AND "settled"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "limit_price" DESC LIMIT $2)
-      ORDER BY "price" DESC;`;
+      ORDER BY "limit_price" DESC;`;
       const results = await pool.query(sqlText, [userID, limit]);
 
       resolve(results.rows);
@@ -417,7 +417,7 @@ const getSpentUSD = (userID, makerFee) => {
 // because the bot stores more "open" orders than CBP will allow for
 const getSpentBTC = (userID) => {
   return new Promise((resolve, reject) => {
-    let sqlText = `SELECT sum("size")
+    let sqlText = `SELECT sum("base_size")
     FROM "limit_orders"
     WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
     pool.query(sqlText, [userID])
@@ -440,10 +440,10 @@ const getReorders = (userID, limit) => {
       // first select the closest trades on either side according to the limit (which is in the bot settings table)
       // then select from the results any that need to be reordered
       let sqlText = `SELECT * FROM (
-        (SELECT "order_id", "will_cancel", "userID", "price", "reorder", "userID" FROM "limit_orders" WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT $2)
+        (SELECT "order_id", "will_cancel", "userID", "limit_price", "reorder", "userID" FROM "limit_orders" WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "limit_price" ASC LIMIT $2)
         UNION
-        (SELECT "order_id", "will_cancel", "userID", "price", "reorder", "userID" FROM "limit_orders" WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT $2)
-        ORDER BY "price" DESC
+        (SELECT "order_id", "will_cancel", "userID", "limit_price", "reorder", "userID" FROM "limit_orders" WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "limit_price" DESC LIMIT $2)
+        ORDER BY "limit_price" DESC
         ) as reorders
         WHERE "reorder"=true;`;
       const results = await pool.query(sqlText, [userID, limit])

@@ -93,19 +93,19 @@ router.get('/profits', rejectUnauthenticated, async (req, res) => {
 
   // for sum since a day ago
   const lastDayQueryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" + "previous_fill_fees")) 
-  FROM public.orders 
+  FROM limit_orders 
   WHERE "side" = 'sell' AND "settled" = 'true' AND "userID" = $1 AND "done_at" > now() - interval '1 day';`;
   // for sum since a week ago
   const lastWeekQueryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" + "previous_fill_fees")) 
-  FROM public.orders 
+  FROM limit_orders 
   WHERE "side" = 'sell' AND "settled" = 'true' AND "userID" = $1 AND "done_at" > now() - interval '1 week';`;
   // for sum since 30 days ago
   const lastThirtyDayQueryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" + "previous_fill_fees")) 
-  FROM public.orders 
+  FROM limit_orders 
   WHERE "side" = 'sell' AND "settled" = 'true' AND "userID" = $1 AND "done_at" > now() - interval '30 day';`;
   // // for sum since reset
   const sinceResetQueryText = `SELECT SUM(("original_sell_price" * "size") - ("original_buy_price" * "size") - ("fill_fees" + "previous_fill_fees")) 
-  FROM public.orders 
+  FROM limit_orders 
   WHERE "side" = 'sell' AND "settled" = 'true' AND "include_in_profit" = 'true' AND "userID" = $1;`;
   try {
 
