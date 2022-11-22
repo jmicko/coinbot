@@ -132,7 +132,7 @@ async function syncOrders(userID, count) {
       // move this back down here because orders need to stay in the db even if canceled until processOrders is done
       // the problem being that it might replace the order based on something stored in an array
       cache.updateStatus(userID, 'main loop - delete marked orders');
-      await deleteMarkedOrders(userID);
+      await databaseClient.deleteMarkedOrders(userID);
       cache.updateStatus(userID, 'end delete marked orders');
 
     } else {
@@ -384,23 +384,6 @@ async function quickSync(userID) {
   });
 }
 
-async function deleteMarkedOrders(userID) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const queryText = `DELETE from "orders" WHERE "will_cancel"=true AND "userID"=$1;`;
-      let result = await pool.query(queryText, [userID]);
-      if (result.rowCount > 0) {
-        cache.storeMessage(userID, {
-          messageText: `Orders marked for cancel were canceled`,
-          orderUpdate: true
-        });
-      }
-      resolve(result);
-    } catch (err) {
-      reject(err)
-    }
-  });
-}
 
 // process orders that have been settled
 async function processOrders(userID) {
@@ -411,10 +394,6 @@ async function processOrders(userID) {
 
 
       // check all trades in db that are both settled and NOT flipped
-      // sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
-      // store the trades in an object
-      // const result = await pool.query(sqlText, [userID]);
-      // const tradeList = result.rows;
       const tradeList = await databaseClient.getSettledTrades(userID);
       cache.updateStatus(userID, 'got all orders to process');
       // if there is at least one trade...
@@ -448,8 +427,6 @@ async function processOrders(userID) {
                 // await databaseClient.storeTrade(cbOrder, dbOrder, cbOrder.created_at);
                 // ...mark the old trade as flipped
                 await databaseClient.markAsFlipped(dbOrder.id);
-                // const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
-                // let updatedTrade = await pool.query(queryText, [dbOrder.id]);
               } else {
                 console.log('new trade failed!!!');
               }
@@ -669,14 +646,12 @@ async function settleMultipleOrders(userID) {
             let fullSettledDetails = await coinbaseClient.getOrderNew(userID, orderToCheck.id);
             console.log('fully settled:', fullSettledDetails);
             // update the order in the db
-            const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
+            const queryText = `UPDATE "limit_orders" SET "settled" = $1, "total_fees" = $2, "filled_size" = $3, "filled_value" = $4 WHERE "order_id"= $5;`;
             await pool.query(queryText, [
               fullSettledDetails.order.settled,
-              fullSettledDetails.order.done_at,
               fullSettledDetails.order.total_fees,
               fullSettledDetails.order.filled_size,
-              fullSettledDetails.order.executed_value,
-              fullSettledDetails.order.done_reason,
+              fullSettledDetails.order.filled_value,
               orderToCheck.id
             ]);
           }

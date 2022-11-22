@@ -187,7 +187,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       await pool.query(apiQueryText, [userToDelete]);
 
       // delete from orders table 
-      const ordersQueryText = `DELETE from "orders" WHERE "userID" = $1;`;
+      const ordersQueryText = `DELETE from "limit_orders" WHERE "userID" = $1;`;
       await pool.query(ordersQueryText, [userToDelete]);
 
       // delete from user settings table 
@@ -211,7 +211,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
         await pool.query(apiQueryText, [userToDelete]);
 
         // delete from orders table 
-        const ordersQueryText = `DELETE from "orders" WHERE "userID" = $1;`;
+        const ordersQueryText = `DELETE from "limit_orders" WHERE "userID" = $1;`;
         await pool.query(ordersQueryText, [userToDelete]);
 
         // delete from user settings table 

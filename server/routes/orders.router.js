@@ -85,7 +85,7 @@ router.delete('/range', rejectUnauthenticated, async (req, res) => {
     await sleep(5000);
 
     // delete from db
-    const queryText = `DELETE from "orders" WHERE "userID"=$1 AND settled=false AND price BETWEEN $2 AND $3;`;
+    const queryText = `DELETE from "limit_orders" WHERE "userID"=$1 AND settled=false AND limit_price BETWEEN $2 AND $3;`;
     await pool.query(queryText, [userID, req.body.lowerLimit, req.body.upperLimit]);
     
     // mark all open orders as reorder
@@ -119,7 +119,7 @@ router.delete('/all', rejectUnauthenticated, async (req, res) => {
     await sleep(5000);
 
     // delete from db first
-    const queryText = `DELETE from "orders" WHERE "settled" = false AND "userID"=$1;`;
+    const queryText = `DELETE from "limit_orders" WHERE "settled" = false AND "userID"=$1;`;
     await pool.query(queryText, [userID]);
     
     // mark all open orders as reorder

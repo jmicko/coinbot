@@ -133,7 +133,7 @@ router.get('/profits', rejectUnauthenticated, async (req, res) => {
 router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   try {
-    let sqlText = `SELECT * FROM "orders" WHERE "userID"=$1;`;
+    let sqlText = `SELECT * FROM "limit_orders" WHERE "userID"=$1;`;
     let result = await pool.query(sqlText, [userID]);
     const allOrders = result.rows;
 
@@ -141,7 +141,7 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
       {
         sheet: 'Orders',
         columns: [
-          { label: 'ID', value: 'id' },
+          { label: 'Order ID', value: 'order_id' },
           { label: 'Price', value: 'price' },
           { label: 'Size', value: 'size' },
           { label: 'Trade pair ratio', value: 'trade_pair_ratio' },
@@ -182,7 +182,7 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
 router.get('/exportCurrentJSON', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   try {
-    let sqlText = `SELECT * FROM "orders" WHERE "userID"=$1;`;
+    let sqlText = `SELECT * FROM "limit_orders" WHERE "userID"=$1;`;
     let result = await pool.query(sqlText, [userID]);
     // const allOrders = JSON.stringify(result.rows);
     const allOrders = await databaseClient.getUnsettledTrades('all', userID);
@@ -588,7 +588,7 @@ router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
 router.post('/resetProfit', rejectUnauthenticated, async (req, res) => {
   const profit_reset = new Date();
   const userID = req.user.id;
-  const queryText = `UPDATE "orders" SET "include_in_profit" = false WHERE "userID"=$1 AND "settled"=true;`;
+  const queryText = `UPDATE "limit_orders" SET "include_in_profit" = false WHERE "userID"=$1 AND "settled"=true;`;
   const timeQuery = `UPDATE "user_settings" SET "profit_reset" = $1 WHERE "userID" = $2;`
   try {
     await pool.query(queryText, [userID]);
