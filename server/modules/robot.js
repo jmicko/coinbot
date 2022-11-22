@@ -330,8 +330,8 @@ async function quickSync(userID) {
         // console.log('recent fill', recentFill, fill.order_id);
         // get order from db
         // if (fill.settled) {
-        if (recentFill != fill.order_id) {
-          console.log('they are NOT the same')
+          // console.log(fill.trade_id == recentFill, 'they are the same')
+          if (recentFill != fill.trade_id) {
 
           const singleDbOrder = await databaseClient.getSingleTrade(fill.order_id);
           // console.log('SINGLE DB ORDER', singleDbOrder);
@@ -360,9 +360,9 @@ async function quickSync(userID) {
         }
         // } // end if (fill.settled)
       } // end for loop
-      // console.log('HERE IS THE FILL', fills[0]);
+      // console.log('HERE IS THE FILL', fills[0].trade_id);
       // after checking fills, store the most recent so don't need to check it later
-      cache.setKey(userID, 'recentFill', fills[0].order_id);
+      cache.setKey(userID, 'recentFill', fills[0].trade_id);
 
       cache.updateStatus(userID, 'done checking fills');
       // this will check the specified number of trades to sync on either side to see if any 
@@ -424,7 +424,7 @@ async function processOrders(userID) {
                 await databaseClient.storeTrade(newOrder.order, dbOrder, flipped_at);
                 // await databaseClient.storeTrade(cbOrder, dbOrder, cbOrder.created_at);
                 // ...mark the old trade as flipped
-                await databaseClient.markAsFlipped(dbOrder.id);
+                await databaseClient.markAsFlipped(dbOrder.order_id);
               } else {
                 console.log('new trade failed!!!');
               }
@@ -485,7 +485,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     base_size: dbOrder.base_size, // BTC
     trade_pair_ratio: dbOrder.trade_pair_ratio,
     product_id: dbOrder.product_id,
-    stp: 'cn',
+    client_order_id: dbOrder.next_client_order_id,
     userID: dbOrder.userID,
   };
   // add buy/sell requirement and price
@@ -608,6 +608,7 @@ async function settleMultipleOrders(userID) {
   cache.updateStatus(userID, 'start settleMultipleOrders (SMO)');
   const userAPI = cache.getAPI(userID);
   const ordersArray = cache.getKey(userID, 'ordersToCheck');
+  // console.log(ordersArray,'orders array');
 
   return new Promise(async (resolve, reject) => {
     if (ordersArray.length > 0) {
@@ -628,10 +629,11 @@ async function settleMultipleOrders(userID) {
         heartBeat(userID);
         try {
           // if it should be canceled, delete it and skip the rest of the loop iteration
-          const willCancel = cache.checkIfCanceling(userID, orderToCheck.id);
+          const willCancel = cache.checkIfCanceling(userID, orderToCheck.order_id);
           if (willCancel) {
             // delete the trade from the db
-            await databaseClient.deleteTrade(orderToCheck.id);
+            // todo - just update the status now since coinbase keeps records of cancelled orders
+            await databaseClient.deleteTrade(orderToCheck.order_id);
             continue;
           } else if (orderToCheck.reorder) {
             // if we know it should be reordered, just reorder it
@@ -641,7 +643,7 @@ async function settleMultipleOrders(userID) {
             // if not a reorder and not canceled, look up the full settlement details on CB
             cache.updateStatus(userID, 'SMO loop get order');
             // get all the order details from cb
-            let fullSettledDetails = await coinbaseClient.getOrderNew(userID, orderToCheck.id);
+            let fullSettledDetails = await coinbaseClient.getOrderNew(userID, orderToCheck.order_id);
             console.log('fully settled:', fullSettledDetails);
             // update the order in the db
             const queryText = `UPDATE "limit_orders" SET "settled" = $1, "total_fees" = $2, "filled_size" = $3, "filled_value" = $4 WHERE "order_id"= $5;`;
@@ -650,7 +652,7 @@ async function settleMultipleOrders(userID) {
               fullSettledDetails.order.total_fees,
               fullSettledDetails.order.filled_size,
               fullSettledDetails.order.filled_value,
-              orderToCheck.id
+              orderToCheck.order_id
             ]);
           }
         } catch (err) {

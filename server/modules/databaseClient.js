@@ -722,7 +722,7 @@ async function markAsFlipped(order_id) {
   return new Promise(async (resolve, reject) => {
     try {
       console.log('marking as flipped', order_id);
-      const sqlText = `UPDATE "limit_orders" SET "flipped" = true WHERE "id"=$1;`;
+      const sqlText = `UPDATE "limit_orders" SET "flipped" = true WHERE "order_id"=$1;`;
       let result = await pool.query(sqlText, [order_id]);
       resolve(result);
     } catch (err) {
