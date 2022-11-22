@@ -93,35 +93,83 @@ function startWebsocket(userID) {
   }
 
 
-  ws.on('open', function () {
-    console.log('OPENING');
-    subscribeToProducts(products, CHANNEL_NAMES.status, ws);
-    subscribeToProducts(products, CHANNEL_NAMES.tickers, ws);
-    subscribeToUser(products, ws);
-  });
+  // ws.on('open', function () {
+  //   console.log('OPENING');
+  //   subscribeToProducts(products, CHANNEL_NAMES.status, ws);
+  //   subscribeToProducts(products, CHANNEL_NAMES.tickers, ws);
+  //   subscribeToUser(products, ws);
+  // });
 
-  ws.on('close', function () {
-    console.log('Socket was closed');
+  // ws.on('close', function () {
+  //   console.log('Socket was closed');
+
+  //   reOpen();
+
+  // });
+
+  open();
+  
+  function open () {
+    
+    fs.appendFile('Output1.txt', 'attempting to reopen socket \r\n', (err) => {
+      // In case of a error log err.
+      if (err) console.log(err, 'error writing to file');;
+    });
+    
     ws = new WebSocket(WS_API_URL);
-  });
-
-  ws.on('message', function (data) {
-    const parsedData = JSON.parse(data);
-    // console.log(parsedData, 'data from ws');
-    if (parsedData.events) {
-      parsedData.events.forEach(event => {
-        if (event.tickers) {
-          event.tickers.forEach(ticker => {
-            console.log(ticker);
-            return
-          });
-        } else {
-          console.log(event, 'event from ws');
-        }
+    
+    
+    ws.on('open', function () {
+      console.log('OPENING');
+      subscribeToProducts(products, CHANNEL_NAMES.status, ws);
+      subscribeToProducts(products, CHANNEL_NAMES.tickers, ws);
+      subscribeToUser(products, ws);
+    });
+    
+      ws.on('close', function () {
+        console.log('Socket was closed');
+    
+        open();
+    
       });
-    }
-    console.log('');
-  });
+  
+    ws.on('message', function (data) {
+      const parsedData = JSON.parse(data);
+      // console.log(parsedData, 'data from ws');
+      if (parsedData.events) {
+        parsedData.events.forEach(event => {
+          if (event.tickers) {
+            event.tickers.forEach(ticker => {
+              console.log(ticker);
+              return
+            });
+          } else {
+            console.log(event, 'event from ws');
+          }
+        });
+      }
+      console.log('');
+    });
+
+  }
+
+  // ws.on('message', function (data) {
+  //   const parsedData = JSON.parse(data);
+  //   // console.log(parsedData, 'data from ws');
+  //   if (parsedData.events) {
+  //     parsedData.events.forEach(event => {
+  //       if (event.tickers) {
+  //         event.tickers.forEach(ticker => {
+  //           console.log(ticker);
+  //           return
+  //         });
+  //       } else {
+  //         console.log(event, 'event from ws');
+  //       }
+  //     });
+  //   }
+  //   console.log('');
+  // });
 
 }
 
