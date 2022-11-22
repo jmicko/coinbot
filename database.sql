@@ -54,6 +54,8 @@ INSERT INTO "bot_settings"
 
 CREATE TABLE IF NOT EXISTS "limit_orders"
 (
+  order_id character varying COLLATE pg_catalog."default" NOT NULL,
+  
   "userID" integer,
   original_buy_price numeric(32,16),
   original_sell_price numeric(32,16),
@@ -64,7 +66,6 @@ CREATE TABLE IF NOT EXISTS "limit_orders"
   include_in_profit boolean DEFAULT true,
   will_cancel boolean DEFAULT false,
 
-  order_id character varying COLLATE pg_catalog."default" NOT NULL,
   product_id character varying COLLATE pg_catalog."default",
   coinbase_user_id character varying COLLATE pg_catalog."default",
   base_size numeric(32,8),
@@ -132,4 +133,4 @@ CREATE INDEX "IDX_session_expire" ON "session" ("expire");
 
 -- this will index the orders table so it is much faster to look for reorders and unsettled trades
 CREATE INDEX reorders
-ON "orders" ("side", "flipped", "will_cancel", "userID", "settled");
+ON "limit_orders" ("side", "flipped", "will_cancel", "userID", "settled");

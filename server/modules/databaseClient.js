@@ -1,47 +1,98 @@
 const pool = require('./pool');
+const { v4: uuidv4 } = require('uuid');
 
 // stores the details of a trade-pair. The originalDetails are details that stay with a trade-pair when it is flipped
 // flipped_at is the "Time" shown on the interface. It has no other function
 const storeTrade = (newOrder, originalDetails, flipped_at) => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     console.log('NEW ORDER IN STORETRADE', newOrder);
     // add new order to the database
-    const sqlText = `INSERT INTO "orders" 
-      ("id", "userID", "price", "size", "trade_pair_ratio", "side", "settled", "product_id", "time_in_force", 
-      "created_at", "flipped_at", "done_at", "fill_fees", "previous_fill_fees", "filled_size", "executed_value", "original_buy_price", "original_sell_price") 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18);`;
-    pool.query(sqlText, [
-      newOrder.order_id,
-      originalDetails.userID,
-      newOrder.order_configuration.limit_limit_gtc.limit_price,
-      newOrder.order_configuration.limit_limit_gtc.base_size,
-      originalDetails.trade_pair_ratio,
-      newOrder.side,
-      newOrder.settled,
-      newOrder.product_id,
-      newOrder.time_in_force,
-      newOrder.created_time,
-      flipped_at,
-      newOrder.done_at,
-      newOrder.total_fees,
-      // bring the fees from the previous order to the new one for more accurate profit calculation
-      originalDetails.total_fees,
-      newOrder.filled_size,
-      newOrder.executed_value,
-      originalDetails.original_buy_price,
-      originalDetails.original_sell_price
-    ])
-      .then((results) => {
-        const success = {
-          message: `order ${newOrder.id} was successfully stored in db`,
-          results: results,
-          success: true
-        }
-        resolve(success);
-      })
-      .catch((err) => {
-        reject(err);
-      });
+    const sqlText = `INSERT INTO "limit_orders" 
+      (
+      "order_id",
+      "userID",
+      "original_buy_price",
+      "original_sell_price"
+      "trade_pair_ratio",
+      "flipped_at",
+      "reorder",
+      "product_id",
+      "coinbase_user_id",
+      "base_size",
+      "limit_price",
+      "post_only",
+      "side",
+      "client_order_id",
+      "next_client_order_id",
+      "status",
+      "time_in_force",
+      "created_time",
+      "completion_percentage",
+      "filled_size",
+      "average_filled_price",
+      "fee",
+      "number_of_fills",
+      "filled_value",
+      "pending_cancel",
+      "size_in_quote",
+      "total_fees",
+      "previous_total_fees",
+      "size_inclusive_of_fees",
+      "total_value_after_fees",
+      "trigger_status",
+      "order_type",
+      "reject_reason",
+      "settled",
+      "product_type",
+      "reject_message",
+      "cancel_message",
+      ) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37);`;
+    try {
+      const results = await pool.query(sqlText, [
+        newOrder.order_id,
+        originalDetails.userID,
+        originalDetails.original_buy_price,
+        originalDetails.original_sell_price,
+        originalDetails.trade_pair_ratio,
+        flipped_at,
+        newOrder.reorder || false,
+        newOrder.product_id,
+        newOrder.coinbase_user_id,
+        newOrder.order_configuration.limit_limit_gtc.base_size,
+        newOrder.order_configuration.limit_limit_gtc.limit_price,
+        newOrder.order_configuration.limit_limit_gtc.post_only,
+        newOrder.side,
+        newOrder.client_order_id,
+        newOrder.next_client_order_id || uuidv4(),
+        newOrder.status,
+        newOrder.time_in_force,
+        newOrder.created_time,
+        newOrder.completion_percentage,
+        newOrder.filled_size,
+        newOrder.average_filled_price,
+        newOrder.fee,
+        newOrder.number_of_fills,
+        newOrder.filled_value,
+        newOrder.pending_cancel,
+        newOrder.size_in_quote,
+        newOrder.total_fees,
+        // bring the fees from the previous order to the new one for more accurate profit calculation
+        originalDetails.total_fees,
+        newOrder.size_inclusive_of_fees,
+        newOrder.total_value_after_fees,
+        newOrder.trigger_status,
+        newOrder.order_type,
+        newOrder.reject_reason,
+        newOrder.settled,
+        newOrder.product_type,
+        newOrder.reject_message,
+        newOrder.cancel_message,
+      ])
+      resolve(results);
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 
@@ -51,8 +102,25 @@ const storeReorderTrade = (newOrder, originalDetails, flipped_at) => {
   return new Promise((resolve, reject) => {
     // add new order to the database
     const sqlText = `INSERT INTO "orders" 
-      ("id", "userID", "price", "size", "trade_pair_ratio", "side", "settled", "product_id", "time_in_force", 
-      "created_at", "flipped_at", "done_at", "fill_fees", "previous_fill_fees", "filled_size", "executed_value", "original_buy_price", "original_sell_price", "reorder") 
+      ("id",
+      "userID",
+      "price",
+      "size",
+      "trade_pair_ratio",
+      "side",
+      "settled",
+      "product_id",
+      "time_in_force",
+      "created_at",
+      "flipped_at",
+      "done_at",
+      "fill_fees",
+      "previous_fill_fees",
+      "filled_size",
+      "executed_value",
+      "original_buy_price",
+      "original_sell_price",
+      "reorder") 
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19);`;
     pool.query(sqlText, [
       newOrder.id,

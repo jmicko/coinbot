@@ -623,8 +623,8 @@ async function placeOrderNew(userID, order) {
         side: order.side,
         order_configuration: {
           limit_limit_gtc: {
-            base_size: order.size,
-            limit_price: order.price,
+            base_size: order.base_size,
+            limit_price: order.limit_price,
             // post_only: false
           },
         },

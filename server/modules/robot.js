@@ -42,9 +42,9 @@ async function startSync() {
     syncOrders(userID, 0);
     try {
       startWebsocket(userID);
-      
+
     } catch (error) {
-      
+
     }
     // deSyncOrderLoop(user, 0);
   });
@@ -441,12 +441,13 @@ async function processOrders(userID) {
                 console.log(newOrder.order.order_configuration, 'order_configuration from new api');
                 // ...store the new trade
                 // need to change the db later, but this will make the profit calc work
-                dbOrder.total_fees = dbOrder.fill_fees;
+                // dbOrder.total_fees = dbOrder.fill_fees;
                 // take the time the new order was created, and use it as the flipped_at value
-                await databaseClient.storeTrade(newOrder.order, dbOrder, newOrder.order.created_time);
+                const flipped_at = newOrder.order.created_time
+                await databaseClient.storeTrade(newOrder.order, dbOrder, flipped_at);
                 // await databaseClient.storeTrade(cbOrder, dbOrder, cbOrder.created_at);
                 // ...mark the old trade as flipped
-                await databaseClient.markAsFlipped(dbOrder.id)
+                await databaseClient.markAsFlipped(dbOrder.id);
                 // const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
                 // let updatedTrade = await pool.query(queryText, [dbOrder.id]);
               } else {
@@ -725,28 +726,28 @@ async function reorder(orderToReorder, retry) {
       upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.id);
 
       tradeDetails = {
-        original_sell_price: upToDateDbOrder.original_sell_price,
-        original_buy_price: upToDateDbOrder.original_buy_price,
+        // original_sell_price: upToDateDbOrder.original_sell_price,
+        // original_buy_price: upToDateDbOrder.original_buy_price,
         side: upToDateDbOrder.side,
-        price: upToDateDbOrder.price, // USD
-        size: upToDateDbOrder.size, // BTC
+        limit_price: JSON.stringify(Number(upToDateDbOrder.limit_price)), // USD
+        base_size: JSON.stringify(Number(upToDateDbOrder.base_size)), // BTC
         product_id: upToDateDbOrder.product_id,
-        trade_pair_ratio: upToDateDbOrder.trade_pair_ratio,
-        userID: upToDateDbOrder.userID,
+        // trade_pair_ratio: upToDateDbOrder.trade_pair_ratio,
+        // userID: upToDateDbOrder.userID,
       };
       // if the order is marked for reordering, it was deleted already and there is no need to wait to double check
       // if retry is passed as true, the bot has already double check CB and not found both times so reorder
       if (upToDateDbOrder.reorder || retry) {
         try {
           // send the new order with the trade details
-          let pendingTrade = await coinbaseClient.placeOrderNew(upToDateDbOrder.userID, tradeDetails);
+          let pendingTrade = await coinbaseClient.placeOrderNew(userID, tradeDetails);
           let newTrade = await coinbaseClient.getOrderNew(userID, pendingTrade.order_id)
-          console.log(newTrade,'newTrade');
-          // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
-          tradeDetails.fill_fees = upToDateDbOrder.previous_fill_fees;
+          console.log(newTrade, 'newTrade');
+          // because the storeDetails function will see the upToDateDbOrder as the "old order", need to store previous_total_fees as just total_fees
+          upToDateDbOrder.total_fees = upToDateDbOrder.previous_total_fees;
           // store the new trade in the db. the trade details are also sent to store trade position prices
           // when reordering a trade, bring the old flipped_at value through so it doesn't change the "Time" on screen
-          let results = await databaseClient.storeTrade(newTrade.order, tradeDetails, upToDateDbOrder.flipped_at);
+          let results = await databaseClient.storeTrade(newTrade.order, upToDateDbOrder, upToDateDbOrder.flipped_at);
 
           // delete the old order from the db
           await databaseClient.deleteTrade(orderToReorder.id);

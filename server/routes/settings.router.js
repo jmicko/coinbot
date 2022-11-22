@@ -367,6 +367,8 @@ router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
     DROP TABLE IF EXISTS "orders";
     CREATE TABLE IF NOT EXISTS "limit_orders"
     (
+      order_id character varying COLLATE pg_catalog."default" NOT NULL,
+
       "userID" integer,
       original_buy_price numeric(32,16),
       original_sell_price numeric(32,16),
@@ -377,7 +379,6 @@ router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
       include_in_profit boolean DEFAULT true,
       will_cancel boolean DEFAULT false,
 
-      order_id character varying COLLATE pg_catalog."default" NOT NULL,
       product_id character varying COLLATE pg_catalog."default",
       coinbase_user_id character varying COLLATE pg_catalog."default",
       base_size numeric(32,8),
@@ -412,9 +413,14 @@ router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
       CONSTRAINT orders_pkey PRIMARY KEY (order_id)
     );
     CREATE INDEX reorders
-    ON "orders" ("side", "flipped", "will_cancel", "userID", "settled");`;
-    await pool.query(queryText);
-    res.sendStatus(200);
+    ON "limit_orders" ("side", "flipped", "will_cancel", "userID", "settled");`;
+    try {
+      await pool.query(queryText);
+      res.sendStatus(200);
+    } catch (err) {
+      res.sendStatus(500);
+      console.log(err, 'error resetting orders table');
+    }
   } else {
     res.sendStatus(403)
   }
@@ -478,6 +484,8 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       VALUES (1);
     CREATE TABLE IF NOT EXISTS "limit_orders"
     (
+      order_id character varying COLLATE pg_catalog."default" NOT NULL,
+
       "userID" integer,
       original_buy_price numeric(32,16),
       original_sell_price numeric(32,16),
@@ -488,7 +496,6 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       include_in_profit boolean DEFAULT true,
       will_cancel boolean DEFAULT false,
     
-      order_id character varying COLLATE pg_catalog."default" NOT NULL,
       product_id character varying COLLATE pg_catalog."default",
       coinbase_user_id character varying COLLATE pg_catalog."default",
       base_size numeric(32,8),
@@ -556,9 +563,14 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
     
     -- this will index the orders table so it is much faster to look for reorders and unsettled trades
     CREATE INDEX reorders
-    ON "orders" ("side", "flipped", "will_cancel", "userID", "settled");`;
-    await pool.query(queryText);
-    res.sendStatus(200);
+    ON "limit_orders" ("side", "flipped", "will_cancel", "userID", "settled");`;
+    try {
+      await pool.query(queryText);
+      res.sendStatus(200);
+    } catch (err) {
+      res.sendStatus(500);
+      console.log(err, 'error factory resetting');
+    }
   } else {
     res.sendStatus(403)
   }

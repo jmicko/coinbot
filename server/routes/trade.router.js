@@ -24,8 +24,8 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       original_sell_price: JSON.stringify(order.original_sell_price),
       original_buy_price: JSON.stringify(order.price),
       side: order.side,
-      price: JSON.stringify(order.price), // USD
-      size: JSON.stringify(order.size), // BTC
+      limit_price: JSON.stringify(order.price), // USD
+      base_size: JSON.stringify(order.size), // BTC
       product_id: order.product_id,
       stp: 'cn',
       userID: userID,
