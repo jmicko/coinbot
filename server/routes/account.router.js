@@ -228,16 +228,16 @@ router.post('/importCurrentJSON', rejectUnauthenticated, async (req, res) => {
           newTrade.id = trade.id + Date.now();
         }
       } else {
-        console.log('price is NOT a valid string', trade.price);
+        console.log('limit_price is NOT a valid string', trade.limit_price);
         errors = true;
       }
 
-      // price should be a number greater than 0 but not too big
-      if (Number(trade.price) && (Number(trade.price) < 999999999) && (Number(trade.price) > 0)) {
-        // console.log('price is a valid number', trade.price);
-        newTrade.price = Number(trade.price);
+      // limit_price should be a number greater than 0 but not too big
+      if (Number(trade.limit_price) && (Number(trade.limit_price) < 999999999) && (Number(trade.limit_price) > 0)) {
+        // console.log('limit_price is a valid number', trade.limit_price);
+        newTrade.limit_price = Number(trade.limit_price);
       } else {
-        console.log('price is NOT a valid number', trade.price);
+        console.log('limit_price is NOT a valid number', trade.limit_price);
         errors = true;
       }
 

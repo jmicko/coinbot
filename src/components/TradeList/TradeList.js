@@ -22,13 +22,13 @@ function TradeList(props) {
   // this watches the store and maps arrays to html when it changes because can't map nothing
   useEffect(() => {
     if (openOrdersInOrder.sells !== undefined) {
-      setLowestSell(Number(openOrdersInOrder.sells[0]?.price || 0))
+      setLowestSell(Number(openOrdersInOrder.sells[0]?.limit_price || 0))
       setSells(openOrdersInOrder.sells.slice(0).reverse().map((sell) => {
         return <SingleTrade key={sell.order_id} order={sell} />
       }))
     }
     if (openOrdersInOrder.buys !== undefined) {
-      setHighestBuy(Number(openOrdersInOrder.buys[0]?.price || 0))
+      setHighestBuy(Number(openOrdersInOrder.buys[0]?.limit_price || 0))
       setBuys(openOrdersInOrder.buys.map((buy) => {
         return <SingleTrade key={buy.order_id} order={buy} />
       }))

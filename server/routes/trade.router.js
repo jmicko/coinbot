@@ -21,11 +21,11 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
   if (user.active && user.approved) {
     // tradeDetails const should take in values sent from trade component form
     const tradeDetails = {
-      original_sell_price: JSON.stringify(order.original_sell_price),
-      original_buy_price: JSON.stringify(order.price),
+      original_sell_price: JSON.stringify(Number(order.original_sell_price)),
+      original_buy_price: JSON.stringify(Number(order.limit_price)),
       side: order.side,
-      limit_price: JSON.stringify(order.price), // USD
-      base_size: JSON.stringify(order.base_size), // BTC
+      limit_price: JSON.stringify(Number(order.limit_price)), // USD
+      base_size: JSON.stringify(Number(order.base_size)), // BTC
       product_id: order.product_id,
       stp: 'cn',
       userID: userID,
@@ -34,7 +34,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
     };
     if (order.type) {
       tradeDetails.type = 'market';
-      // delete tradeDetails.price;
+      // delete tradeDetails.limit_price;
     }
     try {
       // send the new order with the trade details

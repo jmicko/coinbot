@@ -80,7 +80,7 @@ function Trade(props) {
         original_sell_price: original_sell_price,
         original_buy_price: price,
         side: transactionSide,
-        price: price,
+        limit_price: price,
         base_size: transactionAmountBTC,
         product_id: transactionProduct,
         trade_pair_ratio: tradePairRatio,

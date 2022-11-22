@@ -72,7 +72,6 @@ function Login() {
         <input
           type="text"
           name="username"
-          // value={Number(price)}
           required
           onChange={(event) => setUsername(event.target.value)}
         />

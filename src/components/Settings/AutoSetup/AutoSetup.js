@@ -138,9 +138,9 @@ function AutoSetup(props) {
       }
 
       // set the current price based on if it is a buy or sell
-      let price = buyPrice;
+      let limit_price = buyPrice;
       if (side == 'SELL') {
-        price = original_sell_price;
+        limit_price = original_sell_price;
       }
 
       // if the size is in BTC, it will never change. 
@@ -171,7 +171,7 @@ function AutoSetup(props) {
         original_buy_price: buyPrice,
         original_sell_price: original_sell_price,
         side: side,
-        price: price,
+        limit_price: limit_price,
         size: actualSize,
         total_fees: prevFees(),
         product_id: parameters.product_id,

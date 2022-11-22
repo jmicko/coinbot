@@ -335,8 +335,8 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
 
     // need to update the current price on all sells after changing numbers on all trades
     const updateSellsPriceQueryText = `UPDATE orders
-    SET "price" = "original_sell_price"
-    WHERE "side" = 'sell' AND "userID" = $1;`;
+    SET "limit_price" = "original_sell_price"
+    WHERE "side" = 'SELL' AND "userID" = $1;`;
 
     await pool.query(updateSellsPriceQueryText, [user.id]);
 
