@@ -9,6 +9,7 @@ import Meter from '../Meter/Meter';
 
 function TradeList(props) {
   const user = useSelector((store) => store.accountReducer.userReducer);
+  const tickers = useSelector((store) => store.statusReducer.tickers);
   const openOrdersInOrder = useSelector((store) => store.ordersReducer.openOrdersInOrder);
 
   // these will store mapped arrays as html so they can be used after page loads
@@ -72,14 +73,14 @@ function TradeList(props) {
           <Meter
             max={lowestSell}
             min={highestBuy}
-            current={props.priceTicker}
+            current={tickers.btc}
           />
           <div>
 
             {lowestSell !== 0 && highestBuy >= 0
-              ? <p className='price'>&#9650; ${(lowestSell - props.priceTicker).toFixed(2)}
+              ? <p className='price'>&#9650; ${(lowestSell - tickers.btc).toFixed(2)}
                 <br />
-                &#9660; ${(props.priceTicker - highestBuy).toFixed(2)}
+                &#9660; ${(tickers.btc - highestBuy).toFixed(2)}
               </p>
               : <p>No Sells!</p>
             }
