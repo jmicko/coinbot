@@ -98,65 +98,65 @@ const storeTrade = (newOrder, originalDetails, flipped_at) => {
 
 // same as above, only set reorder = true so that the bot knows not to check coinbase for it. 
 // this is used in the autoSetup function to speed up the process
-const storeReorderTrade = (newOrder, originalDetails, flipped_at) => {
-  return new Promise((resolve, reject) => {
-    // add new order to the database
-    const sqlText = `INSERT INTO "orders" 
-      ("id",
-      "userID",
-      "price",
-      "size",
-      "trade_pair_ratio",
-      "side",
-      "settled",
-      "product_id",
-      "time_in_force",
-      "created_at",
-      "flipped_at",
-      "done_at",
-      "fill_fees",
-      "previous_fill_fees",
-      "filled_size",
-      "executed_value",
-      "original_buy_price",
-      "original_sell_price",
-      "reorder") 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19);`;
-    pool.query(sqlText, [
-      newOrder.id,
-      originalDetails.userID,
-      newOrder.price,
-      newOrder.size,
-      originalDetails.trade_pair_ratio,
-      newOrder.side,
-      false,
-      newOrder.product_id,
-      newOrder.time_in_force,
-      newOrder.created_at,
-      flipped_at,
-      newOrder.done_at,
-      newOrder.fill_fees,
-      // bring the fees from the previous order to the new one for more accurate profit calculation
-      originalDetails.fill_fees,
-      newOrder.filled_size,
-      newOrder.executed_value,
-      originalDetails.original_buy_price,
-      originalDetails.original_sell_price,
-      true
-    ])
-      .then((results) => {
-        const success = {
-          message: `order ${newOrder.id} was successfully stored in db`,
-          results: results,
-          success: true
-        }
-        resolve(success);
-      })
-      .catch((err) => {
-        reject(err);
-      });
-  });
-}
+// const storeReorderTrade = (newOrder, originalDetails, flipped_at) => {
+//   return new Promise((resolve, reject) => {
+//     // add new order to the database
+//     const sqlText = `INSERT INTO "orders" 
+//       ("id",
+//       "userID",
+//       "price",
+//       "size",
+//       "trade_pair_ratio",
+//       "side",
+//       "settled",
+//       "product_id",
+//       "time_in_force",
+//       "created_at",
+//       "flipped_at",
+//       "done_at",
+//       "fill_fees",
+//       "previous_fill_fees",
+//       "filled_size",
+//       "executed_value",
+//       "original_buy_price",
+//       "original_sell_price",
+//       "reorder") 
+//       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19);`;
+//     pool.query(sqlText, [
+//       newOrder.id,
+//       originalDetails.userID,
+//       newOrder.price,
+//       newOrder.size,
+//       originalDetails.trade_pair_ratio,
+//       newOrder.side,
+//       false,
+//       newOrder.product_id,
+//       newOrder.time_in_force,
+//       newOrder.created_at,
+//       flipped_at,
+//       newOrder.done_at,
+//       newOrder.fill_fees,
+//       // bring the fees from the previous order to the new one for more accurate profit calculation
+//       originalDetails.fill_fees,
+//       newOrder.filled_size,
+//       newOrder.executed_value,
+//       originalDetails.original_buy_price,
+//       originalDetails.original_sell_price,
+//       true
+//     ])
+//       .then((results) => {
+//         const success = {
+//           message: `order ${newOrder.id} was successfully stored in db`,
+//           results: results,
+//           success: true
+//         }
+//         resolve(success);
+//       })
+//       .catch((err) => {
+//         reject(err);
+//       });
+//   });
+// }
 
 // This function is used when importing trades from the user interface
 // IT MUST USE THE USER ID FROM PASSPORT AUTHENTICATION!!!
@@ -722,7 +722,7 @@ async function markAsFlipped(order_id) {
 
 const databaseClient = {
   storeTrade: storeTrade,
-  storeReorderTrade: storeReorderTrade,
+  // storeReorderTrade: storeReorderTrade,
   importTrade: importTrade,
   getLimitedTrades: getLimitedTrades,
   getLimitedUnsettledTrades: getLimitedUnsettledTrades,
