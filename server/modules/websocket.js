@@ -120,24 +120,9 @@ function startWebsocket(userID) {
       // console.log(parsedData, 'data from ws');
       if (parsedData.events) {
         parsedData.events.forEach(event => {
-          // console.log(event, event.type, 'event from ws');
           if (event.tickers) {
-            // every tick, send an update to open consoles for the user
-            event.tickers.forEach(ticker => {
-
-              cache.sockets.forEach(socket => {
-                // find all open sockets for the user
-                if (socket.userID === userID) {
-                  // console.log(socket.userID, userID)
-                  const msg = {
-                    type: 'ticker',
-                    ticker: ticker
-                  }
-                  socket.emit('message', msg);
-                }
-              })
-              return
-            });
+            // console.log(event, event.type, 'event from ws');
+            handleTickers(userID, event.tickers);
           } else {
             console.log(event, event.type, 'event from ws');
           }
@@ -145,8 +130,29 @@ function startWebsocket(userID) {
       }
       // console.log('');
     });
-
+    
   }
+  
+}
+
+function handleTickers(userID, tickers){
+  // every tick, send an update to open consoles for the user
+  // console.log('handling tickers');
+  tickers.forEach(ticker => {
+    cache.sockets.forEach(socket => {
+      // find each open socket for the user
+      if (socket.userID === userID) {
+        // console.log(socket.userID, userID)
+        const msg = {
+          type: 'ticker',
+          ticker: ticker
+        }
+        // send the message
+        socket.emit('message', msg);
+      }
+    })
+    return
+  });
 
 }
 
