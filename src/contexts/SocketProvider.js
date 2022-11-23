@@ -41,6 +41,11 @@ export function SocketProvider({ children }) {
       }
       if (message.type === 'messageUpdate') {
         dispatch({ type: 'FETCH_BOT_MESSAGES' });
+        if (message.orderUpdate) {
+          dispatch({ type: 'FETCH_ORDERS' });
+          dispatch({ type: 'FETCH_PROFITS' });
+          dispatch({ type: 'FETCH_USER' });
+        }
       }
     });
 

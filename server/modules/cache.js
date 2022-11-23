@@ -122,12 +122,6 @@ const cache = {
         socket.emit('message', msg);
       }
     })
-
-    socketClient.emit('message', {
-      // error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
-      errorUpdate: true,
-      userID: Number(userID)
-    });
   },
   getErrors: (userID) => {
     return cache.storage[userID].errors;
@@ -158,17 +152,11 @@ const cache = {
         // console.log(socket.userID, userID)
         const msg = {
           type: 'messageUpdate',
+          orderUpdate: message.orderUpdate,
         }
         socket.emit('message', msg);
       }
     })
-
-    // socketClient.emit('message', {
-    //   // message: `Internal server message from coinbase! Is the Coinbase Pro website down?`,
-    //   messageUpdate: true,
-    //   orderUpdate: message.orderUpdate,
-    //   userID: Number(userID)
-    // });
   },
 
   getMessages: (userID) => {

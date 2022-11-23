@@ -22,25 +22,6 @@ function Status(props) {
   // const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
   // const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
 
-  const refresh = () => {
-    props.updateUser();
-  }
-
-  const getProfits = useCallback(
-    () => {
-      dispatch({
-        type: 'FETCH_PROFITS'
-      });
-    }, [dispatch]
-  )
-
-  const getAccounts = useCallback(
-    () => {
-      dispatch({
-        type: 'FETCH_USER'
-      });
-    }, [dispatch]
-  )
 
   // watch to see if accuracy changes
   useEffect(() => {
@@ -53,7 +34,6 @@ function Status(props) {
     // return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
     // for now, use this
     if (x !== null) {
-
       let parts = x.toString().split(".");
       parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
       return parts.join(".");
@@ -61,14 +41,6 @@ function Status(props) {
       return "null"
     }
   }
-
-  // update profits when a trade is made
-  useEffect(() => {
-    getProfits();
-    getAccounts();
-    // make it depend on the order reducer because that will change when orders change.
-    // profits are most likely to change when orders change, and do not change if they don't
-  }, [openOrdersInOrder, getProfits, getAccounts]);
 
   useEffect(() => {
     setLoopStatus(prevLoopStatus => {
@@ -89,9 +61,7 @@ function Status(props) {
     if (profitDisplay > 4) {
       setProfitDisplay(1)
     };
-
   }, [profitDisplay]);
-
 
 
   return (
@@ -184,7 +154,7 @@ function Status(props) {
       <center>
         <p className={`info status-ticker ${user.theme} ${heartBeat === 1 && 'blue'}`}>{loopStatus ? <strong>HEARTBEAT</strong> : <strong>heartbeat</strong>}
           <br />
-          <button className={`btn-blue ${user.theme}`} onClick={refresh}>Refresh</button>
+          <button className={`btn-blue ${user.theme}`} onClick={props.updateUser}>Refresh</button>
         </p>
       </center>
 

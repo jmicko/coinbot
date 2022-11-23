@@ -36,23 +36,14 @@ function Home() {
     setIsAutoScroll(!isAutoScroll);
   };
 
-  const getOpenOrders = useCallback(
-    // what is this convoluted mess
-    () => {
-      dispatch({ type: 'FETCH_ORDERS' });
-    }, [dispatch]
-  )
-
   useEffect(() => {
-    getOpenOrders();
-  }, [getOpenOrders]);
+    dispatch({ type: 'FETCH_ORDERS' });
+  }, [dispatch]);
 
   const updateUser = () => {
     dispatch({ type: 'FETCH_PROFITS' });
     dispatch({ type: 'FETCH_ACCOUNT' });
     dispatch({ type: 'FETCH_ORDERS' });
-    // todo - looks like this is happening twice, but might only happen once if there are no orders in the account?
-    // any way to only make it happen once?
     dispatch({ type: 'FETCH_USER' });
   }
 
@@ -65,28 +56,6 @@ function Home() {
     }
   }, [ticker])
 
-
-  // need use effect to prevent multiplying connections every time component renders
-  useEffect(() => {
-    // socket may not exist on page load because it hasn't connected yet
-    if (socket == null) return;
-    socket.on('message', update => {
-      // check if the update is an order update, meaning there is something to change on dom
-      if ((update.orderUpdate != null) && (update.userID === user.id)) {
-        // do api call for all open orders
-        getOpenOrders()
-      }
-      if ((update.userUpdate != null) && (update.userID === user.id)) {
-        // do api call for all open orders
-        updateUser()
-      }
-    });
-    // this will remove the listener when component rerenders
-    return () => socket.off('message')
-    // useEffect will depend on socket because the connection will 
-    // not be there right when the page loads
-  }, [socket, getOpenOrders])
-
   const clickSettings = () => {
     setShowSettings(!showSettings);
     if (user.admin) {
@@ -97,7 +66,7 @@ function Home() {
   // todo - get rid of this when more confident in websocket ticker.
   // might be nice to find a way to use this if the websocket ever fails
   // to get price of bitcoin updated on dom
-  function timedTicker(data) {
+  function timedTicker() {
 
     let URI = 'https://api.exchange.coinbase.com/products/BTC-USD/ticker';
     if (user.sandbox) {
