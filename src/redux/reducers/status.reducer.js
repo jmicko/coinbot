@@ -8,14 +8,12 @@ const tickers = (state = { btc: 0, eth: 0 }, action) => {
       switch (action.payload.product_id) {
         case 'BTC-USD':
           // console.log('it is btc');
-          const btcState = { ...state };
-          btcState.btc = action.payload.price;
-          return btcState;
+          state.btc = action.payload.price;
+          return state;
         case 'ETH-USD':
           // console.log('it is eth');
-          const ethState = { ...state };
-          ethState.eth = action.payload.price;
-          return ethState;
+          state.eth = action.payload.price;
+          return state;
 
         default:
           console.log(action.payload, 'payload in set ticker price');
