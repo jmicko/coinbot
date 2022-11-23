@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { connect, useDispatch, useSelector } from 'react-redux';
+import mapStoreToProps from '../../redux/mapStoreToProps';
 import './Trade.css';
 
 
@@ -117,15 +118,15 @@ function Trade(props) {
         setTransactionPrice(roundedPrice)
       }
     }, [setTransactionPrice, tickers.btc]
-  )
-
-
-  // when the page loads, get the current price
-  useEffect(() => {
+    )
+    
+    
+    // when the page loads, get the current price
+    useEffect(() => {
     if (price === 0) {
       getCurrentPrice();
     }
-  }, [getCurrentPrice, price])
+  }, [getCurrentPrice, price, props.store.statusReducer.tickers.btc])
 
   // once the account fees load into redux, 
   useEffect(() => {
@@ -288,6 +289,7 @@ function Trade(props) {
 
 
           <div className="number-inputs">
+          {/* {JSON.stringify(props.store.statusReducer.tickers.btc)} */}
             {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
             <label htmlFor="trade-pair-ratio">
               Trade pair percent increase:
@@ -384,11 +386,9 @@ function Trade(props) {
           <br />
           <input className={`btn-send-trade btn-blue ${user.theme}`} type="submit" name="submit" value="Send Trade" />
         </form>
-
         {/* </div> */}
       </div>
   );
 }
 
-
-export default Trade;
+export default connect(mapStoreToProps)(Trade);
