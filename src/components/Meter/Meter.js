@@ -9,7 +9,7 @@ function Meter(props) {
   const [difference, setDifference] = useState(1);
   const [segmentMap, setSegmentMap] = useState();
   const socket = useSocket();
-  const tickers = useSelector((store) => store.statusReducer.tickers);
+  // const tickers = useSelector((store) => store.statusReducer.tickers);
 
   useEffect(() => {
     // do not make these calculations unless there are props coming in
@@ -36,7 +36,7 @@ function Meter(props) {
         )
       }))
     }
-  }, [props, tickers, socket.ticker.btc.price])
+  }, [props, socket.ticker.btc.price])
 
   function Segment(props) {
     return (

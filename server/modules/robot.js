@@ -716,7 +716,7 @@ async function reorder(orderToReorder, retry) {
           // send the new order with the trade details
           let pendingTrade = await coinbaseClient.placeOrderNew(userID, tradeDetails);
           let newTrade = await coinbaseClient.getOrderNew(userID, pendingTrade.order_id)
-          console.log(newTrade, 'newTrade');
+          // console.log(newTrade, 'newTrade');
           // because the storeDetails function will see the upToDateDbOrder as the "old order", need to store previous_total_fees as just total_fees
           upToDateDbOrder.total_fees = upToDateDbOrder.previous_total_fees;
           // store the new trade in the db. the trade details are also sent to store trade position prices

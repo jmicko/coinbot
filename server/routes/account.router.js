@@ -15,7 +15,7 @@ const cache = require('../modules/cache');
  * GET route to get all accounts info
  */
 router.get('/', async (req, res) => {
-
+  console.log('get accounts route hit');
   // todo - DOES THIS ROUTE EVER GET HIT??
 
   const user = req.user;
@@ -64,7 +64,7 @@ router.get('/', async (req, res) => {
 * GET route to get total profit estimate
 */
 router.get('/profits', rejectUnauthenticated, async (req, res) => {
-  console.log(req.user, 'profits get route');
+  console.log('profits get route');
   const userID = req.user.id;
 
   try {
@@ -78,7 +78,7 @@ router.get('/profits', rejectUnauthenticated, async (req, res) => {
     // for (let i = 0; i < orders.orders.length; i++) {
     //   const order = orders.orders[i];
     //   console.log(order.status, 'order status from new api');
-      
+
     // }
     // console.log(fees, 'fees from new api');
     // const [USD] = accounts.filter(account => account.currency === 'USD')

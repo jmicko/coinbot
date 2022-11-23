@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useSocket } from '../../contexts/SocketProvider';
 import './Status.css'
 
 
@@ -7,6 +8,7 @@ function Status(props) {
   const dispatch = useDispatch();
   const user = useSelector((store) => store.accountReducer.userReducer);
   const ticker = useSelector((store) => store.statusReducer.tickers);
+  const socket = useSocket();
   const heartBeat = useSelector((store) => store.statusReducer.heartBeat);
   const profitsReducer = useSelector((store) => store.accountReducer.profitsReducer);
   const openOrdersInOrder = useSelector((store) => store.ordersReducer.openOrdersInOrder);
@@ -106,7 +108,7 @@ function Status(props) {
           <strong> BTC-USD Price</strong>
           <br />
           {/* {JSON.stringify(ticker)} */}
-          ${numberWithCommas(Number(ticker.btc).toFixed(2))}
+          ${numberWithCommas(Number(socket.ticker.btc.price).toFixed(2))}
         </p>
       </center>
 

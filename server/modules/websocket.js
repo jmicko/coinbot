@@ -62,17 +62,6 @@ function startWebsocket(userID) {
     ws.send(JSON.stringify(subscribeMsg));
   }
 
-  function subscribeToUser(products, ws) {
-    const message = {
-      type: 'subscribe',
-      channel: "user",
-      api_key: API_KEY,
-      user_id: '',
-    };
-    const subscribeMsg = timestampAndSign(message, products);
-    ws.send(JSON.stringify(subscribeMsg));
-  }
-
   function unsubscribeToProducts(products, channelName, ws) {
     const message = {
       type: 'unsubscribe',
@@ -92,33 +81,26 @@ function startWebsocket(userID) {
     });
   }
 
-
-  // ws.on('open', function () {
-  //   console.log('OPENING');
-  //   subscribeToProducts(products, CHANNEL_NAMES.status, ws);
-  //   subscribeToProducts(products, CHANNEL_NAMES.tickers, ws);
-  //   subscribeToUser(products, ws);
-  // });
-
-  // ws.on('close', function () {
-  //   console.log('Socket was closed');
-
-  //   reOpen();
-
-  // });
-
   open();
 
   function open() {
 
     ws = new WebSocket(WS_API_URL);
 
+    // potentially reconnect every so often to get a snapshot update
+    // setTimeout(() => {
+    //   console.log('reconnecting!');
+    //   ws.close();
+    // }, 1000 * 60);
 
     ws.on('open', function () {
       console.log('OPENING');
-      subscribeToProducts(products, CHANNEL_NAMES.status, ws);
+      // subscribeToProducts(products, CHANNEL_NAMES.status, ws);
       subscribeToProducts(products, CHANNEL_NAMES.tickers, ws);
-      subscribeToUser(products, ws);
+      subscribeToProducts(products, CHANNEL_NAMES.user, ws);
+      // subscribeToProducts(products, CHANNEL_NAMES.ticker_batch, ws);
+      // subscribeToProducts(products, CHANNEL_NAMES.level2, ws);
+      // subscribeToUser(products, ws);
     });
 
     ws.on('close', function () {
@@ -128,7 +110,7 @@ function startWebsocket(userID) {
         // In case of a error log err.
         if (err) console.log(err, 'error writing to file');;
       });
-
+      // always reopen the socket if it closes
       open();
 
     });
@@ -138,6 +120,7 @@ function startWebsocket(userID) {
       // console.log(parsedData, 'data from ws');
       if (parsedData.events) {
         parsedData.events.forEach(event => {
+          // console.log(event, event.type, 'event from ws');
           if (event.tickers) {
             // every tick, send an update to open consoles for the user
             event.tickers.forEach(ticker => {
@@ -156,7 +139,7 @@ function startWebsocket(userID) {
               return
             });
           } else {
-            console.log(event, 'event from ws');
+            console.log(event, event.type, 'event from ws');
           }
         });
       }
@@ -164,24 +147,6 @@ function startWebsocket(userID) {
     });
 
   }
-
-  // ws.on('message', function (data) {
-  //   const parsedData = JSON.parse(data);
-  //   // console.log(parsedData, 'data from ws');
-  //   if (parsedData.events) {
-  //     parsedData.events.forEach(event => {
-  //       if (event.tickers) {
-  //         event.tickers.forEach(ticker => {
-  //           console.log(ticker);
-  //           return
-  //         });
-  //       } else {
-  //         console.log(event, 'event from ws');
-  //       }
-  //     });
-  //   }
-  //   console.log('');
-  // });
 
 }
 

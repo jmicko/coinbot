@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 // flipped_at is the "Time" shown on the interface. It has no other function
 const storeTrade = (newOrder, originalDetails, flipped_at) => {
   return new Promise(async (resolve, reject) => {
-    console.log('NEW ORDER IN STORETRADE', newOrder);
+    // console.log('NEW ORDER IN STORETRADE', newOrder);
     // add new order to the database
     const sqlText = `INSERT INTO "limit_orders" 
       (
