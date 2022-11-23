@@ -22,6 +22,12 @@ function Status(props) {
   // const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
   // const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
 
+  const updateUser = () => {
+    dispatch({ type: 'FETCH_PROFITS' });
+    dispatch({ type: 'FETCH_ACCOUNT' });
+    dispatch({ type: 'FETCH_ORDERS' });
+    dispatch({ type: 'FETCH_USER' });
+  }
 
   // watch to see if accuracy changes
   useEffect(() => {
@@ -154,7 +160,7 @@ function Status(props) {
       <center>
         <p className={`info status-ticker ${user.theme} ${heartBeat === 1 && 'blue'}`}>{loopStatus ? <strong>HEARTBEAT</strong> : <strong>heartbeat</strong>}
           <br />
-          <button className={`btn-blue ${user.theme}`} onClick={props.updateUser}>Refresh</button>
+          <button className={`btn-blue ${user.theme}`} onClick={updateUser}>Refresh</button>
         </p>
       </center>
 

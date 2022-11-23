@@ -30,6 +30,7 @@ function Trade(props) {
   const [basicSide, setBasicSide] = useState('BUY');
   const dispatch = useDispatch();
   const user = useSelector((store) => store.accountReducer.userReducer);
+  const tickers = useSelector((store) => store.statusReducer.tickers);
 
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
   const numberWithCommas = (x) => {
@@ -72,7 +73,7 @@ function Trade(props) {
     // calculate flipped price
     let original_sell_price = (Math.round((price * (Number(tradePairRatio) + 100))) / 100);
     let type = false;
-    if (props.priceTicker < price) {
+    if (tickers.btc < price) {
       type = 'market';
     }
     dispatch({
@@ -108,13 +109,13 @@ function Trade(props) {
         event.preventDefault();
       }
       // check if the current price has been stored yet to prevent NaN errors
-      if (props.priceTicker) {
+      if (tickers.btc) {
         // round the price to nearest 100
-        const roundedPrice = Math.round(props.priceTicker / 100) * 100;
+        const roundedPrice = Math.round(tickers.btc / 100) * 100;
         // change input box to reflect rounded value
         setTransactionPrice(roundedPrice)
       }
-    }, [setTransactionPrice, props.priceTicker]
+    }, [setTransactionPrice, tickers.btc]
   )
 
 
