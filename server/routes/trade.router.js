@@ -53,7 +53,13 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
         console.log(newOrder.order.order_configuration, 'order_configuration from new api');
         await databaseClient.storeTrade(newOrder.order, tradeDetails, newOrder.order.created_time);
       } else {
-        console.log("FAILURE with new api");
+        console.log(pendingTrade, "FAILURE with new api");
+        const errorText = 'Insufficient funds!';
+        const errorData = pendingTrade;
+        cache.storeError(userID, {
+          errorData: errorData,
+          errorText: errorText
+        })
       }
 
       await robot.updateFunds(userID);
@@ -64,11 +70,11 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
     } catch (err) {
       if (err.response?.status === 400) {
         console.log(err, 'Insufficient funds!');
-        socketClient.emit('message', {
-          error: `Insufficient funds!`,
-          orderUpdate: true,
-          userID: Number(userID)
-        });
+        // socketClient.emit('message', {
+        //   error: `Insufficient funds!`,
+        //   orderUpdate: true,
+        //   userID: Number(userID)
+        // });
       } else if (err.code && err.code === 'ETIMEDOUT') {
         console.log('Timed out!!!!! Synching orders just in case');
         socketClient.emit('message', {

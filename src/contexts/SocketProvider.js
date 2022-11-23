@@ -36,8 +36,14 @@ export function SocketProvider({ children }) {
         // console.log(count,'hb from socket.io');
         dispatch({ type: 'SET_HEART_BEAT', payload: count })
       }
+      if (message.type === 'errorUpdate') {
+        dispatch({ type: 'FETCH_BOT_ERRORS' });
+      }
+      if (message.type === 'messageUpdate') {
+        dispatch({ type: 'FETCH_BOT_MESSAGES' });
+      }
     });
-    
+
     // save the new socket and close the old one
     setSocket(newSocket);
     return () => {

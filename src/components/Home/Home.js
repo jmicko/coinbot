@@ -87,26 +87,6 @@ function Home() {
     // not be there right when the page loads
   }, [socket, getOpenOrders])
 
-  // need use effect to prevent multiplying connections every time component renders
-  useEffect(() => {
-    // socket may not exist on page load because it hasn't connected yet
-    if (socket == null) return;
-    socket.on('message', message => {
-      if (message.userID === user.id) {
-        if (message.errorUpdate) {
-          dispatch({ type: 'FETCH_BOT_ERRORS' });
-        }
-        if (message.messageUpdate) {
-          dispatch({ type: 'FETCH_BOT_MESSAGES' });
-        }
-      }
-    });
-    // this will remove the listener when component rerenders
-    return () => socket.off('message')
-    // useEffect will depend on socket because the connection will 
-    // not be there right when the page loads
-  }, [socket, user.id]);
-
   const clickSettings = () => {
     setShowSettings(!showSettings);
     if (user.admin) {
