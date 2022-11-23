@@ -96,67 +96,6 @@ const storeTrade = (newOrder, originalDetails, flipped_at) => {
   });
 }
 
-// same as above, only set reorder = true so that the bot knows not to check coinbase for it. 
-// this is used in the autoSetup function to speed up the process
-// const storeReorderTrade = (newOrder, originalDetails, flipped_at) => {
-//   return new Promise((resolve, reject) => {
-//     // add new order to the database
-//     const sqlText = `INSERT INTO "orders" 
-//       ("id",
-//       "userID",
-//       "price",
-//       "size",
-//       "trade_pair_ratio",
-//       "side",
-//       "settled",
-//       "product_id",
-//       "time_in_force",
-//       "created_at",
-//       "flipped_at",
-//       "done_at",
-//       "fill_fees",
-//       "previous_fill_fees",
-//       "filled_size",
-//       "executed_value",
-//       "original_buy_price",
-//       "original_sell_price",
-//       "reorder") 
-//       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19);`;
-//     pool.query(sqlText, [
-//       newOrder.id,
-//       originalDetails.userID,
-//       newOrder.price,
-//       newOrder.size,
-//       originalDetails.trade_pair_ratio,
-//       newOrder.side,
-//       false,
-//       newOrder.product_id,
-//       newOrder.time_in_force,
-//       newOrder.created_at,
-//       flipped_at,
-//       newOrder.done_at,
-//       newOrder.fill_fees,
-//       // bring the fees from the previous order to the new one for more accurate profit calculation
-//       originalDetails.fill_fees,
-//       newOrder.filled_size,
-//       newOrder.executed_value,
-//       originalDetails.original_buy_price,
-//       originalDetails.original_sell_price,
-//       true
-//     ])
-//       .then((results) => {
-//         const success = {
-//           message: `order ${newOrder.id} was successfully stored in db`,
-//           results: results,
-//           success: true
-//         }
-//         resolve(success);
-//       })
-//       .catch((err) => {
-//         reject(err);
-//       });
-//   });
-// }
 
 // This function is used when importing trades from the user interface
 // IT MUST USE THE USER ID FROM PASSPORT AUTHENTICATION!!!
@@ -357,12 +296,12 @@ const getUnsettledTradeCounts = (userID) => {
 }
 
 // get all details of an order
-const getSingleTrade = (id) => {
+const getSingleTrade = (order_id) => {
   return new Promise((resolve, reject) => {
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
     sqlText = `SELECT * FROM "limit_orders" WHERE "order_id"=$1;`;
-    pool.query(sqlText, [id])
+    pool.query(sqlText, [order_id])
       .then((results) => {
         const [singleTrade] = results.rows;
         // promise returns promise from pool if success
@@ -463,13 +402,13 @@ const getReorders = (userID, limit) => {
 // when the user kills a trade-pair, the current open order is first set to will_cancel=true 
 // this is because it can take a few seconds to connect and cancel on CBP, so the order should be ignored while this is happening
 // connecting to the DB and setting will_cancel to true is much faster
-const checkIfCancelling = async (id) => {
+const checkIfCancelling = async (order_id) => {
   return new Promise(async (resolve, reject) => {
     try {
       let sqlText;
       // put sql stuff here, extending the pool promise to the parent function
       sqlText = `SELECT * FROM "limit_orders" WHERE "order_id"=$1;`;
-      let result = await pool.query(sqlText, [id]);
+      let result = await pool.query(sqlText, [order_id]);
       const singleTrade = result.rows[0];
       // promise returns promise from pool if success
       resolve(singleTrade?.will_cancel);
@@ -482,11 +421,11 @@ const checkIfCancelling = async (id) => {
 
 // delete a trade from the DB. Generally this should be done in combination with cancelling a trade on CB
 // unless it is a settled trade
-const deleteTrade = async (id) => {
+const deleteTrade = async (order_id) => {
   return new Promise(async (resolve, reject) => {
     try {
       const queryText = `DELETE from "limit_orders" WHERE "order_id"=$1;`;
-      let result = await pool.query(queryText, [id]);
+      let result = await pool.query(queryText, [order_id]);
       resolve(result);
     } catch (err) {
       reject(err)
@@ -623,11 +562,11 @@ async function getDeSyncs(userID, limit, side) {
 
 // setting an order to reorder will bypass some functions in the bot that check if the order needs to be reordered.
 // setting this to true for trades that are desynced from CB will save time later
-async function setSingleReorder(id) {
+async function setSingleReorder(order_id) {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `UPDATE "limit_orders" SET "reorder" = true WHERE "order_id" = $1;`;
-      await pool.query(sqlText, [id]);
+      await pool.query(sqlText, [order_id]);
       resolve();
     } catch (err) {
       reject(err);

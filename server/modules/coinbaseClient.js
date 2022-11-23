@@ -815,25 +815,6 @@ async function cancelAllOrders(userID) {
   })
 }
 
-async function repeatedCheck(order, userID, tries) {
-  return new Promise(async (resolve, reject) => {
-    // repeats 10 times
-    if (tries < 10) {
-      await sleep(tries * 100)
-      tries++;
-      // check if the order is in coinbase
-      try {
-        let cbOrder = await getOrder(order.id, userID);
-        resolve(true);
-      } catch (err) {
-        // console.log('error checking coinbase for order');
-        repeatedCheck(order, userID, tries);
-      }
-    } else { // if it has already repeated, give up
-      resolve(false);
-    }
-  });
-}
 
 async function testAPI(secret, key, passphrase, API_URI) {
   return new Promise(async (resolve, reject) => {

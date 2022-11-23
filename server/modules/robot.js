@@ -865,10 +865,10 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
 function orderElimination(dbOrders, cbOrders) {
   for (let i = 0; i < cbOrders.length; i++) {
     // look at each id of coinbase orders
-    const cbOrderID = cbOrders[i].id;
-    // filter out dbOrders of that id
-    dbOrders = dbOrders.filter(id => {
-      return (id.id !== cbOrderID)
+    const cbOrderID = cbOrders[i].order_id;
+    // filter out dbOrders of that order_id
+    dbOrders = dbOrders.filter(dbOrder => {
+      return (dbOrder.order_id !== cbOrderID)
     })
   }
   // return a list of orders that are settled on cb, but have not yet been handled by the bot
