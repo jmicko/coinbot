@@ -88,10 +88,10 @@ function startWebsocket(userID) {
     ws = new WebSocket(WS_API_URL);
 
     // potentially reconnect every so often to get a snapshot update
-    // setTimeout(() => {
-    //   console.log('reconnecting!');
-    //   ws.close();
-    // }, 1000 * 60);
+    setTimeout(() => {
+      console.log('reconnecting!');
+      ws.close();
+    }, 1000 * 5);
 
     ws.on('open', function () {
       console.log('OPENING');
@@ -106,7 +106,7 @@ function startWebsocket(userID) {
     ws.on('close', function () {
       console.log('Socket was closed');
 
-      fs.appendFile('Output1.txt', 'attempting to reopen socket \r\n', (err) => {
+      fs.appendFile('ws-connection-log.txt', `${new Date}  \r\nUser ID: ${userID} \r\nattempting to reopen socket\r\n\r\n`, (err) => {
         // In case of a error log err.
         if (err) console.log(err, 'error writing to file');;
       });
