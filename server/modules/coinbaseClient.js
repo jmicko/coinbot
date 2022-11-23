@@ -228,52 +228,7 @@ async function getAllOrders(userID) {
 }
 
 
-
-
-async function getLimitedFills(userID, limit, quickAPI) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const timestamp = Math.floor(Date.now() / 1000);
-      // // sign the request
-      const userAPI = cache.getAPI(userID);
-      const secret = userAPI.CB_SECRET;
-      const key = userAPI.CB_ACCESS_KEY;
-      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
-      const API_URI = userAPI.API_URI;
-
-      function computeSignature(request) {
-        // const data      = request.data;
-        const method = 'GET';
-        const path = `/fills?product_id=BTC-USD&profile_id=default&limit=${limit}`;
-        const message = timestamp + method + path;
-        const key = CryptoJS.enc.Base64.parse(secret);
-        const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-        return hash;
-      }
-
-      const options = {
-        method: 'GET',
-        timeout: 10000,
-        url: `${API_URI}/fills?product_id=BTC-USD&profile_id=default&limit=${limit}`,
-        headers: {
-          Accept: 'application/json',
-          'cb-access-key': key,
-          'cb-access-passphrase': passphrase,
-          'cb-access-sign': computeSignature(),
-          'cb-access-timestamp': timestamp
-        }
-      };
-
-      let response = await axios.request(options);
-      resolve(response.data);
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
-
-
-async function getLimitedFillsNew(userID, limit) {
+async function getFills(userID, params) {
   return new Promise(async (resolve, reject) => {
     try {
       const userAPI = cache.getAPI(userID);
@@ -295,7 +250,7 @@ async function getLimitedFillsNew(userID, limit) {
       const options = {
         method: 'GET',
         timeout: 10000,
-        url: `https://coinbase.com/api/v3/brokerage/orders/historical/fills?limit=${limit || 250}`,
+        url: `https://coinbase.com/api/v3/brokerage/orders/historical/fills`,
         headers: {
           Accept: 'application/json',
           'CB-ACCESS-KEY': key,
@@ -304,10 +259,36 @@ async function getLimitedFillsNew(userID, limit) {
         }
       };
 
-      // console.log('getting fills');
-
+      if (params) {
+        options.url = options.url + `?`
+        let firstParam = true;
+        if (params.order_id) {
+          firstParam ? firstParam = false : options.url = options.url + '&'
+          options.url = options.url + `order_id=${params.order_id}`;
+        }
+        if (params.product_id) {
+          firstParam ? firstParam = false : options.url = options.url + '&'
+          options.url = options.url + `product_id=${params.product_id}`;
+        }
+        if (params.start_sequence_timestamp || params.start) {
+          firstParam ? firstParam = false : options.url = options.url + '&'
+          options.url = options.url + `start_sequence_timestamp=${params.start_sequence_timestamp || params.start}`;
+        }
+        if (params.end_sequence_timestamp || params.end) {
+          firstParam ? firstParam = false : options.url = options.url + '&'
+          options.url = options.url + `end_sequence_timestamp=${params.end_sequence_timestamp || params.end}`;
+        }
+        if (params.cursor) {
+          firstParam ? firstParam = false : options.url = options.url + '&'
+          options.url = options.url + `cursor=${params.cursor}`;
+        }
+        if (params.limit) {
+          firstParam ? firstParam = false : options.url = options.url + '&'
+          options.url = options.url + `limit=${params.limit}`;
+        }
+      }
       let response = await axios.request(options);
-      resolve(response.data.fills);
+      resolve(response.data);
     } catch (err) {
       reject(err);
     }
@@ -629,7 +610,7 @@ async function placeOrderNew(userID, order) {
           },
         },
         product_id: order.product_id,
-        client_order_id: order.client_order_id ||uuidv4()
+        client_order_id: order.client_order_id || uuidv4()
       }
 
 
@@ -676,7 +657,7 @@ async function cancelOrderNew(userID, orderIdArray) {
   return new Promise(async (resolve, reject) => {
     try {
 
-      const data = {order_ids: orderIdArray}
+      const data = { order_ids: orderIdArray }
 
       const userAPI = cache.getAPI(userID);
       const secret = userAPI.CB_SECRET;
@@ -863,8 +844,7 @@ async function testAPI(secret, key, passphrase, API_URI) {
 
 module.exports = {
   // getAllOrders: getAllOrders,
-  // getLimitedFills: getLimitedFills,
-  getLimitedFillsNew: getLimitedFillsNew,
+  getFills: getFills,
   // getOpenOrders: getOpenOrders,
   getProducts: getProducts,
   getOpenOrdersNew: getOpenOrdersNew,
