@@ -715,26 +715,33 @@ async function reorder(orderToReorder, retry) {
         try {
           // send the new order with the trade details
           let pendingTrade = await coinbaseClient.placeOrderNew(userID, tradeDetails);
-          let newTrade = await coinbaseClient.getOrderNew(userID, pendingTrade.order_id)
-          // console.log(newTrade, 'newTrade');
-          // because the storeDetails function will see the upToDateDbOrder as the "old order", need to store previous_total_fees as just total_fees
-          upToDateDbOrder.total_fees = upToDateDbOrder.previous_total_fees;
-          // store the new trade in the db. the trade details are also sent to store trade position prices
-          // when reordering a trade, bring the old flipped_at value through so it doesn't change the "Time" on screen
-          let results = await databaseClient.storeTrade(newTrade.order, upToDateDbOrder, upToDateDbOrder.flipped_at);
+          console.log(pendingTrade, 'pending trade');
+          if (pendingTrade.success === false) {
+            console.log(tradeDetails, 'failed');
+            reject(pendingTrade)
+          } else {
 
-          // delete the old order from the db
-          await databaseClient.deleteTrade(orderToReorder.order_id);
-          // tell the DOM to update
-          cache.storeMessage(userID, {
-            messageText: `trade was reordered`,
-            orderUpdate: true,
-          });
+            let newTrade = await coinbaseClient.getOrderNew(userID, pendingTrade.order_id)
+            // console.log(newTrade, 'newTrade');
+            // because the storeDetails function will see the upToDateDbOrder as the "old order", need to store previous_total_fees as just total_fees
+            upToDateDbOrder.total_fees = upToDateDbOrder.previous_total_fees;
+            // store the new trade in the db. the trade details are also sent to store trade position prices
+            // when reordering a trade, bring the old flipped_at value through so it doesn't change the "Time" on screen
+            let results = await databaseClient.storeTrade(newTrade.order, upToDateDbOrder, upToDateDbOrder.flipped_at);
 
-          resolve({
-            results: results,
-            reordered: true
-          })
+            // delete the old order from the db
+            await databaseClient.deleteTrade(orderToReorder.order_id);
+            // tell the DOM to update
+            cache.storeMessage(userID, {
+              messageText: `trade was reordered`,
+              orderUpdate: true,
+            });
+
+            resolve({
+              results: results,
+              reordered: true
+            })
+          }
         } catch (err) {
           if (err.response?.status === 400) {
             cache.storeError(userID, {
@@ -742,7 +749,7 @@ async function reorder(orderToReorder, retry) {
               errorText: `Insufficient funds when trying to reorder an order! Do you have a negative balance?`
             })
           }
-          console.log('error in reorder function in robot.js');
+          console.log(err, 'error in reorder function in robot.js');
           reject(err)
         }
       } else {
