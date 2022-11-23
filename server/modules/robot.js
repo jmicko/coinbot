@@ -789,22 +789,27 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
         const orderToCancel = ordersArray[i];
         try {
           // check to make sure it really isn't in the db
-          let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
+          let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.order_id);
           // console.log('double check', doubleCheck);
           if (doubleCheck) {
             // if it is in the db, it should cancel but set it to reorder because it is out of range
             // that way it will reorder faster when it moves back in range
             // console.log('canceling order', orderToCancel);
             await Promise.all([
-              coinbaseClient.cancelOrderNew(userID, [orderToCancel.id]),
-              databaseClient.setSingleReorder(orderToCancel.id)
+              coinbaseClient.cancelOrderNew(userID, [orderToCancel.order_id]),
+              databaseClient.setSingleReorder(orderToCancel.order_id)
             ]);
             // console.log('old trade was set to reorder when back in range');
             quantity++;
           } else {
             // cancel the order if nothing comes back from db
-            coinbaseClient.cancelOrderNew(userID, orderToCancel.id),
+            try {
+              const cancelResult = await coinbaseClient.cancelOrderNew(userID, [orderToCancel.order_id]);
+              console.log(cancelResult, 'cancel result', orderToCancel);
               quantity++;
+            } catch (error) {
+              console.log(error, ' error canceling order');
+            }
           }
         } catch (err) {
           // Do not resolve the error because this is in a for loop which needs to continue. If error, handle it here
