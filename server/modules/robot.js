@@ -311,71 +311,29 @@ async function fullSync(userID) {
 
 async function quickSync(userID) {
   cache.updateStatus(userID, 'begin quick sync');
-
-  // const userAPI = cache.getAPI(userID);
   const botSettings = cache.getKey(0, 'botSettings');
   // IF QUICK SYNC, only get fills
   return new Promise(async (resolve, reject) => {
     try {
-      // initiate empty array to hold orders that need to be checked for settlement
-      let toCheck = [];
       // get the 500 most recent fills for the account
       const fills = await coinbaseClient.getLimitedFillsNew(userID, 500);
-      // console.log(fills, 'fills');
       cache.updateStatus(userID, 'done getting quick sync fills');
-      // look at each fill and find the order in the db associated with it
-      for (let i = 0; i < fills.length; i++) {
-        const fill = fills[i];
-        const recentFill = cache.getKey(userID, 'recentFill')
-        // console.log('recent fill', recentFill, fill.order_id);
-        // get order from db
-        // if (fill.settled) {
-        // console.log(fill.trade_id == recentFill, 'they are the same')
-        if (recentFill != fill.trade_id) {
-
-          const singleDbOrder = await databaseClient.getSingleTrade(fill.order_id);
-          // console.log('SINGLE DB ORDER', singleDbOrder);
-          // console.log('RECENT FILL', recentFill);
-
-          // only need to check it if there is an order in the db. Otherwise it might be a basic trade
-          if (singleDbOrder) {
-            // check if the order has already been settled in the db
-            // console.log('SINGLE ORDER', fill.settled);
-            // if (!fill.settled) {
-
-            // }
-            if (singleDbOrder && !singleDbOrder?.settled) {
-              // if it has not been settled in the db, it needs to be checked with coinbase if it settled
-              // push it into the array
-              toCheck.push(singleDbOrder);
-              console.log(toCheck, 'orders to check');
-            } else {
-              // if it has been settled, we can stop looping because we will have already check all previous fills
-              // i += fills.length;
-              break;
-            }
-          }
-        } else {
-          break;
-        }
-        // } // end if (fill.settled)
-      } // end for loop
-      // console.log('HERE IS THE FILL', fills[0].trade_id);
+      // get an array of just the IDs
+      const fillsIds = []
+      fills.forEach(fill => fillsIds.push(fill.order_id))
+      // find unsettled orders in the db based on the IDs array
+      const unsettledFills = await databaseClient.getUnsettledTradesByIDs(userID, fillsIds);
       // after checking fills, store the most recent so don't need to check it later
-      cache.setKey(userID, 'recentFill', fills[0].trade_id);
-
       cache.updateStatus(userID, 'done checking fills');
       // this will check the specified number of trades to sync on either side to see if any 
       // need to be reordered. It will only find them on a loop after a loop where trades have been placed
-      // This could be faster? But still currently faster than waiting for a full sync
       // todo - maybe this should go after the settleMultipleOrders function so it will fire on same loop
       const reorders = await databaseClient.getReorders(userID, botSettings.orders_to_sync)
-      if (reorders.length >= 1) {
-        reorders.forEach(order => toCheck.push(order))
-      }
-      cache.updateStatus(userID, 'will resolve quick sync');
-
+      // combine the arrays
+      toCheck = unsettledFills.concat(reorders);
+      // set the 'ordersToCheck' key so the next process can access them without needing to pass params
       cache.setKey(userID, 'ordersToCheck', toCheck);
+      cache.updateStatus(userID, 'will resolve quick sync');
       resolve(toCheck);
     } catch (err) {
       cache.updateStatus(userID, 'error in quick sync');
@@ -412,11 +370,11 @@ async function processOrders(userID) {
             if (!willCancel) {
               // console.log(tradeDetails,'trade details');
               let cbOrder = await coinbaseClient.placeOrderNew(userID, tradeDetails);
-              console.log(cbOrder, 'cbOrder');
+              // console.log(cbOrder, 'cbOrder');
               if (cbOrder.success) {
                 const newOrder = await coinbaseClient.getOrderNew(userID, cbOrder.order_id);
-                console.log(newOrder, 'order from new api');
-                console.log(newOrder.order.order_configuration, 'order_configuration from new api');
+                // console.log(newOrder, 'order from new api');
+                // console.log(newOrder.order.order_configuration, 'order_configuration from new api');
                 // ...store the new trade
                 // take the time the new order was created, and use it as the flipped_at value
                 const flipped_at = newOrder.order.created_time
@@ -605,10 +563,8 @@ function sleep(milliseconds) {
 
 async function settleMultipleOrders(userID) {
   cache.updateStatus(userID, 'start settleMultipleOrders (SMO)');
-  const userAPI = cache.getAPI(userID);
   const ordersArray = cache.getKey(userID, 'ordersToCheck');
   // console.log(ordersArray,'orders array');
-
   return new Promise(async (resolve, reject) => {
     if (ordersArray.length > 0) {
       cache.storeMessage(userID, { messageText: `There are ${ordersArray.length} orders that need to be synced` });
@@ -623,16 +579,14 @@ async function settleMultipleOrders(userID) {
         let reorderTimer = true;
         setTimeout(() => {
           reorderTimer = false;
-        }, 80);
+        }, 150);
         // send heartbeat for each loop
         heartBeat(userID);
         try {
           // if it should be canceled, delete it and skip the rest of the loop iteration
           const willCancel = cache.checkIfCanceling(userID, orderToCheck.order_id);
           if (willCancel) {
-            // delete the trade from the db
-            // todo - just update the status now since coinbase keeps records of cancelled orders
-            await databaseClient.deleteTrade(orderToCheck.order_id);
+            // skip it and continue the loop
             continue;
           } else if (orderToCheck.reorder) {
             // if we know it should be reordered, just reorder it
@@ -643,7 +597,7 @@ async function settleMultipleOrders(userID) {
             cache.updateStatus(userID, 'SMO loop get order');
             // get all the order details from cb
             let fullSettledDetails = await coinbaseClient.getOrderNew(userID, orderToCheck.order_id);
-            console.log('fully settled:', fullSettledDetails);
+            // console.log('fully settled:', fullSettledDetails);
             // update the order in the db
             const queryText = `UPDATE "limit_orders" SET "settled" = $1, "total_fees" = $2, "filled_size" = $3, "filled_value" = $4 WHERE "order_id"= $5;`;
             await pool.query(queryText, [
@@ -660,13 +614,6 @@ async function settleMultipleOrders(userID) {
           let errorText = `Error marking order as settled`
           if (err.response?.status === 404) {
             errorText = `Order not found!`
-            // reorder it
-            try {
-              await reorder(orderToCheck);
-            } catch (err) {
-              console.log(err, 'error reordering trade');
-              errorText = `Error finding order on Coinbase, could not reorder`;
-            } // end reorder
           } // end not found
           else {
             console.log(err, 'error in settleMultipleOrders loop');
@@ -842,7 +789,7 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
         }
         await updateFunds(userID);
         // wait to prevent rate limiting
-        await sleep(80);
+        await sleep(150);
       } //end for loop
       // if all goes well, send message to user and resolve promise with success message
       cache.storeMessage(Number(userID), {

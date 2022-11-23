@@ -34,10 +34,10 @@ router.get('/test', rejectUnauthenticated, async (req, res) => {
       // const IDs = '';
 
       // const response = await coinbaseClient.placeOrderNew(userID, tradeDetails);
-      const response = await coinbaseClient.getOrderNew(userID, '');
+      // const response = await coinbaseClient.getOrderNew(userID, '');
       // const response = await coinbaseClient.getProducts(userID);
       // const response = await coinbaseClient.cancelOrderNew(userID, [IDs]);
-      // const response = await coinbaseClient.getOpenOrdersNew(userID);
+      const response = await coinbaseClient.getOpenOrdersNew(userID);
       // const response = await databaseClient.getTradesByIDs(userID, IDs);
       // response.products.forEach(product => {
       //   if (product.new) {

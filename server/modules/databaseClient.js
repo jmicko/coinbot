@@ -320,8 +320,25 @@ const getTradesByIDs = (userID, IDs) => {
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
     sqlText = `select *
-    from orders
+    from limit_orders
     where order_id = ANY ($1) and "userID" = $2;`;
+    try {
+      let result = await pool.query(sqlText, [IDs, userID]);
+      resolve(result.rows);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+// get all details of an array of orders
+const getUnsettledTradesByIDs = (userID, IDs) => {
+  return new Promise(async (resolve, reject) => {
+    let sqlText;
+    // put sql stuff here, extending the pool promise to the parent function
+    sqlText = `select *
+    from limit_orders
+    where order_id = ANY ($1) and settled=false and "userID" = $2;`;
     try {
       let result = await pool.query(sqlText, [IDs, userID]);
       resolve(result.rows);
@@ -372,7 +389,7 @@ const getSpentBTC = (userID) => {
   });
 }
 
-// get a list of orders that need to be resynced with CBP
+// get [limit] number of orders closest to the spread
 const getReorders = (userID, limit) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -682,6 +699,7 @@ const databaseClient = {
   getUnsettledTradeCounts: getUnsettledTradeCounts,
   getSingleTrade: getSingleTrade,
   getTradesByIDs: getTradesByIDs,
+  getUnsettledTradesByIDs: getUnsettledTradesByIDs,
   getSpentUSD: getSpentUSD,
   // getAllSpentUSD: getAllSpentUSD,
   getSpentBTC: getSpentBTC,
