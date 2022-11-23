@@ -13,6 +13,7 @@ export function useSocket() {
 
 export function SocketProvider({ children }) {
   const [socket, setSocket] = useState();
+  const [tickers, setTickers] = useState({ btc: { price: 0 }, eth: { price: 0 } });
   const dispatch = useDispatch();
   // useEffect to prevent from multiple connections
   useEffect(() => {
@@ -29,7 +30,19 @@ export function SocketProvider({ children }) {
       if (message.type === 'ticker') {
         const ticker = message.ticker
         // console.log(ticker,'message from socket.io');
-        dispatch({ type: 'SET_TICKER_PRICE', payload: ticker })
+        dispatch({ type: 'SET_TICKER_PRICE', payload: ticker });
+        switch (ticker.product_id) {
+          case 'BTC-USD':
+            setTickers(prevTickers => ({ ...prevTickers, btc: ticker }));
+            return;
+          case 'ETH-USD':
+            setTickers(prevTickers => ({ ...prevTickers, eth: ticker }));
+            return;
+          default:
+            console.log(ticker, 'payload in set ticker price');
+            return;
+
+        };
       }
       if (message.type === 'heartbeat') {
         const count = message.count
@@ -59,7 +72,10 @@ export function SocketProvider({ children }) {
 
 
   return (
-    <SocketContext.Provider value={socket}>
+    <SocketContext.Provider value={{
+      socket: socket,
+      ticker: tickers
+    }}>
       {/* <>Props: {JSON.stringify()}</> */}
       {children}
     </SocketContext.Provider>

@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { useSocket } from '../../contexts/SocketProvider';
 import './Meter.css'
 
 
@@ -6,6 +8,8 @@ function Meter(props) {
   // const dispatch = useDispatch();
   const [difference, setDifference] = useState(1);
   const [segmentMap, setSegmentMap] = useState();
+  const socket = useSocket();
+  const tickers = useSelector((store) => store.statusReducer.tickers);
 
   useEffect(() => {
     // do not make these calculations unless there are props coming in
@@ -13,7 +17,7 @@ function Meter(props) {
 
       // let difference = (props.max - props.min).toFixed(0);
       setDifference((props.max - props.min).toFixed(0));
-      let adjustedCurrent = props.current - props.min;
+      let adjustedCurrent = socket.ticker.btc.price - props.min;
 
       // this is the important number
       let percentage = ((adjustedCurrent / difference) * 100).toFixed(0);
@@ -32,7 +36,7 @@ function Meter(props) {
         )
       }))
     }
-  }, [props])
+  }, [props, tickers, socket.ticker.btc.price])
 
   function Segment(props) {
     return (

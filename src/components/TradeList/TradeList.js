@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useSelector } from 'react-redux';
+import { useSocket } from '../../contexts/SocketProvider';
 import SingleTrade from '../SingleTrade/SingleTrade'
 import coinbotFilled from "../../../src/coinbotFilled.png";
 // import coinbotFilledGif from "../../../src/coinbotFilled.gif";
@@ -8,8 +9,8 @@ import Meter from '../Meter/Meter';
 
 
 function TradeList(props) {
+  const socket = useSocket();
   const user = useSelector((store) => store.accountReducer.userReducer);
-  const tickers = useSelector((store) => store.statusReducer.tickers);
   const openOrdersInOrder = useSelector((store) => store.ordersReducer.openOrdersInOrder);
 
   // these will store mapped arrays as html so they can be used after page loads
@@ -73,14 +74,14 @@ function TradeList(props) {
           <Meter
             max={lowestSell}
             min={highestBuy}
-            current={tickers.btc}
+          // current={socket.ticker.btc.price}
           />
           <div>
 
             {lowestSell !== 0 && highestBuy >= 0
-              ? <p className='price'>&#9650; ${(lowestSell - tickers.btc).toFixed(2)}
+              ? <p className='price'>&#9650; ${(lowestSell - socket.ticker.btc.price).toFixed(2)}
                 <br />
-                &#9660; ${(tickers.btc - highestBuy).toFixed(2)}
+                &#9660; ${(socket.ticker.btc.price - highestBuy).toFixed(2)}
               </p>
               : <p>No Sells!</p>
             }
