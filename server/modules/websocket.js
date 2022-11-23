@@ -31,9 +31,6 @@ function startWebsocket(userID) {
   };
   const products = ['BTC-USD', 'ETH-USD'];
 
-  // The base URL of the API
-  const WS_API_URL = 'wss://advanced-trade-ws.coinbase.com';
-
   // Function to generate a signature using CryptoJS
   function sign(str, secret) {
     const hash = CryptoJS.HmacSHA256(str, secret);
@@ -46,8 +43,6 @@ function startWebsocket(userID) {
     const sig = sign(strToSign, SIGNING_KEY);
     return { ...message, signature: sig, timestamp: timestamp };
   }
-
-  let ws = new WebSocket(WS_API_URL);
 
   function subscribeToProducts(products, channelName, ws) {
     console.log('products: %s', products.join(','));
@@ -73,34 +68,30 @@ function startWebsocket(userID) {
     ws.send(JSON.stringify(subscribeMsg));
   }
 
-  function onMessage(data) {
-    const parsedData = JSON.parse(data);
-    fs.appendFile('Output1.txt', data, (err) => {
-      // In case of a error throw err.
-      if (err) throw err;
-    });
-  }
+  // The base URL of the API
+  const WS_API_URL = 'wss://advanced-trade-ws.coinbase.com';
+
 
   open();
 
   function open() {
+    console.log('OPENING');
 
-    ws = new WebSocket(WS_API_URL);
+    let ws = new WebSocket(WS_API_URL);
 
-    // potentially reconnect every so often to get a snapshot update
-    setTimeout(() => {
-      console.log('reconnecting!');
-      ws.close();
-    }, 1000 * 5);
+    // // potentially reconnect every so often to get a snapshot update
+    // setTimeout(() => {
+    //   console.log('closing after timeout!');
+    //   ws.close();
+    // }, 1000 * 5);
 
     ws.on('open', function () {
-      console.log('OPENING');
+      console.log('Socket open!');
       // subscribeToProducts(products, CHANNEL_NAMES.status, ws);
       subscribeToProducts(products, CHANNEL_NAMES.tickers, ws);
       subscribeToProducts(products, CHANNEL_NAMES.user, ws);
       // subscribeToProducts(products, CHANNEL_NAMES.ticker_batch, ws);
       // subscribeToProducts(products, CHANNEL_NAMES.level2, ws);
-      // subscribeToUser(products, ws);
     });
 
     ws.on('close', function () {
@@ -111,18 +102,30 @@ function startWebsocket(userID) {
         if (err) console.log(err, 'error writing to file');;
       });
       // always reopen the socket if it closes
-      open();
+      setTimeout(() => {
+        open();
+      }, 2000);
 
+    });
+
+    ws.on('error', (error) => {
+      // const parsedData = JSON.parse(data);
+      // console.log(parsedData, 'data from ws');
+      console.log(error, 'error on ws connection');
     });
 
     ws.on('message', function (data) {
       const parsedData = JSON.parse(data);
-      // console.log(parsedData, 'data from ws');
+      // if (parsedData.channel) {
+      //   console.log(parsedData.channel, 'channel from ws', parsedData);
+      // }
       if (parsedData.events) {
         parsedData.events.forEach(event => {
           if (event.tickers) {
             // console.log(event, event.type, 'event from ws');
             handleTickers(userID, event.tickers);
+          } else if (event.type === 'snapshot') {
+            handleSnapshot(userID, event);
           } else {
             console.log(event, event.type, 'event from ws');
           }
@@ -130,12 +133,18 @@ function startWebsocket(userID) {
       }
       // console.log('');
     });
-    
+
   }
-  
+
 }
 
-function handleTickers(userID, tickers){
+function handleSnapshot(userID, event) {
+  // every tick, send an update to open consoles for the user
+  console.log('handling snapshot');
+
+}
+
+function handleTickers(userID, tickers) {
   // every tick, send an update to open consoles for the user
   // console.log('handling tickers');
   tickers.forEach(ticker => {

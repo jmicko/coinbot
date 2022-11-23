@@ -715,7 +715,7 @@ async function reorder(orderToReorder, retry) {
         try {
           // send the new order with the trade details
           let pendingTrade = await coinbaseClient.placeOrderNew(userID, tradeDetails);
-          console.log(pendingTrade, 'pending trade');
+          // console.log(pendingTrade, 'pending trade');
           if (pendingTrade.success === false) {
             console.log(tradeDetails, 'failed');
             reject(pendingTrade)
