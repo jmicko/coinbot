@@ -748,7 +748,7 @@ async function reorder(orderToReorder, retry) {
       } else {
         await sleep(1000);
         // check again. if it finds it, don't do anything. If not found, error handling will reorder in the 404
-        await coinbaseClient.getOrder(orderToReorder.userID, orderToReorder.order_id);
+        await coinbaseClient.getOrderNew(orderToReorder.userID, orderToReorder.order_id);
       }
     } catch (err) {
       const willCancel = cache.checkIfCanceling(userID, orderToReorder.order_id);
