@@ -31,6 +31,11 @@ export function SocketProvider({ children }) {
         // console.log(ticker,'message from socket.io');
         dispatch({ type: 'SET_TICKER_PRICE', payload: ticker })
       }
+      if (message.type === 'heartbeat') {
+        const count = message.count
+        // console.log(count,'hb from socket.io');
+        dispatch({ type: 'SET_HEART_BEAT', payload: count })
+      }
     });
     
     // save the new socket and close the old one
@@ -39,7 +44,7 @@ export function SocketProvider({ children }) {
       newSocket.off('message')
       newSocket.close();
     }
-  }, []);
+  }, [dispatch]);
 
 
   return (

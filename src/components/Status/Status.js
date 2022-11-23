@@ -1,17 +1,16 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import './Status.css'
-import { useSocket } from "../../contexts/SocketProvider";
 
 
 function Status(props) {
   const dispatch = useDispatch();
   const user = useSelector((store) => store.accountReducer.userReducer);
   const ticker = useSelector((store) => store.statusReducer.tickers);
+  const heartBeat = useSelector((store) => store.statusReducer.heartBeat);
   const profitsReducer = useSelector((store) => store.accountReducer.profitsReducer);
   const openOrdersInOrder = useSelector((store) => store.ordersReducer.openOrdersInOrder);
   const [loopStatus, setLoopStatus] = useState(true);
-  const [fullSync, setFullSync] = useState("");
   const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
   const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
@@ -22,8 +21,6 @@ function Status(props) {
 
   // const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
   // const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
-
-  const socket = useSocket();
 
   const refresh = () => {
     props.updateUser();
@@ -73,31 +70,11 @@ function Status(props) {
     // profits are most likely to change when orders change, and do not change if they don't
   }, [openOrdersInOrder, getProfits, getAccounts]);
 
-  // need use effect to prevent multiplying connections every time component renders
   useEffect(() => {
-    // socket may not exist on page load because it hasn't connected yet
-    if (socket == null) return;
-
-    socket.on('message', message => {
-      // console.log('message from socket', message);
-      if (message.heartbeat && message.userID === user.id) {
-        if (message.count === 1) {
-          setFullSync('blue');
-        } else {
-          setFullSync('');
-        }
-        setLoopStatus(prevLoopStatus => {
-          // console.log('previous error count', prevErrorCount);
-          return !prevLoopStatus;
-        });
-      }
+    setLoopStatus(prevLoopStatus => {
+      return !prevLoopStatus;
     });
-
-    // this will remove the listener when component rerenders
-    return () => socket.off('message')
-    // useEffect will depend on socket because the connection will 
-    // not be there right when the page loads
-  }, [socket, user.id]);
+  }, [heartBeat]);
 
   // get the total number of open orders
   useEffect(() => {
@@ -205,7 +182,7 @@ function Status(props) {
       </center>
 
       <center>
-        <p className={`info status-ticker ${user.theme} ${fullSync}`}>{loopStatus ? <strong>HEARTBEAT</strong> : <strong>heartbeat</strong>}
+        <p className={`info status-ticker ${user.theme} ${heartBeat === 1 && 'blue'}`}>{loopStatus ? <strong>HEARTBEAT</strong> : <strong>heartbeat</strong>}
           <br />
           <button className={`btn-blue ${user.theme}`} onClick={refresh}>Refresh</button>
         </p>

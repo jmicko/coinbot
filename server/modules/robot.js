@@ -330,8 +330,8 @@ async function quickSync(userID) {
         // console.log('recent fill', recentFill, fill.order_id);
         // get order from db
         // if (fill.settled) {
-          // console.log(fill.trade_id == recentFill, 'they are the same')
-          if (recentFill != fill.trade_id) {
+        // console.log(fill.trade_id == recentFill, 'they are the same')
+        if (recentFill != fill.trade_id) {
 
           const singleDbOrder = await databaseClient.getSingleTrade(fill.order_id);
           // console.log('SINGLE DB ORDER', singleDbOrder);
@@ -1130,11 +1130,23 @@ function heartBeat(userID) {
   const loopNumber = cache.getLoopNumber(userID);
   const botSettings = cache.getKey(0, 'botSettings');
 
-  socketClient.emit('message', {
-    heartbeat: true,
-    userID: Number(userID),
-    count: loopNumber % botSettings.full_sync + 1
-  });
+  cache.sockets.forEach(socket => {
+    // find all open sockets for the user
+    if (socket.userID === userID) {
+      // console.log(socket.userID, userID)
+      const msg = {
+        type: 'heartbeat',
+        count: loopNumber % botSettings.full_sync + 1
+      }
+      socket.emit('message', msg);
+    }
+  })
+
+  // socketClient.emit('message', {
+  //   heartbeat: true,
+  //   userID: Number(userID),
+  //   count: loopNumber % botSettings.full_sync + 1
+  // });
 }
 
 
