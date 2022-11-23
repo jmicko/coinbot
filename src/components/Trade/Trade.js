@@ -7,7 +7,8 @@ function Trade(props) {
 
   // todo - default price value should automatically start out at the current price
   // of bitcoin, rounded to the closest $100
-  const [transactionSide, setTransactionSide] = useState('BUY');
+  // const [transactionSide, setTransactionSide] = useState('BUY');
+  const transactionSide = 'BUY'
   const [price, setTransactionPrice] = useState(0);
   const [sellPrice, setSellPrice] = useState(0);
   const [priceMargin, setPriceMargin] = useState(0);
@@ -65,7 +66,7 @@ function Trade(props) {
     setPairMargin(pairMargin);
     setPairProfit(pairProfit);
 
-  }, [price, transactionAmountBTC, transactionAmountUSD, tradePairRatio, amountTypeIsUSD]);
+  }, [fees, price, transactionAmountBTC, transactionAmountUSD, tradePairRatio, amountTypeIsUSD]);
 
 
   function submitTransaction(event) {

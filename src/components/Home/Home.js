@@ -9,7 +9,6 @@ import Settings from '../Settings/Settings'
 import './Home.css'
 import NotApproved from '../NotApproved/NotApproved.js';
 import NotActive from '../NotActive/NotActive.js';
-import axios from 'axios';
 import MobileNav from '../MobileNav/MobileNav.js';
 import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 
