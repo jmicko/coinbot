@@ -75,6 +75,20 @@ function startWebsocket(userID) {
   open();
 
   function open() {
+
+    function timer() {
+      clearTimeout(this.pingTimeout);
+
+      // Use `WebSocket#terminate()`, which immediately destroys the connection,
+      // instead of `WebSocket#close()`, which waits for the close timer.
+      // Delay should be equal to the interval at which your server
+      // sends out pings plus a conservative assumption of the latency.
+      this.pingTimeout = setTimeout(() => {
+        console.log('ending socket after timeout');
+        this.terminate();
+      }, 10000);
+    }
+
     console.log('OPENING');
 
     let ws = new WebSocket(WS_API_URL);
@@ -85,13 +99,11 @@ function startWebsocket(userID) {
     //   ws.close();
     // }, 1000 * 5);
 
+
     ws.on('open', function () {
       console.log('Socket open!');
-      // subscribeToProducts(products, CHANNEL_NAMES.status, ws);
       subscribeToProducts(products, CHANNEL_NAMES.tickers, ws);
       subscribeToProducts(products, CHANNEL_NAMES.user, ws);
-      // subscribeToProducts(products, CHANNEL_NAMES.ticker_batch, ws);
-      // subscribeToProducts(products, CHANNEL_NAMES.level2, ws);
     });
 
     ws.on('close', function () {
@@ -104,7 +116,7 @@ function startWebsocket(userID) {
       // always reopen the socket if it closes
       setTimeout(() => {
         open();
-      }, 2000);
+      }, 1000);
 
     });
 
@@ -132,6 +144,14 @@ function startWebsocket(userID) {
         });
       }
       // console.log('');
+    });
+
+
+    ws.on('open', timer);
+    // ws.on('close', timer);
+    ws.on('message', timer);
+    ws.on('close', function clear() {
+      clearTimeout(this.pingTimeout);
     });
 
   }
