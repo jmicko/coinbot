@@ -113,7 +113,7 @@ async function syncOrders(userID, count) {
       }
 
       // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
-      await settleMultipleOrders(userID); // TEMP COMMENT
+      await updateMultipleOrders(userID); // TEMP COMMENT
       await updateFunds(userID); // TEMP COMMENT
 
 
@@ -317,7 +317,7 @@ async function quickSync(userID) {
       cache.updateStatus(userID, 'done checking fills');
       // this will check the specified number of trades to sync on either side to see if any 
       // need to be reordered. It will only find them on a loop after a loop where trades have been placed
-      // todo - maybe this should go after the settleMultipleOrders function so it will fire on same loop
+      // todo - maybe this should go after the updateMultipleOrders function so it will fire on same loop
       const reorders = await databaseClient.getReorders(userID, botSettings.orders_to_sync)
       // combine the arrays
       toCheck = unsettledFills.concat(reorders);
@@ -550,95 +550,62 @@ function sleep(milliseconds) {
 }
 
 // this should just update the status of each trade in the 'ordersToCheck' cached array
-async function settleMultipleOrders(userID) {
-  cache.updateStatus(userID, 'start settleMultipleOrders (SMO)');
+async function updateMultipleOrders(userID) {
+  cache.updateStatus(userID, 'start updateMultipleOrders (UMO)');
   // get the orders that need processing. This will have been taken directly from the db and include all details
   const ordersArray = cache.getKey(userID, 'ordersToCheck');
-
   return new Promise(async (resolve, reject) => {
     if (ordersArray.length > 0) {
-
       cache.storeMessage(userID, { messageText: `There are ${ordersArray.length} orders that need to be synced` });
-
-      // loop over the array and flip each trade
-      for (let i = 0; i < ordersArray.length; i++) {
-
-        // set up loop
-        const orderToCheck = ordersArray[i];
-        cache.updateStatus(userID, `SMO loop number: ${i}`);
-        // this timer will serve to prevent rate limiting
-        let reorderTimer = true;
-        setTimeout(() => {
-          reorderTimer = false;
-        }, 150);
-        // send heartbeat for each loop
-        heartBeat(userID);
-        // set up loop DONE
-
-
-        try {
-
-
-          if (orderToCheck.will_cancel) {
-            // if it should be canceled, skip it and continue the loop
-            cache.updateStatus(userID, 'SMO loop will cancel');
-            continue;
-          } else if (orderToCheck.reorder) {
-            // if it should be reordered, reorder it
-            cache.updateStatus(userID, 'SMO loop reorder');
-            await reorder(orderToCheck);
-
-          } else {
-            // if not a reorder and not canceled, look up the full settlement details on CB
-            // then update db with current status
-            cache.updateStatus(userID, 'SMO loop get order');
-            // get all the order details from cb
-            let fullSettledDetails = await coinbaseClient.getOrderNew(userID, orderToCheck.order_id);
-            // update the order in the db
-            const queryText = `UPDATE "limit_orders" SET "settled" = $1, "total_fees" = $2, "filled_size" = $3, "filled_value" = $4 WHERE "order_id"= $5;`;
-            await pool.query(queryText, [
-              fullSettledDetails.order.settled,
-              fullSettledDetails.order.total_fees,
-              fullSettledDetails.order.filled_size,
-              fullSettledDetails.order.filled_value,
-              orderToCheck.order_id
-            ]);
-          }
-
-
-
-        } catch (err) {
-
-
-
-          cache.updateStatus(userID, 'error in SMO loop');
-          // handle not found order
-          let errorText = `Error marking order as settled`
-          if (err.response?.status === 404) {
-            errorText = `Order not found!`
-          } // end not found
-          else {
-            console.log(err, 'error in settleMultipleOrders loop');
-          }
-          cache.storeError(userID, {
-            errorData: orderToCheck,
-            errorText: errorText
-          })
-
-
-
-        } // end catch
-        while (reorderTimer) {
-          await sleep(10);
-        }
-      } // end for loop
-      cache.updateStatus(userID, 'SMO all done');
-      resolve();
-    } else {
-      cache.updateStatus(userID, 'SMO all done, no orders to settle');
-      // if no orders to settle, resolve
-      resolve();
     }
+    // loop over the array and update each trade
+    for (let i = 0; i < ordersArray.length; i++) {
+      console.log('loooooooop');
+      cache.storeMessage(userID, { messageText: `Syncing ${i + 1} of ${ordersArray.length} orders that need to be synced` });
+      // set up loop
+      const orderToCheck = ordersArray[i];
+      cache.updateStatus(userID, `UMO loop number: ${i}`);
+      // this timer will serve to prevent rate limiting
+      let reorderTimer = true;
+      setTimeout(() => {
+        reorderTimer = false;
+      }, 150);
+      // send heartbeat for each loop
+      heartBeat(userID);
+      // set up loop DONE
+      try {
+        if (orderToCheck.reorder && !orderToCheck.will_cancel) {
+          // if it should be reordered and is not being canceled by the user, reorder it
+          cache.updateStatus(userID, 'UMO loop reorder');
+          await reorder(orderToCheck);
+        } else {
+          cache.updateStatus(userID, 'UMO loop get order');
+          // if not a reorder, look up the full details on CB
+          let updatedOrder = await coinbaseClient.getOrderNew(userID, orderToCheck.order_id);
+          // then update db with current status
+          await databaseClient.updateTrade(updatedOrder.order);
+        }
+      } catch (err) {
+        cache.updateStatus(userID, 'error in UMO loop');
+        // handle not found order
+        let errorText = `Error updating order details`
+        if (err.response?.status === 404) {
+          errorText = `Order not found!`
+        } // end not found
+        else {
+          console.log(err, 'error in updateMultipleOrders loop');
+        }
+        cache.storeError(userID, {
+          errorData: orderToCheck,
+          errorText: errorText
+        })
+      } // end catch
+      while (reorderTimer) {
+        await sleep(10);
+      }
+    } // end for loop
+    cache.updateStatus(userID, 'UMO all done');
+    resolve();
   })
 }
 
