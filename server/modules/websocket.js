@@ -6,29 +6,14 @@ const fs = require('fs');
 const cache = require('./cache');
 
 function startWebsocket(userID) {
-
-
-  // Derived from your Coinbase Retail API Key
-  //  SIGNING_KEY: the signing key provided as a part of your API key. Also called the "SECRET KEY"
-  //  API_KEY: the api key provided as a part of your API key. also called the "PUBLIC KEY"
   const userAPI = cache.getAPI(userID)
+  const secret = userAPI.CB_SECRET;
+  const key = userAPI.CB_ACCESS_KEY;
 
-  const SIGNING_KEY = userAPI.CB_SECRET;
-  const API_KEY = userAPI.CB_ACCESS_KEY;
-
-  if (!SIGNING_KEY.length || !API_KEY.length) {
+  if (!secret.length || !key.length) {
     throw new Error('missing mandatory environment variable(s)');
   }
 
-  // the various websocket channels you can subscribe to
-  // add to this as we go
-  const CHANNEL_NAMES = {
-    level2: 'level2',
-    user: 'user',
-    tickers: 'ticker',
-    ticker_batch: 'ticker_batch',
-    status: 'status',
-  };
   const products = ['BTC-USD', 'ETH-USD'];
 
   // Function to generate a signature using CryptoJS
@@ -40,7 +25,7 @@ function startWebsocket(userID) {
   function timestampAndSign(message, channel, products = []) {
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const strToSign = `${timestamp}${channel}${products.join(',')}`;
-    const sig = sign(strToSign, SIGNING_KEY);
+    const sig = sign(strToSign, secret);
     return { ...message, signature: sig, timestamp: timestamp };
   }
 
@@ -49,7 +34,7 @@ function startWebsocket(userID) {
     const message = {
       type: 'subscribe',
       channel: channelName,
-      api_key: API_KEY,
+      api_key: key,
       product_ids: products,
       user_id: '',
     };
@@ -61,7 +46,7 @@ function startWebsocket(userID) {
     const message = {
       type: 'unsubscribe',
       channel: channelName,
-      api_key: API_KEY,
+      api_key: key,
       product_ids: products,
     };
     const subscribeMsg = timestampAndSign(message, channelName, products);
@@ -70,15 +55,14 @@ function startWebsocket(userID) {
 
   // The base URL of the API
   const WS_API_URL = 'wss://advanced-trade-ws.coinbase.com';
-
-
+  
   open();
+
 
   function open() {
 
     function timer() {
       clearTimeout(this.pingTimeout);
-
       // Use `WebSocket#terminate()`, which immediately destroys the connection,
       // instead of `WebSocket#close()`, which waits for the close timer.
       // Delay should be equal to the interval at which your server
@@ -89,21 +73,22 @@ function startWebsocket(userID) {
       }, 10000);
     }
 
+    function ordersInterval() {
+      clearInterval(this.getOrders);
+      this.getOrders = setInterval(() => {
+        console.log('getting orders');
+        unsubscribeToProducts(products, 'user', ws);
+        subscribeToProducts(products, 'user', ws);
+      }, 10000);
+    }
+
     console.log('OPENING');
-
     let ws = new WebSocket(WS_API_URL);
-
-    // // potentially reconnect every so often to get a snapshot update
-    // setTimeout(() => {
-    //   console.log('closing after timeout!');
-    //   ws.close();
-    // }, 1000 * 5);
-
 
     ws.on('open', function () {
       console.log('Socket open!');
-      subscribeToProducts(products, CHANNEL_NAMES.tickers, ws);
-      subscribeToProducts(products, CHANNEL_NAMES.user, ws);
+      subscribeToProducts(products, 'ticker', ws);
+      subscribeToProducts(products, 'user', ws);
     });
 
     ws.on('close', function () {
@@ -121,8 +106,6 @@ function startWebsocket(userID) {
     });
 
     ws.on('error', (error) => {
-      // const parsedData = JSON.parse(data);
-      // console.log(parsedData, 'data from ws');
       console.log(error, 'error on ws connection');
     });
 
@@ -135,9 +118,9 @@ function startWebsocket(userID) {
         parsedData.events.forEach(event => {
           if (event.tickers) {
             // console.log(event, event.type, 'event from ws');
-            handleTickers(userID, event.tickers);
+            handleTickers(event.tickers);
           } else if (event.type === 'snapshot') {
-            handleSnapshot(userID, event);
+            handleSnapshot(event);
           } else {
             console.log(event, event.type, 'event from ws');
           }
@@ -148,41 +131,41 @@ function startWebsocket(userID) {
 
 
     ws.on('open', timer);
-    // ws.on('close', timer);
+    // ws.on('open', ordersInterval);
     ws.on('message', timer);
     ws.on('close', function clear() {
       clearTimeout(this.pingTimeout);
+      // clearInterval(this.getOrders)
     });
 
   }
 
-}
+  function handleSnapshot(event) {
+    // every tick, send an update to open consoles for the user
+    console.log(event, 'handling snapshot');
 
-function handleSnapshot(userID, event) {
-  // every tick, send an update to open consoles for the user
-  console.log('handling snapshot');
+  }
 
-}
-
-function handleTickers(userID, tickers) {
-  // every tick, send an update to open consoles for the user
-  // console.log('handling tickers');
-  tickers.forEach(ticker => {
-    cache.sockets.forEach(socket => {
-      // find each open socket for the user
-      if (socket.userID === userID) {
-        // console.log(socket.userID, userID)
-        const msg = {
-          type: 'ticker',
-          ticker: ticker
+  function handleTickers(tickers) {
+    // every tick, send an update to open consoles for the user
+    // console.log('handling tickers');
+    tickers.forEach(ticker => {
+      cache.sockets.forEach(socket => {
+        // find each open socket for the user
+        if (socket.userID === userID) {
+          // console.log(socket.userID, userID)
+          const msg = {
+            type: 'ticker',
+            ticker: ticker
+          }
+          // send the message
+          socket.emit('message', msg);
         }
-        // send the message
-        socket.emit('message', msg);
-      }
-    })
-    return
-  });
+      })
+      return
+    });
 
+  }
 }
 
 module.exports = { startWebsocket };
