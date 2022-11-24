@@ -29,6 +29,8 @@ function Status(props) {
     dispatch({ type: 'FETCH_ACCOUNT' });
     dispatch({ type: 'FETCH_ORDERS' });
     dispatch({ type: 'FETCH_USER' });
+    dispatch({ type: 'FETCH_BOT_ERRORS' });
+    dispatch({ type: 'FETCH_BOT_MESSAGES' });
   }
 
   // watch to see if accuracy changes
