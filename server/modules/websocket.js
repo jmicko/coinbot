@@ -142,7 +142,7 @@ function startWebsocket(userID) {
 
   function handleSnapshot(event) {
     // every tick, send an update to open consoles for the user
-    console.log(event, 'handling snapshot');
+    console.log( 'handling snapshot');
 
   }
 
@@ -194,7 +194,7 @@ function getOpenOrders(userID) {
     }
 
     function subscribeToProducts(products, channelName, ws) {
-      console.log('products: %s', products.join(','));
+      // console.log('products: %s', products.join(','));
       const message = {
         type: 'subscribe',
         channel: channelName,

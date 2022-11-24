@@ -79,9 +79,9 @@ async function syncOrders(userID, count) {
 
 
       // *** WHICH SYNC ***
-      if (count === -50) {
+      if (count === 0) {
         // *** FULL SYNC ***
-        console.log('full sync');
+        // console.log('full sync');
         const full = await Promise.all([
           // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
           // API ENDPOINTS USED: orders, fees
@@ -210,7 +210,7 @@ async function deSync(userID) {
       // console.log(ordersToDeSync[0], 'all to desync');
 
       // cancel them all
-      await cancelMultipleOrders(allToDeSync, userID, true, userAPI);
+      await cancelMultipleOrders(allToDeSync, userID, true);
 
       cache.updateStatus(userID, 'end desync');
       resolve();
@@ -247,7 +247,7 @@ async function fullSync(userID) {
         // coinbaseClient.getOpenOrders(userID, userAPI),
         getOpenOrders(userID),
         // get fees
-        coinbaseClient.getFees(userID)
+        coinbaseClient.getFeesNew(userID)
       ]);
       cache.updateStatus(userID, 'done getting trades to compare');
       // store the lists of orders in the corresponding arrays so they can be compared
@@ -277,7 +277,7 @@ async function fullSync(userID) {
         // API ENDPOINTS USED: orders, accounts
         cache.updateStatus(userID, 'will cancel multiple orders');
         // todo - change this to check if they are in db first, then cancel
-        await cancelMultipleOrders(fullSyncOrders.ordersToCancel, userID, false, userAPI);
+        await cancelMultipleOrders(fullSyncOrders.ordersToCancel, userID, false); //TEMP COMMENT
         cache.updateStatus(userID, 'done canceling multiple orders');
 
         // wait for a second to allow cancels to go through so bot doesn't cancel twice
@@ -581,6 +581,11 @@ async function updateMultipleOrders(userID) {
           cache.updateStatus(userID, 'UMO loop get order');
           // if not a reorder, look up the full details on CB
           let updatedOrder = await coinbaseClient.getOrderNew(userID, orderToCheck.order_id);
+          // if it was cancelled, set it for reorder
+          if (updatedOrder.order.status === 'CANCELLED') {
+            console.log('was canceled but should not have been!')
+            updatedOrder.order.reorder = true;
+          }
           // then update db with current status
           await databaseClient.updateTrade(updatedOrder.order);
         }
@@ -695,7 +700,7 @@ async function reorder(orderToReorder, retry) {
 // but if they are found in the db, they don't cancel out of the coinbot.
 // checking the db wastes a half second and it is probably better to do these things in separate functions,
 // as it can be known if the order id was taken from the db or just pulled from the API
-async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
+async function cancelMultipleOrders(ordersArray, userID, ignoreSleep) {
   return new Promise(async (resolve, reject) => {
     cache.updateStatus(userID, 'begin cancelMultipleOrders (CMO)');
     // set variable to track how many orders were actually canceled
@@ -708,6 +713,7 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
         // only need to wait once because as the loop runs nothing will be added to it. Only wait for most recent order
         await sleep(500);
       }
+      const toCancel = [];
       // todo - this loop can be a lot simpler because an array of IDs can be batch cancelled
       for (let i = 0; i < ordersArray.length; i++) {
         cache.updateStatus(userID, `CMO loop number: ${i}`);
@@ -715,60 +721,37 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
         try {
           // check to make sure it really isn't in the db
           let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.order_id);
-          // console.log('double check', doubleCheck);
           if (doubleCheck) {
-            // if it is in the db, it should cancel but set it to reorder because it is out of range
+            // if it is in the db, it should cancel but set it to reorder because it is most likely out of range
             // that way it will reorder faster when it moves back in range
-            // console.log('canceling order', orderToCancel);
-            await Promise.all([
-              coinbaseClient.cancelOrderNew(userID, [orderToCancel.order_id]),
-              databaseClient.setSingleReorder(orderToCancel.order_id)
-            ]);
-            // console.log('old trade was set to reorder when back in range');
-            quantity++;
-          } else {
-            // cancel the order if nothing comes back from db
-            try {
-              const cancelResult = await coinbaseClient.cancelOrderNew(userID, [orderToCancel.order_id]);
-              console.log(cancelResult, 'cancel result', orderToCancel);
-              quantity++;
-            } catch (error) {
-              console.log(error, ' error canceling order');
-            }
+            // okay but then it might cancel an order that was just placed. idk
+            await databaseClient.setSingleReorder(orderToCancel.order_id)
           }
+          toCancel.push(orderToCancel.order_id)
+          quantity++;
         } catch (err) {
           // Do not resolve the error because this is in a for loop which needs to continue. If error, handle it here
-          if (err.response?.status === 404) {
-            // console.log(err.response.data, 'order not found when cancelling');
-            // if not found, cancel all orders may have been done, so get out of the loop
-            // todo - canceled orders in the Advanced Trade api should still show up, so a 404 can't mean the order was canceled
-            // new array will be made on next loop
-            i += ordersArray.length; // don't use break because need current loop iteration to finish
-          } else if (err.response?.status === 401 || err.response?.status === 502) {
-            cache.storeError(Number(userID), {
-              errorData: orderToCancel,
-              errorText: `Connection issue in cancel orders loop. 
-              Probably nothing to worry about unless it keeps repeating.`
-            })
-          } else {
-            console.log(err, 'unknown error in cancelMultipleOrders for loop');
-            cache.storeError(Number(userID), {
-              errorData: orderToCancel,
-              errorText: `unknown error in cancelMultipleOrders for loop`
-            })
-          }
+          console.log(err, 'unknown error in cancelMultipleOrders for loop');
+          cache.storeError(Number(userID), {
+            errorData: orderToCancel,
+            errorText: `unknown error in cancelMultipleOrders for loop`
+          })
         }
-        await updateFunds(userID);
-        // wait to prevent rate limiting
-        await sleep(150);
       } //end for loop
+      try {
+        // cancel the orders in the array
+        await coinbaseClient.cancelOrderNew(userID, toCancel);
+        // update funds now that everything should be up to date
+        await updateFunds(userID);
+      } catch (err) {
+        console.log('error cancelling multiple orders');
+        reject(err);
+      }
       // if all goes well, send message to user and resolve promise with success message
       cache.storeMessage(Number(userID), {
         messageText: `${quantity} Extra orders were found and canceled`,
         orderUpdate: true
       });
-
-
       cache.updateStatus(userID, 'done CMO');
       resolve({
         message: `${quantity} Extra orders were canceled`,
@@ -1063,7 +1046,7 @@ function heartBeat(userID) {
   cache.sockets.forEach(socket => {
     // find all open sockets for the user
     if (socket.userID === userID) {
-      // console.log(socket.userID, userID)
+      // console.log(loopNumber, botSettings.full_sync, loopNumber % botSettings.full_sync + 1)
       const msg = {
         type: 'heartbeat',
         count: loopNumber % botSettings.full_sync + 1

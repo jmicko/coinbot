@@ -101,7 +101,7 @@ const storeTrade = (newOrder, originalDetails, flipped_at) => {
 // flipped_at is the "Time" shown on the interface. It has no other function
 const updateTrade = (order) => {
   return new Promise(async (resolve, reject) => {
-    console.log(order, 'order to build string from');
+    // console.log(order, 'order to build string from');
     const columns = []
     // console.log('NEW ORDER IN STORETRADE', newOrder);
     // add new order to the database
@@ -266,8 +266,8 @@ const updateTrade = (order) => {
     sqlText += `)\nWHERE "order_id" = $${columns.length + 1};`;
     columns.push(order.order_id)
 
-    console.log(sqlText, 'sqlText');
-    console.log(columns, 'columns');
+    // console.log(sqlText, 'sqlText');
+    // console.log(columns, 'columns');
 
     try {
       const results = await pool.query(sqlText, columns)
