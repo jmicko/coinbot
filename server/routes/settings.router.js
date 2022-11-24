@@ -37,15 +37,24 @@ router.get('/test', rejectUnauthenticated, async (req, res) => {
       // const response = await coinbaseClient.getOrderNew(userID, '');
       // const response = await coinbaseClient.getProducts(userID);
       // const response = await coinbaseClient.cancelOrderNew(userID, [IDs]);
-      const response = await coinbaseClient.getOpenOrdersNew(userID);
+      // const response = await coinbaseClient.getOpenOrdersNew(userID);
       // const response = await databaseClient.getTradesByIDs(userID, IDs);
       // response.products.forEach(product => {
       //   if (product.new) {
 
-      //   }
+      //   }16500.0000000000000000 buy 16615.5000000000000000 sell 0 percent
       //   console.log(product,'response');
 
       // });
+      // let response = `hello`;
+      // true && (response += ` world`)
+      const order = {
+        order_id: "0725ef09-1318-4d01-b4bb-2faa83e96e99",
+        original_buy_price: '16500.0000000000000000',
+        original_sell_price: '16615.5000000000000000',
+        completion_percentage: '0'
+      }
+      const response = await databaseClient.updateTrade(order)
       console.log(response, 'response from test');
 
 

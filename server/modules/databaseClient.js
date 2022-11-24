@@ -96,6 +96,182 @@ const storeTrade = (newOrder, originalDetails, flipped_at) => {
   });
 }
 
+// stores the details of a trade-pair. The originalDetails are details that stay with a trade-pair when it is flipped
+// flipped_at is the "Time" shown on the interface. It has no other function
+const updateTrade = (order) => {
+  return new Promise(async (resolve, reject) => {
+    console.log(order, 'order to build string from');
+    const columns = []
+    // console.log('NEW ORDER IN STORETRADE', newOrder);
+    // add new order to the database
+    let first = true;
+    let sqlText = `UPDATE "limit_orders" SET (`;
+    if (order.original_buy_price) {
+      first ? first = false : sqlText += ', '
+      order.original_buy_price && (sqlText += `"original_buy_price"`) && columns.push(order.original_buy_price);
+    }
+    if (order.original_sell_price) {
+      first ? first = false : sqlText += ', '
+      order.original_sell_price && (sqlText += `"original_sell_price"`) && columns.push(order.original_sell_price);
+    }
+    if (order.trade_pair_ratio) {
+      first ? first = false : sqlText += ', '
+      order.trade_pair_ratio && (sqlText += `"trade_pair_ratio"`) && columns.push(order.trade_pair_ratio);
+    }
+    if (order.flipped_at) {
+      first ? first = false : sqlText += ', '
+      order.flipped_at && (sqlText += `"flipped_at"`) && columns.push(order.flipped_at);
+    }
+    if (order.reorder) {
+      first ? first = false : sqlText += ', '
+      order.reorder && (sqlText += `"reorder"`) && columns.push(order.reorder);
+    }
+    if (order.product_id) {
+      first ? first = false : sqlText += ', '
+      order.product_id && (sqlText += `"product_id"`) && columns.push(order.product_id);
+    }
+    if (order.coinbase_user_id) {
+      first ? first = false : sqlText += ', '
+      order.coinbase_user_id && (sqlText += `"coinbase_user_id"`) && columns.push(order.coinbase_user_id);
+    }
+    if (order.base_size) {
+      first ? first = false : sqlText += ', '
+      order.base_size && (sqlText += `"base_size"`) && columns.push(order.base_size);
+    }
+    if (order.limit_price) {
+      first ? first = false : sqlText += ', '
+      order.limit_price && (sqlText += `"limit_price"`) && columns.push(order.limit_price);
+    }
+    if (order.post_only) {
+      first ? first = false : sqlText += ', '
+      order.post_only && (sqlText += `"post_only"`) && columns.push(order.post_only);
+    }
+    if (order.side) {
+      first ? first = false : sqlText += ', '
+      order.side && (sqlText += `"side"`) && columns.push(order.side);
+    }
+    if (order.client_order_id) {
+      first ? first = false : sqlText += ', '
+      order.client_order_id && (sqlText += `"client_order_id"`) && columns.push(order.client_order_id);
+    }
+    if (order.next_client_order_id) {
+      first ? first = false : sqlText += ', '
+      order.next_client_order_id && (sqlText += `"next_client_order_id"`) && columns.push(order.next_client_order_id);
+    }
+    if (order.status) {
+      first ? first = false : sqlText += ', '
+      order.status && (sqlText += `"status"`) && columns.push(order.status);
+    }
+    if (order.time_in_force) {
+      first ? first = false : sqlText += ', '
+      order.time_in_force && (sqlText += `"time_in_force"`) && columns.push(order.time_in_force);
+    }
+    if (order.created_time) {
+      first ? first = false : sqlText += ', '
+      order.created_time && (sqlText += `"created_time"`) && columns.push(order.created_time);
+    }
+    if (order.completion_percentage) {
+      first ? first = false : sqlText += ', '
+      order.completion_percentage && (sqlText += `"completion_percentage"`) && columns.push(order.completion_percentage);
+    }
+    if (order.filled_size) {
+      first ? first = false : sqlText += ', '
+      order.filled_size && (sqlText += `"filled_size"`) && columns.push(order.filled_size);
+    }
+    if (order.average_filled_price) {
+      first ? first = false : sqlText += ', '
+      order.average_filled_price && (sqlText += `"average_filled_price"`) && columns.push(order.average_filled_price);
+    }
+    if (order.fee) {
+      first ? first = false : sqlText += ', '
+      order.fee && (sqlText += `"fee"`) && columns.push(order.fee);
+    }
+    if (order.number_of_fills) {
+      first ? first = false : sqlText += ', '
+      order.number_of_fills && (sqlText += `"number_of_fills"`) && columns.push(order.number_of_fills);
+    }
+    if (order.filled_value) {
+      first ? first = false : sqlText += ', '
+      order.filled_value && (sqlText += `"filled_value"`) && columns.push(order.filled_value);
+    }
+    if (order.pending_cancel) {
+      first ? first = false : sqlText += ', '
+      order.pending_cancel && (sqlText += `"pending_cancel"`) && columns.push(order.pending_cancel);
+    }
+    if (order.size_in_quote) {
+      first ? first = false : sqlText += ', '
+      order.size_in_quote && (sqlText += `"size_in_quote"`) && columns.push(order.size_in_quote);
+    }
+    if (order.total_fees) {
+      first ? first = false : sqlText += ', '
+      order.total_fees && (sqlText += `"total_fees"`) && columns.push(order.total_fees);
+    }
+    if (order.previous_total_fees) {
+      first ? first = false : sqlText += ', '
+      order.previous_total_fees && (sqlText += `"previous_total_fees"`) && columns.push(order.previous_total_fees);
+    }
+    if (order.size_inclusive_of_fees) {
+      first ? first = false : sqlText += ', '
+      order.size_inclusive_of_fees && (sqlText += `"size_inclusive_of_fees"`) && columns.push(order.size_inclusive_of_fees);
+    }
+    if (order.total_value_after_fees) {
+      first ? first = false : sqlText += ', '
+      order.total_value_after_fees && (sqlText += `"total_value_after_fees"`) && columns.push(order.total_value_after_fees);
+    }
+    if (order.trigger_status) {
+      first ? first = false : sqlText += ', '
+      order.trigger_status && (sqlText += `"trigger_status"`) && columns.push(order.trigger_status);
+    }
+    if (order.order_type) {
+      first ? first = false : sqlText += ', '
+      order.order_type && (sqlText += `"order_type"`) && columns.push(order.order_type);
+    }
+    if (order.reject_reason) {
+      first ? first = false : sqlText += ', '
+      order.reject_reason && (sqlText += `"reject_reason"`) && columns.push(order.reject_reason);
+    }
+    if (order.settled) {
+      first ? first = false : sqlText += ', '
+      order.settled && (sqlText += `"settled"`) && columns.push(order.settled);
+    }
+    if (order.product_type) {
+      first ? first = false : sqlText += ', '
+      order.product_type && (sqlText += `"product_type"`) && columns.push(order.product_type);
+    }
+    if (order.reject_message) {
+      first ? first = false : sqlText += ', '
+      order.reject_message && (sqlText += `"reject_message"`) && columns.push(order.reject_message);
+    }
+    if (order.cancel_message) {
+      first ? first = false : sqlText += ', '
+      order.cancel_message && (sqlText += `"cancel_message"`) && columns.push(order.cancel_message);
+    }
+
+    sqlText += `) = (`;
+
+    first = true;
+    // now loop through array of values and keep building the string
+    for (let i = 0; i < columns.length; i++) {
+      const value = columns[i];
+      first ? first = false : sqlText += ', '
+      sqlText += `$${i + 1}`
+    }
+    sqlText += `)\nWHERE "order_id" = $${columns.length + 1};`;
+    columns.push(order.order_id)
+
+    // console.log(sqlText,'sqlText');
+    // console.log(columns,'columns');
+
+    try {
+      const results = await pool.query(sqlText, columns)
+      resolve(results);
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
 
 // This function is used when importing trades from the user interface
 // IT MUST USE THE USER ID FROM PASSPORT AUTHENTICATION!!!
@@ -104,10 +280,10 @@ const importTrade = (details, userID) => {
   console.log(details.id);
   return new Promise((resolve, reject) => {
     // add new order to the database
-    const sqlText = `INSERT INTO "orders" 
-      ("id", "userID", "price", "size", "trade_pair_ratio", "side", "settled", "product_id", "time_in_force", 
-      "created_at", "flipped_at", "done_at", "fill_fees", "previous_fill_fees", "filled_size", "executed_value", "original_buy_price", "original_sell_price", "reorder") 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19);`;
+    const sqlText = `INSERT INTO "orders"
+    ("id", "userID", "price", "size", "trade_pair_ratio", "side", "settled", "product_id", "time_in_force",
+      "created_at", "flipped_at", "done_at", "fill_fees", "previous_fill_fees", "filled_size", "executed_value", "original_buy_price", "original_sell_price", "reorder")
+  VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19); `;
     pool.query(sqlText, [
       details.id,
       userID,
@@ -146,10 +322,10 @@ const getLimitedUnsettledTrades = (userID, limit) => {
     // get limit of sells
     try {
 
-      let sqlText = `(SELECT * FROM "limit_orders" WHERE "side"='SELL' AND "flipped"=false AND "settled"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "limit_price" ASC LIMIT $2)
-      UNION
-      (SELECT * FROM "limit_orders" WHERE "side"='BUY' AND "flipped"=false AND "settled"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "limit_price" DESC LIMIT $2)
-      ORDER BY "limit_price" DESC;`;
+      let sqlText = `(SELECT * FROM "limit_orders" WHERE "side" = 'SELL' AND "flipped" = false AND "settled" = false AND "will_cancel" = false AND "userID" = $1 ORDER BY "limit_price" ASC LIMIT $2)
+  UNION
+    (SELECT * FROM "limit_orders" WHERE "side" = 'BUY' AND "flipped" = false AND "settled" = false AND "will_cancel" = false AND "userID" = $1 ORDER BY "limit_price" DESC LIMIT $2)
+      ORDER BY "limit_price" DESC; `;
       const results = await pool.query(sqlText, [userID, limit]);
 
       resolve(results.rows);
@@ -167,7 +343,7 @@ const getLimitedUnsettledTrades = (userID, limit) => {
 //     // get limit of sells
 //     try {
 
-//       let sqlText = `(SELECT * FROM "orders" WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" ASC LIMIT $2)
+//       let sqlText = `(SELECT * FROM "orders" WHERE "side" = 'SELL' AND "flipped" = false AND "will_cancel" = false AND "userID" = $1 ORDER BY "price" ASC LIMIT $2)
 //       UNION
 //       (SELECT * FROM "orders" WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT $2)
 //       ORDER BY "price" DESC;`;
@@ -690,6 +866,7 @@ async function markAsFlipped(order_id) {
 
 const databaseClient = {
   storeTrade: storeTrade,
+  updateTrade: updateTrade,
   // storeReorderTrade: storeReorderTrade,
   importTrade: importTrade,
   // getLimitedTrades: getLimitedTrades,

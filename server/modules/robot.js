@@ -578,6 +578,7 @@ async function settleMultipleOrders(userID) {
 
         try {
 
+
           if (orderToCheck.will_cancel) {
             // if it should be canceled, skip it and continue the loop
             cache.updateStatus(userID, 'SMO loop will cancel');
@@ -593,7 +594,6 @@ async function settleMultipleOrders(userID) {
             cache.updateStatus(userID, 'SMO loop get order');
             // get all the order details from cb
             let fullSettledDetails = await coinbaseClient.getOrderNew(userID, orderToCheck.order_id);
-            // console.log('fully settled:', fullSettledDetails);
             // update the order in the db
             const queryText = `UPDATE "limit_orders" SET "settled" = $1, "total_fees" = $2, "filled_size" = $3, "filled_value" = $4 WHERE "order_id"= $5;`;
             await pool.query(queryText, [
@@ -604,7 +604,13 @@ async function settleMultipleOrders(userID) {
               orderToCheck.order_id
             ]);
           }
+
+
+
         } catch (err) {
+
+
+
           cache.updateStatus(userID, 'error in SMO loop');
           // handle not found order
           let errorText = `Error marking order as settled`
@@ -618,6 +624,9 @@ async function settleMultipleOrders(userID) {
             errorData: orderToCheck,
             errorText: errorText
           })
+
+
+
         } // end catch
         while (reorderTimer) {
           await sleep(10);
