@@ -143,7 +143,7 @@ async function getFees(userID, quickAPI) {
   })
 }
 
-async function getFeesNew(userID, quickAPI) {
+async function getFeesNew(userID) {
   return new Promise(async (resolve, reject) => {
     try {
       const userAPI = cache.getAPI(userID);

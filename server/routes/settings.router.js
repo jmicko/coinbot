@@ -7,6 +7,7 @@ const socketClient = require('../modules/socketClient');
 const robot = require('../modules/robot');
 const coinbaseClient = require('../modules/coinbaseClient');
 const cache = require('../modules/cache');
+const { getOpenOrders } = require('../modules/websocket');
 
 
 /**
@@ -63,6 +64,7 @@ router.get('/test', rejectUnauthenticated, async (req, res) => {
         }
       }
       // const response = await databaseClient.updateTrade()
+      const response = await getOpenOrders(userID)
       console.log(response, 'response from test');
 
 

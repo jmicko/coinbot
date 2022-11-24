@@ -3,7 +3,7 @@ const databaseClient = require("./databaseClient");
 const pool = require("./pool");
 const socketClient = require("./socketClient");
 const cache = require("./cache");
-const { startWebsocket } = require("./websocket");
+const { startWebsocket, getOpenOrders } = require("./websocket");
 
 // const startTime = performance.now();
 // const endTime = performance.now();
@@ -89,8 +89,6 @@ async function syncOrders(userID, count) {
           // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
           processOrders(userID)
         ]);
-        // const fullSyncOrders = full[0]
-        // ordersToCheck = fullSyncOrders.ordersToCheck;
 
       } else {
         // *** QUICK SYNC ***
@@ -246,7 +244,8 @@ async function fullSync(userID) {
         // databaseClient.getLimitedTrades(userID, botSettings.orders_to_sync),
         // not sure this should be getting trades whether or not they are settled. Made new db function where settled=false
         databaseClient.getLimitedUnsettledTrades(userID, botSettings.orders_to_sync),
-        coinbaseClient.getOpenOrders(userID, userAPI),
+        // coinbaseClient.getOpenOrders(userID, userAPI),
+        getOpenOrders(userID),
         // get fees
         coinbaseClient.getFees(userID)
       ]);
