@@ -96,6 +96,7 @@ const storeTrade = (newOrder, originalDetails, flipped_at) => {
   });
 }
 
+// hahahahahaha may you never have to change this
 // stores the details of a trade-pair. The originalDetails are details that stay with a trade-pair when it is flipped
 // flipped_at is the "Time" shown on the interface. It has no other function
 const updateTrade = (order) => {
@@ -134,17 +135,23 @@ const updateTrade = (order) => {
       first ? first = false : sqlText += ', '
       order.coinbase_user_id && (sqlText += `"coinbase_user_id"`) && columns.push(order.coinbase_user_id);
     }
-    if (order.base_size) {
+    if (order.base_size != null || order.order_configuration?.limit_limit_gtc?.base_size != null) {
       first ? first = false : sqlText += ', '
-      order.base_size && (sqlText += `"base_size"`) && columns.push(order.base_size);
+      order.base_size != null
+        ? (sqlText += `"base_size"`) && columns.push(order.base_size)
+        : order.order_configuration?.limit_limit_gtc?.base_size != null && (sqlText += `"base_size"`) && columns.push(order.order_configuration?.limit_limit_gtc?.base_size);
     }
-    if (order.limit_price) {
+    if (order.limit_price != null || order.order_configuration?.limit_limit_gtc?.limit_price != null) {
       first ? first = false : sqlText += ', '
-      order.limit_price && (sqlText += `"limit_price"`) && columns.push(order.limit_price);
+      order.limit_price != null
+        ? (sqlText += `"limit_price"`) && columns.push(order.limit_price)
+        : order.order_configuration?.limit_limit_gtc?.limit_price != null && (sqlText += `"limit_price"`) && columns.push(order.order_configuration?.limit_limit_gtc?.limit_price);
     }
-    if (order.post_only) {
+    if (order.post_only != null || order.order_configuration?.limit_limit_gtc?.post_only != null) {
       first ? first = false : sqlText += ', '
-      order.post_only && (sqlText += `"post_only"`) && columns.push(order.post_only);
+      order.post_only != null
+        ? (sqlText += `"post_only"`) && columns.push(order.post_only)
+        : order.order_configuration?.limit_limit_gtc?.post_only != null && (sqlText += `"post_only"`) && columns.push(order.order_configuration?.limit_limit_gtc?.post_only);
     }
     if (order.side) {
       first ? first = false : sqlText += ', '
@@ -259,8 +266,8 @@ const updateTrade = (order) => {
     sqlText += `)\nWHERE "order_id" = $${columns.length + 1};`;
     columns.push(order.order_id)
 
-    // console.log(sqlText,'sqlText');
-    // console.log(columns,'columns');
+    console.log(sqlText, 'sqlText');
+    console.log(columns, 'columns');
 
     try {
       const results = await pool.query(sqlText, columns)
