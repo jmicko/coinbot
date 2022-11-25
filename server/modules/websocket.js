@@ -142,7 +142,7 @@ function startWebsocket(userID) {
 
   function handleSnapshot(event) {
     // every tick, send an update to open consoles for the user
-    console.log( 'handling snapshot');
+    console.log('handling snapshot');
 
   }
 
@@ -217,7 +217,17 @@ function getOpenOrders(userID) {
         clearTimeout(this.pingTimeout);
         this.pingTimeout = setTimeout(() => {
           console.log('ending socket after timeout');
-          reject();
+          reject({
+            response: {
+              status: 503,
+              statusText: 'socket timeout',
+              data: {
+                error: 'socket closed',
+                error_details: 'socket closed after timeout',
+                message: 'socket timeout'
+              }
+            }
+          });
           this.terminate();
         }, 5000);
       }

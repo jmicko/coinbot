@@ -128,26 +128,33 @@ async function syncOrders(userID, count) {
   } catch (err) {
     let errorData;
     let errorText;
-    if (err.response?.data) {
-      errorData = err.response.data
+    // the hell is this error? Did something reject without passing an error?
+    // it totally was lmao
+    // /Users/jmicko/webdev/coinbot/server/modules/robot.js:131
+    //     if (err.response?.data) {
+    //             ^
+
+    // TypeError: Cannot read properties of undefined (reading 'response')
+    if (err?.response?.data) {
+      errorData = err?.response.data
     }
     cache.updateStatus(userID, 'error in the main loop');
-    if (err.code === 'ECONNRESET') {
+    if (err?.code === 'ECONNRESET') {
       errorText = 'Connection reset by Coinbase server';
       console.log('Connection reset by Coinbase server. Probably nothing to worry about unless it keeps happening quickly.');
-    } else if (err.response?.status === 500) {
+    } else if (err?.response?.status === 500) {
       console.log('internal server error from coinbase');
       errorText = 'Internal server error from coinbase';
-    } else if (err.response?.status === 401) {
-      console.log(err.response?.data, 'Invalid Signature');
+    } else if (err?.response?.status === 401) {
+      console.log(err?.response?.data, 'Invalid Signature');
       errorText = 'Invalid Signature. Probably nothing to worry about unless it keeps happening quickly.';
-    } else if (err.response?.statusText === 'Bad Gateway') {
+    } else if (err?.response?.statusText === 'Bad Gateway') {
       console.log('bad gateway');
       errorText = 'Bad Gateway. Probably nothing to worry about unless it keeps happening quickly.';
-    } else if (err.response?.statusText === 'Gateway Timeout') {
+    } else if (err?.response?.statusText === 'Gateway Timeout') {
       console.log('Gateway Timeout');
       errorText = 'Gateway Timeout. Nothing to worry about. Coinbase probably lost the connection';
-    } else if (err.code === 'ECONNABORTED') {
+    } else if (err?.code === 'ECONNABORTED') {
       console.log('10 sec timeout');
       errorText = '10 second timeout. Nothing to worry about, Coinbase was just slow to respond.';
     } else {
@@ -257,7 +264,7 @@ async function fullSync(userID) {
 
       await updateFunds(userID);
       cache.updateStatus(userID, 'done updating funds full sync');
-
+console.log(fees,'fees');
       // need to get the fees for more accurate Available funds reporting
       // fees don't change frequently so only need to do this during full sync
       await databaseClient.saveFees(fees, userID);

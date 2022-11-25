@@ -419,7 +419,7 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
           reject(err);
         })
     } else {
-      reject({ error: 'nothing' })
+      reject({ error: `no "side" parameter. Use 'BUY' 'SELL' or 'all'` })
     }
   });
 }
