@@ -67,30 +67,6 @@ router.get('/profits', rejectUnauthenticated, async (req, res) => {
   console.log('profits get route');
   const userID = req.user.id;
 
-  try {
-    // console.log('update funds before profits');
-    const fees = await coinbaseClient.getFeesNew(userID);
-    await databaseClient.saveFees(fees, userID);
-
-
-    // const orders = await coinbaseClient.getOpenOrders(userID);
-    // console.log(orders, 'orders from new api');
-    // for (let i = 0; i < orders.orders.length; i++) {
-    //   const order = orders.orders[i];
-    //   console.log(order.status, 'order status from new api');
-
-    // }
-    // console.log(fees, 'fees from new api');
-    // const [USD] = accounts.filter(account => account.currency === 'USD')
-    // const [BTC] = accounts.filter(account => account.currency === 'BTC')
-    // console.log(accounts, 'all accounts');
-    // console.log(USD, 'usd');
-    // console.log(BTC, 'btc');
-    await robot.updateFunds(userID)
-  } catch (err) {
-    console.log(err, 'problem updating funds in account/profits route');
-  }
-
   // for sum since a day ago
   const lastDayQueryText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
   FROM limit_orders 
