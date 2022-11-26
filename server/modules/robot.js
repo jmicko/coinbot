@@ -264,7 +264,7 @@ async function fullSync(userID) {
 
       await updateFunds(userID);
       cache.updateStatus(userID, 'done updating funds full sync');
-console.log(fees,'fees');
+      // console.log(fees, 'fees');
       // need to get the fees for more accurate Available funds reporting
       // fees don't change frequently so only need to do this during full sync
       await databaseClient.saveFees(fees, userID);

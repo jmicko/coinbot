@@ -239,6 +239,22 @@ function getOpenOrders(userID) {
         subscribeToProducts(products, 'user', ws);
       });
 
+      ws.on('error', function (err) {
+        console.log('get orders websocket error!');
+        reject({
+          response: {
+            status: 503,
+            statusText: 'unknown error',
+            data: {
+              error: 'unknown error',
+              error_details: 'unknown error',
+              message: 'unknown error'
+            },
+            error: err
+          }
+        });
+      });
+
       ws.on('message', function (data) {
         const parsedData = JSON.parse(data);
 
