@@ -78,40 +78,38 @@ async function syncOrders(userID, count) {
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
 
 
+      const t0 = performance.now();
       // *** WHICH SYNC ***
       if (count === 0) {
-        // *** FULL SYNC ***
-        // console.log('full sync');
-        const full = await Promise.all([
-          // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
-          // API ENDPOINTS USED: orders, fees
-          fullSync(userID),
-          // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
-          processOrders(userID)
-        ]);
 
+        // *** FULL SYNC ***
+        // full sync compares all trades that should be on CB with DB,
+        // and does other less frequent maintenance tasks
+        await fullSync(userID);
       } else {
+
         // *** QUICK SYNC ***
         cache.updateStatus(userID, 'start all quick sync')
-        // can run all three of these at the same time. 
-        // Process orders looks for orders that are settled and not flipped,
-        // and quickSync checkS if they are settled but doesn't act on them
-        // so processOrders will flip trades from the previous cycle while quickSync gets new ones
-        const quick = await Promise.all([
-          //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
-          // API ENDPOINTS USED: fills
-          quickSync(userID),
-          // these two can run at the same time because they are mutually exclusive based on the will_cancel column
-          // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
-          processOrders(userID), //TEMP COMMENT
-          // desync extra orders
-          deSync(userID) // TEMP COMMENT
-        ]);
+        //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
+        await quickSync(userID);
+        // desync extra orders
+        await deSync(userID)
         cache.updateStatus(userID, 'end all quick sync');
       }
 
       // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
       await updateMultipleOrders(userID); // TEMP COMMENT
+
+      // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
+      processOrders(userID); //TEMP COMMENT
+
+      const t1 = performance.now();
+      console.log(`sync took ${t1 - t0} milliseconds.`);
+
+
+
+
+
       await updateFunds(userID); // TEMP COMMENT
 
 
@@ -262,7 +260,7 @@ async function fullSync(userID) {
       fullSyncOrders.cbOrders = results[1];
       const fees = results[2];
 
-      await updateFunds(userID);
+      // await updateFunds(userID);
       cache.updateStatus(userID, 'done updating funds full sync');
       // console.log(fees, 'fees');
       // need to get the fees for more accurate Available funds reporting
@@ -749,7 +747,7 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep) {
         // cancel the orders in the array
         await coinbaseClient.cancelOrderNew(userID, toCancel);
         // update funds now that everything should be up to date
-        await updateFunds(userID);
+        // await updateFunds(userID);
       } catch (err) {
         console.log('error cancelling multiple orders');
         reject(err);
