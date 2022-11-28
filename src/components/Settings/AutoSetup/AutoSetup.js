@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useSocket } from '../../../contexts/SocketProvider';
 import { autoSetup } from '../../../shared';
+import SingleTrade from '../../SingleTrade/SingleTrade';
 import './AutoSetup.css'
 
 
 function AutoSetup(props) {
   const dispatch = useDispatch();
   const user = useSelector((store) => store.accountReducer.userReducer);
+  const socket = useSocket();
 
   const [startingValue, setStartingValue] = useState(1000);
   const [skipFirst, setSkipFirst] = useState(false);
@@ -14,7 +17,7 @@ function AutoSetup(props) {
   const [ignoreFunds, setIgnoreFunds] = useState(false);
   const [increment, setIncrement] = useState(100);
   const [incrementType, setIncrementType] = useState('dollars');
-  const [size, setSize] = useState(10);
+  const [base_size, setSize] = useState(10);
   const [sizeType, setSizeType] = useState('USD');
   const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
   const [tradePairRatio, setTradePairRatio] = useState(1.1);
@@ -22,6 +25,7 @@ function AutoSetup(props) {
   const [autoTradeStarted, setAutoTradeStarted] = useState(false);
   const [totalTrades, setTotalTrades] = useState(false);
 
+  const [orders, setOrders] = useState(<></>);
   const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
   const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
 
@@ -38,11 +42,65 @@ function AutoSetup(props) {
     setIgnoreFunds(!ignoreFunds)
   }
 
+  const calculateResults = useCallback(
+    () => {
+      // let availableFunds = availableFundsUSD;
+      // // this is the current price point that the loop is working with
+      // let loopPrice = startingValue;
+      // // this is the price BTC is currently trading at
+      // let tradingPrice = socket.tickers.btc.price;
+      // // this is how many times the loop has looped
+      // let count = 0;
+
+
+      let payload = {
+        availableFunds: availableFundsUSD,
+        // tradingPrice: socket.tickers.btc.price,
+        tradingPrice: 16000,
+        startingValue: startingValue,
+        skipFirst: skipFirst,
+        endingValue: endingValue,
+        ignoreFunds: ignoreFunds,
+        incrementType: incrementType,
+        increment: increment,
+        trade_pair_ratio: tradePairRatio,
+        base_size: base_size,
+        sizeType: sizeType,
+        product_id: transactionProduct,
+      }
+
+      let setup = autoSetup(user, payload);
+
+      // this will be the buy price of the last trade pair
+      setSetupResults(setup.orderList[setup.orderList.length - 1].original_buy_price);
+
+      // this will be the total number of trades made
+      setTotalTrades(setup.orderList.length);
+
+      setOrders(setup.orderList.map((order) => {
+        return <SingleTrade key={order.order_id} order={order} preview={true} />
+      }))
+
+      console.log(setup);
+
+    }, [availableFundsUSD,
+    // socket.tickers.btc.price,
+    startingValue,
+    endingValue,
+    ignoreFunds,
+    incrementType,
+    increment,
+    tradePairRatio,
+    base_size,
+    sizeType,
+    transactionProduct,]
+  )
+
   useEffect(() => {
-    if (size) {
+    if (base_size) {
       calculateResults();
     }
-  }, [startingValue, increment, size, sizeType, props.priceTicker])
+  }, [startingValue, endingValue, increment, base_size, sizeType, calculateResults])
 
   useEffect(() => {
     if (user) {
@@ -61,182 +119,6 @@ function AutoSetup(props) {
     return parts.join(".");
   }
 
-  function calculateResults() {
-    let availableFunds = availableFundsUSD;
-    // this is the current price point that the loop is working with
-    let loopPrice = startingValue;
-    // this is the price BTC is currently trading at
-    let tradingPrice = props.priceTicker;
-    // this is how many times the loop has looped
-    let count = 0;
-
-
-    let payload = {
-      availableFunds: availableFundsUSD,
-      tradingPrice: props.priceTicker,
-      startingValue: startingValue,
-      skipFirst: skipFirst,
-      endingValue: endingValue,
-      ignoreFunds: ignoreFunds,
-      incrementType: incrementType,
-      increment: increment,
-      trade_pair_ratio: tradePairRatio,
-      size: size,
-      sizeType: sizeType,
-      product_id: transactionProduct,
-    }
-
-    let setup = autoSetup(user, payload);
-
-    // this will be the buy price of the last trade pair
-    setSetupResults(setup.orderList[setup.orderList.length - 1].original_buy_price);
-
-    // this will be the total number of trades made
-    setTotalTrades(setup.orderList.length);
-
-    console.log(setup);
-
-  }
-
-  // function autoSetup(user, parameters) {
-
-  //   // create an array to hold the new trades to put in
-  //   const orderList = [];
-  //   let count = 0;
-
-  //   // SHORTEN PARAMS for better readability
-  //   let availableFunds = parameters.availableFunds;
-  //   let size = parameters.size;
-  //   let startingValue = parameters.startingValue;
-  //   let buyPrice = startingValue;
-  //   let endingValue = parameters.endingValue;
-  //   let tradingPrice = parameters.tradingPrice;
-  //   let increment = parameters.increment;
-  //   let incrementType = parameters.incrementType;
-  //   let trade_pair_ratio = parameters.trade_pair_ratio;
-  //   let sizeType = parameters.sizeType;
-  //   let loopDirection = "up";
-  //   if (endingValue - startingValue < 0) {
-  //     loopDirection = "down";
-  //   }
-
-  //   let btcToBuy = 0;
-
-  //   // loop until one of the stop triggers is hit
-  //   let stop = false;
-  //   while (!stop) {
-  //     count++;
-
-  //     buyPrice = Number(buyPrice.toFixed(2));
-
-  //     // get the sell price with the same math as is used by the bot when flipping
-  //     let original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + 100))) / 100);
-
-  //     // figure out if it is going to be a buy or a sell. Buys will be below current trade price, sells above.
-  //     let side = 'BUY';
-  //     if (buyPrice > tradingPrice) {
-  //       side = 'SELL';
-  //     }
-
-  //     // set the current price based on if it is a buy or sell
-  //     let limit_price = buyPrice;
-  //     if (side == 'SELL') {
-  //       limit_price = original_sell_price;
-  //     }
-
-  //     // if the size is in BTC, it will never change. 
-  //     let actualSize = size;
-  //     // If it is in USD, need to convert
-  //     if (sizeType == 'USD') {
-  //       // use the buy price and the size to get the real size
-  //       actualSize = Number(Math.floor((size / buyPrice) * 100000000)) / 100000000;
-  //     }
-
-  //     // count up how much BTC will need to be purchased to reserve for all the sell orders
-  //     if (side == 'SELL') {
-  //       btcToBuy += actualSize
-  //     }
-
-  //     // calculate the previous fees on sell orders
-  //     let prevFees = () => {
-  //       if (side === 'BUY') {
-  //         return 0
-  //       } else {
-  //         return buyPrice * actualSize * user.taker_fee
-  //       }
-  //     }
-
-
-  //     // CREATE ONE ORDER
-  //     const singleOrder = {
-  //       original_buy_price: buyPrice,
-  //       original_sell_price: original_sell_price,
-  //       side: side,
-  //       limit_price: limit_price,
-  //       size: actualSize,
-  //       total_fees: prevFees(),
-  //       product_id: parameters.product_id,
-  //       stp: 'cn',
-  //       userID: user.id,
-  //       trade_pair_ratio: parameters.trade_pair_ratio,
-  //     }
-
-  //     // push that order into the order list
-  //     orderList.push(singleOrder);
-
-  //     // SETUP FOR NEXT LOOP - do some math to figure out next iteration, and if we should keep looping
-  //     // subtract the buy size USD from the available funds
-  //     // if sizeType is BTC, then we need to convert
-  //     if (sizeType == 'BTC') {
-  //       let USDSize = size * buyPrice;
-  //       availableFunds -= USDSize;
-  //     } else {
-  //       console.log('current funds', availableFunds);
-  //       availableFunds -= size;
-  //     }
-
-  //     // increment the buy price
-  //     // can have either percentage or dollar amount increment
-  //     if (incrementType == 'dollars') {
-  //       // if incrementing by dollar amount
-  //       if (loopDirection == 'up') {
-  //         buyPrice += increment;
-  //       } else {
-  //         buyPrice -= increment;
-  //       }
-  //     } else {
-  //       // if incrementing by percentage
-  //       if (loopDirection == 'up') {
-  //         buyPrice = buyPrice * (1 + (increment / 100));
-  //       } else {
-  //         buyPrice = buyPrice / (1 + (increment / 100));
-  //       }
-  //     }
-
-
-  //     // STOP TRADING IF...
-
-  //     // stop if run out of funds unless user specifies to ignore that
-  //     // console.log('ignore funds:', parameters.ignoreFunds);
-  //     if (availableFunds < 0 && !parameters.ignoreFunds) {
-  //       console.log('ran out of funds!', availableFunds);
-  //       stop = true;
-  //     }
-  //     // console.log('available funds is', availableFunds);
-
-  //     // stop if the buy price passes the ending value
-  //     if (loopDirection == 'up' && buyPrice >= endingValue) {
-  //       stop = true;
-  //     } else if (loopDirection == 'down' && buyPrice <= endingValue) {
-  //       stop = true;
-  //     }
-  //   }
-
-  //   return {
-  //     orderList: orderList,
-  //     btcToBuy: btcToBuy,
-  //   }
-  // }
 
 
   function submitAutoSetup(event) {
@@ -267,7 +149,7 @@ function AutoSetup(props) {
     dispatch({
       type: 'AUTO_SETUP', payload: {
         availableFunds: availableFunds,
-        tradingPrice: props.priceTicker,
+        tradingPrice: socket.tickers.btc.price,
         startingValue: startingValue,
         skipFirst: skipFirst,
         endingValue: endingValue,
@@ -275,7 +157,7 @@ function AutoSetup(props) {
         incrementType: incrementType,
         increment: increment,
         trade_pair_ratio: tradePairRatio,
-        size: size,
+        base_size: base_size,
         sizeType: sizeType,
         product_id: transactionProduct,
       }
@@ -424,7 +306,7 @@ function AutoSetup(props) {
             <input
               name='size'
               type='number'
-              value={size}
+              value={base_size}
               step={.01}
               required
               onChange={(event) => setSize(Number(event.target.value))}
@@ -464,6 +346,8 @@ function AutoSetup(props) {
 
         </div>
       </div>
+      <h3>Preview</h3>
+      {orders}
 
       <div className="divider" />
     </div>

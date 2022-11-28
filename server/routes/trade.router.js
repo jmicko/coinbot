@@ -150,9 +150,9 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
   // POST route code here
   const user = req.user;
   if (user.active && user.approved) {
-    let setupParams = req.body;
-    // let setup = await robot.autoSetup(user, setupParams)
-    let setup = autoSetup(user, setupParams)
+    let options = req.body;
+    // let setup = await robot.autoSetup(user, options)
+    let setup = autoSetup(user, options)
     console.log('setup is:', setup);
 
     try {
@@ -163,7 +163,7 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
       // await databaseClient.setAutoSetupNumber(number, user.id);
 
 
-      console.log('setup params:', setupParams);
+      console.log('setup options:', options);
       // put a market order in for how much BTC need to be purchase for all the sell orders
       // if (false) {
       if (setup.btcToBuy >= 0.000016) {
@@ -176,7 +176,7 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
           type: 'market'
         };
         console.log('BIG order', tradeDetails);
-        if (!setupParams.ignoreFunds) {
+        if (!options.ignoreFunds) {
           let bigOrder = await coinbaseClient.placeOrder(tradeDetails);
           // console.log('big order to balance btc avail', bigOrder.limit_size, 'user', user.taker_fee);
         }
@@ -185,13 +185,13 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
 
       // put each trade into the db as a reorder so the sync loop can sync the right amount
       for (let i = 0; i < setup.orderList.length; i++) {
-        if (i == 0 && req.body.skipFirst) {
-          console.log('Skip one!');
-          continue;
-        }
+        // if (i == 0 && req.body.skipFirst) {
+        //   console.log('Skip one!');
+        //   continue;
+        // }
         const order = setup.orderList[i];
         // adding a bunch of 0s allows easy sorting by id in the DB which might be useful later so better to start now
-        order.order_id = '0000000000' + (Number(user.auto_setup_number) + i).toString();
+        order.order_id = uuidv4();
         // use the current time for the created time 
         const time = new Date();
         order.created_at = time;

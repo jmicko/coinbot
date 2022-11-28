@@ -1,48 +1,59 @@
-function autoSetup(user, parameters) {
+// this file has functions used by both client and server, so no need to write them twice
+function autoSetup(user, options) {
 
   // create an array to hold the new trades to put in
   const orderList = [];
   let count = 0;
 
   // SHORTEN PARAMS for better readability
-  let availableFunds = parameters.availableFunds;
-  let base_size = parameters.base_size;
-  let startingValue = parameters.startingValue;
+  let availableFunds = options.availableFunds;
+  let base_size = options.base_size;
+  let startingValue = options.startingValue;
   let buyPrice = startingValue;
-  let endingValue = parameters.endingValue;
-  let tradingPrice = parameters.tradingPrice;
-  let increment = parameters.increment;
-  let incrementType = parameters.incrementType;
-  let trade_pair_ratio = parameters.trade_pair_ratio;
-  let sizeType = parameters.sizeType;
-  let loopDirection = "up";
-  if (endingValue - startingValue < 0) {
-    loopDirection = "down";
-  }
+  let endingValue = options.endingValue;
+  let tradingPrice = options.tradingPrice;
+  let increment = options.increment;
+  let incrementType = options.incrementType;
+  let trade_pair_ratio = options.trade_pair_ratio;
+  let sizeType = options.sizeType;
+  let skipFirst = options.skipFirst;
+  let loopDirection = (endingValue - startingValue < 0) ? "down" : "up"
 
   let btcToBuy = 0;
 
   // loop until one of the stop triggers is hit
   let stop = false;
-  while (!stop) {
+
+  for (let i = 0; !stop; i++) {
+    if (i === 0 && skipFirst) {
+      console.log('need to skip first one!');
+      // increment price, but don't remove from funds
+
+      // skip the rest of the iteration and continue the loop
+      continue;
+    }
+    // const element = array[i];
+
+    // }
+    // while (!stop) {
     count++;
 
+    // get buy price rounded to cents
     buyPrice = Number(buyPrice.toFixed(2));
 
     // get the sell price with the same math as is used by the bot when flipping
     let original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + 100))) / 100);
 
     // figure out if it is going to be a BUY or a sell. Buys will be below current trade price, sells above.
-    let side = 'BUY';
-    if (buyPrice > tradingPrice) {
-      side = 'SELL';
-    }
+    let side = (buyPrice > tradingPrice)
+      ? 'SELL'
+      : 'BUY'
 
     // set the current price based on if it is a BUY or sell
-    let limit_price = buyPrice;
-    if (side === 'SELL') {
-      limit_price = original_sell_price;
-    }
+    let limit_price = (side === 'SELL')
+      ? original_sell_price
+      : buyPrice
+
 
     // if the base_size is in BTC, it will never change. 
     let actualSize = base_size;
@@ -75,10 +86,10 @@ function autoSetup(user, parameters) {
       limit_price: limit_price,
       base_size: actualSize,
       total_fees: prevFees(),
-      product_id: parameters.product_id,
+      product_id: options.product_id,
       stp: 'cn',
       userID: user.id,
-      trade_pair_ratio: parameters.trade_pair_ratio,
+      trade_pair_ratio: options.trade_pair_ratio,
     }
 
     // push that order into the order list
@@ -117,8 +128,8 @@ function autoSetup(user, parameters) {
     // STOP TRADING IF...
 
     // stop if run out of funds unless user specifies to ignore that
-    // console.log('ignore funds:', parameters.ignoreFunds);
-    if (availableFunds < 0 && !parameters.ignoreFunds) {
+    // console.log('ignore funds:', options.ignoreFunds);
+    if (availableFunds < 0 && !options.ignoreFunds) {
       console.log('ran out of funds!', availableFunds);
       stop = true;
     }
