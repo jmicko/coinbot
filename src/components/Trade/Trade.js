@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { connect, useDispatch, useSelector } from 'react-redux';
+import { useSocket } from '../../contexts/SocketProvider';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 import './Trade.css';
 
@@ -32,7 +33,8 @@ function Trade(props) {
   const [basicSide, setBasicSide] = useState('BUY');
   const dispatch = useDispatch();
   const user = useSelector((store) => store.accountReducer.userReducer);
-  const tickers = useSelector((store) => store.statusReducer.tickers);
+  // const tickers = useSelector((store) => store.statusReducer.tickers);
+  const socket = useSocket();
 
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
   const numberWithCommas = (x) => {
@@ -75,7 +77,7 @@ function Trade(props) {
     // calculate flipped price
     let original_sell_price = (Math.round((price * (Number(tradePairRatio) + 100))) / 100);
     let type = false;
-    if (tickers.btc < price) {
+    if (socket.tickers.btc.price < price) {
       type = 'market';
     }
     dispatch({
@@ -111,22 +113,23 @@ function Trade(props) {
         event.preventDefault();
       }
       // check if the current price has been stored yet to prevent NaN errors
-      if (tickers.btc) {
+      if (socket.tickers.btc.price) {
         // round the price to nearest 100
-        const roundedPrice = Math.round(tickers.btc / 100) * 100;
+        // const roundedPrice = Math.round(socket.tickers.btc.price)
+        const roundedPrice = Math.round(socket.tickers.btc.price / 100) * 100;
         // change input box to reflect rounded value
         setTransactionPrice(roundedPrice)
       }
-    }, [setTransactionPrice, tickers.btc]
-    )
-    
-    
-    // when the page loads, get the current price
-    useEffect(() => {
+    }, [setTransactionPrice, socket.tickers.btc.price]
+  )
+
+
+  // when the page loads, get the current price
+  useEffect(() => {
     if (price === 0) {
       getCurrentPrice();
     }
-  }, [getCurrentPrice, price, props.store.statusReducer.tickers.btc])
+  }, [getCurrentPrice, price])
 
   // once the account fees load into redux, 
   useEffect(() => {
@@ -187,6 +190,7 @@ function Trade(props) {
         <h3 className={`title ${user.theme}`}>New Trade-Pair <button className={`btn-blue ${user.theme}`} onClick={toggleTradeType} >Switch</button></h3>
         {/* form with a single input. Input takes a price point at which 
           to make a trade */}
+        {JSON.stringify(socket.tickers.btc.price)}
         <form className="new-trade-form" onSubmit={submitTransaction} >
 
 
@@ -289,7 +293,7 @@ function Trade(props) {
 
 
           <div className="number-inputs">
-          {/* {JSON.stringify(props.store.statusReducer.tickers.btc)} */}
+            {/* {JSON.stringify(props.store.statusReducer.tickers.btc)} */}
             {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
             <label htmlFor="trade-pair-ratio">
               Trade pair percent increase:

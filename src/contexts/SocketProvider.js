@@ -86,7 +86,7 @@ export function SocketProvider({ children }) {
   return (
     <SocketContext.Provider value={{
       socket: socket,
-      ticker: tickers,
+      tickers: tickers,
       heartbeat: heartbeat
     }}>
       {/* <>Props: {JSON.stringify()}</> */}

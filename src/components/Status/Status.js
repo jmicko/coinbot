@@ -7,7 +7,7 @@ import './Status.css'
 function Status(props) {
   const dispatch = useDispatch();
   const user = useSelector((store) => store.accountReducer.userReducer);
-  const ticker = useSelector((store) => store.statusReducer.tickers);
+  // const ticker = useSelector((store) => store.statusReducer.tickers);
   const socket = useSocket();
   // const heartBeat = useSelector((store) => store.statusReducer.heartBeat);
   const profitsReducer = useSelector((store) => store.accountReducer.profitsReducer);
@@ -110,7 +110,7 @@ function Status(props) {
           <strong> BTC-USD Price</strong>
           <br />
           {/* {JSON.stringify(ticker)} */}
-          ${numberWithCommas(Number(socket.ticker.btc.price).toFixed(2))}
+          ${numberWithCommas(Number(socket.tickers.btc.price).toFixed(2))}
         </p>
       </center>
 

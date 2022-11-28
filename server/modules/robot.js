@@ -85,7 +85,7 @@ async function syncOrders(userID) {
   try {
     cache.updateStatus(userID, 'getting settings');
     const loopNumber = cache.getLoopNumber(userID);
-    console.log(loopNumber, '<-loop number', (loopNumber - 1) % botSettings.full_sync, '<-shrek', botSettings.full_sync);
+    // console.log(loopNumber, '<-loop number', (loopNumber - 1) % botSettings.full_sync, '<-shrek', botSettings.full_sync);
     // send heartbeat signifying start of new loop
     heartBeat(userID, 'heart');
     // check that user is active, approved, and unpaused, and that the bot is not under maintenance
@@ -93,7 +93,7 @@ async function syncOrders(userID) {
 
       // *** WHICH SYNC ***
       if (((loopNumber - 1) % botSettings.full_sync) === 0) {
-        console.log('full sync');
+        // console.log('full sync');
 
         // *** FULL SYNC ***
         // full sync compares all trades that should be on CB with DB,
@@ -102,7 +102,7 @@ async function syncOrders(userID) {
       } else {
 
         // *** QUICK SYNC ***
-        console.log('quick sync');
+        // console.log('quick sync');
         cache.updateStatus(userID, 'start all quick sync')
         //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
         await quickSync(userID);

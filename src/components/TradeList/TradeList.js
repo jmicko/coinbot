@@ -74,14 +74,14 @@ function TradeList(props) {
           <Meter
             max={lowestSell}
             min={highestBuy}
-          // current={socket.ticker.btc.price}
+          // current={socket.tickers.btc.price}
           />
           <div>
 
             {lowestSell !== 0 && highestBuy >= 0
-              ? <p className='price'>&#9650; ${(lowestSell - socket.ticker.btc.price).toFixed(2)}
+              ? <p className='price'>&#9650; ${(lowestSell - socket.tickers.btc.price).toFixed(2)}
                 <br />
-                &#9660; ${(socket.ticker.btc.price - highestBuy).toFixed(2)}
+                &#9660; ${(socket.tickers.btc.price - highestBuy).toFixed(2)}
               </p>
               : <p>No Sells!</p>
             }

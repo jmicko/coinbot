@@ -431,6 +431,7 @@ function setupSocketIO(io) {
     console.log(err.message, 'the error message');  // the error message, for example "Session ID unknown"
     console.log(err.context, 'some additional error context');  // some additional error context
   });
+  console.log('socket setup done');
 }
 
 module.exports = { startWebsocket, getOpenOrders, setupSocketIO };
