@@ -9,10 +9,10 @@ function Status(props) {
   const user = useSelector((store) => store.accountReducer.userReducer);
   const ticker = useSelector((store) => store.statusReducer.tickers);
   const socket = useSocket();
-  const heartBeat = useSelector((store) => store.statusReducer.heartBeat);
+  // const heartBeat = useSelector((store) => store.statusReducer.heartBeat);
   const profitsReducer = useSelector((store) => store.accountReducer.profitsReducer);
   const openOrdersInOrder = useSelector((store) => store.ordersReducer.openOrdersInOrder);
-  const [loopStatus, setLoopStatus] = useState(true);
+  // const [loopStatus, setLoopStatus] = useState(true);
   const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
   const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
@@ -52,11 +52,11 @@ function Status(props) {
     }
   }
 
-  useEffect(() => {
-    setLoopStatus(prevLoopStatus => {
-      return !prevLoopStatus;
-    });
-  }, [heartBeat]);
+  // useEffect(() => {
+  //   setLoopStatus(prevLoopStatus => {
+  //     return !prevLoopStatus;
+  //   });
+  // }, [heartBeat]);
 
   // get the total number of open orders
   useEffect(() => {
@@ -162,7 +162,8 @@ function Status(props) {
       </center>
 
       <center>
-        <p className={`info status-ticker ${user.theme} ${heartBeat === 1 && 'blue'}`}>{loopStatus ? <strong>HEARTBEAT</strong> : <strong>heartbeat</strong>}
+        <p className={`info status-ticker ${user.theme} ${socket.heartbeat.count === 0 && 'blue'}`}>
+          <strong>{socket.heartbeat.heart}{socket.heartbeat.beat}</strong>
           <br />
           <button className={`btn-blue ${user.theme}`} onClick={updateUser}>Refresh</button>
         </p>

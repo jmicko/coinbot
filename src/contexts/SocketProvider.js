@@ -14,6 +14,7 @@ export function useSocket() {
 export function SocketProvider({ children }) {
   const [socket, setSocket] = useState();
   const [tickers, setTickers] = useState({ btc: { price: 0 }, eth: { price: 0 } });
+  const [heartbeat, setHeartbeat] = useState({ heart: 'heart', beat: 'beat', count: 0 });
   const dispatch = useDispatch();
   // useEffect to prevent from multiple connections
   useEffect(() => {
@@ -30,7 +31,7 @@ export function SocketProvider({ children }) {
       if (message.type === 'ticker') {
         const ticker = message.ticker
         // console.log(ticker,'message from socket.io');
-        dispatch({ type: 'SET_TICKER_PRICE', payload: ticker });
+        // dispatch({ type: 'SET_TICKER_PRICE', payload: ticker });
         switch (ticker.product_id) {
           case 'BTC-USD':
             setTickers(prevTickers => ({ ...prevTickers, btc: ticker }));
@@ -44,14 +45,25 @@ export function SocketProvider({ children }) {
 
         };
       }
+      // handle heartbeat
       if (message.type === 'heartbeat') {
-        const count = message.count
-        // console.log(count,'hb from socket.io');
-        dispatch({ type: 'SET_HEART_BEAT', payload: count })
+        setHeartbeat(prevHeartbeat => {
+          if (message.side === 'heart') {
+            return prevHeartbeat.heart === 'heart'
+              ? ({ ...prevHeartbeat, count: message.count, heart: 'HEART' })
+              : ({ ...prevHeartbeat, count: message.count, heart: 'heart' })
+          } else {
+            return prevHeartbeat.beat === 'beat'
+              ? ({ ...prevHeartbeat, beat: 'BEAT' })
+              : ({ ...prevHeartbeat, beat: 'beat' })
+          }
+        })
       }
+      // handle errors
       if (message.type === 'errorUpdate') {
         dispatch({ type: 'FETCH_BOT_ERRORS' });
       }
+      // handle messages
       if (message.type === 'messageUpdate') {
         dispatch({ type: 'FETCH_BOT_MESSAGES' });
         if (message.orderUpdate) {
@@ -74,7 +86,8 @@ export function SocketProvider({ children }) {
   return (
     <SocketContext.Provider value={{
       socket: socket,
-      ticker: tickers
+      ticker: tickers,
+      heartbeat: heartbeat
     }}>
       {/* <>Props: {JSON.stringify()}</> */}
       {children}
