@@ -26,12 +26,35 @@ function AutoSetup(props) {
   const [totalTrades, setTotalTrades] = useState(false);
 
   const [orders, setOrders] = useState(<></>);
+  const [btcToBuy, setBtcToBuy] = useState(0);
   const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
   const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
 
 
   function handleIncrementType(event) {
     setIncrementType(event.target.value)
+  }
+
+  function handleSizeType(event) {
+    setSizeType(event.target.value)
+    if (sizeType === "USD") {
+      // setSizeType("BTC");
+      setSize(0.001);
+    } else {
+      // setSizeType("USD");
+      setSize(10);
+    }
+  }
+
+  function changeSizeType(event) {
+    event.preventDefault();
+    if (sizeType === "USD") {
+      // setSizeType("BTC");
+      setSize(0.01);
+    } else {
+      // setSizeType("USD");
+      setSize(10);
+    }
   }
 
   function handleSkipFirst() {
@@ -44,19 +67,10 @@ function AutoSetup(props) {
 
   const calculateResults = useCallback(
     () => {
-      // let availableFunds = availableFundsUSD;
-      // // this is the current price point that the loop is working with
-      // let loopPrice = startingValue;
-      // // this is the price BTC is currently trading at
-      // let tradingPrice = socket.tickers.btc.price;
-      // // this is how many times the loop has looped
-      // let count = 0;
-
-
       let payload = {
         availableFunds: availableFundsUSD,
-        // tradingPrice: socket.tickers.btc.price,
-        tradingPrice: 16000,
+        tradingPrice: socket.tickers.btc.price,
+        // tradingPrice: 16000,
         startingValue: startingValue,
         skipFirst: skipFirst,
         endingValue: endingValue,
@@ -77,6 +91,10 @@ function AutoSetup(props) {
       // this will be the total number of trades made
       setTotalTrades(setup.orderList.length);
 
+      // this will be how much btc goes on the books
+      setBtcToBuy(setup.btcToBuy)
+      // setBtcToBuy(0)
+
       setOrders(setup.orderList.reverse().map((order) => {
         return <SingleTrade key={order.order_id} order={order} preview={true} />
       }))
@@ -84,7 +102,7 @@ function AutoSetup(props) {
       console.log(setup);
 
     }, [availableFundsUSD,
-    // socket.tickers.btc.price,
+    socket.tickers.btc.price,
     startingValue,
     endingValue,
     ignoreFunds,
@@ -132,17 +150,6 @@ function AutoSetup(props) {
     }, 5000);
   }
 
-  function changeSizeType(event) {
-    event.preventDefault();
-    if (sizeType === "USD") {
-      setSizeType("BTC");
-      setSize(0.01);
-    } else {
-      setSizeType("USD");
-      setSize(10);
-    }
-  }
-
   function autoTrader() {
     let availableFunds = availableFundsUSD;
     // console.log('here is the current available funds', availableFunds);
@@ -176,17 +183,19 @@ function AutoSetup(props) {
           This is much easier than manually placing dozens of trades if they are following a basic pattern.
         </p>
         <p>
-          Please be aware that the bot will slow down slightly with every 999 trades.
+          Please be aware that the bot may slow down slightly with extremely large numbers of trades.
         </p>
 
-        <div className="divider" />
+        {/* <div className="divider" /> */}
       </>}
       <div className='auto-setup-form-and-results'>
 
         <form className='auto-setup-form left-border' onSubmit={submitAutoSetup}>
 
           {/* STARTING VALUE */}
-          <p>What dollar amount to start at?</p>
+          {props.tips
+            ? <p>What dollar amount to start at?</p>
+            : <p />}
           <label htmlFor='startingValue'>
             Starting Value:
             <br />
@@ -213,9 +222,12 @@ function AutoSetup(props) {
           </label>
 
           {/* ENDING VALUE */}
-          <p>What dollar amount to end at? (If not using all of your funds. Checking 'Ignore Funds'
-            will allow the bot to keep adding trades regardless of how much cash you have until this
-            limit is reached.)</p>
+          {props.tips
+            ? <p>What dollar amount to end at? (If not using all of your funds. Checking 'Ignore Funds'
+              will allow the bot to keep adding trades regardless of how much cash you have until this
+              limit is reached.)</p>
+            : <p />}
+          {/* <br /> */}
           <label htmlFor='startingValue'>
             Ending Value:
             <br />
@@ -268,7 +280,9 @@ function AutoSetup(props) {
 
 
           {/* INCREMENT */}
-          <p>What {incrementType === "dollars" ? "dollar amount" : "percentage"} to increment by?</p>
+          {props.tips
+            ? <p>What {incrementType === "dollars" ? "dollar amount" : "percentage"} to increment by?</p>
+            : <p />}
           <label htmlFor='increment'>
             Increment:
             <br />
@@ -282,7 +296,9 @@ function AutoSetup(props) {
           </label>
 
           {/* RATIO */}
-          <p>What is the trade-pair ratio (how much each BUY should increase in price before selling)?</p>
+          {props.tips
+            ? <p>What is the trade-pair ratio (how much each BUY should increase in price before selling)?</p>
+            : <p />}
           <label htmlFor='ratio'>
             Trade-pair ratio:
             <br />
@@ -296,10 +312,39 @@ function AutoSetup(props) {
           </label>
 
           {/* SIZE */}
-          <p>What size in {sizeType === "USD" ? "USD" : "BTC"} should each trade-pair be? {sizeType === "USD"
-            ? <button className={`btn-blue ${user.theme}`} onClick={changeSizeType}> Change to BTC</button>
-            : <button className={`btn-blue ${user.theme}`} onClick={changeSizeType}> Change to USD</button>
-          }</p>
+
+          {/* SIZE */}
+          <p>Size in:</p>
+
+          <input
+            type="radio"
+            name="size_type"
+            value="USD"
+            checked={sizeType === "USD"}
+            onChange={handleSizeType}
+          />
+          <label htmlFor='dollars'>
+            USD
+          </label>
+
+          <input
+            type="radio"
+            name="size_type"
+            value="BTC"
+            checked={sizeType === "BTC"}
+            onChange={handleSizeType}
+          />
+          <label htmlFor='BTC'>
+            BTC
+          </label>
+
+
+
+
+          {props.tips
+            ? <p>What size in {sizeType === "USD" ? "USD" : "BTC"} should each trade-pair be? </p>
+            : <p />}
+
 
           <label htmlFor='size'>
             Size in {sizeType === "USD" ? "USD" : "BTC"}:
@@ -318,14 +363,15 @@ function AutoSetup(props) {
           <br />
           <br />
           {!autoTradeStarted
-            ? <input className={`btn-store-api btn-blue medium ${user.theme}`} type="submit" name="submit" value="Start Trading" />
+            ? <input className={`btn-store-api btn-blue medium ${user.theme}`} type="submit" name="submit" value="Start Setup" />
             : <p>Auto setup started!</p>
           }
         </form>
 
         <div className='auto-setup-results'>
+          <h4>Result</h4>
           <p>
-            The price of the last trade-pair will be close to:
+            The buy price of the last trade-pair will be close to:
           </p>
           <p>
             <strong>{numberWithCommas(setupResults.toFixed(2))}</strong>
@@ -344,6 +390,13 @@ function AutoSetup(props) {
             However, there is a total limit of 10,000 trades placed per user. Latency may cause it to
             create more, in which case you got lucky.
           </p>}
+          <p>
+            BTC to reserve:
+          </p>
+          <p>
+            <strong>{numberWithCommas(btcToBuy)}</strong>
+          </p>
+
 
         </div>
       </div>

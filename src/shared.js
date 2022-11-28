@@ -2,8 +2,7 @@
 function autoSetup(user, options) {
 
   // create an array to hold the new trades to put in
-  const orderList = [];
-  let count = 0;
+  const orderList = []; 
 
   // SHORTEN PARAMS for better readability
   let availableFunds = options.availableFunds;
@@ -32,11 +31,6 @@ function autoSetup(user, options) {
       // skip the rest of the iteration and continue the loop
       continue;
     }
-    // const element = array[i];
-
-    // }
-    // while (!stop) {
-    count++;
 
     // get buy price rounded to cents
     buyPrice = Number(buyPrice.toFixed(2));
@@ -61,7 +55,7 @@ function autoSetup(user, options) {
 
     // count up how much BTC will need to be purchased to reserve for all the sell orders
     if (side === 'SELL') {
-      btcToBuy += actualSize
+      btcToBuy += (actualSize * 100000000)
     }
 
     // calculate the previous fees on sell orders
@@ -114,16 +108,16 @@ function autoSetup(user, options) {
     // console.log('available funds is', availableFunds);
 
     // stop if the buy price passes the ending value
-    if (loopDirection === 'up' && buyPrice >= endingValue) {
+    if (loopDirection === 'up' && buyPrice > endingValue) {
       stop = true;
-    } else if (loopDirection === 'down' && buyPrice <= endingValue) {
+    } else if (loopDirection === 'down' && buyPrice < endingValue) {
       stop = true;
     }
   }
 
   return {
     orderList: orderList,
-    btcToBuy: btcToBuy,
+    btcToBuy: (btcToBuy / 100000000),
   }
 
   function incrementBuyPrice() {
