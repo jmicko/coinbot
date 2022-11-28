@@ -774,6 +774,25 @@ async function setSingleReorder(order_id) {
   })
 }
 
+// setting an order to reorder will bypass some functions in the bot that check if the order needs to be reordered.
+// setting this to true for trades that are desynced from CB will save time later
+async function setManyReorders(idArray) {
+  return new Promise(async (resolve, reject) => {
+    console.log(idArray, 'setting many reorders');
+    try {
+      const sqlText = `UPDATE limit_orders
+      SET "reorder" = true 
+      WHERE "order_id" = ANY ($1);`;
+
+      await pool.query(sqlText, [idArray]);
+      resolve();
+    } catch (err) {
+      console.log('failed to set many reorders');
+      reject(err);
+    }
+  })
+}
+
 // this will set all trades to be reordered. Used when resyncing all orders
 // all orders should be cancelled on CB when doing this
 async function setReorder(userID) {
@@ -900,6 +919,7 @@ const databaseClient = {
   getDeSyncs: getDeSyncs,
   setSingleReorder: setSingleReorder,
   setReorder: setReorder,
+  setManyReorders: setManyReorders,
   setPause: setPause,
   setKillLock: setKillLock,
   setAutoSetupNumber: setAutoSetupNumber,

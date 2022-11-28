@@ -205,7 +205,7 @@ async function deSync(userID) {
       // console.log(ordersToDeSync[0], 'all to desync');
 
       // cancel them all
-      await cancelMultipleOrders(allToDeSync, userID);
+      await cancelAndReorder(allToDeSync, userID);
 
       cache.updateStatus(userID, 'end desync');
       resolve();
@@ -255,7 +255,7 @@ async function fullSync(userID) {
       let ordersToCancel = await orderElimination(cbOrders, dbOrders);
 
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
-      await cancelMultipleOrders(ordersToCancel, userID); //TEMP COMMENT
+      await cancelAndReorder(ordersToCancel, userID); //TEMP COMMENT
 
       cache.setKey(userID, 'ordersToCheck', ordersToCheck);
 
@@ -625,70 +625,37 @@ async function reorder(orderToReorder) {
   });
 }
 
-
-// todo - this function name is a little confusing as it actually desyncs orders
-// but if they are found in the db, they don't cancel out of the coinbot.
-// checking the db wastes a half second and it is probably better to do these things in separate functions,
-// as it can be known if the order id was taken from the db or just pulled from the API
-async function cancelMultipleOrders(ordersArray, userID) {
+// cancels orders on coinbase. If they are in the db, it will set them as reorders.
+async function cancelAndReorder(ordersArray, userID) {
   return new Promise(async (resolve, reject) => {
-    cache.updateStatus(userID, 'begin cancelMultipleOrders (CMO)');
-    // set variable to track how many orders were actually canceled
-    let quantity = 0;
-    // console.log('ordersArray', ordersArray);
+    cache.updateStatus(userID, 'begin cancelAndReorder (CMO)');
+    // avoid making calls with empty arrays
     if (ordersArray.length > 0) {
-      const toCancel = [];
-      // todo - this loop can be a lot simpler because an array of IDs can be batch cancelled
+      // build an array of just the IDs that should be set to reorder
+      const idArray = [];
       for (let i = 0; i < ordersArray.length; i++) {
-        cache.updateStatus(userID, `CMO loop number: ${i}`);
-        const orderToCancel = ordersArray[i];
-        try {
-          // there is a timestamp to know if they were placed recently. 
-          // need to check that and cancel if more than a few seconds
-          // check to make sure it really isn't in the db
-          let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.order_id);
-          if (doubleCheck) {
-            // if it is in the db, it should cancel but set it to reorder because it is most likely out of range
-            // that way it will reorder faster when it moves back in range
-            // okay but then it might cancel an order that was just placed. idk
-            await databaseClient.setSingleReorder(orderToCancel.order_id)
-          }
-          toCancel.push(orderToCancel.order_id)
-          quantity++;
-        } catch (err) {
-          // Do not resolve the error because this is in a for loop which needs to continue. If error, handle it here
-          console.log(err, 'unknown error in cancelMultipleOrders for loop');
-          cache.storeError(Number(userID), {
-            errorData: orderToCancel,
-            errorText: `unknown error in cancelMultipleOrders for loop`
-          })
-        }
+        const order = ordersArray[i];
+        idArray.push(order.order_id)
       } //end for loop
+
       try {
+        databaseClient.setManyReorders(idArray)
         // cancel the orders in the array
-        await coinbaseClient.cancelOrderNew(userID, toCancel);
+        await coinbaseClient.cancelOrderNew(userID, idArray);
         // update funds now that everything should be up to date
       } catch (err) {
         console.log('error cancelling multiple orders');
         reject(err);
       }
+
       // if all goes well, send message to user and resolve promise with success message
       cache.storeMessage(Number(userID), {
-        messageText: `${quantity} Extra orders were found and canceled`,
         orderUpdate: true
       });
-      resolve({
-        message: `${quantity} Extra orders were canceled`,
-        ordersCanceled: true,
-        quantity: quantity
-      })
+      resolve({ success: true })
     } else {
       cache.updateStatus(userID, 'done CMO, no orders');
-      resolve({
-        message: "No orders to cancel",
-        ordersCanceled: false,
-        quantity: quantity
-      })
+      resolve({ success: true })
     }
   });
 }
