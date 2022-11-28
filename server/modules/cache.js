@@ -1,5 +1,5 @@
 const databaseClient = require("./databaseClient");
-const socketClient = require("./socketClient");
+
 
 const cache = {
   // the storage array will store an object of different things at the index of the user id

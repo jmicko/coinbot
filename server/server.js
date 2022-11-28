@@ -72,37 +72,7 @@ io.on('connection', (socket) => {
     console.log(`user id ${userID} connected!`);
     // socket.disconnect();
   }
-
   console.log(`client with id: ${id} connected!`);
-  // console.log('the socket is', socket.handshake);
-  // message to client confirming connection
-  // socket.emit('message', { message: 'welcome!' });
-  socket.emit('message', { message: 'trade a coin or two!' });
-  socket.emit('message', {
-    connection: {
-      localWebsocket: true
-    }
-  });
-
-  // relay updates from the loop about trades that are being checked
-  socket.on('message', (message) => {
-    // socket.broadcast.emit('message', { message: 'welcome!' });
-    // console.log(message.message);
-    socket.broadcast.emit('message', message);
-  })
-
-  // relay updates from the loop about trades that are being checked
-  socket.on('update', (message) => {
-    // socket.broadcast.emit('message', { message: 'welcome!' });
-    // console.log(message);
-    socket.broadcast.emit('update', message);
-  })
-
-  socket.on('exchangeUpdate', (trade) => {
-    // socket.broadcast.emit('message', { message: 'welcome!' });
-    socket.broadcast.emit('exchangeUpdate', trade);
-    // console.log('server got a trade exchange update!', trade);
-  })
 
   socket.on("disconnect", (reason) => {
     console.log(`client with id: ${id} disconnected, reason:`, reason);

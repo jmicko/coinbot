@@ -3,10 +3,7 @@ const router = express.Router();
 const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const coinbaseClient = require('../modules/coinbaseClient');
-const socketClient = require('../modules/socketClient');
-const xlsx = require('json-as-xlsx');
 const databaseClient = require('../modules/databaseClient');
-const robot = require('../modules/robot');
 const cache = require('../modules/cache');
 // const databaseClient = require('../modules/databaseClient/databaseClient');
 
@@ -38,17 +35,8 @@ router.get('/', async (req, res) => {
     catch (err) {
       if (err.response?.status === 500) {
         console.log('internal server error from coinbase');
-        socketClient.emit('message', {
-          error: `Internal server error from coinbase! Is the Coinbase Pro website down?`,
-          orderUpdate: true
-        });
       } else if (err.response?.status === 401) {
         console.log('Invalid API key');
-        socketClient.emit('message', {
-          error: `Invalid API key!`,
-          orderUpdate: false,
-          userID: Number(userID)
-        });
       } else {
         console.log(err, 'error getting accounts:');
       }
@@ -617,11 +605,6 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   } catch (err) {
     if (err.response?.status === 401) {
       console.log('Invalid API key');
-      socketClient.emit('message', {
-        error: `Invalid API key was entered!`,
-        orderUpdate: false,
-        userID: Number(userID)
-      });
       res.sendStatus(500);
     } else {
       console.log(err, 'problem updating api details');

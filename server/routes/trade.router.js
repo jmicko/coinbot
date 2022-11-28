@@ -3,7 +3,6 @@ const router = express.Router();
 const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const databaseClient = require('../modules/databaseClient');
-const socketClient = require('../modules/socketClient');
 const robot = require('../modules/robot');
 const coinbaseClient = require('../modules/coinbaseClient');
 const cache = require('../modules/cache');
@@ -128,18 +127,8 @@ router.post('/basic', rejectUnauthenticated, async (req, res) => {
     } catch (err) {
       if (err.response?.status === 400) {
         console.log('Insufficient funds!');
-        socketClient.emit('message', {
-          error: `Insufficient funds!`,
-          orderUpdate: true,
-          userID: Number(userID)
-        });
       } else if (err.code && err.code === 'ETIMEDOUT') {
         console.log('Timed out');
-        socketClient.emit('message', {
-          error: `Connection timed out`,
-          userID: Number(userID)
-          // orderUpdate: true
-        });
       } else {
         console.log(err, 'problem in sending trade post route');
       }
@@ -241,31 +230,17 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
     await databaseClient.setSingleReorder(orderId);
     res.sendStatus(200);
 
-    socketClient.emit('message', {
-      message: `Order will sync in a moment`,
-      userID: Number(userID)
-    });
   } catch (error) {
     if (error.data?.message) {
       console.log('error message, trade router sync:', error.data.message);
       // orders that have been canceled are deleted from coinbase and return a 404.
       if (error.data.message === 'order not found') {
         await databaseClient.setSingleReorder(orderId);
-        socketClient.emit('message', {
-          error: `Order was not found when sync was requested`,
-          orderUpdate: true,
-          userID: Number(userID)
-        });
         console.log('order not found in account', orderId);
         res.sendStatus(400)
       }
     }
     if (error.response?.status === 404) {
-      socketClient.emit('message', {
-        error: `Order was not found when delete was requested`,
-        orderUpdate: true,
-        userID: Number(userID),
-      });
       console.log('order not found in account', orderId);
       res.sendStatus(400)
     } else {
@@ -286,12 +261,6 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
   console.log('in the server trade DELETE route', orderId);
 
   cache.setCancel(userID, orderId);
-
-  // console.log(cache.storage[userID].willCancel);
-
-  // const willCancel = cache.checkIfCanceling(userID, orderId);
-  // console.log('will it cancel?', willCancel);
-
   // mark as canceled in db
   try {
     const queryText = `UPDATE "limit_orders" SET "will_cancel" = true WHERE "order_id"=$1 RETURNING *;`;
@@ -309,24 +278,11 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       // orders that have been canceled are deleted from coinbase and return a 404.
       // error handling should delete them from db and not worry about coinbase since there is no other way to delete
       // but also send one last delete message to Coinbase just in case it finds it again, but with no error checking
-      if (err.data.message === 'order not found') {
-        socketClient.emit('message', {
-          error: `Order was not found when delete was requested`,
-          orderUpdate: true
-        });
-        console.log('order not found in account', orderId);
-        res.sendStatus(400)
-      }
     }
     if (err.response?.status === 404) {
       databaseClient.deleteTrade(orderId);
-      socketClient.emit('message', {
-        error: `Order was not found when delete was requested`,
-        orderUpdate: true,
-        userID: Number(userID)
-      });
       console.log('order not found in account', orderId);
-      res.sendStatus(400)
+      res.sendStatus(404)
     } else if (err.response?.status === 400) {
       console.log('bad request', err.response?.data);
     } else {

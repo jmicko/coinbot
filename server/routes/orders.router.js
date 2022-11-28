@@ -3,8 +3,6 @@ const router = express.Router();
 const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const databaseClient = require('../modules/databaseClient');
-const robot = require('../modules/robot');
-const socketClient = require("../modules/socketClient");
 const coinbaseClient = require('../modules/coinbaseClient');
 const { sleep } = require('../modules/robot');
 

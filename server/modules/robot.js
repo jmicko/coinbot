@@ -1,13 +1,7 @@
 const coinbaseClient = require("./coinbaseClient");
 const databaseClient = require("./databaseClient");
-const pool = require("./pool");
-const socketClient = require("./socketClient");
 const cache = require("./cache");
 const { startWebsocket, getOpenOrders } = require("./websocket");
-
-// const startTime = performance.now();
-// const endTime = performance.now();
-// console.log(`getFees redis took ${endTime - startTime} milliseconds`)
 
 
 // this will keep track of and update general bot settings
@@ -945,12 +939,6 @@ function heartBeat(userID) {
       socket.emit('message', msg);
     }
   })
-
-  // socketClient.emit('message', {
-  //   heartbeat: true,
-  //   userID: Number(userID),
-  //   count: loopNumber % botSettings.full_sync + 1
-  // });
 }
 
 
