@@ -77,7 +77,7 @@ function AutoSetup(props) {
       // this will be the total number of trades made
       setTotalTrades(setup.orderList.length);
 
-      setOrders(setup.orderList.map((order) => {
+      setOrders(setup.orderList.reverse().map((order) => {
         return <SingleTrade key={order.order_id} order={order} preview={true} />
       }))
 
@@ -346,7 +346,7 @@ function AutoSetup(props) {
 
         </div>
       </div>
-      <h3>Preview</h3>
+      <h4>Preview</h4>
       {orders}
 
       <div className="divider" />

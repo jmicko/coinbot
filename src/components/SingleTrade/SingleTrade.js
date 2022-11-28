@@ -70,36 +70,36 @@ function SingleTrade(props) {
 
   return (
     <div className={`Single-trade ${props.order.side} ${user.theme}`}>
-      <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>
+      {!props.preview && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>}
       {showAll && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={syncTrade}>sync</button>}
       <div className={"overlay"}>
         {(deleting === true)
           ? <p className="deleting">Deleting...</p>
-          : !user.kill_locked && <button className={`btn-red kill-button ${user.theme}`} onClick={() => { deleteOrder() }}>Kill</button>
-          
+          : !props.preview && !user.kill_locked && <button className={`btn-red kill-button ${user.theme}`} onClick={() => { deleteOrder() }}>Kill</button>
+
         }
         <p className="single-trade-text" >
           {/* {JSON.stringify(user.theme)} */}
           <strong>
             Price: </strong>
-          {(props.order.side === 'sell')
+          {(props.order.side === 'SELL')
             ? numberWithCommas(Number(props.order.original_sell_price).toFixed(2))
             : numberWithCommas(Number(props.order.original_buy_price).toFixed(2))
           } <strong>
-            {(props.order.side === 'sell')
+            {(props.order.side === 'SELL')
               ? '~Buys:'
               : '~Sells:'
             } </strong>
-          {(props.order.side === 'sell')
+          {(props.order.side === 'SELL')
             ? numberWithCommas(Number(props.order.original_buy_price).toFixed(2))
             : numberWithCommas(Number(props.order.original_sell_price).toFixed(2))
-          } ~<strong>Size </strong>{Number(props.order.base_size).toFixed(8)} ~
-          <strong>Value</strong> ${numberWithCommas((Math.round((props.order.limit_price * props.order.base_size) * 100) / 100).toFixed(2))} ~
+          } ~<strong>Size </strong>{Number(props.order.base_size).toFixed(8)} {!props.preview && <>~</>}
+          {!props.preview ? <strong>Value</strong >:<strong>/</strong >} ${numberWithCommas((Math.round((props.order.limit_price * props.order.base_size) * 100) / 100).toFixed(2))} ~
           <strong>Net Profit</strong> ${profit.toFixed(8)}
           {/* <strong> ~Time</strong> {new Date(props.order.created_at).toLocaleString('en-US')} */}
-          <strong> ~Time </strong> {props.order.flipped_at 
-          ? new Date(props.order.flipped_at).toLocaleString('en-US')
-          : new Date(props.order.created_at).toLocaleString('en-US')}
+          {!props.preview && <strong> ~Time </strong>} {!props.preview && (props.order.flipped_at
+            ? new Date(props.order.flipped_at).toLocaleString('en-US')
+            : new Date(props.order.created_at).toLocaleString('en-US'))}
           <br />
           {/* created: {JSON.stringify(props.order.created_at)} 
           <br />
