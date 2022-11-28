@@ -1,3 +1,4 @@
+// importing this way makes it easier to see when you are accessing the database or coinbase
 const coinbaseClient = require("./coinbaseClient");
 const databaseClient = require("./databaseClient");
 const cache = require("./cache");
@@ -9,10 +10,10 @@ async function botLoop() {
   userID = 0
   // console.log('botLoop');
   try {
+    // get fresh settings from db
     botSettings = await databaseClient.getBotSettings();
-
+    // save settings to the cache
     cache.setKey(userID, 'botSettings', botSettings);
-
   } catch (err) {
     console.log(err, 'error in botLoop');
   }
@@ -20,20 +21,26 @@ async function botLoop() {
 
 // start a sync loop for each active user
 async function startSync() {
+  // create a user cache for the bot to store bot settings
   robotUser = {
     // user table starts at 1 so bot can be user 0 since storage array starts at 0
     id: 0
   }
-  cache.newUser(robotUser);
-  await botLoop();
-  // get all users from the db
-  const userList = await databaseClient.getAllUsers();
-  userList.forEach(async user => {
-    await initializeUserLoops(user);
-    // deSyncOrderLoop(user, 0);
-  });
+  try {
+    cache.newUser(robotUser);
+    await botLoop();
+    // get all users from the db
+    const userList = await databaseClient.getAllUsers();
+    userList.forEach(async user => {
+      await initializeUserLoops(user);
+      // deSyncOrderLoop(user, 0);
+    });
+  } catch (err) {
+    console.log(err, 'error starting sync');
+  }
 }
 
+// this is separated from the startSync function so it can be called separately when a new user is created
 async function initializeUserLoops(user) {
   const userID = user.id;
   // set up cache for user
@@ -55,6 +62,7 @@ async function processingLoop(userID) {
   await processOrders(userID);
   // will_cancel orders can now be canceled.
   await databaseClient.deleteMarkedOrders(userID);
+  heartBeat(userID, 'beat');
   // console.log('orders processed for user:', userID);
   setTimeout(() => {
     processingLoop(userID);
@@ -62,7 +70,7 @@ async function processingLoop(userID) {
 }
 
 // repeating loop to find orders that have settled on coinbase via REST API
-async function syncOrders(userID, count) {
+async function syncOrders(userID) {
   // increase the loop number tracker at the beginning of the loop
   cache.increaseLoopNumber(userID);
   cache.updateStatus(userID, 'begin main loop');
@@ -77,17 +85,15 @@ async function syncOrders(userID, count) {
   try {
     cache.updateStatus(userID, 'getting settings');
     const loopNumber = cache.getLoopNumber(userID);
-    // console.log(loopNumber,'loop number', count);
-
-    if (count > botSettings.full_sync - 1) {
-      count = 0
-    }
+    console.log(loopNumber, '<-loop number', (loopNumber - 1) % botSettings.full_sync, '<-shrek', botSettings.full_sync);
+    // send heartbeat signifying start of new loop
+    heartBeat(userID, 'heart');
+    // check that user is active, approved, and unpaused, and that the bot is not under maintenance
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
 
-
       // *** WHICH SYNC ***
-      if (count === 0) {
-        // console.log('full sync');
+      if (((loopNumber - 1) % botSettings.full_sync) === 0) {
+        console.log('full sync');
 
         // *** FULL SYNC ***
         // full sync compares all trades that should be on CB with DB,
@@ -96,13 +102,14 @@ async function syncOrders(userID, count) {
       } else {
 
         // *** QUICK SYNC ***
+        console.log('quick sync');
         cache.updateStatus(userID, 'start all quick sync')
         //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
         await quickSync(userID);
         // desync extra orders
         await deSync(userID)
         cache.updateStatus(userID, 'end all quick sync');
-      }
+      } // end which sync
 
       // *** UPDATE ORDERS IN DATABASE ***
       await updateMultipleOrders(userID);
@@ -126,13 +133,12 @@ async function syncOrders(userID, count) {
         console.log(`sync took ${t1 - t0} milliseconds.`, 100 - (t1 - t0));
         await sleep(100 - (t1 - t0));
       }
-      // send heartbeat signifying end of loop
-      heartBeat(userID);
+
       // wait however long the admin requires, then start new loop
       setTimeout(() => {
         cache.clearStatus(userID);
         // cache.increaseLoopNumber(userID);
-        syncOrders(userID, count + 1);
+        syncOrders(userID);
       }, (botSettings.loop_speed * 10));
     } else {
       console.log('user is NOT THERE, stopping loop for user');
@@ -924,7 +930,7 @@ async function alertAllUsers(alertMessage) {
   }
 }
 
-function heartBeat(userID) {
+function heartBeat(userID, side) {
   const loopNumber = cache.getLoopNumber(userID);
   const botSettings = cache.getKey(0, 'botSettings');
 
@@ -934,7 +940,8 @@ function heartBeat(userID) {
       // console.log(loopNumber, botSettings.full_sync, loopNumber % botSettings.full_sync + 1)
       const msg = {
         type: 'heartbeat',
-        count: loopNumber % botSettings.full_sync + 1
+        side: side,
+        count: ((loopNumber - 1) % botSettings.full_sync)
       }
       socket.emit('message', msg);
     }
