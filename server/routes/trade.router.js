@@ -27,7 +27,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       limit_price: JSON.stringify(Number(order.limit_price)), // USD
       base_size: JSON.stringify(Number(order.base_size)), // BTC
       product_id: order.product_id,
-      stp: 'cn',
+      // stp: 'cn',
       userID: userID,
       trade_pair_ratio: Number(order.trade_pair_ratio),
       client_order_id: uuidv4()
@@ -37,55 +37,57 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       // delete tradeDetails.limit_price;
     }
     try {
-      // send the new order with the trade details
-      let pendingTrade = await coinbaseClient.placeOrderNew(userID, tradeDetails);
-
-      // console.log(tradeDetails, 'pending trade details from new api');
-      // wait a second before storing the trade. Sometimes it takes a second for coinbase to register the trade,
-      // even after returning the details. robot.syncOrders will think it settled if it sees it in the db first
-      await robot.sleep(100);
-      // store the new trade in the db. the trade details are also sent to store trade position prices
-      // storing the created_at value in the flipped_at field will fix issues where the time would change when resyncing
-      if (pendingTrade.success) {
-        // console.log('SUCESS with new api');
-        const newOrder = await coinbaseClient.getOrderNew(userID, pendingTrade.order_id);
-        // console.log(newOrder, 'order from new api');
-        // console.log(newOrder.order.order_configuration, 'order_configuration from new api');
-        await databaseClient.storeTrade(newOrder.order, tradeDetails, newOrder.order.created_time);
-        console.log(newOrder, 'trade saved to db');
-      } else {
-        console.log(pendingTrade, "FAILURE with new api");
-        const errorText = 'Order Failed!';
-        const errorData = pendingTrade;
-        cache.storeError(userID, {
-          errorData: errorData,
-          errorText: errorText
-        })
+      // create a fake order, but set it to reorder
+      let fakeOrder = {
+        order_id: uuidv4(),
+        product_id: order.product_id,
+        // user_id: '9f732868-9790-5667-b29a-f6eb8ab97966',
+        order_configuration: {
+          limit_limit_gtc: {
+            base_size: JSON.stringify(Number(order.base_size)),
+            limit_price: JSON.stringify(Number(order.limit_price)),
+            post_only: false
+          }
+        },
+        side: order.side,
+        client_order_id: uuidv4(),
+        status: 'PENDING',
+        time_in_force: 'GOOD_UNTIL_CANCELLED',
+        created_time: new Date(),
+        completion_percentage: '0',
+        filled_size: '0',
+        average_filled_price: '0',
+        fee: '',
+        number_of_fills: '0',
+        filled_value: '0',
+        pending_cancel: false,
+        size_in_quote: false,
+        total_fees: '0',
+        size_inclusive_of_fees: false,
+        total_value_after_fees: '0',
+        trigger_status: 'INVALID_ORDER_TYPE',
+        order_type: 'LIMIT',
+        reject_reason: 'REJECT_REASON_UNSPECIFIED',
+        settled: false,
+        product_type: 'SPOT',
+        reject_message: '',
+        cancel_message: '',
+        reorder: true
       }
-
+      // store the fake order in the db. It will be ordered later in the reorder function
+      await databaseClient.storeTrade(fakeOrder, tradeDetails, fakeOrder.created_time);
+      console.log(fakeOrder, 'trade saved to db');
       await robot.updateFunds(userID);
-
       // send OK status
       res.sendStatus(200);
-
     } catch (err) {
-      if (err.response?.status === 400) {
-        console.log(err, 'Insufficient funds!');
-        // socketClient.emit('message', {
-        //   error: `Insufficient funds!`,
-        //   orderUpdate: true,
-        //   userID: Number(userID)
-        // });
-      } else if (err.code && err.code === 'ETIMEDOUT') {
-        console.log('Timed out!!!!! Synching orders just in case');
-        socketClient.emit('message', {
-          error: `Connection timed out, consider synching all orders to prevent duplicates. This will not be done for you.`,
-          orderUpdate: true,
-          userID: Number(userID)
-        });
-      } else {
-        console.log(err, 'problem in sending trade post route');
-      }
+      console.log(fakeOrder, "FAILURE creating new trade-pair");
+      const errorText = 'FAILURE creating new trade-pair!';
+      const errorData = fakeOrder;
+      cache.storeError(userID, {
+        errorData: errorData,
+        errorText: errorText
+      })
       // send internal error status
       res.sendStatus(500);
     }

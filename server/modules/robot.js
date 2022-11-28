@@ -57,7 +57,10 @@ async function initializeUserLoops(user) {
 }
 
 async function processingLoop(userID) {
+  // flip orders that are settled in the db
   await processOrders(userID);
+  // will_cancel orders can now be canceled.
+  await databaseClient.deleteMarkedOrders(userID);
   // console.log('orders processed for user:', userID);
   setTimeout(() => {
     processingLoop(userID);
@@ -110,19 +113,8 @@ async function syncOrders(userID, count) {
       // *** UPDATE ORDERS IN DATABASE ***
       await updateMultipleOrders(userID);
 
-      // slice here.
-
-      // PROCESS ALL ORDERS THAT ARE SETTLED BUT NOT FLIPPED
-      // await processOrders(userID); //TEMP COMMENT
-
       // update funds after everything has been processed
       await updateFunds(userID);
-
-      // move this back down here because orders need to stay in the db even if canceled until processOrders is done
-      // the problem being that it might replace the order based on something stored in an array
-      cache.updateStatus(userID, 'main loop - delete marked orders');
-      await databaseClient.deleteMarkedOrders(userID);
-      cache.updateStatus(userID, 'end delete marked orders');
 
     } else {
       // if the user is not active or is paused, loop every 5 seconds
@@ -131,15 +123,18 @@ async function syncOrders(userID, count) {
   } catch (err) {
     MainLoopErrors(userID, err);
   } finally {
-    heartBeat(userID);
     cache.updateStatus(userID, 'end main loop finally');
-    // cache.deleteKey(userID, 'ordersToCheck');
-
     // when everything is done, call the sync again if the user still exists
     if (user) {
       const t1 = performance.now();
-      // console.log(`sync took ${t1 - t0} milliseconds.`);
-
+      // API is limited to 10/sec, so make sure the bot waits that long between loops
+      if (100 - (t1 - t0) > 0) {
+        console.log(`sync took ${t1 - t0} milliseconds.`, 100 - (t1 - t0));
+        await sleep(100 - (t1 - t0));
+      }
+      // send heartbeat signifying end of loop
+      heartBeat(userID);
+      // wait however long the admin requires, then start new loop
       setTimeout(() => {
         cache.clearStatus(userID);
         // cache.increaseLoopNumber(userID);
@@ -190,8 +185,6 @@ function MainLoopErrors(userID, err) {
 
 async function deSync(userID) {
   cache.updateStatus(userID, 'begin desync');
-
-  const userAPI = cache.getAPI(userID);
   const botSettings = cache.getKey(0, 'botSettings');
 
   return new Promise(async (resolve, reject) => {
@@ -212,7 +205,7 @@ async function deSync(userID) {
       // console.log(ordersToDeSync[0], 'all to desync');
 
       // cancel them all
-      await cancelMultipleOrders(allToDeSync, userID, true);
+      await cancelMultipleOrders(allToDeSync, userID);
 
       cache.updateStatus(userID, 'end desync');
       resolve();
@@ -384,7 +377,7 @@ async function processOrders(userID) {
             })
           }
           // avoid rate limiting and give orders time to settle before checking again
-          await sleep(150)
+          await sleep(100)
         } // end for loop
       } else {
         cache.updateStatus(userID, 'end resolve processOrders');
@@ -589,7 +582,7 @@ async function updateMultipleOrders(userID, params) {
   })
 }
 
-// this function is doing too much, and is confusing. It shoul
+// Reorder a trade and delete the old from the db
 async function reorder(orderToReorder) {
   return new Promise(async (resolve, reject) => {
     const userID = orderToReorder.userID;
@@ -684,7 +677,6 @@ async function cancelMultipleOrders(ordersArray, userID) {
         messageText: `${quantity} Extra orders were found and canceled`,
         orderUpdate: true
       });
-      cache.updateStatus(userID, 'done CMO');
       resolve({
         message: `${quantity} Extra orders were canceled`,
         ordersCanceled: true,
