@@ -213,12 +213,12 @@ function startWebsocket(userID) {
 }// this should just update the status of each trade in the 'ordersToCheck' cached array
 async function updateMultipleOrders(userID, params) {
   return new Promise(async (resolve, reject) => {
-  cache.updateStatus(userID, 'start updateMultipleOrders (UMO)');
-  // get the orders that need processing. This will have been taken directly from the db and include all details
-  const ordersArray = params?.ordersArray
-    ? params.ordersArray
-    : cache.getKey(userID, 'ordersToCheck');
-  console.log(ordersArray, 'orders array in ws', params);
+    cache.updateStatus(userID, 'start updateMultipleOrders (UMO)');
+    // get the orders that need processing. This will have been taken directly from the db and include all details
+    const ordersArray = params?.ordersArray
+      ? params.ordersArray
+      : cache.getKey(userID, 'ordersToCheck');
+    console.log(ordersArray, 'orders array in ws');
     if (ordersArray.length > 0) {
       cache.storeMessage(userID, { messageText: `There are ${ordersArray.length} orders that need to be synced` });
     }

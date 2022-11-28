@@ -35,22 +35,36 @@ async function startSync() {
   // get all users from the db
   const userList = await databaseClient.getAllUsers();
   userList.forEach(async user => {
-    const userID = user.id
-    // set up cache for user
-    await cache.newUser(user);
-    // start the loop
-    syncOrders(userID, 0);
-    try {
-      startWebsocket(userID);
-
-    } catch (error) {
-
-    }
+    await initializeUserLoops(user);
     // deSyncOrderLoop(user, 0);
   });
 }
 
-// REST protocol to find orders that have settled on coinbase
+async function initializeUserLoops(user) {
+  const userID = user.id;
+  // set up cache for user
+  await cache.newUser(user);
+  // start the loop
+  syncOrders(userID, 0);
+  processingLoop(userID);
+
+  try {
+    startWebsocket(userID);
+
+  } catch (error) {
+    console.log(err, 'error starting websocket');
+  }
+}
+
+async function processingLoop(userID) {
+  await processOrders(userID);
+  // console.log('orders processed for user:', userID);
+  setTimeout(() => {
+    processingLoop(userID);
+  }, 100);
+}
+
+// repeating loop to find orders that have settled on coinbase via REST API
 async function syncOrders(userID, count) {
   // increase the loop number tracker at the beginning of the loop
   cache.increaseLoopNumber(userID);
@@ -77,6 +91,7 @@ async function syncOrders(userID, count) {
       // *** WHICH SYNC ***
       if (count === 0) {
         // console.log('full sync');
+
         // *** FULL SYNC ***
         // full sync compares all trades that should be on CB with DB,
         // and does other less frequent maintenance tasks
@@ -95,8 +110,10 @@ async function syncOrders(userID, count) {
       // *** UPDATE ORDERS IN DATABASE ***
       await updateMultipleOrders(userID);
 
+      // slice here.
+
       // PROCESS ALL ORDERS THAT ARE SETTLED BUT NOT FLIPPED
-      await processOrders(userID); //TEMP COMMENT
+      // await processOrders(userID); //TEMP COMMENT
 
       // update funds after everything has been processed
       await updateFunds(userID);
@@ -116,7 +133,7 @@ async function syncOrders(userID, count) {
   } finally {
     heartBeat(userID);
     cache.updateStatus(userID, 'end main loop finally');
-    cache.deleteKey(userID, 'ordersToCheck');
+    // cache.deleteKey(userID, 'ordersToCheck');
 
     // when everything is done, call the sync again if the user still exists
     if (user) {
@@ -520,12 +537,12 @@ function sleep(milliseconds) {
 // this should just update the status of each trade in the 'ordersToCheck' cached array
 async function updateMultipleOrders(userID, params) {
   return new Promise(async (resolve, reject) => {
-  cache.updateStatus(userID, 'start updateMultipleOrders (UMO)');
-  // get the orders that need processing. This will have been taken directly from the db and include all details
-  const ordersArray = params?.ordersArray
-    ? params.ordersArray
-    : cache.getKey(userID, 'ordersToCheck');
-  console.log(ordersArray, 'orders array');
+    cache.updateStatus(userID, 'start updateMultipleOrders (UMO)');
+    // get the orders that need processing. This will have been taken directly from the db and include all details
+    const ordersArray = params?.ordersArray
+      ? params.ordersArray
+      : cache.getKey(userID, 'ordersToCheck');
+    // console.log(ordersArray, 'orders array');
     if (ordersArray.length > 0) {
       cache.storeMessage(userID, { messageText: `There are ${ordersArray.length} orders that need to be synced` });
     }
@@ -573,6 +590,8 @@ async function updateMultipleOrders(userID, params) {
       }
     } // end for loop
     cache.updateStatus(userID, 'UMO all done');
+    // delete ordersToCheck since they have now been checked
+    cache.deleteKey(userID, 'ordersToCheck');
     resolve();
   })
 }
@@ -580,8 +599,8 @@ async function updateMultipleOrders(userID, params) {
 // this function is doing too much, and is confusing. It shoul
 async function reorder(orderToReorder) {
   return new Promise(async (resolve, reject) => {
-  const userID = orderToReorder.userID;
-  cache.updateStatus(userID, 'begin reorder');
+    const userID = orderToReorder.userID;
+    cache.updateStatus(userID, 'begin reorder');
     try {
       const upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.order_id);
       // make new tradeDetails so client id is not passed from old order
