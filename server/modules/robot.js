@@ -551,7 +551,6 @@ async function updateMultipleOrders(userID, params) {
       cache.storeMessage(userID, { messageText: `Syncing ${i + 1} of ${ordersArray.length} orders that need to be synced` });
       // set up loop
       const orderToCheck = ordersArray[i];
-      cache.updateStatus(userID, `UMO loop number: ${i}`);
       // this timer will serve to prevent rate limiting
       let reorderTimer = true;
       setTimeout(() => {
@@ -561,10 +560,8 @@ async function updateMultipleOrders(userID, params) {
       try {
         if (orderToCheck.reorder && !orderToCheck.will_cancel) {
           // if it should be reordered and is not being canceled by the user, reorder it
-          cache.updateStatus(userID, 'UMO loop reorder');
           await reorder(orderToCheck);
         } else {
-          cache.updateStatus(userID, 'UMO loop get order');
           // if not a reorder, look up the full details on CB
           let updatedOrder = await coinbaseClient.getOrderNew(userID, orderToCheck.order_id);
           // if it was cancelled, set it for reorder
@@ -576,20 +573,16 @@ async function updateMultipleOrders(userID, params) {
           await databaseClient.updateTrade(updatedOrder.order);
         }
       } catch (err) {
-        cache.updateStatus(userID, 'error in UMO loop');
-        // handle not found order
-        let errorText = `Error updating order details`
         console.log(err, 'error in updateMultipleOrders loop');
         cache.storeError(userID, {
           errorData: orderToCheck,
-          errorText: errorText
+          errorText: `Error updating order details`
         })
       } // end catch
       while (reorderTimer) {
         await sleep(10);
       }
     } // end for loop
-    cache.updateStatus(userID, 'UMO all done');
     // delete ordersToCheck since they have now been checked
     cache.deleteKey(userID, 'ordersToCheck');
     resolve();
