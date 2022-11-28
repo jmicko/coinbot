@@ -40,21 +40,22 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       // send the new order with the trade details
       let pendingTrade = await coinbaseClient.placeOrderNew(userID, tradeDetails);
 
-      console.log(tradeDetails, 'pending trade details from new api');
+      // console.log(tradeDetails, 'pending trade details from new api');
       // wait a second before storing the trade. Sometimes it takes a second for coinbase to register the trade,
       // even after returning the details. robot.syncOrders will think it settled if it sees it in the db first
       await robot.sleep(100);
       // store the new trade in the db. the trade details are also sent to store trade position prices
       // storing the created_at value in the flipped_at field will fix issues where the time would change when resyncing
       if (pendingTrade.success) {
-        console.log('SUCESS with new api');
+        // console.log('SUCESS with new api');
         const newOrder = await coinbaseClient.getOrderNew(userID, pendingTrade.order_id);
-        console.log(newOrder, 'order from new api');
-        console.log(newOrder.order.order_configuration, 'order_configuration from new api');
+        // console.log(newOrder, 'order from new api');
+        // console.log(newOrder.order.order_configuration, 'order_configuration from new api');
         await databaseClient.storeTrade(newOrder.order, tradeDetails, newOrder.order.created_time);
+        console.log(newOrder, 'trade saved to db');
       } else {
         console.log(pendingTrade, "FAILURE with new api");
-        const errorText = 'Insufficient funds!';
+        const errorText = 'Order Failed!';
         const errorData = pendingTrade;
         cache.storeError(userID, {
           errorData: errorData,

@@ -514,7 +514,7 @@ const getTradesByIDs = (userID, IDs) => {
   });
 }
 
-// get all details of an array of orders
+// get all details of an array of order IDs
 const getUnsettledTradesByIDs = (userID, IDs) => {
   return new Promise(async (resolve, reject) => {
     let sqlText;

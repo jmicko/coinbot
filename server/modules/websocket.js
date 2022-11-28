@@ -4,6 +4,8 @@ const WebSocket = require('ws');
 const CryptoJS = require('crypto-js');
 const fs = require('fs');
 const cache = require('./cache');
+const databaseClient = require('./databaseClient');
+const coinbaseClient = require('./coinbaseClient');
 
 function startWebsocket(userID) {
   const userAPI = cache.getAPI(userID)
@@ -30,7 +32,7 @@ function startWebsocket(userID) {
   }
 
   function subscribeToProducts(products, channelName, ws) {
-    console.log('products: %s', products.join(','));
+    // console.log('products: %s', products.join(','));
     const message = {
       type: 'subscribe',
       channel: channelName,
@@ -121,6 +123,8 @@ function startWebsocket(userID) {
             handleTickers(event.tickers);
           } else if (event.type === 'snapshot') {
             handleSnapshot(event);
+          } else if (event.type === 'update' && event.orders) {
+            handleOrdersUpdate(event.orders);
           } else {
             console.log(event, event.type, 'event from ws');
           }
@@ -146,6 +150,46 @@ function startWebsocket(userID) {
 
   }
 
+  async function handleOrdersUpdate(orders) {
+    // every tick, send an update to open consoles for the user
+    console.log('handling orders update');
+
+    // update should look like this:
+    // {
+    //   type: 'update',
+    //   orders: [
+    //     {
+    //       order_id: 'b2908b46-d2ca-461b-9c75-4c024a8790ed',
+    //       client_order_id: 'd878c77e-7ade-425c-b2a7-8c84a8101353',
+    //       cumulative_quantity: '0.00029411',
+    //       leaves_quantity: '0',
+    //       avg_price: '16554.17',
+    //       total_fees: '0.01217186734675',
+    //       status: 'FILLED'
+    //     }
+    //   ]
+    // } update event from ws
+    try {
+
+      const orderIds = []
+      orders.forEach(order => {
+        if (order.status === 'FILLED') {
+          orderIds.push(order.order_id)
+          console.log(order, 'filled order');
+        }
+      })
+
+      await sleep(1000);
+      // find unsettled orders in the db based on the IDs array
+      const unsettledOrders = await databaseClient.getUnsettledTradesByIDs(userID, orderIds);
+
+      await updateMultipleOrders(userID, { ordersArray: unsettledOrders });
+    } catch (err) {
+      console.log(err, 'error in ws order update handler');
+    }
+
+  }
+
   function handleTickers(tickers) {
     // every tick, send an update to open consoles for the user
     // console.log('handling tickers');
@@ -166,6 +210,72 @@ function startWebsocket(userID) {
     });
 
   }
+}// this should just update the status of each trade in the 'ordersToCheck' cached array
+async function updateMultipleOrders(userID, params) {
+  return new Promise(async (resolve, reject) => {
+  cache.updateStatus(userID, 'start updateMultipleOrders (UMO)');
+  // get the orders that need processing. This will have been taken directly from the db and include all details
+  const ordersArray = params?.ordersArray
+    ? params.ordersArray
+    : cache.getKey(userID, 'ordersToCheck');
+  console.log(ordersArray, 'orders array in ws', params);
+    if (ordersArray.length > 0) {
+      cache.storeMessage(userID, { messageText: `There are ${ordersArray.length} orders that need to be synced` });
+    }
+    // loop over the array and update each trade
+    for (let i = 0; i < ordersArray.length; i++) {
+      cache.storeMessage(userID, { messageText: `Syncing ${i + 1} of ${ordersArray.length} orders that need to be synced` });
+      // set up loop
+      const orderToCheck = ordersArray[i];
+      // set up loop DONE
+      try {
+        cache.updateStatus(userID, 'UMO loop get order');
+        // if not a reorder, look up the full details on CB
+        let updatedOrder = await coinbaseClient.getOrderNew(userID, orderToCheck.order_id);
+        // if it was cancelled, set it for reorder
+        if (updatedOrder.order.status === 'CANCELLED') {
+          console.log('was canceled but should not have been!')
+          updatedOrder.order.reorder = true;
+        }
+        // then update db with current status
+        await databaseClient.updateTrade(updatedOrder.order);
+      } catch (err) {
+        cache.updateStatus(userID, 'error in UMO loop');
+        // handle not found order
+        let errorText = `Error updating order details`
+        console.log(err, 'error in updateMultipleOrders loop');
+        cache.storeError(userID, {
+          errorData: orderToCheck,
+          errorText: errorText
+        })
+      } // end catch
+    } // end for loop
+    cache.updateStatus(userID, 'UMO all done');
+    resolve();
+  })
+}
+
+// function to pause for x milliseconds in any async function
+function sleep(milliseconds) {
+  return new Promise(resolve => setTimeout(resolve, milliseconds))
+}
+
+function heartBeat(userID) {
+  const loopNumber = cache.getLoopNumber(userID);
+  const botSettings = cache.getKey(0, 'botSettings');
+
+  cache.sockets.forEach(socket => {
+    // find all open sockets for the user
+    if (socket.userID === userID) {
+      // console.log(loopNumber, botSettings.full_sync, loopNumber % botSettings.full_sync + 1)
+      const msg = {
+        type: 'heartbeat',
+        count: loopNumber % botSettings.full_sync + 1
+      }
+      socket.emit('message', msg);
+    }
+  })
+
 }
 
 function getOpenOrders(userID) {

@@ -797,7 +797,7 @@ async function cancelAllOrders(userID) {
 }
 
 
-async function testAPI(secret, key, passphrase, API_URI) {
+async function testAPI(secret, key, API_URI) {
   return new Promise(async (resolve, reject) => {
     try {
       // const timestamp = Math.floor(Date.now() / 1000);

@@ -53,18 +53,14 @@ async function startSync() {
 // REST protocol to find orders that have settled on coinbase
 async function syncOrders(userID, count) {
   // increase the loop number tracker at the beginning of the loop
-  // cache.increaseLoopNumber(userID);
+  cache.increaseLoopNumber(userID);
   cache.updateStatus(userID, 'begin main loop');
-  // keep track of how long the loop is running. Helps prevent rate limiting
-  // todo - there is a better way to do this
-  let timer = true;
-  setTimeout(() => {
-    timer = false;
-  }, 100);
 
   // get the user settings from cache;
   const user = cache.getUser(userID);
-  // console.log('user from cache:', user);
+
+  // keep track of how long the loop takes. Helps prevent rate limiting
+  const t0 = performance.now();
   // get the bot settings
   const botSettings = cache.getKey(0, 'botSettings');
   try {
@@ -78,10 +74,9 @@ async function syncOrders(userID, count) {
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
 
 
-      const t0 = performance.now();
       // *** WHICH SYNC ***
       if (count === 0) {
-
+        // console.log('full sync');
         // *** FULL SYNC ***
         // full sync compares all trades that should be on CB with DB,
         // and does other less frequent maintenance tasks
@@ -97,21 +92,14 @@ async function syncOrders(userID, count) {
         cache.updateStatus(userID, 'end all quick sync');
       }
 
-      // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
-      await updateMultipleOrders(userID); // TEMP COMMENT
+      // *** UPDATE ORDERS IN DATABASE ***
+      await updateMultipleOrders(userID);
 
-      // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
-      processOrders(userID); //TEMP COMMENT
+      // PROCESS ALL ORDERS THAT ARE SETTLED BUT NOT FLIPPED
+      await processOrders(userID); //TEMP COMMENT
 
-      const t1 = performance.now();
-      console.log(`sync took ${t1 - t0} milliseconds.`);
-
-
-
-
-
-      await updateFunds(userID); // TEMP COMMENT
-
+      // update funds after everything has been processed
+      await updateFunds(userID);
 
       // move this back down here because orders need to stay in the db even if canceled until processOrders is done
       // the problem being that it might replace the order based on something stored in an array
@@ -124,45 +112,7 @@ async function syncOrders(userID, count) {
       await sleep(5000);
     }
   } catch (err) {
-    let errorData;
-    let errorText;
-    // the hell is this error? Did something reject without passing an error?
-    // it totally was lmao
-    // /Users/jmicko/webdev/coinbot/server/modules/robot.js:131
-    //     if (err.response?.data) {
-    //             ^
-
-    // TypeError: Cannot read properties of undefined (reading 'response')
-    if (err?.response?.data) {
-      errorData = err?.response.data
-    }
-    cache.updateStatus(userID, 'error in the main loop');
-    if (err?.code === 'ECONNRESET') {
-      errorText = 'Connection reset by Coinbase server';
-      console.log('Connection reset by Coinbase server. Probably nothing to worry about unless it keeps happening quickly.');
-    } else if (err?.response?.status === 500) {
-      console.log('internal server error from coinbase');
-      errorText = 'Internal server error from coinbase';
-    } else if (err?.response?.status === 401) {
-      console.log(err?.response?.data, 'Invalid Signature');
-      errorText = 'Invalid Signature. Probably nothing to worry about unless it keeps happening quickly.';
-    } else if (err?.response?.statusText === 'Bad Gateway') {
-      console.log('bad gateway');
-      errorText = 'Bad Gateway. Probably nothing to worry about unless it keeps happening quickly.';
-    } else if (err?.response?.statusText === 'Gateway Timeout') {
-      console.log('Gateway Timeout');
-      errorText = 'Gateway Timeout. Nothing to worry about. Coinbase probably lost the connection';
-    } else if (err?.code === 'ECONNABORTED') {
-      console.log('10 sec timeout');
-      errorText = '10 second timeout. Nothing to worry about, Coinbase was just slow to respond.';
-    } else {
-      console.log(err, 'unknown error at end of syncOrders');
-      errorText = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???';
-    }
-    cache.storeError(userID, {
-      errorData: errorData,
-      errorText: errorText
-    })
+    MainLoopErrors(userID, err);
   } finally {
     heartBeat(userID);
     cache.updateStatus(userID, 'end main loop finally');
@@ -170,18 +120,12 @@ async function syncOrders(userID, count) {
 
     // when everything is done, call the sync again if the user still exists
     if (user) {
-      while (timer) {
-        await sleep(10);
-        // console.log('not 100ms yet!');
-      }
-      if (!timer) {
-        // console.log('100ms is up');
-      }
-      // console.log('time between full sync', time < 1000, time);
-      // console.log('cache', userID, cache.storage);
+      const t1 = performance.now();
+      // console.log(`sync took ${t1 - t0} milliseconds.`);
+
       setTimeout(() => {
         cache.clearStatus(userID);
-        cache.increaseLoopNumber(userID);
+        // cache.increaseLoopNumber(userID);
         syncOrders(userID, count + 1);
       }, (botSettings.loop_speed * 10));
     } else {
@@ -190,6 +134,42 @@ async function syncOrders(userID, count) {
   }
 }
 
+
+
+function MainLoopErrors(userID, err) {
+  let errorData;
+  let errorText;
+  if (err?.response?.data) {
+    errorData = err?.response.data;
+  }
+  cache.updateStatus(userID, 'error in the main loop');
+  if (err?.code === 'ECONNRESET') {
+    errorText = 'Connection reset by Coinbase server';
+    console.log('Connection reset by Coinbase server. Probably nothing to worry about unless it keeps happening quickly.');
+  } else if (err?.response?.status === 500) {
+    console.log('internal server error from coinbase');
+    errorText = 'Internal server error from coinbase';
+  } else if (err?.response?.status === 401) {
+    console.log(err?.response?.data, 'Invalid Signature');
+    errorText = 'Invalid Signature. Probably nothing to worry about unless it keeps happening quickly.';
+  } else if (err?.response?.statusText === 'Bad Gateway') {
+    console.log('bad gateway');
+    errorText = 'Bad Gateway. Probably nothing to worry about unless it keeps happening quickly.';
+  } else if (err?.response?.statusText === 'Gateway Timeout') {
+    console.log('Gateway Timeout');
+    errorText = 'Gateway Timeout. Nothing to worry about. Coinbase probably lost the connection';
+  } else if (err?.code === 'ECONNABORTED') {
+    console.log('10 sec timeout');
+    errorText = '10 second timeout. Nothing to worry about, Coinbase was just slow to respond.';
+  } else {
+    console.log(err, 'unknown error at end of syncOrders');
+    errorText = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???';
+  }
+  cache.storeError(userID, {
+    errorData: errorData,
+    errorText: errorText
+  });
+}
 
 async function deSync(userID) {
   cache.updateStatus(userID, 'begin desync');
@@ -235,18 +215,9 @@ async function fullSync(userID) {
   // IF FULL SYNC, compare all trades that should be on CB, and do other less frequent maintenance tasks
   return new Promise(async (resolve, reject) => {
     try {
-      // initiate empty object to hold arrays that will be returned to the sync loop
-      let fullSyncOrders = {
-        dbOrders: [],
-        cbOrders: [],
-        ordersToCheck: [],
-        ordersToCancel: []
-      };
       // get lists of trades to compare which have been settled
       const results = await Promise.all([
         // get all open orders from db and cb
-
-        // databaseClient.getLimitedTrades(userID, botSettings.orders_to_sync),
         // not sure this should be getting trades whether or not they are settled. Made new db function where settled=false
         databaseClient.getLimitedUnsettledTrades(userID, botSettings.orders_to_sync),
         // coinbaseClient.getOpenOrders(userID, userAPI),
@@ -254,44 +225,32 @@ async function fullSync(userID) {
         // get fees
         coinbaseClient.getFeesNew(userID)
       ]);
+
       cache.updateStatus(userID, 'done getting trades to compare');
       // store the lists of orders in the corresponding arrays so they can be compared
-      fullSyncOrders.dbOrders = results[0];
-      fullSyncOrders.cbOrders = results[1];
+      const dbOrders = results[0];
+      const cbOrders = results[1];
       const fees = results[2];
 
-      // await updateFunds(userID);
       cache.updateStatus(userID, 'done updating funds full sync');
-      // console.log(fees, 'fees');
+
       // need to get the fees for more accurate Available funds reporting
       // fees don't change frequently so only need to do this during full sync
       await databaseClient.saveFees(fees, userID);
 
       // compare the arrays and remove any where the ids match in both,
       // leaving a list of orders that are open in the db, but not on cb. Probably settled
-      fullSyncOrders.ordersToCheck = await orderElimination(fullSyncOrders.dbOrders, fullSyncOrders.cbOrders);
+      let ordersToCheck = await orderElimination(dbOrders, cbOrders);
       // also get a list of orders that are open on cb, but not in the db. Need to cancel them
-      fullSyncOrders.ordersToCancel = await orderElimination(fullSyncOrders.cbOrders, fullSyncOrders.dbOrders);
+      let ordersToCancel = await orderElimination(cbOrders, dbOrders);
 
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
-      if (fullSyncOrders.ordersToCancel.length) {
-        // the 'false' in the third param is telling the function to sleep for a little bit.
-        // this is needed during full sync because full sync deletes all orders on CB that are not in DB,
-        // but they show up on cb first and the bot may detect and accidentally cancel them if it doesn't wait for the db
-        // console.log('canceling extra orders in fullSync', fullSyncOrders.ordersToCancel);
-        // API ENDPOINTS USED: orders, accounts
-        cache.updateStatus(userID, 'will cancel multiple orders');
-        // todo - change this to check if they are in db first, then cancel
-        await cancelMultipleOrders(fullSyncOrders.ordersToCancel, userID, false); //TEMP COMMENT
-        cache.updateStatus(userID, 'done canceling multiple orders');
+      await cancelMultipleOrders(ordersToCancel, userID); //TEMP COMMENT
 
-        // wait for a second to allow cancels to go through so bot doesn't cancel twice
-        await sleep(1000);
-      }
+      cache.setKey(userID, 'ordersToCheck', ordersToCheck);
+
       cache.updateStatus(userID, 'will resolve full sync');
-
-      cache.setKey(userID, 'ordersToCheck', fullSyncOrders.ordersToCheck);
-      resolve(fullSyncOrders);
+      resolve();
     } catch (err) {
       cache.updateStatus(userID, 'error in full sync');
       reject(err)
@@ -340,7 +299,6 @@ async function quickSync(userID) {
 // process orders that have been settled
 async function processOrders(userID) {
   cache.updateStatus(userID, 'start process orders');
-  const userAPI = cache.getAPI(userID);
   return new Promise(async (resolve, reject) => {
     try {
       // check all trades in db that are both settled and NOT flipped
@@ -358,6 +316,10 @@ async function processOrders(userID) {
           let tradeDetails = flipTrade(dbOrder, user, tradeList, i);
           // ...send the new trade
           try {
+
+
+
+
             const willCancel = cache.checkIfCanceling(userID, dbOrder.order_id);
             if (!willCancel) {
               // console.log(tradeDetails,'trade details');
@@ -365,8 +327,6 @@ async function processOrders(userID) {
               // console.log(cbOrder, 'cbOrder');
               if (cbOrder.success) {
                 const newOrder = await coinbaseClient.getOrderNew(userID, cbOrder.order_id);
-                // console.log(newOrder, 'order from new api');
-                // console.log(newOrder.order.order_configuration, 'order_configuration from new api');
                 // ...store the new trade
                 // take the time the new order was created, and use it as the flipped_at value
                 const flipped_at = newOrder.order.created_time
@@ -382,6 +342,10 @@ async function processOrders(userID) {
                 orderUpdate: true
               });
             }
+
+
+
+
           } catch (err) {
             let errorText;
             cache.updateStatus(userID, 'error in process orders loop');
@@ -554,17 +518,19 @@ function sleep(milliseconds) {
 }
 
 // this should just update the status of each trade in the 'ordersToCheck' cached array
-async function updateMultipleOrders(userID) {
+async function updateMultipleOrders(userID, params) {
+  return new Promise(async (resolve, reject) => {
   cache.updateStatus(userID, 'start updateMultipleOrders (UMO)');
   // get the orders that need processing. This will have been taken directly from the db and include all details
-  const ordersArray = cache.getKey(userID, 'ordersToCheck');
-  return new Promise(async (resolve, reject) => {
+  const ordersArray = params?.ordersArray
+    ? params.ordersArray
+    : cache.getKey(userID, 'ordersToCheck');
+  console.log(ordersArray, 'orders array');
     if (ordersArray.length > 0) {
       cache.storeMessage(userID, { messageText: `There are ${ordersArray.length} orders that need to be synced` });
     }
     // loop over the array and update each trade
     for (let i = 0; i < ordersArray.length; i++) {
-      console.log('loooooooop');
       cache.storeMessage(userID, { messageText: `Syncing ${i + 1} of ${ordersArray.length} orders that need to be synced` });
       // set up loop
       const orderToCheck = ordersArray[i];
@@ -574,8 +540,6 @@ async function updateMultipleOrders(userID) {
       setTimeout(() => {
         reorderTimer = false;
       }, 150);
-      // send heartbeat for each loop
-      heartBeat(userID);
       // set up loop DONE
       try {
         if (orderToCheck.reorder && !orderToCheck.will_cancel) {
@@ -598,12 +562,7 @@ async function updateMultipleOrders(userID) {
         cache.updateStatus(userID, 'error in UMO loop');
         // handle not found order
         let errorText = `Error updating order details`
-        if (err.response?.status === 404) {
-          errorText = `Order not found!`
-        } // end not found
-        else {
-          console.log(err, 'error in updateMultipleOrders loop');
-        }
+        console.log(err, 'error in updateMultipleOrders loop');
         cache.storeError(userID, {
           errorData: orderToCheck,
           errorText: errorText
@@ -618,83 +577,44 @@ async function updateMultipleOrders(userID) {
   })
 }
 
-async function reorder(orderToReorder, retry) {
+// this function is doing too much, and is confusing. It shoul
+async function reorder(orderToReorder) {
+  return new Promise(async (resolve, reject) => {
   const userID = orderToReorder.userID;
   cache.updateStatus(userID, 'begin reorder');
-  return new Promise(async (resolve, reject) => {
-    let upToDateDbOrder;
-    let tradeDetails;
     try {
-      upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.order_id);
-
-      tradeDetails = {
-        // original_sell_price: upToDateDbOrder.original_sell_price,
-        // original_buy_price: upToDateDbOrder.original_buy_price,
+      const upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.order_id);
+      // make new tradeDetails so client id is not passed from old order
+      const tradeDetails = {
         side: upToDateDbOrder.side,
-        limit_price: JSON.stringify(Number(upToDateDbOrder.limit_price)), // USD
-        base_size: JSON.stringify(Number(upToDateDbOrder.base_size)), // BTC
+        limit_price: upToDateDbOrder.limit_price, // USD
+        base_size: upToDateDbOrder.base_size, // BTC
         product_id: upToDateDbOrder.product_id,
-        // trade_pair_ratio: upToDateDbOrder.trade_pair_ratio,
-        // userID: upToDateDbOrder.userID,
       };
-      // if the order is marked for reordering, it was deleted already and there is no need to wait to double check
-      // if retry is passed as true, the bot has already double check CB and not found both times so reorder
-      if (upToDateDbOrder.reorder || retry) {
-        try {
-          // send the new order with the trade details
-          let pendingTrade = await coinbaseClient.placeOrderNew(userID, tradeDetails);
-          // console.log(pendingTrade, 'pending trade');
-          if (pendingTrade.success === false) {
-            console.log(tradeDetails, 'failed');
-            reject(pendingTrade)
-          } else {
+      // send the new order with the trade details
+      let pendingTrade = await coinbaseClient.placeOrderNew(userID, tradeDetails);
+      // console.log(pendingTrade, 'pending trade');
+      if (pendingTrade.success) {
+        let newTrade = await coinbaseClient.getOrderNew(userID, pendingTrade.order_id)
+        // console.log(newTrade, 'newTrade');
+        // because the storeDetails function will see the upToDateDbOrder as the "old order", need to store previous_total_fees as just total_fees
+        upToDateDbOrder.total_fees = upToDateDbOrder.previous_total_fees;
+        // store the new trade in the db. the trade details are also sent to store trade position prices
+        // when reordering a trade, bring the old flipped_at value through so it doesn't change the "Time" on screen
+        let results = await databaseClient.storeTrade(newTrade.order, upToDateDbOrder, upToDateDbOrder.flipped_at);
 
-            let newTrade = await coinbaseClient.getOrderNew(userID, pendingTrade.order_id)
-            // console.log(newTrade, 'newTrade');
-            // because the storeDetails function will see the upToDateDbOrder as the "old order", need to store previous_total_fees as just total_fees
-            upToDateDbOrder.total_fees = upToDateDbOrder.previous_total_fees;
-            // store the new trade in the db. the trade details are also sent to store trade position prices
-            // when reordering a trade, bring the old flipped_at value through so it doesn't change the "Time" on screen
-            let results = await databaseClient.storeTrade(newTrade.order, upToDateDbOrder, upToDateDbOrder.flipped_at);
-
-            // delete the old order from the db
-            await databaseClient.deleteTrade(orderToReorder.order_id);
-            // tell the DOM to update
-            cache.storeMessage(userID, {
-              messageText: `trade was reordered`,
-              orderUpdate: true,
-            });
-
-            resolve({
-              results: results,
-              reordered: true
-            })
-          }
-        } catch (err) {
-          if (err.response?.status === 400) {
-            cache.storeError(userID, {
-              errorData: orderToReorder,
-              errorText: `Insufficient funds when trying to reorder an order! Do you have a negative balance?`
-            })
-          }
-          console.log(err, 'error in reorder function in robot.js');
-          reject(err)
-        }
-      } else {
-        await sleep(1000);
-        // check again. if it finds it, don't do anything. If not found, error handling will reorder in the 404
-        await coinbaseClient.getOrderNew(orderToReorder.userID, orderToReorder.order_id);
+        // delete the old order from the db
+        await databaseClient.deleteTrade(orderToReorder.order_id);
+        // tell the DOM to update
+        cache.storeMessage(userID, {
+          messageText: `trade was reordered`,
+          orderUpdate: true,
+        });
+        resolve({ results: results })
       }
     } catch (err) {
-      const willCancel = cache.checkIfCanceling(userID, orderToReorder.order_id);
-      if ((err.response?.status === 404) && (!willCancel)) {
-        // call reorder again with retry as true so it will reorder right away
-        try {
-          await reorder(orderToReorder, true);
-        } catch (err) {
-          console.log(err, "this is that error in the reorder function that you don't ever expect to see again. Hope it worked!");
-        }
-      }
+      console.log(err, 'error in reorder function in robot.js');
+      reject(err)
     }
     resolve();
   });
@@ -705,25 +625,21 @@ async function reorder(orderToReorder, retry) {
 // but if they are found in the db, they don't cancel out of the coinbot.
 // checking the db wastes a half second and it is probably better to do these things in separate functions,
 // as it can be known if the order id was taken from the db or just pulled from the API
-async function cancelMultipleOrders(ordersArray, userID, ignoreSleep) {
+async function cancelMultipleOrders(ordersArray, userID) {
   return new Promise(async (resolve, reject) => {
     cache.updateStatus(userID, 'begin cancelMultipleOrders (CMO)');
     // set variable to track how many orders were actually canceled
     let quantity = 0;
     // console.log('ordersArray', ordersArray);
     if (ordersArray.length > 0) {
-      if (!ignoreSleep) {
-        // console.log('need to sleep');
-        // need to wait and double check db before deleting because they take time to store and show up on cb first
-        // only need to wait once because as the loop runs nothing will be added to it. Only wait for most recent order
-        await sleep(500);
-      }
       const toCancel = [];
       // todo - this loop can be a lot simpler because an array of IDs can be batch cancelled
       for (let i = 0; i < ordersArray.length; i++) {
         cache.updateStatus(userID, `CMO loop number: ${i}`);
         const orderToCancel = ordersArray[i];
         try {
+          // there is a timestamp to know if they were placed recently. 
+          // need to check that and cancel if more than a few seconds
           // check to make sure it really isn't in the db
           let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.order_id);
           if (doubleCheck) {
@@ -747,7 +663,6 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep) {
         // cancel the orders in the array
         await coinbaseClient.cancelOrderNew(userID, toCancel);
         // update funds now that everything should be up to date
-        // await updateFunds(userID);
       } catch (err) {
         console.log('error cancelling multiple orders');
         reject(err);
@@ -1074,6 +989,7 @@ const robot = {
   flipTrade: flipTrade,
   syncOrders: syncOrders,
   processOrders: processOrders,
+  updateMultipleOrders: updateMultipleOrders,
   startSync: startSync,
   autoSetup: autoSetup,
   getAvailableFunds: getAvailableFunds,
