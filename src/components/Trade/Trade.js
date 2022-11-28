@@ -33,7 +33,6 @@ function Trade(props) {
   const [basicSide, setBasicSide] = useState('BUY');
   const dispatch = useDispatch();
   const user = useSelector((store) => store.accountReducer.userReducer);
-  // const tickers = useSelector((store) => store.statusReducer.tickers);
   const socket = useSocket();
 
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
@@ -183,17 +182,11 @@ function Trade(props) {
 
 
   return (
-
     tradeType
       ? <div className="Trade scrollable boxed" >
-        {/* <div className="scrollable boxed"> */}
         <h3 className={`title ${user.theme}`}>New Trade-Pair <button className={`btn-blue ${user.theme}`} onClick={toggleTradeType} >Switch</button></h3>
-        {/* form with a single input. Input takes a price point at which 
-          to make a trade */}
-        {JSON.stringify(socket.tickers.btc.price)}
+        {/* form for setting up individual trade-pairs */}
         <form className="new-trade-form" onSubmit={submitTransaction} >
-
-
           <div className="number-inputs">
             {/* input for setting the price/BTC per transaction. Can be adjusted in $500 steps, or manually input */}
             <label htmlFor="transaction_price">

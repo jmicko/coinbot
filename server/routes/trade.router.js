@@ -7,7 +7,8 @@ const robot = require('../modules/robot');
 const coinbaseClient = require('../modules/coinbaseClient');
 const cache = require('../modules/cache');
 const { v4: uuidv4 } = require('uuid');
-
+const { autoSetup } = require('../../src/shared');
+// const { autoSetup } = require('../../src/shared');
 
 /**
  * POST route sending trade
@@ -150,7 +151,8 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   if (user.active && user.approved) {
     let setupParams = req.body;
-    let setup = await robot.autoSetup(user, setupParams)
+    // let setup = await robot.autoSetup(user, setupParams)
+    let setup = autoSetup(user, setupParams)
     console.log('setup is:', setup);
 
     try {
@@ -158,7 +160,7 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
       // store a number that counts up every time autoSetup is used, and increase it before using it in case of error
       // then use it here and increase it by the number of trades being put through this way
       const number = (Number(user.auto_setup_number) + setup.orderList.length)
-      await databaseClient.setAutoSetupNumber(number, user.id);
+      // await databaseClient.setAutoSetupNumber(number, user.id);
 
 
       console.log('setup params:', setupParams);
@@ -195,7 +197,8 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
         order.created_at = time;
         order.reorder = true;
         console.log('order to store', order);
-        await databaseClient.storeTrade(order, order, time);
+
+        // await databaseClient.storeTrade(order, order, time);
       }
 
 

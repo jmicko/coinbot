@@ -7,12 +7,9 @@ import './Status.css'
 function Status(props) {
   const dispatch = useDispatch();
   const user = useSelector((store) => store.accountReducer.userReducer);
-  // const ticker = useSelector((store) => store.statusReducer.tickers);
   const socket = useSocket();
-  // const heartBeat = useSelector((store) => store.statusReducer.heartBeat);
   const profitsReducer = useSelector((store) => store.accountReducer.profitsReducer);
   const openOrdersInOrder = useSelector((store) => store.ordersReducer.openOrdersInOrder);
-  // const [loopStatus, setLoopStatus] = useState(true);
   const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
   const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
@@ -51,12 +48,6 @@ function Status(props) {
       return "null"
     }
   }
-
-  // useEffect(() => {
-  //   setLoopStatus(prevLoopStatus => {
-  //     return !prevLoopStatus;
-  //   });
-  // }, [heartBeat]);
 
   // get the total number of open orders
   useEffect(() => {
