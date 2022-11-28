@@ -7,7 +7,11 @@ const options = {
     origin: ["http://localhost:3000"]
   }
 };
+// Socket.io
 const io = require("socket.io")(server, options);
+const { setupSocketIO } = require('./modules/websocket');
+
+// Middleware
 const { sessionMiddleware, wrap } = require('./modules/session-middleware');
 const passport = require('./strategies/user.strategy');
 
@@ -18,13 +22,8 @@ const accountRouter = require('./routes/account.router');
 const ordersRouter = require('./routes/orders.router');
 const settingsRouter = require('./routes/settings.router');
 
+// bot processes
 const robot = require('./modules/robot');
-const coinbaseClient = require('./modules/coinbaseClient');
-const cache = require('./modules/cache');
-// const { wrap } = require('module');
-
-// Start the syncOrders loop
-robot.startSync();
 
 // Body parser middleware
 app.use(express.json());
@@ -44,54 +43,14 @@ app.use('/api/account', accountRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/settings', settingsRouter);
 
-/* socket.io */
-// *** SOCKET AUTH *** //
-// use wrap to wrap socket with express middleware
-io.use(wrap(sessionMiddleware));
-// this triggers on a new client connection
-/* websocket is being used to alert when something has happened, but currently does not 
-    authenticate, and should not be used to send sensitive data. Jk it should be authenticating now */
-// const sockets = new Set();
-
-setInterval(() => {
-  // console.log(cache.sockets,'sockets set');
-  // cache.sockets.forEach(socket => console.log(socket.userID))
-}, 2000);
-io.on('connection', (socket) => {
-  let id = socket.id;
-  // console.log(socket.request.session.passport?.user,'user id');
-  const userID = socket.request.session.passport?.user;
-  socket.userID = userID
-  cache.sockets.add(socket)
-  // cache.sockets.add(3)
-
-  if (!userID) {
-    console.log('user is not logged in');
-    // socket.disconnect();
-  } else {
-    console.log(`user id ${userID} connected!`);
-    // socket.disconnect();
-  }
-  console.log(`client with id: ${id} connected!`);
-
-  socket.on("disconnect", (reason) => {
-    console.log(`client with id: ${id} disconnected, reason:`, reason);
-    cache.sockets.delete(socket);
-  });
-
-});
-
-// handle abnormal disconnects
-io.engine.on("connection_error", (err) => {
-  // console.log(err.req, 'error request object');	     // the request object
-  console.log(err.code, 'the error code');     // the error code, for example 1
-  console.log(err.message, 'the error message');  // the error message, for example "Session ID unknown"
-  console.log(err.context, 'some additional error context');  // some additional error context
-});
-/* end socket.io */
-
 // Serve static files
 app.use(express.static('build'));
+
+// Start the syncOrders loop
+robot.startSync();
+
+/* socket.io */
+setupSocketIO(io);
 
 // App Set //
 const PORT = process.env.PORT || 5000;

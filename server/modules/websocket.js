@@ -6,6 +6,7 @@ const fs = require('fs');
 const cache = require('./cache');
 const databaseClient = require('./databaseClient');
 const coinbaseClient = require('./coinbaseClient');
+const { wrap, sessionMiddleware } = require('./session-middleware');
 
 function startWebsocket(userID) {
   const userAPI = cache.getAPI(userID)
@@ -392,4 +393,44 @@ function getOpenOrders(userID) {
   })
 }
 
-module.exports = { startWebsocket, getOpenOrders };
+function setupSocketIO(io) {
+  console.log('setting up socket.io');
+
+  // auth
+  // use wrap to wrap socket with express middleware
+  io.use(wrap(sessionMiddleware));
+
+  // handle new connections
+  io.on('connection', (socket) => {
+    let id = socket.id;
+    // console.log(socket.request.session.passport?.user,'user id');
+    const userID = socket.request.session.passport?.user;
+    socket.userID = userID
+    cache.sockets.add(socket)
+    // cache.sockets.add(3)
+
+    console.log(`client with id: ${id} connected!`);
+    if (!userID) {
+      console.log('client is not logged in');
+    } else {
+      console.log(`user id ${userID} is logged in!`);
+    }
+
+    // handle disconnect
+    socket.on("disconnect", (reason) => {
+      console.log(`client with id: ${id} disconnected, reason:`, reason);
+      cache.sockets.delete(socket);
+    });
+
+  });
+
+  // handle abnormal disconnects
+  io.engine.on("connection_error", (err) => {
+    // console.log(err.req, 'error request object');	     // the request object
+    console.log(err.code, 'the error code');     // the error code, for example 1
+    console.log(err.message, 'the error message');  // the error message, for example "Session ID unknown"
+    console.log(err.context, 'some additional error context');  // some additional error context
+  });
+}
+
+module.exports = { startWebsocket, getOpenOrders, setupSocketIO };
