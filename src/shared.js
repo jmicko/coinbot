@@ -27,8 +27,8 @@ function autoSetup(user, options) {
   for (let i = 0; !stop; i++) {
     if (i === 0 && skipFirst) {
       console.log('need to skip first one!');
-      // increment price, but don't remove from funds
-
+      // increment buy price, but don't remove cost from funds
+      incrementBuyPrice()
       // skip the rest of the iteration and continue the loop
       continue;
     }
@@ -54,14 +54,10 @@ function autoSetup(user, options) {
       ? original_sell_price
       : buyPrice
 
-
     // if the base_size is in BTC, it will never change. 
-    let actualSize = base_size;
-    // If it is in USD, need to convert
-    if (sizeType === 'USD') {
-      // use the BUY price and the base_size to get the real base_size
-      actualSize = Number(Math.floor((base_size / buyPrice) * 100000000)) / 100000000;
-    }
+    let actualSize = (sizeType === 'USD')
+      ? Number(Math.floor((base_size / buyPrice) * 100000000)) / 100000000
+      : base_size
 
     // count up how much BTC will need to be purchased to reserve for all the sell orders
     if (side === 'SELL') {
@@ -69,14 +65,9 @@ function autoSetup(user, options) {
     }
 
     // calculate the previous fees on sell orders
-    let prevFees = () => {
-      if (side === 'BUY') {
-        return 0
-      } else {
-        return buyPrice * actualSize * user.taker_fee
-      }
-    }
-
+    const previous_total_fees = (side === 'BUY')
+      ? 0
+      : buyPrice * actualSize * user.taker_fee
 
     // CREATE ONE ORDER
     const singleOrder = {
@@ -85,7 +76,8 @@ function autoSetup(user, options) {
       side: side,
       limit_price: limit_price,
       base_size: actualSize,
-      total_fees: prevFees(),
+      previous_total_fees: previous_total_fees,
+      total_fees: 0,
       product_id: options.product_id,
       stp: 'cn',
       userID: user.id,
@@ -96,33 +88,19 @@ function autoSetup(user, options) {
     orderList.push(singleOrder);
 
     // SETUP FOR NEXT LOOP - do some math to figure out next iteration, and if we should keep looping
+
     // subtract the buy base_size USD from the available funds
     // if sizeType is BTC, then we need to convert
     if (sizeType === 'BTC') {
       let USDSize = base_size * buyPrice;
       availableFunds -= USDSize;
     } else {
-      console.log('current funds', availableFunds);
+      // console.log('current funds', availableFunds);
       availableFunds -= base_size;
     }
 
     // increment the buy price
-    // can have either percentage or dollar amount increment
-    if (incrementType === 'dollars') {
-      // if incrementing by dollar amount
-      if (loopDirection === 'up') {
-        buyPrice += increment;
-      } else {
-        buyPrice -= increment;
-      }
-    } else {
-      // if incrementing by percentage
-      if (loopDirection === 'up') {
-        buyPrice = buyPrice * (1 + (increment / 100));
-      } else {
-        buyPrice = buyPrice / (1 + (increment / 100));
-      }
-    }
+    incrementBuyPrice();
 
 
     // STOP TRADING IF...
@@ -146,6 +124,21 @@ function autoSetup(user, options) {
   return {
     orderList: orderList,
     btcToBuy: btcToBuy,
+  }
+
+  function incrementBuyPrice() {
+    // can have either percentage or dollar amount increment
+    if (incrementType === 'dollars') {
+      // if incrementing by dollar amount
+      (loopDirection === 'up')
+        ? buyPrice += increment
+        : buyPrice -= increment;
+    } else {
+      // if incrementing by percentage
+      (loopDirection === 'up')
+        ? buyPrice = buyPrice * (1 + (increment / 100))
+        : buyPrice = buyPrice / (1 + (increment / 100));
+    }
   }
 }
 

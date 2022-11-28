@@ -93,7 +93,8 @@ function AutoSetup(props) {
     tradePairRatio,
     base_size,
     sizeType,
-    transactionProduct,]
+    transactionProduct,
+    skipFirst]
   )
 
   useEffect(() => {
