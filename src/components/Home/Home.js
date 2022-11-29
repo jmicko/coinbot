@@ -43,9 +43,46 @@ function Home() {
 
   return (
     <div className={`Home ${user.theme}`}>
+      {/* {JSON.stringify(mobilePage)} */}
       <Menu clickSettings={clickSettings} />
-      {JSON.stringify(mobilePage)}
+
+
       {
+        // on mobile?
+        width < 800
+          // show mobile page
+          // which mobile page?
+          ? mobilePage === 'newPair'
+            // is the user active
+            ? user.active
+              ? <Trade setTradeType={setTradeType} tradeType={tradeType} />
+              : <NotActive />
+            : mobilePage === 'tradeList'
+              // is the user approved
+              ? user.approved
+                ? <TradeList isAutoScroll={isAutoScroll} />
+                : <NotApproved />
+              : mobilePage === 'messages' && <Messages />
+
+          // show all pages
+          : <>
+            {user.active
+              ? <Trade setTradeType={setTradeType} tradeType={tradeType} />
+              : <NotActive />}
+            {user.approved
+              ? <TradeList isAutoScroll={isAutoScroll} />
+              : <NotApproved />}
+            <Messages />
+          </>
+        // 
+
+      }
+
+
+
+
+
+      {/* {
         user.active
           ? width < 800 && mobilePage === 'newPair'
             ? <Trade setTradeType={setTradeType} tradeType={tradeType} />
@@ -67,7 +104,7 @@ function Home() {
 
       {width < 800 && mobilePage === 'messages'
         ? <Messages />
-        : width > 800 && <Messages />}
+        : width > 800 && <Messages />} */}
 
       <Status
         isAutoScroll={isAutoScroll}

@@ -11,6 +11,10 @@
         /* overflow-y: auto; */
         display      : block;
         max-height: 80vh;
+
+        display    : block;
+        grid-column: 2;
+        grid-row   : 5;
     }
 
 }

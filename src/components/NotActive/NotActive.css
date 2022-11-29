@@ -81,7 +81,7 @@ input {
 }
 
 .api.error-box{
-  margin: 0 5px;
+  margin: 0 5px 1rem;
 }
 
 .flex-api{
