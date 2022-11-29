@@ -162,7 +162,7 @@ function* factoryReset() {
 
 function* test() {
   try {
-    const response = yield axios.get(`/api/settings/test`);
+    const response = yield axios.get(`/api/settings/test/cheese`);
     console.log(response, '<- response from test');
   } catch (error) {
     console.log('post account route factoryReset has failed', error);

@@ -48,13 +48,9 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
     req.user.botMaintenance = botSettings.maintenance;
 
     const URI = cache.getAPI(req.user.id).API_URI;
-    sandbox = () => {
-      if (URI === 'https://api-public.sandbox.exchange.coinbase.com') {
-        return true;
-      }
-      return false;
-    }
-    req.user.sandbox = sandbox();
+    req.user.sandbox = (URI === 'https://api-public.sandbox.exchange.coinbase.com')
+      ? true
+      : false
 
   } catch (err) {
     console.log(err, 'error in user route');
@@ -226,7 +222,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
   } catch (err) {
     console.log(err, 'error in delete user route');
     res.sendStatus(500);
-  } finally{
+  } finally {
     cache.refreshUser(userToDelete)
   }
 });

@@ -12,13 +12,13 @@ const { getOpenOrders } = require('../modules/websocket');
 /**
  * GET route for testing functions in development
  */
-router.get('/test', rejectUnauthenticated, async (req, res) => {
+router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   const userID = user.id
   // only admin can do this
   if (user.admin) {
     try {
-      console.log('test route hit');
+      console.log(req.params, 'test route hit');
 
 
       // const tradeDetails = {
@@ -63,8 +63,8 @@ router.get('/test', rejectUnauthenticated, async (req, res) => {
         }
       }
       // const response = await databaseClient.updateTrade()
-      const response = await getOpenOrders(userID)
-      console.log(response, 'response from test');
+      // const response = await getOpenOrders(userID)
+      // console.log(response, 'response from test');
 
 
 

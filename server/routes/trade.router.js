@@ -298,41 +298,50 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
 /**
 * DELETE route
 */
-router.delete('/', rejectUnauthenticated, async (req, res) => {
+router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
   // DELETE route code here
   const userID = req.user.id;
-  const orderId = req.body.order_id;
-  console.log('in the server trade DELETE route', orderId);
+  const orderId = req.params.order_id;
 
   cache.setCancel(userID, orderId);
   // mark as canceled in db
   try {
-    const queryText = `UPDATE "limit_orders" SET "will_cancel" = true WHERE "order_id"=$1 RETURNING *;`;
-    const result = await pool.query(queryText, [orderId]);
-    const order = result.rows[0];
+    let order = await databaseClient.updateTrade({
+      will_cancel: true,
+      order_id: orderId
+    })
     // if it is a reorder, there is no reason to cancel on CB
     if (!order.reorder) {
       // send cancelOrder to cb
       await coinbaseClient.cancelOrderNew(userID, [orderId]);
     }
     res.sendStatus(200)
+    cache.storeMessage(userID, {
+      messageText: 'Successfully deleted trade-pair'
+    })
   } catch (err) {
-    if (err.data?.message) {
+    let errorText = 'FAILURE deleting trade-pair!';
+    let errorData = err?.data;
+    if (err?.data?.message) {
       console.log(err.data.message, 'error message, trade router DELETE');
-      // orders that have been canceled are deleted from coinbase and return a 404.
-      // error handling should delete them from db and not worry about coinbase since there is no other way to delete
-      // but also send one last delete message to Coinbase just in case it finds it again, but with no error checking
     }
     if (err.response?.status === 404) {
       databaseClient.deleteTrade(orderId);
       console.log('order not found in account', orderId);
+      errorText = 'Order not found on coinbase, deleting from Coinbot.';
       res.sendStatus(404)
     } else if (err.response?.status === 400) {
       console.log('bad request', err.response?.data);
+      errorText = 'Bad request. Please try again.';
+      res.sendStatus(400)
     } else {
       console.log(err, 'something failed in the delete trade route');
       res.sendStatus(500)
     }
+    cache.storeError(userID, {
+      errorData: errorData,
+      errorText: errorText
+    })
   };
 });
 

@@ -38,7 +38,7 @@ function* autoSetup(action) {
 
 function* deleteTrade(action) {
   try {
-    yield axios.delete(`/api/trade/`, { data: action.payload });
+    yield axios.delete(`/api/trade/${action.payload.order_id}`);
   } catch (error) {
     console.log('DELETE order route has failed', error)
     if (error.response.status === 403) {

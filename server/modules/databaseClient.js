@@ -97,8 +97,7 @@ const storeTrade = (newOrder, originalDetails, flipped_at) => {
 }
 
 // hahahahahaha may you never have to change this
-// stores the details of a trade-pair. The originalDetails are details that stay with a trade-pair when it is flipped
-// flipped_at is the "Time" shown on the interface. It has no other function
+// update a trade by any set of parameters
 const updateTrade = (order) => {
   return new Promise(async (resolve, reject) => {
     // console.log(order, 'order to build string from');
@@ -106,7 +105,9 @@ const updateTrade = (order) => {
     // console.log('NEW ORDER IN STORETRADE', newOrder);
     // add new order to the database
     let first = true;
-    let sqlText = `UPDATE "limit_orders" SET (`;
+    let singleSqlText = `UPDATE "limit_orders" SET `;
+    let multiSqlText = `UPDATE "limit_orders" SET (`;
+    let sqlText = ``;
     if (order.original_buy_price) {
       first ? first = false : sqlText += ', '
       order.original_buy_price && (sqlText += `"original_buy_price"`) && columns.push(order.original_buy_price);
@@ -123,9 +124,9 @@ const updateTrade = (order) => {
       first ? first = false : sqlText += ', '
       order.flipped_at && (sqlText += `"flipped_at"`) && columns.push(order.flipped_at);
     }
-    if (order.reorder) {
+    if (order.reorder != null) {
       first ? first = false : sqlText += ', '
-      order.reorder && (sqlText += `"reorder"`) && columns.push(order.reorder);
+      order.reorder != null && (sqlText += `"reorder"`) && columns.push(order.reorder);
     }
     if (order.product_id) {
       first ? first = false : sqlText += ', '
@@ -149,6 +150,7 @@ const updateTrade = (order) => {
     }
     if (order.post_only != null || order.order_configuration?.limit_limit_gtc?.post_only != null) {
       first ? first = false : sqlText += ', '
+      
       order.post_only != null
         ? (sqlText += `"post_only"`) && columns.push(order.post_only)
         : order.order_configuration?.limit_limit_gtc?.post_only != null && (sqlText += `"post_only"`) && columns.push(order.order_configuration?.limit_limit_gtc?.post_only);
@@ -201,13 +203,17 @@ const updateTrade = (order) => {
       first ? first = false : sqlText += ', '
       order.filled_value && (sqlText += `"filled_value"`) && columns.push(order.filled_value);
     }
-    if (order.pending_cancel) {
+    if (order.pending_cancel != null) {
       first ? first = false : sqlText += ', '
-      order.pending_cancel && (sqlText += `"pending_cancel"`) && columns.push(order.pending_cancel);
+      order.pending_cancel != null && (sqlText += `"pending_cancel"`) && columns.push(order.pending_cancel);
     }
-    if (order.size_in_quote) {
+    if (order.will_cancel != null) {
       first ? first = false : sqlText += ', '
-      order.size_in_quote && (sqlText += `"size_in_quote"`) && columns.push(order.size_in_quote);
+      order.will_cancel != null && (sqlText += `"will_cancel"`) && columns.push(order.will_cancel);
+    }
+    if (order.size_in_quote != null) {
+      first ? first = false : sqlText += ', '
+      order.size_in_quote != null && (sqlText += `"size_in_quote"`) && columns.push(order.size_in_quote);
     }
     if (order.total_fees) {
       first ? first = false : sqlText += ', '
@@ -217,9 +223,9 @@ const updateTrade = (order) => {
       first ? first = false : sqlText += ', '
       order.previous_total_fees && (sqlText += `"previous_total_fees"`) && columns.push(order.previous_total_fees);
     }
-    if (order.size_inclusive_of_fees) {
+    if (order.size_inclusive_of_fees != null) {
       first ? first = false : sqlText += ', '
-      order.size_inclusive_of_fees && (sqlText += `"size_inclusive_of_fees"`) && columns.push(order.size_inclusive_of_fees);
+      order.size_inclusive_of_fees != null && (sqlText += `"size_inclusive_of_fees"`) && columns.push(order.size_inclusive_of_fees);
     }
     if (order.total_value_after_fees) {
       first ? first = false : sqlText += ', '
@@ -237,9 +243,9 @@ const updateTrade = (order) => {
       first ? first = false : sqlText += ', '
       order.reject_reason && (sqlText += `"reject_reason"`) && columns.push(order.reject_reason);
     }
-    if (order.settled) {
+    if (order.settled != null) {
       first ? first = false : sqlText += ', '
-      order.settled && (sqlText += `"settled"`) && columns.push(order.settled);
+      order.settled != null && (sqlText += `"settled"`) && columns.push(order.settled);
     }
     if (order.product_type) {
       first ? first = false : sqlText += ', '
@@ -253,25 +259,36 @@ const updateTrade = (order) => {
       first ? first = false : sqlText += ', '
       order.cancel_message && (sqlText += `"cancel_message"`) && columns.push(order.cancel_message);
     }
+    // console.log(columns.length, 'columns');
 
-    sqlText += `) = (`;
+    finalSqlText = (columns.length === 1)
+      ? singleSqlText + sqlText + ` = `
+      : multiSqlText + sqlText + `) = (`
 
     first = true;
     // now loop through array of values and keep building the string
     for (let i = 0; i < columns.length; i++) {
       const value = columns[i];
-      first ? first = false : sqlText += ', '
-      sqlText += `$${i + 1}`
+      first ? first = false : finalSqlText += ', '
+      finalSqlText += `$${i + 1}`
     }
-    sqlText += `)\nWHERE "order_id" = $${columns.length + 1};`;
+    finalSqlText += (columns.length === 1)
+    ? `\nWHERE "order_id" = $${columns.length + 1}\nRETURNING *;`
+    : `)\nWHERE "order_id" = $${columns.length + 1}\nRETURNING *;`;
+
     columns.push(order.order_id)
 
-    // console.log(sqlText, 'sqlText');
+    // console.log(finalSqlText, 'finalSqlText');
     // console.log(columns, 'columns');
 
+
+    if (columns.length === 2) {
+
+    }
+
     try {
-      const results = await pool.query(sqlText, columns)
-      resolve(results);
+      const results = await pool.query(finalSqlText, columns)
+      resolve(results.rows[0]);
       resolve();
     } catch (err) {
       reject(err);
@@ -342,26 +359,6 @@ const getLimitedUnsettledTrades = (userID, limit) => {
   });
 }
 
-// // gets all open orders in db based on a specified limit. 
-// // The limit is for each side, so the results will potentially double that
-// const getLimitedTrades = (userID, limit) => {
-//   return new Promise(async (resolve, reject) => {
-//     // get limit of buys
-//     // get limit of sells
-//     try {
-
-//       let sqlText = `(SELECT * FROM "orders" WHERE "side" = 'SELL' AND "flipped" = false AND "will_cancel" = false AND "userID" = $1 ORDER BY "price" ASC LIMIT $2)
-//       UNION
-//       (SELECT * FROM "orders" WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "price" DESC LIMIT $2)
-//       ORDER BY "price" DESC;`;
-//       const results = await pool.query(sqlText, [userID, limit]);
-
-//       resolve(results.rows);
-//     } catch (err) {
-//       reject(err);
-//     }
-//   });
-// }
 
 // get a number of open orders in DB based on side. This will return them whether or not they are synced with CBP
 // can be limited by how many should be synced, or how many should be shown on the interface 
@@ -893,9 +890,7 @@ async function markAsFlipped(order_id) {
 const databaseClient = {
   storeTrade: storeTrade,
   updateTrade: updateTrade,
-  // storeReorderTrade: storeReorderTrade,
   importTrade: importTrade,
-  // getLimitedTrades: getLimitedTrades,
   getLimitedUnsettledTrades: getLimitedUnsettledTrades,
   getUnsettledTrades: getUnsettledTrades,
   getSettledTrades: getSettledTrades,
@@ -904,7 +899,6 @@ const databaseClient = {
   getTradesByIDs: getTradesByIDs,
   getUnsettledTradesByIDs: getUnsettledTradesByIDs,
   getSpentUSD: getSpentUSD,
-  // getAllSpentUSD: getAllSpentUSD,
   getSpentBTC: getSpentBTC,
   getReorders: getReorders,
   deleteTrade: deleteTrade,
