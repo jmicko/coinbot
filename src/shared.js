@@ -2,30 +2,44 @@
 function autoSetup(user, options) {
 
   // create an array to hold the new trades to put in
-  const orderList = []; 
+  const orderList = [];
 
   // SHORTEN PARAMS for better readability
   let availableFunds = options.availableFunds;
   let base_size = options.base_size;
   let startingValue = options.startingValue;
-  let buyPrice = startingValue;
   let endingValue = options.endingValue;
+  let buyPrice = startingValue;
   let tradingPrice = options.tradingPrice;
   let increment = options.increment;
   let incrementType = options.incrementType;
   let trade_pair_ratio = options.trade_pair_ratio;
   let sizeType = options.sizeType;
   let skipFirst = options.skipFirst;
-  let loopDirection = (endingValue - startingValue < 0) ? "down" : "up"
+  let loopDirection = (endingValue - startingValue < 0) ? "down" : "up";
 
   let btcToBuy = 0;
+
+  // prevent infinite loops and bad orders
+  if (
+    (startingValue === 0 && !skipFirst) ||
+    startingValue <= 0 ||
+    base_size <= 0 ||
+    increment <= 0 ||
+    trade_pair_ratio <= 0
+  ) {
+    return {
+      orderList: [],
+      btcToBuy: (btcToBuy / 100000000),
+    }
+  }
 
   // loop until one of the stop triggers is hit
   let stop = false;
 
   for (let i = 0; !stop; i++) {
     if (i === 0 && skipFirst) {
-      console.log('need to skip first one!');
+      // console.log('need to skip first one!');
       // increment buy price, but don't remove cost from funds
       incrementBuyPrice();
       // check if need to stop
@@ -119,7 +133,7 @@ function autoSetup(user, options) {
 
   function stopChecker() {
     if (availableFunds < 0 && !options.ignoreFunds) {
-      console.log('ran out of funds!', availableFunds);
+      // console.log('ran out of funds!', availableFunds);
       stop = true;
     }
     // console.log('available funds is', availableFunds);
@@ -127,6 +141,8 @@ function autoSetup(user, options) {
     if (loopDirection === 'up' && buyPrice > endingValue) {
       stop = true;
     } else if (loopDirection === 'down' && buyPrice < endingValue) {
+      stop = true;
+    } else if (loopDirection === 'down' && buyPrice <= 0) {
       stop = true;
     }
   }

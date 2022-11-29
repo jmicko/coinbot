@@ -76,8 +76,13 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       }
       // store the fake order in the db. It will be ordered later in the reorder function
       await databaseClient.storeTrade(fakeOrder, tradeDetails, fakeOrder.created_time);
-      console.log(fakeOrder, 'trade saved to db');
+      // console.log(fakeOrder, 'trade saved to db');
       await robot.updateFunds(userID);
+      // tell DOM to update orders
+      cache.storeMessage(Number(user.id), {
+        messageText: `New trade-pair created!`,
+        orderUpdate: true
+      });
       // send OK status
       res.sendStatus(200);
     } catch (err) {
@@ -230,6 +235,12 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
         await databaseClient.storeTrade(fakeOrder, tradeDetails, fakeOrder.created_time);
         // await databaseClient.storeTrade(order, order, time);
       }
+
+      // tell DOM to update orders
+      cache.storeMessage(Number(user.id), {
+        messageText: `Auto setup complete!`,
+        orderUpdate: true
+      });
 
 
 

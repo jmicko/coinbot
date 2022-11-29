@@ -100,7 +100,7 @@ function AutoSetup(props) {
         return <SingleTrade key={order.order_id} order={order} preview={true} />
       }))
 
-      console.log(setup);
+      // console.log(setup);
 
     }, [availableFundsUSD,
     socket.tickers.btc.price,
@@ -117,7 +117,7 @@ function AutoSetup(props) {
   )
 
   useEffect(() => {
-    if (base_size) {
+    if (base_size !== null) {
       calculateResults();
     }
   }, [startingValue, endingValue, increment, base_size, sizeType, calculateResults])
@@ -209,6 +209,8 @@ function AutoSetup(props) {
               onChange={(event) => setStartingValue(Number(event.target.value))}
             />
           </label>
+          {(startingValue === 0 && !skipFirst) && <p className='red'>Starting value cannot be zero unless you skip first!</p>}
+          {(startingValue < 0 && !skipFirst) && <p className='red'>Starting value cannot be negative!</p>}
           <br />
 
           {/* SKIP FIRST */}
