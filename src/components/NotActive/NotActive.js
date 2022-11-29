@@ -11,7 +11,7 @@ function NotActive() {
 
   const [key, setKey] = useState('');
   const [secret, setSecret] = useState('');
-  const [URI, setURI] = useState('real');
+  // const [URI, setURI] = useState('real');
   const [saving, setSaving] = useState(false);
   const [showPermissions, setShowPermissions] = useState(false);
 
@@ -24,7 +24,8 @@ function NotActive() {
       payload: {
         key: key,
         secret: secret,
-        URI: URI
+        // URI: URI
+        URI: 'real'
       }
     });
     // clear the form
