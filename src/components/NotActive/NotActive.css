@@ -4,7 +4,7 @@
   display    : block;
   grid-column: 2;
   grid-row   : 3/5;
-  width: 300px;
+  width: 25rem;
 }
 
 @media (max-width: 800px) {
@@ -16,14 +16,18 @@
 
 }
 
+.title.not-active{
+  /* color: aliceblue; */
+  /* width: fit-content; */
+}
 
 /* === FORM === */
 
-.new-trade-form {
+/* .new-trade-form { */
   /* display           : flex;
     flex-direction    : column; */
-  margin: .4rem;
-}
+  /* margin: .4rem; */
+/* } */
 
 
 /* === INPUTS === */
@@ -37,13 +41,13 @@ input {
   /* margin       : 0% .2%; */
 }
 
-.number-inputs {
+/* .number-inputs { */
   /* margin: .4rem 0 .4rem auto; */
-  display       : flex;
-  flex-direction: column;
-  margin        : .4rem auto;
+  /* display       : flex; */
+  /* flex-direction: column; */
+  /* margin        : .4rem auto; */
 
-}
+/* } */
 
 /* === BUTTONS === */
 
@@ -78,4 +82,24 @@ input {
 
 .api.error-box{
   margin: 0 5px;
+}
+
+.flex-api{
+  display: flex;
+  flex-direction: column;
+}
+
+.API{
+  /* float: right; */
+  /* width: 300px; */
+  /* width: 20rem; */
+}
+
+.required-permissions-image{
+  /* display: block; */
+  width: 100%;
+  /* margin: auto; */
+  /* padding: 1rem; */
+  /* height: 50vh; */
+  /* float: left; */
 }

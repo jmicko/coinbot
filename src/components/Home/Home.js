@@ -44,6 +44,7 @@ function Home() {
   return (
     <div className={`Home ${user.theme}`}>
       <Menu clickSettings={clickSettings} />
+      {JSON.stringify(mobilePage)}
       {
         user.active
           ? width < 800 && mobilePage === 'newPair'
