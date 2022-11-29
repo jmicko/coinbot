@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import './NotActive.css';
 
@@ -6,13 +6,17 @@ import './NotActive.css';
 function NotActive() {
   const dispatch = useDispatch();
   const user = useSelector((store) => store.accountReducer.userReducer);
+  const errors = useSelector((store) => store.errorsReducer.apiMessage);
 
   const [key, setKey] = useState('');
   const [secret, setSecret] = useState('');
   const [URI, setURI] = useState('real');
+  const [saving, setSaving] = useState(false);
 
   function submitApi(event) {
     event.preventDefault();
+    dispatch({ type: 'CLEAR_API_ERROR' })
+    setSaving(true)
     dispatch({
       type: 'STORE_API',
       payload: {
@@ -21,21 +25,25 @@ function NotActive() {
         URI: URI
       }
     });
-
-    // clear the form
-    // setKey('');
-    // setSecret('');
   }
+
+  useEffect(() => {
+    if (errors) {
+      setSaving(false)
+    }
+  }, [errors])
+
 
   return (
     <div className="NotActive" >
+      {/* {errors && JSON.stringify(errors)} */}
       <div className="scrollable boxed">
         <h3 className={`title ${user.theme}`}>You are not active!</h3>
         <p>
-          You must store your API details from Coinbase Pro before you can trade. <br />
-          - You can create an API key by clicking your name on Coinbase Pro, and clicking <strong>API</strong>. <br />
-          - Then click <strong>+ New API Key</strong>, and go through the process. <br />
-          - Enter the details below.
+          You must store your API details from Coinbase Advanced Trading before you can trade. <br />
+          - You can create an API key <a href='https://www.coinbase.com/settings/api' target="_blank">here</a> <br />
+          - Click <strong>New API Key</strong>, and follow the prompts. For accounts, select "all"<br />
+          - You will be given a Key and Secret. Enter them below.
         </p>
 
 
@@ -43,7 +51,7 @@ function NotActive() {
         <div className="API">
           <div className="divider" />
           <h4>API</h4>
-          <p>Paste your API key, and secret from Coinbase here</p>
+          <p>Paste your API key and secret from <a href='https://www.coinbase.com/settings/api' target="_blank">Coinbase</a> here</p>
           {/* form for entering api details */}
           <form className="api-form" onSubmit={submitApi} >
             <label htmlFor="key">
@@ -76,7 +84,15 @@ function NotActive() {
             (click to change)
             <br />
             <br />
-            <input className={`btn-store-api btn-blue medium ${user.theme}`} type="submit" name="submit" value="Store API details" />
+            {errors &&
+              <div className='api error-box notched'>
+                <p>{errors}</p>
+              </div>
+            }
+            {saving
+              ? <p>Saving...</p>
+              : <input className={`btn-store-api btn-blue medium ${user.theme}`} type="submit" name="submit" value="Store API details" />
+            }
           </form>
         </div>
       </div>

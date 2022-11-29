@@ -75,3 +75,7 @@ input {
   margin   : 1rem auto;
   font-size: larger;
 }
+
+.api.error-box{
+  margin: 0 5px;
+}

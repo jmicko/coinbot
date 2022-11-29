@@ -32,6 +32,21 @@ const registrationMessage = (state = '', action) => {
   }
 };
 
+// registrationMessage holds the string that will display
+// on the registration screen if there's an error
+const apiMessage = (state = '', action) => {
+  switch (action.type) {
+    case 'CLEAR_API_ERROR':
+      return '';
+    case 'API_INPUT_ERROR':
+      return 'Please paste your API details from Coinbase!';
+    case 'REGISTRATION_FAILED':
+      return "Oops! That didn't work. Did you copy/paste the API details from Coinbase exactly?";
+    default:
+      return state;
+  }
+};
+
 const botErrors = (state = [], action) => {
   switch (action.type) {
     case 'CLEAR_BOT_ERRORS':
@@ -49,5 +64,6 @@ const botErrors = (state = [], action) => {
 export default combineReducers({
   loginMessage,
   registrationMessage,
+  apiMessage,
   botErrors,
 });

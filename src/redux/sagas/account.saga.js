@@ -50,6 +50,9 @@ function* storeApi(action) {
     if (error.response.status === 403) {
       yield put({ type: 'UNSET_USER' });
     }
+    if (error.response.status === 500) {
+      yield put({ type: 'REGISTRATION_FAILED' });
+    }
   }
 }
 
