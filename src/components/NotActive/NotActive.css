@@ -4,11 +4,24 @@
   display    : block;
   grid-column: 2;
   grid-row   : 3/5;
-  width: 25rem;
+  width      : 25rem;
 }
 
 @media (max-width: 800px) {
   .NotActive {
+    /* display    : block;
+    grid-column: 2;
+    grid-row   : 5; */
+    width      : unset;
+
+    /* max-height: 80vh; */
+
+    grid-row     : 4;
+    grid-column  : 2 / 3;
+    /* overflow-y: auto; */
+    display      : block;
+    /* max-height: 50vh; */
+
     display    : block;
     grid-column: 2;
     grid-row   : 5;
@@ -16,47 +29,27 @@
 
 }
 
-.title.not-active{
-  /* color: aliceblue; */
-  /* width: fit-content; */
-}
-
 /* === FORM === */
 
-/* .new-trade-form { */
-  /* display           : flex;
-    flex-direction    : column; */
-  /* margin: .4rem; */
-/* } */
+.api-form {
+  margin: 5px;
+}
 
 
 /* === INPUTS === */
 
 input {
-  /* background      : rgb(209, 202, 192); */
-  /* color        : rgb(209, 202, 192); */
-  /* background-color: rgb(209, 202, 192); */
-  font-family     : inherit;
-  /* width        : 100%; */
-  /* margin       : 0% .2%; */
+  font-family: inherit;
 }
-
-/* .number-inputs { */
-  /* margin: .4rem 0 .4rem auto; */
-  /* display       : flex; */
-  /* flex-direction: column; */
-  /* margin        : .4rem auto; */
-
-/* } */
 
 /* === BUTTONS === */
 
-.btn-store-api{
+.btn-store-api {
   font-size: medium;
-  margin: .2rem .6rem 2rem;
+  margin   : 0 0 2rem;
 }
 
-.btn-sandbox-api{
+.btn-sandbox-api {
   margin: .2rem .6rem;
 }
 
@@ -80,26 +73,28 @@ input {
   font-size: larger;
 }
 
-.api.error-box{
+.api.error-box {
   margin: 0 5px 1rem;
 }
 
-.flex-api{
-  display: flex;
+.flex-api {
+  display       : flex;
   flex-direction: column;
 }
 
-.API{
-  /* float: right; */
-  /* width: 300px; */
-  /* width: 20rem; */
+
+.required-permissions-image {
+  width: 100%;
 }
 
-.required-permissions-image{
-  /* display: block; */
-  width: 100%;
-  /* margin: auto; */
-  /* padding: 1rem; */
-  /* height: 50vh; */
-  /* float: left; */
+.API p,
+.API .divider.short {
+  margin: 5px;
+  /* width: unset; */
+}
+
+.API .divider.short {
+  /* background-color: red; */
+  /* margin: 5px; */
+  width: unset;
 }

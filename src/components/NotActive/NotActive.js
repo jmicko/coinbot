@@ -42,7 +42,7 @@ function NotActive() {
   return (
     <div className="NotActive" >
       {/* {errors && JSON.stringify(errors)} */}
-      <div className="scrollable boxed">
+      <div className="NotActive scrollable boxed">
         {/* <div className='flex-api'> */}
 
 
@@ -60,11 +60,12 @@ function NotActive() {
           </p>
           {showPermissions && <img className="required-permissions-image" src={permissions} alt="required-permissions-image" />}
 
-          <div className="divider" />
-          <h4>API</h4>
-          <p>Paste your API key and secret from <a href='https://www.coinbase.com/settings/api' target="_blank">Coinbase</a> here</p>
+          <div className="divider short" />
+
           {/* form for entering api details */}
           <form className="api-form" onSubmit={submitApi} >
+            <h4>API</h4>
+            <p>Paste your API key and secret from <a href='https://www.coinbase.com/settings/api' target="_blank">Coinbase</a> here</p>
             <label htmlFor="key">
               API Key:
             </label><br />
@@ -85,15 +86,15 @@ function NotActive() {
               required
               onChange={(event) => setSecret(event.target.value)}
             /><br />
-            <label htmlFor="URI">
+            {/* <label htmlFor="URI">
               Real money or sandbox?
             </label><br />
             {(URI === "real")
               ? <button className={`btn-green btn-sandbox-api medium ${user.theme}`} onClick={(event) => { event.preventDefault(); setURI("sandbox") }}>Real Money API</button>
               : <button className={`btn-green btn-sandbox-api medium ${user.theme}`} onClick={(event) => { event.preventDefault(); setURI("real") }}>Sandbox API</button>
             }
-            (click to change)
-            <br />
+            (click to change) */}
+            {/* <br /> */}
             <br />
             {errors &&
               <div className='api error-box notched'>
