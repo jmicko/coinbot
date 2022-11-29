@@ -6,6 +6,7 @@ function autoSetup(user, options) {
 
   // SHORTEN PARAMS for better readability
   let availableFunds = options.availableFunds;
+  let cost = 0;
   let base_size = options.base_size;
   let startingValue = options.startingValue;
   let endingValue = options.endingValue;
@@ -29,6 +30,7 @@ function autoSetup(user, options) {
     trade_pair_ratio <= 0
   ) {
     return {
+      cost: cost,
       orderList: [],
       btcToBuy: (btcToBuy / 100000000),
     }
@@ -46,6 +48,7 @@ function autoSetup(user, options) {
       stopChecker();
       if (stop) {
         return {
+          cost: cost,
           orderList: [],
           btcToBuy: (btcToBuy / 100000000),
         }
@@ -110,9 +113,11 @@ function autoSetup(user, options) {
     if (sizeType === 'BTC') {
       let USDSize = base_size * buyPrice;
       availableFunds -= USDSize;
+      cost += USDSize;
     } else {
       // console.log('current funds', availableFunds);
       availableFunds -= base_size;
+      cost += base_size;
     }
 
     // increment the buy price
@@ -122,17 +127,23 @@ function autoSetup(user, options) {
     // STOP TRADING IF...
 
     // stop if run out of funds unless user specifies to ignore that
-    // console.log('ignore funds:', options.ignoreFunds);
     stopChecker();
   }
 
   return {
+    cost: cost,
     orderList: orderList,
     btcToBuy: (btcToBuy / 100000000),
   }
 
   function stopChecker() {
-    if (availableFunds < 0 && !options.ignoreFunds) {
+    let USDSize = base_size * buyPrice;
+    // calc next round funds
+    let nextFunds = (sizeType === 'BTC')
+      ? availableFunds - USDSize
+      : availableFunds - base_size
+    // console.log(((availableFunds - nextFunds) < 0) && !options.ignoreFunds, nextFunds, 'next funds', availableFunds, !options.ignoreFunds);
+    if (((nextFunds) < 0) && !options.ignoreFunds) {
       // console.log('ran out of funds!', availableFunds);
       stop = true;
     }

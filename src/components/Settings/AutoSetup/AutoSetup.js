@@ -22,6 +22,7 @@ function AutoSetup(props) {
   const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
   const [tradePairRatio, setTradePairRatio] = useState(1.1);
   const [setupResults, setSetupResults] = useState(1);
+  const [cost, setCost] = useState(0);
   const [autoTradeStarted, setAutoTradeStarted] = useState(false);
   const [totalTrades, setTotalTrades] = useState(false);
 
@@ -40,17 +41,6 @@ function AutoSetup(props) {
     if (sizeType === "USD") {
       // setSizeType("BTC");
       setSize(0.001);
-    } else {
-      // setSizeType("USD");
-      setSize(10);
-    }
-  }
-
-  function changeSizeType(event) {
-    event.preventDefault();
-    if (sizeType === "USD") {
-      // setSizeType("BTC");
-      setSize(0.01);
     } else {
       // setSizeType("USD");
       setSize(10);
@@ -85,6 +75,7 @@ function AutoSetup(props) {
 
       let setup = autoSetup(user, payload);
 
+      setCost(setup.cost)
       // this will be the buy price of the last trade pair
       setSetupResults(setup.orderList[setup.orderList.length - 1]?.original_buy_price);
 
@@ -99,10 +90,9 @@ function AutoSetup(props) {
       setOrders(setup.orderList.reverse().map((order) => {
         return <SingleTrade key={order.order_id} order={order} preview={true} />
       }))
-
-      // console.log(setup);
-
-    }, [availableFundsUSD,
+    }, [
+    user,
+    availableFundsUSD,
     socket.tickers.btc.price,
     startingValue,
     endingValue,
@@ -113,14 +103,14 @@ function AutoSetup(props) {
     base_size,
     sizeType,
     transactionProduct,
-    skipFirst]
-  )
+    skipFirst
+  ])
 
   useEffect(() => {
     if (base_size !== null) {
       calculateResults();
     }
-  }, [startingValue, endingValue, increment, base_size, sizeType, calculateResults])
+  }, [startingValue, endingValue, increment, base_size, sizeType, skipFirst, calculateResults])
 
   useEffect(() => {
     if (user) {
@@ -375,8 +365,7 @@ function AutoSetup(props) {
           <h4>Result</h4>
           <p>
             The buy price of the last trade-pair will be close to:
-          </p>
-          <p>
+            <br />
             <strong>{numberWithCommas(setupResults?.toFixed(2) || 0)}</strong>
           </p>
           {props.tips && <p>
@@ -385,20 +374,44 @@ function AutoSetup(props) {
           </p>}
           <p>
             Approximate number of trades to create:
-          </p>
-          <p>
+            <br />
             <strong>{numberWithCommas(totalTrades)}</strong>
           </p>
           {props.tips && <p>
             However, there is a total limit of 10,000 trades placed per user. Latency may cause it to
             create more, in which case you got lucky.
           </p>}
-          <p>
-            BTC to reserve:
-          </p>
-          <p>
-            <strong>{numberWithCommas(btcToBuy)}</strong>
-          </p>
+          {ignoreFunds
+            ? <>
+              <p>
+                USD to reserve:
+                <br />
+                <strong>${numberWithCommas(((cost) > 0 ? cost : 0).toFixed(2))}</strong>
+              </p>
+              <p>
+                BTC to reserve:
+                <br />
+                <strong>{numberWithCommas(btcToBuy)}</strong>
+              </p>
+              <p>
+                BTC you have:
+                <br />
+                <strong>{numberWithCommas(Number(availableFundsBTC))}</strong>
+              </p>
+              <p>
+                BTC you need to buy manually:
+                <br />
+                <strong>{numberWithCommas(((btcToBuy - availableFundsBTC) > 0 ? btcToBuy - availableFundsBTC : 0).toFixed(8))}</strong>
+              </p>
+            </>
+            : <>
+              <p>
+                It will cost you:
+                <br />
+                <strong>${numberWithCommas(((cost) > 0 ? cost : 0).toFixed(2))}</strong>
+              </p>
+            </>
+          }
 
 
         </div>
