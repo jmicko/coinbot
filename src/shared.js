@@ -27,7 +27,15 @@ function autoSetup(user, options) {
     if (i === 0 && skipFirst) {
       console.log('need to skip first one!');
       // increment buy price, but don't remove cost from funds
-      incrementBuyPrice()
+      incrementBuyPrice();
+      // check if need to stop
+      stopChecker();
+      if (stop) {
+        return {
+          orderList: [],
+          btcToBuy: (btcToBuy / 100000000),
+        }
+      }
       // skip the rest of the iteration and continue the loop
       continue;
     }
@@ -101,23 +109,26 @@ function autoSetup(user, options) {
 
     // stop if run out of funds unless user specifies to ignore that
     // console.log('ignore funds:', options.ignoreFunds);
+    stopChecker();
+  }
+
+  return {
+    orderList: orderList,
+    btcToBuy: (btcToBuy / 100000000),
+  }
+
+  function stopChecker() {
     if (availableFunds < 0 && !options.ignoreFunds) {
       console.log('ran out of funds!', availableFunds);
       stop = true;
     }
     // console.log('available funds is', availableFunds);
-
     // stop if the buy price passes the ending value
     if (loopDirection === 'up' && buyPrice > endingValue) {
       stop = true;
     } else if (loopDirection === 'down' && buyPrice < endingValue) {
       stop = true;
     }
-  }
-
-  return {
-    orderList: orderList,
-    btcToBuy: (btcToBuy / 100000000),
   }
 
   function incrementBuyPrice() {

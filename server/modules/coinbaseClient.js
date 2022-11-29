@@ -653,6 +653,69 @@ async function placeOrderNew(userID, order) {
   });
 }
 
+async function placeMarketOrder(userID, order) {
+  return new Promise(async (resolve, reject) => {
+    try {
+
+      const data = {
+        side: order.side,
+        order_configuration: {
+          limit_limit_gtc: {
+            base_size: order.base_size,
+            limit_price: (order.tradingPrice *2).toString(),
+            // post_only: false
+          },
+          // market_market_ioc: {
+          //   // quote_size: '10.00',
+          //   base_size: order.base_size
+          // },
+          // stop_limit_stop_limit_gtc: { stop_direction: 'UNKNOWN_STOP_DIRECTION' },
+          // stop_limit_stop_limit_gtd: { stop_direction: 'UNKNOWN_STOP_DIRECTION' }
+        },
+        product_id: order.product_id,
+        client_order_id: order.client_order_id || uuidv4()
+      }
+
+
+      const userAPI = cache.getAPI(userID);
+      // console.log(userAPI, 'user api');
+      const secret = userAPI.CB_SECRET;
+      const key = userAPI.CB_ACCESS_KEY;
+
+      const method = 'POST';
+      const path = "/api/v3/brokerage/orders";
+      const body = JSON.stringify(data);
+
+      // const CryptoJS = require('crypto-js');
+      function sign(str, apiSecret) {
+        const hash = CryptoJS.HmacSHA256(str, apiSecret);
+        return hash.toString();
+      }
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const str = timestamp + method + path + body
+      const sig = sign(str, secret)
+
+      const options = {
+        method: 'POST',
+        timeout: 10000,
+        url: `https://coinbase.com/api/v3/brokerage/orders`,
+        headers: {
+          Accept: 'application/json',
+          'cb-access-key': key,
+          'cb-access-sign': sig,
+          'cb-access-timestamp': timestamp
+        },
+        data: data
+      };
+      let response = await axios.request(options);
+      resolve(response.data);
+    } catch (err) {
+      reject(err);
+      console.log('ERROR in place order function in coinbaseClient');
+    }
+  });
+}
+
 async function cancelOrderNew(userID, orderIdArray) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -852,6 +915,7 @@ module.exports = {
   // cancelOrder: cancelOrder,
   // placeOrder: placeOrder,
   placeOrderNew: placeOrderNew,
+  placeMarketOrder: placeMarketOrder,
   // getOrder: getOrder,
   getOrderNew: getOrderNew,
   // cancelAllOrders: cancelAllOrders,

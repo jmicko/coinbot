@@ -86,7 +86,7 @@ function AutoSetup(props) {
       let setup = autoSetup(user, payload);
 
       // this will be the buy price of the last trade pair
-      setSetupResults(setup.orderList[setup.orderList.length - 1].original_buy_price);
+      setSetupResults(setup.orderList[setup.orderList.length - 1]?.original_buy_price);
 
       // this will be the total number of trades made
       setTotalTrades(setup.orderList.length);
@@ -95,6 +95,7 @@ function AutoSetup(props) {
       setBtcToBuy(setup.btcToBuy)
       // setBtcToBuy(0)
 
+      // setup.orderList && 
       setOrders(setup.orderList.reverse().map((order) => {
         return <SingleTrade key={order.order_id} order={order} preview={true} />
       }))
@@ -297,10 +298,10 @@ function AutoSetup(props) {
 
           {/* RATIO */}
           {props.tips
-            ? <p>What is the trade-pair ratio (how much each BUY should increase in price before selling)?</p>
+            ? <p>What is the trade-pair percent increase (how much each BUY should increase in price before selling)?</p>
             : <p />}
           <label htmlFor='ratio'>
-            Trade-pair ratio:
+            Trade-pair percent increase:
             <br />
             <input
               name='ratio'
@@ -374,7 +375,7 @@ function AutoSetup(props) {
             The buy price of the last trade-pair will be close to:
           </p>
           <p>
-            <strong>{numberWithCommas(setupResults.toFixed(2))}</strong>
+            <strong>{numberWithCommas(setupResults?.toFixed(2) || 0)}</strong>
           </p>
           {props.tips && <p>
             This calculation isn't perfect but it will get close. It can also change if the price of BTC moves up or down significantly while the

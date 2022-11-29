@@ -121,10 +121,12 @@ router.delete('/all', rejectUnauthenticated, async (req, res) => {
     await pool.query(queryText, [userID]);
     
     // mark all open orders as reorder
+    // wait why?
     await databaseClient.setReorder(userID);
 
     // cancel all orders. The sync loop will take care of replacing them
-    await coinbaseClient.cancelAllOrders(userID);
+
+    // await coinbaseClient.cancelAllOrders(userID);
     
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID)

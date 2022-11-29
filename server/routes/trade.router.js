@@ -151,18 +151,9 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   if (user.active && user.approved) {
     let options = req.body;
-    // let setup = await robot.autoSetup(user, options)
     let setup = autoSetup(user, options)
-    console.log('setup is:', setup);
-
+    // console.log('setup is:', setup);
     try {
-      // need unique IDs for each trade, but need to also get IDs from CB, so DB has no default.
-      // store a number that counts up every time autoSetup is used, and increase it before using it in case of error
-      // then use it here and increase it by the number of trades being put through this way
-      const number = (Number(user.auto_setup_number) + setup.orderList.length)
-      // await databaseClient.setAutoSetupNumber(number, user.id);
-
-
       console.log('setup options:', options);
       // put a market order in for how much BTC need to be purchase for all the sell orders
       // if (false) {
@@ -171,33 +162,72 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
           side: 'BUY',
           base_size: setup.btcToBuy.toFixed(8), // BTC
           product_id: 'BTC-USD',
-          stp: 'cn',
-          userID: user.id,
-          type: 'market'
+          type: 'market',
+          tradingPrice: options.tradingPrice
         };
         console.log('BIG order', tradeDetails);
         if (!options.ignoreFunds) {
-          let bigOrder = await coinbaseClient.placeOrder(tradeDetails);
-          // console.log('big order to balance btc avail', bigOrder.limit_size, 'user', user.taker_fee);
+          let bigOrder = await coinbaseClient.placeMarketOrder(user.id, tradeDetails);
+          console.log('big order to balance btc avail', bigOrder,);
         }
         await robot.updateFunds(user.id);
       }
 
       // put each trade into the db as a reorder so the sync loop can sync the right amount
       for (let i = 0; i < setup.orderList.length; i++) {
-        // if (i == 0 && req.body.skipFirst) {
-        //   console.log('Skip one!');
-        //   continue;
-        // }
         const order = setup.orderList[i];
-        // adding a bunch of 0s allows easy sorting by id in the DB which might be useful later so better to start now
-        order.order_id = uuidv4();
-        // use the current time for the created time 
-        const time = new Date();
-        order.created_at = time;
-        order.reorder = true;
-        console.log('order to store', order);
 
+        const tradeDetails = {
+          original_sell_price: JSON.stringify(Number(order.original_sell_price)),
+          original_buy_price: JSON.stringify(Number(order.original_buy_price)),
+          side: order.side,
+          limit_price: JSON.stringify(Number(order.limit_price)), // USD
+          base_size: JSON.stringify(Number(order.base_size)), // BTC
+          product_id: order.product_id,
+          // stp: 'cn',
+          userID: user.id,
+          trade_pair_ratio: Number(options.trade_pair_ratio),
+          client_order_id: uuidv4()
+        };
+
+        let fakeOrder = {
+          order_id: uuidv4(),
+          product_id: order.product_id,
+          // user_id: '9f732868-9790-5667-b29a-f6eb8ab97966',
+          order_configuration: {
+            limit_limit_gtc: {
+              base_size: JSON.stringify(Number(order.base_size)),
+              limit_price: JSON.stringify(Number(order.limit_price)),
+              post_only: false
+            }
+          },
+          side: order.side,
+          client_order_id: uuidv4(),
+          status: 'PENDING',
+          time_in_force: 'GOOD_UNTIL_CANCELLED',
+          created_time: new Date(),
+          completion_percentage: '0',
+          filled_size: '0',
+          average_filled_price: '0',
+          fee: '',
+          number_of_fills: '0',
+          filled_value: '0',
+          pending_cancel: false,
+          size_in_quote: false,
+          total_fees: '0',
+          size_inclusive_of_fees: false,
+          total_value_after_fees: '0',
+          trigger_status: 'INVALID_ORDER_TYPE',
+          order_type: 'LIMIT',
+          reject_reason: 'REJECT_REASON_UNSPECIFIED',
+          settled: false,
+          product_type: 'SPOT',
+          reject_message: '',
+          cancel_message: '',
+          reorder: true
+        }
+        // console.log('order to store', fakeOrder);
+        await databaseClient.storeTrade(fakeOrder, tradeDetails, fakeOrder.created_time);
         // await databaseClient.storeTrade(order, order, time);
       }
 
