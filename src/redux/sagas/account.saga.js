@@ -177,7 +177,6 @@ function* importCurrentJSON(action) {
 function* debug(action) {
   try {
     const response = yield axios.get(`/api/account/debug`, {params:{ id: action.payload.id}});
-    // console.log(response.data);
     yield put({ type: 'SET_DEBUG', payload: response.data })
   } catch (error) {
     console.log('debug route has failed', error);
