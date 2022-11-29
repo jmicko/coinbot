@@ -25,6 +25,9 @@ function NotActive() {
         URI: URI
       }
     });
+    // clear the form
+    setKey('');
+    setSecret('');
   }
 
   useEffect(() => {
