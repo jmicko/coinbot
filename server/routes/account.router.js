@@ -574,8 +574,8 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
     if (api.URI === "sandbox") {
       return "https://api-public.sandbox.exchange.coinbase.com";
     }
-    else {
-      return "https://api.exchange.coinbase.com";
+    else if (api.URI === "real") {
+      return "https://coinbase.com";
     }
   }
   const api = req.body;
@@ -592,14 +592,14 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
       api.secret,
       api.key,
       api.passphrase,
-      URI,
+      api.URI,
       userID,
     ]);
 
     // set the account as active
     let result = await pool.query(queryText, [userID]);
     // refresh the user's cache
-    await cache.refreshUser(user.id);
+    await cache.refreshUser(userID);
 
     res.sendStatus(200);
   } catch (err) {

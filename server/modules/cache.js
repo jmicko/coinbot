@@ -53,13 +53,16 @@ const cache = {
   // USER SETTINGS STORAGE
   refreshUser: async (userID) => {
     user = await databaseClient.getUserAndSettings(userID);
-    cache.storage[userID].user = user;
+    // if there is a user, set the user as the user. lmao. Otherwise empty object
+    cache.storage[userID].user = (user) ? user : null;
     userAPI = await databaseClient.getUserAPI(userID);
     cache.storeAPI(userID, userAPI);
   },
 
   getUser: (userID) => {
-    return JSON.parse(JSON.stringify(cache.storage[userID].user))
+    if (cache.storage[userID]?.user) {
+      return JSON.parse(JSON.stringify(cache.storage[userID].user))
+    }
   },
 
   // KEY VALUE STORAGE
@@ -149,7 +152,7 @@ const cache = {
     cache.sockets.forEach(socket => {
       // find all open sockets for the user
       if (socket.userID === userID) {
-        // console.log(socket.userID, userID)
+        console.log(socket.userID, 'equal?', socket.request.session.passport?.user)
         const msg = {
           type: 'messageUpdate',
           orderUpdate: message.orderUpdate,

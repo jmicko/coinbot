@@ -584,6 +584,12 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
     ON "limit_orders" ("side", "flipped", "will_cancel", "userID", "settled");`;
     try {
       await pool.query(queryText);
+      cache.storage.forEach(user => {
+        console.log('refreshing user', user);
+        if (user.user && user.user?.id !== 0) {
+          cache.refreshUser(user.user.id)
+        }
+      })
       res.sendStatus(200);
     } catch (err) {
       res.sendStatus(500);

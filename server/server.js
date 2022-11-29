@@ -8,7 +8,6 @@ const options = {
   }
 };
 // Socket.io
-const io = require("socket.io")(server, options);
 const { setupSocketIO } = require('./modules/websocket');
 
 // Middleware
@@ -35,6 +34,13 @@ app.use(sessionMiddleware);
 // start up passport sessions
 app.use(passport.initialize());
 app.use(passport.session());
+
+// start up socket.io 
+const io = require("socket.io")(server, options);
+// start up socket.io passport sessions
+io.use(wrap(sessionMiddleware));
+io.use(wrap(passport.initialize()));
+io.use(wrap(passport.session()));
 
 /* REST Routes */
 app.use('/api/user', userRouter);

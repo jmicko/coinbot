@@ -13,6 +13,7 @@ export function useSocket() {
 
 export function SocketProvider({ children }) {
   const [socket, setSocket] = useState();
+  const [disconnect, setDisconnect] = useState();
   const [tickers, setTickers] = useState({ btc: { price: 0 }, eth: { price: 0 } });
   const [heartbeat, setHeartbeat] = useState({ heart: 'heart', beat: 'beat', count: 0 });
   const dispatch = useDispatch();
@@ -74,10 +75,28 @@ export function SocketProvider({ children }) {
       }
     });
 
+    const ping = setInterval(() => {
+      newSocket.emit('message', 'ping')
+    }, 1000);
+
+    // setDisconnect(newSocket.close)
+
+    newSocket.on("connect_error", (err) => {
+      newSocket.disconnect();
+      setTimeout(() => {
+        newSocket.connect()
+      }, 5000);
+      console.log(err instanceof Error); // true
+      console.log(err.message); // not authorized
+      console.log(err.data); // { content: "Please retry later" }
+    });
+
     // save the new socket and close the old one
     setSocket(newSocket);
     return () => {
+      clearInterval(ping);
       newSocket.off('message')
+      newSocket.off('connect_error')
       newSocket.close();
     }
   }, [dispatch]);
@@ -86,6 +105,7 @@ export function SocketProvider({ children }) {
   return (
     <SocketContext.Provider value={{
       socket: socket,
+
       tickers: tickers,
       heartbeat: heartbeat
     }}>

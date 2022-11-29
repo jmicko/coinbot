@@ -21,12 +21,14 @@ function App() {
 
   return (
     <div className={`App darkTheme`}>
-      <SocketProvider>
-        {user.id
-          ? <Home />
-          : <Login />}
-      </SocketProvider>
-    </div>
+      {user.id
+        ?
+        < SocketProvider >
+          <Home />
+        </SocketProvider>
+        : <Login />
+      }
+    </div >
   );
 }
 

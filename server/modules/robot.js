@@ -50,23 +50,42 @@ async function initializeUserLoops(user) {
   processingLoop(userID);
 
   try {
-    startWebsocket(userID);
+    const ws = startWebsocket(userID);
+    console.log(ws,'ws success', userID)
 
-  } catch (error) {
+  } catch (err) {
     console.log(err, 'error starting websocket');
   }
 }
 
 async function processingLoop(userID) {
-  // flip orders that are settled in the db
-  await processOrders(userID);
-  // will_cancel orders can now be canceled.
-  await databaseClient.deleteMarkedOrders(userID);
+  // get the user and bot settings from cache;
+  const user = cache.getUser(userID);
+  const botSettings = cache.getKey(0, 'botSettings');
+  // check that user is active, approved, and unpaused, and that the bot is not under maintenance
+  if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
+    // flip orders that are settled in the db
+    try {
+
+      await processOrders(userID);
+      // will_cancel orders can now be canceled.
+      await databaseClient.deleteMarkedOrders(userID);
+    } catch (err) {
+      console.log(err, 'error at the end of the processing loop');
+    }
+  } else {
+    // if the user should not be trading, slow loop
+    await sleep(1000);
+  }
   heartBeat(userID, 'beat');
   // console.log('orders processed for user:', userID);
-  setTimeout(() => {
-    processingLoop(userID);
-  }, 100);
+  if (user) {
+    setTimeout(() => {
+      processingLoop(userID);
+    }, 100);
+  } else {
+    console.log(`user ${userID} is NOT THERE, stopping processing loop for user`);
+  }
 }
 
 // repeating loop to find orders that have settled on coinbase via REST API
@@ -133,7 +152,7 @@ async function syncOrders(userID) {
         console.log(`sync took ${t1 - t0} milliseconds.`, 100 - (t1 - t0));
         await sleep(100 - (t1 - t0));
       }
-
+      // console.log(user?.id, 'user');
       // wait however long the admin requires, then start new loop
       setTimeout(() => {
         cache.clearStatus(userID);
@@ -141,7 +160,7 @@ async function syncOrders(userID) {
         syncOrders(userID);
       }, (botSettings.loop_speed * 10));
     } else {
-      console.log('user is NOT THERE, stopping loop for user');
+      console.log(`user ${userID} is NOT THERE, stopping main loop for user`);
     }
   }
 }
@@ -822,7 +841,7 @@ async function getAvailableFunds(userID, userSettings) {
   return new Promise(async (resolve, reject) => {
     try {
       // console.log(userSettings.active);
-      if (!userSettings.active) {
+      if (!userSettings?.active) {
         console.log('not active!');
         reject('user is not active')
         return;
@@ -937,6 +956,8 @@ function heartBeat(userID, side) {
   cache.sockets.forEach(socket => {
     // find all open sockets for the user
     if (socket.userID === userID) {
+      // console.log(socket.userID, 'equal?', socket.request.session.passport?.user, socket.userID === socket.request.session.passport?.user)
+
       // console.log(loopNumber, botSettings.full_sync, loopNumber % botSettings.full_sync + 1)
       const msg = {
         type: 'heartbeat',
@@ -957,6 +978,7 @@ const robot = {
   processOrders: processOrders,
   updateMultipleOrders: updateMultipleOrders,
   startSync: startSync,
+  initializeUserLoops: initializeUserLoops,
   // autoSetup: autoSetup,
   getAvailableFunds: getAvailableFunds,
   updateFunds: updateFunds,

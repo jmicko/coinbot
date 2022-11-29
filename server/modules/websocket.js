@@ -1,20 +1,32 @@
-// JS Example for subscribing to a channel
-/* eslint-disable */
 const WebSocket = require('ws');
 const CryptoJS = require('crypto-js');
 const fs = require('fs');
 const cache = require('./cache');
 const databaseClient = require('./databaseClient');
 const coinbaseClient = require('./coinbaseClient');
-const { wrap, sessionMiddleware } = require('./session-middleware');
+const { rejectUnauthenticatedSocket } = require('./authentication-middleware');
+const passport = require('../strategies/user.strategy');
 
 function startWebsocket(userID) {
+
+  const user = cache.getUser(userID);
+  // console.log(user, 'ws user');
+  // don't start ws if user is not approved or active
+  if (!user?.active || !user?.approved) {
+    if (user) {
+      setTimeout(() => {
+        const ws = startWebsocket(userID);
+        console.log(ws, 'retry ws success', userID);
+      }, 5000);
+    }
+    return { success: false }
+  }
   const userAPI = cache.getAPI(userID)
   const secret = userAPI.CB_SECRET;
   const key = userAPI.CB_ACCESS_KEY;
 
-  if (!secret.length || !key.length) {
-    throw new Error('missing mandatory environment variable(s)');
+  if (!secret?.length || !key?.length) {
+    throw new Error('websocket connection to coinbase is missing mandatory environment variable(s)');
   }
 
   const products = ['BTC-USD', 'ETH-USD'];
@@ -211,7 +223,9 @@ function startWebsocket(userID) {
     });
 
   }
-}// this should just update the status of each trade in the 'ordersToCheck' cached array
+}
+
+// this should just update the status of each trade in the 'ordersToCheck' cached array
 async function updateMultipleOrders(userID, params) {
   return new Promise(async (resolve, reject) => {
     cache.updateStatus(userID, 'start updateMultipleOrders (UMO)');
@@ -396,9 +410,7 @@ function getOpenOrders(userID) {
 function setupSocketIO(io) {
   console.log('setting up socket.io');
 
-  // auth
-  // use wrap to wrap socket with express middleware
-  io.use(wrap(sessionMiddleware));
+  io.use(rejectUnauthenticatedSocket);
 
   // handle new connections
   io.on('connection', (socket) => {
@@ -422,7 +434,24 @@ function setupSocketIO(io) {
       cache.sockets.delete(socket);
     });
 
+    socket.on('message', (message) => {
+      if (message === 'ping') {
+        // put some timeout function in here
+        // console.log(message, 'message from socket');
+      }
+    })
+
+
   });
+
+  io.on('connect', (socket) => {
+
+    const session = socket.request.session;
+    console.log(`saving sid ${socket.id} in session ${session.id}`);
+    session.socketId = socket.id;
+    session.save();
+
+  })
 
   // handle abnormal disconnects
   io.engine.on("connection_error", (err) => {

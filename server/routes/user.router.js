@@ -23,7 +23,7 @@ async function anyAdmins() {
   })
 }
 
-// Handles Ajax request for user information if user is authenticated
+// Handles request for all user information if user is authenticated and admin
 router.get('/all', rejectUnauthenticated, async (req, res) => {
   const isAdmin = req.user.admin;
   if (isAdmin) {
@@ -40,7 +40,7 @@ router.get('/all', rejectUnauthenticated, async (req, res) => {
   }
 });
 
-// Handles Ajax request for user information if user is authenticated
+// Handles request for user information if user is authenticated
 router.get('/', rejectUnauthenticated, async (req, res) => {
   // console.log('get user route');
   try {
@@ -93,32 +93,33 @@ router.post('/register', userCount, async (req, res, next) => {
       let thirdResult = await pool.query(thirdQueryText, [userID]);
 
       // set up cache storage for new user
-      cache.newUser(user);
+      // cache.newUser(user);
       // start a sync loop for the new user
-      robot.syncOrders(userID, 0);
+      robot.initializeUserLoops(user);
+      // need to call cache.refreshUser after active && approved
       // robot.deSyncOrderLoop(user, 0);
     } else {
       // create the user
-      let queryText = `INSERT INTO "user" (username, password, admin, approved, joined_at)
-      VALUES ($1, $2, true, true, $3) RETURNING id`;
+      let queryText = `INSERT INTO "user" (username, password, admin, approved, joined_at) VALUES ($1, $2, true, true, $3) RETURNING id`;
       let result = await pool.query(queryText, [username, password, joined_at]);
       const user = result.rows[0];
       const userID = result.rows[0].id;
 
       // create entry in api table
-      let secondQueryText = `INSERT INTO "user_api" ("userID")
-      VALUES ($1);`;
+      let secondQueryText = `INSERT INTO "user_api" ("userID") VALUES ($1);`;
       let secondResult = await pool.query(secondQueryText, [userID]);
 
       // create entry in user_settings table
-      let thirdQueryText = `INSERT INTO "user_settings" ("userID")
-      VALUES ($1);`;
+      let thirdQueryText = `INSERT INTO "user_settings" ("userID") VALUES ($1);`;
       let thirdResult = await pool.query(thirdQueryText, [userID]);
 
+      // const sqlText = 
+
       // set up cache storage for new user
-      cache.newUser(user);
+      // cache.newUser(user);
       // start a sync loop for the new user
-      robot.syncOrders(userID, 0);
+      robot.initializeUserLoops(user);
+      // need to call cache.refreshUser after active && approved
       // robot.deSyncOrderLoop(user, 0);
     }
 
@@ -157,6 +158,7 @@ router.put('/approve', rejectUnauthenticated, async (req, res) => {
       console.log('in approve user route', userToApprove);
       const queryText = `UPDATE "user" SET "approved" = true WHERE "id" = $1;`;
       await pool.query(queryText, [userToApprove]);
+      await cache.refreshUser(userToApprove);
       res.sendStatus(200);
     } else {
       console.log('you are NOT admin');
@@ -172,12 +174,13 @@ router.put('/approve', rejectUnauthenticated, async (req, res) => {
 * DELETE route - Delete a single user. Only admin can do this
 */
 router.delete('/', rejectUnauthenticated, async (req, res) => {
+  const userToDelete = req.body.id;
+  const userID = req.user.id;
   try {
     console.log('in delete user route');
     const isAdmin = req.user.admin;
     if (isAdmin) {
       console.log('you are admin');
-      const userToDelete = req.body.id;
       // delete from user table first
       const userQueryText = `DELETE from "user" WHERE "id" = $1;`;
       await pool.query(userQueryText, [userToDelete]);
@@ -196,8 +199,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
 
       res.sendStatus(200);
     } else {
-      const userID = req.body.id;
-      const userToDelete = req.body.id;
+      // const userToDelete = req.body.id;
       console.log('you are NOT admin');
       // check to make sure the user ID that was sent is the same as the user requesting the delete
       if (userID === userToDelete) {
@@ -224,6 +226,8 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
   } catch (err) {
     console.log(err, 'error in delete user route');
     res.sendStatus(500);
+  } finally{
+    cache.refreshUser(userToDelete)
   }
 });
 

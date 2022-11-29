@@ -662,7 +662,7 @@ async function placeMarketOrder(userID, order) {
         order_configuration: {
           limit_limit_gtc: {
             base_size: order.base_size,
-            limit_price: (order.tradingPrice *2).toString(),
+            limit_price: (order.tradingPrice * 2).toString(),
             // post_only: false
           },
           // market_market_ioc: {
@@ -894,7 +894,7 @@ async function testAPI(secret, key, API_URI) {
         }
       };
       let response = await axios.request(options);
-      console.log('SUCCESSFUL RESPONSE FROM NEW API:', response.data);
+      console.log('SUCCESSFUL RESPONSE FROM NEW API:');
       resolve(response.data);
 
 
