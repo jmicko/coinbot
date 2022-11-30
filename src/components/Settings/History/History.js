@@ -82,9 +82,10 @@ function History(props) {
       <div className="divider" />
       <h4>Export current trade-pairs</h4>
       <p>
-        Export all your current trade-pairs in JSON format. You can copy this to a text document
+        Export all your current trade-pairs in JSON format.
+         {/* You can copy this to a text document
         and use it later to import the same trades. This is useful if you want to transfer your
-        trades to a different bot and can't or don't want to mess around with the database.
+        trades to a different bot and can't or don't want to mess around with the database. */}
       </p>
       {currentJSONReducer
         ? <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCurrentJSON('clear') }}>Clear</button>
@@ -100,7 +101,7 @@ function History(props) {
         && <code>{JSON.stringify(currentJSONReducer)}</code>
       }
       <div className="divider" />
-
+{/* 
       <h4>Import current trade-pairs</h4>
       <p>
         Import a JSON string that has previously been exported. It is recommended not to import old
@@ -144,7 +145,7 @@ function History(props) {
         <button className={`import-button btn-red medium ${user.theme}`} onClick={() => { importCurrentJSON() }}>Import</button>
         <br />
       </div>
-      <div className="divider" />
+      <div className="divider" /> */}
     </div>
   );
 }
