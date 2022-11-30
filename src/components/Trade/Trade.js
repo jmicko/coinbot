@@ -407,7 +407,9 @@ function Trade(props) {
           </form>
         </div>
       : <div className={`Trade scrollable boxed collapsed`} >
-        <button className={`btn-blue btn-collapse ${user.theme}`} onClick={toggleCollapse} >&#9654;</button>
+        <button className={`btn-blue btn-collapse ${user.theme}`} onClick={toggleCollapse} >&#9654;<br/>&#9654;<br/>&#9654;</button>
+        {/* <button className={`btn-blue btn-collapse ${user.theme}`} onClick={toggleCollapse} >&#9654;<br/><br/>&#9654;<br/><br/>&#9654;</button> */}
+
       </div>
   );
 }
