@@ -14,83 +14,165 @@
 .errors-section {
   max-height  : 10rem;
   /* min-width: 50%; */
-  width : 50%;
-  border-left: black 1px solid;
+  min-width   : 50%;
+  /* width    : 1fr; */
+  border-left : black 1px solid;
 }
 
 .message-section {
   max-height  : 10rem;
   /* min-width: 50%; */
-  width : 50%;
+  min-width   : 50%;
+  /* width    : 1fr; */
+}
+
+.chat-section {
+  display        : none;
+  /* max-height  : 10rem; */
+  /* min-width   : 50%; */
+  /* min-width   : 50%; */
+  /* width       : 1fr; */
+}
+
+.chat-header {
+  display: flex;
+}
+
+.chat-input {
+  width: 80%;
+
+}
+
+.chat-form {
+  /* width: auto; */
+  width: 80%;
+  height: 1rem;
+}
+
+.errors-section.admin-true {
+  display     : block;
+  max-height  : 10rem;
+  /* min-width: 50%; */
+  min-width   : 33%;
+  /* width    : 1fr; */
+  border-left : black 1px solid;
+}
+
+.message-section.admin-true {
+  display     : block;
+  max-height  : 10rem;
+  /* min-width: 50%; */
+  min-width   : 33%;
+  /* width    : 1fr; */
+}
+
+.chat-section.admin-true {
+  display     : block;
+  max-height  : 8.5rem;
+  /* min-width: 50%; */
+  min-width   : 33%;
+  border-left : black 1px solid;
+  /* width    : 1fr; */
 }
 
 @media (max-width: 800px) {
   .Messages {
-    grid-row     : 5;
-    grid-column  : 2 / 3;
-    height       : unset;
+    grid-row        : 5;
+    grid-column     : 2 / 3;
+    height          : unset;
     /* margin-bottom: unset; */
-    max-height   : unset;
+    max-height      : unset;
   }
-  
+
+  .Messages.admin-true {
+    grid-row        : 5;
+    grid-column     : 2 / 3;
+    height          : unset;
+    /* margin-bottom: unset; */
+    max-height      : unset;
+  }
+
   .message-board {
-    flex-flow : column;
+    flex-flow: column;
   }
-  
+
   .errors-section {
-    width: auto;
-    max-height: 15rem;
+    width           : auto;
+    max-height      : 15rem;
     /* max-height   : unset; */
-    border-left: none;
-    border-top: black 1px solid;
+    border-left     : none;
+    border-top      : black 1px solid;
   }
-  
+
+  .errors-section.admin-true {
+    width           : auto;
+    max-height      : 15rem;
+    /* max-height   : unset; */
+    border-left     : none;
+    border-top      : black 1px solid;
+  }
+
   .message-section {
     /* max-height   : 50%; */
-    max-height: 15rem;
-    width: auto;
+    border-left: none;
+    max-height : 15rem;
+    width      : auto;
+  }
+
+  .chat-section.admin-true {
+    border-left     : none;
+    /* max-height   : 50%; */
+    max-height      : 15rem;
+    width           : auto;
+  }
+
+  .chat-log.admin-true {
+    max-height: 13.5rem;
   }
 }
 
 /* from https://css.gg/trash */
 .gg-trash {
   box-sizing: border-box;
-  position: relative;
-  display: block;
-  transform: scale(var(--ggs,1));
-  width: 10px;
-  height: 12px;
-  border: 2px solid transparent;
+  position  : relative;
+  display   : block;
+  transform : scale(var(--ggs, 1));
+  width     : 10px;
+  height    : 12px;
+  border    : 2px solid transparent;
   box-shadow:
-      0 0 0 2px,
-      inset -2px 0 0,
-      inset 2px 0 0;
-  border-bottom-left-radius: 1px;
+    0 0 0 2px,
+    inset -2px 0 0,
+    inset 2px 0 0;
+  border-bottom-left-radius : 1px;
   border-bottom-right-radius: 1px;
-  margin-top: 4px
+  margin-top                : 4px
 }
+
 .gg-trash::after,
 .gg-trash::before {
-  content: "";
-  display: block;
+  content   : "";
+  display   : block;
   box-sizing: border-box;
-  position: absolute
+  position  : absolute
 }
+
 .gg-trash::after {
-  background: currentColor;
+  background   : currentColor;
   border-radius: 3px;
-  width: 16px;
-  height: 2px;
-  top: -4px;
-  left: -5px
+  width        : 16px;
+  height       : 2px;
+  top          : -4px;
+  left         : -5px
 }
+
 .gg-trash::before {
-  width: 10px;
-  height: 4px;
-  border: 2px solid;
-  border-bottom: transparent;
-  border-top-left-radius: 2px;
+  width                  : 10px;
+  height                 : 4px;
+  border                 : 2px solid;
+  border-bottom          : transparent;
+  border-top-left-radius : 2px;
   border-top-right-radius: 2px;
-  top: -7px;
-  left: -2px
+  top                    : -7px;
+  left                   : -2px
 }

@@ -88,6 +88,17 @@ const botMessages = (state = [], action) => {
   }
 };
 
+const chatMessages = (state = [], action) => {
+  switch (action.type) {
+    case 'CLEAR_CHAT_MESSAGES':
+      return [];
+    case 'SET_CHAT_MESSAGES':
+      return action.payload;
+    default:
+      return state;
+  }
+};
+
 
 export default combineReducers({
   userReducer,
@@ -98,4 +109,5 @@ export default combineReducers({
   currentJSONReducer,
   debugReducer,
   botMessages,
+  chatMessages,
 });

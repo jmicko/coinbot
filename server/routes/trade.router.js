@@ -116,14 +116,23 @@ router.post('/basic', rejectUnauthenticated, async (req, res) => {
     // tradeDetails const should take in values sent from trade component form
     const tradeDetails = {
       side: order.side,
-      base_size: order.base_size, // BTC
+      base_size: order.base_size.toFixed(8), // BTC
       product_id: order.product_id,
       userID: userID,
-      type: order.type
+      tradingPrice: order.tradingPrice
     };
+    console.log('BIG order', tradeDetails);
+    
     try {
       // send the new order with the trade details
-      await coinbaseClient.placeOrder(tradeDetails);
+      let basic = await coinbaseClient.placeMarketOrder(user.id, tradeDetails);
+      console.log('basic trade results', basic,);
+
+      if (!basic.success) {
+        cache.storeError(user.id, {
+          errorText: `Could not place trade. ${basic?.error_response?.message}`
+        })
+      }
 
       await robot.updateFunds(userID);
 
@@ -235,23 +244,17 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
         await databaseClient.storeTrade(fakeOrder, tradeDetails, fakeOrder.created_time);
         // await databaseClient.storeTrade(order, order, time);
       }
-
       // tell DOM to update orders
       cache.storeMessage(Number(user.id), {
         messageText: `Auto setup complete!`,
         orderUpdate: true
       });
-
-
-
     } catch (err) {
       console.log(err, 'problem in autoSetup ');
-      cache.storeError(userID, {
+      cache.storeError(user.id, {
         errorText: `problem in auto setup`
       })
     }
-
-
     res.sendStatus(200);
   } else {
     console.log('user is not active and cannot trade!');
@@ -270,8 +273,8 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
   const orderId = req.body.order_id;
 
   try {
-    await coinbaseClient.cancelOrder(orderId, userID)
-    await databaseClient.setSingleReorder(orderId);
+    await coinbaseClient.cancelOrderNew(userID, [orderId]);
+    await databaseClient.updateTrade({ reorder: true, order_id: orderId })
     res.sendStatus(200);
 
   } catch (error) {

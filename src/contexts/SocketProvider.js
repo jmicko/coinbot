@@ -13,6 +13,7 @@ export function useSocket() {
 
 export function SocketProvider({ children }) {
   const [socket, setSocket] = useState();
+  const [messenger, setMessenger] = useState();
   const [disconnect, setDisconnect] = useState();
   const [tickers, setTickers] = useState({ btc: { price: 0 }, eth: { price: 0 } });
   const [heartbeat, setHeartbeat] = useState({ heart: 'heart', beat: 'beat', count: 0 });
@@ -79,6 +80,12 @@ export function SocketProvider({ children }) {
       newSocket.emit('message', 'ping')
     }, 1000);
 
+    newSocket.sendChat = (chat) => {
+      newSocket.emit('message', { type: 'chat', data: chat })
+    }
+
+    // setMessenger(sendChat);
+
     // setDisconnect(newSocket.close)
 
     newSocket.on("connect_error", (err) => {
@@ -105,7 +112,7 @@ export function SocketProvider({ children }) {
   return (
     <SocketContext.Provider value={{
       socket: socket,
-
+      messenger: messenger,
       tickers: tickers,
       heartbeat: heartbeat
     }}>

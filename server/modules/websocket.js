@@ -435,9 +435,21 @@ function setupSocketIO(io) {
     });
 
     socket.on('message', (message) => {
+      // console.log(message);
       if (message === 'ping') {
         // put some timeout function in here
         // console.log(message, 'message from socket');
+      }
+      if (message.type === 'chat') {
+        const allUsers = cache.getAllUsers()
+        console.log(socket.userID, 'socket user');
+        allUsers.forEach(user => {
+          // console.log(user,'user to send message to', message.data);
+          cache.storeMessage(Number(user.user.id), {
+            messageText: message.data,
+            type: 'chat'
+          });
+        });
       }
     })
 

@@ -439,7 +439,9 @@ router.get('/errors', rejectUnauthenticated, async (req, res) => {
 router.get('/messages', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   try {
-    const userMessages = cache.getMessages(userID);
+    const userMessages = {} 
+    userMessages.general = cache.getMessages(userID);
+    userMessages.chat = cache.getChatMessages(userID);
     // console.log('getting Messages', userMessages);
     res.send(userMessages);
   } catch (err) {

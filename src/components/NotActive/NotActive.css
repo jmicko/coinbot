@@ -67,12 +67,6 @@ input {
   width: 4rem;
 }
 
-.btn-send-trade {
-  height   : 3rem;
-  margin   : 1rem auto;
-  font-size: larger;
-}
-
 .api.error-box {
   margin: 0 5px 1rem;
 }

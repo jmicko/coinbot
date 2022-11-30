@@ -662,7 +662,9 @@ async function placeMarketOrder(userID, order) {
         order_configuration: {
           limit_limit_gtc: {
             base_size: order.base_size,
-            limit_price: (order.tradingPrice * 2).toString(),
+            limit_price: (order.side === 'BUY')
+              ? (order.tradingPrice * 2).toString()
+              : (order.tradingPrice / 2).toString()
             // post_only: false
           },
           // market_market_ioc: {

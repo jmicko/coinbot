@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { connect, useDispatch, useSelector } from 'react-redux';
 import { useSocket } from '../../contexts/SocketProvider';
 import mapStoreToProps from '../../redux/mapStoreToProps';
+import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 import './Trade.css';
 
 
@@ -29,6 +30,8 @@ function Trade(props) {
   const [amountTypeIsUSD, setAmountTypeIsUSD] = useState(true);
 
   const [tradeType, setTradeType] = useState(true);
+  const [collapse, setCollapse] = useState(true);
+  const { width } = useWindowDimensions();
   const [basicAmount, setBasicAmount] = useState(0);
   const [basicSide, setBasicSide] = useState('BUY');
   const dispatch = useDispatch();
@@ -98,10 +101,10 @@ function Trade(props) {
     console.log('BASIC TRADE STARTED');
     dispatch({
       type: 'START_BASIC_TRADE', payload: {
-        type: "market",
         base_size: basicAmount,
         product_id: transactionProduct,
-        side: basicSide
+        side: basicSide,
+        tradingPrice: socket.tickers.btc.price
       }
     })
   }
@@ -180,210 +183,231 @@ function Trade(props) {
     setTradeType(!tradeType);
   }
 
+  function toggleCollapse() {
+    setCollapse((prevCollapse) => {
+      if (prevCollapse) {
+        return false
+      } else {
+        return true
+      }
+    });
+  }
+
 
   return (
-    tradeType
-      ? <div className="Trade scrollable boxed" >
-        <h3 className={`title ${user.theme}`}>New Trade-Pair <button className={`btn-blue ${user.theme}`} onClick={toggleTradeType} >Switch</button></h3>
-        {/* form for setting up individual trade-pairs */}
-        <form className="new-trade-form" onSubmit={submitTransaction} >
-          <div className="number-inputs">
-            {/* input for setting the price/BTC per transaction. Can be adjusted in $500 steps, or manually input */}
-            <label htmlFor="transaction_price">
-              Trade price per 1 BTC (in USD): <button className={`btn-blue ${user.theme}`} onClick={(event) => getCurrentPrice(event)}> Get Current (rounded)</button>
-            </label>
-            <input
-              className={user.theme}
-              type="number"
-              name="transaction_price"
-              value={Number(price)}
-              // todo - this could possibly be changed to 100, or add a selector menu thing to toggle between different amounts
-              step={1}
-              required
-              onChange={(event) => setTransactionPrice(Number(event.target.value))}
-            />
-            <div className="increment-buttons">
-              <div className="increase">
-                <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) + 10000)} value="+10000"></input>
-                <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) + 1000)} value="+1000"></input>
-                <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) + 100)} value="+100"></input>
-                <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) + 10)} value="+10"></input>
-              </div>
-              <div className="decrease">
-                <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) - 10000)} value="-10000"></input>
-                <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) - 1000)} value="-1000"></input>
-                <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) - 100)} value="-100"></input>
-                <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) - 10)} value="-10"></input>
-              </div>
-            </div>
-          </div>
-
-          {/* INPUT FOR AMOUNT IN BTC */}
-          {!amountTypeIsUSD
-            ? <div className="number-inputs">
-              {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
-              <label htmlFor="transaction_amount">
-                Trade amount (in BTC):
-                <button className={`btn-blue ${user.theme}`} onClick={(event) => amountTypeHandler(event, true)}>Switch</button>
+    !collapse || width < 800
+      ? tradeType
+        ? <div className="Trade scrollable boxed" >
+          <h3 className={`title ${user.theme}`}>{ width > 800 && <button className={`btn-blue ${user.theme}`} onClick={toggleCollapse} >&#9664;</button>} New Trade-Pair <button className={`btn-blue ${user.theme}`} onClick={toggleTradeType} >Switch</button></h3>
+          {/* form for setting up individual trade-pairs */}
+          <form className="new-trade-form" onSubmit={submitTransaction} >
+            <div className="number-inputs">
+              {/* input for setting the price/BTC per transaction. Can be adjusted in $500 steps, or manually input */}
+              <label htmlFor="transaction_price">
+                Trade price per 1 BTC (in USD): <button className={`btn-blue ${user.theme}`} onClick={(event) => getCurrentPrice(event)}> Get Current (rounded)</button>
               </label>
               <input
                 className={user.theme}
                 type="number"
-                name="transaction_amount"
-                value={Number(transactionAmountBTC)}
-                // step={0.001}
+                name="transaction_price"
+                value={Number(price)}
+                // todo - this could possibly be changed to 100, or add a selector menu thing to toggle between different amounts
+                step={1}
                 required
-                onChange={(event) => handleTransactionAmount(event.target.value)}
+                onChange={(event) => setTransactionPrice(Number(event.target.value))}
               />
               <div className="increment-buttons">
                 <div className="increase">
-                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 1000) / 10000)} value="+.100"></input>
-                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 100) / 10000)} value="+.010"></input>
-                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 10) / 10000)} value="+.001"></input>
-                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 1) / 10000)} value="+.0001"></input>
+                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) + 10000)} value="+10000"></input>
+                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) + 1000)} value="+1000"></input>
+                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) + 100)} value="+100"></input>
+                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) + 10)} value="+10"></input>
                 </div>
                 <div className="decrease">
-                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 1000) / 10000)} value="-.100"></input>
-                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 100) / 10000)} value="-.010"></input>
-                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 10) / 10000)} value="-.001"></input>
-                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 1) / 10000)} value="-.0001"></input>
+                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) - 10000)} value="-10000"></input>
+                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) - 1000)} value="-1000"></input>
+                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) - 100)} value="-100"></input>
+                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) - 10)} value="-10"></input>
                 </div>
               </div>
             </div>
 
-            /* INPUT FOR AMOUNT IN USD */
-            : <div className="number-inputs">
-              {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
-              <label htmlFor="transaction_amount">
-                Trade amount (in USD):
-                <button className={`btn-blue ${user.theme}`} onClick={(event) => amountTypeHandler(event, false)}>Switch</button>
-              </label>
-              <input
-                className={user.theme}
-                type="number"
-                name="transaction_amount"
-                value={Number(transactionAmountUSD)}
-                // step={0.001}
-                required
-                onChange={(event) => handleTransactionAmount(event.target.value)}
-              />
-              <div className="increment-buttons">
-                <div className="increase">
-                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 10000000) / 10000)} value="+1000"></input>
-                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 1000000) / 10000)} value="+100"></input>
-                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 100000) / 10000)} value="+10"></input>
-                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 10000) / 10000)} value="+1"></input>
+            {/* INPUT FOR AMOUNT IN BTC */}
+            {!amountTypeIsUSD
+              ? <div className="number-inputs">
+                {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
+                <label htmlFor="transaction_amount">
+                  Trade amount (in BTC):
+                  <button className={`btn-blue ${user.theme}`} onClick={(event) => amountTypeHandler(event, true)}>Switch</button>
+                </label>
+                <input
+                  className={user.theme}
+                  type="number"
+                  name="transaction_amount"
+                  value={Number(transactionAmountBTC)}
+                  // step={0.001}
+                  required
+                  onChange={(event) => handleTransactionAmount(event.target.value)}
+                />
+                <div className="increment-buttons">
+                  <div className="increase">
+                    <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 1000) / 10000)} value="+.100"></input>
+                    <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 100) / 10000)} value="+.010"></input>
+                    <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 10) / 10000)} value="+.001"></input>
+                    <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 1) / 10000)} value="+.0001"></input>
+                  </div>
+                  <div className="decrease">
+                    <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 1000) / 10000)} value="-.100"></input>
+                    <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 100) / 10000)} value="-.010"></input>
+                    <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 10) / 10000)} value="-.001"></input>
+                    <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 1) / 10000)} value="-.0001"></input>
+                  </div>
                 </div>
-                <div className="decrease">
-                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 10000000) / 10000)} value="-1000"></input>
-                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 1000000) / 10000)} value="-100"></input>
-                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 100000) / 10000)} value="-10"></input>
-                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 10000) / 10000)} value="-1"></input>
+              </div>
+
+              /* INPUT FOR AMOUNT IN USD */
+              : <div className="number-inputs">
+                {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
+                <label htmlFor="transaction_amount">
+                  Trade amount (in USD):
+                  <button className={`btn-blue ${user.theme}`} onClick={(event) => amountTypeHandler(event, false)}>Switch</button>
+                </label>
+                <input
+                  className={user.theme}
+                  type="number"
+                  name="transaction_amount"
+                  value={Number(transactionAmountUSD)}
+                  // step={0.001}
+                  required
+                  onChange={(event) => handleTransactionAmount(event.target.value)}
+                />
+                <div className="increment-buttons">
+                  <div className="increase">
+                    <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 10000000) / 10000)} value="+1000"></input>
+                    <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 1000000) / 10000)} value="+100"></input>
+                    <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 100000) / 10000)} value="+10"></input>
+                    <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 10000) / 10000)} value="+1"></input>
+                  </div>
+                  <div className="decrease">
+                    <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 10000000) / 10000)} value="-1000"></input>
+                    <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 1000000) / 10000)} value="-100"></input>
+                    <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 100000) / 10000)} value="-10"></input>
+                    <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 10000) / 10000)} value="-1"></input>
+                  </div>
                 </div>
               </div>
-            </div>
-          }
-
-
-          <div className="number-inputs">
-            {/* {JSON.stringify(props.store.statusReducer.tickers.btc)} */}
-            {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
-            <label htmlFor="trade-pair-ratio">
-              Trade pair percent increase:
-            </label>
-            <input
-              className={user.theme}
-              type="number"
-              name="trade-pair-ratio"
-              value={Number(tradePairRatio)}
-              step={0.001}
-              required
-              onChange={(event) => setTradePairRatio(Number(event.target.value))}
-            />
-            <div className="increment-buttons">
-              <div className="increase">
-                <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 + 1000) / 1000)} value="+1"></input>
-                <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 + 100) / 1000)} value="+0.1"></input>
-                <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 + 10) / 1000)} value="+0.01"></input>
-                <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 + 1) / 1000)} value="+0.001"></input>
-
-              </div>
-              <div className="decrease">
-                <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 1000) / 1000)} value="-1"></input>
-                <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 100) / 1000)} value="-0.1"></input>
-                <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 10) / 1000)} value="-0.01"></input>
-                <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 1) / 1000)} value="-0.001"></input>
-              </div>
-            </div>
-            <input className={`btn-send-trade btn-blue ${user.theme}`} type="submit" name="submit" value="Start New Trade-Pair" />
-          </div>
-
-
-          {/* display some details about the new transaction that is going to be made */}
-          <div className={`boxed dark ${user.theme}`}>
-            <h4 className={`title ${user.theme}`}>New position</h4>
-            <p><strong>Trade Pair Details:</strong></p>
-            <p className="info">Buy price: <strong>${numberWithCommas(price.toFixed(2))}</strong> </p>
-            <p className="info">Sell price <strong>${numberWithCommas(sellPrice.toFixed(2))}</strong></p>
-            <p className="info">Price margin: <strong>{numberWithCommas(priceMargin.toFixed(2))}</strong> </p>
-            <p className="info">Volume <strong>{transactionAmountBTC}</strong> </p>
-            <p><strong>Cost at this volume:</strong></p>
-            <p className="info"><strong>BUY*:</strong> ${numberWithCommas(volumeCostBuy.toFixed(2))}</p>
-            <p className="info"><strong>SELL*:</strong>${numberWithCommas(volumeCostSell.toFixed(2))}</p>
-            <p className="info"><strong>BUY FEE*:</strong> ${buyFee.toFixed(8)}</p>
-            <p className="info"><strong>SELL FEE*:</strong> ${sellFee.toFixed(8)}</p>
-            <p className="info"><strong>TOTAL FEES*:</strong> ${totalfees.toFixed(8)}</p>
-            <p className="info"><strong>PAIR MARGIN*:</strong> ${numberWithCommas(pairMargin.toFixed(8))}</p>
-            <p className="info"><strong>PAIR PROFIT*:</strong> ${numberWithCommas(pairProfit.toFixed(8))}</p>
-            <p className="small info">
-              *Costs, fees, margins, and profits, are estimated and may be different at the time of transaction.
-              This is mostly due to rounding issues and market conditions.
-            </p>
-          </div>
-        </form>
-        {/* </div> */}
-      </div>
-
-
-
-
-
-      : <div className="Trade scrollable boxed" >
-        {/* <div className="scrollable boxed"> */}
-        <h3 className={`title ${user.theme}`}>Basic Trade <button className={`btn-blue ${user.theme}`} onClick={toggleTradeType} >Switch</button></h3>
-        {/* form with a single input. Input takes a price point at which 
-        to make a trade */}
-
-        <form className="basic-trade-form" onSubmit={submitBasicTransaction} >
-
-          <input className={`btn-green ${user.theme}`} onClick={(event) => setBasicSide('BUY')} type="button" name="submit" value="BUY" />
-          <input className={`btn-red ${user.theme}`} onClick={(event) => setBasicSide('SELL')} type="button" name="submit" value="SELL" />
-          <br />
-          <p><strong>
-            {
-              basicSide === 'BUY'
-                ? 'Buying'
-                : 'Selling'
             }
-          </strong>
-          </p>
 
-          <label htmlFor="trade-amount">
-            Trade volume in BTC:
-          </label>
-          <br />
-          <input
-            className={user.theme}
-            type="number"
-            name="trade-amount"
-            value={Number(basicAmount)}
-            required
-            onChange={(event) => setBasicAmount(Number(event.target.value))}
-          />
-          <br />
-          <input className={`btn-send-trade btn-blue ${user.theme}`} type="submit" name="submit" value="Send Trade" />
-        </form>
-        {/* </div> */}
+
+            <div className="number-inputs">
+              {/* {JSON.stringify(props.store.statusReducer.tickers.btc)} */}
+              {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
+              <label htmlFor="trade-pair-ratio">
+                Trade pair percent increase:
+              </label>
+              <input
+                className={user.theme}
+                type="number"
+                name="trade-pair-ratio"
+                value={Number(tradePairRatio)}
+                step={0.001}
+                required
+                onChange={(event) => setTradePairRatio(Number(event.target.value))}
+              />
+              <div className="increment-buttons">
+                <div className="increase">
+                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 + 1000) / 1000)} value="+1"></input>
+                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 + 100) / 1000)} value="+0.1"></input>
+                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 + 10) / 1000)} value="+0.01"></input>
+                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 + 1) / 1000)} value="+0.001"></input>
+
+                </div>
+                <div className="decrease">
+                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 1000) / 1000)} value="-1"></input>
+                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 100) / 1000)} value="-0.1"></input>
+                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 10) / 1000)} value="-0.01"></input>
+                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 1) / 1000)} value="-0.001"></input>
+                </div>
+              </div>
+              <input className={`btn-send-trade btn-blue ${user.theme}`} type="submit" name="submit" value="Start New Trade-Pair" />
+            </div>
+
+
+            {/* display some details about the new transaction that is going to be made */}
+            <div className={`boxed dark ${user.theme}`}>
+              <h4 className={`title ${user.theme}`}>New position</h4>
+              <p><strong>Trade Pair Details:</strong></p>
+              <p className="info">Buy price: <strong>${numberWithCommas(price.toFixed(2))}</strong> </p>
+              <p className="info">Sell price <strong>${numberWithCommas(sellPrice.toFixed(2))}</strong></p>
+              <p className="info">Price margin: <strong>{numberWithCommas(priceMargin.toFixed(2))}</strong> </p>
+              <p className="info">Volume <strong>{transactionAmountBTC}</strong> </p>
+              <p><strong>Cost at this volume:</strong></p>
+              <p className="info"><strong>BUY*:</strong> ${numberWithCommas(volumeCostBuy.toFixed(2))}</p>
+              <p className="info"><strong>SELL*:</strong>${numberWithCommas(volumeCostSell.toFixed(2))}</p>
+              <p className="info"><strong>BUY FEE*:</strong> ${buyFee.toFixed(8)}</p>
+              <p className="info"><strong>SELL FEE*:</strong> ${sellFee.toFixed(8)}</p>
+              <p className="info"><strong>TOTAL FEES*:</strong> ${totalfees.toFixed(8)}</p>
+              <p className="info"><strong>PAIR MARGIN*:</strong> ${numberWithCommas(pairMargin.toFixed(8))}</p>
+              <p className="info"><strong>PAIR PROFIT*:</strong> ${numberWithCommas(pairProfit.toFixed(8))}</p>
+              <p className="small info">
+                *Costs, fees, margins, and profits, are estimated and may be different at the time of transaction.
+                This is mostly due to rounding issues and market conditions.
+              </p>
+            </div>
+          </form>
+          {/* </div> */}
+        </div>
+
+
+
+
+
+        : <div className={`Trade scrollable boxed ${basicSide}-color`} >
+
+          <h3 className={`title market-order ${user.theme}`}>{ width > 800 && <button className={`btn-blue ${user.theme}`} onClick={toggleCollapse} >&#9664;</button>} Market Order <button className={`btn-blue ${user.theme}`} onClick={toggleTradeType} >Switch</button></h3>
+          {/* form with a single input. Input takes a price point at which to make a trade */}
+
+          <form className={`basic-trade-form`} onSubmit={submitBasicTransaction} >
+            <div className={`basic-trade-buttons`}>
+              <input className={`btn-green btn-side ${user.theme}`} onClick={(event) => setBasicSide('BUY')} type="button" name="submit" value="BUY" />
+              <input className={`btn-red btn-side ${user.theme}`} onClick={(event) => setBasicSide('SELL')} type="button" name="submit" value="SELL" />
+            </div>
+            <br />
+            <p><strong>
+              {
+                basicSide === 'BUY'
+                  ? 'Buying'
+                  : 'Selling'
+              }
+            </strong>
+            </p>
+
+            <label htmlFor="trade-amount">
+              Trade volume in BTC:
+            </label>
+            <br />
+            <input
+              className={user.theme}
+              type="number"
+              name="trade-amount"
+              value={Number(basicAmount)}
+              required
+              onChange={(event) => setBasicAmount(Number(event.target.value))}
+            />
+
+            {(basicSide === 'SELL') && <input className={`btn-blue ${user.theme}`} onClick={() => setBasicAmount(Number(user.available_btc))} type="button" name="submit" value="Max" />}
+            <br />
+            <p>
+              This equates to about
+              <br />${numberWithCommas((basicAmount * socket.tickers.btc.price).toFixed(2))}
+              <br />before fees
+            </p>
+            <br />
+            <input className={`btn-send-trade market btn-blue ${user.theme}`} type="submit" name="submit" value="Send Market Trade" />
+          </form>
+        </div>
+      : <div className={`Trade scrollable boxed collapsed`} >
+        <button className={`btn-blue btn-collapse ${user.theme}`} onClick={toggleCollapse} >&#9654;</button>
       </div>
   );
 }

@@ -31,7 +31,8 @@ function* fetchErrors() {
 function* fetchMessages() {
   try {
     const response = yield axios.get(`/api/account/messages`);
-    yield put({ type: 'SET_BOT_MESSAGES', payload: response.data })
+    yield put({ type: 'SET_BOT_MESSAGES', payload: response.data.general })
+    yield put({ type: 'SET_CHAT_MESSAGES', payload: response.data.chat })
     // console.log(response.data);
   } catch (error) {
     // console.log('GET profits route has failed', error);

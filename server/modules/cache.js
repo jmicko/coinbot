@@ -13,11 +13,13 @@ const cache = {
       botStatus: ['setup'],
       errors: [],
       messages: [],
+      chatMessages: [],
       willCancel: [],
       keyValuePairs: {},
       loopNumber: 0,
       api: null,
       messageCount: 1,
+      chatMessageCount: 1,
       errorCount: 1
     };
     // cache the API from the db
@@ -63,6 +65,21 @@ const cache = {
     if (cache.storage[userID]?.user) {
       return JSON.parse(JSON.stringify(cache.storage[userID].user))
     }
+  },
+
+  getAllUsers: () => {
+    let allUsers = []
+    cache.storage.forEach(user => {
+      // console.log('user', user);
+      if (user.user && user.user?.id !== 0) {
+        // make a deep copy so you don't delete the api from the user
+        let userCopy = JSON.parse(JSON.stringify(user))
+        // don't send the api anywhere you don't have to
+        delete userCopy.api;
+        allUsers.push(userCopy);
+      }
+    })
+    return JSON.parse(JSON.stringify(allUsers));
   },
 
   // KEY VALUE STORAGE
@@ -135,7 +152,9 @@ const cache = {
 
   // MESSAGE STORAGE - store 1000 most recent messages
   storeMessage: (userID, message) => {
+    console.log(message, 'message')
     const messageData = {
+      type: message.type,
       // message text is to store a custom message message to show the user
       messageText: message.messageText,
       // automatically store the timestamp
@@ -162,8 +181,51 @@ const cache = {
     })
   },
 
+  // MESSAGE STORAGE - store 1000 most recent messages
+  storeChat: (userID, chat) => {
+    console.log(chat, 'chat');
+    const chatData = {
+      // message text is to store a custom chat message to show the user
+      messageText: chat.text,
+      // automatically store the timestamp
+      timeStamp: new Date(),
+      count: cache.storage[userID].chatMessageCount
+    }
+
+    cache.storage[userID].chatMessageCount++;
+
+    cache.storage[userID].chatMessages.unshift(chatData);
+    if (cache.storage[userID].chatMessages.length > 1000) {
+      cache.storage[userID].chatMessages.length = 1000;
+    }
+    // tell Dom to update chat messages and trade list if needed
+    cache.sockets.forEach(socket => {
+      // find all open sockets for the user
+      if (socket.userID === userID) {
+        console.log(socket.userID, 'equal?', socket.request.session.passport?.user)
+        const msg = {
+          type: 'messageUpdate',
+          orderUpdate: false
+        }
+        socket.emit('message', msg);
+      }
+    })
+  },
+
   getMessages: (userID) => {
     return cache.storage[userID].messages;
+  },
+
+  getChatMessages: (userID) => {
+    const chats = [];
+    const messages = JSON.parse(JSON.stringify(cache.storage[userID].messages));
+    messages.forEach(message => {
+      if (message.type === 'chat') {
+        chats.push(message);
+      }
+    });
+    console.log(chats, 'CHAT TO GET');
+    return chats;
   },
 
   clearMessages: (userID) => {
