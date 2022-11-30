@@ -41,13 +41,8 @@ function NotActive() {
 
 
   return (
-    <div className="NotActive" >
-      {/* {errors && JSON.stringify(errors)} */}
       <div className="NotActive scrollable boxed">
-        {/* <div className='flex-api'> */}
-
-
-        <div className="API">
+        {/* <div className="API"> */}
 
           <h3 className={`title not-active ${user.theme}`}>You are not active!</h3>
           <p>
@@ -109,11 +104,11 @@ function NotActive() {
           </form>
 
 
-        </div>
+        {/* </div> */}
 
+        {/* </div> */}
       </div>
-      {/* </div> */}
-    </div>
+    // </div>
   );
 }
 

@@ -9,8 +9,8 @@ function NotApproved() {
   const user = useSelector((store) => store.accountReducer.userReducer);
 
   return (
-    <div className="NotApproved">
-      <div className="scrollable boxed">
+    <div className="NotApproved scrollable boxed">
+      {/* <div className="scrollable boxed"> */}
         {/* <>{JSON.stringify(props.store.accountReducer)}</> */}
         <center><p>Welcome to coinbot, {user.username}!</p></center>
         <center><p>You are not approved yet.</p></center>
@@ -19,7 +19,7 @@ function NotApproved() {
           the coinbot will be here to greet you. Once you've been approved and have stored your API
           details, you will be able to trade the coin.</p></center>
         <center><p>Good Luck!</p></center>
-      </div>
+      {/* </div> */}
     </div>
   )
 }

@@ -70,24 +70,24 @@ input {
 .api.error-box {
   margin: 0 5px 1rem;
 }
-
+/* 
 .flex-api {
   display       : flex;
   flex-direction: column;
-}
+} */
 
 
 .required-permissions-image {
   width: 100%;
 }
 
-.API p,
-.API .divider.short {
+.NotActive p,
+.NotActive .divider.short {
   margin: 5px;
   /* width: unset; */
 }
 
-.API .divider.short {
+.NotActive .divider.short {
   /* background-color: red; */
   /* margin: 5px; */
   width: unset;

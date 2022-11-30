@@ -11,12 +11,12 @@ function startWebsocket(userID) {
 
   const user = cache.getUser(userID);
   // console.log(user, 'ws user');
-  // don't start ws if user is not approved or active
+  // don't start ws if user is not approved and active
   if (!user?.active || !user?.approved) {
     if (user) {
       setTimeout(() => {
         const ws = startWebsocket(userID);
-        console.log(ws, 'retry ws success', userID);
+        // console.log(ws, 'retry ws success', user);
       }, 5000);
     }
     return { success: false }
@@ -85,15 +85,6 @@ function startWebsocket(userID) {
       this.pingTimeout = setTimeout(() => {
         console.log('ending socket after timeout');
         this.terminate();
-      }, 10000);
-    }
-
-    function ordersInterval() {
-      clearInterval(this.getOrders);
-      this.getOrders = setInterval(() => {
-        console.log('getting orders');
-        unsubscribeToProducts(products, 'user', ws);
-        subscribeToProducts(products, 'user', ws);
       }, 10000);
     }
 
