@@ -13,6 +13,7 @@ async function botLoop() {
     // get fresh settings from db
     botSettings = await databaseClient.getBotSettings();
     // save settings to the cache
+    console.log(botSettings,'bot settings');
     cache.setKey(userID, 'botSettings', botSettings);
   } catch (err) {
     console.log(err, 'error in botLoop');
@@ -249,9 +250,9 @@ async function fullSync(userID) {
         // get all open orders from db and cb
         databaseClient.getLimitedUnsettledTrades(userID, botSettings.orders_to_sync),
         // get open orders
-        coinbaseClient.getOpenOrders(userID),
+        coinbaseClient.getOrders(userID, { order_status: 'OPEN' }),
         // get fees
-        coinbaseClient.getFees(userID)
+        coinbaseClient.getTransactionSummary(userID, { user_native_currency: 'USD' })
       ]);
       // store the lists of orders in the corresponding consts so they can be compared
       const dbOrders = results[0];
@@ -285,7 +286,7 @@ async function quickSync(userID) {
   return new Promise(async (resolve, reject) => {
     try {
       // get the 500 most recent fills for the account
-      const response = await coinbaseClient.getFills(userID, { limit: 100 });
+      const response = await coinbaseClient.getFills(userID, { limit: 100, product_id: 'BTC-USD' });
       const fills = response.fills;
       // console.log(fillResponse);
       cache.updateStatus(userID, 'done getting quick sync fills');
@@ -575,7 +576,7 @@ async function updateMultipleOrders(userID, params) {
           await databaseClient.updateTrade(updatedOrder.order);
         }
       } catch (err) {
-        console.log(err, 'error in updateMultipleOrders loop');
+        console.log( 'error in updateMultipleOrders loop');
         cache.storeError(userID, {
           errorData: orderToCheck,
           errorText: `Error updating order details`
@@ -840,20 +841,20 @@ async function getAvailableFunds(userID, userSettings) {
       }
       // console.log('user is active');
       const takerFee = Number(userSettings.taker_fee) + 1;
-      // console.log('maker fee', takerFee);
 
       const results = await Promise.all([
-        coinbaseClient.getAccounts(userID),
+        coinbaseClient.getAccounts(userID, { limit: 250 }),
         // funds are withheld in usd when a buy is placed, so the maker fee is needed to subtract fees
         databaseClient.getSpentUSD(userID, takerFee),
         // funds are taken from the sale once settled, so the maker fee is not needed on the buys
         databaseClient.getSpentBTC(userID),
       ]);
+      const accounts = results[0].accounts
 
       // todo - figure out how to take unsynced trades and subtract from available balance
 
       // calculate USD balances
-      const [USD] = results[0].filter(account => account.currency === 'USD')
+      const [USD] = accounts.filter(account => account.currency === 'USD')
       // const availableUSD = USD.available;
       const availableUSD = USD.available_balance.value;
       // const balanceUSD = USD.balance;
@@ -864,7 +865,7 @@ async function getAvailableFunds(userID, userSettings) {
       const actualAvailableUSD = (balanceUSD - spentUSD).toFixed(16);
 
       // calculate BTC balances
-      const [BTC] = results[0].filter(account => account.currency === 'BTC')
+      const [BTC] = accounts.filter(account => account.currency === 'BTC')
       // const availableBTC = BTC.available;
       const availableBTC = BTC.available_balance.value;
       // const balanceBTC = BTC.balance;

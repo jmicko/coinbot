@@ -1,16 +1,17 @@
 const CryptoJS = require("crypto-js");
 const axios = require("axios").default;
-// const crypto = require('crypto');
 const cache = require("./cache");
 const { v4: uuidv4 } = require('uuid');
 
 
 // used for signing all requests
-function signRequest(userID, data, API) {
+function signRequest(user_api, data, API) {
   // get the user api details
-  const userAPI = cache.getAPI(userID);
+  const userAPI = cache.getAPI(user_api);
   const secret = userAPI.CB_SECRET;
   const key = userAPI.CB_ACCESS_KEY;
+  // const secret = user_api.CB_SECRET;
+  // const key = user_api.CB_ACCESS_KEY;
   // convert the data to JSON, if any
   const body = data ? JSON.stringify(data) : '';
   // get the timestamp
@@ -38,73 +39,55 @@ function signRequest(userID, data, API) {
 function addParams(options, params) {
   // if there are params to go on the query string, add a ? to the string
   options.url = options.url + `?`;
-  // need to check if 
+  // need to know if first param, so can add & symbol if needed
   let firstParam = true;
-  if (params.order_id) {
-    firstChecker();
-    options.url = options.url + `order_id=${params.order_id}`;
-  }
-  if (params.product_id) {
-    firstChecker();
-    options.url = options.url + `product_id=${params.product_id}`;
-  }
-  if (params.start_sequence_timestamp || params.start) {
-    firstChecker();
-    options.url = options.url + `start_sequence_timestamp=${params.start_sequence_timestamp || params.start}`;
-  }
-  if (params.end_sequence_timestamp || params.end) {
-    firstChecker();
-    options.url = options.url + `end_sequence_timestamp=${params.end_sequence_timestamp || params.end}`;
-  }
-  if (params.cursor) {
-    firstChecker();
-    options.url = options.url + `cursor=${params.cursor}`;
-  }
-  if (params.limit) {
-    firstChecker();
-    options.url = options.url + `limit=${params.limit}`;
-  }
-
-  function firstChecker() {
+  // Iterate over each object key/value pair, adding them to the url
+  Object.keys(params).forEach(key => {
+    // if it is the first param, set firstParam to false. All other params will add an '&' symbol
     firstParam ? firstParam = false : options.url = options.url + '&';
-  }
+    options.url = options.url + `${key}=${params[key]}`;
+  });
 }
 
-async function getAccounts(userID) {
+// CALL IT LIKE THIS coinbaseClient.getAccounts(user_api, { limit: 250 })
+async function getAccounts(user_api, params) {
   return new Promise(async (resolve, reject) => {
     try {
       // data should just be blank
       const data = null;
       const API = {
-        url: `https://coinbase.com/api/v3/brokerage/accounts?limit=250`,
+        url: `https://coinbase.com/api/v3/brokerage/accounts`,
         path: "/api/v3/brokerage/accounts",
         method: 'GET',
       }
       // sign the request
-      const options = signRequest(userID, data, API);
-
+      const options = signRequest(user_api, data, API);
+      // add params, if any
+      if (params) { addParams(options, params) }
+      // make the call
       let response = await axios.request(options);
-      // console.log('SUCCESSFUL RESPONSE FROM NEW API:', response.data);
-      resolve(response.data.accounts);
+      resolve(response.data);
     } catch (err) {
       reject(err);
     }
   })
 }
 
-async function getFees(userID) {
+async function getTransactionSummary(user_api, params) {
   return new Promise(async (resolve, reject) => {
     try {
       // data should just be blank
       const data = null;
       const API = {
-        url: `https://coinbase.com/api/v3/brokerage/transaction_summary?user_native_currency=USD`,
+        url: `https://coinbase.com/api/v3/brokerage/transaction_summary`,
         path: "/api/v3/brokerage/transaction_summary",
         method: 'GET',
       }
       // sign the request
-      const options = signRequest(userID, data, API);
-
+      const options = signRequest(user_api, data, API);
+      // add params, if any
+      if (params) { addParams(options, params) }
+      // make the call
       let response = await axios.request(options);
       resolve(response.data);
     } catch (err) {
@@ -114,7 +97,7 @@ async function getFees(userID) {
 }
 
 
-async function getFills(userID, params) {
+async function getFills(user_api, params) {
   return new Promise(async (resolve, reject) => {
     try {
       // data should just be blank
@@ -125,11 +108,10 @@ async function getFills(userID, params) {
         method: 'GET',
       }
       // sign the request
-      const options = signRequest(userID, data, API);
-
-      if (params) {
-        addParams(options, params);
-      }
+      const options = signRequest(user_api, data, API);
+      // add params, if any
+      if (params) { addParams(options, params) }
+      // make the call
       let response = await axios.request(options);
       resolve(response.data);
     } catch (err) {
@@ -138,7 +120,8 @@ async function getFills(userID, params) {
   });
 }
 
-async function getProduct(userID, product_id) {
+// DO NOT pass a params object to some get requests
+async function getProduct(user_api, product_id) {
   return new Promise(async (resolve, reject) => {
     try {
       // data should just be blank
@@ -149,8 +132,8 @@ async function getProduct(userID, product_id) {
         method: 'GET',
       }
       // sign the request
-      const options = signRequest(userID, data, API);
-
+      const options = signRequest(user_api, data, API);
+      // make the call
       let response = await axios.request(options);
       resolve(response.data);
     } catch (err) {
@@ -159,19 +142,21 @@ async function getProduct(userID, product_id) {
   });
 }
 
-async function getProducts(userID) {
+async function getProducts(user_api, params) {
   return new Promise(async (resolve, reject) => {
     try {
       // data should just be blank
       const data = null;
       const API = {
-        url: `https://coinbase.com/api/v3/brokerage/products?new=TRUE`,
+        url: `https://coinbase.com/api/v3/brokerage/products`,
         path: "/api/v3/brokerage/products",
         method: 'GET',
       }
       // sign the request
-      const options = signRequest(userID, data, API);
-
+      const options = signRequest(user_api, data, API);
+      // add params, if any
+      if (params) { addParams(options, params) }
+      // make the call
       let response = await axios.request(options);
       resolve(response.data);
     } catch (err) {
@@ -180,19 +165,21 @@ async function getProducts(userID) {
   });
 }
 
-async function getOpenOrders(userID) {
+async function getOrders(user_api, params) {
   return new Promise(async (resolve, reject) => {
     try {
       // data should just be blank
       const data = null;
       const API = {
-        url: `https://coinbase.com/api/v3/brokerage/orders/historical/batch?order_status=OPEN`,
+        url: `https://coinbase.com/api/v3/brokerage/orders/historical/batch`,
         path: "/api/v3/brokerage/orders/historical/batch",
         method: 'GET',
       }
       // sign the request
-      const options = signRequest(userID, data, API);
-
+      const options = signRequest(user_api, data, API);
+      // add params, if any
+      if (params) { addParams(options, params) }
+      // make the call
       let response = await axios.request(options);
       resolve(response.data);
     } catch (err) {
@@ -201,20 +188,20 @@ async function getOpenOrders(userID) {
   });
 }
 
-
-async function getOrder(userID, orderId) {
+// docs say params are deprecated, so just an order_id is needed for now
+async function getOrder(user_api, order_id) {
   return new Promise(async (resolve, reject) => {
     try {
       // data should just be blank
       const data = null;
       const API = {
-        url: `https://coinbase.com/api/v3/brokerage/orders/historical/${orderId}`,
-        path: `/api/v3/brokerage/orders/historical/${orderId}`,
+        url: `https://coinbase.com/api/v3/brokerage/orders/historical/${order_id}`,
+        path: `/api/v3/brokerage/orders/historical/${order_id}`,
         method: 'GET',
       }
       // sign the request
-      const options = signRequest(userID, data, API);
-
+      const options = signRequest(user_api, data, API);
+      // make the call
       let response = await axios.request(options);
       resolve(response.data);
     } catch (err) {
@@ -225,7 +212,7 @@ async function getOrder(userID, orderId) {
 
 
 
-async function placeOrder(userID, order) {
+async function placeOrder(user_api, order) {
   return new Promise(async (resolve, reject) => {
     try {
       const API = {
@@ -245,8 +232,9 @@ async function placeOrder(userID, order) {
         product_id: order.product_id,
         client_order_id: order.client_order_id || uuidv4()
       }
-      const options = signRequest(userID, data, API);
-
+      // sign the request
+      const options = signRequest(user_api, data, API);
+      // make the call
       let response = await axios.request(options);
       resolve(response.data);
     } catch (err) {
@@ -257,7 +245,7 @@ async function placeOrder(userID, order) {
 }
 
 
-async function placeMarketOrder(userID, order) {
+async function placeMarketOrder(user_api, order) {
   return new Promise(async (resolve, reject) => {
     try {
 
@@ -288,8 +276,9 @@ async function placeMarketOrder(userID, order) {
         client_order_id: order.client_order_id || uuidv4()
       }
 
-      const options = signRequest(userID, data, API);
-
+      // sign the request
+      const options = signRequest(user_api, data, API);
+      // make the call
       let response = await axios.request(options);
       resolve(response.data);
     } catch (err) {
@@ -299,7 +288,7 @@ async function placeMarketOrder(userID, order) {
   });
 }
 
-async function cancelOrders(userID, orderIdArray) {
+async function cancelOrders(user_api, orderIdArray) {
   return new Promise(async (resolve, reject) => {
     try {
       // data should just be an array of IDs
@@ -310,8 +299,8 @@ async function cancelOrders(userID, orderIdArray) {
         method: 'POST',
       }
       // sign the request
-      const options = signRequest(userID, data, API);
-      // send it
+      const options = signRequest(user_api, data, API);
+      // make the call
       let response = await axios.request(options);
       resolve(response.data);
     } catch (err) {
@@ -320,16 +309,21 @@ async function cancelOrders(userID, orderIdArray) {
   })
 }
 
-async function cancelAll(userID) {
+async function cancelAll(user_api) {
   return new Promise(async (resolve, reject) => {
     try {
-      const openOrders = await getOpenOrders(userID);
+      const openOrders = await getOrders(user_api, { order_status: 'OPEN' });
+      console.log(openOrders, 'open orders response');
       const idArray = [];
       openOrders.orders.forEach(order => {
         idArray.push(order.order_id)
       });
       console.log(idArray);
-      const result = await cancelOrders(userID, idArray);
+      const cancelResult = await cancelOrders(user_api, idArray);
+      const result = {
+        openOrdersResult: openOrders,
+        cancelResult: cancelResult
+      }
       resolve(result)
     } catch (err) {
       reject(err)
@@ -383,7 +377,7 @@ async function testAPI(secret, key) {
 
 module.exports = {
   placeMarketOrder: placeMarketOrder,
-  getOpenOrders: getOpenOrders,
+  getOrders: getOrders,
   cancelOrders: cancelOrders,
   getAccounts: getAccounts,
   getProducts: getProducts,
@@ -392,6 +386,6 @@ module.exports = {
   cancelAll: cancelAll,
   getFills: getFills,
   getOrder: getOrder,
-  getFees: getFees,
+  getTransactionSummary: getTransactionSummary,
   testAPI: testAPI,
 }
