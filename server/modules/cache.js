@@ -3,7 +3,7 @@ const databaseClient = require("./databaseClient");
 const botSettings = {
   loop_speed: Number(),
   orders_to_sync: Number(),
-  full_sync: Number(),
+  full_sync: Number(1),
   maintenance: Boolean()
 };
 const userStorage = [];
@@ -12,15 +12,15 @@ const apiStorage = [];
 
 const cache = {
   // the storage array will store an object of different things at the index of the user id
-  storage: [],
+  // storage: [],
 
   setBotSettings: (newSettings) => {
     Object.assign(botSettings, newSettings)
   },
   getBotSettings: () => {
-    if (botSettings) {
+    // if (botSettings) {
       return structuredClone(botSettings)
-    }
+    // }
   },
   refreshBotSettings: async () => {
     const botSettings = await databaseClient.getBotSettings();
@@ -35,7 +35,7 @@ const cache = {
     // delete password. we don't need it here
     delete user.password
     // insert the user at the array index matching their id
-    cache.storage[userID] = {
+    const storage = {
       ...user,
       botStatus: ['setup'],
       errors: Array(),
@@ -46,6 +46,7 @@ const cache = {
       keyValuePairs: Object(),
       loopNumber: Number(),
       api: null,
+      // can't use .length to get counts or they end up at 1000. need a counter instead
       messageCount: 1,
       chatMessageCount: 1,
       errorCount: 1
@@ -53,12 +54,11 @@ const cache = {
 
     // create user object at index of user id
     userStorage[userID] = Object();
-    // add the user to the userStorage array
-    Object.assign(userStorage[userID], cache.storage[userID])
+    // add the user info to the userStorage array
+    Object.assign(userStorage[userID], storage)
 
     // cache the API from the db
     try {
-      // console.log(cache.storage[userID], 'USER');
       const userAPI = await databaseClient.getUserAPI(userID);
       cache.storeAPI(userID, userAPI);
       
@@ -68,7 +68,7 @@ const cache = {
       Object.assign(apiStorage[userID], userAPI)
       
       // console.log(apiStorage, 'new storage array');
-      await cache.refreshUser(user.id);
+      // await cache.refreshUser(user.id);
     } catch (err) {
       console.log(err, 'error creating new user');
     }
@@ -84,7 +84,7 @@ const cache = {
     // don't need password
     delete user.password
     // if there is a user, set the user as the user. lmao. Otherwise empty object
-    cache.storage[userID] = (user) ? { ...cache.storage[userID], ...user } : null;
+    userStorage[userID] = (user) ? { ...userStorage[userID], ...user } : null;
     // get and store the api from the db
     userAPI = await databaseClient.getUserAPI(userID);
     cache.storeAPI(userID, userAPI);
@@ -92,7 +92,7 @@ const cache = {
 
   // KEEP TRACK OF ORDERS TO CANCEL
   setCancel: (userID, orderID) => {
-    const userStore = cache.storage[userID]
+    const userStore = userStorage[userID]
     // add the id to the willCancel set
     userStore.willCancel.add(orderID);
     // delete the id from the set after 30 seconds. Bot would have seen it by then
@@ -103,22 +103,22 @@ const cache = {
   },
 
   checkIfCanceling: (userID, orderID) => {
-    const userStore = cache.storage[userID]
+    const userStore = userStorage[userID]
     // find if id is in the willCancel set
     return userStore.willCancel.has(orderID)
   },
 
   getUser: (userID) => {
     // make a deep copy so you don't delete the api from the user
-    const user = structuredClone(cache.storage[userID])
-    delete user.api
+    const user = structuredClone(userStorage[userID])
+    // delete user.api
     // console.log(user.api,'user api to delete');
     return user
   },
 
   getAllUsers: () => {
     let allUsers = []
-    cache.storage.forEach(user => {
+    userStorage.forEach(user => {
       if (user && user.id !== 0) {
         // get a deep copy of the user
         const userCopy = cache.getUser(user.id)
@@ -131,31 +131,31 @@ const cache = {
 
   // KEY VALUE STORAGE
   setKey: (userID, key, value) => {
-    cache.storage[userID].keyValuePairs[key] = value;
+    userStorage[userID].keyValuePairs[key] = value;
   },
   getKey: (userID, key) => {
-    if (cache.storage[userID].keyValuePairs[key]) {
-      return JSON.parse(JSON.stringify(cache.storage[userID].keyValuePairs[key]))
+    if (userStorage[userID].keyValuePairs[key]) {
+      return JSON.parse(JSON.stringify(userStorage[userID].keyValuePairs[key]))
     } else {
       return null;
     }
   },
   deleteKey: (userID, key) => {
-    delete cache.storage[userID].keyValuePairs[key];
+    delete userStorage[userID].keyValuePairs[key];
   },
 
   // LOOP STATUS UPDATES
   updateStatus: (userID, update) => {
-    cache.storage[userID].botStatus.unshift(update);
-    if (cache.storage[userID].botStatus.length > 100) {
-      cache.storage[userID].botStatus.length = 100;
+    userStorage[userID].botStatus.unshift(update);
+    if (userStorage[userID].botStatus.length > 100) {
+      userStorage[userID].botStatus.length = 100;
     }
   },
   getStatus: (userID) => {
-    return cache.storage[userID].botStatus;
+    return userStorage[userID].botStatus;
   },
   clearStatus: (userID) => {
-    cache.storage[userID].botStatus.length = 0;
+    userStorage[userID].botStatus.length = 0;
   },
 
   // ERROR STORAGE - store 1000 most recent errors
@@ -169,13 +169,13 @@ const cache = {
       errorData: error.errorData,
       // automatically store the timestamp
       timeStamp: new Date(),
-      count: cache.storage[userID].errorCount
+      count: userStorage[userID].errorCount
     }
-    cache.storage[userID].errorCount++;
+    userStorage[userID].errorCount++;
 
-    cache.storage[userID].errors.unshift(errorData);
-    if (cache.storage[userID].errors.length > 1000) {
-      cache.storage[userID].errors.length = 1000;
+    userStorage[userID].errors.unshift(errorData);
+    if (userStorage[userID].errors.length > 1000) {
+      userStorage[userID].errors.length = 1000;
     }
 
     // tell Dom to update errors
@@ -191,10 +191,10 @@ const cache = {
     })
   },
   getErrors: (userID) => {
-    return cache.storage[userID].errors;
+    return userStorage[userID].errors;
   },
   clearErrors: (userID) => {
-    cache.storage[userID].errors.length = 0;
+    userStorage[userID].errors.length = 0;
   },
 
   // MESSAGE STORAGE - store 1000 most recent messages
@@ -206,13 +206,13 @@ const cache = {
       messageText: message.messageText,
       // automatically store the timestamp
       timeStamp: new Date(),
-      count: cache.storage[userID].messageCount
+      count: userStorage[userID].messageCount
     }
-    cache.storage[userID].messageCount++;
+    userStorage[userID].messageCount++;
 
-    cache.storage[userID].messages.unshift(messageData);
-    if (cache.storage[userID].messages.length > 1000) {
-      cache.storage[userID].messages.length = 1000;
+    userStorage[userID].messages.unshift(messageData);
+    if (userStorage[userID].messages.length > 1000) {
+      userStorage[userID].messages.length = 1000;
     }
     // tell Dom to update messages and trade list if needed
     cache.sockets.forEach(socket => {
@@ -236,14 +236,14 @@ const cache = {
       messageText: chat.text,
       // automatically store the timestamp
       timeStamp: new Date(),
-      count: cache.storage[userID].chatMessageCount
+      count: userStorage[userID].chatMessageCount
     }
 
-    cache.storage[userID].chatMessageCount++;
+    userStorage[userID].chatMessageCount++;
 
-    cache.storage[userID].chatMessages.unshift(chatData);
-    if (cache.storage[userID].chatMessages.length > 1000) {
-      cache.storage[userID].chatMessages.length = 1000;
+    userStorage[userID].chatMessages.unshift(chatData);
+    if (userStorage[userID].chatMessages.length > 1000) {
+      userStorage[userID].chatMessages.length = 1000;
     }
     // tell Dom to update chat messages and trade list if needed
     cache.sockets.forEach(socket => {
@@ -260,12 +260,12 @@ const cache = {
   },
 
   getMessages: (userID) => {
-    return cache.storage[userID].messages;
+    return userStorage[userID].messages;
   },
 
   getChatMessages: (userID) => {
     const chats = [];
-    const messages = JSON.parse(JSON.stringify(cache.storage[userID].messages));
+    const messages = JSON.parse(JSON.stringify(userStorage[userID].messages));
     messages.forEach(message => {
       if (message.type === 'chat') {
         chats.push(message);
@@ -276,26 +276,27 @@ const cache = {
   },
 
   clearMessages: (userID) => {
-    cache.storage[userID].messages.length = 0;
+    userStorage[userID].messages.length = 0;
   },
 
   // LOOP COUNTER
   increaseLoopNumber: (userID) => {
     // throwing an error here on 1st user creation
-    cache.storage[userID].loopNumber++;
+    userStorage[userID].loopNumber++;
   },
 
   getLoopNumber: (userID) => {
-    return cache.storage[userID].loopNumber;
+    // console.log(userStorage[userID].loopNumber,'error initializing loops');
+    
+    return userStorage[userID].loopNumber;
   },
 
   // API STORAGE
   storeAPI: (userID, api) => {
-    cache.storage[userID].api = api;
-    // console.log(cache.storage[userID],'DID IT PUT THE USER TOGETHER CORRECTLY')
+    apiStorage[userID] = api;
   },
   getAPI: (userID) => {
-    return cache.storage[userID].api;
+    return apiStorage[userID];
   },
 
   // get all cache storage for a user but remove API before returning
@@ -306,8 +307,8 @@ const cache = {
     // error says unexpected character "u"
 
     console.log('getting safe storage');
-    const safeStorage = cache.storage[userID]
-      ? JSON.parse(JSON.stringify(cache.storage[userID]))
+    const safeStorage = userStorage[userID]
+      ? JSON.parse(JSON.stringify(userStorage[userID]))
       : { user: null, api: null };
     // remove the api so sensitive details are not sent off server
     delete safeStorage.api;

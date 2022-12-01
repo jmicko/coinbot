@@ -89,11 +89,11 @@ async function syncOrders(userID) {
     heartBeat(userID, 'heart');
     // check that user is active, approved, and unpaused, and that the bot is not under maintenance
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
-
+      
       // *** WHICH SYNC ***
       if (((loopNumber - 1) % botSettings.full_sync) === 0) {
-        // console.log('full sync');
-
+        // console.log(user,'full sync');
+        
         // *** FULL SYNC ***
         // full sync compares all trades that should be on CB with DB,
         // and does other less frequent maintenance tasks

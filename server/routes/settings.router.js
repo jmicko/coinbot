@@ -68,7 +68,7 @@ router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
         const response = cache.checkIfCanceling(userID, 'fake_id')
         console.log(response, 'response from test');
       }, 500);
-      
+
 
 
 
@@ -116,9 +116,10 @@ router.put('/loopSpeed', rejectUnauthenticated, async (req, res) => {
       const queryText = `UPDATE "bot_settings" SET "loop_speed" = $1;`;
       await pool.query(queryText, [loopSpeed]);
 
-      botSettings = await databaseClient.getBotSettings();
-      // console.log(botSettings);
-      cache.setKey(0, 'botSettings', botSettings);
+      // botSettings = await databaseClient.getBotSettings();
+      cache.setBotSettings({ loop_speed: loopSpeed })
+      console.log(cache.getBotSettings());
+      // cache.setKey(0, 'botSettings', botSettings);
 
       res.sendStatus(200);
     } catch (err) {
@@ -149,12 +150,12 @@ router.put('/fullSync', rejectUnauthenticated, async (req, res) => {
   if (user.admin && fullSync <= 100 && fullSync >= 1) {
     try {
       console.log('full_sync route hit', fullSync);
+      // set the settings in the cache first
+      cache.setBotSettings({ full_sync: fullSync })
+      // then save to db
       const queryText = `UPDATE "bot_settings" SET "full_sync" = $1;`;
       await pool.query(queryText, [fullSync]);
 
-      botSettings = await databaseClient.getBotSettings();
-      // console.log(botSettings);
-      cache.setKey(0, 'botSettings', botSettings);
 
       res.sendStatus(200);
     } catch (err) {
@@ -182,12 +183,11 @@ router.put('/orderSyncQuantity', rejectUnauthenticated, async (req, res) => {
 
   if (user.admin && orders_to_sync <= 200 && orders_to_sync >= 1) {
     try {
+      // save to cache
+      cache.setBotSettings({ orders_to_sync: orders_to_sync })
+      // save to db
       const queryText = `UPDATE "bot_settings" SET "orders_to_sync" = $1;`;
       await pool.query(queryText, [orders_to_sync]);
-
-      botSettings = await databaseClient.getBotSettings();
-      // console.log(botSettings);
-      cache.setKey(0, 'botSettings', botSettings);
 
       res.sendStatus(200);
     } catch (err) {
@@ -214,9 +214,8 @@ router.put('/toggleMaintenance', rejectUnauthenticated, async (req, res) => {
       await databaseClient.toggleMaintenance();
       robot.alertAllUsers('Toggling maintenance mode!');
 
-      botSettings = await databaseClient.getBotSettings();
-      // console.log(botSettings);
-      cache.setKey(0, 'botSettings', botSettings);
+      // refresh cache
+      cache.refreshBotSettings()
 
       res.sendStatus(200);
     } catch (err) {
