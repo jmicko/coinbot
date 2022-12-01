@@ -1,4 +1,12 @@
-// this file has functions used by both client and server, so no need to write them twice
+// this file has functions used by both client and server, so no need to write them twice.
+// or for when circular imports would be a problem
+
+
+// function to pause for x milliseconds in any async function
+function sleep(milliseconds) {
+  return new Promise(resolve => setTimeout(resolve, milliseconds))
+}
+
 function autoSetup(user, options) {
 
   // create an array to hold the new trades to put in
@@ -174,4 +182,4 @@ function autoSetup(user, options) {
   }
 }
 
-module.exports = { autoSetup }
+module.exports = { autoSetup, sleep }

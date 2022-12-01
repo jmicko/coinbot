@@ -5,7 +5,7 @@ const cache = require('./cache');
 const databaseClient = require('./databaseClient');
 const coinbaseClient = require('./coinbaseClient');
 const { rejectUnauthenticatedSocket } = require('./authentication-middleware');
-const passport = require('../strategies/user.strategy');
+const { sleep } = require('../../src/shared');
 
 function startWebsocket(userID) {
 
@@ -183,7 +183,7 @@ function startWebsocket(userID) {
         }
       })
 
-      await sleep(1000);
+      // await sleep(1000);
       // find unsettled orders in the db based on the IDs array
       const unsettledOrders = await databaseClient.getUnsettledTradesByIDs(userID, orderIds);
 
@@ -261,11 +261,6 @@ async function updateMultipleOrders(userID, params) {
   })
 }
 
-// function to pause for x milliseconds in any async function
-function sleep(milliseconds) {
-  return new Promise(resolve => setTimeout(resolve, milliseconds))
-}
-
 function heartBeat(userID) {
   const loopNumber = cache.getLoopNumber(userID);
   const botSettings = cache.getKey(0, 'botSettings');
@@ -284,119 +279,119 @@ function heartBeat(userID) {
 
 }
 
-function getOpenOrders(userID) {
-  return new Promise(async (resolve, reject) => {
-    const userAPI = cache.getAPI(userID)
-    const secret = userAPI.CB_SECRET;
-    const key = userAPI.CB_ACCESS_KEY;
+// function getOpenOrders(userID) {
+//   return new Promise(async (resolve, reject) => {
+//     const userAPI = cache.getAPI(userID)
+//     const secret = userAPI.CB_SECRET;
+//     const key = userAPI.CB_ACCESS_KEY;
 
-    if (!secret.length || !key.length) {
-      throw new Error('missing mandatory environment variable(s)');
-    }
+//     if (!secret.length || !key.length) {
+//       throw new Error('missing mandatory environment variable(s)');
+//     }
 
-    const products = ['BTC-USD', 'ETH-USD'];
+//     const products = ['BTC-USD', 'ETH-USD'];
 
-    // Function to generate a signature using CryptoJS
-    function sign(str, secret) {
-      const hash = CryptoJS.HmacSHA256(str, secret);
-      return hash.toString();
-    }
+//     // Function to generate a signature using CryptoJS
+//     function sign(str, secret) {
+//       const hash = CryptoJS.HmacSHA256(str, secret);
+//       return hash.toString();
+//     }
 
-    function timestampAndSign(message, channel, products = []) {
-      const timestamp = Math.floor(Date.now() / 1000).toString();
-      const strToSign = `${timestamp}${channel}${products.join(',')}`;
-      const sig = sign(strToSign, secret);
-      return { ...message, signature: sig, timestamp: timestamp };
-    }
+//     function timestampAndSign(message, channel, products = []) {
+//       const timestamp = Math.floor(Date.now() / 1000).toString();
+//       const strToSign = `${timestamp}${channel}${products.join(',')}`;
+//       const sig = sign(strToSign, secret);
+//       return { ...message, signature: sig, timestamp: timestamp };
+//     }
 
-    function subscribeToProducts(products, channelName, ws) {
-      // console.log('products: %s', products.join(','));
-      const message = {
-        type: 'subscribe',
-        channel: channelName,
-        api_key: key,
-        product_ids: products,
-        user_id: '',
-      };
-      const subscribeMsg = timestampAndSign(message, channelName, products);
-      ws.send(JSON.stringify(subscribeMsg));
-    }
+//     function subscribeToProducts(products, channelName, ws) {
+//       // console.log('products: %s', products.join(','));
+//       const message = {
+//         type: 'subscribe',
+//         channel: channelName,
+//         api_key: key,
+//         product_ids: products,
+//         user_id: '',
+//       };
+//       const subscribeMsg = timestampAndSign(message, channelName, products);
+//       ws.send(JSON.stringify(subscribeMsg));
+//     }
 
-    // The base URL of the API
-    const WS_API_URL = 'wss://advanced-trade-ws.coinbase.com';
+//     // The base URL of the API
+//     const WS_API_URL = 'wss://advanced-trade-ws.coinbase.com';
 
-    open();
+//     open();
 
-    function open() {
+//     function open() {
 
-      function timer() {
-        clearTimeout(this.pingTimeout);
-        this.pingTimeout = setTimeout(() => {
-          console.log('ending socket after timeout');
-          reject({
-            response: {
-              status: 503,
-              statusText: 'socket timeout',
-              data: {
-                error: 'socket closed',
-                error_details: 'socket closed after timeout',
-                message: 'socket timeout'
-              }
-            }
-          });
-          this.terminate();
-        }, 5000);
-      }
+//       function timer() {
+//         clearTimeout(this.pingTimeout);
+//         this.pingTimeout = setTimeout(() => {
+//           console.log('ending socket after timeout');
+//           reject({
+//             response: {
+//               status: 503,
+//               statusText: 'socket timeout',
+//               data: {
+//                 error: 'socket closed',
+//                 error_details: 'socket closed after timeout',
+//                 message: 'socket timeout'
+//               }
+//             }
+//           });
+//           this.terminate();
+//         }, 5000);
+//       }
 
-      let ws = new WebSocket(WS_API_URL);
+//       let ws = new WebSocket(WS_API_URL);
 
-      ws.on('open', function () {
-        // console.log('Get orders socket open!');
-        subscribeToProducts(products, 'user', ws);
-      });
+//       ws.on('open', function () {
+//         // console.log('Get orders socket open!');
+//         subscribeToProducts(products, 'user', ws);
+//       });
 
-      ws.on('error', function (err) {
-        console.log('get orders websocket error!');
-        reject({
-          response: {
-            status: 503,
-            statusText: 'unknown error',
-            data: {
-              error: 'unknown error',
-              error_details: 'unknown error',
-              message: 'unknown error'
-            },
-            error: err
-          }
-        });
-      });
+//       ws.on('error', function (err) {
+//         console.log('get orders websocket error!');
+//         reject({
+//           response: {
+//             status: 503,
+//             statusText: 'unknown error',
+//             data: {
+//               error: 'unknown error',
+//               error_details: 'unknown error',
+//               message: 'unknown error'
+//             },
+//             error: err
+//           }
+//         });
+//       });
 
-      ws.on('message', function (data) {
-        const parsedData = JSON.parse(data);
+//       ws.on('message', function (data) {
+//         const parsedData = JSON.parse(data);
 
-        if (parsedData.events) {
-          parsedData.events.forEach(event => {
-            if (event.type === 'snapshot') {
-              handleSnapshot(event);
-            }
-          });
-        }
-      });
+//         if (parsedData.events) {
+//           parsedData.events.forEach(event => {
+//             if (event.type === 'snapshot') {
+//               handleSnapshot(event);
+//             }
+//           });
+//         }
+//       });
 
-      function handleSnapshot(event) {
-        if (event.orders) {
-          resolve(event.orders);
-          ws.close();
-        }
-      }
+//       function handleSnapshot(event) {
+//         if (event.orders) {
+//           resolve(event.orders);
+//           ws.close();
+//         }
+//       }
 
-      ws.on('open', timer);
-      ws.on('close', function clear() {
-        clearTimeout(this.pingTimeout);
-      });
-    }
-  })
-}
+//       ws.on('open', timer);
+//       ws.on('close', function clear() {
+//         clearTimeout(this.pingTimeout);
+//       });
+//     }
+//   })
+// }
 
 function setupSocketIO(io) {
   console.log('setting up socket.io');
@@ -466,4 +461,4 @@ function setupSocketIO(io) {
   console.log('socket setup done');
 }
 
-module.exports = { startWebsocket, getOpenOrders, setupSocketIO };
+module.exports = { startWebsocket, setupSocketIO };

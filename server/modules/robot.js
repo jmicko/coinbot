@@ -2,7 +2,7 @@
 const coinbaseClient = require("./coinbaseClient");
 const databaseClient = require("./databaseClient");
 const cache = require("./cache");
-const { startWebsocket, getOpenOrders } = require("./websocket");
+const { startWebsocket } = require("./websocket");
 
 
 // this will keep track of and update general bot settings
@@ -51,7 +51,7 @@ async function initializeUserLoops(user) {
 
   try {
     const ws = startWebsocket(userID);
-    console.log(ws,'ws success', userID)
+    console.log(ws, 'ws success', userID)
 
   } catch (err) {
     console.log(err, 'error starting websocket');
@@ -132,7 +132,7 @@ async function syncOrders(userID) {
 
       // *** UPDATE ORDERS IN DATABASE ***
       await updateMultipleOrders(userID);
-
+      // console.log('success!!!!!!');
       // update funds after everything has been processed
       await updateFunds(userID);
 
@@ -149,7 +149,7 @@ async function syncOrders(userID) {
       const t1 = performance.now();
       // API is limited to 10/sec, so make sure the bot waits that long between loops
       if (100 - (t1 - t0) > 0) {
-        console.log(`sync took ${t1 - t0} milliseconds.`, 100 - (t1 - t0));
+        // console.log(`sync took ${t1 - t0} milliseconds.`, 100 - (t1 - t0));
         await sleep(100 - (t1 - t0));
       }
       // console.log(user?.id, 'user');
@@ -250,7 +250,7 @@ async function fullSync(userID) {
         // not sure this should be getting trades whether or not they are settled. Made new db function where settled=false
         databaseClient.getLimitedUnsettledTrades(userID, botSettings.orders_to_sync),
         // coinbaseClient.getOpenOrders(userID, userAPI),
-        getOpenOrders(userID),
+        coinbaseClient.getOpenOrdersNew(userID),
         // get fees
         coinbaseClient.getFeesNew(userID)
       ]);
@@ -258,8 +258,10 @@ async function fullSync(userID) {
       cache.updateStatus(userID, 'done getting trades to compare');
       // store the lists of orders in the corresponding arrays so they can be compared
       const dbOrders = results[0];
-      const cbOrders = results[1];
+      const cbOrders = results[1].orders;
       const fees = results[2];
+
+      console.log(cbOrders.length, 'OPEN ORDERS');
 
       cache.updateStatus(userID, 'done updating funds full sync');
 
@@ -555,19 +557,20 @@ async function updateMultipleOrders(userID, params) {
       ? params.ordersArray
       : cache.getKey(userID, 'ordersToCheck');
     // console.log(ordersArray, 'orders array');
-    if (ordersArray.length > 0) {
+
+    if (ordersArray?.length > 0) {
       cache.storeMessage(userID, { messageText: `There are ${ordersArray.length} orders that need to be synced` });
+    } else {
+      resolve()
+      return
     }
     // loop over the array and update each trade
     for (let i = 0; i < ordersArray.length; i++) {
+      // keep track of how long each loop takes. Helps prevent rate limiting
+      const t0 = performance.now();
       cache.storeMessage(userID, { messageText: `Syncing ${i + 1} of ${ordersArray.length} orders that need to be synced` });
       // set up loop
       const orderToCheck = ordersArray[i];
-      // this timer will serve to prevent rate limiting
-      let reorderTimer = true;
-      setTimeout(() => {
-        reorderTimer = false;
-      }, 150);
       // set up loop DONE
       try {
         if (orderToCheck.reorder && !orderToCheck.will_cancel) {
@@ -591,8 +594,10 @@ async function updateMultipleOrders(userID, params) {
           errorText: `Error updating order details`
         })
       } // end catch
-      while (reorderTimer) {
-        await sleep(10);
+      const t1 = performance.now();
+      // API is limited to 10/sec, so make sure the bot waits that long between loops
+      if (100 - (t1 - t0) > 0) {
+        await sleep(100 - (t1 - t0));
       }
     } // end for loop
     // delete ordersToCheck since they have now been checked
