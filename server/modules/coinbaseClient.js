@@ -4,53 +4,6 @@ const axios = require("axios").default;
 const cache = require("./cache");
 const { v4: uuidv4 } = require('uuid');
 
-function sleep(milliseconds) {
-  return new Promise(resolve => setTimeout(resolve, milliseconds))
-}
-
-async function getAccounts(userID) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const timestamp = Math.floor(Date.now() / 1000);
-      // // sign the request
-      const userAPI = cache.getAPI(userID);
-      const secret = userAPI.CB_SECRET;
-      const key = userAPI.CB_ACCESS_KEY;
-      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
-      const API_URI = userAPI.API_URI;
-
-      function computeSignature() {
-        const method = 'GET';
-        const path = "/accounts";
-        const message = timestamp + method + path;
-        const key = CryptoJS.enc.Base64.parse(secret);
-        const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-        return hash;
-      }
-
-      const options = {
-        method: 'GET',
-        timeout: 10000,
-        url: `${API_URI}/accounts`,
-        headers: {
-          Accept: 'application/json',
-          'cb-access-key': key,
-          'cb-access-passphrase': passphrase,
-          'cb-access-sign': computeSignature(),
-          'cb-access-timestamp': timestamp
-        }
-      };
-
-      axios.request(options).then(function (response) {
-        resolve(response.data)
-      }).catch(function (err) {
-        reject(err)
-      });
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
 
 async function getAccountsNew(userID) {
   return new Promise(async (resolve, reject) => {
@@ -96,47 +49,6 @@ async function getAccountsNew(userID) {
 
 
 
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-async function getFees(userID, quickAPI) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const timestamp = Math.floor(Date.now() / 1000);
-
-      const userAPI = cache.getAPI(userID);
-
-      const secret = userAPI.CB_SECRET;
-      const key = userAPI.CB_ACCESS_KEY;
-      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
-      const API_URI = userAPI.API_URI;
-
-      function computeSignature() {
-        const method = 'GET';
-        const path = "/fees";
-        const message = timestamp + method + path;
-        const key = CryptoJS.enc.Base64.parse(secret);
-        const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-        return hash;
-      }
-
-      const options = {
-        method: 'GET',
-        timeout: 10000,
-        url: `${API_URI}/fees`,
-        headers: {
-          Accept: 'application/json',
-          'cb-access-key': key,
-          'cb-access-passphrase': passphrase,
-          'cb-access-sign': computeSignature(),
-          'cb-access-timestamp': timestamp
-        }
-      };
-      let response = await axios.request(options);
-      resolve(response.data);
     } catch (err) {
       reject(err);
     }
@@ -302,9 +214,6 @@ async function getProducts(userID) {
       const userAPI = cache.getAPI(userID);
       const secret = userAPI.CB_SECRET;
       const key = userAPI.CB_ACCESS_KEY;
-      // const API_URI = userAPI.API_URI;
-
-
       const method = 'GET';
       const path = "/api/v3/brokerage/products";
       const body = "";
@@ -382,132 +291,6 @@ async function getOpenOrdersNew(userID) {
   });
 }
 
-async function getOpenOrders(userID, quickAPI) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // console.log('quick api', quickAPI);
-      const timestamp = Math.floor(Date.now() / 1000);
-      // // sign the request
-      const userAPI = cache.getAPI(userID);
-      const secret = userAPI.CB_SECRET;
-      const key = userAPI.CB_ACCESS_KEY;
-      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
-      const API_URI = userAPI.API_URI;
-
-      function computeSignature(request) {
-        // const data      = request.data;
-        const method = 'GET';
-        const path = "/orders?status=open&sortedBy=created_at&sorting=desc";
-        const message = timestamp + method + path;
-        const key = CryptoJS.enc.Base64.parse(secret);
-        const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-        return hash;
-      }
-
-      const options = {
-        method: 'GET',
-        timeout: 10000,
-        url: `${API_URI}/orders?status=open&sortedBy=created_at&sorting=desc`,
-        headers: {
-          Accept: 'application/json',
-          'cb-access-key': key,
-          'cb-access-passphrase': passphrase,
-          'cb-access-sign': computeSignature(),
-          'cb-access-timestamp': timestamp
-        }
-      };
-
-      let response = await axios.request(options);
-      resolve(response.data);
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
-
-
-async function getOpenOrdersBeforeDate(userID, date) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const timestamp = Math.floor(Date.now() / 1000);
-      // // sign the request
-      const userAPI = cache.getAPI(userID);
-      const secret = userAPI.CB_SECRET;
-      const key = userAPI.CB_ACCESS_KEY;
-      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
-      const API_URI = userAPI.API_URI;
-
-      function computeSignature(request) {
-        // const data      = request.data;
-        const method = 'GET';
-        const path = `/orders?status=open&sortedBy=created_at&sorting=desc&end_date=${date}`;
-        const message = timestamp + method + path;
-        const key = CryptoJS.enc.Base64.parse(secret);
-        const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-        return hash;
-      }
-
-      const options = {
-        method: 'GET',
-        timeout: 10000,
-        url: `${API_URI}/orders?status=open&sortedBy=created_at&sorting=desc&end_date=${date}`,
-        headers: {
-          Accept: 'application/json',
-          'cb-access-key': key,
-          'cb-access-passphrase': passphrase,
-          'cb-access-sign': computeSignature(),
-          'cb-access-timestamp': timestamp
-        }
-      };
-
-      let response = await axios.request(options);
-      resolve(response.data);
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
-
-async function getOrder(orderId, userID, quickAPI) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const timestamp = Math.floor(Date.now() / 1000);
-      // // sign the request
-      const userAPI = cache.getAPI(userID);
-      const secret = userAPI.CB_SECRET;
-      const key = userAPI.CB_ACCESS_KEY;
-      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
-      const API_URI = userAPI.API_URI;
-
-      function computeSignature(request) {
-        // const data      = request.data;
-        const method = 'GET';
-        const path = `/orders/${orderId}`;
-        const message = timestamp + method + path;
-        const key = CryptoJS.enc.Base64.parse(secret);
-        const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-        return hash;
-      }
-
-      const options = {
-        method: 'GET',
-        timeout: 10000,
-        url: `${API_URI}/orders/${orderId}`,
-        headers: {
-          Accept: 'application/json',
-          'cb-access-key': key,
-          'cb-access-passphrase': passphrase,
-          'cb-access-sign': computeSignature(),
-          'cb-access-timestamp': timestamp
-        }
-      };
-      let response = await axios.request(options);
-      resolve(response.data);
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
 
 async function getOrderNew(userID, orderId) {
   return new Promise(async (resolve, reject) => {
@@ -551,50 +334,7 @@ async function getOrderNew(userID, orderId) {
   });
 }
 
-async function placeOrder(data, quickAPI) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const timestamp = Math.floor(Date.now() / 1000);
-      // // sign the request
-      // console.log('place order data', data);
-      const userAPI = cache.getAPI(data.userID);
-      const secret = userAPI.CB_SECRET;
-      const key = userAPI.CB_ACCESS_KEY;
-      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
-      const API_URI = userAPI.API_URI;
 
-      function computeSignature(request) {
-        // const data      = request.data;
-        const method = 'POST';
-        const path = `/orders`;
-        const body = JSON.stringify(data);
-        const message = timestamp + method + path + body;
-        const key = CryptoJS.enc.Base64.parse(secret);
-        const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-        return hash;
-      }
-
-      const options = {
-        method: 'POST',
-        timeout: 10000,
-        url: `${API_URI}/orders`,
-        headers: {
-          Accept: 'application/json',
-          'cb-access-key': key,
-          'cb-access-passphrase': passphrase,
-          'cb-access-sign': computeSignature(),
-          'cb-access-timestamp': timestamp
-        },
-        data: data
-      };
-      let response = await axios.request(options);
-      resolve(response.data);
-    } catch (err) {
-      reject(err);
-      console.log('ERROR in place order function in coinbaseClient');
-    }
-  });
-}
 
 async function placeOrderNew(userID, order) {
   return new Promise(async (resolve, reject) => {
@@ -765,45 +505,6 @@ async function cancelOrderNew(userID, orderIdArray) {
   })
 }
 
-async function cancelOrder(orderId, userID, quickAPI) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const timestamp = Math.floor(Date.now() / 1000);
-      // // sign the request
-      const userAPI = cache.getAPI(userID);
-      const secret = userAPI.CB_SECRET;
-      const key = userAPI.CB_ACCESS_KEY;
-      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
-      const API_URI = userAPI.API_URI;
-
-      function computeSignature(request) {
-        // const data      = request.data;
-        const method = 'DELETE';
-        const path = `/orders/${orderId}`;
-        const message = timestamp + method + path;
-        const key = CryptoJS.enc.Base64.parse(secret);
-        const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-        return hash;
-      }
-      const options = {
-        method: 'DELETE',
-        timeout: 10000,
-        url: `${API_URI}/orders/${orderId}`,
-        headers: {
-          Accept: 'application/json',
-          'cb-access-key': key,
-          'cb-access-passphrase': passphrase,
-          'cb-access-sign': computeSignature(),
-          'cb-access-timestamp': timestamp
-        }
-      };
-      let response = await axios.request(options);
-      resolve(response.data);
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
 
 async function cancelOrders(userID) {
   return new Promise(async (resolve, reject) => {
@@ -846,23 +547,8 @@ async function cancelOrders(userID) {
   });
 }
 
-async function cancelAllOrders(userID) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      await cancelOrders(userID);
-      let totalOrders = await getAllOrders(userID);
-      if (totalOrders.length > 0) {
-        await cancelAllOrders(userID);
-      }
-      resolve(true);
-    } catch (err) {
-      reject(err)
-    }
-  })
-}
 
-
-async function testAPI(secret, key, API_URI) {
+async function testAPI(secret, key) {
   return new Promise(async (resolve, reject) => {
     try {
       // const timestamp = Math.floor(Date.now() / 1000);
@@ -898,8 +584,6 @@ async function testAPI(secret, key, API_URI) {
       let response = await axios.request(options);
       console.log('SUCCESSFUL RESPONSE FROM NEW API:');
       resolve(response.data);
-
-
     } catch (err) {
       console.log(err, 'unsuccessful call to new api');
       reject(err);
@@ -908,24 +592,14 @@ async function testAPI(secret, key, API_URI) {
 }
 
 module.exports = {
-  // getAllOrders: getAllOrders,
-  getFills: getFills,
-  // getOpenOrders: getOpenOrders,
-  getProducts: getProducts,
   getOpenOrdersNew: getOpenOrdersNew,
-  cancelOrderNew: cancelOrderNew,
-  // cancelOrder: cancelOrder,
-  // placeOrder: placeOrder,
-  placeOrderNew: placeOrderNew,
   placeMarketOrder: placeMarketOrder,
-  // getOrder: getOrder,
-  getOrderNew: getOrderNew,
-  // cancelAllOrders: cancelAllOrders,
-  // getFees: getFees,
-  getFeesNew: getFeesNew,
-  // getAccounts: getAccounts,
+  cancelOrderNew: cancelOrderNew,
   getAccountsNew: getAccountsNew,
-  // repeatedCheck: repeatedCheck,
+  placeOrderNew: placeOrderNew,
+  getOrderNew: getOrderNew,
+  getProducts: getProducts,
+  getFeesNew: getFeesNew,
+  getFills: getFills,
   testAPI: testAPI,
-  // getOpenOrdersBeforeDate: getOpenOrdersBeforeDate,
 }

@@ -6,7 +6,6 @@ const databaseClient = require('../modules/databaseClient');
 const robot = require('../modules/robot');
 const coinbaseClient = require('../modules/coinbaseClient');
 const cache = require('../modules/cache');
-const { getOpenOrders } = require('../modules/websocket');
 
 
 /**
@@ -333,7 +332,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
     await robot.sleep(5000);
 
     // update the trade-pair ratio for all trades for that user
-    const updateTradesQueryText = `UPDATE orders
+    const updateTradesQueryText = `UPDATE limit_orders
     SET "trade_pair_ratio" = $1
     WHERE "settled" = false AND "userID" = $2;`
 
@@ -343,7 +342,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
     ]);
 
     // update original sell price after ratio is set
-    const updateOGSellPriceQueryText = `UPDATE orders
+    const updateOGSellPriceQueryText = `UPDATE limit_orders
     SET "original_sell_price" = ROUND(((original_buy_price * ("trade_pair_ratio" + 100)) / 100), 2)
     WHERE "settled" = false AND "userID" = $1;`
 
@@ -352,7 +351,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
     ]);
 
     // need to update the current price on all sells after changing numbers on all trades
-    const updateSellsPriceQueryText = `UPDATE orders
+    const updateSellsPriceQueryText = `UPDATE limit_orders
     SET "limit_price" = "original_sell_price"
     WHERE "side" = 'SELL' AND "userID" = $1;`;
 
@@ -362,8 +361,19 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
     // mark all open orders as reorder
     await databaseClient.setReorder(userID);
 
-    // cancel all orders. The sync loop will take care of replacing them
-    await coinbaseClient.cancelAllOrders(userID);
+    let openOrders = await databaseClient.getLimitedUnsettledTrades(userID, botSettings.orders_to_sync);
+
+    if (openOrders.length > 0) {
+      // build an array of just the IDs that should be set to reorder
+      const idArray = [];
+      for (let i = 0; i < openOrders.length; i++) {
+        const order = openOrders[i];
+        idArray.push(order.order_id)
+      } //end for loop
+      
+      // cancel all orders. The sync loop will take care of replacing them
+      await coinbaseClient.cancelOrderNew(userID, idArray);
+    }
 
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID);
