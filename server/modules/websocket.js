@@ -117,6 +117,11 @@ function startWebsocket(userID) {
 
     ws.on('message', function (data) {
       const parsedData = JSON.parse(data);
+      const user = cache.getUser(userID);
+      const botSettings = cache.getKey(0, 'botSettings');
+      if (!user?.active || !user?.approved || user.paused || botSettings.maintenance) {
+        return
+      }
       // if (parsedData.channel) {
       //   console.log(parsedData.channel, 'channel from ws', parsedData);
       // }
