@@ -273,7 +273,7 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
   const orderId = req.body.order_id;
 
   try {
-    await coinbaseClient.cancelOrderNew(userID, [orderId]);
+    await coinbaseClient.cancelOrder(userID, [orderId]);
     await databaseClient.updateTrade({ reorder: true, order_id: orderId })
     res.sendStatus(200);
 
@@ -316,7 +316,7 @@ router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
     // if it is a reorder, there is no reason to cancel on CB
     if (!order.reorder) {
       // send cancelOrder to cb
-      await coinbaseClient.cancelOrderNew(userID, [orderId]);
+      await coinbaseClient.cancelOrder(userID, [orderId]);
     }
     res.sendStatus(200)
     cache.storeMessage(userID, {

@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
   // user needs to be active or they will not have an API key to use
   if (user.active) {
     try {
-      let accounts = await coinbaseClient.getAccountsNew(userID);
+      let accounts = await coinbaseClient.getAccounts(userID);
       let spentUSD = await databaseClient.getSpentUSD(userID);
 
       console.log(accounts, 'accounts from new api');

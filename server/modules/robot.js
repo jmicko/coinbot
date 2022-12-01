@@ -237,57 +237,43 @@ async function deSync(userID) {
 }
 
 
+// FULL SYNC, will compare all trades that should be on CB, and do other less frequent maintenance tasks
 async function fullSync(userID) {
   cache.updateStatus(userID, 'begin full sync');
-
-  const userAPI = cache.getAPI(userID);
+  // get the bot settings
   const botSettings = cache.getKey(0, 'botSettings');
-  // IF FULL SYNC, compare all trades that should be on CB, and do other less frequent maintenance tasks
   return new Promise(async (resolve, reject) => {
     try {
       // get lists of trades to compare which have been settled
       const results = await Promise.all([
         // get all open orders from db and cb
-        // not sure this should be getting trades whether or not they are settled. Made new db function where settled=false
         databaseClient.getLimitedUnsettledTrades(userID, botSettings.orders_to_sync),
-        // coinbaseClient.getOpenOrders(userID, userAPI),
-        coinbaseClient.getOpenOrdersNew(userID),
+        // get open orders
+        coinbaseClient.getOpenOrders(userID),
         // get fees
-        coinbaseClient.getFeesNew(userID)
+        coinbaseClient.getFees(userID)
       ]);
-
-      cache.updateStatus(userID, 'done getting trades to compare');
-      // store the lists of orders in the corresponding arrays so they can be compared
+      // store the lists of orders in the corresponding consts so they can be compared
       const dbOrders = results[0];
       const cbOrders = results[1].orders;
       const fees = results[2];
-
-      console.log(cbOrders.length, 'OPEN ORDERS');
-
       cache.updateStatus(userID, 'done updating funds full sync');
-
       // need to get the fees for more accurate Available funds reporting
       // fees don't change frequently so only need to do this during full sync
       await databaseClient.saveFees(fees, userID);
-
       // compare the arrays and remove any where the ids match in both,
-      // leaving a list of orders that are open in the db, but not on cb. Probably settled
+      // leaving a list of orders that are open in the db, but not on cb. Probably settled, possibly canceled
       let ordersToCheck = await orderElimination(dbOrders, cbOrders);
       // also get a list of orders that are open on cb, but not in the db. Need to cancel them
       let ordersToCancel = await orderElimination(cbOrders, dbOrders);
-
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
-      await cancelAndReorder(ordersToCancel, userID); //TEMP COMMENT
-
+      await cancelAndReorder(ordersToCancel, userID);
+      // save the orders that need to be individually checked against CB
       cache.setKey(userID, 'ordersToCheck', ordersToCheck);
-
-      cache.updateStatus(userID, 'will resolve full sync');
       resolve();
     } catch (err) {
       cache.updateStatus(userID, 'error in full sync');
       reject(err)
-    } finally {
-      cache.updateStatus(userID, 'done full sync');
     }
   });
 }
@@ -355,10 +341,10 @@ async function processOrders(userID) {
             const willCancel = cache.checkIfCanceling(userID, dbOrder.order_id);
             if (!willCancel) {
               // console.log(tradeDetails,'trade details');
-              let cbOrder = await coinbaseClient.placeOrderNew(userID, tradeDetails);
+              let cbOrder = await coinbaseClient.placeOrder(userID, tradeDetails);
               // console.log(cbOrder, 'cbOrder');
               if (cbOrder.success) {
-                const newOrder = await coinbaseClient.getOrderNew(userID, cbOrder.order_id);
+                const newOrder = await coinbaseClient.getOrder(userID, cbOrder.order_id);
                 // ...store the new trade
                 // take the time the new order was created, and use it as the flipped_at value
                 const flipped_at = newOrder.order.created_time
@@ -579,7 +565,7 @@ async function updateMultipleOrders(userID, params) {
           await reorder(orderToCheck);
         } else {
           // if not a reorder, look up the full details on CB
-          let updatedOrder = await coinbaseClient.getOrderNew(userID, orderToCheck.order_id);
+          let updatedOrder = await coinbaseClient.getOrder(userID, orderToCheck.order_id);
           // if it was cancelled, set it for reorder
           if (updatedOrder.order.status === 'CANCELLED') {
             console.log('was canceled but should not have been!')
@@ -622,10 +608,10 @@ async function reorder(orderToReorder) {
         product_id: upToDateDbOrder.product_id,
       };
       // send the new order with the trade details
-      let pendingTrade = await coinbaseClient.placeOrderNew(userID, tradeDetails);
+      let pendingTrade = await coinbaseClient.placeOrder(userID, tradeDetails);
       // console.log(pendingTrade, 'pending trade');
       if (pendingTrade.success) {
-        let newTrade = await coinbaseClient.getOrderNew(userID, pendingTrade.order_id)
+        let newTrade = await coinbaseClient.getOrder(userID, pendingTrade.order_id)
         // console.log(newTrade, 'newTrade');
         // because the storeDetails function will see the upToDateDbOrder as the "old order", need to store previous_total_fees as just total_fees
         upToDateDbOrder.total_fees = upToDateDbOrder.previous_total_fees;
@@ -666,7 +652,7 @@ async function cancelAndReorder(ordersArray, userID) {
       try {
         databaseClient.setManyReorders(idArray)
         // cancel the orders in the array
-        await coinbaseClient.cancelOrderNew(userID, idArray);
+        await coinbaseClient.cancelOrder(userID, idArray);
         // update funds now that everything should be up to date
       } catch (err) {
         console.log('error cancelling multiple orders');
@@ -857,7 +843,7 @@ async function getAvailableFunds(userID, userSettings) {
       // console.log('maker fee', takerFee);
 
       const results = await Promise.all([
-        coinbaseClient.getAccountsNew(userID),
+        coinbaseClient.getAccounts(userID),
         // funds are withheld in usd when a buy is placed, so the maker fee is needed to subtract fees
         databaseClient.getSpentUSD(userID, takerFee),
         // funds are taken from the sale once settled, so the maker fee is not needed on the buys

@@ -35,7 +35,7 @@ function signRequest(userID, data, API) {
   return options;
 }
 
-async function getAccountsNew(userID) {
+async function getAccounts(userID) {
   return new Promise(async (resolve, reject) => {
     try {
       // data should just be blank
@@ -57,7 +57,7 @@ async function getAccountsNew(userID) {
   })
 }
 
-async function getFeesNew(userID) {
+async function getFees(userID) {
   return new Promise(async (resolve, reject) => {
     try {
       // data should just be blank
@@ -175,7 +175,7 @@ async function getProducts(userID) {
   });
 }
 
-async function getOpenOrdersNew(userID) {
+async function getOpenOrders(userID) {
   return new Promise(async (resolve, reject) => {
     try {
       // data should just be blank
@@ -197,7 +197,7 @@ async function getOpenOrdersNew(userID) {
 }
 
 
-async function getOrderNew(userID, orderId) {
+async function getOrder(userID, orderId) {
   return new Promise(async (resolve, reject) => {
     try {
       // data should just be blank
@@ -220,7 +220,7 @@ async function getOrderNew(userID, orderId) {
 
 
 
-async function placeOrderNew(userID, order) {
+async function placeOrder(userID, order) {
   return new Promise(async (resolve, reject) => {
     try {
       const API = {
@@ -294,7 +294,7 @@ async function placeMarketOrder(userID, order) {
   });
 }
 
-async function cancelOrderNew(userID, orderIdArray) {
+async function cancelOrder(userID, orderIdArray) {
   return new Promise(async (resolve, reject) => {
     try {
       // data should just be an array of IDs
@@ -360,15 +360,15 @@ async function testAPI(secret, key) {
 }
 
 module.exports = {
-  getOpenOrdersNew: getOpenOrdersNew,
+  getOpenOrders: getOpenOrders,
   placeMarketOrder: placeMarketOrder,
-  cancelOrderNew: cancelOrderNew,
-  getAccountsNew: getAccountsNew,
-  placeOrderNew: placeOrderNew,
-  getOrderNew: getOrderNew,
+  cancelOrder: cancelOrder,
+  getAccounts: getAccounts,
+  placeOrder: placeOrder,
+  getOrder: getOrder,
   getProducts: getProducts,
   getProduct: getProduct,
-  getFeesNew: getFeesNew,
+  getFees: getFees,
   getFills: getFills,
   testAPI: testAPI,
 }

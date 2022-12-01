@@ -237,7 +237,7 @@ async function updateMultipleOrders(userID, params) {
       try {
         cache.updateStatus(userID, 'UMO loop get order');
         // if not a reorder, look up the full details on CB
-        let updatedOrder = await coinbaseClient.getOrderNew(userID, orderToCheck.order_id);
+        let updatedOrder = await coinbaseClient.getOrder(userID, orderToCheck.order_id);
         // if it was cancelled, set it for reorder
         if (updatedOrder.order.status === 'CANCELLED') {
           console.log('was canceled but should not have been!')
@@ -278,120 +278,6 @@ function heartBeat(userID) {
   })
 
 }
-
-// function getOpenOrders(userID) {
-//   return new Promise(async (resolve, reject) => {
-//     const userAPI = cache.getAPI(userID)
-//     const secret = userAPI.CB_SECRET;
-//     const key = userAPI.CB_ACCESS_KEY;
-
-//     if (!secret.length || !key.length) {
-//       throw new Error('missing mandatory environment variable(s)');
-//     }
-
-//     const products = ['BTC-USD', 'ETH-USD'];
-
-//     // Function to generate a signature using CryptoJS
-//     function sign(str, secret) {
-//       const hash = CryptoJS.HmacSHA256(str, secret);
-//       return hash.toString();
-//     }
-
-//     function timestampAndSign(message, channel, products = []) {
-//       const timestamp = Math.floor(Date.now() / 1000).toString();
-//       const strToSign = `${timestamp}${channel}${products.join(',')}`;
-//       const sig = sign(strToSign, secret);
-//       return { ...message, signature: sig, timestamp: timestamp };
-//     }
-
-//     function subscribeToProducts(products, channelName, ws) {
-//       // console.log('products: %s', products.join(','));
-//       const message = {
-//         type: 'subscribe',
-//         channel: channelName,
-//         api_key: key,
-//         product_ids: products,
-//         user_id: '',
-//       };
-//       const subscribeMsg = timestampAndSign(message, channelName, products);
-//       ws.send(JSON.stringify(subscribeMsg));
-//     }
-
-//     // The base URL of the API
-//     const WS_API_URL = 'wss://advanced-trade-ws.coinbase.com';
-
-//     open();
-
-//     function open() {
-
-//       function timer() {
-//         clearTimeout(this.pingTimeout);
-//         this.pingTimeout = setTimeout(() => {
-//           console.log('ending socket after timeout');
-//           reject({
-//             response: {
-//               status: 503,
-//               statusText: 'socket timeout',
-//               data: {
-//                 error: 'socket closed',
-//                 error_details: 'socket closed after timeout',
-//                 message: 'socket timeout'
-//               }
-//             }
-//           });
-//           this.terminate();
-//         }, 5000);
-//       }
-
-//       let ws = new WebSocket(WS_API_URL);
-
-//       ws.on('open', function () {
-//         // console.log('Get orders socket open!');
-//         subscribeToProducts(products, 'user', ws);
-//       });
-
-//       ws.on('error', function (err) {
-//         console.log('get orders websocket error!');
-//         reject({
-//           response: {
-//             status: 503,
-//             statusText: 'unknown error',
-//             data: {
-//               error: 'unknown error',
-//               error_details: 'unknown error',
-//               message: 'unknown error'
-//             },
-//             error: err
-//           }
-//         });
-//       });
-
-//       ws.on('message', function (data) {
-//         const parsedData = JSON.parse(data);
-
-//         if (parsedData.events) {
-//           parsedData.events.forEach(event => {
-//             if (event.type === 'snapshot') {
-//               handleSnapshot(event);
-//             }
-//           });
-//         }
-//       });
-
-//       function handleSnapshot(event) {
-//         if (event.orders) {
-//           resolve(event.orders);
-//           ws.close();
-//         }
-//       }
-
-//       ws.on('open', timer);
-//       ws.on('close', function clear() {
-//         clearTimeout(this.pingTimeout);
-//       });
-//     }
-//   })
-// }
 
 function setupSocketIO(io) {
   console.log('setting up socket.io');
