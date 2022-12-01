@@ -34,7 +34,7 @@ router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
 
       // const response = await coinbaseClient.placeOrderNew(userID, tradeDetails);
       // const old = await coinbaseClient.getOrderNew(userID, '');
-      // const response = await coinbaseClient.getProducts(userID);
+      const response = await coinbaseClient.getProduct(userID, 'BTC-USD');
       // const response = await coinbaseClient.cancelOrderNew(userID, [IDs]);
       // const response = await coinbaseClient.getOpenOrdersNew(userID);
       // const response = await databaseClient.getTradesByIDs(userID, IDs);
@@ -63,7 +63,7 @@ router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
       }
       // const response = await databaseClient.updateTrade()
       // const response = await getOpenOrders(userID)
-      // console.log(response, 'response from test');
+      console.log(response, 'response from test');
 
 
 

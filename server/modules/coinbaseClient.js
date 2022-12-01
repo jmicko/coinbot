@@ -97,48 +97,6 @@ async function getFeesNew(userID) {
   })
 }
 
-async function getAllOrders(userID) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const timestamp = Math.floor(Date.now() / 1000);
-      // // sign the request
-      const userAPI = cache.getAPI(userID);
-      const secret = userAPI.CB_SECRET;
-      const key = userAPI.CB_ACCESS_KEY;
-      const passphrase = userAPI.CB_ACCESS_PASSPHRASE;
-      const API_URI = userAPI.API_URI;
-
-      function computeSignature(request) {
-        // const data      = request.data;
-        const method = 'GET';
-        const path = "/orders";
-        const body = (method === 'GET' || !data) ? '' : JSON.stringify(data);
-        const message = timestamp + method + path + body;
-        const key = CryptoJS.enc.Base64.parse(secret);
-        const hash = CryptoJS.HmacSHA256(message, key).toString(CryptoJS.enc.Base64);
-        return hash;
-      }
-      const options = {
-        method: 'GET',
-        timeout: 10000,
-        url: `${API_URI}/orders`,
-        headers: {
-          Accept: 'application/json',
-          'cb-access-key': key,
-          'cb-access-passphrase': passphrase,
-          'cb-access-sign': computeSignature(),
-          'cb-access-timestamp': timestamp
-        }
-      };
-
-      let response = await axios.request(options);
-      resolve(response.data);
-    } catch (err) {
-      reject(err)
-    }
-  });
-}
-
 
 async function getFills(userID, params) {
   return new Promise(async (resolve, reject) => {
@@ -208,6 +166,45 @@ async function getFills(userID, params) {
 }
 
 
+async function getProduct(userID, product_id) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const userAPI = cache.getAPI(userID);
+      const secret = userAPI.CB_SECRET;
+      const key = userAPI.CB_ACCESS_KEY;
+      const method = 'GET';
+      const path = `/api/v3/brokerage/products/${product_id}`;
+      const body = "";
+
+      function sign(str, apiSecret) {
+        const hash = CryptoJS.HmacSHA256(str, apiSecret);
+        return hash.toString();
+      }
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const str = timestamp + method + path + body
+      const sig = sign(str, secret)
+
+
+      const options = {
+        method: 'GET',
+        timeout: 10000,
+        url: `https://coinbase.com/api/v3/brokerage/products/${product_id}`,
+        headers: {
+          Accept: 'application/json',
+          'cb-access-key': key,
+          'cb-access-sign': sig,
+          'cb-access-timestamp': timestamp
+        }
+      };
+
+      let response = await axios.request(options);
+      resolve(response.data);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
 async function getProducts(userID) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -218,7 +215,6 @@ async function getProducts(userID) {
       const path = "/api/v3/brokerage/products";
       const body = "";
 
-      // const CryptoJS = require('crypto-js');
       function sign(str, apiSecret) {
         const hash = CryptoJS.HmacSHA256(str, apiSecret);
         return hash.toString();
@@ -339,7 +335,11 @@ async function getOrderNew(userID, orderId) {
 async function placeOrderNew(userID, order) {
   return new Promise(async (resolve, reject) => {
     try {
-
+      const API = {
+        url: `https://coinbase.com/api/v3/brokerage/orders`,
+        path: "/api/v3/brokerage/orders",
+        method: 'POST',
+      }
       const data = {
         side: order.side,
         order_configuration: {
@@ -352,38 +352,8 @@ async function placeOrderNew(userID, order) {
         product_id: order.product_id,
         client_order_id: order.client_order_id || uuidv4()
       }
+      const options = signRequest(userID, data, API);
 
-
-      const userAPI = cache.getAPI(userID);
-      // console.log(userAPI, 'user api');
-      const secret = userAPI.CB_SECRET;
-      const key = userAPI.CB_ACCESS_KEY;
-
-      const method = 'POST';
-      const path = "/api/v3/brokerage/orders";
-      const body = JSON.stringify(data);
-
-      // const CryptoJS = require('crypto-js');
-      function sign(str, apiSecret) {
-        const hash = CryptoJS.HmacSHA256(str, apiSecret);
-        return hash.toString();
-      }
-      const timestamp = Math.floor(Date.now() / 1000).toString();
-      const str = timestamp + method + path + body
-      const sig = sign(str, secret)
-
-      const options = {
-        method: 'POST',
-        timeout: 10000,
-        url: `https://coinbase.com/api/v3/brokerage/orders`,
-        headers: {
-          Accept: 'application/json',
-          'cb-access-key': key,
-          'cb-access-sign': sig,
-          'cb-access-timestamp': timestamp
-        },
-        data: data
-      };
       let response = await axios.request(options);
       resolve(response.data);
     } catch (err) {
@@ -391,6 +361,36 @@ async function placeOrderNew(userID, order) {
       console.log('ERROR in place order function in coinbaseClient');
     }
   });
+}
+
+function signRequest(userID, data, API) {
+  const userAPI = cache.getAPI(userID);
+  const secret = userAPI.CB_SECRET;
+  const key = userAPI.CB_ACCESS_KEY;
+  const body = JSON.stringify(data);
+
+  // const CryptoJS = require('crypto-js');
+  function sign(str, apiSecret) {
+    const hash = CryptoJS.HmacSHA256(str, apiSecret);
+    return hash.toString();
+  }
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const str = timestamp + API.method + API.path + body;
+  const sig = sign(str, secret);
+
+  const options = {
+    method: API.method,
+    timeout: 10000,
+    url: API.url,
+    headers: {
+      Accept: 'application/json',
+      'cb-access-key': key,
+      'cb-access-sign': sig,
+      'cb-access-timestamp': timestamp
+    },
+    data: data
+  };
+  return options;
 }
 
 async function placeMarketOrder(userID, order) {
@@ -599,6 +599,7 @@ module.exports = {
   placeOrderNew: placeOrderNew,
   getOrderNew: getOrderNew,
   getProducts: getProducts,
+  getProduct: getProduct,
   getFeesNew: getFeesNew,
   getFills: getFills,
   testAPI: testAPI,
