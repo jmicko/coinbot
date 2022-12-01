@@ -44,20 +44,20 @@ router.get('/', rejectUnauthenticated, (req, res) => {
 router.put('/', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   const previousPauseStatus = req.user.paused;
-  try{
+  try {
 
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID)
 
     // wait 5 seconds to give the sync loop more time to finish
     await sleep(5000);
-    
+
     // mark all open orders as reorder
     await databaseClient.setReorder(userID);
 
     // cancel all orders. The sync loop will take care of replacing them
     await coinbaseClient.cancelAll(userID);
-    
+
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID)
     // console.log('+++++++ synchronization complete +++++++');
@@ -78,20 +78,20 @@ router.delete('/range', rejectUnauthenticated, async (req, res) => {
   try {
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID)
-    
+
     // wait 5 seconds to give the synch loop more time to finish
     await sleep(5000);
 
     // delete from db
     const queryText = `DELETE from "limit_orders" WHERE "userID"=$1 AND settled=false AND limit_price BETWEEN $2 AND $3;`;
     await pool.query(queryText, [userID, req.body.lowerLimit, req.body.upperLimit]);
-    
+
     // mark all open orders as reorder
     // await databaseClient.setReorder();
 
     // cancel all orders. The sync loop will take care of replacing them
     // await coinbaseClient.cancelAllOrders(userID);
-    
+
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID)
     console.log('+++++++ RANGE WAS DELETED +++++++ for user:', userID);
@@ -112,14 +112,14 @@ router.delete('/all', rejectUnauthenticated, async (req, res) => {
   try {
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID)
-    
+
     // wait 5 seconds to give the synch loop more time to finish
     await sleep(5000);
 
     // delete from db first
     const queryText = `DELETE from "limit_orders" WHERE "settled" = false AND "userID"=$1;`;
     await pool.query(queryText, [userID]);
-    
+
     // mark all open orders as reorder
     // wait why?
     await databaseClient.setReorder(userID);
@@ -127,7 +127,7 @@ router.delete('/all', rejectUnauthenticated, async (req, res) => {
     // cancel all orders. The sync loop will take care of replacing them
 
     // await coinbaseClient.cancelAllOrders(userID);
-    
+
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID)
     console.log('+++++++ EVERYTHING WAS DELETED +++++++ for user:', userID);

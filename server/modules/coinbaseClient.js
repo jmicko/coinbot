@@ -37,16 +37,15 @@ function signRequest(user_api, data, API) {
 }
 
 function addParams(options, params) {
-  // if there are params to go on the query string, add a ? to the string
+  // this function is only called if there are params, so add a ? to the url string
   options.url = options.url + `?`;
-  // need to know if first param, so can add & symbol if needed
-  let firstParam = true;
   // Iterate over each object key/value pair, adding them to the url
   Object.keys(params).forEach(key => {
-    // if it is the first param, set firstParam to false. All other params will add an '&' symbol
-    firstParam ? firstParam = false : options.url = options.url + '&';
-    options.url = options.url + `${key}=${params[key]}`;
+    // add new param
+    options.url += `${key}=${params[key]}&`;
   });
+  // cut off the last & symbol
+  options.url.slice(0, -1)
 }
 
 // CALL IT LIKE THIS coinbaseClient.getAccounts(user_api, { limit: 250 })
@@ -63,7 +62,7 @@ async function getAccounts(user_api, params) {
       // sign the request
       const options = signRequest(user_api, data, API);
       // add params, if any
-      if (params) { addParams(options, params) }
+      if (params) { addParams(options, params) };
       // make the call
       let response = await axios.request(options);
       resolve(response.data);
@@ -86,7 +85,7 @@ async function getTransactionSummary(user_api, params) {
       // sign the request
       const options = signRequest(user_api, data, API);
       // add params, if any
-      if (params) { addParams(options, params) }
+      if (params) { addParams(options, params) };
       // make the call
       let response = await axios.request(options);
       resolve(response.data);
@@ -110,7 +109,7 @@ async function getFills(user_api, params) {
       // sign the request
       const options = signRequest(user_api, data, API);
       // add params, if any
-      if (params) { addParams(options, params) }
+      if (params) { addParams(options, params) };
       // make the call
       let response = await axios.request(options);
       resolve(response.data);
@@ -155,7 +154,7 @@ async function getProducts(user_api, params) {
       // sign the request
       const options = signRequest(user_api, data, API);
       // add params, if any
-      if (params) { addParams(options, params) }
+      if (params) { addParams(options, params) };
       // make the call
       let response = await axios.request(options);
       resolve(response.data);
@@ -178,7 +177,7 @@ async function getOrders(user_api, params) {
       // sign the request
       const options = signRequest(user_api, data, API);
       // add params, if any
-      if (params) { addParams(options, params) }
+      if (params) { addParams(options, params) };
       // make the call
       let response = await axios.request(options);
       resolve(response.data);
@@ -312,17 +311,20 @@ async function cancelOrders(user_api, orderIdArray) {
 async function cancelAll(user_api) {
   return new Promise(async (resolve, reject) => {
     try {
-      const openOrders = await getOrders(user_api, { order_status: 'OPEN' });
-      console.log(openOrders, 'open orders response');
+      const openOrders = await getOrders(user_api, { order_status: 'OPEN', limit: 1000 });
       const idArray = [];
       openOrders.orders.forEach(order => {
         idArray.push(order.order_id)
       });
-      console.log(idArray);
       const cancelResult = await cancelOrders(user_api, idArray);
-      const result = {
-        openOrdersResult: openOrders,
-        cancelResult: cancelResult
+      let result = [
+        { openOrdersResult: openOrders },
+        { cancelResult: cancelResult }
+      ]
+      // let's get recursive! call the function again if there are 1000 returned orders. Might be more
+      if (openOrders?.orders.length >= 1000) {
+        const nextResult = await cancelAll(user_api)
+        result = result.concat(nextResult);
       }
       resolve(result)
     } catch (err) {
