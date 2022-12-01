@@ -35,7 +35,7 @@ router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
       // const response = await coinbaseClient.placeOrder(userID, tradeDetails);
       // const old = await coinbaseClient.getOrder(userID, '');
       const response = await coinbaseClient.getProduct(userID, 'BTC-USD');
-      // const response = await coinbaseClient.cancelOrder(userID, [IDs]);
+      // const response = await coinbaseClient.cancelOrders(userID, [IDs]);
       // const response = await databaseClient.getTradesByIDs(userID, IDs);
       // response.products.forEach(product => {
       //   if (product.new) {
@@ -371,7 +371,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
       } //end for loop
       
       // cancel all orders. The sync loop will take care of replacing them
-      await coinbaseClient.cancelOrder(userID, idArray);
+      await coinbaseClient.cancelOrders(userID, idArray);
     }
 
     // set pause status to what it was before route was hit

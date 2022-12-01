@@ -230,10 +230,9 @@ async function updateMultipleOrders(userID, params) {
     }
     // loop over the array and update each trade
     for (let i = 0; i < ordersArray.length; i++) {
+      // send client message with each loop
       cache.storeMessage(userID, { messageText: `Syncing ${i + 1} of ${ordersArray.length} orders that need to be synced` });
-      // set up loop
       const orderToCheck = ordersArray[i];
-      // set up loop DONE
       try {
         cache.updateStatus(userID, 'UMO loop get order');
         // if not a reorder, look up the full details on CB
@@ -261,23 +260,6 @@ async function updateMultipleOrders(userID, params) {
   })
 }
 
-function heartBeat(userID) {
-  const loopNumber = cache.getLoopNumber(userID);
-  const botSettings = cache.getKey(0, 'botSettings');
-
-  cache.sockets.forEach(socket => {
-    // find all open sockets for the user
-    if (socket.userID === userID) {
-      // console.log(loopNumber, botSettings.full_sync, loopNumber % botSettings.full_sync + 1)
-      const msg = {
-        type: 'heartbeat',
-        count: loopNumber % botSettings.full_sync + 1
-      }
-      socket.emit('message', msg);
-    }
-  })
-
-}
 
 function setupSocketIO(io) {
   console.log('setting up socket.io');
@@ -329,12 +311,10 @@ function setupSocketIO(io) {
   });
 
   io.on('connect', (socket) => {
-
     const session = socket.request.session;
     console.log(`saving sid ${socket.id} in session ${session.id}`);
     session.socketId = socket.id;
     session.save();
-
   })
 
   // handle abnormal disconnects

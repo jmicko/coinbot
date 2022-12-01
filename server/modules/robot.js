@@ -652,7 +652,7 @@ async function cancelAndReorder(ordersArray, userID) {
       try {
         databaseClient.setManyReorders(idArray)
         // cancel the orders in the array
-        await coinbaseClient.cancelOrder(userID, idArray);
+        await coinbaseClient.cancelOrders(userID, idArray);
         // update funds now that everything should be up to date
       } catch (err) {
         console.log('error cancelling multiple orders');

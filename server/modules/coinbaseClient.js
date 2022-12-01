@@ -35,6 +35,41 @@ function signRequest(userID, data, API) {
   return options;
 }
 
+function addParams(options, params) {
+  // if there are params to go on the query string, add a ? to the string
+  options.url = options.url + `?`;
+  // need to check if 
+  let firstParam = true;
+  if (params.order_id) {
+    firstChecker();
+    options.url = options.url + `order_id=${params.order_id}`;
+  }
+  if (params.product_id) {
+    firstChecker();
+    options.url = options.url + `product_id=${params.product_id}`;
+  }
+  if (params.start_sequence_timestamp || params.start) {
+    firstChecker();
+    options.url = options.url + `start_sequence_timestamp=${params.start_sequence_timestamp || params.start}`;
+  }
+  if (params.end_sequence_timestamp || params.end) {
+    firstChecker();
+    options.url = options.url + `end_sequence_timestamp=${params.end_sequence_timestamp || params.end}`;
+  }
+  if (params.cursor) {
+    firstChecker();
+    options.url = options.url + `cursor=${params.cursor}`;
+  }
+  if (params.limit) {
+    firstChecker();
+    options.url = options.url + `limit=${params.limit}`;
+  }
+
+  function firstChecker() {
+    firstParam ? firstParam = false : options.url = options.url + '&';
+  }
+}
+
 async function getAccounts(userID) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -101,36 +136,6 @@ async function getFills(userID, params) {
       reject(err);
     }
   });
-}
-
-
-function addParams(options, params) {
-  options.url = options.url + `?`;
-  let firstParam = true;
-  if (params.order_id) {
-    firstParam ? firstParam = false : options.url = options.url + '&';
-    options.url = options.url + `order_id=${params.order_id}`;
-  }
-  if (params.product_id) {
-    firstParam ? firstParam = false : options.url = options.url + '&';
-    options.url = options.url + `product_id=${params.product_id}`;
-  }
-  if (params.start_sequence_timestamp || params.start) {
-    firstParam ? firstParam = false : options.url = options.url + '&';
-    options.url = options.url + `start_sequence_timestamp=${params.start_sequence_timestamp || params.start}`;
-  }
-  if (params.end_sequence_timestamp || params.end) {
-    firstParam ? firstParam = false : options.url = options.url + '&';
-    options.url = options.url + `end_sequence_timestamp=${params.end_sequence_timestamp || params.end}`;
-  }
-  if (params.cursor) {
-    firstParam ? firstParam = false : options.url = options.url + '&';
-    options.url = options.url + `cursor=${params.cursor}`;
-  }
-  if (params.limit) {
-    firstParam ? firstParam = false : options.url = options.url + '&';
-    options.url = options.url + `limit=${params.limit}`;
-  }
 }
 
 async function getProduct(userID, product_id) {
@@ -294,7 +299,7 @@ async function placeMarketOrder(userID, order) {
   });
 }
 
-async function cancelOrder(userID, orderIdArray) {
+async function cancelOrders(userID, orderIdArray) {
   return new Promise(async (resolve, reject) => {
     try {
       // data should just be an array of IDs
@@ -313,6 +318,23 @@ async function cancelOrder(userID, orderIdArray) {
       reject(err);
     }
   })
+}
+
+async function cancelAll(userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const openOrders = await getOpenOrders(userID);
+      const idArray = [];
+      openOrders.orders.forEach(order => {
+        idArray.push(order.order_id)
+      });
+      console.log(idArray);
+      const result = await cancelOrders(userID, idArray);
+      resolve(result)
+    } catch (err) {
+      reject(err)
+    }
+  });
 }
 
 
@@ -360,15 +382,16 @@ async function testAPI(secret, key) {
 }
 
 module.exports = {
-  getOpenOrders: getOpenOrders,
   placeMarketOrder: placeMarketOrder,
-  cancelOrder: cancelOrder,
+  getOpenOrders: getOpenOrders,
+  cancelOrders: cancelOrders,
   getAccounts: getAccounts,
-  placeOrder: placeOrder,
-  getOrder: getOrder,
   getProducts: getProducts,
+  placeOrder: placeOrder,
   getProduct: getProduct,
-  getFees: getFees,
+  cancelAll: cancelAll,
   getFills: getFills,
+  getOrder: getOrder,
+  getFees: getFees,
   testAPI: testAPI,
 }

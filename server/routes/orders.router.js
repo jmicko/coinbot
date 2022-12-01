@@ -49,14 +49,14 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID)
 
-    // wait 5 seconds to give the synch loop more time to finish
+    // wait 5 seconds to give the sync loop more time to finish
     await sleep(5000);
     
     // mark all open orders as reorder
     await databaseClient.setReorder(userID);
 
     // cancel all orders. The sync loop will take care of replacing them
-    await coinbaseClient.cancelAllOrders(userID);
+    await coinbaseClient.cancelAll(userID);
     
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID)
