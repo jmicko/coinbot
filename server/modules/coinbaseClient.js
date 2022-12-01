@@ -4,22 +4,21 @@ const axios = require("axios").default;
 const cache = require("./cache");
 const { v4: uuidv4 } = require('uuid');
 
+
 // used for signing all requests
 function signRequest(userID, data, API) {
   // get the user api details
   const userAPI = cache.getAPI(userID);
   const secret = userAPI.CB_SECRET;
   const key = userAPI.CB_ACCESS_KEY;
+  // convert the data to JSON, if any
   const body = data ? JSON.stringify(data) : '';
   // get the timestamp
   const timestamp = Math.floor(Date.now() / 1000).toString();
-  const str = timestamp + API.method + API.path + body;
+  // build the message string
+  const message = timestamp + API.method + API.path + body;
   // sign the message
-  const sig = sign(str, secret);
-  function sign(str, secret) {
-    const hash = CryptoJS.HmacSHA256(str, secret);
-    return hash.toString();
-  }
+  const sig = CryptoJS.HmacSHA256(message, secret).toString();
   // build the options object to return to the requester function
   const options = {
     method: API.method,
