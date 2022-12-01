@@ -88,7 +88,7 @@ function startWebsocket(userID) {
       }, 10000);
     }
 
-    console.log('OPENING');
+    console.log('opening socket to coinbase for user', userID);
     let ws = new WebSocket(WS_API_URL);
 
     ws.on('open', function () {
@@ -118,7 +118,7 @@ function startWebsocket(userID) {
     ws.on('message', function (data) {
       const parsedData = JSON.parse(data);
       const user = cache.getUser(userID);
-      const botSettings = cache.getKey(0, 'botSettings');
+      const botSettings = cache.getBotSettings();
       if (!user?.active || !user?.approved || user.paused || botSettings.maintenance) {
         return
       }
@@ -135,7 +135,7 @@ function startWebsocket(userID) {
           } else if (event.type === 'update' && event.orders) {
             handleOrdersUpdate(event.orders);
           } else {
-            console.log(event, event.type, 'event from ws');
+            // console.log(event, event.type, 'event from ws');
           }
         });
       }
@@ -154,8 +154,7 @@ function startWebsocket(userID) {
   }
 
   function handleSnapshot(event) {
-    // every tick, send an update to open consoles for the user
-    console.log('handling snapshot');
+    // console.log('handling snapshot');
 
   }
 
@@ -304,7 +303,7 @@ function setupSocketIO(io) {
         console.log(socket.userID, 'socket user');
         allUsers.forEach(user => {
           // console.log(user,'user to send message to', message.data);
-          cache.storeMessage(Number(user.user.id), {
+          cache.storeMessage(Number(user.id), {
             messageText: message.data,
             type: 'chat'
           });

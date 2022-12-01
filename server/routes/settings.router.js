@@ -34,7 +34,8 @@ router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
 
       // const response = await coinbaseClient.placeOrder(userID, tradeDetails);
       // const old = await coinbaseClient.getOrder(userID, '');
-      const response = await coinbaseClient.getProduct(userID, 'BTC-USD');
+      // const response = await coinbaseClient.cancelAll(userID);
+      // const response = await coinbaseClient.getAccounts(userID, { limit: 2 })
       // const response = await coinbaseClient.cancelOrders(userID, [IDs]);
       // const response = await databaseClient.getTradesByIDs(userID, IDs);
       // response.products.forEach(product => {
@@ -46,23 +47,28 @@ router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
       // });
       // let response = `hello`;
       // true && (response += ` world`)
-      const order = {
-        order_id: "",
-        original_buy_price: '16500.0000000000000000',
-        original_sell_price: '16615.5000000000000000',
-        completion_percentage: '0',
-        // limit_price: '51',
-        order_configuration: {
-          limit_limit_gtc:
-          {
-            base_size: 0,
-            limit_price: 1000
-          }
-        }
-      }
+      // const order = {
+      //   order_id: "",
+      //   original_buy_price: '16500.0000000000000000',
+      //   original_sell_price: '16615.5000000000000000',
+      //   completion_percentage: '0',
+      //   // limit_price: '51',
+      //   order_configuration: {
+      //     limit_limit_gtc:
+      //     {
+      //       base_size: 0,
+      //       limit_price: 1000
+      //     }
+      //   }
+      // }
       // const response = await databaseClient.updateTrade()
       // const response = await getOpenOrders(userID)
-      console.log(response, 'response from test');
+      cache.setCancel(userID, 'fake_id')
+      setInterval(() => {
+        const response = cache.checkIfCanceling(userID, 'fake_id')
+        console.log(response, 'response from test');
+      }, 500);
+      
 
 
 
@@ -369,7 +375,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
         const order = openOrders[i];
         idArray.push(order.order_id)
       } //end for loop
-      
+
       // cancel all orders. The sync loop will take care of replacing them
       await coinbaseClient.cancelOrders(userID, idArray);
     }

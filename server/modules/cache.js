@@ -1,85 +1,132 @@
 const databaseClient = require("./databaseClient");
 
+const botSettings = {
+  loop_speed: Number(),
+  orders_to_sync: Number(),
+  full_sync: Number(),
+  maintenance: Boolean()
+};
+const userStorage = [];
+
+const apiStorage = [];
 
 const cache = {
   // the storage array will store an object of different things at the index of the user id
   storage: [],
 
+  setBotSettings: (newSettings) => {
+    Object.assign(botSettings, newSettings)
+  },
+  getBotSettings: () => {
+    if (botSettings) {
+      return structuredClone(botSettings)
+    }
+  },
+  refreshBotSettings: async () => {
+    const botSettings = await databaseClient.getBotSettings();
+    // save settings to the cache
+    cache.setBotSettings(botSettings)
+  },
+
   // set up a storage cache for a new user
-  newUser: async (user) => {
+  createNewUser: async (user) => {
+    // get the user id
     const userID = user.id;
+    // delete password. we don't need it here
+    delete user.password
+    // insert the user at the array index matching their id
     cache.storage[userID] = {
-      user: user,
+      ...user,
       botStatus: ['setup'],
-      errors: [],
-      messages: [],
-      chatMessages: [],
-      willCancel: [],
-      keyValuePairs: {},
-      loopNumber: 0,
+      errors: Array(),
+      messages: Array(),
+      chatMessages: Array(),
+      // hold orders that will be canceled so bot can check against them before reordering
+      willCancel: new Set(),
+      keyValuePairs: Object(),
+      loopNumber: Number(),
       api: null,
       messageCount: 1,
       chatMessageCount: 1,
       errorCount: 1
     };
+
+    // create user object at index of user id
+    userStorage[userID] = Object();
+    // add the user to the userStorage array
+    Object.assign(userStorage[userID], cache.storage[userID])
+
     // cache the API from the db
     try {
-      userAPI = await databaseClient.getUserAPI(userID);
+      // console.log(cache.storage[userID], 'USER');
+      const userAPI = await databaseClient.getUserAPI(userID);
       cache.storeAPI(userID, userAPI);
-      await cache.refreshUser(userID);
+      
+      // create api object at index of user id
+      apiStorage[userID] = Object();
+      // add the user to the apiStorage array
+      Object.assign(apiStorage[userID], userAPI)
+      
+      // console.log(apiStorage, 'new storage array');
+      await cache.refreshUser(user.id);
     } catch (err) {
       console.log(err, 'error creating new user');
     }
   },
 
-  // KEEP TRACK OF ORDERS TO CANCEL
-  setCancel: (userID, orderID) => {
-    cache.storage[userID].willCancel.unshift(orderID);
-    if (cache.storage[userID].willCancel.length > 100) {
-      cache.storage[userID].willCancel.length = 100;
-    }
-  },
-
-  checkIfCanceling: (userID, orderID) => {
-    // console.log(
-    //   'in check cancel',
-    //   cache.storage[userID].willCancel.indexOf(orderID)
-    // );
-    if (cache.storage[userID].willCancel.indexOf(orderID) == -1) {
-      return false;
-    } else {
-      return true;
-    }
-  },
-
   // USER SETTINGS STORAGE
   refreshUser: async (userID) => {
+    // don't refresh the robot user
+    if (userID === 0) {
+      return
+    }
     user = await databaseClient.getUserAndSettings(userID);
+    // don't need password
+    delete user.password
     // if there is a user, set the user as the user. lmao. Otherwise empty object
-    cache.storage[userID].user = (user) ? user : null;
+    cache.storage[userID] = (user) ? { ...cache.storage[userID], ...user } : null;
+    // get and store the api from the db
     userAPI = await databaseClient.getUserAPI(userID);
     cache.storeAPI(userID, userAPI);
   },
 
+  // KEEP TRACK OF ORDERS TO CANCEL
+  setCancel: (userID, orderID) => {
+    const userStore = cache.storage[userID]
+    // add the id to the willCancel set
+    userStore.willCancel.add(orderID);
+    // delete the id from the set after 30 seconds. Bot would have seen it by then
+    setTimeout(() => {
+      userStore.willCancel.delete(orderID)
+    }, 30 * 1000);
+
+  },
+
+  checkIfCanceling: (userID, orderID) => {
+    const userStore = cache.storage[userID]
+    // find if id is in the willCancel set
+    return userStore.willCancel.has(orderID)
+  },
+
   getUser: (userID) => {
-    if (cache.storage[userID]?.user) {
-      return JSON.parse(JSON.stringify(cache.storage[userID].user))
-    }
+    // make a deep copy so you don't delete the api from the user
+    const user = structuredClone(cache.storage[userID])
+    delete user.api
+    // console.log(user.api,'user api to delete');
+    return user
   },
 
   getAllUsers: () => {
     let allUsers = []
     cache.storage.forEach(user => {
-      // console.log('user', user);
-      if (user.user && user.user?.id !== 0) {
-        // make a deep copy so you don't delete the api from the user
-        let userCopy = JSON.parse(JSON.stringify(user))
-        // don't send the api anywhere you don't have to
-        delete userCopy.api;
+      if (user && user.id !== 0) {
+        // get a deep copy of the user
+        const userCopy = cache.getUser(user.id)
+        // push the user copy into the array
         allUsers.push(userCopy);
       }
     })
-    return JSON.parse(JSON.stringify(allUsers));
+    return allUsers;
   },
 
   // KEY VALUE STORAGE
@@ -245,6 +292,7 @@ const cache = {
   // API STORAGE
   storeAPI: (userID, api) => {
     cache.storage[userID].api = api;
+    // console.log(cache.storage[userID],'DID IT PUT THE USER TOGETHER CORRECTLY')
   },
   getAPI: (userID) => {
     return cache.storage[userID].api;

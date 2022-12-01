@@ -4,34 +4,14 @@ const databaseClient = require("./databaseClient");
 const cache = require("./cache");
 const { startWebsocket } = require("./websocket");
 
-
-// this will keep track of and update general bot settings
-async function botLoop() {
-  userID = 0
-  // console.log('botLoop');
-  try {
-    // get fresh settings from db
-    botSettings = await databaseClient.getBotSettings();
-    // save settings to the cache
-    console.log(botSettings,'bot settings');
-    cache.setKey(userID, 'botSettings', botSettings);
-  } catch (err) {
-    console.log(err, 'error in botLoop');
-  }
-}
-
 // start a sync loop for each active user
 async function startSync() {
-  // create a user cache for the bot to store bot settings
-  robotUser = {
-    // user table starts at 1 so bot can be user 0 since storage array starts at 0
-    id: 0
-  }
   try {
-    cache.newUser(robotUser);
-    await botLoop();
+    // load the bot settings
+    await cache.refreshBotSettings();
     // get all users from the db
     const userList = await databaseClient.getAllUsers();
+    // start the loops for each user
     userList.forEach(async user => {
       await initializeUserLoops(user);
       // deSyncOrderLoop(user, 0);
@@ -44,25 +24,24 @@ async function startSync() {
 // this is separated from the startSync function so it can be called separately when a new user is created
 async function initializeUserLoops(user) {
   const userID = user.id;
-  // set up cache for user
-  await cache.newUser(user);
-  // start the loop
-  syncOrders(userID, 0);
-  processingLoop(userID);
-
   try {
-    const ws = startWebsocket(userID);
-    console.log(ws, 'ws success', userID)
-
+    // set up cache for user
+    await cache.createNewUser(user);
+    // start syncing orders over the REST api
+    syncOrders(userID, 0);
+    // start looking for orders to process
+    processingLoop(userID);
+    // start websocket connection to coinbase for rapid order updates
+    startWebsocket(userID);
   } catch (err) {
-    console.log(err, 'error starting websocket');
+    console.log(err, 'error initializing loops');
   }
 }
 
 async function processingLoop(userID) {
   // get the user and bot settings from cache;
   const user = cache.getUser(userID);
-  const botSettings = cache.getKey(0, 'botSettings');
+  const botSettings = cache.getBotSettings();
   // check that user is active, approved, and unpaused, and that the bot is not under maintenance
   if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
     // flip orders that are settled in the db
@@ -101,7 +80,7 @@ async function syncOrders(userID) {
   // keep track of how long the loop takes. Helps prevent rate limiting
   const t0 = performance.now();
   // get the bot settings
-  const botSettings = cache.getKey(0, 'botSettings');
+  const botSettings = cache.getBotSettings();
   try {
     cache.updateStatus(userID, 'getting settings');
     const loopNumber = cache.getLoopNumber(userID);
@@ -206,7 +185,7 @@ function MainLoopErrors(userID, err) {
 
 async function deSync(userID) {
   cache.updateStatus(userID, 'begin desync');
-  const botSettings = cache.getKey(0, 'botSettings');
+  const botSettings = cache.getBotSettings();
 
   return new Promise(async (resolve, reject) => {
     try {
@@ -242,7 +221,7 @@ async function deSync(userID) {
 async function fullSync(userID) {
   cache.updateStatus(userID, 'begin full sync');
   // get the bot settings
-  const botSettings = cache.getKey(0, 'botSettings');
+  const botSettings = cache.getBotSettings();
   return new Promise(async (resolve, reject) => {
     try {
       // get lists of trades to compare which have been settled
@@ -281,7 +260,7 @@ async function fullSync(userID) {
 
 async function quickSync(userID) {
   cache.updateStatus(userID, 'begin quick sync');
-  const botSettings = cache.getKey(0, 'botSettings');
+  const botSettings = cache.getBotSettings();
   // IF QUICK SYNC, only get fills
   return new Promise(async (resolve, reject) => {
     try {
@@ -576,7 +555,7 @@ async function updateMultipleOrders(userID, params) {
           await databaseClient.updateTrade(updatedOrder.order);
         }
       } catch (err) {
-        console.log( 'error in updateMultipleOrders loop');
+        console.log('error in updateMultipleOrders loop');
         cache.storeError(userID, {
           errorData: orderToCheck,
           errorText: `Error updating order details`
@@ -944,7 +923,7 @@ async function alertAllUsers(alertMessage) {
 
 function heartBeat(userID, side) {
   const loopNumber = cache.getLoopNumber(userID);
-  const botSettings = cache.getKey(0, 'botSettings');
+  const botSettings = cache.getBotSettings();
 
   cache.sockets.forEach(socket => {
     // find all open sockets for the user
