@@ -182,6 +182,7 @@ function MainLoopErrors(userID, err) {
     errorText = 'Internal server error from coinbase';
   } else if (err?.response?.status === 401) {
     console.log(err?.response?.data, 'Invalid Signature');
+    console.log(err?.response?.data, 'Invalid Signature');
     errorText = 'Invalid Signature. Probably nothing to worry about unless it keeps happening quickly.';
   } else if (err?.response?.statusText === 'Bad Gateway') {
     console.log('bad gateway');
