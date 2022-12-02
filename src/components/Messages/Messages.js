@@ -45,8 +45,8 @@ function Messages() {
             {/* <button className='btn-red'><span className='gg-trash'></span></button> */}
           </h3>
           {!collapsed && botMessages.map((message, i) => {
-            if (message.messageText) {
-              return <p key={i}><strong>Msg #{message.count} {new Date(message.timeStamp).toLocaleString('en-US')}</strong> <br /> {message.messageText}</p>
+            if (message.text) {
+              return <p key={i}><strong>Msg #{message.count} {new Date(message.timeStamp).toLocaleString('en-US')}</strong> <br /> {message.text}</p>
             }
           })}
         </div>
@@ -75,7 +75,7 @@ function Messages() {
             </h3>
             <div className={`scrollable chat-log admin-${user.admin}`}>
               {!collapsed && chatMessages.map((chat, i) => {
-                return <p key={i}><strong>Err #{chat.count} {new Date(chat.timeStamp).toLocaleString('en-US')}</strong> <br /> {chat.messageText}</p>
+                return <p key={i}><strong>Err #{chat.count} {new Date(chat.timeStamp).toLocaleString('en-US')}</strong> <br /> {chat.text}</p>
               })}
             </div>
           </div>

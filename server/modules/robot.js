@@ -89,11 +89,11 @@ async function syncOrders(userID) {
     heartBeat(userID, 'heart');
     // check that user is active, approved, and unpaused, and that the bot is not under maintenance
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
-      
+
       // *** WHICH SYNC ***
       if (((loopNumber - 1) % botSettings.full_sync) === 0) {
         // console.log(user,'full sync');
-        
+
         // *** FULL SYNC ***
         // full sync compares all trades that should be on CB with DB,
         // and does other less frequent maintenance tasks
@@ -406,7 +406,10 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     // if it was a BUY, sell for more. multiply old price
     tradeDetails.side = "SELL"
     tradeDetails.limit_price = dbOrder.original_sell_price;
-    cache.storeMessage(userID, { messageText: `Selling for $${Number(tradeDetails.limit_price)}` });
+    cache.storeMessage(userID, {
+      type: 'general',
+      text: `Selling for $${Number(tradeDetails.limit_price)}`
+    });
   } else {
     // if it is a sell turning into a buy, check if user wants to reinvest the funds
     if (user.reinvest) {
@@ -492,7 +495,10 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "BUY"
     tradeDetails.limit_price = dbOrder.original_buy_price;
-    cache.storeMessage(userID, { messageText: `Buying for $${Number(tradeDetails.limit_price)}` });
+    cache.storeMessage(userID, {
+      type: 'general',
+      text: `Buying for $${Number(tradeDetails.limit_price)}`
+    });
   }
   // return the tradeDetails object
   cache.updateStatus(userID, 'end flip trade');
@@ -526,7 +532,10 @@ async function updateMultipleOrders(userID, params) {
     // console.log(ordersArray, 'orders array');
 
     if (ordersArray?.length > 0) {
-      cache.storeMessage(userID, { messageText: `There are ${ordersArray.length} orders that need to be synced` });
+      cache.storeMessage(userID, {
+        type: 'general',
+        text: `There are ${ordersArray.length} orders that need to be synced`
+      });
     } else {
       resolve()
       return
@@ -535,7 +544,10 @@ async function updateMultipleOrders(userID, params) {
     for (let i = 0; i < ordersArray.length; i++) {
       // keep track of how long each loop takes. Helps prevent rate limiting
       const t0 = performance.now();
-      cache.storeMessage(userID, { messageText: `Syncing ${i + 1} of ${ordersArray.length} orders that need to be synced` });
+      cache.storeMessage(userID, {
+        type: 'general',
+        text: `Syncing ${i + 1} of ${ordersArray.length} orders that need to be synced`
+      });
       // set up loop
       const orderToCheck = ordersArray[i];
       // set up loop DONE
@@ -603,7 +615,8 @@ async function reorder(orderToReorder) {
         await databaseClient.deleteTrade(orderToReorder.order_id);
         // tell the DOM to update
         cache.storeMessage(userID, {
-          messageText: `trade was reordered`,
+          type: 'general',
+          text: `trade was reordered`,
           orderUpdate: true,
         });
         resolve({ results: results })
@@ -912,7 +925,8 @@ async function alertAllUsers(alertMessage) {
     userList.forEach(user => {
       // console.log(user);
       cache.storeMessage(Number(user.id), {
-        messageText: alertMessage,
+        type: 'general',
+        text: alertMessage,
         orderUpdate: true
       });
     });

@@ -61,7 +61,7 @@ const debugReducer = (state = [], action) => {
   switch (action.type) {
     case 'SET_DEBUG':
       console.log('action.payload', action.payload);
-console.log(action.payload,'payload');
+      console.log(action.payload, 'payload');
       const userInfo = action.payload;
       // copy old state
       const newState = [...state];

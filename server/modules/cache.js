@@ -8,11 +8,65 @@ const botSettings = {
   maintenance: Boolean()
 };
 
-// the storage arrays will store objects of different things at the index of the user id
+// the storage arrays will store objects/arrays/sets of different things at the index of the user id
+// they are not exported so they can be safely manipulated only by functions in this file
+// store an object per user with the user settings and some key/value properties
 const userStorage = [];
+// store an object with each user api. keep it separate from user storage to prevent accident
 const apiStorage = [];
+// store an object with arrays for messages and errors
 const messageStorage = [];
-const userSockets = [];
+// store a set of connected sockets for each user
+const socketStorage = [];
+
+class SocketSet {
+  constructor(socket) {
+    this.sockets=new Set();
+  }
+}
+
+class Message {
+  constructor(type, text, mCount, cCount) {
+    this.type = type;
+    this.text = String(text);
+    this.mCount = Number(mCount);
+    this.cCount = Number(cCount);
+    this.timeStamp = new Date();
+  }
+}
+
+// store messages/errors, and make new ones
+class Messages {
+  constructor() {
+    this.errors = new Array();
+    this.messages = new Array();
+    this.messageCount = Number(1);
+    this.chatMessageCount = Number(1);
+    this.errorCount = Number(1);
+  }
+  newMessage(message) {
+    const newMessage = new Message(message.type, message.text, this.messageCount, this.chatMessageCount);
+    this.messages.unshift(newMessage);
+    if (message.type === 'chat') {
+      this.chatMessageCount++;
+    }
+    // this.messages.unshift(newMessage);
+    this.messageCount++;
+    if (this.messages.length > 1000) {
+      this.messages.length = 1000;
+    }
+  }
+  newError(type, text) {
+    const error = new Message(type, text, this.count);
+    this.errors.unshift(error);
+    this.errorCount++;
+    if (this.errors.length > 1000) {
+      this.errors.length = 1000;
+    }
+  }
+}
+
+
 
 const cache = {
   setBotSettings: (newSettings) => {
@@ -20,7 +74,7 @@ const cache = {
   },
   getBotSettings: () => {
     // if (botSettings) {
-      return structuredClone(botSettings)
+    return structuredClone(botSettings)
     // }
   },
   refreshBotSettings: async () => {
@@ -57,10 +111,13 @@ const cache = {
     userStorage[userID] = Object();
     // add the user info to the userStorage array
     Object.assign(userStorage[userID], storage)
-    // create user object for messages
-    messageStorage[userID] = Object();
+    // create an object to store messages and errors
+    messageStorage[userID] = new Messages();
+
+    // create user object for sockets
+    socketStorage[userID] = new Set();
     // add the user info to the messageStorage array
-    Object.assign(messageStorage[userID], storage)
+    // Object.assign(messageStorage[userID], storage)
 
     // cache the API from the db
     try {
@@ -199,21 +256,24 @@ const cache = {
 
   // MESSAGE STORAGE - store 1000 most recent messages
   storeMessage: (userID, message) => {
-    console.log(message, 'message')
-    const messageData = {
-      type: message.type,
-      // message text is to store a custom message message to show the user
-      messageText: message.messageText,
-      // automatically store the timestamp
-      timeStamp: new Date(),
-      count: messageStorage[userID].messageCount
-    }
-    messageStorage[userID].messageCount++;
+    // todo - chats are also being sent here so need to change this to differentiate type
+    messageStorage[userID].newMessage(message);
 
-    messageStorage[userID].messages.unshift(messageData);
-    if (messageStorage[userID].messages.length > 1000) {
-      messageStorage[userID].messages.length = 1000;
-    }
+
+
+
+    // tell Dom to update messages and trade list if needed
+    socketStorage[userID].forEach(socket => {
+      // find all open sockets for the user
+      if (socket.userID === userID) {
+        console.log(socket.userID, 'equal?', socket.request.session.passport?.user)
+        const msg = {
+          type: 'messageUpdate',
+          orderUpdate: message.orderUpdate,
+        }
+        socket.emit('message', msg);
+      }
+    })
     // tell Dom to update messages and trade list if needed
     cache.sockets.forEach(socket => {
       // find all open sockets for the user
@@ -228,15 +288,19 @@ const cache = {
     })
   },
 
+  // todo - chats are being sent to storeMessage, so need to get rid of this?
   // MESSAGE STORAGE - store 1000 most recent messages
   storeChat: (userID, chat) => {
     console.log(chat, 'chat');
+    if (!chat.text) {
+      return
+    }
     const chatData = {
       // message text is to store a custom chat message to show the user
-      messageText: chat.text,
+      text: chat.text,
       // automatically store the timestamp
       timeStamp: new Date(),
-      count: messageStorage[userID].chatMessageCount
+      count: userStorage[userID].chatMessageCount
     }
 
     messageStorage[userID].chatMessageCount++;
@@ -267,6 +331,8 @@ const cache = {
     // get the messages
     const messages = structuredClone(messageStorage[userID].messages);
     // extract the chats
+
+    // console.log(messages, '<-- what is this');
     messages.forEach(message => {
       if (message.type === 'chat') {
         chats.push(message);
@@ -276,7 +342,7 @@ const cache = {
   },
 
   clearMessages: (userID) => {
-    messageStorage[userID].messages.length = 0;
+    messageStorage[userID].length = 0;
   },
 
   // LOOP COUNTER
@@ -286,18 +352,16 @@ const cache = {
   },
 
   getLoopNumber: (userID) => {
-    // console.log(userStorage[userID].loopNumber,'error initializing loops');
-    
     return userStorage[userID].loopNumber;
   },
 
   // API STORAGE
   storeAPI: (userID, api) => {
     Object.assign(apiStorage[userID], api)
-    // apiStorage[userID] = api;
   },
+
   getAPI: (userID) => {
-    return apiStorage[userID];
+    return structuredClone(apiStorage[userID]);
   },
 
   // get all cache storage for a user but remove API before returning

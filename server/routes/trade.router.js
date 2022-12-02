@@ -80,7 +80,8 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       await robot.updateFunds(userID);
       // tell DOM to update orders
       cache.storeMessage(Number(user.id), {
-        messageText: `New trade-pair created!`,
+        type:'general',
+        text: `New trade-pair created!`,
         orderUpdate: true
       });
       // send OK status
@@ -246,7 +247,8 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
       }
       // tell DOM to update orders
       cache.storeMessage(Number(user.id), {
-        messageText: `Auto setup complete!`,
+        type:'general',
+        text: `Auto setup complete!`,
         orderUpdate: true
       });
     } catch (err) {
@@ -320,7 +322,8 @@ router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
     }
     res.sendStatus(200)
     cache.storeMessage(userID, {
-      messageText: 'Successfully deleted trade-pair'
+      type:'general',
+      text: 'Successfully deleted trade-pair'
     })
   } catch (err) {
     let errorText = 'FAILURE deleting trade-pair!';

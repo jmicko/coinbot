@@ -230,12 +230,18 @@ async function updateMultipleOrders(userID, params) {
       : cache.getKey(userID, 'ordersToCheck');
     console.log(ordersArray, 'orders array in ws');
     if (ordersArray.length > 0) {
-      cache.storeMessage(userID, { messageText: `There are ${ordersArray.length} orders that need to be synced` });
+      cache.storeMessage(userID, {
+        type: 'general',
+        text: `There are ${ordersArray.length} orders that need to be synced`
+      });
     }
     // loop over the array and update each trade
     for (let i = 0; i < ordersArray.length; i++) {
       // send client message with each loop
-      cache.storeMessage(userID, { messageText: `Syncing ${i + 1} of ${ordersArray.length} orders that need to be synced` });
+      cache.storeMessage(userID, {
+        type: 'general',
+        text: `Syncing ${i + 1} of ${ordersArray.length} orders that need to be synced`
+      });
       const orderToCheck = ordersArray[i];
       try {
         cache.updateStatus(userID, 'UMO loop get order');
@@ -304,7 +310,7 @@ function setupSocketIO(io) {
         allUsers.forEach(user => {
           // console.log(user,'user to send message to', message.data);
           cache.storeMessage(Number(user.id), {
-            messageText: message.data,
+            text: message.data,
             type: 'chat'
           });
         });
