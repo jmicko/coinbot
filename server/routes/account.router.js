@@ -11,14 +11,14 @@ const cache = require('../modules/cache');
 /**
  * GET route to get all accounts info
  */
-router.get('/', async (req, res) => {
+router.get('/', rejectUnauthenticated, async (req, res) => {
   console.log('get accounts route hit');
   // todo - DOES THIS ROUTE EVER GET HIT??
 
   const user = req.user;
-  const userID = req.user.id;
+  const userID = req.user?.id;
   // user needs to be active or they will not have an API key to use
-  if (user.active) {
+  if (user?.active) {
     try {
       let accounts = await coinbaseClient.getAccounts(userID, { limit: 250 });
       let spentUSD = await databaseClient.getSpentUSD(userID);
@@ -43,6 +43,7 @@ router.get('/', async (req, res) => {
       res.sendStatus(500)
     }
   } else {
+    res.send(`you never should have come here!`)
     res.sendStatus(404)
   }
 });

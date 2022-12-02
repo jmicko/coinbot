@@ -6,7 +6,7 @@ const rejectUnauthenticated = (req, res, next) => {
     next();
   } else {
     // failure sends a forbidden status code
-    res.sendStatus(403);
+    res.send(`You never should have come here! >:|`).status(403);
   }
 };
 
