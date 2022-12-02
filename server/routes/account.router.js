@@ -215,7 +215,7 @@ router.get('/debug', rejectUnauthenticated, async (req, res) => {
       const userErrors = cache.getErrors(userID);
       console.log('debug - full storage', userInfo);
       console.log('errors', userErrors);
-      userInfo.user !== null
+      userInfo.id !== null
         ? res.send(userInfo).status(200)
         : res.sendStatus(500);
     } catch (err) {

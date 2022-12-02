@@ -92,8 +92,9 @@ function SingleUser(props) {
           <ol>
             <li>Loop #{debugReducer[props.user.id]?.loopNumber}</li>
             {/* <p>{JSON.stringify(}</p> */}
-            {debugReducer[props.user.id]?.botStatus.slice(0).reverse().map(statusItem => {
-              return <li key={statusItem}>{statusItem}</li>
+            {debugReducer[props.user.id]?.botStatus.slice(0).reverse().map((statusItem, i = 1) => {
+              i++
+              return <li key={i}>{statusItem}</li>
             }) || <p>Click debug to get info. This will return a snapshot of the user, and does not update live.</p>}
           </ol>
           {/* <h4></h4> */}

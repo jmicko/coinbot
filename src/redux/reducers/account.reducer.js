@@ -61,14 +61,12 @@ const debugReducer = (state = [], action) => {
   switch (action.type) {
     case 'SET_DEBUG':
       console.log('action.payload', action.payload);
-
+console.log(action.payload,'payload');
       const userInfo = action.payload;
-
+      // copy old state
       const newState = [...state];
-
-      newState[userInfo.user.id] = userInfo;
-
-      
+      // replace user info at user.id index of new state
+      newState[userInfo.id] = userInfo;
       return newState;
     case 'UNSET_ALL_DEBUG':
       return [];
