@@ -10,7 +10,7 @@ async function startSync() {
   // const settings = botSettings
   try {
     // load the bot settings
-    await cache.refreshBotSettings();
+    await botSettings.refresh();
     // get all users from the db
     const userList = await databaseClient.getAllUsers();
     // start the loops for each user
@@ -31,11 +31,11 @@ async function initializeUserLoops(user) {
     // set up cache for user
     await cache.createNewUser(user);
     // start syncing orders over the REST api
-    // syncOrders(userID);
+    syncOrders(userID);
     // start looking for orders to process
     processingLoop(userID);
     // start websocket connection to coinbase for rapid order updates
-    // startWebsocket(userID);
+    startWebsocket(userID);
   } catch (err) {
     console.log(err, 'error initializing loops');
   }
@@ -44,7 +44,7 @@ async function initializeUserLoops(user) {
 async function processingLoop(userID) {
   // get the user and bot settings from cache;
   const user = cache.getUser(userID);
-  const botSettings = cache.getBotSettings();
+
   // check that user is active, approved, and unpaused, and that the bot is not under maintenance
   if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
     // flip orders that are settled in the db
@@ -83,7 +83,7 @@ async function syncOrders(userID) {
   // keep track of how long the loop takes. Helps prevent rate limiting
   const t0 = performance.now();
   // get the bot settings
-  const botSettings = cache.getBotSettings();
+
   try {
     cache.updateStatus(userID, 'getting settings');
     const loopNumber = cache.getLoopNumber(userID);
@@ -188,7 +188,7 @@ function MainLoopErrors(userID, err) {
 
 async function deSync(userID) {
   cache.updateStatus(userID, 'begin desync');
-  const botSettings = cache.getBotSettings();
+  // const botSettings = cache.getBotSettings();
 
   return new Promise(async (resolve, reject) => {
     try {
@@ -224,7 +224,7 @@ async function deSync(userID) {
 async function fullSync(userID) {
   cache.updateStatus(userID, 'begin full sync');
   // get the bot settings
-  const botSettings = cache.getBotSettings();
+  // const botSettings = cache.getBotSettings();
   return new Promise(async (resolve, reject) => {
     try {
       // get lists of trades to compare which have been settled
@@ -246,13 +246,13 @@ async function fullSync(userID) {
       await databaseClient.saveFees(fees, userID);
       // compare the arrays and remove any where the ids match in both,
       // leaving a list of orders that are open in the db, but not on cb. Probably settled, possibly canceled
-      let ordersToCheck = await orderElimination(dbOrders, cbOrders);
+      let toCheck = await orderElimination(dbOrders, cbOrders);
       // also get a list of orders that are open on cb, but not in the db. Need to cancel them
-      let ordersToCancel = await orderElimination(cbOrders, dbOrders);
+      let toCancel = await orderElimination(cbOrders, dbOrders);
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
-      await cancelAndReorder(ordersToCancel, userID);
+      await cancelAndReorder(toCancel, userID);
       // save the orders that need to be individually checked against CB
-      cache.setKey(userID, 'ordersToCheck', ordersToCheck);
+      userStorage[userID].addToCheck(toCheck);
       resolve();
     } catch (err) {
       cache.updateStatus(userID, 'error in full sync');
@@ -263,7 +263,7 @@ async function fullSync(userID) {
 
 async function quickSync(userID) {
   cache.updateStatus(userID, 'begin quick sync');
-  const botSettings = cache.getBotSettings();
+  // const botSettings = cache.getBotSettings();
   // IF QUICK SYNC, only get fills
   return new Promise(async (resolve, reject) => {
     try {
@@ -285,8 +285,8 @@ async function quickSync(userID) {
       const reorders = await databaseClient.getReorders(userID, botSettings.orders_to_sync)
       // combine the arrays
       toCheck = unsettledFills.concat(reorders);
-      // set the 'ordersToCheck' key so the next process can access them without needing to pass params
-      cache.setKey(userID, 'ordersToCheck', toCheck);
+      // set orders to check so the next process can access them without needing to pass params through
+      userStorage[userID].addToCheck(toCheck);
       cache.updateStatus(userID, 'will resolve quick sync');
       resolve(toCheck);
     } catch (err) {
@@ -524,14 +524,14 @@ function sleep(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
-// this should just update the status of each trade in the 'ordersToCheck' cached array
+// this should just update the status of each trade in the ordersToCheck cached array
 async function updateMultipleOrders(userID, params) {
   return new Promise(async (resolve, reject) => {
     cache.updateStatus(userID, 'start updateMultipleOrders (UMO)');
     // get the orders that need processing. This will have been taken directly from the db and include all details
     const ordersArray = params?.ordersArray
       ? params.ordersArray
-      : cache.getKey(userID, 'ordersToCheck');
+      : userStorage[userID].getToCheck();;
     // console.log(ordersArray, 'orders array');
 
     if (ordersArray?.length > 0) {
@@ -582,8 +582,8 @@ async function updateMultipleOrders(userID, params) {
         await sleep(100 - (t1 - t0));
       }
     } // end for loop
-    // delete ordersToCheck since they have now been checked
-    cache.deleteKey(userID, 'ordersToCheck');
+    // delete orders to check since they have now been checked
+    userStorage[userID].clearToCheck();
     resolve();
   })
 }

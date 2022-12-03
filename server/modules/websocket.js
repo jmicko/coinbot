@@ -1,7 +1,7 @@
 const WebSocket = require('ws');
 const CryptoJS = require('crypto-js');
 const fs = require('fs');
-const { cache, messenger } = require('./cache');
+const { cache, messenger, userStorage, botSettings } = require('./cache');
 const databaseClient = require('./databaseClient');
 const coinbaseClient = require('./coinbaseClient');
 const { rejectUnauthenticatedSocket } = require('./authentication-middleware');
@@ -10,7 +10,7 @@ const { sleep } = require('../../src/shared');
 function startWebsocket(userID) {
 
   const user = cache?.getUser(userID);
-  console.log(user, 'ws user');
+  // console.log(user, 'ws user');
   // don't start ws if user is not approved and active
   if (!user?.active || !user?.approved) {
     if (user) {
@@ -22,6 +22,7 @@ function startWebsocket(userID) {
     return { success: false }
   }
   const userAPI = cache.getAPI(userID)
+  console.log(userAPI,'api details in ws');
   const secret = userAPI.CB_SECRET;
   const key = userAPI.CB_ACCESS_KEY;
 
@@ -117,8 +118,8 @@ function startWebsocket(userID) {
 
     ws.on('message', function (data) {
       const parsedData = JSON.parse(data);
-      const user = cache.getUser(userID);
-      const botSettings = cache.getBotSettings();
+      const user = userStorage[userID].getUser();
+      // const botSettings = cache.getBotSettings();
       if (!user?.active || !user?.approved || user.paused || botSettings.maintenance) {
         return
       }
@@ -202,18 +203,14 @@ function startWebsocket(userID) {
     // every tick, send an update to open consoles for the user
     // console.log('handling tickers');
     tickers.forEach(ticker => {
-      cache.sockets.forEach(socket => {
-        // find each open socket for the user
-        if (socket.userID === userID) {
-          // console.log(socket.userID, userID)
-          const msg = {
-            type: 'ticker',
-            ticker: ticker
-          }
-          // send the message
-          socket.emit('message', msg);
-        }
-      })
+
+      // console.log(socket.userID, userID)
+      const msg = {
+        type: 'ticker',
+        ticker: ticker
+      }
+      messenger[userID].newMessage(msg)
+
       return
     });
 

@@ -1,6 +1,6 @@
 const CryptoJS = require("crypto-js");
 const axios = require("axios").default;
-const cache = require("./cache");
+const { cache } = require("./cache");
 const { v4: uuidv4 } = require('uuid');
 
 

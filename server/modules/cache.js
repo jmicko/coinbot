@@ -1,12 +1,26 @@
 const databaseClient = require("./databaseClient");
 
-// store the bot settings
-const botSettings = new Object({
-  loop_speed: Number(),
-  orders_to_sync: Number(),
-  full_sync: Number(1),
-  maintenance: Boolean(true)
-});
+const botSettings = new class BotSettings {
+  constructor() {
+    this.loop_speed = Number();
+    this.orders_to_sync = Number();
+    this.full_sync = Number(1);
+    this.maintenance = Boolean(true)
+  }
+  async refresh() {
+    const newBotSettings = await databaseClient.getBotSettings();
+    // save settings to the cache
+    Object.assign(this, newBotSettings)
+    console.log(botSettings, 'refreshing bot settings');
+  }
+  change(settings) {
+    Object.assign(this, settings)
+    console.log(this);
+  }
+  get() {
+    return structuredClone(this);
+  }
+}
 
 // the storage arrays will store objects/arrays/sets of different things at the index of the user id
 // they are not exported so they can be safely manipulated only by functions in this file
@@ -15,8 +29,6 @@ const userStorage = [];
 // store an object with each user api. keep it separate from user storage to prevent accident
 const apiStorage = [];
 // store an object with arrays for messages and errors
-// const messageStorage = [];
-// store a set of connected sockets for each user
 const messenger = [];
 
 // I'm pretty new to classes so this might be a bit jumbled for now. Not sure what I'm doing lol
@@ -36,6 +48,19 @@ class User {
     this.ordersToCheck = new Array();
     this.loopNumber = Number(0);
   }
+  getUser() {
+    return structuredClone(this);
+  }
+  addToCheck(orders) {
+    this.ordersToCheck = orders;
+  }
+  getToCheck(orders) {
+    return structuredClone(this.ordersToCheck);
+  }
+  clearToCheck(orders) {
+    this.ordersToCheck = new Array();
+  }
+
 }
 
 class Message {
@@ -104,6 +129,12 @@ class Messenger {
       socket.emit('message', message);
     })
   }
+  // pretty much just used for tickers
+  instantMessage(message) {
+    this.sockets.forEach(socket => {
+      socket.emit('message', message);
+    })
+  }
   // todo - should probably use type: 'error and get rid of this
   newError(type, text) {
     const error = new Message(type, text, this.count);
@@ -117,12 +148,7 @@ class Messenger {
 
 
 const cache = {
-  refreshBotSettings: async () => {
-    const newBotSettings = await databaseClient.getBotSettings();
-    // save settings to the cache
-    Object.assign(botSettings, newBotSettings)
-    console.log(botSettings, 'refreshing bot settings');
-  },
+
   getBotSettings: () => {
     // if (botSettings) {
     return structuredClone(botSettings)
@@ -141,6 +167,8 @@ const cache = {
 
     // create object for sockets at index of user id
     messenger[userID] = new Messenger(userID);
+    // create object for api at index of user id
+    // apiStorage[userID] = new Api(userID);
     // console.log(messenger, userID, 'new socket storage');
 
     // cache the API from the db
@@ -211,21 +239,6 @@ const cache = {
       }
     })
     return allUsers;
-  },
-
-  // KEY VALUE STORAGE
-  setKey: (userID, key, value) => {
-    userStorage[userID].keyValuePairs[key] = value;
-  },
-  getKey: (userID, key) => {
-    if (userStorage[userID].keyValuePairs[key]) {
-      return structuredClone(userStorage[userID].keyValuePairs[key])
-    } else {
-      return null;
-    }
-  },
-  deleteKey: (userID, key) => {
-    delete userStorage[userID].keyValuePairs[key];
   },
 
   // LOOP STATUS UPDATES
@@ -377,7 +390,6 @@ const cache = {
   },
 
   getAPI: (userID) => {
-    console.log(apiStorage[userID], 'API STORAGE NOT A FUNCTION');
     return structuredClone(apiStorage[userID]);
   },
 
@@ -389,14 +401,6 @@ const cache = {
       ? structuredClone(userStorage[userID])
       : { user: null, api: null };
     return safeStorage;
-  },
-
-  // addSocket: (userID, socket) => {
-  //   messenger[userID].sockets.add(socket);
-  // },
-
-  deleteSocket: (userID, socket) => {
-    messenger[userID].sockets.delete(socket);
   },
 
   heartbeat: (userID, message) => {

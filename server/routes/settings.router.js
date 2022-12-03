@@ -5,7 +5,7 @@ const { rejectUnauthenticated, } = require('../modules/authentication-middleware
 const databaseClient = require('../modules/databaseClient');
 const robot = require('../modules/robot');
 const coinbaseClient = require('../modules/coinbaseClient');
-const cache = require('../modules/cache');
+const { cache, botSettings } = require('../modules/cache');
 
 
 /**
@@ -117,9 +117,9 @@ router.put('/loopSpeed', rejectUnauthenticated, async (req, res) => {
       await pool.query(queryText, [loopSpeed]);
 
       // botSettings = await databaseClient.getBotSettings();
-      cache.setBotSettings({ loop_speed: loopSpeed })
-      console.log(cache.getBotSettings());
-      // cache.setKey(0, 'botSettings', botSettings);
+      botSettings.change({ loop_speed: loopSpeed })
+
+      console.log(botSettings);
 
       res.sendStatus(200);
     } catch (err) {
@@ -151,7 +151,7 @@ router.put('/fullSync', rejectUnauthenticated, async (req, res) => {
     try {
       console.log('full_sync route hit', fullSync);
       // set the settings in the cache first
-      cache.setBotSettings({ full_sync: fullSync })
+      botSettings.change({ full_sync: fullSync })
       // then save to db
       const queryText = `UPDATE "bot_settings" SET "full_sync" = $1;`;
       await pool.query(queryText, [fullSync]);
@@ -184,7 +184,7 @@ router.put('/orderSyncQuantity', rejectUnauthenticated, async (req, res) => {
   if (user.admin && orders_to_sync <= 200 && orders_to_sync >= 1) {
     try {
       // save to cache
-      cache.setBotSettings({ orders_to_sync: orders_to_sync })
+      botSettings.change({ orders_to_sync: orders_to_sync })
       // save to db
       const queryText = `UPDATE "bot_settings" SET "orders_to_sync" = $1;`;
       await pool.query(queryText, [orders_to_sync]);
@@ -215,7 +215,7 @@ router.put('/toggleMaintenance', rejectUnauthenticated, async (req, res) => {
       robot.alertAllUsers('Toggling maintenance mode!');
 
       // refresh cache
-      cache.refreshBotSettings()
+      botSettings.refresh()
 
       res.sendStatus(200);
     } catch (err) {
