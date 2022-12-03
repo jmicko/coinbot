@@ -60,7 +60,9 @@ class User {
   clearToCheck(orders) {
     this.ordersToCheck = new Array();
   }
-
+  setCancel(order_id) {
+    this.willCancel.add(order_id);
+  }
 }
 
 class Message {
@@ -112,8 +114,10 @@ class Messenger {
   newMessage(message) {
     // create the message
     const newMessage = new Message(message.type, message.text, this.messageCount, this.chatMessageCount, message.orderUpdate);
-    // add message to messages array
-    this.messages.unshift(newMessage);
+    // add message to messages array if there is text to store
+    if (message.text) {
+      this.messages.unshift(newMessage);
+    }
     // icrease the counts
     this.messageCount++;
     if (message.type === 'chat') {

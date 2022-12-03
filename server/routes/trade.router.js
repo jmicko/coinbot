@@ -5,7 +5,7 @@ const { rejectUnauthenticated, } = require('../modules/authentication-middleware
 const databaseClient = require('../modules/databaseClient');
 const robot = require('../modules/robot');
 const coinbaseClient = require('../modules/coinbaseClient');
-const cache = require('../modules/cache');
+const { cache, userStorage } = require('../modules/cache');
 const { v4: uuidv4 } = require('uuid');
 const { autoSetup } = require('../../src/shared');
 // const { autoSetup } = require('../../src/shared');
@@ -80,7 +80,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       await robot.updateFunds(userID);
       // tell DOM to update orders
       cache.storeMessage(Number(user.id), {
-        type:'general',
+        type: 'general',
         text: `New trade-pair created!`,
         orderUpdate: true
       });
@@ -123,7 +123,7 @@ router.post('/basic', rejectUnauthenticated, async (req, res) => {
       tradingPrice: order.tradingPrice
     };
     console.log('BIG order', tradeDetails);
-    
+
     try {
       // send the new order with the trade details
       let basic = await coinbaseClient.placeMarketOrder(user.id, tradeDetails);
@@ -247,7 +247,7 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
       }
       // tell DOM to update orders
       cache.storeMessage(Number(user.id), {
-        type:'general',
+        type: 'general',
         text: `Auto setup complete!`,
         orderUpdate: true
       });
@@ -308,7 +308,7 @@ router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   const orderId = req.params.order_id;
 
-  cache.setCancel(userID, orderId);
+  userStorage[userID].setCancel(orderId);
   // mark as canceled in db
   try {
     let order = await databaseClient.updateTrade({
@@ -322,7 +322,7 @@ router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
     }
     res.sendStatus(200)
     cache.storeMessage(userID, {
-      type:'general',
+      type: 'general',
       text: 'Successfully deleted trade-pair'
     })
   } catch (err) {
