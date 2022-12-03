@@ -3,7 +3,7 @@ const router = express.Router();
 const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const databaseClient = require('../modules/databaseClient');
-const coinbaseClient = require('../modules/coinbaseClient');
+const { cbClients } = require('../modules/cache')
 const { sleep } = require('../modules/robot');
 
 
@@ -56,7 +56,7 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
     await databaseClient.setReorder(userID);
 
     // cancel all orders. The sync loop will take care of replacing them
-    await coinbaseClient.cancelAll(userID);
+    await cbClients[userID].cancelAll();
 
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID)
@@ -89,8 +89,9 @@ router.delete('/range', rejectUnauthenticated, async (req, res) => {
     // mark all open orders as reorder
     // await databaseClient.setReorder();
 
+    // todo - fix this so it cancels an array returned from above
     // cancel all orders. The sync loop will take care of replacing them
-    // await coinbaseClient.cancelAllOrders(userID);
+    await cbClients[userID].cancelAll();
 
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID)
@@ -126,7 +127,7 @@ router.delete('/all', rejectUnauthenticated, async (req, res) => {
 
     // cancel all orders. The sync loop will take care of replacing them
 
-    // await coinbaseClient.cancelAllOrders(userID);
+    await cbClients[userID].cancelAll();
 
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID)

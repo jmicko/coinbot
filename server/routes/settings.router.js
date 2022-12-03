@@ -4,8 +4,7 @@ const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const databaseClient = require('../modules/databaseClient');
 const robot = require('../modules/robot');
-const coinbaseClient = require('../modules/coinbaseClient');
-const { cache, botSettings } = require('../modules/cache');
+const { cache, botSettings, cbClients } = require('../modules/cache');
 
 
 /**
@@ -32,11 +31,6 @@ router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
 
       // const IDs = '';
 
-      // const response = await coinbaseClient.placeOrder(userID, tradeDetails);
-      // const old = await coinbaseClient.getOrder(userID, '');
-      // const response = await coinbaseClient.cancelAll(userID);
-      // const response = await coinbaseClient.getAccounts(userID, { limit: 2 })
-      // const response = await coinbaseClient.cancelOrders(userID, [IDs]);
       // const response = await databaseClient.getTradesByIDs(userID, IDs);
       // response.products.forEach(product => {
       //   if (product.new) {
@@ -376,7 +370,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
       } //end for loop
 
       // cancel all orders. The sync loop will take care of replacing them
-      await coinbaseClient.cancelOrders(userID, idArray);
+      await cbClients[userID].cancelOrders(idArray);
     }
 
     // set pause status to what it was before route was hit

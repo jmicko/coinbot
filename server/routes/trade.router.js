@@ -4,8 +4,7 @@ const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const databaseClient = require('../modules/databaseClient');
 const robot = require('../modules/robot');
-const coinbaseClient = require('../modules/coinbaseClient');
-const { cache, userStorage } = require('../modules/cache');
+const { cache, userStorage, cbClients } = require('../modules/cache');
 const { v4: uuidv4 } = require('uuid');
 const { autoSetup } = require('../../src/shared');
 // const { autoSetup } = require('../../src/shared');
@@ -126,7 +125,7 @@ router.post('/basic', rejectUnauthenticated, async (req, res) => {
 
     try {
       // send the new order with the trade details
-      let basic = await coinbaseClient.placeMarketOrder(user.id, tradeDetails);
+      let basic = await cbClients[userID].placeMarketOrder(tradeDetails);
       console.log('basic trade results', basic,);
 
       if (!basic.success) {
@@ -182,7 +181,7 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
         };
         console.log('BIG order', tradeDetails);
         if (!options.ignoreFunds) {
-          let bigOrder = await coinbaseClient.placeMarketOrder(user.id, tradeDetails);
+          let bigOrder = await cbClients[user.id].placeMarketOrder(tradeDetails);
           console.log('big order to balance btc avail', bigOrder,);
         }
         await robot.updateFunds(user.id);
@@ -275,7 +274,7 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
   const orderId = req.body.order_id;
 
   try {
-    await coinbaseClient.cancelOrders(userID, [orderId]);
+    await cbClients[userID].cancelOrders([orderId]);
     await databaseClient.updateTrade({ reorder: true, order_id: orderId })
     res.sendStatus(200);
 
@@ -318,7 +317,7 @@ router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
     // if it is a reorder, there is no reason to cancel on CB
     if (!order.reorder) {
       // send cancelOrder to cb
-      await coinbaseClient.cancelOrders(userID, [orderId]);
+      await cbClients[userID].cancelOrders([orderId]);
     }
     res.sendStatus(200)
     cache.storeMessage(userID, {

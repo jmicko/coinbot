@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
-const coinbaseClient = require('../modules/coinbaseClient');
 const databaseClient = require('../modules/databaseClient');
-const { cache } = require('../modules/cache');
+const { cache, cbClients } = require('../modules/cache');
+const { Coinbase } = require('../modules/coinbaseClient');
 // const databaseClient = require('../modules/databaseClient/databaseClient');
 
 
@@ -20,7 +20,7 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
   // user needs to be active or they will not have an API key to use
   if (user?.active) {
     try {
-      let accounts = await coinbaseClient.getAccounts(userID, { limit: 250 });
+      let accounts = await cbClients[userID].getAccounts({ limit: 250 });
       let spentUSD = await databaseClient.getSpentUSD(userID);
 
       console.log(accounts, 'accounts from new api');
@@ -396,14 +396,14 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   }
   const api = req.body;
   const URI = getURI();
-  const userAPIQueryText = `UPDATE "user_api" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4
-  WHERE "userID"=$5;`;
-  const queryText = `UPDATE "user" SET "active" = true
-  WHERE "id"=$1;`;
   try {
     // check if the api works first
-    await coinbaseClient.testAPI(api.secret, api.key, api.passphrase, URI)
+    const testClient = new Coinbase(api.key, api.secret);
+    testClient.getFills();
+
     // store the api in the db
+    const userAPIQueryText = `UPDATE "user_api" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4
+    WHERE "userID"=$5;`;
     let userAPIResult = await pool.query(userAPIQueryText, [
       api.secret,
       api.key,
@@ -411,8 +411,10 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
       api.URI,
       userID,
     ]);
-
+    
     // set the account as active
+    const queryText = `UPDATE "user" SET "active" = true
+    WHERE "id"=$1;`;
     let result = await pool.query(queryText, [userID]);
     // refresh the user's cache
     await cache.refreshUser(userID);

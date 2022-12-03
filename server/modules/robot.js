@@ -1,7 +1,6 @@
 // importing this way makes it easier to see when you are accessing the database or coinbase
-const coinbaseClient = require("./coinbaseClient");
 const databaseClient = require("./databaseClient");
-const { cache, botSettings, userStorage, apiStorage, messenger } = require("./cache");
+const { cache, botSettings, userStorage, apiStorage, messenger, cbClients } = require("./cache");
 // const botSettings = botSettings;
 const { startWebsocket } = require("./websocket");
 
@@ -232,9 +231,9 @@ async function fullSync(userID) {
         // get all open orders from db and cb
         databaseClient.getLimitedUnsettledTrades(userID, botSettings.orders_to_sync),
         // get open orders
-        coinbaseClient.getOrders(userID, { order_status: 'OPEN' }),
+        cbClients[userID].getOrders({ order_status: 'OPEN' }),
         // get fees
-        coinbaseClient.getTransactionSummary(userID, { user_native_currency: 'USD' })
+        cbClients[userID].getTransactionSummary({ user_native_currency: 'USD' })
       ]);
       // store the lists of orders in the corresponding consts so they can be compared
       const dbOrders = results[0];
@@ -268,7 +267,7 @@ async function quickSync(userID) {
   return new Promise(async (resolve, reject) => {
     try {
       // get the 500 most recent fills for the account
-      const response = await coinbaseClient.getFills(userID, { limit: 100, product_id: 'BTC-USD' });
+      const response = await cbClients[userID].getFills({ limit: 100, product_id: 'BTC-USD' });
       const fills = response.fills;
       // console.log(fillResponse);
       cache.updateStatus(userID, 'done getting quick sync fills');
@@ -324,10 +323,10 @@ async function processOrders(userID) {
             const willCancel = cache.checkIfCanceling(userID, dbOrder.order_id);
             if (!willCancel) {
               // console.log(tradeDetails,'trade details');
-              let cbOrder = await coinbaseClient.placeOrder(userID, tradeDetails);
+              let cbOrder = await cbClients[userID].placeOrder(tradeDetails);
               // console.log(cbOrder, 'cbOrder');
               if (cbOrder.success) {
-                const newOrder = await coinbaseClient.getOrder(userID, cbOrder.order_id);
+                const newOrder = await cbClients[userID].getOrder(cbOrder.order_id);
                 // ...store the new trade
                 // take the time the new order was created, and use it as the flipped_at value
                 const flipped_at = newOrder.order.created_time
@@ -339,9 +338,7 @@ async function processOrders(userID) {
                 console.log('new trade failed!!!');
               }
               // tell the frontend that an update was made so the DOM can update
-              cache.storeMessage(Number(userID), {
-                orderUpdate: true
-              });
+              userStorage[userID].orderUpdate();
             }
 
 
@@ -560,7 +557,7 @@ async function updateMultipleOrders(userID, params) {
           await reorder(orderToCheck);
         } else {
           // if not a reorder, look up the full details on CB
-          let updatedOrder = await coinbaseClient.getOrder(userID, orderToCheck.order_id);
+          let updatedOrder = await cbClients[userID].getOrder(userID, orderToCheck.order_id);
           // if it was cancelled, set it for reorder
           if (updatedOrder.order.status === 'CANCELLED') {
             console.log('was canceled but should not have been!')
@@ -603,10 +600,10 @@ async function reorder(orderToReorder) {
         product_id: upToDateDbOrder.product_id,
       };
       // send the new order with the trade details
-      let pendingTrade = await coinbaseClient.placeOrder(userID, tradeDetails);
+      let pendingTrade = await cbClients[userID].placeOrder(tradeDetails);
       // console.log(pendingTrade, 'pending trade');
       if (pendingTrade.success) {
-        let newTrade = await coinbaseClient.getOrder(userID, pendingTrade.order_id)
+        let newTrade = await cbClients[userID].getOrder(pendingTrade.order_id)
         // console.log(newTrade, 'newTrade');
         // because the storeDetails function will see the upToDateDbOrder as the "old order", need to store previous_total_fees as just total_fees
         upToDateDbOrder.total_fees = upToDateDbOrder.previous_total_fees;
@@ -625,7 +622,7 @@ async function reorder(orderToReorder) {
         resolve({ results: results })
       }
     } catch (err) {
-      console.log(err, 'error in reorder function in robot.js');
+      console.log(err?.data, 'error in reorder function in robot.js');
       reject(err)
     }
     resolve();
@@ -648,7 +645,7 @@ async function cancelAndReorder(ordersArray, userID) {
       try {
         databaseClient.setManyReorders(idArray)
         // cancel the orders in the array
-        await coinbaseClient.cancelOrders(userID, idArray);
+        await cbClients[userID].cancelOrders(idArray);
         // update funds now that everything should be up to date
       } catch (err) {
         console.log('error cancelling multiple orders');
@@ -838,7 +835,7 @@ async function getAvailableFunds(userID, userSettings) {
       const takerFee = Number(userSettings.taker_fee) + 1;
 
       const results = await Promise.all([
-        coinbaseClient.getAccounts(userID, { limit: 250 }),
+        cbClients[userID].getAccounts({ limit: 250 }),
         // funds are withheld in usd when a buy is placed, so the maker fee is needed to subtract fees
         databaseClient.getSpentUSD(userID, takerFee),
         // funds are taken from the sale once settled, so the maker fee is not needed on the buys

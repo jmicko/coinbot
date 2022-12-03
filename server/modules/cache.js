@@ -1,3 +1,4 @@
+const {Coinbase} = require("./coinbaseClient");
 const databaseClient = require("./databaseClient");
 
 const botSettings = new class BotSettings {
@@ -11,11 +12,11 @@ const botSettings = new class BotSettings {
     const newBotSettings = await databaseClient.getBotSettings();
     // save settings to the cache
     Object.assign(this, newBotSettings)
-    console.log(botSettings, 'refreshing bot settings');
+    // console.log(botSettings, 'refreshing bot settings');
   }
   change(settings) {
     Object.assign(this, settings)
-    console.log(this);
+    // console.log(this);
   }
   get() {
     return structuredClone(this);
@@ -28,6 +29,8 @@ const botSettings = new class BotSettings {
 const userStorage = [];
 // store an object with each user api. keep it separate from user storage to prevent accident
 const apiStorage = [];
+// store a client to connect to coinbase
+const cbClients = [];
 // store an object with arrays for messages and errors
 const messenger = [];
 
@@ -36,7 +39,7 @@ const messenger = [];
 // the different methods can then be called on whatever properties get stored there
 class User {
   constructor(user) {
-    this.id = user.id;
+    this.userID = user.id;
     this.username = user.username;
     this.admin = user.admin;
     this.active = user.active;
@@ -62,6 +65,9 @@ class User {
   }
   setCancel(order_id) {
     this.willCancel.add(order_id);
+  }
+  orderUpdate() {
+    messenger[this.userID].newMessage({ orderUpdate: true })
   }
 }
 
@@ -167,9 +173,7 @@ const cache = {
     // need to create user first because other things depend on it
     userStorage[userID] = new User(user)
     // console.log(userStorage[userID], 'after storing user in storage');
-    // create an object to store messages and errors
-
-    // create object for sockets at index of user id
+    // create an object to store messages and errors and sockets to send them with
     messenger[userID] = new Messenger(userID);
     // create object for api at index of user id
     // apiStorage[userID] = new Api(userID);
@@ -182,6 +186,8 @@ const cache = {
       apiStorage[userID] = Object();
       // add the user api to the apiStorage array
       cache.storeAPI(userID, userAPI);
+      // store a coinbase client for the user
+      cbClients[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET);
 
     } catch (err) {
       console.log(err, 'error creating new user');
@@ -224,7 +230,7 @@ const cache = {
 
   getUser: (userID) => {
     // make a deep copy so you don't delete the api from the user
-    !userStorage[userID] && console.log(userStorage[userID], 'getting user from storage!!');
+    // !userStorage[userID] && console.log(userStorage[userID], 'getting user from storage!!');
     const user = structuredClone(userStorage[userID])
     // console.log(user, 'GETTTINGH USER FROM STORAGE');
     // console.log(user, userStorage[userID], 'user from get user function');
@@ -306,24 +312,24 @@ const cache = {
 
 
 
-    // tell Dom to update messages and trade list if needed
-    messenger[userID].sockets.forEach(socket => {
-      // find all open sockets for the user
-      if (socket.userID === userID) {
-        console.log(socket.userID, 'equal?', socket.request.session.passport?.user)
-        const msg = {
-          type: 'messageUpdate',
-          orderUpdate: message.orderUpdate,
-        }
-        socket.emit('message', msg);
-      }
-    })
+    // // tell Dom to update messages and trade list if needed
+    // messenger[userID].sockets.forEach(socket => {
+    //   // find all open sockets for the user
+    //   if (socket.userID === userID) {
+    //     console.log(socket.userID, 'equal?', socket.request.session.passport?.user)
+    //     const msg = {
+    //       type: 'messageUpdate',
+    //       orderUpdate: message.orderUpdate,
+    //     }
+    //     socket.emit('message', msg);
+    //   }
+    // })
   },
 
   // todo - chats are being sent to storeMessage, so need to get rid of this?
   // MESSAGE STORAGE - store 1000 most recent messages
   storeChat: (userID, chat) => {
-    console.log(chat, 'chat');
+    // console.log(chat, 'chat');
     if (!chat.text) {
       return
     }
@@ -355,7 +361,7 @@ const cache = {
   },
 
   getMessages: (userID) => {
-    console.log(messenger[userID], 'user messenger');
+    // console.log(messenger[userID], 'user messenger');
     return messenger[userID].messages;
   },
 
@@ -401,7 +407,7 @@ const cache = {
   // get all cache storage for a user but remove API before returning
   getSafeStorage: (userID) => {
     // create a deep copy of the user's storage object so that it can be changed
-    console.log('getting safe storage');
+    // console.log('getting safe storage');
     const safeStorage = userStorage[userID]
       ? structuredClone(userStorage[userID])
       : { user: null, api: null };
@@ -413,4 +419,4 @@ const cache = {
   }
 }
 
-module.exports = { cache, messenger, botSettings, userStorage };
+module.exports = { cache, messenger, botSettings, userStorage, cbClients };

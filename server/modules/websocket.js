@@ -1,9 +1,8 @@
 const WebSocket = require('ws');
 const CryptoJS = require('crypto-js');
 const fs = require('fs');
-const { cache, messenger, userStorage, botSettings } = require('./cache');
+const { cache, messenger, userStorage, botSettings, cbClients} = require('./cache');
 const databaseClient = require('./databaseClient');
-const coinbaseClient = require('./coinbaseClient');
 const { rejectUnauthenticatedSocket } = require('./authentication-middleware');
 const { sleep } = require('../../src/shared');
 
@@ -161,7 +160,7 @@ function startWebsocket(userID) {
 
   async function handleOrdersUpdate(orders) {
     // every tick, send an update to open consoles for the user
-    console.log('handling orders update');
+    // console.log('handling orders update');
 
     // update should look like this:
     // {
@@ -225,7 +224,7 @@ async function updateMultipleOrders(userID, params) {
     const ordersArray = params?.ordersArray
       ? params.ordersArray
       : cache.getKey(userID, 'ordersToCheck');
-    console.log(ordersArray, 'orders array in ws');
+    // console.log(ordersArray, 'orders array in ws');
     if (ordersArray.length > 0) {
       cache.storeMessage(userID, {
         type: 'general',
@@ -243,7 +242,7 @@ async function updateMultipleOrders(userID, params) {
       try {
         cache.updateStatus(userID, 'UMO loop get order');
         // if not a reorder, look up the full details on CB
-        let updatedOrder = await coinbaseClient.getOrder(userID, orderToCheck.order_id);
+        let updatedOrder = await cbClients[userID].getOrder(orderToCheck.order_id);
         // if it was cancelled, set it for reorder
         if (updatedOrder.order.status === 'CANCELLED') {
           console.log('was canceled but should not have been!')
