@@ -190,7 +190,7 @@ const cache = {
       cbClients[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET);
 
     } catch (err) {
-      console.log(err, 'error creating new user');
+      console.log(err, `\nERROR creating new user`);
     }
   },
 

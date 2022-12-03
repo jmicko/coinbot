@@ -5,6 +5,9 @@ const { v4: uuidv4 } = require('uuid');
 
 class Coinbase {
   constructor(key, secret) {
+    if (!secret?.length || !key?.length) {
+      throw new Error('Coinbase is missing mandatory key and/or secret!');
+    }
     this.key = key;
     this.secret = secret;
   }
