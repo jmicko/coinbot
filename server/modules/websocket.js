@@ -9,8 +9,8 @@ const { sleep } = require('../../src/shared');
 
 function startWebsocket(userID) {
 
-  const user = cache.getUser(userID);
-  // console.log(user, 'ws user');
+  const user = cache?.getUser(userID);
+  console.log(user, 'ws user');
   // don't start ws if user is not approved and active
   if (!user?.active || !user?.approved) {
     if (user) {
@@ -281,21 +281,23 @@ function setupSocketIO(io) {
     let id = socket.id;
     // console.log(socket.request.session.passport?.user,'user id');
     const userID = socket.request.session.passport?.user;
-    socket.userID = userID
-    cache.sockets.add(socket)
+    socket.userID = userID;
+    console.log(userID, 'the user id in socketIO');
+    cache.addSocket(userID, socket);
     // cache.sockets.add(3)
-
+    
     console.log(`client with id: ${id} connected!`);
     if (!userID) {
       console.log('client is not logged in');
     } else {
       console.log(`user id ${userID} is logged in!`);
     }
-
+    
     // handle disconnect
     socket.on("disconnect", (reason) => {
+      const userID = socket.request.session.passport?.user;
       console.log(`client with id: ${id} disconnected, reason:`, reason);
-      cache.sockets.delete(socket);
+      cache.sockets.delete(userID, socket);
     });
 
     socket.on('message', (message) => {
@@ -306,7 +308,7 @@ function setupSocketIO(io) {
       }
       if (message.type === 'chat') {
         const allUsers = cache.getAllUsers()
-        console.log(socket.userID, 'socket user');
+        console.log(allUsers, 'ALLLLLLL OF THE user');
         allUsers.forEach(user => {
           // console.log(user,'user to send message to', message.data);
           cache.storeMessage(Number(user.id), {

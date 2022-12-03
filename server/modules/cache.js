@@ -1,12 +1,13 @@
 const databaseClient = require("./databaseClient");
 
 // store the bot settings
-const botSettings = {
-  loop_speed: Number(),
-  orders_to_sync: Number(),
-  full_sync: Number(1),
-  maintenance: Boolean()
-};
+const botSettings = {};
+// new Object({
+//   loop_speed: Number(),
+//   orders_to_sync: Number(),
+//   full_sync: Number(1),
+//   maintenance: Boolean()
+// });
 
 // the storage arrays will store objects/arrays/sets of different things at the index of the user id
 // they are not exported so they can be safely manipulated only by functions in this file
@@ -19,25 +20,63 @@ const messageStorage = [];
 // store a set of connected sockets for each user
 const socketStorage = [];
 
+// I'm pretty new to classes so this might be a bit jumbled for now. Not sure what I'm doing lol
+// seems like the constructor inputs should be things that will stay with the new object forever
+
 class SocketSet {
-  constructor(socket) {
-    this.sockets=new Set();
+  constructor() {
+    this.sockets = new Set();
+  }
+  addSocket(socket) {
+    this.sockets.add(socket)
+  }
+  deleteSocket(socket) {
+    this.sockets.delete(socket)
+  }
+  // this method is really terrible but for now I need it to keep old code working hahaha I don't have time
+  messageToUser(message) {
+    this.sockets.forEach(socket => {
+      // find all open sockets for the user
+      console.log(socket.userID, 'equal?', socket.request.session.passport?.user)
+      const msg = {
+        type: 'messageUpdate',
+        orderUpdate: message.orderUpdate,
+      }
+      socket.emit('message', msg);
+    })
+  }
+  heartbeat(userID, side) {
+    // take out the userID thing once we have a better way to get the loop number
+    // const loopNumber = cache.getLoopNumber(userID);
+    // const botSettings = botSettings;
+
+    this.sockets.forEach(socket => {
+      const msg = {
+        type: 'heartbeat',
+        side: side,
+        count: 5
+        // count: ((loopNumber - 1) % botSettings.full_sync)
+      }
+      socket.emit('message', msg);
+    })
   }
 }
 
 class Message {
-  constructor(type, text, mCount, cCount) {
+  constructor(type, text, mCount, cCount, orderUpdate) {
     this.type = type;
     this.text = String(text);
     this.mCount = Number(mCount);
     this.cCount = Number(cCount);
     this.timeStamp = new Date();
+    this.orderUpdate = Boolean(orderUpdate);
   }
 }
 
 // store messages/errors, and make new ones
 class Messages {
-  constructor() {
+  constructor(userID) {
+    this.userID = userID;
     this.errors = new Array();
     this.messages = new Array();
     this.messageCount = Number(1);
@@ -45,17 +84,24 @@ class Messages {
     this.errorCount = Number(1);
   }
   newMessage(message) {
-    const newMessage = new Message(message.type, message.text, this.messageCount, this.chatMessageCount);
+    // create the message
+    const newMessage = new Message(message.type, message.text, this.messageCount, this.chatMessageCount, message.orderUpdate);
+    // add message to messages array
     this.messages.unshift(newMessage);
+    // icrease the counts
+    this.messageCount++;
     if (message.type === 'chat') {
+      // only increase chat count if it is a chat type message
       this.chatMessageCount++;
     }
-    // this.messages.unshift(newMessage);
-    this.messageCount++;
+    // check and limit the number of stored messages
     if (this.messages.length > 1000) {
       this.messages.length = 1000;
     }
+    // tell user to update messages
+    socketStorage[this.userID].messageToUser(message)
   }
+  // todo - should probably use type: 'error and get rid of this
   newError(type, text) {
     const error = new Message(type, text, this.count);
     this.errors.unshift(error);
@@ -69,6 +115,12 @@ class Messages {
 
 
 const cache = {
+  refreshBotSettings: async () => {
+    const newBotSettings = await databaseClient.getBotSettings();
+    // save settings to the cache
+    cache.setBotSettings(newBotSettings);
+    console.log(botSettings, 'refreshing bot settings');
+  },
   setBotSettings: (newSettings) => {
     Object.assign(botSettings, newSettings)
   },
@@ -76,11 +128,6 @@ const cache = {
     // if (botSettings) {
     return structuredClone(botSettings)
     // }
-  },
-  refreshBotSettings: async () => {
-    const botSettings = await databaseClient.getBotSettings();
-    // save settings to the cache
-    cache.setBotSettings(botSettings)
   },
 
   // set up a storage cache for a new user
@@ -93,31 +140,33 @@ const cache = {
     const storage = {
       ...user,
       botStatus: ['setup'],
-      errors: Array(),
-      messages: Array(),
-      chatMessages: Array(),
+      // errors: Array(),
+      // messages: Array(),
+      // chatMessages: Array(),
       // hold orders that will be canceled so bot can check against them before reordering
       willCancel: new Set(),
       keyValuePairs: Object(),
       loopNumber: Number(),
-      api: null,
+      // api: null,
       // can't use .length to get counts or they end up at 1000. need a counter instead
-      messageCount: 1,
-      chatMessageCount: 1,
-      errorCount: 1
+      // messageCount: 1,
+      // chatMessageCount: 1,
+      // errorCount: 1
     };
 
     // create user object at index of user id for user storage
     userStorage[userID] = Object();
     // add the user info to the userStorage array
     Object.assign(userStorage[userID], storage)
+    console.log(userStorage[userID], 'after storing user in storage');
     // create an object to store messages and errors
-    messageStorage[userID] = new Messages();
+    messageStorage[userID] = new Messages(userID);
 
     // create user object for sockets
-    socketStorage[userID] = new Set();
+    // const newSocketStorage = new SocketSet();
     // add the user info to the messageStorage array
-    // Object.assign(messageStorage[userID], storage)
+    socketStorage[userID] = new SocketSet();
+    console.log(socketStorage, userID, 'new socket storage');
 
     // cache the API from the db
     try {
@@ -126,6 +175,7 @@ const cache = {
       apiStorage[userID] = Object();
       // add the user api to the apiStorage array
       cache.storeAPI(userID, userAPI);
+      console.log(userAPI, apiStorage[userID], 'SAVING NEW API TO STORAGE______________1');
     } catch (err) {
       console.log(err, 'error creating new user');
     }
@@ -143,7 +193,7 @@ const cache = {
     // if there is a user, set the user as the user. lmao. Otherwise empty object
     userStorage[userID] = (user) ? { ...userStorage[userID], ...user } : null;
     // get and store the api from the db
-    userAPI = await databaseClient.getUserAPI(userID);
+    const userAPI = await databaseClient.getUserAPI(userID);
     cache.storeAPI(userID, userAPI);
   },
 
@@ -167,9 +217,11 @@ const cache = {
 
   getUser: (userID) => {
     // make a deep copy so you don't delete the api from the user
+    !userStorage[userID] && console.log(userStorage[userID], 'getting user from storage!!');
     const user = structuredClone(userStorage[userID])
+    // console.log(user, 'GETTTINGH USER FROM STORAGE');
+    // console.log(user, userStorage[userID], 'user from get user function');
     // delete user.api
-    // console.log(user.api,'user api to delete');
     return user
   },
 
@@ -234,9 +286,9 @@ const cache = {
     if (messageStorage[userID].errors.length > 1000) {
       messageStorage[userID].errors.length = 1000;
     }
-
+    // console.log(socketStorage);
     // tell Dom to update errors
-    cache.sockets.forEach(socket => {
+    socketStorage[userID].sockets.forEach(socket => {
       // find all open sockets for the user
       if (socket.userID === userID) {
         // console.log(socket.userID, userID)
@@ -260,10 +312,10 @@ const cache = {
     messageStorage[userID].newMessage(message);
 
 
-
+    console.log(socketStorage[userID], 'do we need to go deeper?');
 
     // tell Dom to update messages and trade list if needed
-    socketStorage[userID].forEach(socket => {
+    socketStorage[userID].sockets.forEach(socket => {
       // find all open sockets for the user
       if (socket.userID === userID) {
         console.log(socket.userID, 'equal?', socket.request.session.passport?.user)
@@ -274,18 +326,18 @@ const cache = {
         socket.emit('message', msg);
       }
     })
-    // tell Dom to update messages and trade list if needed
-    cache.sockets.forEach(socket => {
-      // find all open sockets for the user
-      if (socket.userID === userID) {
-        console.log(socket.userID, 'equal?', socket.request.session.passport?.user)
-        const msg = {
-          type: 'messageUpdate',
-          orderUpdate: message.orderUpdate,
-        }
-        socket.emit('message', msg);
-      }
-    })
+    // // tell Dom to update messages and trade list if needed
+    // cache.sockets.forEach(socket => {
+    //   // find all open sockets for the user
+    //   if (socket.userID === userID) {
+    //     console.log(socket.userID, 'equal?', socket.request.session.passport?.user)
+    //     const msg = {
+    //       type: 'messageUpdate',
+    //       orderUpdate: message.orderUpdate,
+    //     }
+    //     socket.emit('message', msg);
+    //   }
+    // })
   },
 
   // todo - chats are being sent to storeMessage, so need to get rid of this?
@@ -310,16 +362,16 @@ const cache = {
       messageStorage[userID].chatMessages.length = 1000;
     }
     // tell Dom to update chat messages and trade list if needed
-    cache.sockets.forEach(socket => {
-      // find all open sockets for the user
-      if (socket.userID === userID) {
-        const msg = {
-          type: 'messageUpdate',
-          orderUpdate: false
-        }
-        socket.emit('message', msg);
-      }
-    })
+    // cache.sockets.forEach(socket => {
+    //   // find all open sockets for the user
+    //   if (socket.userID === userID) {
+    //     const msg = {
+    //       type: 'messageUpdate',
+    //       orderUpdate: false
+    //     }
+    //     socket.emit('message', msg);
+    //   }
+    // })
   },
 
   getMessages: (userID) => {
@@ -358,9 +410,11 @@ const cache = {
   // API STORAGE
   storeAPI: (userID, api) => {
     Object.assign(apiStorage[userID], api)
+    // console.log(apiStorage[userID], 'SAVING NEW API TO STORAGE______________');
   },
 
   getAPI: (userID) => {
+    console.log(apiStorage[userID], 'API STORAGE NOT A FUNCTION');
     return structuredClone(apiStorage[userID]);
   },
 
@@ -374,8 +428,17 @@ const cache = {
     return safeStorage;
   },
 
-  // socket.io connections
-  sockets: new Set()
+  addSocket: (userID, socket) => {
+    socketStorage[userID].sockets.add(socket);
+  },
+
+  deleteSocket: (userID, socket) => {
+    socketStorage[userID].sockets.delete(socket);
+  },
+
+  heartbeat: (userID, side) => {
+    socketStorage[userID].heartbeat(userID, side)
+  }
 }
 
 module.exports = cache;

@@ -64,9 +64,9 @@
   width: 4rem;
 }
 
-.collapsed{
-  /* height: min-content; */
-}
+/* .collapsed{
+  height: min-content;
+} */
 
 .btn-collapse{
   height: unset;

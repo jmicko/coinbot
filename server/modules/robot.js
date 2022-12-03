@@ -2,16 +2,19 @@
 const coinbaseClient = require("./coinbaseClient");
 const databaseClient = require("./databaseClient");
 const cache = require("./cache");
+// const botSettings = botSettings;
 const { startWebsocket } = require("./websocket");
 
 // start a sync loop for each active user
 async function startSync() {
+  // const settings = botSettings
   try {
     // load the bot settings
     await cache.refreshBotSettings();
     // get all users from the db
     const userList = await databaseClient.getAllUsers();
     // start the loops for each user
+    console.log(userList, 'user list user list000000000000000000000');
     userList.forEach(async user => {
       await initializeUserLoops(user);
       // deSyncOrderLoop(user, 0);
@@ -28,11 +31,11 @@ async function initializeUserLoops(user) {
     // set up cache for user
     await cache.createNewUser(user);
     // start syncing orders over the REST api
-    syncOrders(userID, 0);
+    // syncOrders(userID);
     // start looking for orders to process
     processingLoop(userID);
     // start websocket connection to coinbase for rapid order updates
-    startWebsocket(userID);
+    // startWebsocket(userID);
   } catch (err) {
     console.log(err, 'error initializing loops');
   }
@@ -936,23 +939,7 @@ async function alertAllUsers(alertMessage) {
 }
 
 function heartBeat(userID, side) {
-  const loopNumber = cache.getLoopNumber(userID);
-  const botSettings = cache.getBotSettings();
-
-  cache.sockets.forEach(socket => {
-    // find all open sockets for the user
-    if (socket.userID === userID) {
-      // console.log(socket.userID, 'equal?', socket.request.session.passport?.user, socket.userID === socket.request.session.passport?.user)
-
-      // console.log(loopNumber, botSettings.full_sync, loopNumber % botSettings.full_sync + 1)
-      const msg = {
-        type: 'heartbeat',
-        side: side,
-        count: ((loopNumber - 1) % botSettings.full_sync)
-      }
-      socket.emit('message', msg);
-    }
-  })
+  cache.heartbeat(userID, side)
 }
 
 
