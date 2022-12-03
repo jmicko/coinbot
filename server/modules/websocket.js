@@ -209,7 +209,7 @@ function startWebsocket(userID) {
         type: 'ticker',
         ticker: ticker
       }
-      messenger[userID].newMessage(msg)
+      messenger[userID].instantMessage(msg)
 
       return
     });

@@ -351,6 +351,7 @@ const cache = {
   },
 
   getMessages: (userID) => {
+    console.log(messenger[userID], 'user messenger');
     return messenger[userID].messages;
   },
 
