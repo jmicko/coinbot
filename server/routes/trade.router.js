@@ -119,13 +119,13 @@ router.post('/basic', rejectUnauthenticated, async (req, res) => {
       base_size: order.base_size.toFixed(8), // BTC
       product_id: order.product_id,
       userID: userID,
-      tradingPrice: order.tradingPrice
+      // tradingPrice: order.tradingPrice
     };
     console.log('BIG order', tradeDetails);
 
     try {
       // send the new order with the trade details
-      let basic = await cbClients[userID].placeMarketOrder(tradeDetails);
+      let basic = await cbClients[userID].placeOrder(tradeDetails);
       console.log('basic trade results', basic,);
 
       if (!basic.success) {

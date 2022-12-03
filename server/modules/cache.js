@@ -1,4 +1,4 @@
-const {Coinbase} = require("./coinbaseClient");
+const { Coinbase } = require("./coinbaseClient");
 const databaseClient = require("./databaseClient");
 
 const botSettings = new class BotSettings {
@@ -187,7 +187,7 @@ const cache = {
       // add the user api to the apiStorage array
       cache.storeAPI(userID, userAPI);
       // store a coinbase client for the user
-      cbClients[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET);
+      cbClients[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET, ['BTC-USD', 'ETH-USD']);
 
     } catch (err) {
       console.log(err, `\nERROR creating new user`);

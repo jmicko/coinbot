@@ -10,8 +10,57 @@ class Coinbase {
     }
     this.key = key;
     this.secret = secret;
+    this.WS_API_URL = 'wss://advanced-trade-ws.coinbase.com';
+    // console.log(this,'new coinbase class thing');
   }
-  // used for signing all requests
+  // used for signing all SOCKET requests
+  timestampAndSignSocket(message, channel, products = []) {
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const strToSign = `${timestamp}${channel}${products.join(',')}`;
+    const sig = CryptoJS.HmacSHA256(strToSign, secret).toString();
+    return { ...message, signature: sig, timestamp: timestamp };
+  }
+  subscribe(products, channelName, ws) {
+    // console.log('products: %s', products.join(','));
+    const message = {
+      type: 'subscribe',
+      channel: channelName,
+      api_key: this.key,
+      product_ids: products,
+      user_id: '',
+    };
+    const subscribeMsg = timestampAndSignSocket(message, channelName, products);
+    ws.send(JSON.stringify(subscribeMsg));
+  }
+  unsubscribe(products, channelName, ws) {
+    const message = {
+      type: 'unsubscribe',
+      channel: channelName,
+      api_key: this.key,
+      product_ids: products,
+    };
+    const subscribeMsg = this.timestampAndSignSocket(message, channelName, products);
+    ws.send(JSON.stringify(subscribeMsg));
+  }
+  openSocket() {
+    this.ws = new WebSocket(WS_API_URL);
+
+
+
+    this.ws.on('error', (error) => {
+      console.log(error, 'error on ws connection');
+    });
+    this.ws.on('open', timer);
+    // ws.on('open', ordersInterval);
+    this.ws.on('message', timer);
+    this.ws.on('close', function clear() {
+      clearTimeout(this.pingTimeout);
+      // clearInterval(this.getOrders)
+    });
+
+  }
+
+  // used for signing all REST requests
   signRequest(data, API) {
     // convert the data to JSON, if any
     const body = data ? JSON.stringify(data) : '';
@@ -220,21 +269,119 @@ class Coinbase {
           path: "/api/v3/brokerage/orders",
           method: 'POST',
         }
+        console.log(order, 'incoming order');
+        // build out the order config
+        const orderConfig =
+          order.order_configuration
+            ?// did the user provide their own order config?
+            order.order_configuration // use the user provided config
+            : //if they provided a flat object...
+            order.limit_price
+              ? // is there a limit price?,
+              order.end_time //end times will only be provided on gtd orders
+                ?// Is it good-till-date?
+                {
+                  limit_limit_gtd: {
+                    // it will have either a base or quote size
+                    ...this.base_size = order.base_size && { base_size: order.base_size },
+                    ...this.quote_size = order.quote_size && { quote_size: order.quote_size },
+                    limit_price: order.limit_price,
+                    post_only: order.post_only || false,
+                    end_time: order.end_time
+                  }
+                }
+                : // Is it good till cancel? ->no end_time property
+                {
+                  limit_limit_gtc: {
+                    ...this.base_size = order.base_size && { base_size: order.base_size },
+                    ...this.quote_size = order.quote_size && { quote_size: order.quote_size },
+                    limit_price: order.limit_price,
+                    post_only: order.post_only || false
+                  }
+                }
+              : // if there is no limit price...
+              order.stop_price // is there a stop price? It will be a STOP LIMIT, either good till date or good till cancel
+                ? order.end_time //end times will only be provided on gtd orders
+                  ? // Is it good-till-date?
+                  {
+                    stop_limit_stop_limit_gtd: {
+                      ...this.base_size = order.base_size && { base_size: order.base_size },
+                      ...this.quote_size = order.quote_size && { quote_size: order.quote_size },
+                      limit_price: order.limit_price,
+                      post_only: order.post_only || false,
+                      end_time: order.end_time
+                    }
+                  }
+                  : // Is it good till cancel? ->no end_time property
+                  {
+                    stop_limit_stop_limit_gtc: {
+                      ...this.base_size = order.base_size && { base_size: order.base_size },
+                      ...this.quote_size = order.quote_size && { quote_size: order.quote_size },
+                      limit_price: order.limit_price,
+                      post_only: order.post_only || false
+                    }
+                  }
+                : // if there is no end time and no stop price it is a MARKET ORDER 
+                {
+                  market_market_ioc: {
+                    ...this.base_size = order.base_size && { base_size: order.base_size },
+                    ...this.quote_size = order.quote_size && { quote_size: order.quote_size },
+                  }
+                }
+
         const data = {
           side: order.side,
-          order_configuration: {
-            limit_limit_gtc: {
-              base_size: order.base_size,
-              limit_price: order.limit_price,
-              // post_only: false
-            },
-          },
+          order_configuration: orderConfig,
           product_id: order.product_id,
           client_order_id: order.client_order_id || uuidv4()
         }
+        // // old style data
+        // const oldData = {
+        //   side: order.side,
+        //   order_configuration: {
+        //     limit_limit_gtc: {
+        //       base_size: order.base_size,
+        //       limit_price: order.limit_price,
+        //       // post_only: false
+        //     },
+        //   },
+        //   product_id: order.product_id,
+        //   client_order_id: order.client_order_id || uuidv4()
+        // }
         // sign the request
+        console.log(data, 'is it a MARKET ORDER');
+
+        if (data.order_configuration.market_market_ioc) {
+          // this will be a market order and we need to fake fake it 
+          // because market order with base size is not supported right now
+          console.log(data, 'making market order instead');
+
+          const product = await this.getProduct(order.product_id);
+
+
+
+          const tradeDetails = {
+            side: data.side,
+            base_size: Number(data.order_configuration.market_market_ioc.base_size).toFixed(8), // BTC
+            product_id: data.product_id,
+            client_order_id: data.client_order_id,
+            product: product
+            // .toFixed(8)
+          };
+
+
+          console.log(tradeDetails, 'details for placeMarketOrder');
+          const result = await this.placeMarketOrder(tradeDetails)
+          resolve(result);
+          return
+          // get current price
+        }
+        console.log('market order should not go past this line');
+
+
         const options = this.signRequest(data, API);
         // make the call
+        console.log(data, 'new order confige thing');
         let response = await axios.request(options);
         resolve(response.data);
       } catch (err) {
@@ -255,27 +402,33 @@ class Coinbase {
           method: 'POST',
         }
 
+        const baseIncrement = order.product.base_increment;
+        const quoteIncrement = order.product.quote_increment;
+
+        // first figure out how many decimals we round to
+        const reverseBaseInc = Number(baseIncrement.split("").reverse().join("")).toString().length;
+        const reverseQuoteInc = Number(quoteIncrement.split("").reverse().join("")).toString().length;
+
+        // then round to the correct resolution
+        const correctedBase = (Math.round((order.product.price / 2) / baseIncrement) * baseIncrement).toFixed(reverseBaseInc)
+        const correctedQuote = (Math.round((order.product.price / 2) / quoteIncrement) * quoteIncrement).toFixed(reverseQuoteInc)
+        // Don't.
+
+
         const data = {
           side: order.side,
           order_configuration: {
             limit_limit_gtc: {
               base_size: order.base_size,
               limit_price: (order.side === 'BUY')
-                ? (order.tradingPrice * 2).toString()
-                : (order.tradingPrice / 2).toString()
-              // post_only: false
+                ? correctedBase
+                : correctedQuote
             },
-            // market_market_ioc: {
-            //   // quote_size: '10.00',
-            //   base_size: order.base_size
-            // },
-            // stop_limit_stop_limit_gtc: { stop_direction: 'UNKNOWN_STOP_DIRECTION' },
-            // stop_limit_stop_limit_gtd: { stop_direction: 'UNKNOWN_STOP_DIRECTION' }
+
           },
           product_id: order.product_id,
           client_order_id: order.client_order_id || uuidv4()
         }
-
         // sign the request
         const options = this.signRequest(data, API);
         // make the call
@@ -336,4 +489,4 @@ class Coinbase {
 }
 
 
-module.exports = {Coinbase};
+module.exports = { Coinbase };

@@ -622,7 +622,7 @@ async function reorder(orderToReorder) {
         resolve({ results: results })
       }
     } catch (err) {
-      console.log(err?.data, 'error in reorder function in robot.js');
+      console.log(err, 'error in reorder function in robot.js');
       reject(err)
     }
     resolve();

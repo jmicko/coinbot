@@ -32,15 +32,15 @@ function startWebsocket(userID) {
   const products = ['BTC-USD', 'ETH-USD'];
 
   // Function to generate a signature using CryptoJS
-  function sign(str, secret) {
-    const hash = CryptoJS.HmacSHA256(str, secret);
-    return hash.toString();
+  function sign(strToSign, secret) {
+    const hash = CryptoJS.HmacSHA256(strToSign, secret).toString();
+    return hash;
   }
 
   function timestampAndSign(message, channel, products = []) {
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const strToSign = `${timestamp}${channel}${products.join(',')}`;
-    const sig = sign(strToSign, secret);
+    const sig = CryptoJS.HmacSHA256(strToSign, secret).toString();
     return { ...message, signature: sig, timestamp: timestamp };
   }
 
