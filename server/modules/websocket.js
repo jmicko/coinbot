@@ -1,7 +1,7 @@
 const WebSocket = require('ws');
 const CryptoJS = require('crypto-js');
 const fs = require('fs');
-const cache = require('./cache');
+const { cache, socketStorage } = require('./cache');
 const databaseClient = require('./databaseClient');
 const coinbaseClient = require('./coinbaseClient');
 const { rejectUnauthenticatedSocket } = require('./authentication-middleware');
@@ -279,26 +279,24 @@ function setupSocketIO(io) {
   // handle new connections
   io.on('connection', (socket) => {
     let id = socket.id;
-    // console.log(socket.request.session.passport?.user,'user id');
     const userID = socket.request.session.passport?.user;
     socket.userID = userID;
     console.log(userID, 'the user id in socketIO');
-    cache.addSocket(userID, socket);
-    // cache.sockets.add(3)
-    
-    console.log(`client with id: ${id} connected!`);
+    // add the socket to the user's socket storage
+    socketStorage[userID].addSocket(socket);
+
     if (!userID) {
-      console.log('client is not logged in');
+      console.log('socket connected but client is not logged in');
     } else {
-      console.log(`user id ${userID} is logged in!`);
+      console.log(`client connected! with user id ${userID} socket id: ${id}`);
     }
-    
+
     // handle disconnect
-    socket.on("disconnect", (reason) => {
-      const userID = socket.request.session.passport?.user;
-      console.log(`client with id: ${id} disconnected, reason:`, reason);
-      cache.sockets.delete(userID, socket);
-    });
+    // socket.on("disconnect", (reason) => {
+    //   const userID = socket.request.session.passport?.user;
+    //   console.log(`client with id: ${id} disconnected, reason:`, reason);
+    //   socketStorage[userID].deleteSocket(socket);
+    // });
 
     socket.on('message', (message) => {
       // console.log(message);
@@ -308,7 +306,7 @@ function setupSocketIO(io) {
       }
       if (message.type === 'chat') {
         const allUsers = cache.getAllUsers()
-        console.log(allUsers, 'ALLLLLLL OF THE user');
+        // console.log(allUsers, 'ALLLLLLL OF THE user');
         allUsers.forEach(user => {
           // console.log(user,'user to send message to', message.data);
           cache.storeMessage(Number(user.id), {

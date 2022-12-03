@@ -4,7 +4,7 @@ const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const coinbaseClient = require('../modules/coinbaseClient');
 const databaseClient = require('../modules/databaseClient');
-const cache = require('../modules/cache');
+const { cache } = require('../modules/cache');
 // const databaseClient = require('../modules/databaseClient/databaseClient');
 
 
@@ -235,6 +235,7 @@ router.get('/debug', rejectUnauthenticated, async (req, res) => {
 router.get('/errors', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   try {
+    // const userErrors = cache.socketStorage
     const userErrors = cache.getErrors(userID);
     // console.log('getting errors', userErrors);
     res.send(userErrors);

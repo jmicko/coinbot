@@ -16,49 +16,26 @@ const userStorage = [];
 // store an object with each user api. keep it separate from user storage to prevent accident
 const apiStorage = [];
 // store an object with arrays for messages and errors
-const messageStorage = [];
+// const messageStorage = [];
 // store a set of connected sockets for each user
-const socketStorage = [];
+const messenger = [];
 
 // I'm pretty new to classes so this might be a bit jumbled for now. Not sure what I'm doing lol
 // seems like the constructor inputs should be things that will stay with the new object forever
-
-class SocketSet {
-  constructor() {
-    this.sockets = new Set();
-  }
-  addSocket(socket) {
-    this.sockets.add(socket)
-  }
-  deleteSocket(socket) {
-    this.sockets.delete(socket)
-  }
-  // this method is really terrible but for now I need it to keep old code working hahaha I don't have time
-  messageToUser(message) {
-    this.sockets.forEach(socket => {
-      // find all open sockets for the user
-      console.log(socket.userID, 'equal?', socket.request.session.passport?.user)
-      const msg = {
-        type: 'messageUpdate',
-        orderUpdate: message.orderUpdate,
-      }
-      socket.emit('message', msg);
-    })
-  }
-  heartbeat(userID, side) {
-    // take out the userID thing once we have a better way to get the loop number
-    // const loopNumber = cache.getLoopNumber(userID);
-    // const botSettings = botSettings;
-
-    this.sockets.forEach(socket => {
-      const msg = {
-        type: 'heartbeat',
-        side: side,
-        count: 5
-        // count: ((loopNumber - 1) % botSettings.full_sync)
-      }
-      socket.emit('message', msg);
-    })
+// the different methods can then be called on whatever properties get stored there
+class User {
+  constructor(user) {
+    this.id = user.id;
+    this.username = user.username;
+    this.admin = user.admin;
+    this.active = user.active;
+    this.approved = user.approved;
+    this.joined_at = user.joined_at;
+    // I think you can just preload an array like this?
+    this.botStatus = new Array(['setup']);
+    this.willCancel = new Set();
+    this.ordersToCheck = new Array();
+    this.loopNumber = Number(0);
   }
 }
 
@@ -73,15 +50,56 @@ class Message {
   }
 }
 
-// store messages/errors, and make new ones
-class Messages {
+class Messenger {
   constructor(userID) {
     this.userID = userID;
+    this.sockets = new Set();
     this.errors = new Array();
     this.messages = new Array();
     this.messageCount = Number(1);
     this.chatMessageCount = Number(1);
     this.errorCount = Number(1);
+  }
+  addSocket(socket) {
+    // handle disconnection when socket closes
+    socket.on("disconnect", (reason) => {
+      const userID = socket.request.session.passport?.user;
+      console.log(`client with id: ${socket.id} disconnected, reason:`, reason);
+      this.deleteSocket(socket);
+    });
+    this.sockets.add(socket)
+  }
+  deleteSocket(socket) {
+    this.sockets.delete(socket)
+  }
+  // this method is really terrible but for now I need it to keep old code working hahaha I don't have time
+  messageToUser(message) {
+    this.sockets.forEach(socket => {
+      socket.emit('message', message);
+    })
+  }
+  updateMessages(message) {
+    this.sockets.forEach(socket => {
+      // find all open sockets for the user
+      console.log(socket.userID, 'equal?', socket.request.session.passport?.user)
+      const msg = {
+        type: 'messageUpdate',
+        orderUpdate: message.orderUpdate,
+      }
+      socket.emit('message', msg);
+    })
+  }
+  heartBeat(side) {
+    // send a heartbeat to all open sockets for the user
+    this.sockets.forEach(socket => {
+      const msg = {
+        type: 'heartbeat',
+        side: side,
+        // count: 5
+        count: ((userStorage[this.userID].loopNumber - 1) % botSettings.full_sync)
+      }
+      socket.emit('message', msg);
+    })
   }
   newMessage(message) {
     // create the message
@@ -99,7 +117,7 @@ class Messages {
       this.messages.length = 1000;
     }
     // tell user to update messages
-    socketStorage[this.userID].messageToUser(message)
+    messenger[this.userID].messageToUser(message)
   }
   // todo - should probably use type: 'error and get rid of this
   newError(type, text) {
@@ -112,17 +130,53 @@ class Messages {
   }
 }
 
+// // store messages/errors, and make new ones
+// class Messages {
+//   constructor(userID) {
+//     this.userID = userID;
+//     this.errors = new Array();
+//     this.messages = new Array();
+//     this.messageCount = Number(1);
+//     this.chatMessageCount = Number(1);
+//     this.errorCount = Number(1);
+//   }
+//   newMessage(message) {
+//     // create the message
+//     const newMessage = new Message(message.type, message.text, this.messageCount, this.chatMessageCount, message.orderUpdate);
+//     // add message to messages array
+//     this.messages.unshift(newMessage);
+//     // icrease the counts
+//     this.messageCount++;
+//     if (message.type === 'chat') {
+//       // only increase chat count if it is a chat type message
+//       this.chatMessageCount++;
+//     }
+//     // check and limit the number of stored messages
+//     if (this.messages.length > 1000) {
+//       this.messages.length = 1000;
+//     }
+//     // tell user to update messages
+//     messenger[this.userID].messageToUser(message)
+//   }
+//   // todo - should probably use type: 'error and get rid of this
+//   newError(type, text) {
+//     const error = new Message(type, text, this.count);
+//     this.errors.unshift(error);
+//     this.errorCount++;
+//     if (this.errors.length > 1000) {
+//       this.errors.length = 1000;
+//     }
+//   }
+// }
+
 
 
 const cache = {
   refreshBotSettings: async () => {
     const newBotSettings = await databaseClient.getBotSettings();
     // save settings to the cache
-    cache.setBotSettings(newBotSettings);
+    Object.assign(botSettings, newBotSettings)
     console.log(botSettings, 'refreshing bot settings');
-  },
-  setBotSettings: (newSettings) => {
-    Object.assign(botSettings, newSettings)
   },
   getBotSettings: () => {
     // if (botSettings) {
@@ -134,39 +188,15 @@ const cache = {
   createNewUser: async (user) => {
     // get the user id
     const userID = user.id;
-    // delete password. we don't need it here
-    delete user.password
-    // insert the user at the array index matching their id
-    const storage = {
-      ...user,
-      botStatus: ['setup'],
-      // errors: Array(),
-      // messages: Array(),
-      // chatMessages: Array(),
-      // hold orders that will be canceled so bot can check against them before reordering
-      willCancel: new Set(),
-      keyValuePairs: Object(),
-      loopNumber: Number(),
-      // api: null,
-      // can't use .length to get counts or they end up at 1000. need a counter instead
-      // messageCount: 1,
-      // chatMessageCount: 1,
-      // errorCount: 1
-    };
-
     // create user object at index of user id for user storage
-    userStorage[userID] = Object();
-    // add the user info to the userStorage array
-    Object.assign(userStorage[userID], storage)
-    console.log(userStorage[userID], 'after storing user in storage');
+    // need to create user first because other things depend on it
+    userStorage[userID] = new User(user)
+    // console.log(userStorage[userID], 'after storing user in storage');
     // create an object to store messages and errors
-    messageStorage[userID] = new Messages(userID);
 
-    // create user object for sockets
-    // const newSocketStorage = new SocketSet();
-    // add the user info to the messageStorage array
-    socketStorage[userID] = new SocketSet();
-    console.log(socketStorage, userID, 'new socket storage');
+    // create object for sockets at index of user id
+    messenger[userID] = new Messenger(userID);
+    // console.log(messenger, userID, 'new socket storage');
 
     // cache the API from the db
     try {
@@ -175,7 +205,7 @@ const cache = {
       apiStorage[userID] = Object();
       // add the user api to the apiStorage array
       cache.storeAPI(userID, userAPI);
-      console.log(userAPI, apiStorage[userID], 'SAVING NEW API TO STORAGE______________1');
+
     } catch (err) {
       console.log(err, 'error creating new user');
     }
@@ -278,17 +308,17 @@ const cache = {
       errorData: error.errorData,
       // automatically store the timestamp
       timeStamp: new Date(),
-      count: messageStorage[userID].errorCount
+      count: messenger[userID].errorCount
     }
-    messageStorage[userID].errorCount++;
+    messenger[userID].errorCount++;
 
-    messageStorage[userID].errors.unshift(errorData);
-    if (messageStorage[userID].errors.length > 1000) {
-      messageStorage[userID].errors.length = 1000;
+    messenger[userID].errors.unshift(errorData);
+    if (messenger[userID].errors.length > 1000) {
+      messenger[userID].errors.length = 1000;
     }
-    // console.log(socketStorage);
+    // console.log(messenger);
     // tell Dom to update errors
-    socketStorage[userID].sockets.forEach(socket => {
+    messenger[userID].sockets.forEach(socket => {
       // find all open sockets for the user
       if (socket.userID === userID) {
         // console.log(socket.userID, userID)
@@ -300,22 +330,22 @@ const cache = {
     })
   },
   getErrors: (userID) => {
-    return messageStorage[userID].errors;
+    return messenger[userID].errors;
   },
   clearErrors: (userID) => {
-    messageStorage[userID].errors.length = 0;
+    messenger[userID].errors.length = 0;
   },
 
   // MESSAGE STORAGE - store 1000 most recent messages
   storeMessage: (userID, message) => {
     // todo - chats are also being sent here so need to change this to differentiate type
-    messageStorage[userID].newMessage(message);
+    messenger[userID].newMessage(message);
 
 
-    console.log(socketStorage[userID], 'do we need to go deeper?');
+
 
     // tell Dom to update messages and trade list if needed
-    socketStorage[userID].sockets.forEach(socket => {
+    messenger[userID].sockets.forEach(socket => {
       // find all open sockets for the user
       if (socket.userID === userID) {
         console.log(socket.userID, 'equal?', socket.request.session.passport?.user)
@@ -326,18 +356,6 @@ const cache = {
         socket.emit('message', msg);
       }
     })
-    // // tell Dom to update messages and trade list if needed
-    // cache.sockets.forEach(socket => {
-    //   // find all open sockets for the user
-    //   if (socket.userID === userID) {
-    //     console.log(socket.userID, 'equal?', socket.request.session.passport?.user)
-    //     const msg = {
-    //       type: 'messageUpdate',
-    //       orderUpdate: message.orderUpdate,
-    //     }
-    //     socket.emit('message', msg);
-    //   }
-    // })
   },
 
   // todo - chats are being sent to storeMessage, so need to get rid of this?
@@ -355,11 +373,11 @@ const cache = {
       count: userStorage[userID].chatMessageCount
     }
 
-    messageStorage[userID].chatMessageCount++;
+    messenger[userID].chatMessageCount++;
 
-    messageStorage[userID].chatMessages.unshift(chatData);
-    if (messageStorage[userID].chatMessages.length > 1000) {
-      messageStorage[userID].chatMessages.length = 1000;
+    messenger[userID].chatMessages.unshift(chatData);
+    if (messenger[userID].chatMessages.length > 1000) {
+      messenger[userID].chatMessages.length = 1000;
     }
     // tell Dom to update chat messages and trade list if needed
     // cache.sockets.forEach(socket => {
@@ -375,13 +393,13 @@ const cache = {
   },
 
   getMessages: (userID) => {
-    return messageStorage[userID].messages;
+    return messenger[userID].messages;
   },
 
   getChatMessages: (userID) => {
     const chats = [];
     // get the messages
-    const messages = structuredClone(messageStorage[userID].messages);
+    const messages = structuredClone(messenger[userID].messages);
     // extract the chats
 
     // console.log(messages, '<-- what is this');
@@ -394,7 +412,7 @@ const cache = {
   },
 
   clearMessages: (userID) => {
-    messageStorage[userID].length = 0;
+    messenger[userID].length = 0;
   },
 
   // LOOP COUNTER
@@ -429,16 +447,16 @@ const cache = {
   },
 
   addSocket: (userID, socket) => {
-    socketStorage[userID].sockets.add(socket);
+    messenger[userID].sockets.add(socket);
   },
 
   deleteSocket: (userID, socket) => {
-    socketStorage[userID].sockets.delete(socket);
+    messenger[userID].sockets.delete(socket);
   },
 
-  heartbeat: (userID, side) => {
-    socketStorage[userID].heartbeat(userID, side)
+  heartbeat: (userID, message) => {
+    messenger[userID].heartbeat(userID, side)
   }
 }
 
-module.exports = cache;
+module.exports = { cache, messenger, botSettings, userStorage };

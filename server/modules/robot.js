@@ -1,7 +1,7 @@
 // importing this way makes it easier to see when you are accessing the database or coinbase
 const coinbaseClient = require("./coinbaseClient");
 const databaseClient = require("./databaseClient");
-const cache = require("./cache");
+const { cache, botSettings, userStorage, apiStorage, messenger } = require("./cache");
 // const botSettings = botSettings;
 const { startWebsocket } = require("./websocket");
 
@@ -14,7 +14,7 @@ async function startSync() {
     // get all users from the db
     const userList = await databaseClient.getAllUsers();
     // start the loops for each user
-    console.log(userList, 'user list user list000000000000000000000');
+    // console.log(userList, 'user list user list000000000000000000000');
     userList.forEach(async user => {
       await initializeUserLoops(user);
       // deSyncOrderLoop(user, 0);
@@ -939,7 +939,7 @@ async function alertAllUsers(alertMessage) {
 }
 
 function heartBeat(userID, side) {
-  cache.heartbeat(userID, side)
+  messenger[userID].heartBeat(side);
 }
 
 
