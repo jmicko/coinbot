@@ -1,7 +1,7 @@
 const WebSocket = require('ws');
 const CryptoJS = require('crypto-js');
 const fs = require('fs');
-const { cache, socketStorage } = require('./cache');
+const { cache, messenger } = require('./cache');
 const databaseClient = require('./databaseClient');
 const coinbaseClient = require('./coinbaseClient');
 const { rejectUnauthenticatedSocket } = require('./authentication-middleware');
@@ -283,7 +283,7 @@ function setupSocketIO(io) {
     socket.userID = userID;
     console.log(userID, 'the user id in socketIO');
     // add the socket to the user's socket storage
-    socketStorage[userID].addSocket(socket);
+    messenger[userID].addSocket(socket);
 
     if (!userID) {
       console.log('socket connected but client is not logged in');
@@ -295,7 +295,7 @@ function setupSocketIO(io) {
     // socket.on("disconnect", (reason) => {
     //   const userID = socket.request.session.passport?.user;
     //   console.log(`client with id: ${id} disconnected, reason:`, reason);
-    //   socketStorage[userID].deleteSocket(socket);
+    //   messenger[userID].deleteSocket(socket);
     // });
 
     socket.on('message', (message) => {
@@ -309,7 +309,7 @@ function setupSocketIO(io) {
         // console.log(allUsers, 'ALLLLLLL OF THE user');
         allUsers.forEach(user => {
           // console.log(user,'user to send message to', message.data);
-          cache.storeMessage(Number(user.id), {
+          messenger[user.id].newMessage({
             text: message.data,
             type: 'chat'
           });

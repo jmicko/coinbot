@@ -1,13 +1,12 @@
 const databaseClient = require("./databaseClient");
 
 // store the bot settings
-const botSettings = {};
-// new Object({
-//   loop_speed: Number(),
-//   orders_to_sync: Number(),
-//   full_sync: Number(1),
-//   maintenance: Boolean()
-// });
+const botSettings = new Object({
+  loop_speed: Number(),
+  orders_to_sync: Number(),
+  full_sync: Number(1),
+  maintenance: Boolean(true)
+});
 
 // the storage arrays will store objects/arrays/sets of different things at the index of the user id
 // they are not exported so they can be safely manipulated only by functions in this file
@@ -73,22 +72,6 @@ class Messenger {
     this.sockets.delete(socket)
   }
   // this method is really terrible but for now I need it to keep old code working hahaha I don't have time
-  messageToUser(message) {
-    this.sockets.forEach(socket => {
-      socket.emit('message', message);
-    })
-  }
-  updateMessages(message) {
-    this.sockets.forEach(socket => {
-      // find all open sockets for the user
-      console.log(socket.userID, 'equal?', socket.request.session.passport?.user)
-      const msg = {
-        type: 'messageUpdate',
-        orderUpdate: message.orderUpdate,
-      }
-      socket.emit('message', msg);
-    })
-  }
   heartBeat(side) {
     // send a heartbeat to all open sockets for the user
     this.sockets.forEach(socket => {
@@ -117,7 +100,9 @@ class Messenger {
       this.messages.length = 1000;
     }
     // tell user to update messages
-    messenger[this.userID].messageToUser(message)
+    this.sockets.forEach(socket => {
+      socket.emit('message', message);
+    })
   }
   // todo - should probably use type: 'error and get rid of this
   newError(type, text) {
@@ -129,46 +114,6 @@ class Messenger {
     }
   }
 }
-
-// // store messages/errors, and make new ones
-// class Messages {
-//   constructor(userID) {
-//     this.userID = userID;
-//     this.errors = new Array();
-//     this.messages = new Array();
-//     this.messageCount = Number(1);
-//     this.chatMessageCount = Number(1);
-//     this.errorCount = Number(1);
-//   }
-//   newMessage(message) {
-//     // create the message
-//     const newMessage = new Message(message.type, message.text, this.messageCount, this.chatMessageCount, message.orderUpdate);
-//     // add message to messages array
-//     this.messages.unshift(newMessage);
-//     // icrease the counts
-//     this.messageCount++;
-//     if (message.type === 'chat') {
-//       // only increase chat count if it is a chat type message
-//       this.chatMessageCount++;
-//     }
-//     // check and limit the number of stored messages
-//     if (this.messages.length > 1000) {
-//       this.messages.length = 1000;
-//     }
-//     // tell user to update messages
-//     messenger[this.userID].messageToUser(message)
-//   }
-//   // todo - should probably use type: 'error and get rid of this
-//   newError(type, text) {
-//     const error = new Message(type, text, this.count);
-//     this.errors.unshift(error);
-//     this.errorCount++;
-//     if (this.errors.length > 1000) {
-//       this.errors.length = 1000;
-//     }
-//   }
-// }
-
 
 
 const cache = {
@@ -446,9 +391,9 @@ const cache = {
     return safeStorage;
   },
 
-  addSocket: (userID, socket) => {
-    messenger[userID].sockets.add(socket);
-  },
+  // addSocket: (userID, socket) => {
+  //   messenger[userID].sockets.add(socket);
+  // },
 
   deleteSocket: (userID, socket) => {
     messenger[userID].sockets.delete(socket);
