@@ -557,7 +557,7 @@ async function updateMultipleOrders(userID, params) {
           await reorder(orderToCheck);
         } else {
           // if not a reorder, look up the full details on CB
-          let updatedOrder = await cbClients[userID].getOrder(userID, orderToCheck.order_id);
+          let updatedOrder = await cbClients[userID].getOrder(orderToCheck.order_id);
           // if it was cancelled, set it for reorder
           if (updatedOrder.order.status === 'CANCELLED') {
             console.log('was canceled but should not have been!')
