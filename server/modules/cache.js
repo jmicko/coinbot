@@ -36,6 +36,25 @@ class User {
     this.approved = user.approved;
     this.paused = user.paused;
     this.joined_at = user.joined_at;
+    this.kill_locked = user.kill_locked;
+    this.theme = user.theme;
+    this.reinvest = user.reinvest;
+    this.reinvest_ratio = user.reinvest_ratio;
+    this.post_max_reinvest_ratio = user.post_max_reinvest_ratio;
+    this.reserve = user.reserve;
+    this.maker_fee = user.maker_fee;
+    this.taker_fee = user.taker_fee;
+    this.usd_volume = user.usd_volume;
+    this.available_btc = user.available_btc;
+    this.available_usd = user.available_usd;
+    this.actualavailable_btc = user.actualavailable_btc;
+    this.actualavailable_usd = user.actualavailable_usd;
+    this.max_trade = user.max_trade;
+    this.max_trade_size = user.max_trade_size;
+    this.max_trade_load = user.max_trade_load;
+    this.profit_accuracy = user.profit_accuracy;
+    this.auto_setup_number = user.auto_setup_number;
+    this.profit_reset = user.profit_reset;
     // I think you can just preload an array like this?
     this.botStatus = new Array(['setup']);
     this.willCancel = new Set();
@@ -99,6 +118,25 @@ class User {
     this.approved = user.approved;
     this.paused = user.paused;
     this.joined_at = user.joined_at;
+    this.kill_locked = user.kill_locked;
+    this.theme = user.theme;
+    this.reinvest = user.reinvest;
+    this.reinvest_ratio = user.reinvest_ratio;
+    this.post_max_reinvest_ratio = user.post_max_reinvest_ratio;
+    this.reserve = user.reserve;
+    this.maker_fee = user.maker_fee;
+    this.taker_fee = user.taker_fee;
+    this.usd_volume = user.usd_volume;
+    this.available_btc = user.available_btc;
+    this.available_usd = user.available_usd;
+    this.actualavailable_btc = user.actualavailable_btc;
+    this.actualavailable_usd = user.actualavailable_usd;
+    this.max_trade = user.max_trade;
+    this.max_trade_size = user.max_trade_size;
+    this.max_trade_load = user.max_trade_load;
+    this.profit_accuracy = user.profit_accuracy;
+    this.auto_setup_number = user.auto_setup_number;
+    this.profit_reset = user.profit_reset;
   }
 }
 
@@ -289,6 +327,21 @@ const userStorage = new class {
 
 };
 
+
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+
+
 const cache = {
 
   getBotSettings: () => {
@@ -299,6 +352,10 @@ const cache = {
 
   // set up a storage cache for a new user
   createNewUser: async (user) => {
+
+
+
+
     // get the user id
     const userID = user.id;
     // create user object at index of user id for user storage
@@ -336,20 +393,7 @@ const cache = {
 
   // USER SETTINGS STORAGE
   refreshUser: async (userID) => {
-    // don't refresh the robot user
-    if (userID === 0) {
-      return
-    }
-    const user = await databaseClient.getUserAndSettings(userID);
-    // don't need password
-    delete user?.password
-    console.log(userStorage[userID], 'BEFORE REFRESH');
-    // if there is a user, set the user as the user. lmao. Otherwise empty object
-    userStorage[userID] = (user) ? { ...userStorage[userID], ...user } : null;
-    console.log(userStorage[userID], 'AFTER REFRESH');
-    // get and store the api from the db
-    const userAPI = await databaseClient.getUserAPI(userID);
-    cache.storeAPI(userID, userAPI);
+    await userStorage[userID].update();
   },
 
   // KEEP TRACK OF ORDERS TO CANCEL

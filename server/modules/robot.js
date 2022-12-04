@@ -312,10 +312,10 @@ async function processOrders(userID) {
           // ...send the new trade
           try {
 
+console.log('TESTY');
 
 
-
-            const willCancel = userStorage[userID](dbOrder.order_id);
+            const willCancel = userStorage[userID].checkCancel(dbOrder.order_id);
             if (!willCancel) {
               // console.log(tradeDetails,'trade details');
               let cbOrder = await cbClients[userID].placeOrder(tradeDetails);
@@ -393,12 +393,11 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
   };
   // add buy/sell requirement and price
 
-
   if (dbOrder.side === "BUY") {
     // if it was a BUY, sell for more. multiply old price
     tradeDetails.side = "SELL"
     tradeDetails.limit_price = dbOrder.original_sell_price;
-    userStorage[userID].newMessage({
+    messenger[userID].newMessage({
       type: 'general',
       text: `Selling for $${Number(tradeDetails.limit_price)}`
     });
@@ -406,15 +405,16 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     // if it is a sell turning into a buy, check if user wants to reinvest the funds
     if (user.reinvest) {
       const orderSize = Number(dbOrder.base_size);
-
+      
       // find out how much profit there was
       const BTCprofit = calculateProfitBTC(dbOrder);
-
+      
       let amountToReinvest = BTCprofit * reinvestRatio;
       if (amountToReinvest <= 0) {
         console.log('negative profit');
         amountToReinvest = 0;
-        messenger[userID].newMessage({
+        messenger[userID].newE({
+          type: 'error',
           errorData: dbOrder,
           errorText: `Just saw a negative profit! Maybe increase your trade-pair ratio? 
           This may also be due to fees that were charged during setup or at a different fee tier.`
@@ -470,10 +470,10 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
             allFlipsValue += (trade.base_size * trade.original_buy_price)
           }
         });
-
+        
         // calculate what funds will be leftover after all pending flips go through
         const leftoverFunds = (Number(user.actualavailable_usd) - (allFlipsValue * (1 + Number(user.maker_fee))));
-
+        
         // only set the new base_size if it will stay above the reserve
         if (leftoverFunds > user.reserve) {
           console.log('there is enough money left to reinvest');
@@ -482,7 +482,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
           console.log('there is NOT enough money left to reinvest');
         }
       }
-
+      
     }
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "BUY"
@@ -492,6 +492,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
       text: `Buying for $${Number(tradeDetails.limit_price)}`
     });
   }
+
   // return the tradeDetails object
   return tradeDetails;
 }
