@@ -335,49 +335,35 @@ class Coinbase {
           product_id: order.product_id,
           client_order_id: order.client_order_id || uuidv4()
         }
-        // // old style data
-        // const oldData = {
-        //   side: order.side,
-        //   order_configuration: {
-        //     limit_limit_gtc: {
-        //       base_size: order.base_size,
-        //       limit_price: order.limit_price,
-        //       // post_only: false
-        //     },
-        //   },
-        //   product_id: order.product_id,
-        //   client_order_id: order.client_order_id || uuidv4()
-        // }
-        // sign the request
-        console.log(data, 'is it a MARKET ORDER');
 
-        if (data.order_configuration.market_market_ioc) {
-          // this will be a market order and we need to fake fake it 
+        // sign the request
+        // console.log(data, 'is it a MARKET ORDER');
+
+        if (data.order_configuration?.market_market_ioc?.base_size) {
+          // this will be a market order and we need to fake it by making limit orders with extreme prices
           // because market order with base size is not supported right now
           console.log(data, 'making market order instead');
 
           const product = await this.getProduct(order.product_id);
 
-
-
           const tradeDetails = {
-            side: data.side,
+            // side: data.side,
             base_size: Number(data.order_configuration.market_market_ioc.base_size).toFixed(8), // BTC
-            product_id: data.product_id,
-            client_order_id: data.client_order_id,
-            product: product
+            // product_id: data.product_id,
+            // client_order_id: data.client_order_id,
+            product: product,
+            ...this.market_multiplier = order.market_multiplier && { market_multiplier: order.market_multiplier },
+            ...data,
             // .toFixed(8)
           };
 
-
-          console.log(tradeDetails, 'details for placeMarketOrder');
+          // console.log(tradeDetails, 'details for placeMarketOrder');
           const result = await this.placeMarketOrder(tradeDetails)
           resolve(result);
           return
           // get current price
         }
         console.log('market order should not go past this line');
-
 
         const options = this.signRequest(data, API);
         // make the call
@@ -410,8 +396,9 @@ class Coinbase {
         const reverseQuoteInc = Number(quoteIncrement.split("").reverse().join("")).toString().length;
 
         // then round to the correct resolution
-        const correctedBase = (Math.round((order.product.price / 2) / baseIncrement) * baseIncrement).toFixed(reverseBaseInc)
-        const correctedQuote = (Math.round((order.product.price / 2) / quoteIncrement) * quoteIncrement).toFixed(reverseQuoteInc)
+        // const correctedBase = (Math.round((order.product.price * (order.market_multiplier || 2)) / baseIncrement) * baseIncrement).toFixed(reverseBaseInc)
+        const correctedBuy = (Math.round((order.product.price * (order.market_multiplier || 2)) / quoteIncrement) * quoteIncrement).toFixed(reverseQuoteInc)
+        const correctedSell = (Math.round((order.product.price / (order.market_multiplier || 2)) / quoteIncrement) * quoteIncrement).toFixed(reverseQuoteInc)
         // Don't.
 
 
@@ -421,14 +408,17 @@ class Coinbase {
             limit_limit_gtc: {
               base_size: order.base_size,
               limit_price: (order.side === 'BUY')
-                ? correctedBase
-                : correctedQuote
+                ? correctedBuy
+                : correctedSell
+              // ? order.product.quote_max_size
+              // : order.product.quote_increment
             },
 
           },
           product_id: order.product_id,
           client_order_id: order.client_order_id || uuidv4()
         }
+        console.log(data, 'fake market order setup');
         // sign the request
         const options = this.signRequest(data, API);
         // make the call

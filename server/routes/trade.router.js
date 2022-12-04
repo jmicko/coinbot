@@ -119,7 +119,7 @@ router.post('/basic', rejectUnauthenticated, async (req, res) => {
       base_size: order.base_size.toFixed(8), // BTC
       product_id: order.product_id,
       userID: userID,
-      // tradingPrice: order.tradingPrice
+      market_multiplier: 1.1
     };
     console.log('BIG order', tradeDetails);
 
