@@ -117,7 +117,7 @@ function startWebsocket(userID) {
 
     ws.on('message', function (data) {
       const parsedData = JSON.parse(data);
-      const user = userStorage[userID].getUser();
+      const user = userStorage.getUser(userID);
       // const botSettings = cache.getBotSettings();
       if (!user?.active || !user?.approved || user.paused || botSettings.maintenance) {
         return
@@ -301,11 +301,11 @@ function setupSocketIO(io) {
         // console.log(message, 'message from socket');
       }
       if (message.type === 'chat') {
-        const allUsers = cache.getAllUsers()
-        // console.log(allUsers, 'ALLLLLLL OF THE user');
-        allUsers.forEach(user => {
+        const allUsers = userStorage.getAllUsers()
+        console.log(allUsers, 'ALLLLLLL OF THE user');
+        allUsers.forEach(userID => {
           // console.log(user,'user to send message to', message.data);
-          messenger[user.id].newMessage({
+          messenger[userID].newMessage({
             text: message.data,
             type: 'chat'
           });

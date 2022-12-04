@@ -47,6 +47,9 @@ async function initializeUserLoops(user) {
 async function processingLoop(userID) {
   // get the user and bot settings from cache;
   const user = userStorage.getUser(userID);
+  if (user.deleting) {
+    return
+  }
 
   // check that user is active, approved, and unpaused, and that the bot is not under maintenance
   if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
@@ -76,12 +79,15 @@ async function processingLoop(userID) {
 
 // repeating loop to find orders that have settled on coinbase via REST API
 async function syncOrders(userID) {
+  const user = userStorage.getUser(userID)
+  if (user.deleting) {
+    return
+  }
   // increase the loop number tracker at the beginning of the loop
   userStorage[userID].increaseLoopNumber();
   userStorage[userID].updateStatus('begin main loop');
 
   // get the user settings from cache;
-  const user = userStorage[userID].getUser()
 
   // keep track of how long the loop takes. Helps prevent rate limiting
   const t0 = performance.now();
@@ -90,7 +96,9 @@ async function syncOrders(userID) {
     const loopNumber = userStorage[userID].getLoopNumber();
     // console.log(loopNumber, '<-loop number', (loopNumber - 1) % botSettings.full_sync, '<-shrek', botSettings.full_sync);
     // send heartbeat signifying start of new loop
-    heartBeat(userID, 'heart');
+    if (user) {
+      heartBeat(userID, 'heart');
+    }
     // check that user is active, approved, and unpaused, and that the bot is not under maintenance
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
 
@@ -884,7 +892,7 @@ async function updateFunds(userID) {
     } catch (err) {
       messenger[userID].newError(userID, {
         text: 'error getting available funds',
-        data:err
+        data: err
       })
       reject(err)
     }
@@ -897,7 +905,7 @@ async function alertAllUsers(alertMessage) {
     const userList = await databaseClient.getAllUsers();
     userList.forEach(user => {
       // console.log(user);
-      messenger[user.id].newMessage( {
+      messenger[user.id].newMessage({
         type: 'general',
         text: alertMessage,
         orderUpdate: true

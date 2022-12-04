@@ -3,7 +3,7 @@ const router = express.Router();
 const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const databaseClient = require('../modules/databaseClient');
-const { cache, cbClients } = require('../modules/cache');
+const { cache, cbClients, userStorage } = require('../modules/cache');
 const { Coinbase } = require('../modules/coinbaseClient');
 // const databaseClient = require('../modules/databaseClient/databaseClient');
 
@@ -399,7 +399,9 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   try {
     // check if the api works first
     const testClient = new Coinbase(api.key, api.secret);
-    testClient.getFills();
+    const txSummary = await testClient.getTransactionSummary({ user_native_currency: 'USD' });
+    console.log(txSummary, 'test api results');
+    await databaseClient.saveFees(txSummary, userID);
 
     // store the api in the db
     const userAPIQueryText = `UPDATE "user_api" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4
@@ -411,13 +413,13 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
       api.URI,
       userID,
     ]);
-    
+
     // set the account as active
     const queryText = `UPDATE "user" SET "active" = true
-    WHERE "id"=$1;`;
+    WHERE "id"=$1 RETURNING *;`;
     let result = await pool.query(queryText, [userID]);
     // refresh the user's cache
-    await cache.refreshUser(userID);
+    await cbClients.updateAPI(result.rows[0].id);
 
     res.sendStatus(200);
   } catch (err) {

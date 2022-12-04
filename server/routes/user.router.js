@@ -158,6 +158,7 @@ router.put('/approve', rejectUnauthenticated, async (req, res) => {
       // await cache.refreshUser(userToApprove);
       // start the loops
       console.log(user.rows[0], '<- the updated user');
+      userStorage[userToApprove].approve(true);
       // robot.initializeUserLoops(user.rows[0]);
       res.sendStatus(200);
     } else {
@@ -227,10 +228,8 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
     console.log(err, 'error in delete user route');
     res.sendStatus(500);
   } finally {
-    userStorage[userID].deleteUser()
-    messenger[userID].newMessage({
-      orderUpdate: true
-    });
+    userStorage.deleteUser(userToDelete);
+
 
   }
 });

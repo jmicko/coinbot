@@ -40,6 +40,7 @@ class User {
     this.willCancel = new Set();
     this.ordersToCheck = new Array();
     this.loopNumber = Number(0);
+    this.deleting = false;
   }
   getUser() {
     // console.log('getting the user')
@@ -79,6 +80,15 @@ class User {
   clearStatus() {
     this.botStatus.length = 0;
   }
+  approve(bool) {
+    this.approved = bool;
+    messenger[this.userID].userUpdate()
+  }
+  activate(bool) {
+    this.active = bool;
+    messenger[this.userID].userUpdate()
+  }
+
 }
 
 class Message {
@@ -158,6 +168,9 @@ class Messenger {
   orderUpdate() {
     this.instantMessage({ orderUpdate: true })
   }
+  userUpdate() {
+    this.instantMessage({ userUpdate: true })
+  }
   // todo - should probably use type: 'error' and get rid of this
   newError(err) {
     const error = new Message(err.type, err.text, this.count);
@@ -178,7 +191,21 @@ const apiStorage = new class {
 };
 // store a client to connect to coinbase
 const cbClients = new class {
+  constructor() { }
 
+  async updateAPI(userID) {
+    const userAPI = await databaseClient.getUserAPI(userID);
+
+    Object.assign(apiStorage[userID], userAPI)
+
+    this[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET, ['BTC-USD', 'ETH-USD']);
+    if (userAPI.CB_ACCESS_KEY.length) {
+      userStorage[userID].activate(true);
+    } else {
+      userStorage[userID].activate(false);
+    }
+    messenger[userID].userUpdate();
+  }
 };
 // store an object with arrays for messages and errors
 const messenger = new class {
@@ -193,10 +220,13 @@ const messenger = new class {
 // they are not exported so they can be safely manipulated only by functions in this file
 // store an object per user with the user settings and some key/value properties
 const userStorage = new class {
-  constructor() { }
+  constructor() {
+    this.idList = new Array();
+  }
   async createNewUser(user) {
     // get the user id
     const userID = user.id;
+    this.idList.push(userID);
     // create user object at index of user id for user storage
     // need to create user first because other things depend on it
     this[userID] = new User(user)
@@ -211,7 +241,7 @@ const userStorage = new class {
 
       // the user will only be active if they have an api
       if (!user.active) {
-        console.log(user, '<- the user');
+        console.log(user, '<- the user in userStorage');
         // do not start the Coinbase client if they are not active
         return
       }
@@ -224,11 +254,23 @@ const userStorage = new class {
   }
   // get a deep copy of a user's object
   getUser(userID) {
-    return structuredClone(this[userID])
+    if (this[userID]) {
+      return structuredClone(this[userID])
+    }
+    // else {
+    //   return { deleting: true }
+    // }
+  }
+  getAllUsers() {
+    return structuredClone(this.idList);
   }
   // delete the user if there is one
   deleteUser(userID) {
-    this[userID] = null;
+    console.log(this.idList.indexOf(Number(userID)), userID, 'index to delete');
+    this.idList.splice(this.idList.indexOf(Number(userID)), 1);
+    this[userID].deleting = true;
+    // send an orderUpdate which will log out the user
+    messenger[userID].orderUpdate();
   }
 
 };
@@ -266,7 +308,7 @@ const cache = {
 
       // the user will only be active if they have an api
       if (!user.active) {
-        console.log(user, '<- the user');
+        console.log(user, '<- the user in cache.createNewUser');
         // do not start the Coinbase client if they are not active
         return
       }

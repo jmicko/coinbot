@@ -66,13 +66,17 @@ export function SocketProvider({ children }) {
         dispatch({ type: 'FETCH_BOT_ERRORS' });
       }
       // handle messages
-      if (message.type === 'messageUpdate'||message.type === 'chat'||message.type === 'general') {
+      if (message.type === 'messageUpdate' || message.type === 'chat' || message.type === 'general') {
         dispatch({ type: 'FETCH_BOT_MESSAGES' });
-        if (message.orderUpdate) {
-          dispatch({ type: 'FETCH_ORDERS' });
-          dispatch({ type: 'FETCH_PROFITS' });
-          dispatch({ type: 'FETCH_USER' });
-        }
+      }
+      if (message.orderUpdate) {
+        dispatch({ type: 'FETCH_ORDERS' });
+        dispatch({ type: 'FETCH_PROFITS' });
+        dispatch({ type: 'FETCH_USER' });
+      }
+      if (message.userUpdate) {
+        dispatch({ type: 'FETCH_PROFITS' });
+        dispatch({ type: 'FETCH_USER' });
       }
     });
 
