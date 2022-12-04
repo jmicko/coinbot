@@ -34,6 +34,7 @@ class User {
     this.admin = user.admin;
     this.active = user.active;
     this.approved = user.approved;
+    this.paused = user.paused;
     this.joined_at = user.joined_at;
     // I think you can just preload an array like this?
     this.botStatus = new Array(['setup']);
@@ -88,7 +89,17 @@ class User {
     this.active = bool;
     messenger[this.userID].userUpdate()
   }
-
+  async update() {
+    const user = await databaseClient.getUserAndSettings(this.userID);
+    console.log(this.userID, user, 'the user in update()');
+    this.userID = user.id;
+    this.username = user.username;
+    this.admin = user.admin;
+    this.active = user.active;
+    this.approved = user.approved;
+    this.paused = user.paused;
+    this.joined_at = user.joined_at;
+  }
 }
 
 class Message {
@@ -173,14 +184,15 @@ class Messenger {
   }
   // todo - should probably use type: 'error' and get rid of this
   newError(err) {
-    const error = new Message(err.type, err.text, this.count);
+    console.log(err.errorText);
+    const error = new Message('error', err.errorText, this.errorCount);
     this.errors.unshift(error);
     this.errorCount++;
     if (this.errors.length > 1000) {
       this.errors.length = 1000;
     }
     this.sockets.forEach(socket => {
-      socket.emit('message', message);
+      socket.emit('message', error);
     })
   }
 }
@@ -226,10 +238,12 @@ const userStorage = new class {
   async createNewUser(user) {
     // get the user id
     const userID = user.id;
+    const userAndSettings = await databaseClient.getUserAndSettings(userID)
+    console.log(userAndSettings,'user and settings when creating new user');
     this.idList.push(userID);
     // create user object at index of user id for user storage
     // need to create user first because other things depend on it
-    this[userID] = new User(user)
+    this[userID] = new User(userAndSettings)
     // create an object to store messages and errors and sockets to send them with
     messenger.newMessenger(userID);
     try {
@@ -326,11 +340,13 @@ const cache = {
     if (userID === 0) {
       return
     }
-    user = await databaseClient.getUserAndSettings(userID);
+    const user = await databaseClient.getUserAndSettings(userID);
     // don't need password
     delete user?.password
+    console.log(userStorage[userID], 'BEFORE REFRESH');
     // if there is a user, set the user as the user. lmao. Otherwise empty object
     userStorage[userID] = (user) ? { ...userStorage[userID], ...user } : null;
+    console.log(userStorage[userID], 'AFTER REFRESH');
     // get and store the api from the db
     const userAPI = await databaseClient.getUserAPI(userID);
     cache.storeAPI(userID, userAPI);

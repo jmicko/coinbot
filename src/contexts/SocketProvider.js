@@ -62,7 +62,7 @@ export function SocketProvider({ children }) {
         })
       }
       // handle errors
-      if (message.type === 'errorUpdate') {
+      if (message.type === 'error') {
         dispatch({ type: 'FETCH_BOT_ERRORS' });
       }
       // handle messages

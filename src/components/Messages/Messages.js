@@ -46,7 +46,7 @@ function Messages() {
           </h3>
           {!collapsed && botMessages.map((message, i) => {
             if (message.text) {
-              return <p key={i}><strong>Msg #{message.count} {new Date(message.timeStamp).toLocaleString('en-US')}</strong> <br /> {message.text}</p>
+              return <p key={i}><strong>Msg #{message.mCount} {new Date(message.timeStamp).toLocaleString('en-US')}</strong> <br /> {message.text}</p>
             }
           })}
         </div>
@@ -55,7 +55,7 @@ function Messages() {
         <div className={`errors-section scrollable admin-${user.admin}`}>
           <h3 className={`title ${user.theme}`}>{collapsed && botErrors.length} Errors</h3>
           {!collapsed && botErrors.map((error, i) => {
-            return <p key={i}><strong>Err #{error.count} {new Date(error.timeStamp).toLocaleString('en-US')}</strong> <br /> {error.errorText}</p>
+            return <p key={i}><strong>Err #{error.mCount} {new Date(error.timeStamp).toLocaleString('en-US')}</strong> <br /> {error.text}</p>
           })}
         </div>
 
@@ -75,7 +75,7 @@ function Messages() {
             </h3>
             <div className={`scrollable chat-log admin-${user.admin}`}>
               {!collapsed && chatMessages.map((chat, i) => {
-                return <p key={i}><strong>Err #{chat.count} {new Date(chat.timeStamp).toLocaleString('en-US')}</strong> <br /> {chat.text}</p>
+                return <p key={i}><strong>Err #{chat.cCount} {new Date(chat.timeStamp).toLocaleString('en-US')}</strong> <br /> {chat.text}</p>
               })}
             </div>
           </div>

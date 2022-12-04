@@ -269,7 +269,8 @@ router.put('/pause', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
     await databaseClient.setPause(!user.paused, user.id);
-    await cache.refreshUser(user.id);
+    // await cache.refreshUser(user.id);
+    await userStorage[user.id].update();
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in PAUSE ROUTE');
@@ -285,7 +286,7 @@ router.put('/theme', rejectUnauthenticated, async (req, res) => {
   try {
     const queryText = `UPDATE "user_settings" SET "theme" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.theme, user.id]);
-    await cache.refreshUser(user.id);
+    await userStorage[user.id].update();
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in THEME ROUTE');
