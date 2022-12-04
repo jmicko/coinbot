@@ -495,56 +495,8 @@ const cache = {
     // todo - chats are also being sent here so need to change this to differentiate type
     messenger[userID].newMessage(message);
 
-
-
-
-    // // tell Dom to update messages and trade list if needed
-    // messenger[userID].sockets.forEach(socket => {
-    //   // find all open sockets for the user
-    //   if (socket.userID === userID) {
-    //     console.log(socket.userID, 'equal?', socket.request.session.passport?.user)
-    //     const msg = {
-    //       type: 'messageUpdate',
-    //       orderUpdate: message.orderUpdate,
-    //     }
-    //     socket.emit('message', msg);
-    //   }
-    // })
   },
 
-  // todo - chats are being sent to storeMessage, so need to get rid of this?
-  // MESSAGE STORAGE - store 1000 most recent messages
-  storeChat: (userID, chat) => {
-    // console.log(chat, 'chat');
-    if (!chat.text) {
-      return
-    }
-    const chatData = {
-      // message text is to store a custom chat message to show the user
-      text: chat.text,
-      // automatically store the timestamp
-      timeStamp: new Date(),
-      count: userStorage[userID].chatMessageCount
-    }
-
-    messenger[userID].chatMessageCount++;
-
-    messenger[userID].chatMessages.unshift(chatData);
-    if (messenger[userID].chatMessages.length > 1000) {
-      messenger[userID].chatMessages.length = 1000;
-    }
-    // tell Dom to update chat messages and trade list if needed
-    // cache.sockets.forEach(socket => {
-    //   // find all open sockets for the user
-    //   if (socket.userID === userID) {
-    //     const msg = {
-    //       type: 'messageUpdate',
-    //       orderUpdate: false
-    //     }
-    //     socket.emit('message', msg);
-    //   }
-    // })
-  },
 
   getMessages: (userID) => {
     // console.log(messenger[userID], 'user messenger');

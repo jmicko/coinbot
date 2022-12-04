@@ -363,7 +363,7 @@ class Coinbase {
           return
           // get current price
         }
-        console.log('market order should not go past this line');
+        // console.log('market order should not go past this line');
 
         const options = this.signRequest(data, API);
         // make the call

@@ -1,7 +1,7 @@
 const WebSocket = require('ws');
 const CryptoJS = require('crypto-js');
 const fs = require('fs');
-const { cache, messenger, userStorage, botSettings, cbClients} = require('./cache');
+const { cache, messenger, userStorage, botSettings, cbClients } = require('./cache');
 const databaseClient = require('./databaseClient');
 const { rejectUnauthenticatedSocket } = require('./authentication-middleware');
 const { sleep } = require('../../src/shared');
@@ -21,7 +21,7 @@ function startWebsocket(userID) {
     return { success: false }
   }
   const userAPI = cache.getAPI(userID)
-  console.log(userAPI,'api details in ws');
+  console.log(userAPI, 'api details in ws');
   const secret = userAPI.CB_SECRET;
   const key = userAPI.CB_ACCESS_KEY;
 
@@ -226,7 +226,7 @@ async function updateMultipleOrders(userID, params) {
       : cache.getKey(userID, 'ordersToCheck');
     // console.log(ordersArray, 'orders array in ws');
     if (ordersArray.length > 0) {
-      cache.storeMessage(userID, {
+      messenger[userID].newMessage({
         type: 'general',
         text: `There are ${ordersArray.length} orders that need to be synced`
       });
@@ -234,7 +234,7 @@ async function updateMultipleOrders(userID, params) {
     // loop over the array and update each trade
     for (let i = 0; i < ordersArray.length; i++) {
       // send client message with each loop
-      cache.storeMessage(userID, {
+      messenger[userID].newMessage({
         type: 'general',
         text: `Syncing ${i + 1} of ${ordersArray.length} orders that need to be synced`
       });
@@ -255,10 +255,11 @@ async function updateMultipleOrders(userID, params) {
         // handle not found order
         let errorText = `Error updating order details`
         console.log(err, 'error in updateMultipleOrders loop');
-        cache.storeError(userID, {
-          errorData: orderToCheck,
+        messenger[userID].newError({
+          errorData: errorData,
           errorText: errorText
-        })
+        });
+
       } // end catch
     } // end for loop
     cache.updateStatus(userID, 'UMO all done');

@@ -4,7 +4,7 @@ const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const databaseClient = require('../modules/databaseClient');
 const robot = require('../modules/robot');
-const { cache, userStorage, cbClients } = require('../modules/cache');
+const { cache, userStorage, cbClients, messenger } = require('../modules/cache');
 const { v4: uuidv4 } = require('uuid');
 const { autoSetup } = require('../../src/shared');
 // const { autoSetup } = require('../../src/shared');
@@ -78,7 +78,7 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       // console.log(fakeOrder, 'trade saved to db');
       await robot.updateFunds(userID);
       // tell DOM to update orders
-      cache.storeMessage(Number(user.id), {
+      messenger[userID].newMessage({
         type: 'general',
         text: `New trade-pair created!`,
         orderUpdate: true
@@ -86,13 +86,14 @@ router.post('/', rejectUnauthenticated, async (req, res) => {
       // send OK status
       res.sendStatus(200);
     } catch (err) {
-      console.log(fakeOrder, "FAILURE creating new trade-pair");
+      console.log(err, "FAILURE creating new trade-pair");
       const errorText = 'FAILURE creating new trade-pair!';
-      const errorData = fakeOrder;
-      cache.storeError(userID, {
+      const errorData = err;
+      messenger[userID].newError({
         errorData: errorData,
         errorText: errorText
-      })
+      });
+
       // send internal error status
       res.sendStatus(500);
     }
@@ -129,9 +130,11 @@ router.post('/basic', rejectUnauthenticated, async (req, res) => {
       console.log('basic trade results', basic,);
 
       if (!basic.success) {
-        cache.storeError(user.id, {
+        messenger[userID].newError({
+          errorData: basic,
           errorText: `Could not place trade. ${basic?.error_response?.message}`
-        })
+        });
+
       }
 
       await robot.updateFunds(userID);
@@ -177,11 +180,11 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
           base_size: setup.btcToBuy.toFixed(8), // BTC
           product_id: 'BTC-USD',
           type: 'market',
-          tradingPrice: options.tradingPrice
+          // tradingPrice: options.tradingPrice
         };
         console.log('BIG order', tradeDetails);
         if (!options.ignoreFunds) {
-          let bigOrder = await cbClients[user.id].placeMarketOrder(tradeDetails);
+          let bigOrder = await cbClients[user.id].placeOrder(tradeDetails);
           console.log('big order to balance btc avail', bigOrder,);
         }
         await robot.updateFunds(user.id);
@@ -245,16 +248,17 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
         // await databaseClient.storeTrade(order, order, time);
       }
       // tell DOM to update orders
-      cache.storeMessage(Number(user.id), {
+      messenger[user.id].newMessage({
         type: 'general',
         text: `Auto setup complete!`,
         orderUpdate: true
       });
     } catch (err) {
       console.log(err, 'problem in autoSetup ');
-      cache.storeError(user.id, {
+      messenger[user.id].newError({
+        errorData: err,
         errorText: `problem in auto setup`
-      })
+      });
     }
     res.sendStatus(200);
   } else {
@@ -320,10 +324,10 @@ router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
       await cbClients[userID].cancelOrders([orderId]);
     }
     res.sendStatus(200)
-    cache.storeMessage(userID, {
+    messenger[userID].newMessage({
       type: 'general',
       text: 'Successfully deleted trade-pair'
-    })
+    });
   } catch (err) {
     let errorText = 'FAILURE deleting trade-pair!';
     let errorData = err?.data;
@@ -343,10 +347,10 @@ router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
       console.log(err, 'something failed in the delete trade route');
       res.sendStatus(500)
     }
-    cache.storeError(userID, {
+    messenger[userID].newError({
       errorData: errorData,
       errorText: errorText
-    })
+    });
   };
 });
 

@@ -404,10 +404,10 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     // if it is a sell turning into a buy, check if user wants to reinvest the funds
     if (user.reinvest) {
       const orderSize = Number(dbOrder.base_size);
-      
+
       // find out how much profit there was
       const BTCprofit = calculateProfitBTC(dbOrder);
-      
+
       let amountToReinvest = BTCprofit * reinvestRatio;
       if (amountToReinvest <= 0) {
         console.log('negative profit');
@@ -469,10 +469,10 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
             allFlipsValue += (trade.base_size * trade.original_buy_price)
           }
         });
-        
+
         // calculate what funds will be leftover after all pending flips go through
         const leftoverFunds = (Number(user.actualavailable_usd) - (allFlipsValue * (1 + Number(user.maker_fee))));
-        
+
         // only set the new base_size if it will stay above the reserve
         if (leftoverFunds > user.reserve) {
           console.log('there is enough money left to reinvest');
@@ -481,7 +481,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
           console.log('there is NOT enough money left to reinvest');
         }
       }
-      
+
     }
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "BUY"
@@ -558,10 +558,14 @@ async function updateMultipleOrders(userID, params) {
           await databaseClient.updateTrade(updatedOrder.order);
         }
       } catch (err) {
-        console.log('error in updateMultipleOrders loop');
+        console.log(err, 'error in updateMultipleOrders loop');
+        let errorText = `Error updating order details`
+        if (err.error_response.message) {
+          errorText = errorText + '. Reason: ' + err.error_response.message
+        }
         messenger[userID].newError({
           errorData: orderToCheck,
-          errorText: `Error updating order details`
+          errorText: errorText
         })
       } // end catch
       const t1 = performance.now();
@@ -611,6 +615,9 @@ async function reorder(orderToReorder) {
           orderUpdate: true,
         });
         resolve({ results: results })
+      } else {
+        console.log(pendingTrade, 'error in reorder function in robot.js');
+        reject(pendingTrade);
       }
     } catch (err) {
       console.log(err, 'error in reorder function in robot.js');
