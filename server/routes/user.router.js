@@ -6,7 +6,7 @@ const pool = require('../modules/pool');
 const userStrategy = require('../strategies/user.strategy');
 const robot = require('../modules/robot');
 const databaseClient = require('../modules/databaseClient');
-const cache = require('../modules/cache');
+const { cache, userStorage, messenger } = require('../modules/cache');
 
 const router = express.Router();
 
@@ -50,8 +50,8 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
     // const URI = cache.getAPI(req.user.id).API_URI;
     req.user.sandbox = false
     //  (URI === 'https://api-public.sandbox.exchange.coinbase.com')
-      // ? true
-      // : false
+    // ? true
+    // : false
 
   } catch (err) {
     console.log(err, 'error in user route');
@@ -153,9 +153,12 @@ router.put('/approve', rejectUnauthenticated, async (req, res) => {
       console.log('you are admin');
       const userToApprove = req.body.data.id;
       console.log('in approve user route', userToApprove);
-      const queryText = `UPDATE "user" SET "approved" = true WHERE "id" = $1;`;
-      await pool.query(queryText, [userToApprove]);
-      await cache.refreshUser(userToApprove);
+      const queryText = `UPDATE "user" SET "approved" = true WHERE "id" = $1 RETURNING *;`;
+      const user = await pool.query(queryText, [userToApprove]);
+      // await cache.refreshUser(userToApprove);
+      // start the loops
+      console.log(user.rows[0], '<- the updated user');
+      // robot.initializeUserLoops(user.rows[0]);
       res.sendStatus(200);
     } else {
       console.log('you are NOT admin');
@@ -224,7 +227,11 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
     console.log(err, 'error in delete user route');
     res.sendStatus(500);
   } finally {
-    cache.refreshUser(userToDelete)
+    userStorage[userID].deleteUser()
+    messenger[userID].newMessage({
+      orderUpdate: true
+    });
+
   }
 });
 

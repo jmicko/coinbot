@@ -25,10 +25,14 @@ async function startSync() {
 
 // this is separated from the startSync function so it can be called separately when a new user is created
 async function initializeUserLoops(user) {
+  // if (!user.active || !user.approved) {
+  //   console.log(user, '<- the user');
+  //   return
+  // }
   const userID = user.id;
   try {
     // set up cache for user
-    await cache.createNewUser(user);
+    await userStorage.createNewUser(user);
     // start syncing orders over the REST api
     syncOrders(userID);
     // start looking for orders to process
@@ -42,7 +46,7 @@ async function initializeUserLoops(user) {
 
 async function processingLoop(userID) {
   // get the user and bot settings from cache;
-  const user = cache.getUser(userID);
+  const user = userStorage.getUser(userID);
 
   // check that user is active, approved, and unpaused, and that the bot is not under maintenance
   if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
@@ -73,19 +77,17 @@ async function processingLoop(userID) {
 // repeating loop to find orders that have settled on coinbase via REST API
 async function syncOrders(userID) {
   // increase the loop number tracker at the beginning of the loop
-  cache.increaseLoopNumber(userID);
-  cache.updateStatus(userID, 'begin main loop');
+  userStorage[userID].increaseLoopNumber();
+  userStorage[userID].updateStatus('begin main loop');
 
   // get the user settings from cache;
-  const user = cache.getUser(userID);
+  const user = userStorage[userID].getUser()
 
   // keep track of how long the loop takes. Helps prevent rate limiting
   const t0 = performance.now();
-  // get the bot settings
 
   try {
-    cache.updateStatus(userID, 'getting settings');
-    const loopNumber = cache.getLoopNumber(userID);
+    const loopNumber = userStorage[userID].getLoopNumber();
     // console.log(loopNumber, '<-loop number', (loopNumber - 1) % botSettings.full_sync, '<-shrek', botSettings.full_sync);
     // send heartbeat signifying start of new loop
     heartBeat(userID, 'heart');
@@ -104,12 +106,10 @@ async function syncOrders(userID) {
 
         // *** QUICK SYNC ***
         // console.log('quick sync');
-        cache.updateStatus(userID, 'start all quick sync')
         //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
         await quickSync(userID);
         // desync extra orders
         await deSync(userID)
-        cache.updateStatus(userID, 'end all quick sync');
       } // end which sync
 
       // *** UPDATE ORDERS IN DATABASE ***
@@ -125,7 +125,6 @@ async function syncOrders(userID) {
   } catch (err) {
     MainLoopErrors(userID, err);
   } finally {
-    cache.updateStatus(userID, 'end main loop finally');
     // when everything is done, call the sync again if the user still exists
     if (user) {
       const t1 = performance.now();
@@ -137,8 +136,7 @@ async function syncOrders(userID) {
       // console.log(user?.id, 'user');
       // wait however long the admin requires, then start new loop
       setTimeout(() => {
-        cache.clearStatus(userID);
-        // cache.increaseLoopNumber(userID);
+        userStorage[userID].clearStatus();
         syncOrders(userID);
       }, (botSettings.loop_speed * 10));
     } else {
@@ -155,7 +153,6 @@ function MainLoopErrors(userID, err) {
   if (err?.response?.data) {
     errorData = err?.response.data;
   }
-  cache.updateStatus(userID, 'error in the main loop');
   if (err?.code === 'ECONNRESET') {
     errorText = 'Connection reset by Coinbase server';
     console.log('Connection reset by Coinbase server. Probably nothing to worry about unless it keeps happening quickly.');
@@ -179,15 +176,14 @@ function MainLoopErrors(userID, err) {
     console.log(err, 'unknown error at end of syncOrders');
     errorText = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???';
   }
-  cache.storeError(userID, {
+  messenger[userID].newError({
     errorData: errorData,
     errorText: errorText
   });
 }
 
 async function deSync(userID) {
-  cache.updateStatus(userID, 'begin desync');
-  // const botSettings = cache.getBotSettings();
+  userStorage[userID].updateStatus('begin desync');
 
   return new Promise(async (resolve, reject) => {
     try {
@@ -209,10 +205,9 @@ async function deSync(userID) {
       // cancel them all
       await cancelAndReorder(allToDeSync, userID);
 
-      cache.updateStatus(userID, 'end desync');
       resolve();
     } catch (err) {
-      cache.updateStatus(userID, 'error in desync');
+      console.log('desync error');
       reject(err)
     }
   });
@@ -221,9 +216,7 @@ async function deSync(userID) {
 
 // FULL SYNC, will compare all trades that should be on CB, and do other less frequent maintenance tasks
 async function fullSync(userID) {
-  cache.updateStatus(userID, 'begin full sync');
-  // get the bot settings
-  // const botSettings = cache.getBotSettings();
+  userStorage[userID].updateStatus('begin full sync');
   return new Promise(async (resolve, reject) => {
     try {
       // get lists of trades to compare which have been settled
@@ -239,7 +232,6 @@ async function fullSync(userID) {
       const dbOrders = results[0];
       const cbOrders = results[1].orders;
       const fees = results[2];
-      cache.updateStatus(userID, 'done updating funds full sync');
       // need to get the fees for more accurate Available funds reporting
       // fees don't change frequently so only need to do this during full sync
       await databaseClient.saveFees(fees, userID);
@@ -254,15 +246,14 @@ async function fullSync(userID) {
       userStorage[userID].addToCheck(toCheck);
       resolve();
     } catch (err) {
-      cache.updateStatus(userID, 'error in full sync');
+      console.log('error in full sync');
       reject(err)
     }
   });
 }
 
 async function quickSync(userID) {
-  cache.updateStatus(userID, 'begin quick sync');
-  // const botSettings = cache.getBotSettings();
+  userStorage[userID].updateStatus('begin quick sync');
   // IF QUICK SYNC, only get fills
   return new Promise(async (resolve, reject) => {
     try {
@@ -270,14 +261,12 @@ async function quickSync(userID) {
       const response = await cbClients[userID].getFills({ limit: 100, product_id: 'BTC-USD' });
       const fills = response.fills;
       // console.log(fillResponse);
-      cache.updateStatus(userID, 'done getting quick sync fills');
       // get an array of just the IDs
       const fillsIds = []
       fills.forEach(fill => fillsIds.push(fill.order_id))
       // find unsettled orders in the db based on the IDs array
       const unsettledFills = await databaseClient.getUnsettledTradesByIDs(userID, fillsIds);
       // after checking fills, store the most recent so don't need to check it later
-      cache.updateStatus(userID, 'done checking fills');
       // this will check the specified number of trades to sync on either side to see if any 
       // need to be reordered. It will only find them on a loop after a loop where trades have been placed
       // todo - maybe this should go after the updateMultipleOrders function so it will fire on same loop
@@ -286,10 +275,9 @@ async function quickSync(userID) {
       toCheck = unsettledFills.concat(reorders);
       // set orders to check so the next process can access them without needing to pass params through
       userStorage[userID].addToCheck(toCheck);
-      cache.updateStatus(userID, 'will resolve quick sync');
       resolve(toCheck);
     } catch (err) {
-      cache.updateStatus(userID, 'error in quick sync');
+      console.log('error in quick sync');
       reject(err)
     }
   });
@@ -298,12 +286,11 @@ async function quickSync(userID) {
 
 // process orders that have been settled
 async function processOrders(userID) {
-  cache.updateStatus(userID, 'start process orders');
+  userStorage[userID].updateStatus('start process orders');
   return new Promise(async (resolve, reject) => {
     try {
       // check all trades in db that are both settled and NOT flipped
       const tradeList = await databaseClient.getSettledTrades(userID);
-      cache.updateStatus(userID, 'got all orders to process');
       // if there is at least one trade...
       if (tradeList.length > 0) {
         // loop through all the settled orders and flip them
@@ -320,7 +307,7 @@ async function processOrders(userID) {
 
 
 
-            const willCancel = cache.checkIfCanceling(userID, dbOrder.order_id);
+            const willCancel = userStorage[userID](dbOrder.order_id);
             if (!willCancel) {
               // console.log(tradeDetails,'trade details');
               let cbOrder = await cbClients[userID].placeOrder(tradeDetails);
@@ -346,7 +333,6 @@ async function processOrders(userID) {
 
           } catch (err) {
             let errorText;
-            cache.updateStatus(userID, 'error in process orders loop');
             if (err.code && err.code === 'ETIMEDOUT') {
               console.log('Timed out!!!!! from processOrders');
               errorText = 'Coinbase timed out while flipping an order';
@@ -359,7 +345,7 @@ async function processOrders(userID) {
               console.log(err, 'unknown error in processOrders');
               errorText = 'unknown error while flipping an order';
             }
-            cache.storeError(userID, {
+            messenger[userID].newError({
               errorData: dbOrder,
               errorText: errorText
             })
@@ -368,10 +354,8 @@ async function processOrders(userID) {
           await sleep(100)
         } // end for loop
       } else {
-        cache.updateStatus(userID, 'end resolve processOrders');
         resolve();
       }
-      cache.updateStatus(userID, 'end resolve processOrders');
       resolve();
     } catch (err) {
       console.log(err, '!!!!!!!!!!!!!!!!!error at end of processOrders');
@@ -384,7 +368,7 @@ async function processOrders(userID) {
 // Returns the tradeDetails object needed to send trade to CB
 function flipTrade(dbOrder, user, allFlips, iteration) {
   const userID = user.id
-  cache.updateStatus(userID, 'start flip trade');
+  userStorage[userID].updateStatus('start flip trade');
   const reinvestRatio = user.reinvest_ratio / 100;
   const postMaxReinvestRatio = user.post_max_reinvest_ratio / 100;
   const maxTradeSize = user.max_trade_size;
@@ -406,7 +390,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     // if it was a BUY, sell for more. multiply old price
     tradeDetails.side = "SELL"
     tradeDetails.limit_price = dbOrder.original_sell_price;
-    cache.storeMessage(userID, {
+    userStorage[userID].newMessage({
       type: 'general',
       text: `Selling for $${Number(tradeDetails.limit_price)}`
     });
@@ -422,7 +406,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
       if (amountToReinvest <= 0) {
         console.log('negative profit');
         amountToReinvest = 0;
-        cache.storeError(userID, {
+        messenger[userID].newMessage({
           errorData: dbOrder,
           errorText: `Just saw a negative profit! Maybe increase your trade-pair ratio? 
           This may also be due to fees that were charged during setup or at a different fee tier.`
@@ -495,13 +479,12 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "BUY"
     tradeDetails.limit_price = dbOrder.original_buy_price;
-    cache.storeMessage(userID, {
+    messenger[userID].newMessage({
       type: 'general',
       text: `Buying for $${Number(tradeDetails.limit_price)}`
     });
   }
   // return the tradeDetails object
-  cache.updateStatus(userID, 'end flip trade');
   return tradeDetails;
 }
 
@@ -524,7 +507,7 @@ function sleep(milliseconds) {
 // this should just update the status of each trade in the ordersToCheck cached array
 async function updateMultipleOrders(userID, params) {
   return new Promise(async (resolve, reject) => {
-    cache.updateStatus(userID, 'start updateMultipleOrders (UMO)');
+    userStorage[userID].updateStatus('start updateMultipleOrders (UMO)');
     // get the orders that need processing. This will have been taken directly from the db and include all details
     const ordersArray = params?.ordersArray
       ? params.ordersArray
@@ -532,7 +515,7 @@ async function updateMultipleOrders(userID, params) {
     // console.log(ordersArray, 'orders array');
 
     if (ordersArray?.length > 0) {
-      cache.storeMessage(userID, {
+      messenger[userID].newMessage({
         type: 'general',
         text: `There are ${ordersArray.length} orders that need to be synced`
       });
@@ -544,7 +527,7 @@ async function updateMultipleOrders(userID, params) {
     for (let i = 0; i < ordersArray.length; i++) {
       // keep track of how long each loop takes. Helps prevent rate limiting
       const t0 = performance.now();
-      cache.storeMessage(userID, {
+      messenger[userID].newMessage({
         type: 'general',
         text: `Syncing ${i + 1} of ${ordersArray.length} orders that need to be synced`
       });
@@ -568,7 +551,7 @@ async function updateMultipleOrders(userID, params) {
         }
       } catch (err) {
         console.log('error in updateMultipleOrders loop');
-        cache.storeError(userID, {
+        messenger[userID].newError({
           errorData: orderToCheck,
           errorText: `Error updating order details`
         })
@@ -589,7 +572,7 @@ async function updateMultipleOrders(userID, params) {
 async function reorder(orderToReorder) {
   return new Promise(async (resolve, reject) => {
     const userID = orderToReorder.userID;
-    cache.updateStatus(userID, 'begin reorder');
+    userStorage[userID].updateStatus('begin reorder');
     try {
       const upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.order_id);
       // make new tradeDetails so client id is not passed from old order
@@ -614,7 +597,7 @@ async function reorder(orderToReorder) {
         // delete the old order from the db
         await databaseClient.deleteTrade(orderToReorder.order_id);
         // tell the DOM to update
-        cache.storeMessage(userID, {
+        messenger[userID].newMessage({
           type: 'general',
           text: `trade was reordered`,
           orderUpdate: true,
@@ -632,7 +615,7 @@ async function reorder(orderToReorder) {
 // cancels orders on coinbase. If they are in the db, it will set them as reorders.
 async function cancelAndReorder(ordersArray, userID) {
   return new Promise(async (resolve, reject) => {
-    cache.updateStatus(userID, 'begin cancelAndReorder (CMO)');
+    userStorage[userID].updateStatus('begin cancelAndReorder (CMO)');
     // avoid making calls with empty arrays
     if (ordersArray.length > 0) {
       // build an array of just the IDs that should be set to reorder
@@ -653,12 +636,9 @@ async function cancelAndReorder(ordersArray, userID) {
       }
 
       // if all goes well, send message to user and resolve promise with success message
-      cache.storeMessage(Number(userID), {
-        orderUpdate: true
-      });
+      userStorage[userID].orderUpdate();
       resolve({ success: true })
     } else {
-      cache.updateStatus(userID, 'done CMO, no orders');
       resolve({ success: true })
     }
   });
@@ -822,7 +802,7 @@ function orderElimination(dbOrders, cbOrders) {
 
 async function getAvailableFunds(userID, userSettings) {
   // console.log('getting available funds');
-  cache.updateStatus(userID, 'get available funds');
+  userStorage[userID].updateStatus('get available funds');
   return new Promise(async (resolve, reject) => {
     try {
       // console.log(userSettings.active);
@@ -876,14 +856,11 @@ async function getAvailableFunds(userID, userSettings) {
         actualAvailableUSD: actualAvailableUSD
       }
 
-      // console.log(availableFunds, 'available funds');
-
-      cache.updateStatus(userID, 'done getting available funds');
       resolve(availableFunds)
     } catch (err) {
-      cache.updateStatus(userID, 'error getting available funds');
-      cache.storeError(userID, {
-        errorText: 'error getting available funds'
+      messenger[userID].newError({
+        text: 'error getting available funds',
+        data: err
       })
       reject(err)
     }
@@ -891,7 +868,7 @@ async function getAvailableFunds(userID, userSettings) {
 }
 
 async function updateFunds(userID) {
-  cache.updateStatus(userID, 'update funds');
+  userStorage[userID].updateStatus('begin update funds');
   return new Promise(async (resolve, reject) => {
     try {
       const userSettings = await databaseClient.getUserAndSettings(userID);
@@ -901,17 +878,13 @@ async function updateFunds(userID) {
 
       // check if the funds have changed and update the DOM if needed
       if (Number(userSettings.actualavailable_usd) !== Number(available.actualAvailableUSD)) {
-        cache.storeMessage(Number(userID), {
-          orderUpdate: true
-        });
+        messenger[userID].orderUpdate();
       }
-
-      cache.updateStatus(userID, 'done updating funds');
       resolve()
     } catch (err) {
-      cache.updateStatus(userID, 'error updating funds');
-      cache.storeError(userID, {
-        errorText: 'error getting available funds'
+      messenger[userID].newError(userID, {
+        text: 'error getting available funds',
+        data:err
       })
       reject(err)
     }
@@ -924,7 +897,7 @@ async function alertAllUsers(alertMessage) {
     const userList = await databaseClient.getAllUsers();
     userList.forEach(user => {
       // console.log(user);
-      cache.storeMessage(Number(user.id), {
+      messenger[user.id].newMessage( {
         type: 'general',
         text: alertMessage,
         orderUpdate: true

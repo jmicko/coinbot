@@ -23,16 +23,6 @@ const botSettings = new class BotSettings {
   }
 }
 
-// the storage arrays will store objects/arrays/sets of different things at the index of the user id
-// they are not exported so they can be safely manipulated only by functions in this file
-// store an object per user with the user settings and some key/value properties
-const userStorage = [];
-// store an object with each user api. keep it separate from user storage to prevent accident
-const apiStorage = [];
-// store a client to connect to coinbase
-const cbClients = [];
-// store an object with arrays for messages and errors
-const messenger = [];
 
 // I'm pretty new to classes so this might be a bit jumbled for now. Not sure what I'm doing lol
 // seems like the constructor inputs should be things that will stay with the new object forever
@@ -52,6 +42,7 @@ class User {
     this.loopNumber = Number(0);
   }
   getUser() {
+    // console.log('getting the user')
     return structuredClone(this);
   }
   addToCheck(orders) {
@@ -66,8 +57,27 @@ class User {
   setCancel(order_id) {
     this.willCancel.add(order_id);
   }
+  checkCancel(order_id) {
+    return this.willCancel.has(order_id)
+  }
   orderUpdate() {
     messenger[this.userID].newMessage({ orderUpdate: true })
+  }
+  // increase the loop number by 1
+  increaseLoopNumber() {
+    this.loopNumber++;
+  }
+  getLoopNumber() {
+    return structuredClone(this.loopNumber);
+  }
+  updateStatus(update) {
+    this.botStatus.unshift(update);
+    if (this.botStatus.length > 100) {
+      this.botStatus.length = 100;
+    }
+  }
+  clearStatus() {
+    this.botStatus.length = 0;
   }
 }
 
@@ -124,7 +134,7 @@ class Messenger {
     if (message.text) {
       this.messages.unshift(newMessage);
     }
-    // icrease the counts
+    // increase the counts
     this.messageCount++;
     if (message.type === 'chat') {
       // only increase chat count if it is a chat type message
@@ -145,17 +155,83 @@ class Messenger {
       socket.emit('message', message);
     })
   }
-  // todo - should probably use type: 'error and get rid of this
-  newError(type, text) {
-    const error = new Message(type, text, this.count);
+  orderUpdate() {
+    this.instantMessage({ orderUpdate: true })
+  }
+  // todo - should probably use type: 'error' and get rid of this
+  newError(err) {
+    const error = new Message(err.type, err.text, this.count);
     this.errors.unshift(error);
     this.errorCount++;
     if (this.errors.length > 1000) {
       this.errors.length = 1000;
     }
+    this.sockets.forEach(socket => {
+      socket.emit('message', message);
+    })
   }
 }
 
+// store an object with each user api. keep it separate from user storage to prevent accident
+const apiStorage = new class {
+
+};
+// store a client to connect to coinbase
+const cbClients = new class {
+
+};
+// store an object with arrays for messages and errors
+const messenger = new class {
+  constructor() { }
+  newMessenger(userID) {
+    this[userID] = new Messenger(userID);
+  }
+};
+
+
+// the storage arrays will store objects/arrays/sets of different things at the index of the user id
+// they are not exported so they can be safely manipulated only by functions in this file
+// store an object per user with the user settings and some key/value properties
+const userStorage = new class {
+  constructor() { }
+  async createNewUser(user) {
+    // get the user id
+    const userID = user.id;
+    // create user object at index of user id for user storage
+    // need to create user first because other things depend on it
+    this[userID] = new User(user)
+    // create an object to store messages and errors and sockets to send them with
+    messenger.newMessenger(userID);
+    try {
+      const userAPI = await databaseClient.getUserAPI(userID);
+      // create api object at index of user id
+      apiStorage[userID] = Object();
+      // add the user api to the apiStorage array
+      cache.storeAPI(userID, userAPI);
+
+      // the user will only be active if they have an api
+      if (!user.active) {
+        console.log(user, '<- the user');
+        // do not start the Coinbase client if they are not active
+        return
+      }
+      // store a coinbase client for the user
+      cbClients[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET, ['BTC-USD', 'ETH-USD']);
+
+    } catch (err) {
+      console.log(err, `\nERROR creating new user`);
+    }
+  }
+  // get a deep copy of a user's object
+  getUser(userID) {
+    return structuredClone(this[userID])
+  }
+  // delete the user if there is one
+  deleteUser(userID) {
+    this[userID] = null;
+  }
+
+};
 
 const cache = {
 
@@ -181,11 +257,19 @@ const cache = {
 
     // cache the API from the db
     try {
+
       const userAPI = await databaseClient.getUserAPI(userID);
       // create api object at index of user id
       apiStorage[userID] = Object();
       // add the user api to the apiStorage array
       cache.storeAPI(userID, userAPI);
+
+      // the user will only be active if they have an api
+      if (!user.active) {
+        console.log(user, '<- the user');
+        // do not start the Coinbase client if they are not active
+        return
+      }
       // store a coinbase client for the user
       cbClients[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET, ['BTC-USD', 'ETH-USD']);
 
@@ -202,7 +286,7 @@ const cache = {
     }
     user = await databaseClient.getUserAndSettings(userID);
     // don't need password
-    delete user.password
+    delete user?.password
     // if there is a user, set the user as the user. lmao. Otherwise empty object
     userStorage[userID] = (user) ? { ...userStorage[userID], ...user } : null;
     // get and store the api from the db

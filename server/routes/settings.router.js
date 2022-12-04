@@ -4,7 +4,7 @@ const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const databaseClient = require('../modules/databaseClient');
 const robot = require('../modules/robot');
-const { cache, botSettings, cbClients } = require('../modules/cache');
+const { cache, botSettings, cbClients, userStorage } = require('../modules/cache');
 
 
 /**
@@ -57,13 +57,71 @@ router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
       // }
       // const response = await databaseClient.updateTrade()
       // const response = await getOpenOrders(userID)
-      cache.setCancel(userID, 'fake_id')
-      setInterval(() => {
-        const response = cache.checkIfCanceling(userID, 'fake_id')
-        console.log(response, 'response from test');
-      }, 500);
 
 
+
+      // const data = {
+      //   pizza: 'thick',
+      //   topping: 'cheese',
+      //   crust: 'stuffed'
+      // }
+
+      // const newPizza = data.pizza
+      //   ? // is it a pizza
+      //   {
+      //     pizza: true,
+      //     pizza_toppings: {
+      //       ...pepperoni = data.pepperoni && { pepperoni: data.pepperoni },
+      //       topping: data.topping,
+      //       ...crust = { crust: data.crust },
+      //     }
+      //   }
+      //   : { taco: true }
+
+
+
+
+        // basic trade results = {
+        //   product_id: 'BTC-USD',
+        //   price: '16922.15',
+        //   price_percentage_change_24h: '-0.46947500789614',
+        //   volume_24h: '13850.17877267',
+        //   volume_percentage_change_24h: '-39.33038176669629',
+        //   base_increment: '0.00000001',
+        //   quote_increment: '0.01',
+        //   quote_min_size: '1',
+        //   quote_max_size: '50000000',
+        //   base_min_size: '0.000016',
+        //   base_max_size: '2600',
+        //   base_name: 'Bitcoin',
+        //   quote_name: 'US Dollar',
+        //   watched: true,
+        //   is_disabled: false,
+        //   new: false,
+        //   status: 'online',
+        //   cancel_only: false,
+        //   limit_only: false,
+        //   post_only: false,
+        //   trading_disabled: false,
+        //   auction_mode: false,
+        //   product_type: 'SPOT',
+        //   quote_currency_id: 'USD',
+        //   base_currency_id: 'BTC',
+        //   fcm_trading_session_details: null,
+        //   mid_market_price: ''
+        // }
+
+
+
+
+      // cache.setCancel(userID, 'fake_id')
+      // setInterval(() => {
+      //   const response = cache.checkIfCanceling(userID, 'fake_id')
+      //   console.log(response, 'response from test');
+      // }, 500);
+
+      // console.log(newPizza, 'new pizza');
+      console.log(userStorage,'<------ the user storage');
 
 
 
