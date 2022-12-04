@@ -68,6 +68,7 @@ router.post('/register', userCount, async (req, res, next) => {
   const password = encryptLib.encryptPassword(req.body.password);
   try {
     let adminCount = await anyAdmins();
+    let user;
     const joined_at = new Date();
     console.log('THERE ARE THIS MANY ADMINS!!!!!', adminCount);
 
@@ -76,7 +77,7 @@ router.post('/register', userCount, async (req, res, next) => {
       let queryText = `INSERT INTO "user" (username, password, joined_at)
       VALUES ($1, $2, $3) RETURNING id;`;
       let result = await pool.query(queryText, [username, password, joined_at]);
-      const user = result.rows[0];
+      user = result.rows[0];
       const userID = result.rows[0].id;
 
       // create entry in api table
@@ -85,21 +86,15 @@ router.post('/register', userCount, async (req, res, next) => {
       let secondResult = await pool.query(secondQueryText, [userID]);
 
       // create entry in user_settings table
-      let thirdQueryText = `INSERT INTO "user_settings" ("userID")
-      VALUES ($1);`;
-      let thirdResult = await pool.query(thirdQueryText, [userID]);
+      let thirdQueryText = `INSERT INTO "user_settings" ("userID", "profit_reset")
+      VALUES ($1, $2);`;
+      let thirdResult = await pool.query(thirdQueryText, [userID, joined_at]);
 
-      // set up cache storage for new user
-      // cache.newUser(user);
-      // start a sync loop for the new user
-      robot.initializeUserLoops(user);
-      // need to call cache.refreshUser after active && approved
-      // robot.deSyncOrderLoop(user, 0);
     } else {
       // create the user
       let queryText = `INSERT INTO "user" (username, password, admin, approved, joined_at) VALUES ($1, $2, true, true, $3) RETURNING id`;
       let result = await pool.query(queryText, [username, password, joined_at]);
-      const user = result.rows[0];
+      user = result.rows[0];
       const userID = result.rows[0].id;
 
       // create entry in api table
@@ -107,18 +102,12 @@ router.post('/register', userCount, async (req, res, next) => {
       let secondResult = await pool.query(secondQueryText, [userID]);
 
       // create entry in user_settings table
-      let thirdQueryText = `INSERT INTO "user_settings" ("userID") VALUES ($1);`;
-      let thirdResult = await pool.query(thirdQueryText, [userID]);
-
-      // const sqlText = 
-
-      // set up cache storage for new user
-      // cache.newUser(user);
-      // start a sync loop for the new user
-      robot.initializeUserLoops(user);
-      // need to call cache.refreshUser after active && approved
-      // robot.deSyncOrderLoop(user, 0);
+      let thirdQueryText = `INSERT INTO "user_settings" ("userID", "profit_reset") VALUES ($1, $2);`;
+      let thirdResult = await pool.query(thirdQueryText, [userID, joined_at]);
     }
+
+    // START THE LOOPS
+    robot.initializeUserLoops(user);
 
     res.sendStatus(201);
   } catch (err) {
@@ -155,11 +144,7 @@ router.put('/approve', rejectUnauthenticated, async (req, res) => {
       console.log('in approve user route', userToApprove);
       const queryText = `UPDATE "user" SET "approved" = true WHERE "id" = $1 RETURNING *;`;
       const user = await pool.query(queryText, [userToApprove]);
-      // await cache.refreshUser(userToApprove);
-      // start the loops
-      console.log(user.rows[0], '<- the updated user');
       userStorage[userToApprove].approve(true);
-      // robot.initializeUserLoops(user.rows[0]);
       res.sendStatus(200);
     } else {
       console.log('you are NOT admin');

@@ -312,7 +312,6 @@ async function processOrders(userID) {
           // ...send the new trade
           try {
 
-console.log('TESTY');
 
 
             const willCancel = userStorage[userID].checkCancel(dbOrder.order_id);

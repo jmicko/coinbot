@@ -81,35 +81,35 @@ router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
 
 
 
-        // basic trade results = {
-        //   product_id: 'BTC-USD',
-        //   price: '16922.15',
-        //   price_percentage_change_24h: '-0.46947500789614',
-        //   volume_24h: '13850.17877267',
-        //   volume_percentage_change_24h: '-39.33038176669629',
-        //   base_increment: '0.00000001',
-        //   quote_increment: '0.01',
-        //   quote_min_size: '1',
-        //   quote_max_size: '50000000',
-        //   base_min_size: '0.000016',
-        //   base_max_size: '2600',
-        //   base_name: 'Bitcoin',
-        //   quote_name: 'US Dollar',
-        //   watched: true,
-        //   is_disabled: false,
-        //   new: false,
-        //   status: 'online',
-        //   cancel_only: false,
-        //   limit_only: false,
-        //   post_only: false,
-        //   trading_disabled: false,
-        //   auction_mode: false,
-        //   product_type: 'SPOT',
-        //   quote_currency_id: 'USD',
-        //   base_currency_id: 'BTC',
-        //   fcm_trading_session_details: null,
-        //   mid_market_price: ''
-        // }
+      // basic trade results = {
+      //   product_id: 'BTC-USD',
+      //   price: '16922.15',
+      //   price_percentage_change_24h: '-0.46947500789614',
+      //   volume_24h: '13850.17877267',
+      //   volume_percentage_change_24h: '-39.33038176669629',
+      //   base_increment: '0.00000001',
+      //   quote_increment: '0.01',
+      //   quote_min_size: '1',
+      //   quote_max_size: '50000000',
+      //   base_min_size: '0.000016',
+      //   base_max_size: '2600',
+      //   base_name: 'Bitcoin',
+      //   quote_name: 'US Dollar',
+      //   watched: true,
+      //   is_disabled: false,
+      //   new: false,
+      //   status: 'online',
+      //   cancel_only: false,
+      //   limit_only: false,
+      //   post_only: false,
+      //   trading_disabled: false,
+      //   auction_mode: false,
+      //   product_type: 'SPOT',
+      //   quote_currency_id: 'USD',
+      //   base_currency_id: 'BTC',
+      //   fcm_trading_session_details: null,
+      //   mid_market_price: ''
+      // }
 
 
 
@@ -121,7 +121,7 @@ router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
       // }, 500);
 
       // console.log(newPizza, 'new pizza');
-      console.log(userStorage,'<------ the user storage');
+      console.log(userStorage, '<------ the user storage');
 
 
 
@@ -288,7 +288,7 @@ router.put('/tradeLoadMax', rejectUnauthenticated, async (req, res) => {
   try {
     const queryText = `UPDATE "user_settings" SET "max_trade_load" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.max_trade_load, user.id]);
-    await cache.refreshUser(user.id);
+    await userStorage[user.id].update();
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'error with tradeLoadMax route');
@@ -305,7 +305,7 @@ router.put('/postMaxReinvestRatio', rejectUnauthenticated, async (req, res) => {
     console.log("postMaxReinvestRatio route hit", req.body);
     const queryText = `UPDATE "user_settings" SET "post_max_reinvest_ratio" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.postMaxReinvestRatio, user.id]);
-    await cache.refreshUser(user.id);
+    await userStorage[user.id].update();
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in postMaxReinvestRatio ROUTE');
@@ -321,7 +321,7 @@ router.put('/reserve', rejectUnauthenticated, async (req, res) => {
   try {
     const queryText = `UPDATE "user_settings" SET "reserve" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.reserve, user.id]);
-    await cache.refreshUser(user.id);
+    await userStorage[user.id].update();
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in reserve ROUTE');
@@ -347,7 +347,7 @@ router.put('/profitAccuracy', rejectUnauthenticated, async (req, res) => {
     console.log('profit_accuracy route hit', req.body);
     const queryText = `UPDATE "user_settings" SET "profit_accuracy" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [accuracy(), user.id]);
-    await cache.refreshUser(user.id);
+    await userStorage[user.id].update();
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'error with profit accuracy route');
@@ -362,7 +362,7 @@ router.put('/killLock', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
     databaseClient.setKillLock(!user.kill_locked, user.id);
-    await cache.refreshUser(user.id);
+    await userStorage[user.id].update();
     console.log('kill lock route hit', user);
     res.sendStatus(200);
   } catch (err) {
@@ -382,7 +382,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
   try {
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID);
-    await cache.refreshUser(user.id);
+    await userStorage[user.id].update();
 
     // wait 5 seconds to give the sync loop more time to finish
     await robot.sleep(5000);
@@ -433,7 +433,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
 
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID);
-    await cache.refreshUser(user.id);
+    await userStorage[user.id].update();
 
     res.sendStatus(200);
   } catch (err) {
@@ -650,12 +650,13 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
     ON "limit_orders" ("side", "flipped", "will_cancel", "userID", "settled");`;
     try {
       await pool.query(queryText);
-      cache.storage.forEach(user => {
-        console.log('refreshing user', user);
-        if (user.user && user.user?.id !== 0) {
-          cache.refreshUser(user.user.id)
-        }
-      })
+
+      // cache.storage.forEach(async user => {
+      //   console.log('refreshing user', user);
+      //   if (user.user && user.user?.id !== 0) {
+      //     await userStorage[user.id].update();
+      //   }
+      // })
       res.sendStatus(200);
     } catch (err) {
       res.sendStatus(500);
