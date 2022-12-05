@@ -395,7 +395,7 @@ function Trade(props) {
               onChange={(event) => setBasicAmount(Number(event.target.value))}
             />
 
-            {(basicSide === 'SELL') && <input className={`btn-blue ${user.theme}`} onClick={() => setBasicAmount(Number(user.available_btc))} type="button" name="submit" value="Max" />}
+            {(basicSide === 'SELL') && <input className={`btn-blue ${user.theme}`} onClick={() => setBasicAmount(Number(user.actualavailable_btc))} type="button" name="submit" value="Max" />}
             <br />
             <p>
               This equates to about
