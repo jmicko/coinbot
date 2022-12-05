@@ -16,15 +16,13 @@ class Coinbase {
     // console.log(this,'new coinbase class thing');
   }
 
-  openSocket = this.open.bind(this)
+  // openSocket = this.open.bind(this)
 
-  open(setup) {
-
+  openSocket(setup) {
     const key = this.key;
     const secret = this.secret;
-    // const ws = this.ws
     const WS_API_URL = this.WS_API_URL
-    let ws = new WebSocket(WS_API_URL);
+    const ws = new WebSocket(WS_API_URL);
 
     // used for signing all SOCKET requests
     function timestampAndSignSocket(message, channel, products = []) {
@@ -57,8 +55,6 @@ class Coinbase {
       const subscribeMsg = this.timestampAndSignSocket(message, channelName, products);
       ws.send(JSON.stringify(subscribeMsg));
     }
-
-
     function timestampAndSignSocket(message, channel, products = []) {
       const timestamp = Math.floor(Date.now() / 1000).toString();
       const strToSign = `${timestamp}${channel}${products.join(',')}`;
@@ -67,74 +63,53 @@ class Coinbase {
     }
 
 
-    // open()
-    // function open() {
 
-    console.log('heyyyyyyyyyyyyy');
-    // this.ws = new WebSocket(WS_API_URL);
-
-    console.log(this, setup, '<---- SETUP');
-
-
-
-    // const timestampAndSignSocket = this.timestampAndSignSocket.bind(this)
-
-    // const subscribe = this.subscribe.bind(this, timestampAndSignSocket);
     // bind this and setup to this function I am so confused but it works?
-    const open = this.openSocket.bind(this, setup)
+    const openSocket = this.openSocket.bind(this, setup)
 
     function timer() {
-      // console.log('starting timer');
       clearTimeout(this.pingTimeout);
-
       this.pingTimeout = setTimeout(() => {
         console.log('ending socket after timeout');
+        // Use `WebSocket#terminate()`, which immediately destroys the connection,
+        // instead of `WebSocket#close()`, which waits for the close timer.
+        // Delay should be equal to the interval at which your server
+        // sends out pings plus a conservative assumption of the latency.
         this.terminate();
-      }, 10000);
+      }, setup.timeout || 10000);
     }
 
     ws.on('close', function () {
       console.log('Socket was closed');
-      // always reopen the socket if it closes
-      setTimeout(() => {
-        open();
-      }, 1000);
-
+      if (setup.reopen !== false) {
+        setTimeout(() => {
+          openSocket();
+        }, 1000);
+      }
     });
 
     ws.on('message', function (data) {
-      const parsedData = JSON.parse(data);
+      // send data to whatever callback is passed as eventHandler
       setup.eventHandler(data);
-      // console.log(setup, 'SETUP SETUP SETUP SETUP');
-      
     });
-
-
 
     ws.on('open', function () {
       console.log(setup, 'Socket open!');
-
+      // subscribe to each channel in the channels array with the products in the products array
       setup.channels.forEach(channel => {
-        console.log(channel, subscribe, 'channel to sub to');
         subscribe(setup.products, channel)
       });
 
     });
 
-
-
     ws.on('error', (error) => {
       console.log(error, 'error on ws connection');
     });
     ws.on('open', timer);
-    // ws.on('open', ordersInterval);
     ws.on('message', timer);
     ws.on('close', function clear() {
       clearTimeout(this.pingTimeout);
-      // clearInterval(this.getOrders)
     });
-
-    // }
   }
 
   // used for signing all REST requests
@@ -337,7 +312,6 @@ class Coinbase {
   }
 
 
-
   async placeOrder(order) {
     return new Promise(async (resolve, reject) => {
       try {
@@ -477,7 +451,6 @@ class Coinbase {
         const correctedBuy = (Math.round((order.product.price * (order.market_multiplier || 1.1)) / quoteIncrement) * quoteIncrement).toFixed(reverseQuoteInc)
         const correctedSell = (Math.round((order.product.price / (order.market_multiplier || 1.1)) / quoteIncrement) * quoteIncrement).toFixed(reverseQuoteInc)
         // Don't.
-
 
         const data = {
           side: order.side,

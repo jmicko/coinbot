@@ -5,6 +5,7 @@ const { rejectUnauthenticated, } = require('../modules/authentication-middleware
 const databaseClient = require('../modules/databaseClient');
 const robot = require('../modules/robot');
 const { cache, botSettings, cbClients, userStorage } = require('../modules/cache');
+const { sleep } = require('../modules/robot');
 
 
 /**
@@ -16,28 +17,36 @@ router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
   // only admin can do this
   if (user.admin) {
     try {
-      console.log(req.params, 'test route hit');
+      // console.log(req.params, 'test route hit');
 
 
 
       const module = {
         x: 42,
-        getX: function() {
+        getX: function () {
           return this.x;
         }
       };
-      
-      const unboundGetX = module.getX;
-      console.log(unboundGetX()); // The function gets invoked at the global scope
-      // expected output: undefined
-      
-      const boundGetX = unboundGetX.bind(module);
-      console.log(boundGetX());
-      // expected output: 42
 
-      
+      let sum = 0;
 
-      
+      for (let i = 0; i < 10; i++) {
+
+        const t0 = performance.now();
+
+        await cbClients[userID].getAccounts()
+
+        const t1 = performance.now();
+
+        console.log(`took ${(t1 - t0) / 1000} seconds`);
+
+        sum += (t1 - t0)
+
+        await sleep(1000)
+
+      }
+
+      console.log((sum / 10) / 1000, '<-- average');
 
 
       res.sendStatus(200);
@@ -95,7 +104,7 @@ router.put('/loopSpeed', rejectUnauthenticated, async (req, res) => {
         console.log('error with loop speed route', err);
         res.sendStatus(500);
       }
-    } else{
+    } else {
       console.log('invalid parameters');
       res.status(500).send('invalid parameters!')
     }
