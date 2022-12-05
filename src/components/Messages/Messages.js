@@ -39,7 +39,7 @@ function Messages() {
       <div className="message-board">
 
         {/* MESSAGES */}
-        <div className={`message-section scrollable admin-${user.admin}`}>
+        <div className={`message-section message-window scrollable admin-${user.admin}`}>
           <h3 className={`title ${user.theme}`}>
             {collapsed && botMessages.length} General Messages
             {/* <button className='btn-red'><span className='gg-trash'></span></button> */}
@@ -52,7 +52,7 @@ function Messages() {
         </div>
 
         {/* ERRORS */}
-        <div className={`errors-section scrollable admin-${user.admin}`}>
+        <div className={`errors-section message-window scrollable admin-${user.admin}`}>
           <h3 className={`title ${user.theme}`}>{collapsed && botErrors.length} Errors</h3>
           {!collapsed && botErrors.map((error, i) => {
             return <p key={i}><strong>Err #{error.mCount} {new Date(error.timeStamp).toLocaleString('en-US')}</strong> <br /> {error.text}</p>
@@ -61,7 +61,7 @@ function Messages() {
 
         {/* CHAT */}
         {user.admin &&
-          <div  className={`chat-section admin-${user.admin}`}>
+          <div className={`chat-section message-window admin-${user.admin}`}>
             <h3 className={`title chat-header ${user.theme}`}>{collapsed && chatMessages.length} Chat:
               <form className={`chat-form`} onSubmit={sendChat}>
                 <input

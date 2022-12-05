@@ -1,134 +1,72 @@
 .Messages {
-  grid-row     : 5;
-  grid-column  : 2 / 5;
-  height       : fit-content;
-  margin-bottom: .4rem;
+  grid-row        : 5;
+  grid-column     : 2 / 5;
+  /* height       : fit-content; */
+  margin-bottom   : .4rem;
 }
 
 .message-board {
-  display     : flex;
-  /* flex-flow: column; */
-  width       : 100%;
+  display              : grid;
+  grid-template-rows   : minmax(0px, 10rem);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap                  : 1px solid black;
+  /* flex-flow         : column; */
+  /* width             : 100%; */
 }
 
-.errors-section {
-  max-height  : 10rem;
-  /* min-width: 50%; */
-  min-width   : 50%;
-  /* width    : 1fr; */
-  border-left : black 1px solid;
+.message-window .title {
+  /* width: 1fr; */
+  height: 1.5rem;
+
 }
 
-.message-section {
-  max-height  : 10rem;
-  /* min-width: 50%; */
-  min-width   : 50%;
-  /* width    : 1fr; */
+.errors-section,
+.chat-log,
+.chat-header {
+  border-left: black 1px solid;
 }
+
 
 .chat-section {
-  display        : none;
-  /* max-height  : 10rem; */
-  /* min-width   : 50%; */
-  /* min-width   : 50%; */
-  /* width       : 1fr; */
+  height: calc(100% - 1.5rem - 1px);
+  /* height    : auto; */
 }
 
 .chat-header {
   display: flex;
 }
 
-.chat-input {
-  width: 80%;
-
-}
-
-.chat-form {
-  /* width: auto; */
-  width: 80%;
-  height: 1rem;
-}
-
-.errors-section.admin-true {
-  display     : block;
-  max-height  : 10rem;
-  /* min-width: 50%; */
-  min-width   : 33%;
-  /* width    : 1fr; */
-  border-left : black 1px solid;
-}
-
-.message-section.admin-true {
-  display     : block;
-  max-height  : 10rem;
-  /* min-width: 50%; */
-  min-width   : 33%;
-  /* width    : 1fr; */
-}
-
-.chat-section.admin-true {
-  display     : block;
-  max-height  : 8.5rem;
-  /* min-width: 50%; */
-  min-width   : 33%;
-  border-left : black 1px solid;
-  /* width    : 1fr; */
-}
-
 @media (max-width: 800px) {
+
+  .errors-section,
+  .chat-log,
+  .chat-header {
+    border-left: none;
+  }
+
   .Messages {
-    grid-row        : 5;
-    grid-column     : 2 / 3;
-    height          : unset;
-    /* margin-bottom: unset; */
-    max-height      : unset;
+    grid-row   : 5;
+    grid-column: 2 / 3;
+
   }
 
   .Messages.admin-true {
-    grid-row        : 5;
-    grid-column     : 2 / 3;
-    height          : unset;
-    /* margin-bottom: unset; */
-    max-height      : unset;
+    grid-row           : 5;
+    grid-column        : 2 / 3;
+    /* height          : unset; */
+    /* margin-bottom   : unset; */
+    /* max-height      : unset; */
   }
 
   .message-board {
-    flex-flow: column;
+    grid-template-columns: unset;
+    width                : auto;
   }
 
-  .errors-section {
-    width           : auto;
-    max-height      : 15rem;
-    /* max-height   : unset; */
-    border-left     : none;
-    border-top      : black 1px solid;
+  .message-window {
+    max-height: 10rem;
   }
 
-  .errors-section.admin-true {
-    width           : auto;
-    max-height      : 15rem;
-    /* max-height   : unset; */
-    border-left     : none;
-    border-top      : black 1px solid;
-  }
-
-  .message-section {
-    /* max-height   : 50%; */
-    border-left: none;
-    max-height : 15rem;
-    width      : auto;
-  }
-
-  .chat-section.admin-true {
-    border-left     : none;
-    /* max-height   : 50%; */
-    max-height      : 15rem;
-    width           : auto;
-  }
-
-  .chat-log.admin-true {
-    max-height: 13.5rem;
-  }
 }
 
 /* from https://css.gg/trash */
