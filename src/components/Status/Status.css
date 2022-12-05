@@ -29,3 +29,20 @@
     }
 
 }
+
+/* ticker status dot */
+span.open {
+    color: green;
+}
+
+span.timeout {
+    color: yellow;
+}
+
+span.closed {
+    color: red;
+}
+
+span.reopening {
+    color: blue;
+}

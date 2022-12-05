@@ -61,6 +61,7 @@ class User {
     this.ordersToCheck = new Array();
     this.loopNumber = Number(0);
     this.deleting = false;
+    this.socketStatus = 'closed';
   }
   getUser() {
     // console.log('getting the user')
@@ -137,6 +138,9 @@ class User {
     this.profit_accuracy = user.profit_accuracy;
     this.auto_setup_number = user.auto_setup_number;
     this.profit_reset = user.profit_reset;
+  }
+  setSocketStatus(socketStatus){
+    this.socketStatus = socketStatus;
   }
 }
 

@@ -13,6 +13,7 @@ export function useSocket() {
 
 export function SocketProvider({ children }) {
   const [socket, setSocket] = useState();
+  const [socketStatus, setSocketStatus] = useState('closed');
   const [messenger, setMessenger] = useState();
   const [disconnect, setDisconnect] = useState();
   const [tickers, setTickers] = useState({ btc: { price: 0 }, eth: { price: 0 } });
@@ -60,6 +61,10 @@ export function SocketProvider({ children }) {
               : ({ ...prevHeartbeat, beat: 'beat' })
           }
         })
+      }
+      // handle cb websocket status
+      if (message.type === 'socketStatus') {
+        setSocketStatus(message.socketStatus)
       }
       // handle errors
       if (message.type === 'error') {
@@ -116,6 +121,7 @@ export function SocketProvider({ children }) {
   return (
     <SocketContext.Provider value={{
       socket: socket,
+      socketStatus: socketStatus,
       messenger: messenger,
       tickers: tickers,
       heartbeat: heartbeat

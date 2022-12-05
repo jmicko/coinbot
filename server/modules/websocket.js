@@ -31,32 +31,42 @@ function startWebsocket(userID) {
 
 
 
-  function eventHandler(data) {
-    const parsedData = JSON.parse(data);
-    // console.log(parsedData);
+  function messageHandler(data) {
     const user = userStorage.getUser(userID);
-    // console.log(user.paused, user.userID,'<-- THE USER');
-    // const botSettings = cache.getBotSettings();
     if (!user?.active || !user?.approved || botSettings.maintenance) {
       return
     }
-    // if (parsedData.channel) {
-    //   console.log(parsedData.channel, 'channel from ws', parsedData);
-    // }
-    if (parsedData.events) {
-      parsedData.events.forEach(event => {
+    if (data.events) {
+      data.events.forEach(event => {
         if (event.tickers) {
-          // console.log(event, event.type, 'event from ws');
           handleTickers(event.tickers);
         } else if (event.type === 'snapshot') {
           handleSnapshot(event);
         } else if (event.type === 'update' && event.orders) {
           handleOrdersUpdate(event.orders);
         } else {
-          // console.log(event, event.type, 'event from ws');
+          console.log(event, event.type, 'unhandled event from ws');
         }
       });
     }
+  }
+
+  function statusHandler(socketStatus) {
+    console.log(socketStatus, '<-- socketStatus');
+    // send status message to user
+    const statMessage = {
+      type: 'socketStatus',
+      socketStatus: socketStatus
+    };
+    messenger[userID].instantMessage(statMessage);
+    // save status to user storage
+    userStorage[userID].setSocketStatus(socketStatus);
+    // can add custom event handlers
+    // if (socketStatus === 'open') {
+    //   cbClients[userID].ws.on('message', function () {
+    //     console.log('message recieved on new socket');
+    //   });
+    // }
   }
 
   // products to subscribe to
@@ -64,14 +74,16 @@ function startWebsocket(userID) {
 
   // setup params for the cbClient
   const setup = {
-    channels: ['ticker', 'user'],
+    channels: ['ticker', 'user'], // list of 
     products: products,
-    // reopen: false,
-    // timeout: 1000,
-    eventHandler: eventHandler
+    // reopen: false, // optional - socket will close if timed out when false
+    // timeout: 1000, // optional - change how long before socket times out if no message
+    messageHandler: messageHandler,
+    statusHandler: statusHandler // optional - socket will pass 'closed', 'open', 'timeout', and 'reopening' to this callback
   }
 
   cbClients[userID].openSocket(setup)
+
 
   function handleSnapshot(event) {
     // console.log('handling snapshot');
@@ -87,7 +99,6 @@ function startWebsocket(userID) {
           console.log(order, 'filled order');
         }
       })
-      // await sleep(1000);
       // find unsettled orders in the db based on the IDs array
       const unsettledOrders = await databaseClient.getUnsettledTradesByIDs(userID, orderIds);
 
@@ -176,6 +187,16 @@ function setupSocketIO(io) {
     console.log(userID, 'the user id in socketIO');
     // add the socket to the user's socket storage
     messenger?.[userID]?.addSocket(socket);
+
+    console.log(userStorage?.[userID]?.socketStatus, '<-- current status');
+
+    const statMessage = {
+      type: 'socketStatus',
+      socketStatus: userStorage?.[userID]?.socketStatus
+    }
+    messenger[userID].instantMessage(statMessage)
+
+    // userStorage?.[userID]?.socketStatus;
 
     if (!userID) {
       console.log('socket connected but client is not logged in');

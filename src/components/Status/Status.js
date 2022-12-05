@@ -154,7 +154,7 @@ function Status(props) {
 
       <center>
         <p className={`info status-ticker ${user.theme} ${socket.heartbeat.count === 0 && 'blue'}`}>
-          <strong>{socket.heartbeat.heart}{socket.heartbeat.beat}</strong>
+          <strong>{socket.heartbeat.heart}{socket.heartbeat.beat}<span className={socket.socketStatus}>&#x2022;</span></strong>
           <br />
           <button className={`btn-blue ${user.theme}`} onClick={updateUser}>Refresh</button>
         </p>

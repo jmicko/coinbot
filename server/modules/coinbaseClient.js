@@ -23,6 +23,10 @@ class Coinbase {
     const secret = this.secret;
     const WS_API_URL = this.WS_API_URL
     const ws = new WebSocket(WS_API_URL);
+    // set the class ws property to the new socket
+    this.ws = ws;
+    // bind this and setup to this function so it has the key etc when reopened
+    const openSocket = this.openSocket.bind(this, setup)
 
     // used for signing all SOCKET requests
     function timestampAndSignSocket(message, channel, products = []) {
@@ -32,7 +36,7 @@ class Coinbase {
       return { ...message, signature: sig, timestamp: timestamp };
     }
 
-    function subscribe(products, channelName) {
+    function subscribe(products, channelName, ws) {
       // console.log('products: %s', products.join(','));
       const message = {
         type: 'subscribe',
@@ -63,10 +67,6 @@ class Coinbase {
     }
 
 
-
-    // bind this and setup to this function I am so confused but it works?
-    const openSocket = this.openSocket.bind(this, setup)
-
     function timer() {
       clearTimeout(this.pingTimeout);
       this.pingTimeout = setTimeout(() => {
@@ -75,29 +75,44 @@ class Coinbase {
         // instead of `WebSocket#close()`, which waits for the close timer.
         // Delay should be equal to the interval at which your server
         // sends out pings plus a conservative assumption of the latency.
+        if (setup.statusHandler) {
+          setup.statusHandler('timeout')
+        }
         this.terminate();
       }, setup.timeout || 10000);
     }
 
     ws.on('close', function () {
       console.log('Socket was closed');
+      if (setup.statusHandler) {
+        setup.statusHandler('closed')
+      }
       if (setup.reopen !== false) {
         setTimeout(() => {
+          if (setup.statusHandler) {
+            setup.statusHandler('reopening')
+          }
           openSocket();
         }, 1000);
       }
     });
 
     ws.on('message', function (data) {
-      // send data to whatever callback is passed as eventHandler
-      setup.eventHandler(data);
+      const parsedData = JSON.parse(data);
+      // send data to whatever callback is passed as messageHandler
+      if (setup.messageHandler) {
+        setup.messageHandler(parsedData);
+      }
     });
 
     ws.on('open', function () {
-      console.log(setup, 'Socket open!');
+      console.log('Socket open!');
+      if (setup.statusHandler) {
+        setup.statusHandler('open')
+      }
       // subscribe to each channel in the channels array with the products in the products array
       setup.channels.forEach(channel => {
-        subscribe(setup.products, channel)
+        subscribe(setup.products, channel, ws)
       });
 
     });
@@ -110,6 +125,7 @@ class Coinbase {
     ws.on('close', function clear() {
       clearTimeout(this.pingTimeout);
     });
+
   }
 
   // used for signing all REST requests
