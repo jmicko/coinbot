@@ -13,6 +13,7 @@ class Coinbase {
     this.secret = secret;
     this.WS_API_URL = 'wss://advanced-trade-ws.coinbase.com';
     this.ws = null;
+    // this.openSocket = this.openSocket.bind(this);
     // console.log(this,'new coinbase class thing');
   }
 

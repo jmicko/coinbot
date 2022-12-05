@@ -201,6 +201,7 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
           limit_price: JSON.stringify(Number(order.limit_price)), // USD
           base_size: JSON.stringify(Number(order.base_size)), // BTC
           product_id: order.product_id,
+          total_fees: order.previous_total_fees,
           // stp: 'cn',
           userID: user.id,
           trade_pair_ratio: Number(options.trade_pair_ratio),

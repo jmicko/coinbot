@@ -1,5 +1,6 @@
 // this file has functions used by both client and server, so no need to write them twice.
 // or for when circular imports would be a problem
+// DO NOT put anything in here that should never be seen by the client
 
 
 // function to pause for x milliseconds in any async function
@@ -43,7 +44,6 @@ function autoSetup(user, options) {
       btcToBuy: (btcToBuy / 100000000),
     }
   }
-
   // loop until one of the stop triggers is hit
   let stop = false;
 
@@ -93,8 +93,10 @@ function autoSetup(user, options) {
 
     // calculate the previous fees on sell orders
     const previous_total_fees = (side === 'BUY')
-      ? 0
-      : buyPrice * actualSize * user.taker_fee
+      ? null
+      : buyPrice * actualSize * user.taker_fee;
+
+    // console.log(previous_total_fees);
 
     // CREATE ONE ORDER
     const singleOrder = {
