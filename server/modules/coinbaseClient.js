@@ -1,3 +1,4 @@
+const WebSocket = require('ws');
 const CryptoJS = require("crypto-js");
 const axios = require("axios").default;
 // const { cache } = require("./cache");
@@ -11,53 +12,129 @@ class Coinbase {
     this.key = key;
     this.secret = secret;
     this.WS_API_URL = 'wss://advanced-trade-ws.coinbase.com';
+    this.ws = null;
     // console.log(this,'new coinbase class thing');
   }
-  // used for signing all SOCKET requests
-  timestampAndSignSocket(message, channel, products = []) {
-    const timestamp = Math.floor(Date.now() / 1000).toString();
-    const strToSign = `${timestamp}${channel}${products.join(',')}`;
-    const sig = CryptoJS.HmacSHA256(strToSign, secret).toString();
-    return { ...message, signature: sig, timestamp: timestamp };
-  }
-  subscribe(products, channelName, ws) {
-    // console.log('products: %s', products.join(','));
-    const message = {
-      type: 'subscribe',
-      channel: channelName,
-      api_key: this.key,
-      product_ids: products,
-      user_id: '',
-    };
-    const subscribeMsg = timestampAndSignSocket(message, channelName, products);
-    ws.send(JSON.stringify(subscribeMsg));
-  }
-  unsubscribe(products, channelName, ws) {
-    const message = {
-      type: 'unsubscribe',
-      channel: channelName,
-      api_key: this.key,
-      product_ids: products,
-    };
-    const subscribeMsg = this.timestampAndSignSocket(message, channelName, products);
-    ws.send(JSON.stringify(subscribeMsg));
-  }
-  openSocket() {
-    this.ws = new WebSocket(WS_API_URL);
+
+  openSocket = this.open.bind(this)
+
+  open(setup) {
+
+    const key = this.key;
+    const secret = this.secret;
+    // const ws = this.ws
+    const WS_API_URL = this.WS_API_URL
+    let ws = new WebSocket(WS_API_URL);
+
+    // used for signing all SOCKET requests
+    function timestampAndSignSocket(message, channel, products = []) {
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const strToSign = `${timestamp}${channel}${products.join(',')}`;
+      const sig = CryptoJS.HmacSHA256(strToSign, secret).toString();
+      return { ...message, signature: sig, timestamp: timestamp };
+    }
+
+    function subscribe(products, channelName) {
+      // console.log('products: %s', products.join(','));
+      const message = {
+        type: 'subscribe',
+        channel: channelName,
+        api_key: key,
+        product_ids: products,
+        user_id: '',
+      };
+      const subscribeMsg = timestampAndSignSocket(message, channelName, products);
+      ws.send(JSON.stringify(subscribeMsg));
+    }
+
+    function unsubscribe(products, channelName, ws) {
+      const message = {
+        type: 'unsubscribe',
+        channel: channelName,
+        api_key: this.key,
+        product_ids: products,
+      };
+      const subscribeMsg = this.timestampAndSignSocket(message, channelName, products);
+      ws.send(JSON.stringify(subscribeMsg));
+    }
+
+
+    function timestampAndSignSocket(message, channel, products = []) {
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const strToSign = `${timestamp}${channel}${products.join(',')}`;
+      const sig = CryptoJS.HmacSHA256(strToSign, secret).toString();
+      return { ...message, signature: sig, timestamp: timestamp };
+    }
+
+
+    // open()
+    // function open() {
+
+    console.log('heyyyyyyyyyyyyy');
+    // this.ws = new WebSocket(WS_API_URL);
+
+    console.log(this, setup, '<---- SETUP');
 
 
 
-    this.ws.on('error', (error) => {
+    // const timestampAndSignSocket = this.timestampAndSignSocket.bind(this)
+
+    // const subscribe = this.subscribe.bind(this, timestampAndSignSocket);
+    // bind this and setup to this function I am so confused but it works?
+    const open = this.openSocket.bind(this, setup)
+
+    function timer() {
+      // console.log('starting timer');
+      clearTimeout(this.pingTimeout);
+
+      this.pingTimeout = setTimeout(() => {
+        console.log('ending socket after timeout');
+        this.terminate();
+      }, 10000);
+    }
+
+    ws.on('close', function () {
+      console.log('Socket was closed');
+      // always reopen the socket if it closes
+      setTimeout(() => {
+        open();
+      }, 1000);
+
+    });
+
+    ws.on('message', function (data) {
+      const parsedData = JSON.parse(data);
+      setup.eventHandler(data);
+      // console.log(setup, 'SETUP SETUP SETUP SETUP');
+      
+    });
+
+
+
+    ws.on('open', function () {
+      console.log(setup, 'Socket open!');
+
+      setup.channels.forEach(channel => {
+        console.log(channel, subscribe, 'channel to sub to');
+        subscribe(setup.products, channel)
+      });
+
+    });
+
+
+
+    ws.on('error', (error) => {
       console.log(error, 'error on ws connection');
     });
-    this.ws.on('open', timer);
+    ws.on('open', timer);
     // ws.on('open', ordersInterval);
-    this.ws.on('message', timer);
-    this.ws.on('close', function clear() {
+    ws.on('message', timer);
+    ws.on('close', function clear() {
       clearTimeout(this.pingTimeout);
       // clearInterval(this.getOrders)
     });
 
+    // }
   }
 
   // used for signing all REST requests
@@ -397,8 +474,8 @@ class Coinbase {
 
         // then round to the correct resolution
         // const correctedBase = (Math.round((order.product.price * (order.market_multiplier || 2)) / baseIncrement) * baseIncrement).toFixed(reverseBaseInc)
-        const correctedBuy = (Math.round((order.product.price * (order.market_multiplier || 2)) / quoteIncrement) * quoteIncrement).toFixed(reverseQuoteInc)
-        const correctedSell = (Math.round((order.product.price / (order.market_multiplier || 2)) / quoteIncrement) * quoteIncrement).toFixed(reverseQuoteInc)
+        const correctedBuy = (Math.round((order.product.price * (order.market_multiplier || 1.1)) / quoteIncrement) * quoteIncrement).toFixed(reverseQuoteInc)
+        const correctedSell = (Math.round((order.product.price / (order.market_multiplier || 1.1)) / quoteIncrement) * quoteIncrement).toFixed(reverseQuoteInc)
         // Don't.
 
 

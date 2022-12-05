@@ -248,8 +248,9 @@ const cbClients = new class {
 
     Object.assign(apiStorage[userID], userAPI)
 
-    this[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET, ['BTC-USD', 'ETH-USD']);
-    if (userAPI.CB_ACCESS_KEY.length) {
+    // console.log(this, userAPI, 'the new cbClient');
+    if (userAPI.CB_ACCESS_KEY?.length) {
+      this[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET, ['BTC-USD', 'ETH-USD']);
       userStorage[userID].activate(true);
     } else {
       userStorage[userID].activate(false);
@@ -277,7 +278,7 @@ const userStorage = new class {
     // get the user id
     const userID = user.id;
     const userAndSettings = await databaseClient.getUserAndSettings(userID)
-    console.log(userAndSettings,'user and settings when creating new user');
+    // console.log(userAndSettings,'user and settings when creating new user');
     this.idList.push(userID);
     // create user object at index of user id for user storage
     // need to create user first because other things depend on it
@@ -292,13 +293,14 @@ const userStorage = new class {
       cache.storeAPI(userID, userAPI);
 
       // the user will only be active if they have an api
-      if (!user.active) {
-        console.log(user, '<- the user in userStorage');
-        // do not start the Coinbase client if they are not active
-        return
-      }
+      // if (!user.active) {
+      //   console.log(user, '<- the user in userStorage');
+      //   // do not start the Coinbase client if they are not active
+      //   return
+      // }
       // store a coinbase client for the user
-      cbClients[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET, ['BTC-USD', 'ETH-USD']);
+      await cbClients.updateAPI(userID)
+      // cbClients[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET, ['BTC-USD', 'ETH-USD']);
 
     } catch (err) {
       console.log(err, `\nERROR creating new user`);

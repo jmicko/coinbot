@@ -21,7 +21,7 @@ function startWebsocket(userID) {
     return { success: false }
   }
   const userAPI = cache.getAPI(userID)
-  console.log(userAPI, 'api details in ws');
+  // console.log(userAPI, 'api details in ws');
   const secret = userAPI.CB_SECRET;
   const key = userAPI.CB_ACCESS_KEY;
 
@@ -71,7 +71,46 @@ function startWebsocket(userID) {
   // The base URL of the API
   const WS_API_URL = 'wss://advanced-trade-ws.coinbase.com';
 
-  open();
+
+  function eventHandler(data) {
+    const parsedData = JSON.parse(data);
+    // console.log(parsedData);
+    const user = userStorage.getUser(userID);
+    console.log(user.paused, user.userID,'<-- THE USER');
+    // const botSettings = cache.getBotSettings();
+    if (!user?.active || !user?.approved || botSettings.maintenance) {
+      return
+    }
+    // if (parsedData.channel) {
+    //   console.log(parsedData.channel, 'channel from ws', parsedData);
+    // }
+    if (parsedData.events) {
+      parsedData.events.forEach(event => {
+        if (event.tickers) {
+          // console.log(event, event.type, 'event from ws');
+          handleTickers(event.tickers);
+        } else if (event.type === 'snapshot') {
+          handleSnapshot(event);
+        } else if (event.type === 'update' && event.orders) {
+          handleOrdersUpdate(event.orders);
+        } else {
+          // console.log(event, event.type, 'event from ws');
+        }
+      });
+    }
+    // console.log('');
+  }
+
+  // open();
+
+  const setup = {
+    channels: ['ticker', 'user'],
+    products: products,
+    eventHandler: eventHandler
+  }
+
+  cbClients[userID].openSocket(setup)
+  // cbClients[userID].subscribeToProducts(products, 'ticker');
 
 
   function open() {
@@ -114,6 +153,7 @@ function startWebsocket(userID) {
     ws.on('error', (error) => {
       console.log(error, 'error on ws connection');
     });
+
 
     ws.on('message', function (data) {
       const parsedData = JSON.parse(data);
