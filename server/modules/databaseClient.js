@@ -124,6 +124,10 @@ const updateTrade = (order) => {
       first ? first = false : sqlText += ', '
       order.flipped_at && (sqlText += `"flipped_at"`) && columns.push(order.flipped_at);
     }
+    if (order.filled_at) {
+      first ? first = false : sqlText += ', '
+      order.filled_at && (sqlText += `"filled_at"`) && columns.push(order.filled_at);
+    }
     if (order.reorder != null) {
       first ? first = false : sqlText += ', '
       order.reorder != null && (sqlText += `"reorder"`) && columns.push(order.reorder);
@@ -422,6 +426,25 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
 }
 
 // This will get trades that have settled but not yet been flipped, meaning they need to be processed
+const getAllSettledTrades = (userID) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // check all trades in db that are both settled and NOT flipped
+      sqlText = `SELECT * FROM "limit_orders" WHERE "settled"=true AND "userID"=$1;`;
+
+      const results = await pool.query(sqlText, [userID])
+      // .then((results) => {
+      const settled = results.rows;
+      // promise returns promise from pool if success
+      resolve(settled);
+    } catch (err) {
+      // or promise relays errors from pool to parent
+      reject(err);
+    }
+  });
+}
+
+// This will get trades that have settled but not yet been flipped, meaning they need to be processed
 const getSettledTrades = (userID) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -519,6 +542,23 @@ const getUnsettledTradesByIDs = (userID, IDs) => {
     sqlText = `select *
     from limit_orders
     where order_id = ANY ($1) and settled=false and "userID" = $2;`;
+    try {
+      let result = await pool.query(sqlText, [IDs, userID]);
+      resolve(result.rows);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+// get all details of an array of order IDs
+const getUnfilledTradesByIDs = (userID, IDs) => {
+  return new Promise(async (resolve, reject) => {
+    let sqlText;
+    // put sql stuff here, extending the pool promise to the parent function
+    sqlText = `select *
+    from limit_orders
+    where order_id = ANY ($1) and filled_at IS NULL and settled=true and "userID" = $2;`;
     try {
       let result = await pool.query(sqlText, [IDs, userID]);
       resolve(result.rows);
@@ -894,10 +934,12 @@ const databaseClient = {
   getLimitedUnsettledTrades: getLimitedUnsettledTrades,
   getUnsettledTrades: getUnsettledTrades,
   getSettledTrades: getSettledTrades,
+  getAllSettledTrades: getAllSettledTrades,
   getUnsettledTradeCounts: getUnsettledTradeCounts,
   getSingleTrade: getSingleTrade,
   getTradesByIDs: getTradesByIDs,
   getUnsettledTradesByIDs: getUnsettledTradesByIDs,
+  getUnfilledTradesByIDs: getUnfilledTradesByIDs,
   getSpentUSD: getSpentUSD,
   getSpentBTC: getSpentBTC,
   getReorders: getReorders,

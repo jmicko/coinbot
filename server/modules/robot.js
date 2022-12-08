@@ -265,15 +265,40 @@ async function quickSync(userID) {
   // IF QUICK SYNC, only get fills
   return new Promise(async (resolve, reject) => {
     try {
-      // get the 500 most recent fills for the account
+      // get the 100 most recent fills for the account
       const response = await cbClients[userID].getFills({ limit: 100, product_id: 'BTC-USD' });
-      const fills = response.fills;
+      const fills = response.fills; //this is the same as allFills
       // console.log(fillResponse);
       // get an array of just the IDs
       const fillsIds = []
       fills.forEach(fill => fillsIds.push(fill.order_id))
       // find unsettled orders in the db based on the IDs array
       const unsettledFills = await databaseClient.getUnsettledTradesByIDs(userID, fillsIds);
+
+
+
+      // get any fills that are not filled but are settled in the db. This will likely be from the previous loop
+      const unfilled = await databaseClient.getUnfilledTradesByIDs(userID, fillsIds);
+
+      unfilled.forEach(async trade => {
+
+        const unfilledFill = fills.filter(fill => fill.order_id === trade.order_id)[0];
+
+        // make a small order to update the order with. 
+        // this will prevent accidents if coinbase adds values that match the limit_orders table in the future
+        const newFill = {
+          order_id: unfilledFill.order_id,
+          filled_at: unfilledFill.trade_time
+        }
+
+        // update the trade in the db with the new data
+        await databaseClient.updateTrade(newFill);
+
+      });
+
+
+
+
       // after checking fills, store the most recent so don't need to check it later
       // this will check the specified number of trades to sync on either side to see if any 
       // need to be reordered. It will only find them on a loop after a loop where trades have been placed

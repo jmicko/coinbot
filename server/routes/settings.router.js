@@ -17,37 +17,60 @@ router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
   // only admin can do this
   if (user.admin) {
     try {
-      // console.log(req.params, 'test route hit');
+      console.log(userID, 'test route hit');
+
+
+      const allOrders = await databaseClient.getAllSettledTrades(userID);
+
+      // console.log(allOrders, 'all orders');
+
+      const fillsIds = []
+      const allFills = []
+
+      for (let i = 0; i < allOrders.length; i++) {
+        const order = allOrders[i];
+
+        let orderFills = await cbClients[userID].getFills({ order_id: order.order_id })
+
+        // console.log(orderFills, 'order fills');
+
+        orderFills.fills.forEach(fill => fillsIds.push(fill.order_id))
+        orderFills.fills.forEach(fill => allFills.push(fill))
 
 
 
-      const module = {
-        x: 42,
-        getX: function () {
-          return this.x;
-        }
-      };
+        // if (orderFills.length > 1) {
+        //   console.log(orderFills, 'order fills');
+        // } else {
+        //   console.log(orderFills.fills[0], 'order fills');
+        // }
 
-      let sum = 0;
 
-      for (let i = 0; i < 10; i++) {
-
-        const t0 = performance.now();
-
-        await cbClients[userID].getAccounts()
-
-        const t1 = performance.now();
-
-        console.log(`took ${(t1 - t0) / 1000} seconds`);
-
-        sum += (t1 - t0)
-
-        await sleep(1000)
-
+        await sleep(200);
       }
+      
+      // console.log(fillsIds, 'fills ids');
+      
+      const unfilled = await databaseClient.getUnfilledTradesByIDs(userID, fillsIds);
+      
+      console.log(unfilled, 'unfilled');
+      
+      unfilled.forEach(async trade => {
+        
+        const unfilledFill = allFills.filter(fill => fill.order_id === trade.order_id)[0];
+        
+        console.log(trade, 'trade');
+        console.log(unfilledFill, 'unfilled fill');
+        
+        
+        const newFill = {
+          order_id: unfilledFill.order_id,
+          filled_at: unfilledFill.trade_time
+        }
+        
+        await databaseClient.updateTrade(newFill);
 
-      console.log((sum / 10) / 1000, '<-- average');
-
+      });
 
       res.sendStatus(200);
     } catch (err) {
@@ -389,6 +412,7 @@ router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
       trade_pair_ratio numeric(32,8),
       flipped boolean DEFAULT false,
       flipped_at timestamptz,
+      filled_at timestamptz,
       reorder boolean DEFAULT false,
       include_in_profit boolean DEFAULT true,
       will_cancel boolean DEFAULT false,
@@ -506,6 +530,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       trade_pair_ratio numeric(32,8),
       flipped boolean DEFAULT false,
       flipped_at timestamptz,
+      filled_at timestamptz,
       reorder boolean DEFAULT false,
       include_in_profit boolean DEFAULT true,
       will_cancel boolean DEFAULT false,

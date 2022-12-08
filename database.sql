@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS "limit_orders"
   trade_pair_ratio numeric(32,8),
   flipped boolean DEFAULT false,
   flipped_at timestamptz,
+  filled_at timestamptz,
   reorder boolean DEFAULT false,
   include_in_profit boolean DEFAULT true,
   will_cancel boolean DEFAULT false,
