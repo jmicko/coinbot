@@ -30,6 +30,7 @@ function Home() {
 
   useEffect(() => {
     dispatch({ type: 'FETCH_ORDERS' });
+    dispatch({ type: 'FETCH_PROFITS' });
   }, [dispatch]);
 
 
