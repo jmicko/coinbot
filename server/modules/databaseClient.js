@@ -349,14 +349,30 @@ const getLimitedUnsettledTrades = (userID, limit) => {
     // get limit of buys
     // get limit of sells
     try {
+      // first get which products are in the portfolio
+      const productsSqlText = `SELECT DISTINCT "product_id" FROM "limit_orders" WHERE "userID" = $1;`;
+      const products = await pool.query(productsSqlText, [userID]);
 
-      let sqlText = `(SELECT * FROM "limit_orders" WHERE "side" = 'SELL' AND "flipped" = false AND "settled" = false AND "will_cancel" = false AND "userID" = $1 ORDER BY "limit_price" ASC LIMIT $2)
-  UNION
-    (SELECT * FROM "limit_orders" WHERE "side" = 'BUY' AND "flipped" = false AND "settled" = false AND "will_cancel" = false AND "userID" = $1 ORDER BY "limit_price" DESC LIMIT $2)
+      let sqlText = `
+      (SELECT * FROM "limit_orders" WHERE "side" = 'SELL' AND "flipped" = false AND "settled" = false AND "will_cancel" = false AND "userID" = $1 AND "product_id" = $2 ORDER BY "limit_price" ASC LIMIT $3)
+      UNION
+      (SELECT * FROM "limit_orders" WHERE "side" = 'BUY' AND "flipped" = false AND "settled" = false AND "will_cancel" = false AND "userID" = $1 AND "product_id" = $2 ORDER BY "limit_price" DESC LIMIT $3)
       ORDER BY "limit_price" DESC; `;
-      const results = await pool.query(sqlText, [userID, limit]);
+      let results = [];
+      for (let i = 0; i < products.rows.length; i++) {
+        const product = products.rows[i];
+        const productResults = await pool.query(sqlText,
+          [userID, product.product_id, limit]);
+        results = [...results, ...productResults.rows];
+      }
 
-      resolve(results.rows);
+      resolve(results);
+
+
+
+      // const results = await pool.query(sqlText, [userID, limit]);
+
+      // resolve(results.rows);
     } catch (err) {
       reject(err);
     }
@@ -835,23 +851,38 @@ async function toggleMaintenance() {
 async function getDeSyncs(userID, limit, side) {
   return new Promise(async (resolve, reject) => {
     try {
+      // first get which products are in the portfolio
+      const productsSqlText = `SELECT DISTINCT "product_id" FROM "limit_orders" WHERE "userID" = $1;`;
+      const products = await pool.query(productsSqlText, [userID]);
+
+
       let results = []
       if (side === 'buys') {
         // WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
         const sqlTextBuys = `SELECT * FROM "limit_orders" 
-        WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1
+        WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1 AND "product_id"=$2
         ORDER BY "limit_price" DESC
-        OFFSET $2;`;
-        results = await pool.query(sqlTextBuys, [userID, limit]);
+        OFFSET $3;`;
+        for (let i = 0; i < products.rows.length; i++) {
+          const product = products.rows[i].product_id;
+          const productResults = await pool.query(sqlTextBuys, [userID, product, limit]);
+          results = [...results, ...productResults.rows];
+        }
+        // results = await pool.query(sqlTextBuys, [userID, limit]);
       } else {
         // WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
         const sqlTextSells = `SELECT * FROM "limit_orders" 
-        WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1
+        WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1 AND "product_id"=$2
         ORDER BY "limit_price" ASC
-        OFFSET $2;`;
-        results = await pool.query(sqlTextSells, [userID, limit]);
+        OFFSET $3;`;
+        for (let i = 0; i < products.rows.length; i++) {
+          const product = products.rows[i].product_id;
+          const productResults = await pool.query(sqlTextSells, [userID, product, limit]);
+          results = [...results, ...productResults.rows];
+        }
+        // results = await pool.query(sqlTextSells, [userID, limit]);
       }
-      resolve(results.rows);
+      resolve(results);
     } catch (err) {
       reject(err);
     }

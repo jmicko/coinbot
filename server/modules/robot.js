@@ -266,7 +266,7 @@ async function quickSync(userID) {
   return new Promise(async (resolve, reject) => {
     try {
       // get the 100 most recent fills for the account
-      const response = await cbClients[userID].getFills({ limit: 100, product_id: 'BTC-USD' });
+      const response = await cbClients[userID].getFills({ limit: 100 });
       const fills = response.fills; //this is the same as allFills
       // console.log(fillResponse);
       // get an array of just the IDs
