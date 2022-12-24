@@ -16,6 +16,7 @@ export function SocketProvider({ children }) {
   const [socketStatus, setSocketStatus] = useState('closed');
   const [messenger, setMessenger] = useState();
   const [disconnect, setDisconnect] = useState();
+  const [product, setProduct] = useState('BTC-USD');
   const [tickers, setTickers] = useState({ "BTC-USD": { price: 0 }, "ETH-USD": { price: 0 } });
   const [heartbeat, setHeartbeat] = useState({ heart: 'heart', beat: 'beat', count: 0 });
   const dispatch = useDispatch();
@@ -33,20 +34,8 @@ export function SocketProvider({ children }) {
     newSocket.on('message', message => {
       if (message.type === 'ticker') {
         const ticker = message.ticker
-        // set the ticker based on the product id, todo - need to remove the switch below once migrated
+        // set the ticker based on the product id
         setTickers(prevTickers => ({ ...prevTickers, [ticker.product_id]: ticker }));
-        switch (ticker.product_id) {
-          case 'BTC-USD':
-            setTickers(prevTickers => ({ ...prevTickers, btc: ticker }));
-            return;
-          case 'ETH-USD':
-            setTickers(prevTickers => ({ ...prevTickers, eth: ticker }));
-            return;
-          default:
-            console.log(ticker, 'payload in set ticker price');
-            return;
-
-        };
       }
       // handle heartbeat
       if (message.type === 'heartbeat') {
@@ -75,7 +64,10 @@ export function SocketProvider({ children }) {
         dispatch({ type: 'FETCH_BOT_MESSAGES' });
       }
       if (message.orderUpdate) {
-        dispatch({ type: 'FETCH_ORDERS' });
+        dispatch({
+          type: 'FETCH_ORDERS',
+          payload: { product: product }
+        });
         dispatch({ type: 'FETCH_PROFITS' });
         dispatch({ type: 'FETCH_USER' });
       }
@@ -115,7 +107,7 @@ export function SocketProvider({ children }) {
       newSocket.off('connect_error')
       newSocket.close();
     }
-  }, [dispatch]);
+  }, [dispatch, product]);
 
 
   return (
@@ -123,6 +115,8 @@ export function SocketProvider({ children }) {
       socket: socket,
       socketStatus: socketStatus,
       messenger: messenger,
+      product: product,
+      setProduct: setProduct,
       tickers: tickers,
       heartbeat: heartbeat
     }}>

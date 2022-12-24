@@ -3,7 +3,7 @@ const router = express.Router();
 const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const databaseClient = require('../modules/databaseClient');
-const { cbClients } = require('../modules/cache')
+const { cbClients, messenger } = require('../modules/cache')
 const { sleep } = require('../modules/robot');
 
 
@@ -84,8 +84,8 @@ router.delete('/range', rejectUnauthenticated, async (req, res) => {
     await sleep(5000);
 
     // delete from db
-    const queryText = `DELETE from "limit_orders" WHERE "userID"=$1 AND settled=false AND limit_price BETWEEN $2 AND $3;`;
-    await pool.query(queryText, [userID, req.body.lowerLimit, req.body.upperLimit]);
+    const queryText = `DELETE from "limit_orders" WHERE "userID"=$1 AND settled=false AND "product_id"=$2 AND limit_price BETWEEN $3 AND $4;`;
+    await pool.query(queryText, [userID, req.body.product_id, req.body.lowerLimit, req.body.upperLimit]);
 
     // mark all open orders as reorder
     // await databaseClient.setReorder();
@@ -96,6 +96,11 @@ router.delete('/range', rejectUnauthenticated, async (req, res) => {
 
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID)
+    messenger[userID].newMessage({
+      type: 'general',
+      text: `Deleted orders between ${req.body.lowerLimit} and ${req.body.upperLimit} for ${req.body.product_id}`,
+      orderUpdate: true
+    })
     console.log('+++++++ RANGE WAS DELETED +++++++ for user:', userID);
   } catch (err) {
     console.log(err, 'error in delete all orders route');
@@ -132,6 +137,13 @@ router.delete('/all', rejectUnauthenticated, async (req, res) => {
 
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID)
+    // update orders on client
+    messenger[userID].newMessage({
+      type: 'general',
+      text: `Deleted all orders`,
+      orderUpdate: true
+    })
+
     console.log('+++++++ EVERYTHING WAS DELETED +++++++ for user:', userID);
   } catch (err) {
     console.log(err, 'error in delete all orders route');

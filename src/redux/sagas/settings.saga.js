@@ -66,7 +66,7 @@ function* toggleMaintenance(action) {
 function* bulkPairRatio(action) {
   try {
     yield axios.put(`/api/settings/bulkPairRatio`, action.payload);
-    yield put({ type: 'FETCH_ORDERS' })
+    // yield put({ type: 'FETCH_ORDERS' })
   } catch (error) {
     console.log('setting bot speed has failed', error);
     if (error.response.status === 403) {
@@ -78,7 +78,7 @@ function* bulkPairRatio(action) {
 function* sendTradeLoadMax(action) {
   try {
     yield axios.put(`/api/settings/tradeLoadMax`, action.payload);
-    yield put({ type: 'FETCH_ORDERS' })
+    // yield put({ type: 'FETCH_ORDERS' })
     yield put({ type: 'FETCH_USER' })
   } catch (error) {
     console.log('sendTradeLoadMax saga has failed', error);
@@ -139,7 +139,7 @@ function* killLock(action) {
 function* ordersReset() {
   try {
     yield axios.post(`/api/settings/ordersReset`);
-    yield put({ type: 'FETCH_ORDERS' });
+    // yield put({ type: 'FETCH_ORDERS' });
   } catch (error) {
     console.log('post account route factoryReset has failed', error);
     if (error.response.status === 403) {

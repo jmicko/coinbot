@@ -24,7 +24,8 @@ function BulkDelete(props) {
       type: 'DELETE_RANGE',
       payload: {
         lowerLimit: lowerLimit,
-        upperLimit: upperLimit
+        upperLimit: upperLimit,
+        product_id: props.product
       }
     });
   }

@@ -16,7 +16,10 @@ function* startBasicTrade(action) {
 function* startTrade(action) {
   try {
     yield axios.post(`/api/trade/`, action.payload);
-    yield put({ type: 'FETCH_ORDERS' });
+    yield put({
+      type: 'FETCH_ORDERS',
+      payload: { product: action.payload.product_id }
+    });
   } catch (error) {
     console.log('POST order route has failed', error)
     if (error.response.status === 403) {

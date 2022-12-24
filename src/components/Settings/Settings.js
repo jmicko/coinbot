@@ -39,13 +39,13 @@ function Settings(props) {
         <SettingsNav setSettingsPage={setSettingsPage} settingsPage={settingsPage} />
         {
           {
-            'general': <General theme={user.theme} tips={tips} />,
-            'investment': <Investment theme={user.theme} tips={tips} />,
+            'general': <General product={props.product} theme={user.theme} tips={tips} />,
+            'investment': <Investment product={props.product} theme={user.theme} tips={tips} />,
             'autoSetup': <AutoSetup product={props.product} theme={user.theme} tips={tips} priceTicker={props.priceTicker} />,
-            'bulkDelete': <BulkDelete theme={user.theme} tips={tips} />,
+            'bulkDelete': <BulkDelete product={props.product} theme={user.theme} tips={tips} />,
             'history': <History theme={user.theme} tips={tips} />,
             'reset': <Reset theme={user.theme} tips={tips} />,
-            'admin': <Admin theme={user.theme} tips={tips} />
+            'admin': <Admin product={props.product} theme={user.theme} tips={tips} />
           }[settingsPage]
         }
       </div>

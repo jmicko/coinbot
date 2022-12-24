@@ -4,7 +4,7 @@ const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const databaseClient = require('../modules/databaseClient');
 const robot = require('../modules/robot');
-const { cache, botSettings, cbClients, userStorage } = require('../modules/cache');
+const { cache, botSettings, cbClients, userStorage, messenger } = require('../modules/cache');
 const { sleep } = require('../modules/robot');
 
 
@@ -242,6 +242,12 @@ router.put('/tradeLoadMax', rejectUnauthenticated, async (req, res) => {
     const queryText = `UPDATE "user_settings" SET "max_trade_load" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.max_trade_load, user.id]);
     await userStorage[user.id].update();
+    // update orders on client
+    messenger[user.id].newMessage({
+      type: 'general',
+      text: `Max trades to load updated to ${req.body.max_trade_load}`,
+      orderUpdate: true
+    })
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'error with tradeLoadMax route');
@@ -387,6 +393,12 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID);
     await userStorage[user.id].update();
+    // update orders on client
+    messenger[userID].newMessage({
+      type: 'general',
+      text: `Bulk trade pair ratio updated to ${bulk_pair_ratio}`,
+      orderUpdate: true
+    })
 
     res.sendStatus(200);
   } catch (err) {
@@ -455,6 +467,15 @@ router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
     try {
       await pool.query(queryText);
       res.sendStatus(200);
+      // update orders on client for all users
+      userStorage.getAllUsers().forEach(userID => {
+        // update orders on client
+        messenger[userID].newMessage({
+          type: 'general',
+          text: `Orders table reset`,
+          orderUpdate: true
+        })
+      })
     } catch (err) {
       res.sendStatus(500);
       console.log(err, 'error resetting orders table');
