@@ -17,6 +17,7 @@ function Home() {
   const user = useSelector((store) => store.accountReducer.userReducer);
   const { height, width } = useWindowDimensions();
 
+  const [product, setProduct] = useState('BTC-USD');
   const [showSettings, setShowSettings] = useState(false);
   const [mobilePage, setMobilePage] = useState('tradeList');
   const [tradeType, setTradeType] = useState('pair');
@@ -45,7 +46,7 @@ function Home() {
   return (
     <div className={`Home ${user.theme}`}>
       {/* {JSON.stringify(mobilePage)} */}
-      <Menu clickSettings={clickSettings} />
+      <Menu clickSettings={clickSettings} product={product} setProduct={setProduct} />
 
 
       {
@@ -56,22 +57,22 @@ function Home() {
           ? mobilePage === 'newPair'
             // is the user active
             ? user.active
-              ? <Trade setTradeType={setTradeType} tradeType={tradeType} />
+              ? <Trade setTradeType={setTradeType} tradeType={tradeType} product={product} />
               : <NotActive />
             : mobilePage === 'tradeList'
               // is the user approved
               ? user.approved
-                ? <TradeList isAutoScroll={isAutoScroll} />
+                ? <TradeList isAutoScroll={isAutoScroll} product={product} />
                 : <NotApproved />
               : mobilePage === 'messages' && <Messages />
 
           // show all pages
           : <>
             {user.active
-              ? <Trade setTradeType={setTradeType} tradeType={tradeType} />
+              ? <Trade setTradeType={setTradeType} tradeType={tradeType} product={product} />
               : <NotActive />}
             {user.approved
-              ? <TradeList isAutoScroll={isAutoScroll} />
+              ? <TradeList isAutoScroll={isAutoScroll} product={product} />
               : <NotApproved />}
             <Messages />
           </>
@@ -79,35 +80,8 @@ function Home() {
 
       }
 
-
-
-
-
-      {/* {
-        user.active
-          ? width < 800 && mobilePage === 'newPair'
-            ? <Trade setTradeType={setTradeType} tradeType={tradeType} />
-            : width > 800 && <Trade setTradeType={setTradeType} tradeType={tradeType} />
-          : width < 800 && mobilePage === 'newPair'
-            ? <NotActive />
-            : width > 800 && <NotActive />
-      }
-
-      {
-        user.approved
-          ? width < 800 && mobilePage === 'tradeList'
-            ? <TradeList isAutoScroll={isAutoScroll} />
-            : width > 800 && <TradeList isAutoScroll={isAutoScroll} />
-          : width < 800 && mobilePage === 'tradeList'
-            ? <NotApproved />
-            : width > 800 && <NotApproved />
-      }
-
-      {width < 800 && mobilePage === 'messages'
-        ? <Messages />
-        : width > 800 && <Messages />} */}
-
       <Status
+        product={product}
         isAutoScroll={isAutoScroll}
         handleAutoScrollChange={handleAutoScrollChange}
       />
