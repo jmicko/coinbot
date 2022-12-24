@@ -23,3 +23,7 @@ yarn-debug.log*
 yarn-error.log*
 .env
 ws-connection-log.txt
+notes.js
+
+# Generated files
+/rusty-robot/target/
