@@ -19,7 +19,7 @@ function AutoSetup(props) {
   const [incrementType, setIncrementType] = useState('dollars');
   const [base_size, setSize] = useState(10);
   const [sizeType, setSizeType] = useState('USD');
-  const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
+  // const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
   const [tradePairRatio, setTradePairRatio] = useState(1.1);
   const [setupResults, setSetupResults] = useState(1);
   const [cost, setCost] = useState(0);
@@ -59,7 +59,7 @@ function AutoSetup(props) {
     () => {
       let payload = {
         availableFunds: availableFundsUSD,
-        tradingPrice: socket.tickers.btc.price,
+        tradingPrice: socket.tickers[props.product].price,
         // tradingPrice: 16000,
         startingValue: startingValue,
         skipFirst: skipFirst,
@@ -70,7 +70,7 @@ function AutoSetup(props) {
         trade_pair_ratio: tradePairRatio,
         base_size: base_size,
         sizeType: sizeType,
-        product_id: transactionProduct,
+        product_id: props.product,
       }
 
       let setup = autoSetup(user, payload);
@@ -93,7 +93,7 @@ function AutoSetup(props) {
     }, [
     user,
     availableFundsUSD,
-    socket.tickers.btc.price,
+    socket.tickers[props.product].price,
     startingValue,
     endingValue,
     ignoreFunds,
@@ -102,7 +102,7 @@ function AutoSetup(props) {
     tradePairRatio,
     base_size,
     sizeType,
-    transactionProduct,
+    props.product,
     skipFirst
   ])
 
@@ -148,7 +148,7 @@ function AutoSetup(props) {
     dispatch({
       type: 'AUTO_SETUP', payload: {
         availableFunds: availableFunds,
-        tradingPrice: socket.tickers.btc.price,
+        tradingPrice: socket.tickers[props.product].price,
         startingValue: startingValue,
         skipFirst: skipFirst,
         endingValue: endingValue,
@@ -158,7 +158,7 @@ function AutoSetup(props) {
         trade_pair_ratio: tradePairRatio,
         base_size: base_size,
         sizeType: sizeType,
-        product_id: transactionProduct,
+        product_id: props.product,
       }
     })
   }

@@ -33,8 +33,8 @@ export function SocketProvider({ children }) {
     newSocket.on('message', message => {
       if (message.type === 'ticker') {
         const ticker = message.ticker
-        // console.log(ticker,'message from socket.io');
-        // dispatch({ type: 'SET_TICKER_PRICE', payload: ticker });
+        // set the ticker based on the product id, todo - need to remove the switch below once migrated
+        setTickers(prevTickers => ({ ...prevTickers, [ticker.product_id]: ticker }));
         switch (ticker.product_id) {
           case 'BTC-USD':
             setTickers(prevTickers => ({ ...prevTickers, btc: ticker }));

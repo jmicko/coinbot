@@ -84,8 +84,9 @@ function Home() {
         product={product}
         isAutoScroll={isAutoScroll}
         handleAutoScrollChange={handleAutoScrollChange}
-      />
+        />
       <Settings
+        product={product}
         showSettings={showSettings}
         clickSettings={clickSettings}
       />

@@ -41,7 +41,7 @@ function Settings(props) {
           {
             'general': <General theme={user.theme} tips={tips} />,
             'investment': <Investment theme={user.theme} tips={tips} />,
-            'autoSetup': <AutoSetup theme={user.theme} tips={tips} priceTicker={props.priceTicker} />,
+            'autoSetup': <AutoSetup product={props.product} theme={user.theme} tips={tips} priceTicker={props.priceTicker} />,
             'bulkDelete': <BulkDelete theme={user.theme} tips={tips} />,
             'history': <History theme={user.theme} tips={tips} />,
             'reset': <Reset theme={user.theme} tips={tips} />,

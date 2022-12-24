@@ -98,10 +98,9 @@ function Status(props) {
 
       <center>
         <p className="info status-ticker">
-          <strong> BTC-USD Price</strong>
+          <strong>{props.product} Price</strong>
           <br />
-          {/* {JSON.stringify(ticker)} */}
-          ${numberWithCommas(Number(socket.tickers.btc.price).toFixed(2))}
+          ${Number(socket.tickers[props.product]?.price).toFixed(2)}
         </p>
       </center>
 

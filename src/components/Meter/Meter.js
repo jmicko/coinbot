@@ -17,7 +17,7 @@ function Meter(props) {
 
       // let difference = (props.max - props.min).toFixed(0);
       setDifference((props.max - props.min).toFixed(0));
-      let adjustedCurrent = socket.tickers.btc.price - props.min;
+      let adjustedCurrent = socket.tickers[props.product].price - props.min;
 
       // this is the important number
       let percentage = ((adjustedCurrent / difference) * 100).toFixed(0);
@@ -36,7 +36,7 @@ function Meter(props) {
         )
       }))
     }
-  }, [props, socket.tickers.btc.price])
+  }, [props, socket.tickers[props.product].price])
 
   function Segment(props) {
     return (
