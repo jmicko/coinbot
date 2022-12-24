@@ -21,7 +21,7 @@ function Trade(props) {
   const [volumeCostSell, setVolumeCostSell] = useState(0);
   const [transactionAmountBTC, setTransactionAmountBTC] = useState(0.001);
   const [transactionAmountUSD, setTransactionAmountUSD] = useState(10);
-  const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
+  // const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
   const [tradePairRatio, setTradePairRatio] = useState(1.1);
   const [fees, setFees] = useState(0.005);
   const [buyFee, setBuyFee] = useState(0.005);
@@ -79,7 +79,7 @@ function Trade(props) {
     // calculate flipped price
     let original_sell_price = (Math.round((price * (Number(tradePairRatio) + 100))) / 100);
     let type = false;
-    if (socket.tickers.btc.price < price) {
+    if (socket.tickers[props.product].price < price) {
       type = 'market';
     }
     dispatch({
@@ -89,7 +89,7 @@ function Trade(props) {
         side: transactionSide,
         limit_price: price,
         base_size: transactionAmountBTC,
-        product_id: transactionProduct,
+        product_id: props.product,
         trade_pair_ratio: tradePairRatio,
         type: type
       }
@@ -102,9 +102,9 @@ function Trade(props) {
     dispatch({
       type: 'START_BASIC_TRADE', payload: {
         base_size: basicAmount,
-        product_id: transactionProduct,
+        product_id: props.product,
         side: basicSide,
-        tradingPrice: socket.tickers.btc.price
+        tradingPrice: socket.tickers[props.product].price
       }
     })
   }
@@ -115,14 +115,14 @@ function Trade(props) {
         event.preventDefault();
       }
       // check if the current price has been stored yet to prevent NaN errors
-      if (socket.tickers.btc.price) {
+      if (socket.tickers[props.product].price) {
         // round the price to nearest 100
-        // const roundedPrice = Math.round(socket.tickers.btc.price)
-        const roundedPrice = Math.round(socket.tickers.btc.price / 100) * 100;
+        // const roundedPrice = Math.round(socket.tickers[props.product].price)
+        const roundedPrice = Math.round(socket.tickers[props.product].price / 100) * 100;
         // change input box to reflect rounded value
         setTransactionPrice(roundedPrice)
       }
-    }, [setTransactionPrice, socket.tickers.btc.price]
+    }, [setTransactionPrice, socket.tickers[props.product].price]
   )
 
 
@@ -300,7 +300,7 @@ function Trade(props) {
 
 
             <div className="number-inputs">
-              {/* {JSON.stringify(props.store.statusReducer.tickers.btc)} */}
+              {/* {JSON.stringify(props.store.statusReducer.tickers[props.product])} */}
               {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
               <label htmlFor="trade-pair-ratio">
                 Trade pair percent increase:
@@ -399,7 +399,7 @@ function Trade(props) {
             <br />
             <p>
               This equates to about
-              <br />${numberWithCommas((basicAmount * socket.tickers.btc.price).toFixed(2))}
+              <br />${numberWithCommas((basicAmount * socket.tickers[props.product].price).toFixed(2))}
               <br />before fees
             </p>
             <br />

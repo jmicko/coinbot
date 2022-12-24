@@ -75,7 +75,7 @@ function TradeList(props) {
             product={props.product}
             max={lowestSell}
             min={highestBuy}
-          // current={socket.tickers.btc.price}
+          // current={socket.tickers[props.product].price}
           />
           <div>
 
