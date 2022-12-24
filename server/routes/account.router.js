@@ -621,8 +621,9 @@ function convertJSONImport(TRADES_TO_IMPORT, IGNORE_DUPLICATES) {
 
     // console.log('CHECK DATA', new Date("trade.created_at").getTime(), Date.now(), typeof trade.created_at);
     // some of the trade details should be fixed
-    newTrade.product_id = "BTC-USD";
     newTrade.time_in_force = "GTC";
+    // product_id should not be fixed, need to verify that it is a valid product_id when reimplementing JSON import/export
+    newTrade.product_id = "BTC-USD";
 
 
     newTradeList.push(newTrade);

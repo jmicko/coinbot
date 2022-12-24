@@ -154,7 +154,7 @@ const updateTrade = (order) => {
     }
     if (order.post_only != null || order.order_configuration?.limit_limit_gtc?.post_only != null) {
       first ? first = false : sqlText += ', '
-      
+
       order.post_only != null
         ? (sqlText += `"post_only"`) && columns.push(order.post_only)
         : order.order_configuration?.limit_limit_gtc?.post_only != null && (sqlText += `"post_only"`) && columns.push(order.order_configuration?.limit_limit_gtc?.post_only);
@@ -277,8 +277,8 @@ const updateTrade = (order) => {
       finalSqlText += `$${i + 1}`
     }
     finalSqlText += (columns.length === 1)
-    ? `\nWHERE "order_id" = $${columns.length + 1}\nRETURNING *;`
-    : `)\nWHERE "order_id" = $${columns.length + 1}\nRETURNING *;`;
+      ? `\nWHERE "order_id" = $${columns.length + 1}\nRETURNING *;`
+      : `)\nWHERE "order_id" = $${columns.length + 1}\nRETURNING *;`;
 
     columns.push(order.order_id)
 
@@ -363,6 +363,67 @@ const getLimitedUnsettledTrades = (userID, limit) => {
   });
 }
 
+
+// get a number of open orders in DB based on side. This will return them whether or not they are synced with CBP
+// can be limited by how many should be synced, or how many should be shown on the interface 
+// depending on where it is being called from
+// this is very similar to the function above, but gets only one side at a time so they are easier to split
+const getUnsettledTradesByProduct = (side, product, userID, max_trade_load) => {
+  return new Promise(async (resolve, reject) => {
+    let sqlText;
+    // the only time 'BUY' or 'SELL' is passed is when the frontend is calling for all trades. 
+    // can request a limited amount of data to save on network costs
+    if (side == 'BUY') {
+      console.log('getting buys', max_trade_load);
+      // gets all unsettled buys, sorted by price
+      sqlText = `SELECT * FROM "limit_orders" 
+      WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "product_id"=$1 AND "userID"=$2
+      ORDER BY "limit_price" DESC
+      LIMIT $3;`;
+      pool.query(sqlText, [product, userID, max_trade_load])
+        .then((results) => {
+          // promise returns promise from pool if success
+          resolve(results.rows);
+        })
+        .catch((err) => {
+          // or promise relays errors from pool to parent
+          reject(err);
+        })
+    } else if (side == 'SELL') {
+      // console.log('getting sells', max_trade_load);
+      // gets all unsettled sells, sorted by price
+      sqlText = `SELECT * FROM "limit_orders" 
+      WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "product_id"=$1 AND "userID"=$2
+      ORDER BY "limit_price" ASC
+      LIMIT $3;`;
+      pool.query(sqlText, [product, userID, max_trade_load])
+        .then((results) => {
+          // promise returns promise from pool if success
+          resolve(results.rows);
+        })
+        .catch((err) => {
+          // or promise relays errors from pool to parent
+          reject(err);
+        })
+    } else if (side == 'all') {
+      // gets all unsettled trades, sorted by price
+      sqlText = `SELECT * FROM "limit_orders" 
+      WHERE "flipped"=false AND "will_cancel"=false AND "product_id"=$1 AND "userID"=$2
+      ORDER BY "limit_price" ASC;`;
+      pool.query(sqlText, [userID])
+        .then((results) => {
+          // promise returns promise from pool if success
+          resolve(results.rows);
+        })
+        .catch((err) => {
+          // or promise relays errors from pool to parent
+          reject(err);
+        })
+    } else {
+      reject({ error: `no "side" parameter. Use 'BUY' 'SELL' or 'all'` })
+    }
+  });
+}
 
 // get a number of open orders in DB based on side. This will return them whether or not they are synced with CBP
 // can be limited by how many should be synced, or how many should be shown on the interface 
@@ -933,6 +994,7 @@ const databaseClient = {
   importTrade: importTrade,
   getLimitedUnsettledTrades: getLimitedUnsettledTrades,
   getUnsettledTrades: getUnsettledTrades,
+  getUnsettledTradesByProduct: getUnsettledTradesByProduct,
   getSettledTrades: getSettledTrades,
   getAllSettledTrades: getAllSettledTrades,
   getUnsettledTradeCounts: getUnsettledTradeCounts,

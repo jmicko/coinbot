@@ -24,7 +24,11 @@ function Status(props) {
   const updateUser = () => {
     dispatch({ type: 'FETCH_PROFITS' });
     dispatch({ type: 'FETCH_ACCOUNT' });
-    dispatch({ type: 'FETCH_ORDERS' });
+    
+    dispatch({
+      type: 'FETCH_ORDERS',
+      payload: { product: props.product }
+    });
     dispatch({ type: 'FETCH_USER' });
     dispatch({ type: 'FETCH_BOT_ERRORS' });
     dispatch({ type: 'FETCH_BOT_MESSAGES' });
