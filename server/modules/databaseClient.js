@@ -380,6 +380,24 @@ const getLimitedUnsettledTrades = (userID, limit) => {
 }
 
 
+// gets all open orders in db based on a specified limit. 
+// The limit is for each side, so the results will potentially double that
+const getUserProducts = (userID) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // get which products are currently traded in the portfolio
+      const sqlText = `SELECT DISTINCT "product_id" FROM "limit_orders" WHERE "userID" = $1;`;
+      const products = await pool.query(sqlText, [userID]);
+
+      resolve(products.rows);
+
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+
 // get a number of open orders in DB based on side. This will return them whether or not they are synced with CBP
 // can be limited by how many should be synced, or how many should be shown on the interface 
 // depending on where it is being called from
@@ -665,6 +683,49 @@ const getSpentUSD = (userID, makerFee) => {
       })
   });
 }
+
+
+// get the total USD that is on trade-pairs in the DB. This should be higher or the same as what is reported by CBP
+// because the bot stores more "open" orders than CBP will allow for
+const getSpentQuote = (userID, takerFee, product_id) => {
+  return new Promise((resolve, reject) => {
+    let sqlText = `SELECT sum("limit_price"*"base_size"*$1)
+    FROM "limit_orders"
+    WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$2 AND "product_id"=$3;`;
+    pool.query(sqlText, [takerFee, userID, product_id])
+      .then((results) => {
+        const [volume_quote] = results.rows;
+        // promise returns promise from pool if success
+        resolve(Number(volume_quote.sum));
+      })
+      .catch((err) => {
+        // or promise relays errors from pool to parent
+        reject(err);
+      })
+  });
+}
+
+
+// get the total BTC that is on trade-pairs in the DB. This should be higher or the same as what is reported by CBP
+// because the bot stores more "open" orders than CBP will allow for
+const getSpentBase = (userID, product_id) => {
+  return new Promise((resolve, reject) => {
+    let sqlText = `SELECT sum("base_size")
+    FROM "limit_orders"
+    WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 AND "product_id"=$2;`;
+    pool.query(sqlText, [userID, product_id])
+      .then((results) => {
+        const [volume_base] = results.rows;
+        // promise returns promise from pool if success
+        resolve(Number(volume_base.sum));
+      })
+      .catch((err) => {
+        // or promise relays errors from pool to parent
+        reject(err);
+      })
+  });
+}
+
 
 // get the total BTC that is on trade-pairs in the DB. This should be higher or the same as what is reported by CBP
 // because the bot stores more "open" orders than CBP will allow for
@@ -1027,6 +1088,7 @@ const databaseClient = {
   getUnsettledTrades: getUnsettledTrades,
   getUnsettledTradesByProduct: getUnsettledTradesByProduct,
   getSettledTrades: getSettledTrades,
+  getUserProducts: getUserProducts,
   getAllSettledTrades: getAllSettledTrades,
   getUnsettledTradeCounts: getUnsettledTradeCounts,
   getSingleTrade: getSingleTrade,
@@ -1035,6 +1097,8 @@ const databaseClient = {
   getUnfilledTradesByIDs: getUnfilledTradesByIDs,
   getSpentUSD: getSpentUSD,
   getSpentBTC: getSpentBTC,
+  getSpentBase: getSpentBase,
+  getSpentQuote: getSpentQuote,
   getReorders: getReorders,
   deleteTrade: deleteTrade,
   deleteMarkedOrders: deleteMarkedOrders,

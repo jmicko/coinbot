@@ -699,147 +699,6 @@ function orderElimination(dbOrders, cbOrders) {
 }
 
 
-// async function autoSetup(user, parameters) {
-
-//   // create an array to hold the new trades to put in
-//   const orderList = [];
-//   let count = 0;
-
-//   // SHORTEN PARAMS for better readability
-//   let availableFunds = parameters.availableFunds;
-//   let base_size = parameters.base_size;
-//   let startingValue = parameters.startingValue;
-//   let buyPrice = startingValue;
-//   let endingValue = parameters.endingValue;
-//   let tradingPrice = parameters.tradingPrice;
-//   let increment = parameters.increment;
-//   let incrementType = parameters.incrementType;
-//   let trade_pair_ratio = parameters.trade_pair_ratio;
-//   let sizeType = parameters.sizeType;
-//   let loopDirection = "up";
-//   if (endingValue - startingValue < 0) {
-//     loopDirection = "down";
-//   }
-
-//   let btcToBuy = 0;
-
-//   // loop until one of the stop triggers is hit
-//   let stop = false;
-//   while (!stop) {
-//     count++;
-
-//     buyPrice = Number(buyPrice.toFixed(2));
-
-//     // get the sell price with the same math as is used by the bot when flipping
-//     let original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + 100))) / 100);
-
-//     // figure out if it is going to be a BUY or a sell. Buys will be below current trade price, sells above.
-//     let side = 'BUY';
-//     if (buyPrice > tradingPrice) {
-//       side = 'SELL';
-//     }
-
-//     // set the current price based on if it is a BUY or sell
-//     let limit_price = buyPrice;
-//     if (side === 'SELL') {
-//       limit_price = original_sell_price;
-//     }
-
-//     // if the base_size is in BTC, it will never change. 
-//     let actualSize = base_size;
-//     // If it is in USD, need to convert
-//     if (sizeType === 'USD') {
-//       // use the BUY price and the base_size to get the real base_size
-//       actualSize = Number(Math.floor((base_size / buyPrice) * 100000000)) / 100000000;
-//     }
-
-//     // count up how much BTC will need to be purchased to reserve for all the sell orders
-//     if (side === 'SELL') {
-//       btcToBuy += actualSize
-//     }
-
-//     // calculate the previous fees on sell orders
-//     let prevFees = () => {
-//       if (side === 'BUY') {
-//         return 0
-//       } else {
-//         return buyPrice * actualSize * user.taker_fee
-//       }
-//     }
-
-
-//     // CREATE ONE ORDER
-//     const singleOrder = {
-//       original_buy_price: buyPrice,
-//       original_sell_price: original_sell_price,
-//       side: side,
-//       limit_price: limit_price,
-//       base_size: actualSize,
-//       total_fees: prevFees(),
-//       product_id: parameters.product_id,
-//       stp: 'cn',
-//       userID: user.id,
-//       trade_pair_ratio: parameters.trade_pair_ratio,
-//     }
-
-//     // push that order into the order list
-//     orderList.push(singleOrder);
-
-//     // SETUP FOR NEXT LOOP - do some math to figure out next iteration, and if we should keep looping
-//     // subtract the buy base_size USD from the available funds
-//     // if sizeType is BTC, then we need to convert
-//     if (sizeType === 'BTC') {
-//       let USDSize = base_size * buyPrice;
-//       availableFunds -= USDSize;
-//     } else {
-//       console.log('current funds', availableFunds);
-//       availableFunds -= base_size;
-//     }
-
-//     // increment the buy price
-//     // can have either percentage or dollar amount increment
-//     if (incrementType === 'dollars') {
-//       // if incrementing by dollar amount
-//       if (loopDirection === 'up') {
-//         buyPrice += increment;
-//       } else {
-//         buyPrice -= increment;
-//       }
-//     } else {
-//       // if incrementing by percentage
-//       if (loopDirection === 'up') {
-//         buyPrice = buyPrice * (1 + (increment / 100));
-//       } else {
-//         buyPrice = buyPrice / (1 + (increment / 100));
-//       }
-//     }
-
-
-//     // STOP TRADING IF...
-
-//     // stop if run out of funds unless user specifies to ignore that
-//     // console.log('ignore funds:', parameters.ignoreFunds);
-//     if (availableFunds < 0 && !parameters.ignoreFunds) {
-//       console.log('ran out of funds!', availableFunds);
-//       stop = true;
-//     }
-//     // console.log('available funds is', availableFunds);
-
-//     // stop if the buy price passes the ending value
-//     if (loopDirection === 'up' && buyPrice >= endingValue) {
-//       stop = true;
-//     } else if (loopDirection === 'down' && buyPrice <= endingValue) {
-//       stop = true;
-//     }
-//   }
-
-//   return {
-//     orderList: orderList,
-//     btcToBuy: btcToBuy,
-//   }
-// }
-
-
 async function getAvailableFunds(userID, userSettings) {
   // console.log('getting available funds');
   userStorage[userID].updateStatus('get available funds');
@@ -860,10 +719,99 @@ async function getAvailableFunds(userID, userSettings) {
         databaseClient.getSpentUSD(userID, takerFee),
         // funds are taken from the sale once settled, so the maker fee is not needed on the buys
         databaseClient.getSpentBTC(userID),
+        // get a list of products from coinbase
+        cbClients[userID].getProducts(),
+        // get user products from db
+        databaseClient.getUserProducts(userID),
       ]);
       const accounts = results[0].accounts
+      // console.log(accounts, 'accounts');
+      const cbProducts = results[3].products;
+      // console.log(cbProducts, 'cbProducts');
+      const dbProducts = results[4];
+      // console.log(dbProducts, 'dbProducts');
 
-      // todo - figure out how to take unsynced trades and subtract from available balance
+      // filter out products that are not in the user's list
+      const filteredProducts = cbProducts.filter(product => {
+        return dbProducts.some(dbProduct => {
+          return dbProduct.product_id === product.product_id
+        })
+      })
+      console.log(filteredProducts, 'filteredProducts');
+
+      // get the amount spent for the base and quote currencies for each product
+      // and add them to an array of currency objects with the currency id and amount spent
+      // if the currency already exists in the array, add the amount spent to the amount spent for that currency
+      const currencyArray = [];
+      for (let i = 0; i < filteredProducts.length; i++) {
+        const product = filteredProducts[i];
+        const baseCurrency = product.base_currency_id;
+        const quoteCurrency = product.quote_currency_id;
+        const baseSpent = await databaseClient.getSpentBase(userID, product.product_id);
+        const quoteSpent = await databaseClient.getSpentQuote(userID, takerFee, product.product_id);
+        // console.log(baseSpent, 'baseSpent');
+        // console.log(quoteSpent, 'quoteSpent');
+
+        // if the base currency is already in the array, add the amount spent to the existing amount spent
+        if (currencyArray.some(currency => currency.currency_id === baseCurrency)) {
+          const index = currencyArray.findIndex(currency => currency.currency_id === baseCurrency);
+          currencyArray[index].amount_spent += baseSpent;
+        } else {
+          // if the base currency is not in the array, add it
+          currencyArray.push({ currency_id: baseCurrency, amount_spent: baseSpent })
+        }
+
+        // if the quote currency is already in the array, add the amount spent to the existing amount spent
+        if (currencyArray.some(currency => currency.currency_id === quoteCurrency)) {
+          const index = currencyArray.findIndex(currency => currency.currency_id === quoteCurrency);
+          currencyArray[index].amount_spent += quoteSpent;
+        } else {
+          // if the quote currency is not in the array, add it
+          currencyArray.push({ currency_id: quoteCurrency, amount_spent: quoteSpent })
+        }
+      }
+      // console.log(currencyArray, 'currencyArray');
+
+      // calculate the available funds for each currency rounded to 16 decimal places
+      const availableFundsNew = [];
+      for (let i = 0; i < currencyArray.length; i++) {
+        const currency = currencyArray[i];
+        // get the currency from the accounts
+        const [account] = accounts.filter(account => account.currency === currency.currency_id);
+        // console.log(account, 'account');
+        // calculate the available funds
+        const available = Number(account.available_balance.value) + Number(account.hold.value) - currency.amount_spent;
+        // console.log(available, 'available');
+        // round to 16 decimal places
+        const availableRounded = available.toFixed(16);
+        // console.log(availableRounded, 'availableRounded');
+        // add the currency and available funds to the array
+        availableFundsNew.push({ currency_id: currency.currency_id, available: availableRounded })
+      }
+      // console.log(availableFundsNew, 'availableFundsNew', '\n', filteredProducts, 'filteredProducts');
+
+      // make an object with an object for each user's product with the product id as the key for each nested object 
+      // each nested object has the available funds for the base and quote currencies, along with the name of the currency
+      const availableFundsObject = {};
+      for (let i = 0; i < filteredProducts.length; i++) {
+        const product = filteredProducts[i];
+        const baseCurrency = product.base_currency_id;
+        const quoteCurrency = product.quote_currency_id;
+        const baseAvailable = availableFundsNew.find(currency => currency.currency_id === baseCurrency).available;
+        const quoteAvailable = availableFundsNew.find(currency => currency.currency_id === quoteCurrency).available;
+        availableFundsObject[product.product_id] = {
+          base_currency: baseCurrency,
+          base_available: baseAvailable,
+          quote_currency: quoteCurrency,
+          quote_available: quoteAvailable,
+        }
+      }
+      // console.log(availableFundsObject, 'availableFundsObject');
+
+
+
+
+
 
       // calculate USD balances
       const [USD] = accounts.filter(account => account.currency === 'USD')
