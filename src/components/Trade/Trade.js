@@ -21,7 +21,6 @@ function Trade(props) {
   const [volumeCostSell, setVolumeCostSell] = useState(0);
   const [transactionAmountBTC, setTransactionAmountBTC] = useState(0.001);
   const [transactionAmountUSD, setTransactionAmountUSD] = useState(10);
-  // const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
   const [tradePairRatio, setTradePairRatio] = useState(1.1);
   const [fees, setFees] = useState(0.005);
   const [buyFee, setBuyFee] = useState(0.005);

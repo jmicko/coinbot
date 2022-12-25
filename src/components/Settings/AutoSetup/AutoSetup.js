@@ -19,7 +19,6 @@ function AutoSetup(props) {
   const [incrementType, setIncrementType] = useState('dollars');
   const [base_size, setSize] = useState(10);
   const [sizeType, setSizeType] = useState('USD');
-  // const [transactionProduct, setTransactionProduct] = useState('BTC-USD');
   const [tradePairRatio, setTradePairRatio] = useState(1.1);
   const [setupResults, setSetupResults] = useState(1);
   const [cost, setCost] = useState(0);

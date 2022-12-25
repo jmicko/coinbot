@@ -3,8 +3,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import './Menu.css'
 
 function Menu(props) {
-  // const [product, setProduct] = useState('BTC-USD');
-
   const dispatch = useDispatch();
   const user = useSelector((store) => store.accountReducer.userReducer)
 
