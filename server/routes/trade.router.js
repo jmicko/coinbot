@@ -178,7 +178,7 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
         const tradeDetails = {
           side: 'BUY',
           base_size: setup.btcToBuy.toFixed(8), // BTC
-          product_id: setup.product_id,
+          product_id: options.product_id,
           type: 'market',
           // tradingPrice: options.tradingPrice
         };
