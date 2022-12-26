@@ -65,6 +65,26 @@ router.get('/products', rejectUnauthenticated, async (req, res) => {
   }
 });
 
+/** PUT route to toggle product active status **/
+router.put('/products', rejectUnauthenticated, async (req, res) => {
+  console.log('put products route hit');
+  const userID = req.user.id;
+  // console.log(req.body, 'req.body');
+  const productID = req.body.product_id;
+  const active = !req.body.active_for_user;
+  console.log(productID, active, 'productID and active');
+  try {
+    // update product active status in db
+    await databaseClient.updateProductActiveStatus(userID, productID, active);
+    res.sendStatus(200);
+  }
+  catch (err) {
+    console.log(err, 'error updating product active status');
+    res.sendStatus(500)
+  }
+});
+
+
 /**
 * GET route to get total profit estimate
 */

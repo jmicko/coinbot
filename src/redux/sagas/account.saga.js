@@ -29,6 +29,20 @@ function* fetchProducts() {
   }
 }
 
+// toggle active status of product
+function* toggleActiveProduct(action) {
+  try {
+    yield axios.put(`/api/account/products`, action.payload);
+    yield put({ type: 'FETCH_PRODUCTS' });
+  } catch (error) {
+    // console.log('PUT products route has failed', error);
+    if (error?.response?.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+  
+
 function* fetchErrors() {
   try {
     const response = yield axios.get(`/api/account/errors`);
@@ -207,6 +221,7 @@ function* debug(action) {
 function* accountSaga() {
   yield takeLatest('FETCH_PROFITS', fetchProfits);
   yield takeLatest('FETCH_PRODUCTS', fetchProducts);
+  yield takeLatest('TOGGLE_ACTIVE_PRODUCT', toggleActiveProduct);
   yield takeLatest('FETCH_BOT_ERRORS', fetchErrors);
   yield takeLatest('FETCH_BOT_MESSAGES', fetchMessages);
   yield takeLatest('STORE_API', storeApi);

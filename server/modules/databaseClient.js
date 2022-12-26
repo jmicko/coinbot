@@ -510,6 +510,20 @@ const getActiveProducts = (userID) => {
   });
 }
 
+// update the active_for_user column for a product
+const updateProductActiveStatus = (userID, productID, active) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `UPDATE "products" SET "active_for_user" = $1 WHERE "user_id" = $2 AND "product_id" = $3;`;
+      await pool.query(sqlText, [active, userID, productID]);
+      resolve();
+    } catch (error) {
+      console.log('Error in updateProductActiveStatus', error);
+      reject(error);
+    }
+  });
+}
+
 
 // gets all open orders in db based on a specified limit. 
 // The limit is for each side, so the results will potentially double that
@@ -1260,6 +1274,7 @@ const databaseClient = {
   insertProducts: insertProducts,
   getActiveProducts: getActiveProducts,
   getUserProducts: getUserProducts,
+  updateProductActiveStatus: updateProductActiveStatus,
   getAllSettledTrades: getAllSettledTrades,
   getUnsettledTradeCounts: getUnsettledTradeCounts,
   getSingleTrade: getSingleTrade,

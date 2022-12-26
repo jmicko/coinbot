@@ -21,9 +21,9 @@ function Menu(props) {
           onChange={(event) => props.setProduct(event.target.value)}
         >
           {/* each active product in products should be listed as an option with the value equal to the product_id */}
-          {products.activeProducts.map((product) => {
+          {products?.activeProducts?.map((product, i) => {
             return (
-              <option value={product.product_id}>{product.product_id}</option>
+              <option key={i} value={product.product_id}>{product.product_id}</option>
             )
           })}
         </select>

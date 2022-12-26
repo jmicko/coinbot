@@ -111,7 +111,7 @@ class User {
   }
   async update() {
     const user = await databaseClient.getUserAndSettings(this.userID);
-    console.log(this.userID, user, 'the user in update()');
+    // console.log(this.userID, user, 'the user in update()');
     this.userID = user.id;
     this.username = user.username;
     this.admin = user.admin;
