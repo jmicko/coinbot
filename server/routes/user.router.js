@@ -53,6 +53,11 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
     // ? true
     // : false
 
+    // get available funds from userStorage
+    const availableFunds = userStorage[req.user.id].getAvailableFunds();
+    // console.log('availableFunds', availableFunds);
+    req.user.availableFunds = availableFunds;
+
   } catch (err) {
     console.log(err, 'error in user route');
   }

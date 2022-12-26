@@ -804,8 +804,10 @@ async function getAvailableFunds(userID, userSettings) {
         availableFundsObject[product.product_id] = {
           base_currency: baseCurrency,
           base_available: baseAvailable,
+          base_increment: product.base_increment,
           quote_currency: quoteCurrency,
           quote_available: quoteAvailable,
+          quote_increment: product.quote_increment,
         }
       }
       // console.log(availableFundsObject, 'availableFundsObject');
@@ -863,9 +865,12 @@ async function updateFunds(userID) {
     try {
       const userSettings = await databaseClient.getUserAndSettings(userID);
       const available = await getAvailableFunds(userID, userSettings);
-      // console.log(available, 'available');
+      console.log(available, 'available');
 
       await databaseClient.saveFunds(available.availableFunds, userID);
+
+      // update the user's available funds in the userStorage
+      userStorage[userID].updateAvailableFunds(available.availableFundsObject);
 
       // check if the funds have changed and update the DOM if needed
       if (Number(userSettings.actualavailable_usd) !== Number(available.actualAvailableUSD)) {

@@ -49,6 +49,7 @@ class User {
     this.available_usd = user.available_usd;
     this.actualavailable_btc = user.actualavailable_btc;
     this.actualavailable_usd = user.actualavailable_usd;
+    this.availableFunds = new Object();
     this.max_trade = user.max_trade;
     this.max_trade_size = user.max_trade_size;
     this.max_trade_load = user.max_trade_load;
@@ -66,6 +67,14 @@ class User {
   getUser() {
     // console.log('getting the user')
     return structuredClone(this);
+  }
+  // update available funds
+  updateAvailableFunds(funds) {
+    this.availableFunds = funds;
+  }
+  // get available funds
+  getAvailableFunds() {
+    return structuredClone(this.availableFunds);
   }
   addToCheck(orders) {
     this.ordersToCheck = orders;

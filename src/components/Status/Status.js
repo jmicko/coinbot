@@ -24,7 +24,7 @@ function Status(props) {
   const updateUser = () => {
     dispatch({ type: 'FETCH_PROFITS' });
     dispatch({ type: 'FETCH_ACCOUNT' });
-    
+
     dispatch({
       type: 'FETCH_ORDERS',
       payload: { product: props.product }
@@ -104,21 +104,28 @@ function Status(props) {
         <p className="info status-ticker">
           <strong>{props.product} Price</strong>
           <br />
-          ${Number(socket.tickers[props.product]?.price).toFixed(2)}
+          {Number(socket.tickers[props.product]?.price)
+            .toFixed(Number(user.availableFunds[props.product].quote_increment.split('1')[0].length - 1))
+            // .toFixed(2)
+          }
         </p>
       </center>
 
       <center onClick={() => { setAvailableFundsDisplay(!availableFundsDisplay) }}>
+        {/* {JSON.stringify(user.availableFunds[props.product])} */}
         {availableFundsDisplay
           ? <p className="info status-ticker">
-            <strong>Available Funds</strong>
+            <strong>Available {user.availableFunds[props.product].base_currency}</strong>
             <br />
-            {numberWithCommas(Math.floor(user.actualavailable_btc * 100000000) / 100000000)} BTC
+            {/* {JSON.stringify((user.availableFunds[props.product].base_increment.split('1')[0].length - 1))} */}
+            {numberWithCommas(Number(user.availableFunds[props.product].base_available)
+              .toFixed(Number(user.availableFunds[props.product].base_increment.split('1')[0].length - 1)))}
           </p>
           : <p className="info status-ticker">
-            <strong>Available Funds</strong>
+            <strong>Available {user.availableFunds[props.product].quote_currency}</strong>
             <br />
-            ${numberWithCommas(Math.floor(user.actualavailable_usd * 100) / 100)}
+            {numberWithCommas(Number(user.availableFunds[props.product].quote_available)
+              .toFixed(Number(user.availableFunds[props.product].quote_increment.split('1')[0].length - 1)))}
           </p>
         }
       </center>

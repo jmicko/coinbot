@@ -71,8 +71,8 @@ async function startWebsocket(userID) {
 
   // products to subscribe to
   // const products = ['BTC-USD', 'ETH-USD'];
-  // const products = await getProducts();
-  cbClients[userID].products = await getProducts();
+  const products = await getProducts();
+  cbClients[userID].setProducts(products);
   console.log(cbClients[userID].products, 'cbClients[userID]');
   // console.log(products, 'products in ws');
 
@@ -85,9 +85,6 @@ async function startWebsocket(userID) {
     });
     return productIds;
   }
-
-
-
 
   // setup params for the cbClient
   const setup = {
