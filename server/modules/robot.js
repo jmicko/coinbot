@@ -848,7 +848,7 @@ async function getAvailableFunds(userID, userSettings) {
         actualAvailableUSD: actualAvailableUSD
       }
 
-      resolve({availableFunds, availableFundsObject})
+      resolve({ availableFunds, availableFundsObject })
     } catch (err) {
       messenger[userID].newError({
         text: 'error getting available funds',
@@ -865,12 +865,23 @@ async function updateFunds(userID) {
     try {
       const userSettings = await databaseClient.getUserAndSettings(userID);
       const available = await getAvailableFunds(userID, userSettings);
-      console.log(available, 'available');
+      const previousAvailable = userStorage[userID].getAvailableFunds();
+      console.log(previousAvailable, 'previousAvailable');
+      // console.log(available, 'available');
 
       await databaseClient.saveFunds(available.availableFunds, userID);
 
       // update the user's available funds in the userStorage
       userStorage[userID].updateAvailableFunds(available.availableFundsObject);
+
+      // compare the previous available funds to the new available funds
+      const availableFundsChanged = compareAvailableFunds(previousAvailable, available.availableFundsObject);
+      console.log(availableFundsChanged, 'availableFundsChanged');
+
+      // if the available funds have changed, update the DOM
+      if (availableFundsChanged) {
+        messenger[userID].orderUpdate();
+      }
 
       // check if the funds have changed and update the DOM if needed
       if (Number(userSettings.actualavailable_usd) !== Number(available.actualAvailableUSD)) {
@@ -885,6 +896,22 @@ async function updateFunds(userID) {
       reject(err)
     }
   })
+}
+
+function compareAvailableFunds(previousAvailable, availableFunds) {
+  // return true if the available funds have changed or if there are no previous available, false if they have not changed
+  for (let product in availableFunds) {
+    if (!previousAvailable[product]) {
+      return true;
+    }
+    if (previousAvailable[product].base_available !== availableFunds[product].base_available) {
+      return true;
+    }
+    if (previousAvailable[product].quote_available !== availableFunds[product].quote_available) {
+      return true;
+    }
+  }
+  return false;
 }
 
 async function alertAllUsers(alertMessage) {
