@@ -808,7 +808,7 @@ async function getAvailableFunds(userID, userSettings) {
           quote_available: quoteAvailable,
         }
       }
-      console.log(availableFundsObject, 'availableFundsObject');
+      // console.log(availableFundsObject, 'availableFundsObject');
 
 
 
@@ -863,7 +863,7 @@ async function updateFunds(userID) {
     try {
       const userSettings = await databaseClient.getUserAndSettings(userID);
       const available = await getAvailableFunds(userID, userSettings);
-      console.log(available, 'available');
+      // console.log(available, 'available');
 
       await databaseClient.saveFunds(available.availableFunds, userID);
 

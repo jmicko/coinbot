@@ -13,8 +13,19 @@ class Coinbase {
     this.secret = secret;
     this.WS_API_URL = 'wss://advanced-trade-ws.coinbase.com';
     this.ws = null;
+    this.products = null;
     // this.openSocket = this.openSocket.bind(this);
     // console.log(this,'new coinbase class thing');
+  }
+
+  // update the products array
+  setProducts(products) {
+    this.products = products;
+  }
+
+  // close the socket
+  closeSocket() {
+    this.ws.close();
   }
 
   // openSocket = this.open.bind(this)
@@ -22,6 +33,7 @@ class Coinbase {
   openSocket(setup) {
     const key = this.key;
     const secret = this.secret;
+    const products = this.products;
     const WS_API_URL = this.WS_API_URL
     const ws = new WebSocket(WS_API_URL);
     // set the class ws property to the new socket
@@ -79,6 +91,7 @@ class Coinbase {
         if (setup.statusHandler) {
           setup.statusHandler('timeout')
         }
+        // console.log(setup.timeout, 'timeout')
         this.terminate();
       }, setup.timeout || 10000);
     }
@@ -113,7 +126,7 @@ class Coinbase {
       }
       // subscribe to each channel in the channels array with the products in the products array
       setup.channels.forEach(channel => {
-        subscribe(setup.products, channel, ws)
+        subscribe(products, channel, ws)
       });
 
     });

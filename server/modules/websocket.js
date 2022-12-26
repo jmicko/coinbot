@@ -6,7 +6,7 @@ const databaseClient = require('./databaseClient');
 const { rejectUnauthenticatedSocket } = require('./authentication-middleware');
 const { sleep } = require('../../src/shared');
 
-function startWebsocket(userID) {
+async function startWebsocket(userID) {
 
   const user = cache?.getUser(userID);
   // console.log(user, 'ws user');
@@ -70,12 +70,29 @@ function startWebsocket(userID) {
   }
 
   // products to subscribe to
-  const products = ['BTC-USD', 'ETH-USD'];
+  // const products = ['BTC-USD', 'ETH-USD'];
+  // const products = await getProducts();
+  cbClients[userID].products = await getProducts();
+  console.log(cbClients[userID].products, 'cbClients[userID]');
+  // console.log(products, 'products in ws');
+
+  async function getProducts() {
+    const products = await databaseClient.getActiveProducts(userID);
+    // add each product_id to an array product ids
+    const productIds = [];
+    products.forEach(product => {
+      productIds.push(product.product_id);
+    });
+    return productIds;
+  }
+
+
+
 
   // setup params for the cbClient
   const setup = {
     channels: ['ticker', 'user'], // list of 
-    products: products,
+    // products: cbClients[userID].products,
     // reopen: false, // optional - socket will close if timed out when false
     // timeout: 1000, // optional - change how long before socket times out if no message
     messageHandler: messageHandler,
@@ -121,6 +138,17 @@ function startWebsocket(userID) {
     });
   }
 }
+
+// async function to get active products from db
+async function getActiveProducts() {
+  try {
+    const products = await databaseClient.getActiveProducts();
+    return products;
+  } catch (err) {
+    console.log(err, 'error in getActiveProducts');
+  }
+}
+
 
 // this should just update the status of each trade in the 'ordersToCheck' cached array
 async function updateMultipleOrders(userID, params) {

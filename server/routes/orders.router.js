@@ -13,7 +13,7 @@ const { sleep } = require('../modules/robot');
 router.get('/:product', rejectUnauthenticated, (req, res) => {
   const userID = req.user.id;
   const product = req.params.product;
-  console.log('user in get all orders route', product);
+  // console.log('user in get all orders route', product);
   // console.log('getting all orders for...', userID);
   // ask db for an array of buys and an array of sells
   return Promise.all([

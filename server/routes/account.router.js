@@ -76,6 +76,17 @@ router.put('/products', rejectUnauthenticated, async (req, res) => {
   try {
     // update product active status in db
     await databaseClient.updateProductActiveStatus(userID, productID, active);
+    // get active products from db
+    const products = await databaseClient.getActiveProducts(userID);
+    // add each product_id to an array product ids
+    const productIds = [];
+    products.forEach(product => {
+      productIds.push(product.product_id);
+    });
+    // update cbClient with new product ids
+    cbClients[userID].setProducts(productIds);
+    // close the socket in cbClient. This will force a new connection to be made with the new product ids
+    cbClients[userID].closeSocket();
     res.sendStatus(200);
   }
   catch (err) {
@@ -89,7 +100,7 @@ router.put('/products', rejectUnauthenticated, async (req, res) => {
 * GET route to get total profit estimate
 */
 router.get('/profits', rejectUnauthenticated, async (req, res) => {
-  console.log('profits get route');
+  // console.log('profits get route');
   const userID = req.user.id;
 
   // for sum since a day ago

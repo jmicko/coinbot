@@ -591,7 +591,7 @@ const getUnsettledTradesByProduct = (side, product, userID, max_trade_load) => {
     // the only time 'BUY' or 'SELL' is passed is when the frontend is calling for all trades. 
     // can request a limited amount of data to save on network costs
     if (side == 'BUY') {
-      console.log('getting buys', max_trade_load);
+      // console.log('getting buys', max_trade_load);
       // gets all unsettled buys, sorted by price
       sqlText = `SELECT * FROM "limit_orders" 
       WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "product_id"=$1 AND "userID"=$2
@@ -652,7 +652,7 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
     // the only time 'BUY' or 'SELL' is passed is when the frontend is calling for all trades. 
     // can request a limited amount of data to save on network costs
     if (side == 'BUY') {
-      console.log('getting buys', max_trade_load);
+      // console.log('getting buys', max_trade_load);
       // gets all unsettled buys, sorted by price
       sqlText = `SELECT * FROM "limit_orders" 
       WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
