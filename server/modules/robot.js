@@ -104,7 +104,11 @@ async function syncOrders(userID) {
 
       // *** WHICH SYNC ***
       if (((loopNumber - 1) % botSettings.full_sync) === 0) {
-        // console.log(user,'full sync');
+        if (((loopNumber - 1) % (botSettings.full_sync * 10)) === 0) {
+          // every 10 full syncs, update the products in the database
+          await updateProducts(userID);
+          console.log('updated products');
+        }
 
         // *** FULL SYNC ***
         // full sync compares all trades that should be on CB with DB,
@@ -153,6 +157,19 @@ async function syncOrders(userID) {
   }
 }
 
+
+async function updateProducts(userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const products = await cbClients[userID].getProducts();
+      await databaseClient.insertProducts(products.products, userID);
+      resolve();
+    } catch (err) {
+      console.log(err, 'error updating products');
+      reject(err);
+    }
+  });
+}
 
 
 function MainLoopErrors(userID, err) {
@@ -719,32 +736,18 @@ async function getAvailableFunds(userID, userSettings) {
         databaseClient.getSpentUSD(userID, takerFee),
         // funds are taken from the sale once settled, so the maker fee is not needed on the buys
         databaseClient.getSpentBTC(userID),
-        // get a list of products from coinbase
-        cbClients[userID].getProducts(),
-        // get user products from db
-        databaseClient.getUserProducts(userID),
+        // get a list of products that the user has active
+        databaseClient.getActiveProducts(userID),
       ]);
-      const accounts = results[0].accounts
-      // console.log(accounts, 'accounts');
-      const cbProducts = results[3].products;
-      // console.log(cbProducts, 'cbProducts');
-      const dbProducts = results[4];
-      // console.log(dbProducts, 'dbProducts');
-
-      // filter out products that are not in the user's list
-      const filteredProducts = cbProducts.filter(product => {
-        return dbProducts.some(dbProduct => {
-          return dbProduct.product_id === product.product_id
-        })
-      })
-      console.log(filteredProducts, 'filteredProducts');
+      const accounts = results[0].accounts;
+      const activeProducts = results[3];
 
       // get the amount spent for the base and quote currencies for each product
       // and add them to an array of currency objects with the currency id and amount spent
       // if the currency already exists in the array, add the amount spent to the amount spent for that currency
       const currencyArray = [];
-      for (let i = 0; i < filteredProducts.length; i++) {
-        const product = filteredProducts[i];
+      for (let i = 0; i < activeProducts.length; i++) {
+        const product = activeProducts[i];
         const baseCurrency = product.base_currency_id;
         const quoteCurrency = product.quote_currency_id;
         const baseSpent = await databaseClient.getSpentBase(userID, product.product_id);
@@ -788,13 +791,12 @@ async function getAvailableFunds(userID, userSettings) {
         // add the currency and available funds to the array
         availableFundsNew.push({ currency_id: currency.currency_id, available: availableRounded })
       }
-      // console.log(availableFundsNew, 'availableFundsNew', '\n', filteredProducts, 'filteredProducts');
 
       // make an object with an object for each user's product with the product id as the key for each nested object 
       // each nested object has the available funds for the base and quote currencies, along with the name of the currency
       const availableFundsObject = {};
-      for (let i = 0; i < filteredProducts.length; i++) {
-        const product = filteredProducts[i];
+      for (let i = 0; i < activeProducts.length; i++) {
+        const product = activeProducts[i];
         const baseCurrency = product.base_currency_id;
         const quoteCurrency = product.quote_currency_id;
         const baseAvailable = availableFundsNew.find(currency => currency.currency_id === baseCurrency).available;
@@ -806,7 +808,7 @@ async function getAvailableFunds(userID, userSettings) {
           quote_available: quoteAvailable,
         }
       }
-      // console.log(availableFundsObject, 'availableFundsObject');
+      console.log(availableFundsObject, 'availableFundsObject');
 
 
 
@@ -844,7 +846,7 @@ async function getAvailableFunds(userID, userSettings) {
         actualAvailableUSD: actualAvailableUSD
       }
 
-      resolve(availableFunds)
+      resolve({availableFunds, availableFundsObject})
     } catch (err) {
       messenger[userID].newError({
         text: 'error getting available funds',
@@ -861,8 +863,9 @@ async function updateFunds(userID) {
     try {
       const userSettings = await databaseClient.getUserAndSettings(userID);
       const available = await getAvailableFunds(userID, userSettings);
+      console.log(available, 'available');
 
-      await databaseClient.saveFunds(available, userID);
+      await databaseClient.saveFunds(available.availableFunds, userID);
 
       // check if the funds have changed and update the DOM if needed
       if (Number(userSettings.actualavailable_usd) !== Number(available.actualAvailableUSD)) {

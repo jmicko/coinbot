@@ -342,6 +342,210 @@ const importTrade = (details, userID) => {
   });
 }
 
+// function to insert an array of products into the database for a user
+// if the product already exists for the user, everything EXCEPT "active_for_user" is updated. Do not update "active_for_user" here.
+// if the product_id is BTC-USD, make sure to set active_for_user to true
+// the products table looks like this:
+// (
+//   "product_id" character varying COLLATE pg_catalog."default" NOT NULL,
+//   "user_id" character varying COLLATE pg_catalog."default" NOT NULL,
+//   "active_for_user" boolean DEFAULT false,
+//   "quote_currency_id" character varying COLLATE pg_catalog."default",
+//   "base_currency_id" character varying COLLATE pg_catalog."default",
+//   "price" numeric(32,16),
+//   "price_percentage_change_24h" numeric(32,16),
+//   "volume_24h" numeric(32,16),
+//   "volume_percentage_change_24h" numeric(32,16),
+//   "base_increment" numeric(32,16),
+//   "quote_increment" numeric(32,16),
+//   "quote_min_size" numeric(32,16),
+//   "quote_max_size" numeric(32,16),
+//   "base_min_size" numeric(32,16),
+//   "base_max_size" numeric(32,16),
+//   "base_name" character varying COLLATE pg_catalog."default",
+//   "quote_name" character varying COLLATE pg_catalog."default",
+//   "watched" boolean DEFAULT false,
+//   "is_disabled" boolean DEFAULT false,
+//   "new" boolean DEFAULT false,
+//   "status" character varying COLLATE pg_catalog."default",
+//   "cancel_only" boolean DEFAULT false,
+//   "limit_only" boolean DEFAULT false,
+//   "post_only" boolean DEFAULT false,
+//   "trading_disabled" boolean DEFAULT false,
+//   "auction_mode" boolean DEFAULT false,
+//   "product_type" character varying COLLATE pg_catalog."default",
+//   "fcm_trading_session_details" character varying COLLATE pg_catalog."default",
+//   "mid_market_price" numeric(32,16)
+// );
+const insertProducts = (products, userID) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // first get which products are in the portfolio
+      const productsSqlText = `SELECT "product_id" FROM "products" WHERE "user_id" = $1;`;
+      const results = await pool.query(productsSqlText, [userID]);
+      const productsInPortfolio = results.rows.map((row) => row.product_id);
+
+      // now loop through the products and insert them into the database
+      // if they already exist, update them
+      for (let i = 0; i < products.length; i++) {
+        const product = products[i];
+        if (productsInPortfolio.includes(product.product_id)) {
+          // console.log('updating product', product.mid_market_price);
+          // update the product
+          const updateSqlText = `UPDATE "products" SET
+          "quote_currency_id" = $1,
+          "base_currency_id" = $2,
+          "price" = $3,
+          "price_percentage_change_24h" = $4,
+          "volume_24h" = $5,
+          "volume_percentage_change_24h" = $6,
+          "base_increment" = $7,
+          "quote_increment" = $8,
+          "quote_min_size" = $9,
+          "quote_max_size" = $10,
+          "base_min_size" = $11,
+          "base_max_size" = $12,
+          "base_name" = $13,
+          "quote_name" = $14,
+          "watched" = $15,
+          "is_disabled" = $16,
+          "new" = $17,
+          "status" = $18,
+          "cancel_only" = $19,
+          "limit_only" = $20,
+          "post_only" = $21,
+          "trading_disabled" = $22,
+          "auction_mode" = $23,
+          "product_type" = $24,
+          "fcm_trading_session_details" = $25,
+          "mid_market_price" = $26
+          WHERE "product_id" = $27 AND "user_id" = $28;`;
+          await pool.query(updateSqlText, [
+            product.quote_currency_id,
+            product.base_currency_id,
+            product.price || null,
+            product.price_percentage_change_24h || null,
+            product.volume_24h || null,
+            product.volume_percentage_change_24h || null,
+            product.base_increment || null,
+            product.quote_increment || null,
+            product.quote_min_size || null,
+            product.quote_max_size || null,
+            product.base_min_size || null,
+            product.base_max_size || null,
+            product.base_name,
+            product.quote_name,
+            product.watched,
+            product.is_disabled,
+            product.new,
+            product.status,
+            product.cancel_only,
+            product.limit_only,
+            product.post_only,
+            product.trading_disabled,
+            product.auction_mode,
+            product.product_type,
+            product.fcm_trading_session_details,
+            product.mid_market_price || null,
+            product.product_id,
+            userID,
+          ]);
+        } else {
+          // console.log('inserting product', product, product.mid_market_price || 'null');
+          // insert the product
+          const insertSqlText = `INSERT INTO "products" (
+          "product_id",
+          "user_id",
+          "quote_currency_id",
+          "base_currency_id",
+          "price",
+          "price_percentage_change_24h",
+          "volume_24h",
+          "volume_percentage_change_24h",
+          "base_increment",
+          "quote_increment",
+          "quote_min_size",
+          "quote_max_size",
+          "base_min_size",
+          "base_max_size",
+          "base_name",
+          "quote_name",
+          "watched",
+          "is_disabled",
+          "new",
+          "status",
+          "cancel_only",
+          "limit_only",
+          "post_only",
+          "trading_disabled",
+          "auction_mode",
+          "product_type",
+          "fcm_trading_session_details",
+          "mid_market_price"
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28);`;
+          await pool.query(insertSqlText, [
+            product.product_id,
+            userID,
+            product.quote_currency_id,
+            product.base_currency_id,
+            product.price || null,
+            product.price_percentage_change_24h || null,
+            product.volume_24h || null,
+            product.volume_percentage_change_24h || null,
+            product.base_increment || null,
+            product.quote_increment || null,
+            product.quote_min_size || null,
+            product.quote_max_size || null,
+            product.base_min_size || null,
+            product.base_max_size || null,
+            product.base_name,
+            product.quote_name,
+            product.watched,
+            product.is_disabled,
+            product.new,
+            product.status,
+            product.cancel_only,
+            product.limit_only,
+            product.post_only,
+            product.trading_disabled,
+            product.auction_mode,
+            product.product_type,
+            product.fcm_trading_session_details,
+            product.mid_market_price || null,
+          ]);
+          // if the product_id is BTC-USD, set active_for_user to true
+          if (product.product_id === 'BTC-USD') {
+            const updateSqlText = `UPDATE "products" SET "active_for_user" = true WHERE "product_id" = $1 AND "user_id" = $2;`;
+            await pool.query(updateSqlText, [product.product_id, userID]);
+          }
+        }
+      }
+      resolve();
+    } catch (error) {
+      console.log('Error in updateProducts', error);
+      reject(error);
+    }
+  });
+}
+
+// get all active products in the portfolio
+const getActiveProducts = (userID) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `SELECT * FROM "products" WHERE "user_id" = $1 AND "active_for_user" = true;`;
+      const result = await pool.query(sqlText, [userID]);
+      resolve(result.rows);
+    } catch (error) {
+      console.log('Error in getActiveProducts', error);
+      reject(error);
+    }
+  });
+}
+
+
+
+
+
 // gets all open orders in db based on a specified limit. 
 // The limit is for each side, so the results will potentially double that
 const getLimitedUnsettledTrades = (userID, limit) => {
@@ -1088,6 +1292,8 @@ const databaseClient = {
   getUnsettledTrades: getUnsettledTrades,
   getUnsettledTradesByProduct: getUnsettledTradesByProduct,
   getSettledTrades: getSettledTrades,
+  insertProducts: insertProducts,
+  getActiveProducts: getActiveProducts,
   getUserProducts: getUserProducts,
   getAllSettledTrades: getAllSettledTrades,
   getUnsettledTradeCounts: getUnsettledTradeCounts,
