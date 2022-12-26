@@ -41,6 +41,39 @@ CREATE TABLE IF NOT EXISTS "user_settings"
   "profit_reset" timestamp
 );
 
+CREATE TABLE IF NOT EXISTS "products"
+(
+  "product_id" character varying COLLATE pg_catalog."default" NOT NULL,
+  "user_id" character varying COLLATE pg_catalog."default" NOT NULL,
+  "active_for_user" boolean DEFAULT false,
+  "quote_currency_id" character varying COLLATE pg_catalog."default",
+  "base_currency_id" character varying COLLATE pg_catalog."default",
+  "price" numeric(32,16),
+  "price_percentage_change_24h" numeric(32,16),
+  "volume_24h" numeric(32,16),
+  "volume_percentage_change_24h" numeric(32,16),
+  "base_increment" numeric(32,16),
+  "quote_increment" numeric(32,16),
+  "quote_min_size" numeric(32,16),
+  "quote_max_size" numeric(32,16),
+  "base_min_size" numeric(32,16),
+  "base_max_size" numeric(32,16),
+  "base_name" character varying COLLATE pg_catalog."default",
+  "quote_name" character varying COLLATE pg_catalog."default",
+  "watched" boolean DEFAULT false,
+  "is_disabled" boolean DEFAULT false,
+  "new" boolean DEFAULT false,
+  "status" character varying COLLATE pg_catalog."default",
+  "cancel_only" boolean DEFAULT false,
+  "limit_only" boolean DEFAULT false,
+  "post_only" boolean DEFAULT false,
+  "trading_disabled" boolean DEFAULT false,
+  "auction_mode" boolean DEFAULT false,
+  "product_type" character varying COLLATE pg_catalog."default",
+  "fcm_trading_session_details" character varying COLLATE pg_catalog."default",
+  "mid_market_price" numeric(32,16)
+);
+
 CREATE TABLE IF NOT EXISTS "bot_settings"
 (
   "loop_speed" integer DEFAULT 1,
