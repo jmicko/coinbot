@@ -25,7 +25,7 @@ function Products(props) {
       <div className="divider" />
 
       {/* ACTIVE PRODUCTS */}
-      <h4>Currently Active</h4>
+      <h4>Currently Active ({products?.activeProducts?.length})</h4>
       {props.tips && <p>
         These are all the trades you have currently set to trade.
         Deleting them will delete all active trades and stop the bot from trading them.
@@ -90,7 +90,7 @@ function Products(props) {
       </table>
       <div className="divider" />
       {/* AVAILABLE PRODUCTS */}
-      <h4>Available</h4>
+      <h4>Available ({products?.allProducts?.length})</h4>
       {props.tips && <p>
         These are all the trades available on Coinbase. Setting them as active will allow them to show in the dropdown by the settings button,
         and will allow the bot to trade them.
