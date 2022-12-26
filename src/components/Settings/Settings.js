@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import Admin from './Admin/Admin';
 import AutoSetup from './AutoSetup/AutoSetup';
 import General from './General/General';
+import Products from './Products/Products';
 import Investment from './Investment/Investment';
 import Reset from './Reset/Reset';
 import History from './History/History';
@@ -40,6 +41,7 @@ function Settings(props) {
         {
           {
             'general': <General product={props.product} theme={user.theme} tips={tips} />,
+            'products': <Products product={props.product} theme={user.theme} tips={tips} />,
             'investment': <Investment product={props.product} theme={user.theme} tips={tips} />,
             'autoSetup': <AutoSetup product={props.product} theme={user.theme} tips={tips} priceTicker={props.priceTicker} />,
             'bulkDelete': <BulkDelete product={props.product} theme={user.theme} tips={tips} />,

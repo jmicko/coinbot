@@ -48,6 +48,22 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
   }
 });
 
+/** GET route to get user products from db **/
+router.get('/products', rejectUnauthenticated, async (req, res) => {
+  console.log('get products route hit');
+  const userID = req.user.id;
+  try {
+    // get active products from db
+    let activeProducts = await databaseClient.getActiveProducts(userID);
+    // get all products from db
+    let allProducts = await databaseClient.getUserProducts(userID);
+    res.send({activeProducts, allProducts});
+  }
+  catch (err) {
+    console.log(err, 'error getting products');
+    res.sendStatus(500)
+  }
+});
 
 /**
 * GET route to get total profit estimate
