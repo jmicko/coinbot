@@ -52,6 +52,18 @@ function Home() {
     socket.setProduct(value);
   }
 
+  // function to dispatch to get all products
+  function getProducts() {
+    dispatch({
+      type: 'FETCH_PRODUCTS',
+    });
+  }
+
+  // get products on component load
+  useEffect(() => {
+    getProducts();
+  }, []);
+
 
   return (
     <div className={`Home ${user.theme}`}>

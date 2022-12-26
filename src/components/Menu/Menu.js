@@ -4,7 +4,8 @@ import './Menu.css'
 
 function Menu(props) {
   const dispatch = useDispatch();
-  const user = useSelector((store) => store.accountReducer.userReducer)
+  const user = useSelector((store) => store.accountReducer.userReducer);
+  const products = useSelector((store) => store.accountReducer.productsReducer);
 
   return (
 
@@ -17,10 +18,14 @@ function Menu(props) {
         {process.env.NODE_ENV === 'development' && user.admin && <button className={`btn-blue btn-logout ${user.theme}`} onClick={() => dispatch({ type: 'TEST' })}>Test</button>}
         {/* add dropdown selector */}
         <select
-        onChange={(event) => props.setProduct(event.target.value)}
+          onChange={(event) => props.setProduct(event.target.value)}
         >
-          <option value="BTC-USD">BTC-USD</option>
-          <option value="ETH-USD">ETH-USD</option>
+          {/* each active product in products should be listed as an option with the value equal to the product_id */}
+          {products.activeProducts.map((product) => {
+            return (
+              <option value={product.product_id}>{product.product_id}</option>
+            )
+          })}
         </select>
         <button className={`btn-blue btn-logout ${user.theme}`} onClick={() => { props.clickSettings() }}>Settings</button>
         <button className={`btn-blue btn-logout ${user.theme}`} onClick={() => dispatch({ type: 'LOGOUT' })}>Log Out</button>

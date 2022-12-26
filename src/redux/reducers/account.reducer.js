@@ -12,6 +12,18 @@ const userReducer = (state = {}, action) => {
   }
 };
 
+// reducer for holding the user's products
+const productsReducer = (state = [], action) => {
+  switch (action.type) {
+    case 'SET_PRODUCTS':
+      return action.payload;
+    case 'UNSET_PRODUCTS':
+      return [];
+    default:
+      return state;
+  }
+};
+
 const profitsReducer = (state = [{ sum: "0" }], action) => {
   switch (action.type) {
     case 'SET_PROFITS':
@@ -102,6 +114,7 @@ export default combineReducers({
   userReducer,
   // feeReducer,
   profitsReducer,
+  productsReducer,
   // accountReducer,
   xlsxReducer,
   currentJSONReducer,
