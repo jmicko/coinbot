@@ -866,7 +866,7 @@ async function updateFunds(userID) {
       const userSettings = await databaseClient.getUserAndSettings(userID);
       const available = await getAvailableFunds(userID, userSettings);
       const previousAvailable = userStorage[userID].getAvailableFunds();
-      console.log(previousAvailable, 'previousAvailable');
+      // console.log(previousAvailable, 'previousAvailable');
       // console.log(available, 'available');
 
       await databaseClient.saveFunds(available.availableFunds, userID);
@@ -876,7 +876,7 @@ async function updateFunds(userID) {
 
       // compare the previous available funds to the new available funds
       const availableFundsChanged = compareAvailableFunds(previousAvailable, available.availableFundsObject);
-      console.log(availableFundsChanged, 'availableFundsChanged');
+      // console.log(availableFundsChanged, 'availableFundsChanged');
 
       // if the available funds have changed, update the DOM
       if (availableFundsChanged) {

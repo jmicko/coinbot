@@ -510,6 +510,25 @@ const getActiveProducts = (userID) => {
   });
 }
 
+
+// get all active products in the portfolio
+const getActiveProductIDs = (userID) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const activeProducts = await getActiveProducts(userID);
+      // get the product ids from the results and put them in an array
+      const productIDs = [];
+      for (let product of activeProducts) {
+        productIDs.push(product.product_id);
+      }
+      resolve(productIDs);
+    } catch (error) {
+      console.log('Error in getActiveProductIDs', error);
+      reject(error);
+    }
+  });
+}
+
 // update the active_for_user column for a product
 const updateProductActiveStatus = (userID, productID, active) => {
   return new Promise(async (resolve, reject) => {
@@ -551,8 +570,7 @@ const getLimitedUnsettledTrades = (userID, limit) => {
     // get limit of sells
     try {
       // first get which products are in the portfolio
-      const productsSqlText = `SELECT DISTINCT "product_id" FROM "limit_orders" WHERE "userID" = $1;`;
-      const products = await pool.query(productsSqlText, [userID]);
+      const products = await getActiveProductIDs(userID);
 
       let sqlText = `
       (SELECT * FROM "limit_orders" WHERE "side" = 'SELL' AND "flipped" = false AND "settled" = false AND "will_cancel" = false AND "userID" = $1 AND "product_id" = $2 ORDER BY "limit_price" ASC LIMIT $3)
@@ -560,20 +578,13 @@ const getLimitedUnsettledTrades = (userID, limit) => {
       (SELECT * FROM "limit_orders" WHERE "side" = 'BUY' AND "flipped" = false AND "settled" = false AND "will_cancel" = false AND "userID" = $1 AND "product_id" = $2 ORDER BY "limit_price" DESC LIMIT $3)
       ORDER BY "limit_price" DESC; `;
       let results = [];
-      for (let i = 0; i < products.rows.length; i++) {
-        const product = products.rows[i];
+      for (let i = 0; i < products.length; i++) {
+        const product = products[i];
         const productResults = await pool.query(sqlText,
-          [userID, product.product_id, limit]);
+          [userID, product, limit]);
         results = [...results, ...productResults.rows];
       }
-
       resolve(results);
-
-
-
-      // const results = await pool.query(sqlText, [userID, limit]);
-
-      // resolve(results.rows);
     } catch (err) {
       reject(err);
     }
@@ -934,16 +945,28 @@ const getSpentBTC = (userID) => {
 const getReorders = (userID, limit) => {
   return new Promise(async (resolve, reject) => {
     try {
+      // first get active products
+      const products = await getActiveProductIDs(userID);
       // first select the closest trades on either side according to the limit (which is in the bot settings table)
       // then select from the results any that need to be reordered
       let sqlText = `SELECT * FROM (
-        (SELECT "order_id", "will_cancel", "userID", "limit_price", "reorder", "userID" FROM "limit_orders" WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "limit_price" ASC LIMIT $2)
+        (
+        SELECT "order_id", "will_cancel", "userID", "limit_price", "reorder", "userID" 
+        FROM "limit_orders" 
+        WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "product_id" IN ($1) AND "userID"=$2 
+        ORDER BY "limit_price" ASC LIMIT $3)
         UNION
-        (SELECT "order_id", "will_cancel", "userID", "limit_price", "reorder", "userID" FROM "limit_orders" WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 ORDER BY "limit_price" DESC LIMIT $2)
+        (
+        SELECT "order_id", "will_cancel", "userID", "limit_price", "reorder", "userID" 
+        FROM "limit_orders" 
+        WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "product_id" IN ($1) AND "userID"=$2 
+        ORDER BY "limit_price" DESC LIMIT $3)
         ORDER BY "limit_price" DESC
         ) as reorders
         WHERE "reorder"=true;`;
-      const results = await pool.query(sqlText, [userID, limit])
+      const results = await pool.query(sqlText, [products, userID, limit]);
+      // get the results from the DB for all products
+
       // .then((results) => {
       const reorders = results.rows;
       // promise returns promise from pool if success
@@ -1095,10 +1118,8 @@ async function toggleMaintenance() {
 async function getDeSyncs(userID, limit, side) {
   return new Promise(async (resolve, reject) => {
     try {
-      // first get which products are in the portfolio
-      const productsSqlText = `SELECT DISTINCT "product_id" FROM "limit_orders" WHERE "userID" = $1;`;
-      const products = await pool.query(productsSqlText, [userID]);
-
+      // first get active products
+      const products = await getActiveProductIDs(userID);
 
       let results = []
       if (side === 'buys') {
@@ -1107,8 +1128,8 @@ async function getDeSyncs(userID, limit, side) {
         WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1 AND "product_id"=$2
         ORDER BY "limit_price" DESC
         OFFSET $3;`;
-        for (let i = 0; i < products.rows.length; i++) {
-          const product = products.rows[i].product_id;
+        for (let i = 0; i < products.length; i++) {
+          const product = products[i].product_id;
           const productResults = await pool.query(sqlTextBuys, [userID, product, limit]);
           results = [...results, ...productResults.rows];
         }
@@ -1119,8 +1140,8 @@ async function getDeSyncs(userID, limit, side) {
         WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1 AND "product_id"=$2
         ORDER BY "limit_price" ASC
         OFFSET $3;`;
-        for (let i = 0; i < products.rows.length; i++) {
-          const product = products.rows[i].product_id;
+        for (let i = 0; i < products.length; i++) {
+          const product = products[i].product_id;
           const productResults = await pool.query(sqlTextSells, [userID, product, limit]);
           results = [...results, ...productResults.rows];
         }
@@ -1273,6 +1294,7 @@ const databaseClient = {
   getSettledTrades: getSettledTrades,
   insertProducts: insertProducts,
   getActiveProducts: getActiveProducts,
+  getActiveProductIDs: getActiveProductIDs,
   getUserProducts: getUserProducts,
   updateProductActiveStatus: updateProductActiveStatus,
   getAllSettledTrades: getAllSettledTrades,
