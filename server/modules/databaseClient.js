@@ -550,7 +550,7 @@ const getUserProducts = (userID) => {
   return new Promise(async (resolve, reject) => {
     try {
       // get which products are currently traded in the portfolio
-      const sqlText = `SELECT * FROM "products" WHERE "user_id"=$1 AND "volume_24h" IS NOT NULL ORDER BY "volume_24h"*"price" DESC;`;
+      const sqlText = `SELECT * FROM "products" WHERE "user_id"=$1 AND "quote_currency_id" = 'USD' AND "volume_24h" IS NOT NULL ORDER BY "volume_24h"*"price" DESC;`;
       const products = await pool.query(sqlText, [userID]);
 
       resolve(products.rows);
