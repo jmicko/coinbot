@@ -457,7 +457,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
       if (amountToReinvest <= 0) {
         console.log('negative profit');
         amountToReinvest = 0;
-        messenger[userID].newE({
+        messenger[userID].newError({
           type: 'error',
           errorData: dbOrder,
           errorText: `Just saw a negative profit! Maybe increase your trade-pair ratio? 
