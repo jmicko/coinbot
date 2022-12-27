@@ -57,7 +57,7 @@ router.get('/products', rejectUnauthenticated, async (req, res) => {
     let activeProducts = await databaseClient.getActiveProducts(userID);
     // get all products from db
     let allProducts = await databaseClient.getUserProducts(userID);
-    res.send({activeProducts, allProducts});
+    res.send({ activeProducts, allProducts });
   }
   catch (err) {
     console.log(err, 'error getting products');
@@ -103,37 +103,27 @@ router.get('/profits/:product', rejectUnauthenticated, async (req, res) => {
   // console.log('profits get route');
   const userID = req.user.id;
   const product = req.params.product;
-  console.log(product, 'product');
+  // console.log(product, 'product');
+  // console.log(req.user, 'req.user in profits route');
 
-  // for sum since a day ago
-  const lastDayQueryText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
-  FROM limit_orders 
-  WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "filled_at" > now() - interval '1 day';`;
-  // for sum since a week ago
-  const lastWeekQueryText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
-  FROM limit_orders 
-  WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "filled_at" > now() - interval '1 week';`;
-  // for sum since 30 days ago
-  const lastThirtyDayQueryText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
-  FROM limit_orders 
-  WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "filled_at" > now() - interval '30 day';`;
-  // // for sum since reset
-  const sinceResetQueryText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
-  FROM limit_orders 
-  WHERE "side" = 'SELL' AND "settled" = 'true' AND "include_in_profit" = 'true' AND "userID" = $1;`;
+  const durations = ['24 hour', '1 week', '30 day', '1 year'];
+  const profits = [];
   try {
+    for (let i = 0; i < durations.length; i++) {
+      const duration = durations[i];
+      // get profit for each duration by product
+      let productProfit = await databaseClient.getProfitForDurationByProduct(userID, product, duration);
+      // get profit for each duration by all products
+      let allProfit = await databaseClient.getProfitForDurationByAllProducts(userID, duration);
+      // add profit to profits array along with duration
+      profits.push({ duration, productProfit, allProfit });
+    }
 
-    let profits = [];
+    const sinceDate = await databaseClient.getProfitSinceDate(userID, req.user.profit_reset, product)
+    // add since reset to profits array
+    profits.push(sinceDate);
 
-    let dayResult = await pool.query(lastDayQueryText, [userID]);
-    let weekResult = await pool.query(lastWeekQueryText, [userID]);
-    let monthResult = await pool.query(lastThirtyDayQueryText, [userID]);
-    let sinceResetResult = await pool.query(sinceResetQueryText, [userID]);
-
-    profits.push(dayResult.rows[0]);
-    profits.push(weekResult.rows[0]);
-    profits.push(monthResult.rows[0]);
-    profits.push(sinceResetResult.rows[0]);
+    // console.log(profits, 'duration profits');
     res.send(profits);
   } catch (err) {
     console.log(err, 'error in profits route:');

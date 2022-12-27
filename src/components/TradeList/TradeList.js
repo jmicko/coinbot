@@ -80,9 +80,9 @@ function TradeList(props) {
           <div>
 
             {lowestSell !== 0 && highestBuy >= 0
-              ? <p className='price'>&#9650; ${(lowestSell - socket.tickers[props.product].price).toFixed(2)}
+              ? <p className='price'>&#9650; ${(lowestSell - socket.tickers?.[props.product]?.price).toFixed(2)}
                 <br />
-                &#9660; ${(socket.tickers[props.product].price - highestBuy).toFixed(2)}
+                &#9660; ${(socket.tickers?.[props.product]?.price - highestBuy).toFixed(2)}
               </p>
               : <p>No Sells!</p>
             }

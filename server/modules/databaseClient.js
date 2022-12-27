@@ -1283,6 +1283,66 @@ async function markAsFlipped(order_id) {
   })
 }
 
+// get profit for a product and for all products for a duration of time
+async function getProfitForDurationByProduct(userID, product, duration) {
+  return new Promise(async (resolve, reject) => {
+    // console.log('getting profit for duration', userID, product, duration);
+    try {
+      const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
+      FROM limit_orders 
+      WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "product_id" = $2 AND "filled_at" > now() - $3::interval;`;
+      let result = await pool.query(sqlText, [userID, product, duration]);
+      // console.log('result', result.rows[0].sum);
+      resolve(result.rows[0].sum);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+// get profit for a product and for all products for a duration of time
+async function getProfitForDurationByAllProducts(userID, duration) {
+  return new Promise(async (resolve, reject) => {
+    // console.log('getting profit for duration', userID, duration);
+    try {
+      const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
+      FROM limit_orders 
+      WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "filled_at" > now() - $2::interval;`;
+      let result = await pool.query(sqlText, [userID, duration]);
+      resolve(result.rows[0].sum);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+// get profit for a product and for all products for a duration of time
+async function getProfitSinceDate(userID, date, product) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
+      FROM limit_orders 
+      WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "filled_at" BETWEEN now() AND $2;`;
+      let result = await pool.query(sqlText, [userID, date]);
+
+      const productSqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
+      FROM limit_orders 
+      WHERE "side" = 'SELL' AND "settled" = 'true' AND "product_id" = $1 AND "userID" = $2 AND "filled_at" BETWEEN now() AND $3;`;
+      let productResult = await pool.query(productSqlText, [product, userID, date]);
+
+      // add both results to an object and resolve
+      const profit = {
+        duration: 'Since reset',
+        allProfit: result.rows[0].sum || 0,
+        productProfit: productResult.rows[0].sum || 0
+      }
+      resolve(profit);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 
 const databaseClient = {
   storeTrade: storeTrade,
@@ -1326,7 +1386,10 @@ const databaseClient = {
   setAutoSetupNumber: setAutoSetupNumber,
   saveFunds: saveFunds,
   saveFees: saveFees,
-  markAsFlipped: markAsFlipped
+  markAsFlipped: markAsFlipped,
+  getProfitForDurationByProduct: getProfitForDurationByProduct,
+  getProfitForDurationByAllProducts: getProfitForDurationByAllProducts,
+  getProfitSinceDate: getProfitSinceDate,
 }
 
 module.exports = databaseClient;

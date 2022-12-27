@@ -117,11 +117,11 @@ function Trade(props) {
       if (socket.tickers[props.product].price) {
         // round the price to nearest 100
         // const roundedPrice = Math.round(socket.tickers[props.product].price)
-        const roundedPrice = Math.round(socket.tickers[props.product].price / 100) * 100;
+        const roundedPrice = Math.round(socket.tickers?.[props.product]?.price / 100) * 100;
         // change input box to reflect rounded value
         setTransactionPrice(roundedPrice)
       }
-    }, [setTransactionPrice, socket.tickers[props.product].price]
+    }, [setTransactionPrice, socket.tickers?.[props.product]?.price]
   )
 
 

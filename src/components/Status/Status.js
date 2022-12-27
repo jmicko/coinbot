@@ -13,7 +13,7 @@ function Status(props) {
   const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
   const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
-  const [profitDisplay, setProfitDisplay] = useState(1);
+  const [profitDisplay, setProfitDisplay] = useState(0);
   const [availableFundsDisplay, setAvailableFundsDisplay] = useState(false);
   const [feeDisplay, setFeeDisplay] = useState(true);
   const [profitAccuracy, setProfitAccuracy] = useState(2);
@@ -68,7 +68,7 @@ function Status(props) {
 
   useEffect(() => {
     if (profitDisplay > 4) {
-      setProfitDisplay(1)
+      setProfitDisplay(0)
     };
   }, [profitDisplay]);
 
@@ -78,29 +78,13 @@ function Status(props) {
     <div className="Status boxed fit">
       {/* todo - maybe style in some divider lines here or something */}
       <center onClick={() => { setProfitDisplay(profitDisplay + 1) }}>
-        {profitDisplay === 1
-          ? <p className="info status-ticker">
-            <strong>24 hour Profit</strong>
+        {<p className="info status-ticker">
+          {/* {JSON.stringify(profitsReducer[profitDisplay])} */}
+            <strong>{profitsReducer[profitDisplay]?.duration} Profit</strong>
             <br />
-            ${numberWithCommas(Number(profitsReducer[0].sum).toFixed(profitAccuracy))}
+            ${numberWithCommas(Number(profitsReducer[profitDisplay]?.productProfit).toFixed(profitAccuracy))} /
+            ${numberWithCommas(Number(profitsReducer[profitDisplay]?.allProfit).toFixed(profitAccuracy))}
           </p>
-          : profitDisplay === 2
-            ? <p className="info status-ticker">
-              <strong>7 Day Profit</strong>
-              <br />
-              ${numberWithCommas(Number(profitsReducer[1]?.sum).toFixed(profitAccuracy))}
-            </p>
-            : profitDisplay === 3
-              ? <p className="info status-ticker">
-                <strong>30 Day Profit</strong>
-                <br />
-                ${numberWithCommas(Number(profitsReducer[2]?.sum).toFixed(profitAccuracy))}
-              </p>
-              : <p className="info status-ticker">
-                <strong>Profit Since Reset</strong>
-                <br />
-                ${numberWithCommas(Number(profitsReducer[3]?.sum).toFixed(profitAccuracy))}
-              </p>
         }
       </center>
 
@@ -109,7 +93,7 @@ function Status(props) {
           <strong>{props.product} Price</strong>
           <br />
           {Number(socket.tickers[props.product]?.price)
-            .toFixed(Number(user.availableFunds[props.product].quote_increment.split('1')[0].length - 1))
+            .toFixed(Number(user.availableFunds?.[props.product]?.quote_increment.split('1')[0].length - 1))
             // .toFixed(2)
           }
         </p>
@@ -126,10 +110,10 @@ function Status(props) {
               .toFixed(Number(user.availableFunds[props.product].base_increment.split('1')[0].length - 1)))}
           </p>
           : <p className="info status-ticker">
-            <strong>Available {user.availableFunds[props.product].quote_currency}</strong>
+            <strong>Available {user.availableFunds?.[props.product]?.quote_currency}</strong>
             <br />
-            {numberWithCommas(Number(user.availableFunds[props.product].quote_available)
-              .toFixed(Number(user.availableFunds[props.product].quote_increment.split('1')[0].length - 1)))}
+            {numberWithCommas(Number(user.availableFunds?.[props.product]?.quote_available)
+              .toFixed(Number(user.availableFunds?.[props.product]?.quote_increment.split('1')[0].length - 1)))}
           </p>
         }
       </center>
