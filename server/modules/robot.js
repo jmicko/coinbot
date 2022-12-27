@@ -255,11 +255,19 @@ async function fullSync(userID) {
       ]);
       // store the lists of orders in the corresponding consts so they can be compared
       const dbOrders = results[0];
-      const cbOrders = results[1].orders;
+      const allCbOrders = results[1].orders;
       const fees = results[2];
-      // need to get the fees for more accurate Available funds reporting
+
+      // need to save the fees for more accurate Available funds reporting
       // fees don't change frequently so only need to do this during full sync
       await databaseClient.saveFees(fees, userID);
+
+      // remove any orders from cbOrders that have a product id that is not active for the user
+      // first get the list of active products
+      const activeProducts = await databaseClient.getActiveProductIDs(userID);
+      
+      // then filter out any orders that are not in the active products list
+      const cbOrders = allCbOrders.filter(order => activeProducts.includes(order.product_id));
       // compare the arrays and remove any where the ids match in both,
       // leaving a list of orders that are open in the db, but not on cb. Probably settled, possibly canceled
       let toCheck = await orderElimination(dbOrders, cbOrders);

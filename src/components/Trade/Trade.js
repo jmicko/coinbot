@@ -114,7 +114,7 @@ function Trade(props) {
         event.preventDefault();
       }
       // check if the current price has been stored yet to prevent NaN errors
-      if (socket.tickers[props.product].price) {
+      if (socket.tickers[props.product]?.price) {
         // round the price to nearest 100
         // const roundedPrice = Math.round(socket.tickers[props.product].price)
         const roundedPrice = Math.round(socket.tickers?.[props.product]?.price / 100) * 100;

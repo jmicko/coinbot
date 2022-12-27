@@ -71,8 +71,7 @@ function Home() {
 
   return (
     <div className={`Home ${user.theme}`}>
-      {/* {JSON.stringify(socket.product)}
-      {JSON.stringify(product)} */}
+      {/* {JSON.stringify(socket.product)}{JSON.stringify(product)} */}
       <Menu clickSettings={clickSettings} product={product} setProduct={handleProductChange} />
 
 
