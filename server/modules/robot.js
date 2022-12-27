@@ -99,16 +99,16 @@ async function syncOrders(userID) {
     if (user) {
       heartBeat(userID, 'heart');
     }
+    if ((((loopNumber - 1) % (botSettings.full_sync * 10)) === 0) && user?.active && user?.approved && !botSettings.maintenance) {
+      // every 10 full syncs, update the products in the database
+      await updateProducts(userID);
+      console.log('updated products');
+    }
     // check that user is active, approved, and unpaused, and that the bot is not under maintenance
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
 
       // *** WHICH SYNC ***
       if (((loopNumber - 1) % botSettings.full_sync) === 0) {
-        if (((loopNumber - 1) % (botSettings.full_sync * 10)) === 0) {
-          // every 10 full syncs, update the products in the database
-          await updateProducts(userID);
-          console.log('updated products');
-        }
 
         // *** FULL SYNC ***
         // full sync compares all trades that should be on CB with DB,
