@@ -1,5 +1,6 @@
 DROP TABLE IF EXISTS "limit_orders";
 DROP TABLE IF EXISTS "user";
+DROP TABLE IF EXISTS "products";
 DROP TABLE IF EXISTS "session";
 DROP TABLE IF EXISTS "user_api";
 DROP TABLE IF EXISTS "user_settings";
@@ -46,6 +47,7 @@ CREATE TABLE IF NOT EXISTS "products"
   "product_id" character varying COLLATE pg_catalog."default" NOT NULL,
   "user_id" character varying COLLATE pg_catalog."default" NOT NULL,
   "active_for_user" boolean DEFAULT false,
+  "activated_at" timestamptz,
   "quote_currency_id" character varying COLLATE pg_catalog."default",
   "base_currency_id" character varying COLLATE pg_catalog."default",
   "price" numeric(32,16),

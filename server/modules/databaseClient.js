@@ -500,7 +500,7 @@ const insertProducts = (products, userID) => {
 const getActiveProducts = (userID) => {
   return new Promise(async (resolve, reject) => {
     try {
-      const sqlText = `SELECT * FROM "products" WHERE "user_id" = $1 AND "active_for_user" = true;`;
+      const sqlText = `SELECT * FROM "products" WHERE "user_id" = $1 AND "active_for_user" = true ORDER BY "activated_at" DESC;`;
       const result = await pool.query(sqlText, [userID]);
       resolve(result.rows);
     } catch (error) {
@@ -533,7 +533,7 @@ const getActiveProductIDs = (userID) => {
 const updateProductActiveStatus = (userID, productID, active) => {
   return new Promise(async (resolve, reject) => {
     try {
-      const sqlText = `UPDATE "products" SET "active_for_user" = $1 WHERE "user_id" = $2 AND "product_id" = $3;`;
+      const sqlText = `UPDATE "products" SET "active_for_user" = $1, "activated_at" = now() WHERE "user_id" = $2 AND "product_id" = $3;`;
       await pool.query(sqlText, [active, userID, productID]);
       resolve();
     } catch (error) {
