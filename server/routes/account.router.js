@@ -99,9 +99,11 @@ router.put('/products', rejectUnauthenticated, async (req, res) => {
 /**
 * GET route to get total profit estimate
 */
-router.get('/profits', rejectUnauthenticated, async (req, res) => {
+router.get('/profits/:product', rejectUnauthenticated, async (req, res) => {
   // console.log('profits get route');
   const userID = req.user.id;
+  const product = req.params.product;
+  console.log(product, 'product');
 
   // for sum since a day ago
   const lastDayQueryText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
@@ -425,7 +427,7 @@ router.post('/resetProfit', rejectUnauthenticated, async (req, res) => {
     await pool.query(queryText, [userID]);
     await pool.query(timeQuery, [profit_reset, userID]);
 
-    await userStorage[user.id].update();
+    await userStorage[userID].update();
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem resetting profit');

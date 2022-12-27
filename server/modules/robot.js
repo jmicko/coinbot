@@ -421,6 +421,8 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
   const reinvestRatio = user.reinvest_ratio / 100;
   const postMaxReinvestRatio = user.post_max_reinvest_ratio / 100;
   const maxTradeSize = user.max_trade_size;
+  // create post_only const which is only true if the product_id is USDT-USD
+  const post_only = dbOrder.product_id === 'USDT-USD' ? true : false;
   // set up the object to be sent
   const tradeDetails = {
     side: '',
@@ -431,6 +433,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     product_id: dbOrder.product_id,
     client_order_id: dbOrder.next_client_order_id,
     userID: dbOrder.userID,
+    post_only: post_only,
   };
   // add buy/sell requirement and price
 

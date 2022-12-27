@@ -22,7 +22,11 @@ function Status(props) {
   // const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
 
   const updateUser = () => {
-    dispatch({ type: 'FETCH_PROFITS' });
+    dispatch({
+      type: 'FETCH_PROFITS',
+      // send current product to fetch profits for
+      payload: { product: props.product }
+    });
     dispatch({ type: 'FETCH_ACCOUNT' });
 
     dispatch({

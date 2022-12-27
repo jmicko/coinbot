@@ -36,7 +36,11 @@ function Home() {
       type: 'FETCH_ORDERS',
       payload: { product: product }
     });
-    dispatch({ type: 'FETCH_PROFITS' });
+    dispatch({
+      type: 'FETCH_PROFITS',
+      // send current product to fetch profits for
+      payload: { product: product }
+    });
   }, [dispatch, product]);
 
 

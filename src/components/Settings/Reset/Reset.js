@@ -4,7 +4,7 @@ import Confirm from '../../Confirm/Confirm';
 import './Reset.css'
 
 
-function Reset() {
+function Reset(props) {
   const dispatch = useDispatch();
   const user = useSelector((store) => store.accountReducer.userReducer);
 
@@ -18,6 +18,9 @@ function Reset() {
     // event.preventDefault();
     dispatch({
       type: 'RESET_PROFIT',
+      payload: {
+        product: props.product,
+      }
     });
   }
 

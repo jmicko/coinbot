@@ -336,8 +336,8 @@ function Trade(props) {
             <div className={`boxed dark ${user.theme}`}>
               <h4 className={`title ${user.theme}`}>New position</h4>
               <p><strong>Trade Pair Details:</strong></p>
-              <p className="info">Buy price: <strong>${numberWithCommas(price.toFixed(2))}</strong> </p>
-              <p className="info">Sell price <strong>${numberWithCommas(sellPrice.toFixed(2))}</strong></p>
+              <p className="info">Buy price: <strong>${numberWithCommas(price.toFixed(8))}</strong> </p>
+              <p className="info">Sell price <strong>${numberWithCommas(sellPrice.toFixed(8))}</strong></p>
               <p className="info">Price margin: <strong>{numberWithCommas(priceMargin.toFixed(2))}</strong> </p>
               <p className="info">Volume <strong>{transactionAmountBTC}</strong> </p>
               <p><strong>Cost at this volume:</strong></p>
