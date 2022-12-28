@@ -5,7 +5,7 @@ const { rejectUnauthenticated, } = require('../modules/authentication-middleware
 const databaseClient = require('../modules/databaseClient');
 const robot = require('../modules/robot');
 const { cache, botSettings, cbClients, userStorage, messenger } = require('../modules/cache');
-const { sleep } = require('../modules/robot');
+const { sleep } = require('../../src/shared');
 
 
 /**
@@ -344,7 +344,7 @@ router.put('/bulkPairRatio', rejectUnauthenticated, async (req, res) => {
     await userStorage[user.id].update();
 
     // wait 5 seconds to give the sync loop more time to finish
-    await robot.sleep(5000);
+    await sleep(5000);
 
     // update the trade-pair ratio for all trades for that user
     const updateTradesQueryText = `UPDATE limit_orders

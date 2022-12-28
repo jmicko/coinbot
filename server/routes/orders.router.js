@@ -3,8 +3,8 @@ const router = express.Router();
 const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const databaseClient = require('../modules/databaseClient');
-const { cbClients, messenger } = require('../modules/cache')
-const { sleep } = require('../modules/robot');
+const { cbClients, messenger } = require('../modules/cache');
+const { sleep } = require('../../src/shared');
 
 
 /**

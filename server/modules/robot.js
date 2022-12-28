@@ -3,6 +3,7 @@ const databaseClient = require("./databaseClient");
 const { cache, botSettings, userStorage, apiStorage, messenger, cbClients } = require("./cache");
 // const botSettings = botSettings;
 const { startWebsocket } = require("./websocket");
+const { sleep } = require("../../src/shared");
 
 // start a sync loop for each active user
 async function startSync() {
@@ -560,11 +561,6 @@ function calculateProfitBTC(dbOrder) {
 }
 
 
-// function to pause for x milliseconds in any async function
-function sleep(milliseconds) {
-  return new Promise(resolve => setTimeout(resolve, milliseconds))
-}
-
 // this should just update the status of each trade in the ordersToCheck cached array
 async function updateMultipleOrders(userID, params) {
   return new Promise(async (resolve, reject) => {
@@ -904,7 +900,6 @@ function heartBeat(userID, side) {
 
 
 const robot = {
-  sleep: sleep,
   flipTrade: flipTrade,
   syncOrders: syncOrders,
   processOrders: processOrders,
