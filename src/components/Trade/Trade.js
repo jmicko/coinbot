@@ -398,7 +398,7 @@ function Trade(props) {
             <br />
             <p>
               This equates to about
-              <br />${numberWithCommas((basicAmount * socket.tickers[props.product].price).toFixed(2))}
+              <br />${numberWithCommas((basicAmount * socket.tickers[props.product]?.price).toFixed(2))}
               <br />before fees
             </p>
             <br />

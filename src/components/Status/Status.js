@@ -103,11 +103,11 @@ function Status(props) {
         {/* {JSON.stringify(user.availableFunds[props.product])} */}
         {availableFundsDisplay
           ? <p className="info status-ticker">
-            <strong>Available {user.availableFunds[props.product].base_currency}</strong>
+            <strong>Available {user.availableFunds?.[props.product]?.base_currency}</strong>
             <br />
             {/* {JSON.stringify((user.availableFunds[props.product].base_increment.split('1')[0].length - 1))} */}
-            {numberWithCommas(Number(user.availableFunds[props.product].base_available)
-              .toFixed(Number(user.availableFunds[props.product].base_increment.split('1')[0].length - 1)))}
+            {numberWithCommas(Number(user.availableFunds?.[props.product]?.base_available)
+              .toFixed(Number(user.availableFunds?.[props.product]?.base_increment.split('1')[0].length - 1)))}
           </p>
           : <p className="info status-ticker">
             <strong>Available {user.availableFunds?.[props.product]?.quote_currency}</strong>
