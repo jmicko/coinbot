@@ -544,8 +544,8 @@ const updateProductActiveStatus = (userID, productID, active) => {
 }
 
 
-// gets all open orders in db based on a specified limit. 
-// The limit is for each side, so the results will potentially double that
+// get all products in the portfolio that have USD as the quote currency
+// this will be displayed in the client as available products to trade
 const getUserProducts = (userID) => {
   return new Promise(async (resolve, reject) => {
     try {

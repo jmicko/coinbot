@@ -170,3 +170,7 @@ CREATE INDEX "IDX_session_expire" ON "session" ("expire");
 -- this will index the orders table so it is much faster to look for reorders and unsettled trades
 CREATE INDEX reorders
 ON "limit_orders" ("side", "flipped", "will_cancel", "userID", "settled");
+
+-- this will index the products table so that looking up active products is faster
+CREATE INDEX user_active
+ON "products" ("user_id","quote_currency_id","active_for_user");
