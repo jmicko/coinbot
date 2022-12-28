@@ -3,7 +3,7 @@ const router = express.Router();
 const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const databaseClient = require('../modules/databaseClient');
-const { cache, cbClients, userStorage } = require('../modules/cache');
+const { cache, cbClients, userStorage, messenger } = require('../modules/cache');
 const { Coinbase } = require('../modules/coinbaseClient');
 // const databaseClient = require('../modules/databaseClient/databaseClient');
 
@@ -312,6 +312,9 @@ router.put('/pause', rejectUnauthenticated, async (req, res) => {
     await databaseClient.setPause(!user.paused, user.id);
 
     await userStorage[user.id].update();
+
+    // tell user to update user
+    messenger[req.user.id].userUpdate();
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in PAUSE ROUTE');
