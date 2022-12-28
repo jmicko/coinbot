@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSocket } from '../../contexts/SocketProvider';
+import { numberWithCommas } from '../../shared';
 import './Status.css'
 
 
@@ -43,19 +44,6 @@ function Status(props) {
     setProfitAccuracy(Number(user.profit_accuracy));
   }, [user.profit_accuracy])
 
-  // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
-  const numberWithCommas = (x) => {
-    // this will work in safari once lookbehind is supported
-    // return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
-    // for now, use this
-    if (x !== null) {
-      let parts = x.toString().split(".");
-      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-      return parts.join(".");
-    } else {
-      return "null"
-    }
-  }
 
   // get the total number of open orders
   useEffect(() => {

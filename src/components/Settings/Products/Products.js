@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { numberWithCommas } from '../../../shared';
 import './Products.css'
 
 
@@ -62,17 +63,17 @@ function Products(props) {
                   </td>
                   <td>
                     <center>
-                      {Number(product.price)}
+                      {numberWithCommas(Number(product.price))}
                     </center>
                   </td>
                   <td>
                     <center>
-                      {Number(product.volume_24h).toFixed(Number(product.quote_increment).toString().length - 2)}
+                      {numberWithCommas(Number(product.volume_24h).toFixed(Number(product.quote_increment).toString().length - 2))}
                     </center>
                   </td>
                   <td>
                     <center>
-                      {Number(product.volume_24h * product.price).toFixed(Number(product.quote_increment).toString().length - 2)} {product.quote_currency_id}
+                      {numberWithCommas(Number(product.volume_24h * product.price).toFixed(Number(product.quote_increment).toString().length - 2))} {product.quote_currency_id}
                     </center>
                   </td>
                   <td>
@@ -128,17 +129,17 @@ function Products(props) {
                   </td>
                   <td>
                     <center>
-                      {Number(product.price)}
+                      {numberWithCommas(Number(product.price))}
                     </center>
                   </td>
                   <td>
                     <center>
-                      {Number(product.volume_24h).toFixed(Number(product.quote_increment).toString().length - 2)}
+                      {numberWithCommas(Number(product.volume_24h).toFixed(Number(product.quote_increment).toString().length - 2))}
                     </center>
                   </td>
                   <td>
                     <center>
-                      {Number(product.volume_24h * product.price).toFixed(Number(product.quote_increment).toString().length - 2)} {product.quote_currency_id}
+                      {numberWithCommas(Number(product.volume_24h * product.price).toFixed(Number(product.quote_increment).toString().length - 2))} {product.quote_currency_id}
                     </center>
                   </td>
                   <td>
