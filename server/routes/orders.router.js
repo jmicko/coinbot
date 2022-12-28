@@ -11,6 +11,7 @@ const { sleep } = require('../modules/robot');
 * GET route - get all orders
 */
 router.get('/:product', rejectUnauthenticated, (req, res) => {
+  console.log('in get all orders for a product route');
   const userID = req.user.id;
   const product = req.params.product;
   // console.log('user in get all orders route', product);
@@ -43,6 +44,7 @@ router.get('/:product', rejectUnauthenticated, (req, res) => {
 * UPDATE route - synchronize all orders with cb
 */
 router.put('/', rejectUnauthenticated, async (req, res) => {
+  console.log('in synch orders PUT route');
   const userID = req.user.id;
   const previousPauseStatus = req.user.paused;
   try {

@@ -233,6 +233,9 @@ class Messenger {
   userUpdate() {
     this.instantMessage({ userUpdate: true })
   }
+  profitUpdate() {
+    this.instantMessage({ profitUpdate: true })
+  }
   // todo - should probably use type: 'error' and get rid of this
   newError(err) {
     console.log(err.errorText);

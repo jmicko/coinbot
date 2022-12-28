@@ -63,24 +63,23 @@ export function SocketProvider({ children }) {
       if (message.type === 'messageUpdate' || message.type === 'chat' || message.type === 'general') {
         dispatch({ type: 'FETCH_BOT_MESSAGES' });
       }
+      // fetch orders if orderUpdate
       if (message.orderUpdate) {
+        console.log('order update in socket provider')
         dispatch({
           type: 'FETCH_ORDERS',
+          // send current product to fetch orders for
           payload: { product: product }
         });
+      }
+      if (message.profitUpdate) {
         dispatch({
           type: 'FETCH_PROFITS',
           // send current product to fetch profits for
           payload: { product: product }
         });
-        dispatch({ type: 'FETCH_USER' });
       }
       if (message.userUpdate) {
-        dispatch({
-          type: 'FETCH_PROFITS',
-          // send current product to fetch profits for
-          payload: { product: product }
-        });
         dispatch({ type: 'FETCH_USER' });
       }
     });

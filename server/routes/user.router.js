@@ -25,6 +25,7 @@ async function anyAdmins() {
 
 // Handles request for all user information if user is authenticated and admin
 router.get('/all', rejectUnauthenticated, async (req, res) => {
+  console.log('get all users route');
   const isAdmin = req.user.admin;
   if (isAdmin) {
     try {
@@ -42,7 +43,7 @@ router.get('/all', rejectUnauthenticated, async (req, res) => {
 
 // Handles request for user information if user is authenticated
 router.get('/', rejectUnauthenticated, async (req, res) => {
-  // console.log('get user route');
+  console.log('get user route');
   try {
     const botSettings = await databaseClient.getBotSettings();
     req.user.botMaintenance = botSettings.maintenance;

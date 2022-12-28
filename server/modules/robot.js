@@ -102,7 +102,6 @@ async function syncOrders(userID) {
     if ((((loopNumber - 1) % (botSettings.full_sync * 10)) === 0) && user?.active && user?.approved && !botSettings.maintenance) {
       // every 10 full syncs, update the products in the database
       await updateProducts(userID);
-      console.log('updated products');
     }
     // check that user is active, approved, and unpaused, and that the bot is not under maintenance
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
@@ -382,6 +381,7 @@ async function processOrders(userID) {
                 console.log('new trade failed!!!');
               }
               // tell the frontend that an update was made so the DOM can update
+              console.log('sending order update from processOrders');
               userStorage[userID].orderUpdate();
             }
 
@@ -704,6 +704,7 @@ async function cancelAndReorder(ordersArray, userID) {
       }
 
       // if all goes well, send message to user and resolve promise with success message
+      console.log('sending order update from cancelAndReorder');
       userStorage[userID].orderUpdate();
       resolve({ success: true })
     } else {
@@ -891,12 +892,8 @@ async function updateFunds(userID) {
 
       // if the available funds have changed, update the DOM
       if (availableFundsChanged) {
-        messenger[userID].orderUpdate();
-      }
-
-      // check if the funds have changed and update the DOM if needed
-      if (Number(userSettings.actualavailable_usd) !== Number(available.actualAvailableUSD)) {
-        messenger[userID].orderUpdate();
+        console.log('sending order update from updateFunds after available funds changed');
+        messenger[userID].userUpdate();
       }
       resolve()
     } catch (err) {

@@ -29,10 +29,6 @@ function* syncOrders() {
 function* deleteRange(action) {
   try {
     yield axios.delete(`/api/orders/range`, { data: action.payload });
-    // yield put({
-    //   type: 'FETCH_ORDERS',
-    //   payload: { product: action.payload.product_id }
-    // });
   } catch (error) {
     console.log('DELETE all orders route has failed', error);
     if (error.response.status === 403) {

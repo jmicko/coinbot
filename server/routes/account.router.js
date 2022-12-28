@@ -100,7 +100,7 @@ router.put('/products', rejectUnauthenticated, async (req, res) => {
 * GET route to get total profit estimate
 */
 router.get('/profits/:product', rejectUnauthenticated, async (req, res) => {
-  // console.log('profits get route');
+  console.log('profits get route');
   const userID = req.user.id;
   const product = req.params.product;
   // console.log(product, 'product');
@@ -272,6 +272,7 @@ router.get('/debug', rejectUnauthenticated, async (req, res) => {
 * GET route to get user's errors from cache
 */
 router.get('/errors', rejectUnauthenticated, async (req, res) => {
+  console.log('get errors route');
   const userID = req.user.id;
   try {
     const userErrors = cache.getErrors(userID);
@@ -287,6 +288,7 @@ router.get('/errors', rejectUnauthenticated, async (req, res) => {
 * GET route to get user's messages from cache
 */
 router.get('/messages', rejectUnauthenticated, async (req, res) => {
+  console.log('get messages route');
   const userID = req.user.id;
   try {
     const userMessages = {}
@@ -304,6 +306,7 @@ router.get('/messages', rejectUnauthenticated, async (req, res) => {
  * PUT route to change status of pause
  */
 router.put('/pause', rejectUnauthenticated, async (req, res) => {
+  console.log('pause route');
   const user = req.user;
   try {
     await databaseClient.setPause(!user.paused, user.id);
@@ -320,6 +323,7 @@ router.put('/pause', rejectUnauthenticated, async (req, res) => {
 * PUT route to change theme
 */
 router.put('/theme', rejectUnauthenticated, async (req, res) => {
+  console.log('theme route');
   const user = req.user;
   try {
     const queryText = `UPDATE "user_settings" SET "theme" = $1 WHERE "userID" = $2`;
@@ -336,6 +340,7 @@ router.put('/theme', rejectUnauthenticated, async (req, res) => {
 * PUT route to change status of reinvestment
 */
 router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
+  console.log('reinvest route');
   const user = req.user;
   try {
     const queryText = `UPDATE "user_settings" SET "reinvest" = $1 WHERE "userID" = $2`;
@@ -353,6 +358,7 @@ router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
 * PUT route to change status of reinvestment ratio
 */
 router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
+  console.log('reinvest ratio route');
   const user = req.user;
   try {
     const queryText = `UPDATE "user_settings" SET "reinvest_ratio" = $1 WHERE "userID" = $2`;
@@ -370,6 +376,7 @@ router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
 * PUT route to change status of reinvestment
 */
 router.put('/tradeMax', rejectUnauthenticated, async (req, res) => {
+  console.log('trade max route');
   const user = req.user;
   try {
     const queryText = `UPDATE "user_settings" SET "max_trade" = $1 WHERE "userID" = $2`;
@@ -387,6 +394,7 @@ router.put('/tradeMax', rejectUnauthenticated, async (req, res) => {
 * PUT route to change status of reinvestment ratio
 */
 router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
+  console.log('max trade size route');
   const user = req.user;
   try {
     if (req.body.max_trade_size >= 0) {
@@ -409,6 +417,7 @@ router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
 * POST route to reset profits
 */
 router.post('/resetProfit', rejectUnauthenticated, async (req, res) => {
+  console.log('reset profit route');
   const profit_reset = new Date();
   const userID = req.user.id;
   const queryText = `UPDATE "limit_orders" SET "include_in_profit" = false WHERE "userID"=$1 AND "settled"=true;`;
@@ -429,6 +438,7 @@ router.post('/resetProfit', rejectUnauthenticated, async (req, res) => {
 * POST route to store API details
 */
 router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
+  console.log('store api route');
   const userID = req.user.id;
   function getURI() {
     if (api.URI === "sandbox") {

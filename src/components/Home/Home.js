@@ -32,15 +32,17 @@ function Home() {
   };
 
   useEffect(() => {
-    dispatch({
-      type: 'FETCH_ORDERS',
-      payload: { product: product }
-    });
-    dispatch({
-      type: 'FETCH_PROFITS',
-      // send current product to fetch profits for
-      payload: { product: product }
-    });
+    if(product){
+      dispatch({
+        type: 'FETCH_ORDERS',
+        payload: { product: product }
+      });
+      dispatch({
+        type: 'FETCH_PROFITS',
+        // send current product to fetch profits for
+        payload: { product: product }
+      });
+    }
   }, [dispatch, product]);
 
 
