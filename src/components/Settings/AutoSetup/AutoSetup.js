@@ -86,8 +86,8 @@ function AutoSetup(props) {
       // setBtcToBuy(0)
 
       // setup.orderList && 
-      setOrders(setup.orderList.reverse().map((order) => {
-        return <SingleTrade key={order.order_id} order={order} preview={true} />
+      setOrders(setup.orderList.reverse().map((order, i) => {
+        return <SingleTrade key={i} order={order} preview={true} />
       }))
     }, [
     user,
