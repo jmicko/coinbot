@@ -889,7 +889,7 @@ async function alertAllUsers(alertMessage) {
       messenger[user.id].newMessage({
         type: 'general',
         text: alertMessage,
-        orderUpdate: true
+        userUpdate: true
       });
     });
   } catch (err) {
