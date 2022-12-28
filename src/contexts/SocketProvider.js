@@ -72,7 +72,11 @@ export function SocketProvider({ children }) {
           payload: { product: product }
         });
       }
-      if (message.profitUpdate) {
+      // fetch products if productUpdate
+      if (message.productUpdate) {
+        dispatch({ type: 'FETCH_PRODUCTS' });
+      }
+      if (message.profitUpdate || message.orderUpdate) {
         dispatch({
           type: 'FETCH_PROFITS',
           // send current product to fetch profits for

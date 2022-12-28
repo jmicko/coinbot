@@ -264,7 +264,7 @@ async function fullSync(userID) {
       // remove any orders from cbOrders that have a product id that is not active for the user
       // first get the list of active products
       const activeProducts = await databaseClient.getActiveProductIDs(userID);
-      
+
       // then filter out any orders that are not in the active products list
       const cbOrders = allCbOrders.filter(order => activeProducts.includes(order.product_id));
       // compare the arrays and remove any where the ids match in both,
@@ -822,45 +822,8 @@ async function getAvailableFunds(userID, userSettings) {
           quote_increment: product.quote_increment,
         }
       }
-      // console.log(availableFundsObject, 'availableFundsObject');
 
-
-
-
-
-
-      // calculate USD balances
-      const [USD] = accounts.filter(account => account.currency === 'USD')
-      // const availableUSD = USD.available;
-      const availableUSD = USD.available_balance.value;
-      // const balanceUSD = USD.balance;
-      const balanceUSD = Number(availableUSD) + Number(USD.hold.value);
-      const spentUSD = results[1].sum;
-      // console.log('spent usd', spentUSD);
-      // subtract the total amount spent from the total balance
-      const actualAvailableUSD = (balanceUSD - spentUSD).toFixed(16);
-
-      // calculate BTC balances
-      const [BTC] = accounts.filter(account => account.currency === 'BTC')
-      // const availableBTC = BTC.available;
-      const availableBTC = BTC.available_balance.value;
-      // const balanceBTC = BTC.balance;
-      // console.log(BTC.available_balance);
-      const balanceBTC = Number(availableBTC) + Number(BTC.hold.value);
-      const spentBTC = results[2].sum;
-      // subtract the total amount spent from the total balance
-      const actualAvailableBTC = Number((balanceBTC - spentBTC).toFixed(16));
-
-      const availableFunds = {
-        availableBTC: availableBTC,
-        balanceBTC: balanceBTC,
-        availableUSD: availableUSD,
-        balanceUSD: balanceUSD,
-        actualAvailableBTC: actualAvailableBTC,
-        actualAvailableUSD: actualAvailableUSD
-      }
-
-      resolve({ availableFunds, availableFundsObject })
+      resolve(availableFundsObject)
     } catch (err) {
       messenger[userID].newError({
         text: 'error getting available funds',
@@ -878,17 +841,12 @@ async function updateFunds(userID) {
       const userSettings = await databaseClient.getUserAndSettings(userID);
       const available = await getAvailableFunds(userID, userSettings);
       const previousAvailable = userStorage[userID].getAvailableFunds();
-      // console.log(previousAvailable, 'previousAvailable');
-      // console.log(available, 'available');
-
-      await databaseClient.saveFunds(available.availableFunds, userID);
 
       // update the user's available funds in the userStorage
-      userStorage[userID].updateAvailableFunds(available.availableFundsObject);
+      userStorage[userID].updateAvailableFunds(available);
 
       // compare the previous available funds to the new available funds
-      const availableFundsChanged = compareAvailableFunds(previousAvailable, available.availableFundsObject);
-      // console.log(availableFundsChanged, 'availableFundsChanged');
+      const availableFundsChanged = compareAvailableFunds(previousAvailable, available);
 
       // if the available funds have changed, update the DOM
       if (availableFundsChanged) {
