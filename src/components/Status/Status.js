@@ -78,7 +78,7 @@ function Status(props) {
 
       <center>
         <p className="info status-ticker">
-          <strong>{props.product} Price</strong>
+          <strong>{user.availableFunds?.[props.product]?.base_currency} Price</strong>
           <br />
           {Number(socket.tickers[props.product]?.price)
             .toFixed(Number(user.availableFunds?.[props.product]?.quote_increment.split('1')[0].length - 1))
@@ -91,17 +91,17 @@ function Status(props) {
         {/* {JSON.stringify(user.availableFunds[props.product])} */}
         {availableFundsDisplay
           ? <p className="info status-ticker">
-            <strong>Available {user.availableFunds?.[props.product]?.base_currency}</strong>
+            <strong>Available</strong>
             <br />
             {/* {JSON.stringify((user.availableFunds[props.product].base_increment.split('1')[0].length - 1))} */}
             {numberWithCommas(Number(user.availableFunds?.[props.product]?.base_available)
-              .toFixed(Number(user.availableFunds?.[props.product]?.base_increment.split('1')[0].length - 1)))}
+              .toFixed(Number(user.availableFunds?.[props.product]?.base_increment.split('1')[0].length - 1)))} {user.availableFunds?.[props.product]?.base_currency}
           </p>
           : <p className="info status-ticker">
-            <strong>Available {user.availableFunds?.[props.product]?.quote_currency}</strong>
+            <strong>Available</strong>
             <br />
-            {numberWithCommas(Number(user.availableFunds?.[props.product]?.quote_available)
-              .toFixed(Number(user.availableFunds?.[props.product]?.quote_increment.split('1')[0].length - 1)))}
+            {user.availableFunds?.[props.product]?.quote_currency === 'USD' && "$"}{numberWithCommas(Number(user.availableFunds?.[props.product]?.quote_available)
+              .toFixed(Number(user.availableFunds?.[props.product]?.quote_increment.split('1')[0].length - 1)))} {user.availableFunds?.[props.product]?.quote_currency !== 'USD' && user.availableFunds?.[props.product]?.quote_currency}
           </p>
         }
       </center>
@@ -132,7 +132,7 @@ function Status(props) {
 
       <center>
         <p className="info status-ticker">
-          <strong>Total Open Orders</strong>
+          <strong>Order Counts</strong>
           <br />
           <strong>B:</strong>{numberWithCommas(openBuysQuantity)} <strong>S:</strong>{numberWithCommas(openSellsQuantity)} <strong>T:</strong>{numberWithCommas(openOrderQuantity)}
         </p>
