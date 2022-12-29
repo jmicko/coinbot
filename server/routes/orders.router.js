@@ -124,19 +124,14 @@ router.delete('/all', rejectUnauthenticated, async (req, res) => {
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID)
 
-    // wait 5 seconds to give the synch loop more time to finish
+    // wait 5 seconds to give the sync loop more time to finish
     await sleep(5000);
 
     // delete from db first
     const queryText = `DELETE from "limit_orders" WHERE "settled" = false AND "userID"=$1;`;
     await pool.query(queryText, [userID]);
 
-    // mark all open orders as reorder
-    // wait why?
-    await databaseClient.setReorder(userID);
-
-    // cancel all orders. The sync loop will take care of replacing them
-
+    // cancel all orders on coinbase
     await cbClients[userID].cancelAll();
 
     // set pause status to what it was before route was hit
@@ -149,6 +144,45 @@ router.delete('/all', rejectUnauthenticated, async (req, res) => {
     })
 
     console.log('+++++++ EVERYTHING WAS DELETED +++++++ for user:', userID);
+  } catch (err) {
+    console.log(err, 'error in delete all orders route');
+  }
+  res.sendStatus(200)
+});
+
+/**
+* DELETE route - delete all orders for a product from DB, then cancel on CB
+*/
+router.delete('/product/:product_id', rejectUnauthenticated, async (req, res) => {
+  console.log('in delete all orders for product_id route');
+  const userID = req.user.id;
+  const previousPauseStatus = req.user.paused;
+  const product_id = req.params.product_id;
+  console.log('in delete all orders route', userID);
+  try {
+    // pause trading before cancelling all orders or it will reorder them before done, making it take longer
+    await databaseClient.setPause(true, userID)
+
+    // wait 5 seconds to give the sync loop more time to finish
+    await sleep(5000);
+
+    // delete from db first
+    const queryText = `DELETE from "limit_orders" WHERE "settled" = false AND "userID"=$1 AND "product_id"=$2;`;
+    await pool.query(queryText, [userID, product_id]);
+
+    // cancel all orders for that product on coinbase
+    await cbClients[userID].cancelOrdersForProduct(product_id);
+
+    // set pause status to what it was before route was hit
+    await databaseClient.setPause(previousPauseStatus, userID)
+    // update orders on client
+    messenger[userID].newMessage({
+      type: 'general',
+      text: `Deleted all orders for ${product_id}`,
+      orderUpdate: true
+    })
+
+    console.log(`+++++++ EVERYTHING FOR PRODUCT: ${product_id} WAS DELETED +++++++ for user:`, userID);
   } catch (err) {
     console.log(err, 'error in delete all orders route');
   }

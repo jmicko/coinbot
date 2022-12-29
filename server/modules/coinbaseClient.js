@@ -556,6 +556,31 @@ class Coinbase {
       }
     });
   }
+
+  async cancelAllForProduct(product_id) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const openOrders = await this.getOrders({ order_status: 'OPEN', product_id: product_id, limit: 1000 });
+        const idArray = [];
+        openOrders.orders.forEach(order => {
+          idArray.push(order.order_id)
+        });
+        const cancelResult = await this.cancelOrders(idArray);
+        let result = [
+          { openOrdersResult: openOrders },
+          { cancelResult: cancelResult }
+        ]
+        // let's get recursive! call the function again if there are 1000 returned orders. Might be more
+        if (openOrders?.orders.length >= 1000) {
+          const nextResult = await cancelAll()
+          result = result.concat(nextResult);
+        }
+        resolve(result)
+      } catch (err) {
+        reject(err)
+      }
+    });
+  }
 }
 
 

@@ -49,10 +49,22 @@ function* deleteAllOrders() {
   }
 }
 
+function* deleteAllOrdersForProduct(action) {
+  try {
+    yield axios.delete(`/api/orders/product/${action.payload.product_id}`);
+    // yield put({ type: 'FETCH_ORDERS' });
+  } catch (error) {
+    console.log('DELETE all orders route has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 
 function* deleteOrder(action) {
   try {
-    yield axios.delete(`/api/orders/${action.payload.order_id}`);
+    yield axios.delete(`/api/orders/product/${action.payload.product_id}`);
   } catch (error) {
     console.log('DELETE order route has failed', error)
     if (error.response.status === 403) {
@@ -65,6 +77,7 @@ function* orderSaga() {
   yield takeLatest('FETCH_ORDERS', fetchOrders);
   yield takeLatest('SYNC_ORDERS', syncOrders);
   yield takeLatest('DELETE_ALL_ORDERS', deleteAllOrders);
+  yield takeLatest('DELETE_ALL_PRODUCT_ORDERS', deleteAllOrdersForProduct);
   yield takeLatest('DELETE_RANGE', deleteRange);
   yield takeLatest('DELETE_TRADE', deleteOrder);
 }
