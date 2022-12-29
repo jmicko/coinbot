@@ -39,16 +39,16 @@ function* autoSetup(action) {
   }
 }
 
-function* deleteTrade(action) {
-  try {
-    yield axios.delete(`/api/trade/${action.payload.order_id}`);
-  } catch (error) {
-    console.log('DELETE order route has failed', error)
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
+// function* deleteTrade(action) {
+//   try {
+//     yield axios.delete(`/api/trade/${action.payload.order_id}`);
+//   } catch (error) {
+//     console.log('DELETE order route has failed', error)
+//     if (error.response.status === 403) {
+//       yield put({ type: 'UNSET_USER' });
+//     }
+//   }
+// }
 
 function* syncTrade(action) {
   try {
@@ -65,7 +65,7 @@ function* tradeSaga() {
   yield takeLatest('START_TRADE', startTrade);
   yield takeLatest('START_BASIC_TRADE', startBasicTrade);
   yield takeLatest('AUTO_SETUP', autoSetup);
-  yield takeLatest('DELETE_TRADE', deleteTrade);
+  // yield takeLatest('DELETE_TRADE', deleteTrade);
   yield takeLatest('SYNC_TRADE', syncTrade);
 }
 

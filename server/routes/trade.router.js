@@ -304,56 +304,56 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
 });
 
 
-/**
-* DELETE route
-*/
-router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
-  // DELETE route code here
-  const userID = req.user.id;
-  const orderId = req.params.order_id;
+// /**
+// * DELETE route
+// */
+// router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
+//   // DELETE route code here
+//   const userID = req.user.id;
+//   const orderId = req.params.order_id;
 
-  userStorage[userID].setCancel(orderId);
-  // mark as canceled in db
-  try {
-    let order = await databaseClient.updateTrade({
-      will_cancel: true,
-      order_id: orderId
-    })
-    // if it is a reorder, there is no reason to cancel on CB
-    if (!order.reorder) {
-      // send cancelOrder to cb
-      await cbClients[userID].cancelOrders([orderId]);
-    }
-    res.sendStatus(200)
-    messenger[userID].newMessage({
-      type: 'general',
-      text: 'Successfully deleted trade-pair'
-    });
-  } catch (err) {
-    let errorText = 'FAILURE deleting trade-pair!';
-    let errorData = err?.data;
-    if (err?.data?.message) {
-      console.log(err.data.message, 'error message, trade router DELETE');
-    }
-    if (err.response?.status === 404) {
-      databaseClient.deleteTrade(orderId);
-      console.log('order not found in account', orderId);
-      errorText = 'Order not found on coinbase, deleting from Coinbot.';
-      res.sendStatus(404)
-    } else if (err.response?.status === 400) {
-      console.log('bad request', err.response?.data);
-      errorText = 'Bad request. Please try again.';
-      res.sendStatus(400)
-    } else {
-      console.log(err, 'something failed in the delete trade route');
-      res.sendStatus(500)
-    }
-    messenger[userID].newError({
-      errorData: errorData,
-      errorText: errorText
-    });
-  };
-});
+//   userStorage[userID].setCancel(orderId);
+//   // mark as canceled in db
+//   try {
+//     let order = await databaseClient.updateTrade({
+//       will_cancel: true,
+//       order_id: orderId
+//     })
+//     // if it is a reorder, there is no reason to cancel on CB
+//     if (!order.reorder) {
+//       // send cancelOrder to cb
+//       await cbClients[userID].cancelOrders([orderId]);
+//     }
+//     res.sendStatus(200)
+//     messenger[userID].newMessage({
+//       type: 'general',
+//       text: 'Successfully deleted trade-pair'
+//     });
+//   } catch (err) {
+//     let errorText = 'FAILURE deleting trade-pair!';
+//     let errorData = err?.data;
+//     if (err?.data?.message) {
+//       console.log(err.data.message, 'error message, trade router DELETE');
+//     }
+//     if (err.response?.status === 404) {
+//       databaseClient.deleteTrade(orderId);
+//       console.log('order not found in account', orderId);
+//       errorText = 'Order not found on coinbase, deleting from Coinbot.';
+//       res.sendStatus(404)
+//     } else if (err.response?.status === 400) {
+//       console.log('bad request', err.response?.data);
+//       errorText = 'Bad request. Please try again.';
+//       res.sendStatus(400)
+//     } else {
+//       console.log(err, 'something failed in the delete trade route');
+//       res.sendStatus(500)
+//     }
+//     messenger[userID].newError({
+//       errorData: errorData,
+//       errorText: errorText
+//     });
+//   };
+// });
 
 
 

@@ -3,7 +3,7 @@ const router = express.Router();
 const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const databaseClient = require('../modules/databaseClient');
-const { cbClients, messenger } = require('../modules/cache');
+const { cbClients, messenger, userStorage } = require('../modules/cache');
 const { sleep } = require('../../src/shared');
 
 
@@ -75,6 +75,7 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
 * DELETE RANGE route - Delete orders within a range
 */
 router.delete('/range', rejectUnauthenticated, async (req, res) => {
+  console.log('in delete range route');
   const userID = req.user.id;
   const previousPauseStatus = req.user.paused;
   console.log('in delete range route', userID, req.body);
@@ -115,6 +116,7 @@ router.delete('/range', rejectUnauthenticated, async (req, res) => {
 * DELETE route - delete all orders from DB, then cancel on CB
 */
 router.delete('/all', rejectUnauthenticated, async (req, res) => {
+  console.log('in delete all orders route');
   const userID = req.user.id;
   const previousPauseStatus = req.user.paused;
   console.log('in delete all orders route', userID);
@@ -151,6 +153,60 @@ router.delete('/all', rejectUnauthenticated, async (req, res) => {
     console.log(err, 'error in delete all orders route');
   }
   res.sendStatus(200)
+});
+
+
+/**
+* DELETE route - delete a single order from DB, then cancel on CB
+*/
+router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
+  console.log('in delete single order route');
+  // DELETE route code here
+  const userID = req.user.id;
+  const orderId = req.params.order_id;
+
+  userStorage[userID].setCancel(orderId);
+  // mark as canceled in db
+  try {
+    let order = await databaseClient.updateTrade({
+      will_cancel: true,
+      order_id: orderId
+    })
+    // if it is a reorder, there is no reason to cancel on CB
+    if (!order.reorder) {
+      // send cancelOrder to cb
+      await cbClients[userID].cancelOrders([orderId]);
+    }
+    res.sendStatus(200)
+    messenger[userID].newMessage({
+      type: 'general',
+      text: 'Successfully deleted trade-pair',
+      orderUpdate: true
+    });
+  } catch (err) {
+    let errorText = 'FAILURE deleting trade-pair!';
+    let errorData = err?.data;
+    if (err?.data?.message) {
+      console.log(err.data.message, 'error message, trade router DELETE');
+    }
+    if (err.response?.status === 404) {
+      databaseClient.deleteTrade(orderId);
+      console.log('order not found in account', orderId);
+      errorText = 'Order not found on coinbase, deleting from Coinbot.';
+      res.sendStatus(404)
+    } else if (err.response?.status === 400) {
+      console.log('bad request', err.response?.data);
+      errorText = 'Bad request. Please try again.';
+      res.sendStatus(400)
+    } else {
+      console.log(err, 'something failed in the delete trade route');
+      res.sendStatus(500)
+    }
+    messenger[userID].newError({
+      errorData: errorData,
+      errorText: errorText
+    });
+  };
 });
 
 
