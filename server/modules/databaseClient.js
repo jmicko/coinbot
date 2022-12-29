@@ -1309,12 +1309,12 @@ async function getProfitSinceDate(userID, date, product) {
     try {
       const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
       FROM limit_orders 
-      WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "filled_at" BETWEEN now() AND $2;`;
+      WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "filled_at" BETWEEN $2 AND now();`;
       let result = await pool.query(sqlText, [userID, date]);
 
       const productSqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
       FROM limit_orders 
-      WHERE "side" = 'SELL' AND "settled" = 'true' AND "product_id" = $1 AND "userID" = $2 AND "filled_at" BETWEEN now() AND $3;`;
+      WHERE "side" = 'SELL' AND "settled" = 'true' AND "product_id" = $1 AND "userID" = $2 AND "filled_at" BETWEEN $3 AND now();`;
       let productResult = await pool.query(productSqlText, [product, userID, date]);
 
       // add both results to an object and resolve
@@ -1323,6 +1323,7 @@ async function getProfitSinceDate(userID, date, product) {
         allProfit: result.rows[0].sum || 0,
         productProfit: productResult.rows[0].sum || 0
       }
+      console.log('profit', profit);
       resolve(profit);
     } catch (err) {
       reject(err);
