@@ -97,8 +97,6 @@ router.delete('/range', rejectUnauthenticated, async (req, res) => {
     // cancel all orders. The sync loop will take care of replacing them
     await cbClients[userID].cancelAll();
 
-    // set pause status to what it was before route was hit
-    await databaseClient.setPause(previousPauseStatus, userID)
     messenger[userID].newMessage({
       type: 'general',
       text: `Deleted orders between ${req.body.lowerLimit} and ${req.body.upperLimit} for ${req.body.product_id}`,
@@ -107,6 +105,10 @@ router.delete('/range', rejectUnauthenticated, async (req, res) => {
     console.log('+++++++ RANGE WAS DELETED +++++++ for user:', userID);
   } catch (err) {
     console.log(err, 'error in delete all orders route');
+  } finally {
+    // set pause status to what it was before route was hit
+    console.log('setting pause status to what it was before route was hit');
+    await databaseClient.setPause(previousPauseStatus, userID)
   }
   res.sendStatus(200)
 });
@@ -134,8 +136,6 @@ router.delete('/all', rejectUnauthenticated, async (req, res) => {
     // cancel all orders on coinbase
     await cbClients[userID].cancelAll();
 
-    // set pause status to what it was before route was hit
-    await databaseClient.setPause(previousPauseStatus, userID)
     // update orders on client
     messenger[userID].newMessage({
       type: 'general',
@@ -146,6 +146,9 @@ router.delete('/all', rejectUnauthenticated, async (req, res) => {
     console.log('+++++++ EVERYTHING WAS DELETED +++++++ for user:', userID);
   } catch (err) {
     console.log(err, 'error in delete all orders route');
+  } finally {
+    // set pause status to what it was before route was hit
+    await databaseClient.setPause(previousPauseStatus, userID)
   }
   res.sendStatus(200)
 });
@@ -171,10 +174,8 @@ router.delete('/product/:product_id', rejectUnauthenticated, async (req, res) =>
     await pool.query(queryText, [userID, product_id]);
 
     // cancel all orders for that product on coinbase
-    await cbClients[userID].cancelOrdersForProduct(product_id);
+    await cbClients[userID].cancelAllForProduct(product_id);
 
-    // set pause status to what it was before route was hit
-    await databaseClient.setPause(previousPauseStatus, userID)
     // update orders on client
     messenger[userID].newMessage({
       type: 'general',
@@ -185,6 +186,9 @@ router.delete('/product/:product_id', rejectUnauthenticated, async (req, res) =>
     console.log(`+++++++ EVERYTHING FOR PRODUCT: ${product_id} WAS DELETED +++++++ for user:`, userID);
   } catch (err) {
     console.log(err, 'error in delete all orders route');
+  } finally {
+    // set pause status to what it was before route was hit
+    await databaseClient.setPause(previousPauseStatus, userID)
   }
   res.sendStatus(200)
 });

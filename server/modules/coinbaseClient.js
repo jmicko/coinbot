@@ -514,6 +514,11 @@ class Coinbase {
   async cancelOrders(orderIdArray) {
     return new Promise(async (resolve, reject) => {
       try {
+        // make sure we have an array and that it is not empty
+        if (!Array.isArray(orderIdArray) || orderIdArray.length === 0) {
+          reject('orderIdArray must be an array of order IDs');
+          return;
+        }
         // data should just be an array of IDs
         const data = { order_ids: orderIdArray }
         const API = {

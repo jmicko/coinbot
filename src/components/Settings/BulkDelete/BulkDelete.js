@@ -18,6 +18,12 @@ function BulkDelete(props) {
     dispatch({ type: 'DELETE_ALL_ORDERS' });
   }
 
+  // delete all orders for a given product
+  function deleteAllOrdersForProduct() {
+    // call the orders delete route
+    dispatch({ type: 'DELETE_ALL_PRODUCT_ORDERS', payload: { product_id: props.product } });
+  }
+
   function deleteRange() {
     // call the orders delete route
     dispatch({
@@ -78,13 +84,21 @@ function BulkDelete(props) {
         <br />
         <br />
 
-        <button className={`btn-red medium ${user.theme}`} onClick={() => { deleteRange() }}>Delete Range</button>
+        <button className={`btn-red medium ${user.theme}`} onClick={() => { deleteRange() }}>Delete Range For {props.product}</button>
       </div>
+
+      {/* DELETE ALL TRADES FOR CURRENT PRODUCT */}
+
+      <div className="divider" />
+      <h4>Delete All Trades for {props.product}</h4>
+      <p>Danger! This button will delete all your positions for {props.product}! Press it carefully!</p>
+      <button className={`btn-red medium ${user.theme}`} onClick={() => { deleteAllOrdersForProduct() }}>Delete All {props.product}</button>
+      
 
       {/* DELETE ALL TRADES */}
       <div className="divider" />
       <h4>Delete All Trades</h4>
-      <p>Danger! This button will delete all your positions! Press it carefully!</p>
+      <p>Danger! This button will delete ALL your positions for ALL your products! Not just {props.product}! Press it carefully!</p>
       <button className={`btn-red medium ${user.theme}`} onClick={() => { deleteAllOrders() }}>Delete All</button>
 
       <div className="divider" />
