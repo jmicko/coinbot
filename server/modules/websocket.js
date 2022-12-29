@@ -45,14 +45,14 @@ async function startWebsocket(userID) {
         } else if (event.type === 'update' && event.orders) {
           handleOrdersUpdate(event.orders);
         } else {
-          console.log(event, event.type, 'unhandled event from ws');
+          // console.log(event, event.type, 'unhandled event from ws');
         }
       });
     }
   }
 
   function statusHandler(socketStatus) {
-    console.log(socketStatus, '<-- socketStatus');
+    // console.log(socketStatus, '<-- socketStatus');
     // send status message to user
     const statMessage = {
       type: 'socketStatus',
@@ -110,7 +110,7 @@ async function startWebsocket(userID) {
       orders.forEach(order => {
         if (order.status === 'FILLED') {
           orderIds.push(order.order_id)
-          console.log(order, 'filled order');
+          // console.log(order, 'filled order');
         }
       })
       // find unsettled orders in the db based on the IDs array
@@ -200,7 +200,7 @@ async function updateMultipleOrders(userID, params) {
 
 
 function setupSocketIO(io) {
-  console.log('setting up socket.io');
+  // console.log('setting up socket.io');
 
   io.use(rejectUnauthenticatedSocket);
 
@@ -209,11 +209,11 @@ function setupSocketIO(io) {
     let id = socket.id;
     const userID = socket.request.session.passport?.user;
     socket.userID = userID;
-    console.log(userID, 'the user id in socketIO');
+    // console.log(userID, 'the user id in socketIO');
     // add the socket to the user's socket storage
     messenger?.[userID]?.addSocket(socket);
 
-    console.log(userStorage?.[userID]?.socketStatus, '<-- current status');
+    // console.log(userStorage?.[userID]?.socketStatus, '<-- current status');
 
     const statMessage = {
       type: 'socketStatus',
@@ -260,7 +260,7 @@ function setupSocketIO(io) {
 
   io.on('connect', (socket) => {
     const session = socket.request.session;
-    console.log(`saving sid ${socket.id} in session ${session.id}`);
+    // console.log(`saving sid ${socket.id} in session ${session.id}`);
     session.socketId = socket.id;
     session.save();
   })

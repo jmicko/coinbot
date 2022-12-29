@@ -1241,19 +1241,6 @@ async function setAutoSetupNumber(number, userID) {
   })
 }
 
-// update the fund balances
-async function saveFunds(funds, userID) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `UPDATE "user_settings" SET "available_btc" = $1, "available_usd" = $2, "actualavailable_btc" = $3, "actualavailable_usd" = $4  WHERE "userID" = $5`;
-      let result = await pool.query(sqlText, [funds.availableBTC, funds.availableUSD, funds.actualAvailableBTC, funds.actualAvailableUSD, userID]);
-      resolve(result);
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
 // update the fees and 30 day trade volume
 async function saveFees(fees, userID) {
   return new Promise(async (resolve, reject) => {
@@ -1384,7 +1371,6 @@ const databaseClient = {
   setPause: setPause,
   setKillLock: setKillLock,
   setAutoSetupNumber: setAutoSetupNumber,
-  saveFunds: saveFunds,
   saveFees: saveFees,
   markAsFlipped: markAsFlipped,
   getProfitForDurationByProduct: getProfitForDurationByProduct,

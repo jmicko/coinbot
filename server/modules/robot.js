@@ -59,6 +59,7 @@ async function processingLoop(userID) {
 
       await processOrders(userID);
       // will_cancel orders can now be canceled.
+      // there is no need to update client after this because it is updated when user clicks the kill button
       await databaseClient.deleteMarkedOrders(userID);
     } catch (err) {
       console.log(err, 'error at the end of the processing loop');
@@ -363,13 +364,17 @@ async function processOrders(userID) {
           try {
 
 
-
+            // check if the trade should be canceled. This is the point of no return
             const willCancel = userStorage[userID].checkCancel(dbOrder.order_id);
             if (!willCancel) {
               // console.log(tradeDetails,'trade details');
+              // place the new trade on coinbase
               let cbOrder = await cbClients[userID].placeOrder(tradeDetails);
+              // let cbOrder = false
               // console.log(cbOrder, 'cbOrder');
+              // if the new trade was successfully placed...
               if (cbOrder.success) {
+                // ...get the new order from coinbase since not all details are returned when placing
                 const newOrder = await cbClients[userID].getOrder(cbOrder.order_id);
                 // ...store the new trade
                 // take the time the new order was created, and use it as the flipped_at value
@@ -378,12 +383,17 @@ async function processOrders(userID) {
                 // await databaseClient.storeTrade(cbOrder, dbOrder, cbOrder.created_at);
                 // ...mark the old trade as flipped
                 await databaseClient.markAsFlipped(dbOrder.order_id);
+                // tell the frontend that an update was made so the DOM can update
+                console.log('sending order update from processOrders');
+                // userStorage[userID].orderUpdate();
+                messenger[userID].orderUpdate();
               } else {
                 console.log('new trade failed!!!');
+                messenger[userID].newError({
+                  errorData: dbOrder,
+                  errorText: 'Something went wrong while flipping an order'
+                })
               }
-              // tell the frontend that an update was made so the DOM can update
-              console.log('sending order update from processOrders');
-              userStorage[userID].orderUpdate();
             }
 
 
@@ -459,6 +469,18 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     if (user.reinvest) {
       const orderSize = Number(dbOrder.base_size);
 
+      // console.log('===================== REINVESTING ======================');
+
+      // get available funds from userStorage
+      const availableFunds = userStorage[userID].getAvailableFunds();
+      
+      // get the available USD funds for the product_id
+      const availableUSD = availableFunds[dbOrder.product_id].quote_available;
+      
+      // console.log(availableFunds[dbOrder.product_id].quote_available, 'availableFunds in flipTrade');
+      // console.log(user.actualavailable_usd, 'user.actualavailable_usd')
+      // console.log(dbOrder, 'dbOrder in flipTrade');
+      
       // find out how much profit there was
       const BTCprofit = calculateProfitBTC(dbOrder);
 
@@ -492,7 +514,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
         });
 
         // calculate what funds will be leftover after all pending flips go through
-        const leftoverFunds = (Number(user.actualavailable_usd) - (allFlipsValue * (1 + Number(user.maker_fee))));
+        const leftoverFunds = (Number(availableUSD) - (allFlipsValue * (1 + Number(user.maker_fee))));
 
         // only set the new base_size if it will stay above the reserve
         if (leftoverFunds > user.reserve) {
@@ -525,7 +547,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
         });
 
         // calculate what funds will be leftover after all pending flips go through
-        const leftoverFunds = (Number(user.actualavailable_usd) - (allFlipsValue * (1 + Number(user.maker_fee))));
+        const leftoverFunds = (Number(availableUSD) - (allFlipsValue * (1 + Number(user.maker_fee))));
 
         // only set the new base_size if it will stay above the reserve
         if (leftoverFunds > user.reserve) {
@@ -546,6 +568,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     });
   }
 
+  // console.log('tradeDetails in flipTrade', tradeDetails);
   // return the tradeDetails object
   return tradeDetails;
 }
@@ -906,7 +929,6 @@ const robot = {
   updateMultipleOrders: updateMultipleOrders,
   startSync: startSync,
   initializeUserLoops: initializeUserLoops,
-  // autoSetup: autoSetup,
   getAvailableFunds: getAvailableFunds,
   updateFunds: updateFunds,
   alertAllUsers: alertAllUsers,
