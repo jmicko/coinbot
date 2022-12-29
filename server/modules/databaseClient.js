@@ -753,18 +753,18 @@ const getSettledTrades = (userID) => {
 }
 
 // get the number of open orders from the DB
-const getUnsettledTradeCounts = (userID) => {
+const getUnsettledTradeCounts = (userID, product) => {
   return new Promise(async (resolve, reject) => {
     try {
       // get total open buys
-      let sqlTextBuys = `SELECT COUNT(*) FROM "limit_orders" WHERE "userID"=$1 AND settled=false AND side='BUY';`;
+      let sqlTextBuys = `SELECT COUNT(*) FROM "limit_orders" WHERE "userID"=$1 AND settled=false AND side='BUY' AND "product_id"=$2;`;
 
       // get total open sells
-      let sqlTextSells = `SELECT COUNT(*) FROM "limit_orders" WHERE "userID"=$1 AND settled=false AND side='SELL';`;
+      let sqlTextSells = `SELECT COUNT(*) FROM "limit_orders" WHERE "userID"=$1 AND settled=false AND side='SELL' AND "product_id"=$2;`;
 
       const totals = await Promise.all([
-        pool.query(sqlTextBuys, [userID]),
-        pool.query(sqlTextSells, [userID])
+        pool.query(sqlTextBuys, [userID, product]),
+        pool.query(sqlTextSells, [userID, product])
       ])
       const [totalOpenBuys] = totals[0].rows;
       const [totalOpenSells] = totals[1].rows;

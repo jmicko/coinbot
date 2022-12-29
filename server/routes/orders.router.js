@@ -21,7 +21,7 @@ router.get('/:product', rejectUnauthenticated, (req, res) => {
     // get all open orders from db and from coinbase
     databaseClient.getUnsettledTradesByProduct('BUY', product, userID, req.user.max_trade_load),
     databaseClient.getUnsettledTradesByProduct('SELL', product, userID, req.user.max_trade_load),
-    databaseClient.getUnsettledTradeCounts(userID)
+    databaseClient.getUnsettledTradeCounts(userID, product)
   ])
     .then((result) => {
       const buys = result[0], sells = result[1], counts = result[2];
