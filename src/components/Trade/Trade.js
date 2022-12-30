@@ -33,6 +33,7 @@ function Trade(props) {
   const { width } = useWindowDimensions();
   const [basicAmount, setBasicAmount] = useState(0);
   const [basicSide, setBasicSide] = useState('BUY');
+  const products = useSelector((store) => store.accountReducer.productsReducer);
   const dispatch = useDispatch();
   const user = useSelector((store) => store.accountReducer.userReducer);
   const socket = useSocket();
@@ -394,7 +395,9 @@ function Trade(props) {
               onChange={(event) => setBasicAmount(Number(event.target.value))}
             />
 
-            {(basicSide === 'SELL') && <input className={`btn-blue ${user.theme}`} onClick={() => setBasicAmount(Number(user.actualavailable_btc))} type="button" name="submit" value="Max" />}
+            {/* {JSON.stringify(user.availableFunds?.[props.product].base_available)} */}
+
+            {(basicSide === 'SELL') && <input className={`btn-blue ${user.theme}`} onClick={() => setBasicAmount(Number(user.availableFunds?.[props.product].base_available))} type="button" name="submit" value="Max" />}
             <br />
             <p>
               This equates to about
