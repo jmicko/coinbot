@@ -568,6 +568,13 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     });
   }
 
+  // make sure all properties of tradeDetails are strings unless they are boolean
+  for (let key in tradeDetails) {
+    if (typeof tradeDetails[key] !== 'boolean') {
+      tradeDetails[key] = String(tradeDetails[key]);
+    }
+  }
+  
   // console.log('tradeDetails in flipTrade', tradeDetails);
   // return the tradeDetails object
   return tradeDetails;
