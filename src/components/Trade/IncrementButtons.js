@@ -25,7 +25,7 @@ function IncrementButtons(props) {
   // return the increment buttons and decrement buttons in a div.
   return (
     <div className="increment-buttons">
-      {JSON.stringify(buttonValues)}
+      {/* {JSON.stringify(buttonValues)} */}
       <div className="increase">
         {incrementButtons}
       </div>
