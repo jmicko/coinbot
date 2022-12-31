@@ -27,16 +27,42 @@ function Trade(props) {
   const [sellFee, setSellFee] = useState(0.005);
   const [totalfees, setTotalFees] = useState(0.005);
   const [amountTypeIsUSD, setAmountTypeIsUSD] = useState(true);
-
   const [tradeType, setTradeType] = useState(true);
+
   const [collapse, setCollapse] = useState(true);
   const { width } = useWindowDimensions();
   const [basicAmount, setBasicAmount] = useState(0);
   const [basicSide, setBasicSide] = useState('BUY');
-  const products = useSelector((store) => store.accountReducer.productsReducer);
   const dispatch = useDispatch();
   const user = useSelector((store) => store.accountReducer.userReducer);
   const socket = useSocket();
+  const [initialPriceSet, setInitialPriceSet] = useState(false);
+
+  // product info for the current product
+  const products = useSelector((store) => store.accountReducer.productsReducer);
+  const currentProductId = props.product;
+  const currentProduct = products?.allProducts?.find((product) => product.product_id === currentProductId);
+  const currentProductPrice = Number(socket.tickers?.[props.product]?.price);
+  // find the decimal places of the quote_increment
+  const quote_increment = currentProduct?.quote_increment;
+  const quote_increment_decimal_places = quote_increment?.split('1')[0]?.length - 1;
+  // rename the quote_increment_decimal_places to something shorter
+  const qidp = quote_increment_decimal_places;
+  // find the decimal places of the base_increment
+  const base_increment = currentProduct?.base_increment;
+  const base_increment_decimal_places = base_increment?.split('1')[0]?.length - 1;
+  // rename the base_increment_decimal_places to something shorter
+  const bidp = base_increment_decimal_places;
+  // create an integer version of the bidp
+  const bidp_int = Math.pow(10, bidp);
+  // create an integer version of the qidp
+  const qidp_int = Math.pow(10, qidp);
+  // create a rounding decimal place for the price
+  // const price_rounding = Math.pow(10, qidp - 2);
+  const price_rounding = Math.pow(10, qidp - 2);
+  // create a rounding decimal place for the amount
+  // const amount_rounding = Math.pow(10, bidp - 2);
+  const minBaseSize = currentProduct?.base_min_size;
 
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
   const numberWithCommas = (x) => {
@@ -79,7 +105,7 @@ function Trade(props) {
     // calculate flipped price
     let original_sell_price = (Math.round((price * (Number(tradePairRatio) + 100))) / 100);
     let type = false;
-    if (socket.tickers[props.product].price < price) {
+    if (currentProductPrice < price) {
       type = 'market';
     }
     dispatch({
@@ -89,7 +115,7 @@ function Trade(props) {
         side: transactionSide,
         limit_price: price,
         base_size: transactionAmountBTC,
-        product_id: props.product,
+        product_id: currentProductId,
         trade_pair_ratio: tradePairRatio,
         type: type
       }
@@ -102,36 +128,51 @@ function Trade(props) {
     dispatch({
       type: 'START_BASIC_TRADE', payload: {
         base_size: basicAmount,
-        product_id: props.product,
+        product_id: currentProductId,
         side: basicSide,
-        tradingPrice: socket.tickers[props.product].price
+        tradingPrice: currentProductPrice
       }
     })
   }
 
+  // store the current product in a variable
   const getCurrentPrice = useCallback(
     (event) => {
       if (event) {
         event.preventDefault();
       }
-      // check if the current price has been stored yet to prevent NaN errors
-      if (socket.tickers[props.product]?.price) {
+      // console.log(currentProductPrice, typeof currentProductPrice, 'currentProductPrice')
+      // console.log(currentProductId, 'currentProductId')
+      // console.log(currentProduct, 'currentProduct')
+      // console.log(qidp, 'qidp')
+      // console.log(qidp_int, 'qidp_int')
+      // console.log(bidp, 'bidp')
+      // console.log(bidp_int, 'bidp_int')
+      console.log(price_rounding, 'price_rounding')
+      // console.log(amount_rounding, 'amount_rounding')
+      // check if the current price has been stored and is a number to prevent NaN errors
+      if (currentProductPrice && typeof currentProductPrice === 'number') {
         // round the price to nearest 100
         // const roundedPrice = Math.round(socket.tickers[props.product].price)
-        const roundedPrice = Math.round(socket.tickers?.[props.product]?.price / 100) * 100;
+        // const roundedPrice = Math.round(currentProductPrice / 100) * 100;
+        // const roundedPrice = currentProductPrice;
+        // const roundedPrice = Math.round(currentProductPrice / price_rounding) * price_rounding;
+        const roundedPrice = Math.round(currentProductPrice * price_rounding) / price_rounding;
+        console.log(roundedPrice, 'roundedPrice')
         // change input box to reflect rounded value
         setTransactionPrice(roundedPrice)
       }
-    }, [setTransactionPrice, socket.tickers?.[props.product]?.price]
+    }, [setTransactionPrice, currentProductPrice, price_rounding]
   )
 
 
   // when the page loads, get the current price
   useEffect(() => {
-    if (price === 0) {
+    if (!initialPriceSet && currentProductPrice) {
       getCurrentPrice();
+      setInitialPriceSet(true);
     }
-  }, [getCurrentPrice, price])
+  }, [getCurrentPrice, currentProductPrice, initialPriceSet, setInitialPriceSet])
 
   // once the account fees load into redux, 
   useEffect(() => {
@@ -169,7 +210,7 @@ function Trade(props) {
 
   // function to set amount in BTC if USD inputs are being used
   useEffect(() => {
-    if (amountTypeIsUSD) {
+    if (amountTypeIsUSD && price) {
       const convertedAmount = Number((transactionAmountUSD / price) * 100000000) / 100000000;
       setTransactionAmountBTC(Math.floor(convertedAmount * 100000000) / 100000000);
     }
@@ -198,7 +239,7 @@ function Trade(props) {
     !collapse || width < 800
       ? tradeType
         ? <div className="Trade scrollable boxed" >
-          <h3 className={`title ${user.theme}`}>{ width > 800 && <button className={`btn-blue ${user.theme}`} onClick={toggleCollapse} >&#9664;</button>} New Trade-Pair <button className={`btn-blue ${user.theme}`} onClick={toggleTradeType} >Switch</button></h3>
+          <h3 className={`title ${user.theme}`}>{width > 800 && <button className={`btn-blue ${user.theme}`} onClick={toggleCollapse} >&#9664;</button>} New Trade-Pair <button className={`btn-blue ${user.theme}`} onClick={toggleTradeType} >Switch</button></h3>
           {/* form for setting up individual trade-pairs */}
           <form className="new-trade-form" onSubmit={submitTransaction} >
             <div className="number-inputs">
@@ -364,7 +405,7 @@ function Trade(props) {
 
         : <div className={`Trade scrollable boxed ${basicSide}-color`} >
 
-          <h3 className={`title market-order ${user.theme}`}>{ width > 800 && <button className={`btn-blue ${user.theme}`} onClick={toggleCollapse} >&#9664;</button>} Market Order <button className={`btn-blue ${user.theme}`} onClick={toggleTradeType} >Switch</button></h3>
+          <h3 className={`title market-order ${user.theme}`}>{width > 800 && <button className={`btn-blue ${user.theme}`} onClick={toggleCollapse} >&#9664;</button>} Market Order <button className={`btn-blue ${user.theme}`} onClick={toggleTradeType} >Switch</button></h3>
           {/* form with a single input. Input takes a price point at which to make a trade */}
 
           <form className={`basic-trade-form`} onSubmit={submitBasicTransaction} >
@@ -409,7 +450,7 @@ function Trade(props) {
           </form>
         </div>
       : <div className={`Trade scrollable boxed collapsed`} >
-        <button className={`btn-blue btn-collapse ${user.theme}`} onClick={toggleCollapse} >&#9654;<br/>&#9654;<br/>&#9654;</button>
+        <button className={`btn-blue btn-collapse ${user.theme}`} onClick={toggleCollapse} >&#9654;<br />&#9654;<br />&#9654;</button>
         {/* <button className={`btn-blue btn-collapse ${user.theme}`} onClick={toggleCollapse} >&#9654;<br/><br/>&#9654;<br/><br/>&#9654;</button> */}
 
       </div>
