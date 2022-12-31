@@ -64,7 +64,7 @@ function* deleteAllOrdersForProduct(action) {
 
 function* deleteOrder(action) {
   try {
-    yield axios.delete(`/api/orders/product/${action.payload.product_id}`);
+    yield axios.delete(`/api/orders/${action.payload.order_id}`);
   } catch (error) {
     console.log('DELETE order route has failed', error)
     if (error.response.status === 403) {
