@@ -4,6 +4,8 @@ import { useSocket } from '../../contexts/SocketProvider';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 import './Trade.css';
+import IncrementButtons from './IncrementButtons';
+import { numberWithCommas } from '../../shared';
 
 
 function Trade(props) {
@@ -61,23 +63,14 @@ function Trade(props) {
   // const price_rounding = Math.pow(10, qidp - 2);
   const price_rounding = Math.pow(10, qidp - 2);
   // create a rounding decimal place for the amount
-  // const amount_rounding = Math.pow(10, bidp - 2);
+  const amount_rounding = Math.pow(10, bidp - 2);
   const minBaseSize = currentProduct?.base_min_size;
-
-  // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
-  const numberWithCommas = (x) => {
-    // this will work in safari once lookbehind is supported
-    // return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
-    // for now, use this
-    let parts = x.toString().split(".");
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return parts.join(".");
-  }
 
   // calculate New Position values every time a number in the calculator changes
   useEffect(() => {
 
-    let sellPrice = (price * (tradePairRatio + 100)) / 100;
+    
+    let sellPrice = (price * (Number(tradePairRatio) + 100)) / 100;
     let priceMargin = sellPrice - price;
     let volumeCostBuy = price * transactionAmountBTC;
     let volumeCostSell = sellPrice * transactionAmountBTC;
@@ -87,6 +80,11 @@ function Trade(props) {
     let pairMargin = volumeCostSell - volumeCostBuy;
     let pairProfit = pairMargin - totalfees;
 
+    console.log(tradePairRatio, 'tradePairRatio')
+    console.log(price, 'price')
+    console.log(sellPrice, 'sellPrice')
+
+    
     setSellPrice(sellPrice);
     setPriceMargin(priceMargin);
     setVolumeCostBuy(volumeCostBuy);
@@ -141,15 +139,15 @@ function Trade(props) {
       if (event) {
         event.preventDefault();
       }
-      // console.log(currentProductPrice, typeof currentProductPrice, 'currentProductPrice')
-      // console.log(currentProductId, 'currentProductId')
-      // console.log(currentProduct, 'currentProduct')
-      // console.log(qidp, 'qidp')
-      // console.log(qidp_int, 'qidp_int')
-      // console.log(bidp, 'bidp')
-      // console.log(bidp_int, 'bidp_int')
+      console.log(currentProductPrice, typeof currentProductPrice, 'currentProductPrice')
+      console.log(currentProductId, 'currentProductId')
+      console.log(currentProduct, 'currentProduct')
+      console.log(qidp, 'qidp')
+      console.log(qidp_int, 'qidp_int')
+      console.log(bidp, 'bidp')
+      console.log(bidp_int, 'bidp_int')
       console.log(price_rounding, 'price_rounding')
-      // console.log(amount_rounding, 'amount_rounding')
+      console.log(amount_rounding, 'amount_rounding')
       // check if the current price has been stored and is a number to prevent NaN errors
       if (currentProductPrice && typeof currentProductPrice === 'number') {
         // round the price to nearest 100
@@ -184,41 +182,26 @@ function Trade(props) {
       event.preventDefault();
     }
     setAmountTypeIsUSD(type);
-    if (type === true) {
-      const newUSDAmount = Math.round(price * transactionAmountBTC)
-      setTransactionAmountUSD(newUSDAmount)
-      const convertedAmount = Number(Math.floor((newUSDAmount / price) * 100000000)) / 100000000;
-      setTransactionAmountBTC(convertedAmount);
-    } else {
-      setTransactionAmountBTC(Math.floor(transactionAmountBTC * 10000) / 10000)
+    if (!type) {
+      setTransactionAmountBTC(Number(transactionAmountBTC).toFixed(bidp))
     }
   }
 
   function handleTransactionAmount(amount) {
     if (amountTypeIsUSD) {
-      setTransactionAmountUSD(amount)
       // setTransactionAmountBTC(Math.floor(price / amount * 1000) / 1000)
-      const convertedAmount = Number(Math.floor((amount / price) * 100000000)) / 100000000;
+      setTransactionAmountUSD(Number(amount).toFixed(qidp))
+      const convertedAmount = Number(Math.floor((amount / price) * bidp_int)) / bidp_int;
       setTransactionAmountBTC(convertedAmount);
     }
     if (!amountTypeIsUSD) {
       // setTransactionAmountBTC(Math.floor(amount *100000000) / 100000000)
-      setTransactionAmountBTC(amount)
-      setTransactionAmountUSD(Number(Math.round(price * amount * 100) / 100))
+      setTransactionAmountBTC(Number(amount).toFixed(bidp))
+      setTransactionAmountUSD(Number(price * amount).toFixed(qidp))
+      // setTransactionAmountUSD(Number(Math.round(price * amount * 100) / 100))
     }
   }
 
-  // function to set amount in BTC if USD inputs are being used
-  useEffect(() => {
-    if (amountTypeIsUSD && price) {
-      const convertedAmount = Number((transactionAmountUSD / price) * 100000000) / 100000000;
-      setTransactionAmountBTC(Math.floor(convertedAmount * 100000000) / 100000000);
-    }
-    if (!amountTypeIsUSD) {
-      setTransactionAmountBTC(Math.floor(transactionAmountBTC * 10000) / 10000)
-      // setTransactionAmountUSD(Math.round(price * transactionAmountBTC * 100) / 100)
-    }
-  }, [price])
 
   function toggleTradeType() {
     setTradeType(!tradeType);
@@ -257,20 +240,13 @@ function Trade(props) {
                 required
                 onChange={(event) => setTransactionPrice(Number(event.target.value))}
               />
-              <div className="increment-buttons">
-                <div className="increase">
-                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) + 10000)} value="+10000"></input>
-                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) + 1000)} value="+1000"></input>
-                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) + 100)} value="+100"></input>
-                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) + 10)} value="+10"></input>
-                </div>
-                <div className="decrease">
-                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) - 10000)} value="-10000"></input>
-                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) - 1000)} value="-1000"></input>
-                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) - 100)} value="-100"></input>
-                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTransactionPrice(Number(price) - 10)} value="-10"></input>
-                </div>
-              </div>
+              <IncrementButtons
+                firstButton={currentProduct.quote_increment * 10}
+                roundTo={qidp}
+                currentValue={price}
+                changeValue={setTransactionPrice}
+                theme={user.theme}
+              />
             </div>
 
             {/* INPUT FOR AMOUNT IN BTC */}
@@ -278,7 +254,7 @@ function Trade(props) {
               ? <div className="number-inputs">
                 {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
                 <label htmlFor="transaction_amount">
-                  Trade amount (in BTC):
+                  Trade amount in {currentProduct.base_currency_id}:
                   <button className={`btn-blue ${user.theme}`} onClick={(event) => amountTypeHandler(event, true)}>Switch</button>
                 </label>
                 <input
@@ -290,27 +266,20 @@ function Trade(props) {
                   required
                   onChange={(event) => handleTransactionAmount(event.target.value)}
                 />
-                <div className="increment-buttons">
-                  <div className="increase">
-                    <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 1000) / 10000)} value="+.100"></input>
-                    <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 100) / 10000)} value="+.010"></input>
-                    <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 10) / 10000)} value="+.001"></input>
-                    <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 + 1) / 10000)} value="+.0001"></input>
-                  </div>
-                  <div className="decrease">
-                    <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 1000) / 10000)} value="-.100"></input>
-                    <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 100) / 10000)} value="-.010"></input>
-                    <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 10) / 10000)} value="-.001"></input>
-                    <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountBTC) * 10000 - 1) / 10000)} value="-.0001"></input>
-                  </div>
-                </div>
+                <IncrementButtons
+                  firstButton={currentProduct.base_increment * 10000}
+                  roundTo={bidp}
+                  currentValue={transactionAmountBTC}
+                  changeValue={handleTransactionAmount}
+                  theme={user.theme}
+                />
               </div>
 
               /* INPUT FOR AMOUNT IN USD */
               : <div className="number-inputs">
                 {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
                 <label htmlFor="transaction_amount">
-                  Trade amount (in USD):
+                  Trade amount in {currentProduct.quote_currency_id}:
                   <button className={`btn-blue ${user.theme}`} onClick={(event) => amountTypeHandler(event, false)}>Switch</button>
                 </label>
                 <input
@@ -322,20 +291,13 @@ function Trade(props) {
                   required
                   onChange={(event) => handleTransactionAmount(event.target.value)}
                 />
-                <div className="increment-buttons">
-                  <div className="increase">
-                    <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 10000000) / 10000)} value="+1000"></input>
-                    <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 1000000) / 10000)} value="+100"></input>
-                    <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 100000) / 10000)} value="+10"></input>
-                    <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 + 10000) / 10000)} value="+1"></input>
-                  </div>
-                  <div className="decrease">
-                    <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 10000000) / 10000)} value="-1000"></input>
-                    <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 1000000) / 10000)} value="-100"></input>
-                    <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 100000) / 10000)} value="-10"></input>
-                    <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => handleTransactionAmount(Math.round(Number(transactionAmountUSD) * 10000 - 10000) / 10000)} value="-1"></input>
-                  </div>
-                </div>
+                <IncrementButtons
+                  firstButton={currentProduct.quote_increment * 10}
+                  roundTo={qidp}
+                  currentValue={transactionAmountUSD}
+                  changeValue={handleTransactionAmount}
+                  theme={user.theme}
+                />
               </div>
             }
 
@@ -355,21 +317,13 @@ function Trade(props) {
                 required
                 onChange={(event) => setTradePairRatio(Number(event.target.value))}
               />
-              <div className="increment-buttons">
-                <div className="increase">
-                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 + 1000) / 1000)} value="+1"></input>
-                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 + 100) / 1000)} value="+0.1"></input>
-                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 + 10) / 1000)} value="+0.01"></input>
-                  <input type="button" className={`btn-green ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 + 1) / 1000)} value="+0.001"></input>
-
-                </div>
-                <div className="decrease">
-                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 1000) / 1000)} value="-1"></input>
-                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 100) / 1000)} value="-0.1"></input>
-                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 10) / 1000)} value="-0.01"></input>
-                  <input type="button" className={`btn-red ${user.theme}`} onClick={(event) => setTradePairRatio(Math.round(Number(tradePairRatio) * 1000 - 1) / 1000)} value="-0.001"></input>
-                </div>
-              </div>
+              <IncrementButtons
+                  firstButton={0.001}
+                  roundTo={3}
+                  currentValue={tradePairRatio}
+                  changeValue={setTradePairRatio}
+                  theme={user.theme}
+                />
               <input className={`btn-send-trade btn-blue ${user.theme}`} type="submit" name="submit" value="Start New Trade-Pair" />
             </div>
 
@@ -378,13 +332,13 @@ function Trade(props) {
             <div className={`boxed dark ${user.theme}`}>
               <h4 className={`title ${user.theme}`}>New position</h4>
               <p><strong>Trade Pair Details:</strong></p>
-              <p className="info">Buy price: <strong>${numberWithCommas(price.toFixed(8))}</strong> </p>
-              <p className="info">Sell price <strong>${numberWithCommas(sellPrice.toFixed(8))}</strong></p>
-              <p className="info">Price margin: <strong>{numberWithCommas(priceMargin.toFixed(2))}</strong> </p>
+              <p className="info">Buy price: <strong>${numberWithCommas(price.toFixed(qidp))}</strong> </p>
+              <p className="info">Sell price <strong>${numberWithCommas(sellPrice.toFixed(qidp))}{sellPrice}</strong></p>
+              <p className="info">Price margin: <strong>{numberWithCommas(priceMargin.toFixed(qidp))}</strong> </p>
               <p className="info">Volume <strong>{transactionAmountBTC}</strong> </p>
               <p><strong>Cost at this volume:</strong></p>
-              <p className="info"><strong>BUY*:</strong> ${numberWithCommas(volumeCostBuy.toFixed(2))}</p>
-              <p className="info"><strong>SELL*:</strong>${numberWithCommas(volumeCostSell.toFixed(2))}</p>
+              <p className="info"><strong>BUY*:</strong> ${numberWithCommas(volumeCostBuy.toFixed(qidp))}</p>
+              <p className="info"><strong>SELL*:</strong>${numberWithCommas(volumeCostSell.toFixed(qidp))}</p>
               <p className="info"><strong>BUY FEE*:</strong> ${buyFee.toFixed(8)}</p>
               <p className="info"><strong>SELL FEE*:</strong> ${sellFee.toFixed(8)}</p>
               <p className="info"><strong>TOTAL FEES*:</strong> ${totalfees.toFixed(8)}</p>
