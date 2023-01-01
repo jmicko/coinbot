@@ -19,58 +19,31 @@ router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
     try {
       console.log(userID, 'test route hit');
 
-
-      const allOrders = await databaseClient.getAllSettledTrades(userID);
-
-      // console.log(allOrders, 'all orders');
-
-      const fillsIds = []
-      const allFills = []
-
-      for (let i = 0; i < allOrders.length; i++) {
-        const order = allOrders[i];
-
-        let orderFills = await cbClients[userID].getFills({ order_id: order.order_id })
-
-        // console.log(orderFills, 'order fills');
-
-        orderFills.fills.forEach(fill => fillsIds.push(fill.order_id))
-        orderFills.fills.forEach(fill => allFills.push(fill))
-
-
-
-        // if (orderFills.length > 1) {
-        //   console.log(orderFills, 'order fills');
-        // } else {
-        //   console.log(orderFills.fills[0], 'order fills');
-        // }
-
-
-        await sleep(200);
-      }
-      
-      // console.log(fillsIds, 'fills ids');
-      
-      const unfilled = await databaseClient.getUnfilledTradesByIDs(userID, fillsIds);
-      
-      console.log(unfilled, 'unfilled');
-      
-      unfilled.forEach(async trade => {
-        
-        const unfilledFill = allFills.filter(fill => fill.order_id === trade.order_id)[0];
-        
-        console.log(trade, 'trade');
-        console.log(unfilledFill, 'unfilled fill');
-        
-        
-        const newFill = {
-          order_id: unfilledFill.order_id,
-          filled_at: unfilledFill.trade_time
-        }
-        
-        await databaseClient.updateTrade(newFill);
-
+      // get the current date converted to unix time in seconds
+      const endDate = Math.round(new Date().getTime() / 1000);
+      // const endDate = Math.round((new Date().getTime() - (1000 * 60 * 60 * 24 * 50)) / 1000);
+      // const endDate = 1670_529_094
+      // subtract 4 hours
+      const startDate = endDate - (60 * 60 * 4);
+      // const startDate = 1670_525_505
+      // const startDate = 1672_578_875903
+      // const startDate = 1672_539_84648400
+      console.log(endDate);
+      // get market candles
+      const marketCandles = await cbClients[userID].getMarketCandles({
+        product_id: 'BTC-USD',
+        // start date in unix time
+        start: startDate.toString(),
+        // end date in unix time
+        end: endDate.toString(),
+        granularity: 'ONE_MINUTE'
       });
+
+      console.log(startDate, endDate)
+
+      console.log(marketCandles);
+
+
 
       res.sendStatus(200);
     } catch (err) {

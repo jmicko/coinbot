@@ -175,8 +175,10 @@ class Coinbase {
       // add new param
       options.url += `${key}=${params[key]}&`;
     });
+    // console.log(options.url);
     // cut off the last & symbol
-    options.url.slice(0, -1)
+    options.url = options.url.slice(0, -1)
+    // console.log(options.url);
   }
 
   // CALL IT LIKE THIS coinbase.getAccounts({ limit: 250, someKey:whateverValue })
@@ -303,6 +305,62 @@ class Coinbase {
         const API = {
           url: `https://coinbase.com/api/v3/brokerage/products`,
           path: "/api/v3/brokerage/products",
+          method: 'GET',
+        }
+        // sign the request
+        const options = this.signRequest(data, API);
+        // add params, if any
+        if (params) { this.addParams(options, params) };
+        // make the call
+        let response = await axios.request(options);
+        resolve(response.data);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+
+  async getMarketTrades(params) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const product_id = params.product_id;
+        // delete product_id from params
+        delete params.product_id;
+        // console.log(params);
+        // data should just be blank
+        const data = null;
+        const API = {
+          url: `https://coinbase.com/api/v3/brokerage/products/${product_id}/ticker/`,
+          path: `/api/v3/brokerage/products/${product_id}/ticker/`,
+          method: 'GET',
+        }
+        // sign the request
+        const options = this.signRequest(data, API);
+        // add params, if any
+        if (params) { this.addParams(options, params) };
+        // make the call
+        let response = await axios.request(options);
+        resolve(response.data);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+
+  async getMarketCandles(params) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const product_id = params.product_id;
+        // delete product_id from params
+        delete params.product_id;
+        // console.log(params);
+        // data should just be blank
+        const data = null;
+        const API = {
+          url: `https://coinbase.com/api/v3/brokerage/products/${product_id}/candles/`,
+          path: `/api/v3/brokerage/products/${product_id}/candles/`,
           method: 'GET',
         }
         // sign the request
