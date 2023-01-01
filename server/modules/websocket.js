@@ -120,7 +120,6 @@ async function startWebsocket(userID) {
     } catch (err) {
       console.log(err, 'error in ws order update handler');
     }
-
   }
 
   function handleTickers(tickers) {

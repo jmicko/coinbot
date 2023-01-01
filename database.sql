@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS "session";
 DROP TABLE IF EXISTS "user_api";
 DROP TABLE IF EXISTS "user_settings";
 DROP TABLE IF EXISTS "bot_settings";
+DROP TABLE IF EXISTS "market_candles";
 
 CREATE TABLE IF NOT EXISTS "user_api"
 (
@@ -75,6 +76,21 @@ CREATE TABLE IF NOT EXISTS "products"
   "fcm_trading_session_details" character varying COLLATE pg_catalog."default",
   "mid_market_price" numeric(32,16)
 );
+
+CREATE TABLE IF NOT EXISTS "market_candles"
+(
+  "id" SERIAL PRIMARY KEY,
+  "product_id" character varying COLLATE pg_catalog."default" NOT NULL,
+  "granularity" character varying COLLATE pg_catalog."default" NOT NULL,
+  -- start should be a data type that can store a unix timestamp in seconds as a number
+  "start" integer NOT NULL,
+  "low" numeric(32,16) NOT NULL,
+  "high" numeric(32,16) NOT NULL,
+  "open" numeric(32,16) NOT NULL,
+  "close" numeric(32,16) NOT NULL,
+  "volume" numeric(32,16) NOT NULL
+);
+
 
 CREATE TABLE IF NOT EXISTS "bot_settings"
 (
@@ -174,3 +190,7 @@ ON "limit_orders" ("side", "flipped", "will_cancel", "userID", "settled");
 -- this will index the products table so that looking up active products is faster
 CREATE INDEX user_active
 ON "products" ("user_id","quote_currency_id","active_for_user");
+
+-- this will index the market_candles table so that looking up candles is faster
+CREATE INDEX candles
+ON "market_candles" ("product_id","granularity");
