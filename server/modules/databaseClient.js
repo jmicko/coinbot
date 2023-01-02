@@ -1346,6 +1346,21 @@ async function getMostRecentCandle(userID, product_id, granularity) {
   })
 }
 
+async function getOldestCandle(userID, product_id, granularity) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `
+      SELECT * FROM "market_candles" 
+      WHERE "user_id" = $1 AND "product_id" = $2 AND "granularity" = $3 
+      ORDER BY "start" ASC LIMIT 1;`;
+      let result = await pool.query(sqlText, [userID, product_id, granularity]);
+      resolve(result.rows[0]);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 // save an array of candles to the database
 async function saveCandles(userID, productID, granularity, candles) {
   return new Promise(async (resolve, reject) => {
@@ -1450,6 +1465,7 @@ const databaseClient = {
   getProfitForDurationByAllProducts: getProfitForDurationByAllProducts,
   getProfitSinceDate: getProfitSinceDate,
   getMostRecentCandle: getMostRecentCandle,
+  getOldestCandle: getOldestCandle,
   saveCandles: saveCandles,
   getCandles: getCandles,
   getCandlesAverage: getCandlesAverage,
