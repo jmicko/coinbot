@@ -45,7 +45,7 @@ function Settings(props) {
             'investment': <Investment product={props.product} theme={user.theme} tips={tips} />,
             'autoSetup': <AutoSetup product={props.product} theme={user.theme} tips={tips} priceTicker={props.priceTicker} />,
             'bulkDelete': <BulkDelete product={props.product} theme={user.theme} tips={tips} />,
-            'history': <History theme={user.theme} tips={tips} />,
+            'history': <History product={props.product} theme={user.theme} tips={tips} />,
             'reset': <Reset product={props.product} theme={user.theme} tips={tips} />,
             'admin': <Admin product={props.product} theme={user.theme} tips={tips} />
           }[settingsPage]

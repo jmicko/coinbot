@@ -37,7 +37,8 @@ function Products(props) {
             <th>Active</th>
             <th>Product ID</th>
             <th>Price</th>
-            <th>Volume 24h</th>
+            {/* <th>Volume 24h</th> */}
+            <th>6h avg variance</th>
             <th>Volume 24h In Quote</th>
             <th>Price % Change 24h</th>
           </tr>
@@ -68,7 +69,8 @@ function Products(props) {
                   </td>
                   <td>
                     <center>
-                      {numberWithCommas(Number(product.volume_24h).toFixed(Number(product.quote_increment).toString().length - 2))}
+                      {/* {numberWithCommas(Number(product.volume_24h).toFixed(Number(product.quote_increment).toString().length - 2))} */}
+                      {numberWithCommas(Number(product.average).toFixed(8))}
                     </center>
                   </td>
                   <td>

@@ -183,6 +183,25 @@ function* exportXlsx() {
   }
 }
 
+// export candles for a product and granularity
+function* exportCandles(action) {
+  try {
+    const response = yield axios.get(`/api/account/exportCandles/${action.payload.product}/${action.payload.granularity}`, { responseType: 'arraybuffer' });
+    // save the file to the client
+    const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.download = `${action.payload.product}-${action.payload.granularity}.xlsx`;
+    link.click();
+    // yield put({ type: 'SET_CANDLES', payload: response })
+  } catch (error) {
+    console.log('export candles route has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
 function* exportCurrentJSON() {
   try {
     const response = yield axios.get(`/api/account/exportCurrentJSON`);
@@ -234,6 +253,7 @@ function* accountSaga() {
   yield takeLatest('TOGGLE_TRADE_MAX', tradeMax);
   yield takeLatest('STORE_MAX_TRADE_SIZE', storeMaxTradeSize);
   yield takeLatest('EXPORT_XLSX', exportXlsx);
+  yield takeLatest('EXPORT_CANDLE_XLSX', exportCandles);
   yield takeLatest('EXPORT_CURRENT_JSON', exportCurrentJSON);
   yield takeLatest('IMPORT_CURRENT_JSON', importCurrentJSON);
   yield takeLatest('DEBUG', debug);

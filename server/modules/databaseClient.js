@@ -1331,6 +1331,78 @@ async function getProfitSinceDate(userID, date, product) {
   })
 }
 
+async function getMostRecentCandle(userID, product_id, granularity) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `
+      SELECT * FROM "market_candles" 
+      WHERE "user_id" = $1 AND "product_id" = $2 AND "granularity" = $3 
+      ORDER BY "start" DESC LIMIT 1;`;
+      let result = await pool.query(sqlText, [userID, product_id, granularity]);
+      resolve(result.rows[0]);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+// save an array of candles to the database
+async function saveCandles(userID, productID, granularity, candles) {
+  return new Promise(async (resolve, reject) => {
+    console.log('saving candles', candles.length);
+    try {
+      // save each candle to the database unless it already exists
+      for (let i = 0; i < candles.length; i++) {
+        const candle = candles[i];
+        // console.log('candle', candle.start, productID, granularity, Date.now());
+        // check if the candle already exists
+        const sqlText = `SELECT * FROM "market_candles" WHERE "user_id" = $1 AND "product_id" = $2 AND "granularity" = $3 AND "start" = $4;`;
+        let result = await pool.query(sqlText, [userID, productID, granularity, candle.start]);
+        // console.log('result', result.rows[0]);
+        // if the candle doesn't exist, save it
+        if (result.rows.length === 0) {
+          const insertSqlText = `INSERT INTO market_candles (user_id, product_id, granularity, start, low, high, high_low_ratio, open, close, volume)
+          VALUES ($1, $2, $3, $4, $5, $6, ($6::numeric / $5::numeric), $7, $8, $9);`;
+          await pool.query(insertSqlText, [userID, productID, granularity, candle.start, candle.low, candle.high, candle.open, candle.close, candle.volume]);
+        }
+      }
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+// get all candles for a product and granularity
+async function getCandles(userID, productID, granularity) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `SELECT * FROM "market_candles" WHERE "user_id" = $1 AND "product_id" = $2 AND "granularity" = $3;`;
+      let result = await pool.query(sqlText, [userID, productID, granularity]);
+      resolve(result.rows);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+// get all candles for a product and granularity
+async function getCandlesAverage(userID, productID, granularity) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // get the unix date in seconds for 30 days ago
+      const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (60 * 60 * 24 * 30);
+      // get the average high low ratio for the last 30 days
+      const sqlText = `SELECT AVG("high_low_ratio") AS "average" FROM "market_candles" WHERE "user_id" = $1 AND "product_id" = $2 AND "granularity" = $3 AND "start" > $4;`;
+      let result = await pool.query(sqlText, [userID, productID, granularity, thirtyDaysAgo]);
+      resolve(result.rows[0]);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+
 
 const databaseClient = {
   storeTrade: storeTrade,
@@ -1377,6 +1449,10 @@ const databaseClient = {
   getProfitForDurationByProduct: getProfitForDurationByProduct,
   getProfitForDurationByAllProducts: getProfitForDurationByAllProducts,
   getProfitSinceDate: getProfitSinceDate,
+  getMostRecentCandle: getMostRecentCandle,
+  saveCandles: saveCandles,
+  getCandles: getCandles,
+  getCandlesAverage: getCandlesAverage,
 }
 
 module.exports = databaseClient;

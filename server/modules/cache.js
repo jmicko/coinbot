@@ -63,6 +63,13 @@ class User {
     this.loopNumber = Number(0);
     this.deleting = false;
     this.socketStatus = 'closed';
+    this.candlesBeingUpdated = new Object();
+  }
+  updateCandlesBeingUpdated(product_id, granularity, boolean) {
+    if (!this.candlesBeingUpdated[product_id]) {
+      this.candlesBeingUpdated[product_id] = {};
+    }
+    this.candlesBeingUpdated[product_id][granularity] = boolean;
   }
   getUser() {
     // console.log('getting the user')
@@ -148,7 +155,7 @@ class User {
     this.auto_setup_number = user.auto_setup_number;
     this.profit_reset = user.profit_reset;
   }
-  setSocketStatus(socketStatus){
+  setSocketStatus(socketStatus) {
     this.socketStatus = socketStatus;
   }
 }

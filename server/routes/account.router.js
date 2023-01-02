@@ -5,6 +5,7 @@ const { rejectUnauthenticated, } = require('../modules/authentication-middleware
 const databaseClient = require('../modules/databaseClient');
 const { cache, cbClients, userStorage, messenger } = require('../modules/cache');
 const { Coinbase } = require('../modules/coinbaseClient');
+const excel = require('exceljs');
 // const databaseClient = require('../modules/databaseClient/databaseClient');
 
 
@@ -55,6 +56,12 @@ router.get('/products', rejectUnauthenticated, async (req, res) => {
   try {
     // get active products from db
     let activeProducts = await databaseClient.getActiveProducts(userID);
+    // for each active product, get the candle average and add it to the product object
+    for (let product of activeProducts) {
+      let average = await databaseClient.getCandlesAverage(userID, product.product_id, 'SIX_HOUR');
+      console.log(average, 'average');
+      product.average = average.average;
+    }
     // get all products from db
     let allProducts = await databaseClient.getUserProducts(userID);
     res.send({ activeProducts, allProducts });
@@ -179,6 +186,87 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
     res.sendStatus(500);
   }
 });
+
+/**
+* GET route to export xlxs of candle data
+*/
+
+
+router.get('/exportCandles/:product/:granularity', rejectUnauthenticated, async (req, res) => {
+  try {
+    console.log('export candles route hit');
+    // get the userID, product, and granularity from the query params
+    const userID = req.user.id;
+    const product = req.params.product;
+    const granularity = req.params.granularity;
+
+    console.log(userID, product, granularity, 'userID, product, granularity');
+
+    // retrieve candle data from db
+    const data = await databaseClient.getCandles(userID, product, granularity);
+
+    // for each candle, convert all properties to numbers if they are numbers in string form
+    data.forEach(candle => {
+      for (let key in candle) {
+        if (!isNaN(candle[key])) {
+          candle[key] = Number(candle[key]);
+        }
+      }
+    });
+
+
+    console.log(data, 'data');
+
+    // create a new excel doc and add a worksheet with the candle data
+    const workbook = new excel.Workbook();
+    const worksheet = workbook.addWorksheet('Sheet 1');
+    // add column headers. the object will look like this:
+    // {
+    //   id: 134246,
+    //   user_id: '1',
+    //   product_id: 'ETH-USD',
+    //   granularity: 'SIX_HOUR',
+    //   start: 1645596000,
+    //   low: '2656.9700000000000000',
+    //   high: '2740.0000000000000000',
+    //   high_low_ratio: '1.0312498823848218',
+    //   open: '2659.4800000000000000',
+    //   close: '2721.5100000000000000',
+    //   volume: '33135.9741297300000000'
+    // }
+    worksheet.columns = [
+      { header: 'id', key: 'id', width: 10 },
+      { header: 'user_id', key: 'user_id', width: 10 },
+      { header: 'product_id', key: 'product_id', width: 10 },
+      { header: 'granularity', key: 'granularity', width: 10 },
+      { header: 'start', key: 'start', width: 15 },
+      { header: 'low', key: 'low', width: 22 },
+      { header: 'high', key: 'high', width: 22 },
+      { header: 'high_low_ratio', key: 'high_low_ratio', width: 22 },
+      { header: 'open', key: 'open', width: 22 },
+      { header: 'close', key: 'close', width: 22 },
+      { header: 'volume', key: 'volume', width: 20 }
+    ];
+    // add the data to the worksheet
+    worksheet.addRows(data);
+    
+    // // set the style for the header row
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true };
+    
+    // create a buffer and send the workbook as an attachment
+    const fileBuffer = await workbook.xlsx.writeBuffer({ useStyles: true });
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment;filename="report.xlsx"');
+    res.send(fileBuffer);
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
+});
+
+module.exports = router;
+
 
 /**
 * GET route to export JSON of current orders

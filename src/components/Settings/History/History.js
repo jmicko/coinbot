@@ -22,6 +22,16 @@ function History(props) {
     })
   }
 
+  async function exportCandleXlxs() {
+    dispatch({
+      type: 'EXPORT_CANDLE_XLSX',
+      payload: {
+        product: props.product,
+        granularity: 'SIX_HOUR'
+      }
+    })
+  }
+
   async function exportCurrentJSON(params) {
     if (params === 'clear') {
       dispatch({
@@ -74,6 +84,12 @@ function History(props) {
     <div className="History settings-panel scrollable">
 
       <div className="divider" />
+      <h4>Candles</h4>
+      <p>
+        Hey man idk what to put here but this is where you can export your candles.
+      </p>
+      <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCandleXlxs() }}>Export</button>
+      <div className="divider" />
       <h4>Export .xlsx spreadsheet</h4>
       <p>
         Export and download your entire trade history as an xlsx spreadsheet.
@@ -83,7 +99,7 @@ function History(props) {
       <h4>Export current trade-pairs</h4>
       <p>
         Export all your current trade-pairs in JSON format.
-         {/* You can copy this to a text document
+        {/* You can copy this to a text document
         and use it later to import the same trades. This is useful if you want to transfer your
         trades to a different bot and can't or don't want to mess around with the database. */}
       </p>
@@ -101,7 +117,7 @@ function History(props) {
         && <code>{JSON.stringify(currentJSONReducer)}</code>
       }
       <div className="divider" />
-{/* 
+      {/* 
       <h4>Import current trade-pairs</h4>
       <p>
         Import a JSON string that has previously been exported. It is recommended not to import old

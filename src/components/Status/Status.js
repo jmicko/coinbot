@@ -37,6 +37,7 @@ function Status(props) {
     dispatch({ type: 'FETCH_USER' });
     dispatch({ type: 'FETCH_BOT_ERRORS' });
     dispatch({ type: 'FETCH_BOT_MESSAGES' });
+    dispatch({ type: 'FETCH_PRODUCTS' });
   }
 
   // watch to see if accuracy changes
