@@ -198,4 +198,26 @@ function autoSetup(user, options) {
   }
 }
 
-module.exports = { autoSetup, sleep, numberWithCommas }
+const granularitySeconds = {
+  'ONE_MINUTE': 60,
+  'FIVE_MINUTES': 300,
+  'FIFTEEN_MINUTES': 900,
+  'THIRTY_MINUTES': 1800,
+  'ONE_HOUR': 3600,
+  'TWO_HOURS': 7200,
+  'SIX_HOURS': 21600,
+  'ONE_DAY': 86400,
+}
+
+const granularities = [
+  { name: 'ONE_MINUTE', readable: 'One Minute', value: 60 },
+  { name: 'FIVE_MINUTE', readable: 'Five Minutes', value: 300 },
+  { name: 'FIFTEEN_MINUTE', readable: 'Fifteen Minutes', value: 900 },
+  { name: 'THIRTY_MINUTE', readable: 'Thirty Minutes', value: 1800 },
+  { name: 'ONE_HOUR', readable: 'One Hour', value: 3600 },
+  { name: 'TWO_HOUR', readable: 'Two Hours', value: 7200 },
+  { name: 'SIX_HOUR', readable: 'Six Hours', value: 21600 },
+  { name: 'ONE_DAY', readable: 'One Day', value: 86400 },
+]
+
+module.exports = { autoSetup, sleep, numberWithCommas, granularities }

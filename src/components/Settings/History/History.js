@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import './History.css'
 import xlsx from 'json-as-xlsx'
+import { granularities } from '../../../shared';
 
 function History(props) {
   const dispatch = useDispatch();
@@ -11,6 +12,11 @@ function History(props) {
 
   const [jsonImport, setJSONImport] = useState('');
   const [ignoreDuplicates, setIgnoreDuplicates] = useState(false);
+  // end should start as the current date withouth the time
+  const [end, setEnd] = useState(new Date().toISOString().slice(0, 10));
+  // start should start as 30 days ago
+  const [start, setStart] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().slice(0, 10));
+  const [granularity, setGranularity] = useState('ONE_MINUTE');
 
   function handleIgnoreDuplicates() {
     setIgnoreDuplicates(!ignoreDuplicates)
@@ -22,12 +28,14 @@ function History(props) {
     })
   }
 
-  async function exportCandleXlxs() {
+  async function exportCandleXlxs(granularity) {
     dispatch({
       type: 'EXPORT_CANDLE_XLSX',
       payload: {
         product: props.product,
-        granularity: 'ONE_MINUTE'
+        granularity: granularity,
+        start: start,
+        end: end
       }
     })
   }
@@ -88,7 +96,44 @@ function History(props) {
       <p>
         Hey man idk what to put here but this is where you can export your candles.
       </p>
-      <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCandleXlxs() }}>Export</button>
+      {/* {JSON.stringify(start)}
+      <br />
+      {JSON.stringify(end)} */}
+      {/* add two date selectors. one tied to the start value, one tied to the end value */}
+      <label htmlFor="start">Start date:</label>
+      <input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+      <label htmlFor="end"> End date:</label>
+      <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+      <br />
+      <br />
+
+      {/* selector to pick the granularity */}
+      <label htmlFor="granularity">Granularity:</label>
+      <select
+        name="granularity"
+        id="granularity"
+        value={granularity}
+        onChange={(e) => setGranularity(e.target.value)}
+      >
+        {granularities.map((granularity, index) => {
+          return (
+            <option key={index} value={granularity.name}>{granularity.readable}</option>
+          )
+        })}
+      </select>
+
+
+      {/* buttons to export for each granularity */}
+      {/* {granularities.map((granularity, index) => {
+        return (
+          <>
+            <button className={`btn-red medium ${user.theme}`} key={index} onClick={() => exportCandleXlxs(granularity.name)}>Export {granularity.readable} Granularity</button>
+            <br />
+          </>
+        )
+      })} */}
+
+      {/* <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCandleXlxs() }}>Export</button> */}
       <div className="divider" />
       <h4>Export .xlsx spreadsheet</h4>
       <p>
