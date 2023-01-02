@@ -3,7 +3,7 @@ const databaseClient = require("./databaseClient");
 const { cache, botSettings, userStorage, apiStorage, messenger, cbClients } = require("./cache");
 // const botSettings = botSettings;
 const { startWebsocket } = require("./websocket");
-const { sleep } = require("../../src/shared");
+const { sleep, granularities } = require("../../src/shared");
 
 // start a sync loop for each active user
 async function startSync() {
@@ -945,6 +945,7 @@ function compareAvailableFunds(previousAvailable, availableFunds) {
 async function updateProductCandles(userID, productID, granularity) {
   return new Promise(async (resolve, reject) => {
     try {
+
       // object with the number of seconds in each granularity
       const granularitySeconds = {
         'ONE_MINUTE': 60,

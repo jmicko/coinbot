@@ -6,6 +6,7 @@ const databaseClient = require('../modules/databaseClient');
 const { cache, cbClients, userStorage, messenger } = require('../modules/cache');
 const { Coinbase } = require('../modules/coinbaseClient');
 const excel = require('exceljs');
+const { granularities } = require('../../src/shared');
 // const databaseClient = require('../modules/databaseClient/databaseClient');
 
 
@@ -192,18 +193,46 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
 */
 
 
-router.get('/exportCandles/:product/:granularity', rejectUnauthenticated, async (req, res) => {
+router.get('/exportCandles/:product/:granularity/:start/:end', rejectUnauthenticated, async (req, res) => {
   try {
     console.log('export candles route hit');
     // get the userID, product, and granularity from the query params
     const userID = req.user.id;
     const product = req.params.product;
     const granularity = req.params.granularity;
+    // get the start and end dates from the query params and convert them to unix timestamps
+    const start = new Date(req.params.start).getTime() / 1000;
+    // const start = req.params.start;
+    const end = new Date(req.params.end).getTime() / 1000;
+    // const end = req.params.end;
 
-    console.log(userID, product, granularity, 'userID, product, granularity');
+    console.log(userID, product, granularity, start, end, end - start, 'export candles params');
+
+    // ensure that the difference between the start and end dates divided by the granularity is less than 100_000
+    // first find the value of the granularity in seconds from the granularities object which looks like this:
+    // const granularities = [
+    //   { name: 'ONE_MINUTE', readable: 'One Minute', value: 60 },
+    //   { name: 'FIVE_MINUTE', readable: 'Five Minutes', value: 300 },
+    //   { name: 'FIFTEEN_MINUTE', readable: 'Fifteen Minutes', value: 900 },
+    //   { name: 'THIRTY_MINUTE', readable: 'Thirty Minutes', value: 1800 },
+    //   { name: 'ONE_HOUR', readable: 'One Hour', value: 3600 },
+    //   { name: 'TWO_HOUR', readable: 'Two Hours', value: 7200 },
+    //   { name: 'SIX_HOUR', readable: 'Six Hours', value: 21600 },
+    //   { name: 'ONE_DAY', readable: 'One Day', value: 86400 },
+    // ]
+    const granularityValue = granularities.find(granularityObj => granularityObj.name === granularity).value;
+    // console.log(granularityValue, 'granularity value');
+    // if the difference between the start and end dates divided by the granularity is greater than 150_000, send an error
+    if ((end - start) / granularityValue >= 150_000) {
+      res.status(400).send(`The difference between the start and end dates divided by the granularity is greater than 100_000.
+       Please select a smaller date range.`);
+      return;
+    }
+
+    
 
     // retrieve candle data from db
-    const data = await databaseClient.getCandles(userID, product, granularity);
+    const data = await databaseClient.getCandles(userID, product, granularity, start, end);
 
     // for each candle, convert all properties to numbers if they are numbers in string form
     data.forEach(candle => {
@@ -215,7 +244,7 @@ router.get('/exportCandles/:product/:granularity', rejectUnauthenticated, async 
     });
 
 
-    console.log(data, 'data');
+    console.log(data.length, 'data length');
 
     // create a new excel doc and add a worksheet with the candle data
     const workbook = new excel.Workbook();
@@ -249,11 +278,11 @@ router.get('/exportCandles/:product/:granularity', rejectUnauthenticated, async 
     ];
     // add the data to the worksheet
     worksheet.addRows(data);
-    
+
     // // set the style for the header row
     const headerRow = worksheet.getRow(1);
     headerRow.font = { bold: true };
-    
+
     // create a buffer and send the workbook as an attachment
     const fileBuffer = await workbook.xlsx.writeBuffer({ useStyles: true });
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

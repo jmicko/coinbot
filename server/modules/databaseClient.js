@@ -1389,11 +1389,11 @@ async function saveCandles(userID, productID, granularity, candles) {
 }
 
 // get all candles for a product and granularity
-async function getCandles(userID, productID, granularity) {
+async function getCandles(userID, productID, granularity, start, end) {
   return new Promise(async (resolve, reject) => {
     try {
-      const sqlText = `SELECT * FROM "market_candles" WHERE "user_id" = $1 AND "product_id" = $2 AND "granularity" = $3;`;
-      let result = await pool.query(sqlText, [userID, productID, granularity]);
+      const sqlText = `SELECT * FROM "market_candles" WHERE "user_id" = $1 AND "product_id" = $2 AND "granularity" = $3 AND "start" BETWEEN $4 AND $5;`;
+      let result = await pool.query(sqlText, [userID, productID, granularity, start, end]);
       resolve(result.rows);
     } catch (err) {
       reject(err);

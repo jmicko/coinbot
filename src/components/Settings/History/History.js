@@ -28,7 +28,7 @@ function History(props) {
     })
   }
 
-  async function exportCandleXlxs(granularity) {
+  async function exportCandleXlxs() {
     dispatch({
       type: 'EXPORT_CANDLE_XLSX',
       payload: {
@@ -132,8 +132,9 @@ function History(props) {
           </>
         )
       })} */}
-
-      {/* <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCandleXlxs() }}>Export</button> */}
+      <br />
+      <br />
+      <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCandleXlxs() }}>Export</button>
       <div className="divider" />
       <h4>Export .xlsx spreadsheet</h4>
       <p>
