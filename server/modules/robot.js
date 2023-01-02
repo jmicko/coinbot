@@ -846,13 +846,15 @@ async function getAvailableFunds(userID, userSettings) {
 
       // calculate the available funds for each currency rounded to 16 decimal places
       const availableFundsNew = [];
+      // console.log(accounts, 'accounts');
       for (let i = 0; i < currencyArray.length; i++) {
         const currency = currencyArray[i];
+        // console.log(currency, 'currency');
         // get the currency from the accounts
         const [account] = accounts.filter(account => account.currency === currency.currency_id);
-        // console.log(account, 'account');
+        // console.log(currency, account, 'account');
         // calculate the available funds
-        const available = Number(account.available_balance.value) + Number(account.hold.value) - currency.amount_spent;
+        const available = Number(account?.available_balance?.value || 0) + Number(account?.hold?.value || 0) - currency.amount_spent;
         // console.log(available, 'available');
         // round to 16 decimal places
         const availableRounded = available.toFixed(16);

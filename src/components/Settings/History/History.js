@@ -27,7 +27,7 @@ function History(props) {
       type: 'EXPORT_CANDLE_XLSX',
       payload: {
         product: props.product,
-        granularity: 'SIX_HOUR'
+        granularity: 'ONE_MINUTE'
       }
     })
   }
