@@ -208,22 +208,7 @@ router.get('/exportCandles/:product/:granularity/:start/:end', rejectUnauthentic
     const end = new Date(req.params.end).getTime() / 1000;
     // const end = req.params.end;
 
-    console.log(userID, product, granularity, start, end, end - start, 'export candles params');
-
-    // ensure that the difference between the start and end dates divided by the granularity is less than 150_000
-    // get the value of the granularity
-    const granularityValue = granularities.find(granularityObj => granularityObj.name === granularity).value;
-    // console.log(granularityValue, 'granularity value');
-    // if the difference between the start and end dates divided by the granularity is greater than 150_000, send an error
-    if ((end - start) / granularityValue >= 35_000_000) {
-      res.status(400).send(`The difference between the start and end dates divided by the granularity is greater than 100_000.
-       Please select a smaller date range.`);
-      return;
-    } else {
-      console.log('granularity is good');
-    }
-
-
+    // console.log(userID, product, granularity, start, end, end - start, 'export candles params');
 
     // process the data on a separate thread
     // create a new worker
@@ -237,18 +222,13 @@ router.get('/exportCandles/:product/:granularity/:start/:end', rejectUnauthentic
       // const data = JSON.parse(dataString);
 
       console.log(fileName, 'message from worker');
-      // create a buffer and send the workbook as an attachment
-      // const fileBuffer = await workbook.xlsx.writeBuffer({ useStyles: true });
-      // const fileBuffer = await data.xlsx.writeBuffer({ useStyles: true });
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition', 'attachment;filename="file.xlsx"');
-      // res.send(fileBuffer);
-      // res.send(data);
       fs.readFile(`server/exports/${fileName}`, (error, buffer) => {
         if (error) {
           // handle the error
           res.sendStatus(500);
         } else {
+          res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+          res.setHeader('Content-Disposition', 'attachment;filename="file.xlsx"');
           // write the buffer to the response body
           res.end(buffer);
           // delete the file
@@ -261,10 +241,6 @@ router.get('/exportCandles/:product/:granularity/:start/:end', rejectUnauthentic
           });
         }
       });
-      // res.end();
-
-
-
       worker.kill();
     });
     worker.on('exit', (code) => {
