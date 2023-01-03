@@ -752,6 +752,26 @@ const getSettledTrades = (userID) => {
   });
 }
 
+
+// This will get orders for a user
+const getAllOrders = (userID) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // check all trades in db that are both settled and NOT flipped
+      sqlText = `SELECT * FROM "limit_orders" WHERE "userID"=$1;`;
+
+      const results = await pool.query(sqlText, [userID])
+      // .then((results) => {
+      const settled = results.rows;
+      // promise returns promise from pool if success
+      resolve(settled);
+    } catch (err) {
+      // or promise relays errors from pool to parent
+      reject(err);
+    }
+  });
+}
+
 // get the number of open orders from the DB
 const getUnsettledTradeCounts = (userID, product) => {
   return new Promise(async (resolve, reject) => {
@@ -1392,6 +1412,7 @@ async function saveCandles(userID, productID, granularity, candles) {
 async function getCandles(userID, productID, granularity, start, end) {
   return new Promise(async (resolve, reject) => {
     try {
+      console.log('getting candles FROM DB', userID, productID, granularity, start, end);
       const sqlText = `SELECT * FROM "market_candles" WHERE "user_id" = $1 AND "product_id" = $2 AND "granularity" = $3 AND "start" BETWEEN $4 AND $5;`;
       let result = await pool.query(sqlText, [userID, productID, granularity, start, end]);
       resolve(result.rows);
@@ -1427,6 +1448,7 @@ const databaseClient = {
   getUnsettledTrades: getUnsettledTrades,
   getUnsettledTradesByProduct: getUnsettledTradesByProduct,
   getSettledTrades: getSettledTrades,
+  getAllOrders: getAllOrders,
   insertProducts: insertProducts,
   getActiveProducts: getActiveProducts,
   getActiveProductIDs: getActiveProductIDs,

@@ -7,6 +7,8 @@ const { cache, cbClients, userStorage, messenger } = require('../modules/cache')
 const { Coinbase } = require('../modules/coinbaseClient');
 const excel = require('exceljs');
 const { granularities } = require('../../src/shared');
+const { fork } = require('child_process');
+const fs = require('fs');
 // const databaseClient = require('../modules/databaseClient/databaseClient');
 
 
@@ -208,86 +210,72 @@ router.get('/exportCandles/:product/:granularity/:start/:end', rejectUnauthentic
 
     console.log(userID, product, granularity, start, end, end - start, 'export candles params');
 
-    // ensure that the difference between the start and end dates divided by the granularity is less than 100_000
-    // first find the value of the granularity in seconds from the granularities object which looks like this:
-    // const granularities = [
-    //   { name: 'ONE_MINUTE', readable: 'One Minute', value: 60 },
-    //   { name: 'FIVE_MINUTE', readable: 'Five Minutes', value: 300 },
-    //   { name: 'FIFTEEN_MINUTE', readable: 'Fifteen Minutes', value: 900 },
-    //   { name: 'THIRTY_MINUTE', readable: 'Thirty Minutes', value: 1800 },
-    //   { name: 'ONE_HOUR', readable: 'One Hour', value: 3600 },
-    //   { name: 'TWO_HOUR', readable: 'Two Hours', value: 7200 },
-    //   { name: 'SIX_HOUR', readable: 'Six Hours', value: 21600 },
-    //   { name: 'ONE_DAY', readable: 'One Day', value: 86400 },
-    // ]
+    // ensure that the difference between the start and end dates divided by the granularity is less than 150_000
+    // get the value of the granularity
     const granularityValue = granularities.find(granularityObj => granularityObj.name === granularity).value;
     // console.log(granularityValue, 'granularity value');
     // if the difference between the start and end dates divided by the granularity is greater than 150_000, send an error
-    if ((end - start) / granularityValue >= 150_000) {
+    if ((end - start) / granularityValue >= 35_000_000) {
       res.status(400).send(`The difference between the start and end dates divided by the granularity is greater than 100_000.
        Please select a smaller date range.`);
       return;
+    } else {
+      console.log('granularity is good');
     }
 
-    
 
-    // retrieve candle data from db
-    const data = await databaseClient.getCandles(userID, product, granularity, start, end);
 
-    // for each candle, convert all properties to numbers if they are numbers in string form
-    data.forEach(candle => {
-      for (let key in candle) {
-        if (!isNaN(candle[key])) {
-          candle[key] = Number(candle[key]);
+    // process the data on a separate thread
+    // create a new worker
+    const worker = fork('./server/modules/exportWorker.js');
+    worker.send({
+      type: 'candles',
+      params: { userID, product, granularity, start, end }
+    });
+    worker.on('message', (fileName) => {
+
+      // const data = JSON.parse(dataString);
+
+      console.log(fileName, 'message from worker');
+      // create a buffer and send the workbook as an attachment
+      // const fileBuffer = await workbook.xlsx.writeBuffer({ useStyles: true });
+      // const fileBuffer = await data.xlsx.writeBuffer({ useStyles: true });
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment;filename="file.xlsx"');
+      // res.send(fileBuffer);
+      // res.send(data);
+      fs.readFile(`server/exports/${fileName}`, (error, buffer) => {
+        if (error) {
+          // handle the error
+          res.sendStatus(500);
+        } else {
+          // write the buffer to the response body
+          res.end(buffer);
+          // delete the file
+          fs.unlink(`server/exports/${fileName}`, (error) => {
+            if (error) {
+              console.log(error);
+            } else {
+              console.log('file deleted');
+            }
+          });
         }
+      });
+      // res.end();
+
+
+
+      worker.kill();
+    });
+    worker.on('exit', (code) => {
+      console.log('worker exited');
+      if (code !== 0) {
+        console.log(`Worker stopped with exit code ${code}`);
       }
     });
 
 
-    console.log(data.length, 'data length');
 
-    // create a new excel doc and add a worksheet with the candle data
-    const workbook = new excel.Workbook();
-    const worksheet = workbook.addWorksheet('Sheet 1');
-    // add column headers. the object will look like this:
-    // {
-    //   id: 134246,
-    //   user_id: '1',
-    //   product_id: 'ETH-USD',
-    //   granularity: 'SIX_HOUR',
-    //   start: 1645596000,
-    //   low: '2656.9700000000000000',
-    //   high: '2740.0000000000000000',
-    //   high_low_ratio: '1.0312498823848218',
-    //   open: '2659.4800000000000000',
-    //   close: '2721.5100000000000000',
-    //   volume: '33135.9741297300000000'
-    // }
-    worksheet.columns = [
-      { header: 'id', key: 'id', width: 10 },
-      { header: 'user_id', key: 'user_id', width: 10 },
-      { header: 'product_id', key: 'product_id', width: 10 },
-      { header: 'granularity', key: 'granularity', width: 10 },
-      { header: 'start', key: 'start', width: 15 },
-      { header: 'low', key: 'low', width: 22 },
-      { header: 'high', key: 'high', width: 22 },
-      { header: 'high_low_ratio', key: 'high_low_ratio', width: 22 },
-      { header: 'open', key: 'open', width: 22 },
-      { header: 'close', key: 'close', width: 22 },
-      { header: 'volume', key: 'volume', width: 20 }
-    ];
-    // add the data to the worksheet
-    worksheet.addRows(data);
-
-    // // set the style for the header row
-    const headerRow = worksheet.getRow(1);
-    headerRow.font = { bold: true };
-
-    // create a buffer and send the workbook as an attachment
-    const fileBuffer = await workbook.xlsx.writeBuffer({ useStyles: true });
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment;filename="report.xlsx"');
-    res.send(fileBuffer);
   } catch (error) {
     console.error(error);
     res.sendStatus(500);

@@ -1,0 +1,1 @@
+This folder is used to store files that will be exported to the client
