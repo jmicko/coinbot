@@ -9,6 +9,7 @@ const excel = require('exceljs');
 const { granularities } = require('../../src/shared');
 const { fork } = require('child_process');
 const fs = require('fs');
+const path = require('path');
 // const databaseClient = require('../modules/databaseClient/databaseClient');
 
 
@@ -197,9 +198,10 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
 
 router.get('/exportCandles/:product/:granularity/:start/:end', rejectUnauthenticated, async (req, res) => {
   try {
-    console.log('export candles route hit');
+    console.log(req.user, 'export candles route hit');
     // get the userID, product, and granularity from the query params
     const userID = req.user.id;
+    const username = req.user.username;
     const product = req.params.product;
     const granularity = req.params.granularity;
     // get the start and end dates from the query params and convert them to unix timestamps
@@ -215,32 +217,33 @@ router.get('/exportCandles/:product/:granularity/:start/:end', rejectUnauthentic
     const worker = fork('./server/modules/exportWorker.js');
     worker.send({
       type: 'candles',
-      params: { userID, product, granularity, start, end }
+      params: { userID, username, product, granularity, start, end }
     });
     worker.on('message', (fileName) => {
 
       // const data = JSON.parse(dataString);
 
       console.log(fileName, 'message from worker');
-      fs.readFile(`server/exports/${fileName}`, (error, buffer) => {
-        if (error) {
-          // handle the error
-          res.sendStatus(500);
-        } else {
-          res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-          res.setHeader('Content-Disposition', 'attachment;filename="file.xlsx"');
-          // write the buffer to the response body
-          res.end(buffer);
-          // delete the file
-          fs.unlink(`server/exports/${fileName}`, (error) => {
-            if (error) {
-              console.log(error);
-            } else {
-              console.log('file deleted');
-            }
-          });
-        }
-      });
+      // fs.readFile(`server/exports/${fileName}`, (error, buffer) => {
+      //   if (error) {
+      //     // handle the error
+      //     res.sendStatus(500);
+      //   } else {
+      //     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      //     res.setHeader('Content-Disposition', 'attachment;filename="file.xlsx"');
+      //     // write the buffer to the response body
+      //     res.end(buffer);
+      //     // // delete the file
+      //     // fs.unlink(`server/exports/${fileName}`, (error) => {
+      //     //   if (error) {
+      //     //     console.log(error);
+      //     //   } else {
+      //     //     console.log('file deleted');
+      //     //   }
+      //     // });
+      //   }
+      // });
+      // send okay status to client
       worker.kill();
     });
     worker.on('exit', (code) => {
@@ -250,6 +253,7 @@ router.get('/exportCandles/:product/:granularity/:start/:end', rejectUnauthentic
       }
     });
 
+    res.sendStatus(200);
 
 
   } catch (error) {
@@ -258,7 +262,53 @@ router.get('/exportCandles/:product/:granularity/:start/:end', rejectUnauthentic
   }
 });
 
-module.exports = router;
+
+
+/**
+ * GET route to find all files in the exports folder with the user's username in the filename
+*/
+router.get('/exportFiles', rejectUnauthenticated, async (req, res) => {
+  console.log('export files route hit');
+  try {
+    const username = req.user.username;
+    const files = await fs.readdirSync('server/exports');
+    const userFiles = files.filter(file => file.includes(username));
+    res.send(userFiles);
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
+});
+
+// serve the file to the client
+router.get('/downloadFile/:fileName', rejectUnauthenticated, async (req, res) => {
+  console.log('download file route hit');
+  try {
+    const username = req.user.username;
+    const fileName = req.params.fileName;
+    console.log(fileName, 'file name');
+    // verify that the file exists in the exports folder and that the user is authorized to access it
+    const files = await fs.readdirSync('server/exports');
+    const userFiles = files.filter(file => file.includes(fileName));
+    if (userFiles.length > 0) {
+      // check that the file has the user's username in it
+      if (userFiles[0].includes(username)) {
+        // serve the file
+        res.sendFile(path.join(__dirname, `../exports/${fileName}`));
+      } else {
+        // send a 403 forbidden status if the user is not authorized to access the file
+        res.sendStatus(403);
+      }
+    } else {
+      // send a 404 not found status if the file doesn't exist
+      res.sendStatus(404);
+    }
+  } catch (error) {
+    console.error(error);
+    // send a 500 internal server error status if there is an error
+    res.sendStatus(500);
+  }
+});
 
 
 /**
@@ -765,3 +815,4 @@ function convertJSONImport(TRADES_TO_IMPORT, IGNORE_DUPLICATES) {
   return { errors, newTradeList };
 }
 
+module.exports = router;

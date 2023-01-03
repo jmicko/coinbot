@@ -9,6 +9,8 @@ function History(props) {
   const user = useSelector((store) => store.accountReducer.userReducer);
   const xlsxReducer = useSelector((store) => store.accountReducer.xlsxReducer);
   const currentJSONReducer = useSelector((store) => store.accountReducer.currentJSONReducer);
+  const exportFilesReducer = useSelector((store) => store.accountReducer.exportFilesReducer);
+  const products = useSelector((store) => store.accountReducer.productsReducer);
 
   const [jsonImport, setJSONImport] = useState('');
   const [ignoreDuplicates, setIgnoreDuplicates] = useState(false);
@@ -37,6 +39,26 @@ function History(props) {
         start: start,
         end: end
       }
+    })
+  }
+
+  // fetch list of files that are available to download
+  async function fetchExportFiles() {
+    dispatch({
+      type: 'FETCH_EXPORT_FILES'
+    })
+  }
+
+  // fetch list of files that are available to download on component load
+  useEffect(() => {
+    fetchExportFiles();
+  }, [])
+
+  // download a file
+  async function downloadFile(file) {
+    dispatch({
+      type: 'DOWNLOAD_FILE',
+      payload: file
     })
   }
 
@@ -94,7 +116,8 @@ function History(props) {
       <div className="divider" />
       <h4>Candles</h4>
       <p>
-        Hey man idk what to put here but this is where you can export your candles.
+        select a date range and granularity and a file will be generated for you to download. This may take a few minutes. 
+        The file will be available for download in the "Available files to download" section below.
       </p>
       {/* {JSON.stringify(start)}
       <br />
@@ -134,7 +157,24 @@ function History(props) {
       })} */}
       <br />
       <br />
-      <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCandleXlxs() }}>Export</button>
+      <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCandleXlxs() }}>Generate</button>
+
+      {/* display the list of files that are available to download from the account reducer.
+      the reducer is just an array of file names */}
+      <br />
+      <p>Available files to download:</p>
+      {/* {JSON.stringify(exportFilesReducer)} */}
+      {exportFilesReducer?.map((file, index) => {
+        return (
+          <div key={index}>
+            {/* each file should be a link that will call the download function */}
+            <a href="#" onClick={() => { downloadFile(file) }}>{file}</a>
+          </div>
+        )
+      })}
+
+
+
       <div className="divider" />
       <h4>Export .xlsx spreadsheet</h4>
       <p>

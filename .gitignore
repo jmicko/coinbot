@@ -27,3 +27,4 @@ notes.js
 
 # Generated files
 /rusty-robot/target/
+/server/exports/*.xlsx

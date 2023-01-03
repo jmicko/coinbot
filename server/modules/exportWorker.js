@@ -141,14 +141,14 @@ async function processCandleData(data) {
   console.log('header row styled');
   // send workbook to main process and check for errors
   // const buffer = 
-  await workbook.xlsx.writeFile(`server/exports/${data.userID}-${data.product}-${data.granularity}-${data.start}-${data.end}.xlsx`);
+  await workbook.xlsx.writeFile(`server/exports/${data.userID}-${data.username}-${data.product}-${data.granularity}-${data.start}-${data.end}.xlsx`);
   // console.log('buffer', buffer);
   // console.log('buffer created');
   // create and name the file
   // fs.writeFileSync(`server/exports/${data.userID}-${data.product}-${data.granularity}-${data.start}-${data.end}.xlsx`, buffer);
   console.log('file created');
   // return the file
-  return `${data.userID}-${data.product}-${data.granularity}-${data.start}-${data.end}.xlsx`;
+  return `${data.userID}-${data.username}-${data.product}-${data.granularity}-${data.start}-${data.end}.xlsx`;
   // return buffer;
   // return workbook;
 }

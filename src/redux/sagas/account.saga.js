@@ -240,6 +240,42 @@ function* debug(action) {
   }
 }
 
+// fetch list of files that can be exported
+function* fetchExportFiles() {
+  try {
+    const response = yield axios.get(`/api/account/exportFiles`);
+    console.log('fetch export files route has succeeded', response.data);
+    yield put({ type: 'SET_EXPORT_FILES', payload: response.data })
+  } catch (error) {
+    console.log('fetch export files route has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
+// download a file from the server
+function* downloadFile(action) {
+  try {
+    console.log('download file route has started', action.payload);
+    const response = yield axios.get(`/api/account/downloadFile/${action.payload}`, { responseType: 'arraybuffer' });
+    console.log('download file route has succeeded', response.data);
+    // save the file to the client
+    const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.download = `${action.payload}.xlsx`;
+    link.click();
+  } catch (error) {
+    console.log('download file route has failed', error);
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
+
+
+
 function* accountSaga() {
   yield takeLatest('FETCH_PROFITS', fetchProfits);
   yield takeLatest('FETCH_PRODUCTS', fetchProducts);
@@ -259,6 +295,8 @@ function* accountSaga() {
   yield takeLatest('EXPORT_CURRENT_JSON', exportCurrentJSON);
   yield takeLatest('IMPORT_CURRENT_JSON', importCurrentJSON);
   yield takeLatest('DEBUG', debug);
+  yield takeLatest('FETCH_EXPORT_FILES', fetchExportFiles);
+  yield takeLatest('DOWNLOAD_FILE', downloadFile);
 }
 
 export default accountSaga;
