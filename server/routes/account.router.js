@@ -262,7 +262,7 @@ router.put('/exportCandles', rejectUnauthenticated, async (req, res) => {
         console.log(`Worker stopped with exit code ${code}`);
       }
     });
-    
+
     // send okay status to client
     res.sendStatus(200);
 
@@ -295,21 +295,40 @@ router.get('/exportFiles', rejectUnauthenticated, async (req, res) => {
 router.get('/downloadFile/:fileName', rejectUnauthenticated, async (req, res) => {
   console.log('download file route hit');
   try {
+    const userID = req.user.id;
     const username = req.user.username;
     const fileName = req.params.fileName;
-    console.log(fileName, 'file name');
-    // verify that the file exists in the exports folder and that the user is authorized to access it
+    // check that the file name does not contain a path
+    if (fileName.includes('/')) {
+      res.sendStatus(403);
+      return;
+    }
+    // verify that the file exists in the exports folder
+    // and that the file name starts with the user id and username
+    // get all files in the exports folder
     const files = await fs.readdirSync('server/exports');
-    const userFiles = files.filter(file => file.includes(fileName));
-    if (userFiles.length > 0) {
-      // check that the file has the user's username in it
-      if (userFiles[0].includes(username)) {
-        // serve the file
-        res.sendFile(path.join(__dirname, `../exports/${fileName}`));
-      } else {
-        // send a 403 forbidden status if the user is not authorized to access the file
-        res.sendStatus(403);
-      }
+    // filter the files to only include files with the user's username in the file name
+    const fileStart = `${userID}-${username}`;
+    // the beginning of the file name should be a concatenation of the user id and username
+    // check the beginning of the file name to make sure it matches the user id and username
+    if (!fileName.startsWith(fileStart)) {
+      res.sendStatus(403);
+      return;
+    }
+    const userFiles = files.filter(file => file.startsWith(fileStart));
+    // make sure that the file exists
+    if (userFiles.length === 0) {
+      res.sendStatus(404);
+      return;
+    }
+    // make sure that the file is the only file in the array
+    const singleFile = userFiles.filter(file => file === fileName);
+    console.log(singleFile, 'single file');
+    // if there is a file, serve it
+    if (singleFile.length > 0) {
+      // serve the file
+      res.sendFile(path.join(__dirname, `../exports/${fileName}`));
+
     } else {
       // send a 404 not found status if the file doesn't exist
       res.sendStatus(404);
