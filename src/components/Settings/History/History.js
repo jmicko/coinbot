@@ -27,9 +27,9 @@ function History(props) {
   async function exportXlxs() {
     dispatch({
       type: 'EXPORT_XLSX'
-    })
+    });
   }
-
+  
   async function exportCandleXlxs() {
     dispatch({
       type: 'EXPORT_CANDLE_XLSX',
@@ -40,6 +40,7 @@ function History(props) {
         end: end
       }
     })
+    dispatch({ type: 'FETCH_USER' });
   }
 
   // fetch list of files that are available to download
@@ -116,12 +117,12 @@ function History(props) {
       <div className="divider" />
       <h4>Candles</h4>
       <p>
-        select a date range and granularity and a file will be generated for you to download. This may take a few minutes. 
+        select a date range and granularity and a file will be generated for you to download. This may take a few minutes.
         The file will be available for download in the "Available files to download" section below.
       </p>
-      {/* {JSON.stringify(start)}
-      <br />
-      {JSON.stringify(end)} */}
+      {/* {JSON.stringify(user)} */}
+      {/* <br /> */}
+      {/* {JSON.stringify(end)} */}
       {/* add two date selectors. one tied to the start value, one tied to the end value */}
       <label htmlFor="start">Start date:</label>
       <input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
@@ -145,19 +146,12 @@ function History(props) {
         })}
       </select>
 
-
-      {/* buttons to export for each granularity */}
-      {/* {granularities.map((granularity, index) => {
-        return (
-          <>
-            <button className={`btn-red medium ${user.theme}`} key={index} onClick={() => exportCandleXlxs(granularity.name)}>Export {granularity.readable} Granularity</button>
-            <br />
-          </>
-        )
-      })} */}
       <br />
       <br />
-      <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCandleXlxs() }}>Generate</button>
+      {!user.exporting
+        ? <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCandleXlxs() }}>Generate</button>
+        : <p>Generating...</p>
+      }
 
       {/* display the list of files that are available to download from the account reducer.
       the reducer is just an array of file names */}

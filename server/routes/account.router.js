@@ -192,25 +192,51 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
-* GET route to export xlxs of candle data
+* PUT route to export xlxs of candle data
 */
 
 
-router.get('/exportCandles/:product/:granularity/:start/:end', rejectUnauthenticated, async (req, res) => {
+router.put('/exportCandles', rejectUnauthenticated, async (req, res) => {
   try {
     console.log(req.user, 'export candles route hit');
     // get the userID, product, and granularity from the query params
     const userID = req.user.id;
     const username = req.user.username;
-    const product = req.params.product;
-    const granularity = req.params.granularity;
-    // get the start and end dates from the query params and convert them to unix timestamps
-    const start = new Date(req.params.start).getTime() / 1000;
-    // const start = req.params.start;
-    const end = new Date(req.params.end).getTime() / 1000;
-    // const end = req.params.end;
+    const product = req.body.product;
+    const granularity = req.body.granularity;
+    // get the start and end dates from the query body and convert them to unix timestamps
+    const start = new Date(req.body.start).getTime() / 1000;
+    // const start = req.body.start;
+    const end = new Date(req.body.end).getTime() / 1000;
+    // const end = req.body.end;
 
-    // console.log(userID, product, granularity, start, end, end - start, 'export candles params');
+    console.log(userID, product, granularity, start, end, end - start, 'export candles params');
+    // ensure that all params are present and valid
+    if (!userID || !product || !granularity || !start || !end) {
+      console.log('missing params');
+      res.sendStatus(400);
+      return;
+    }
+    // ensure that the start and end dates are valid dates and that the start date is before the end date
+    if (isNaN(start) || isNaN(end) || start > end) {
+      console.log('invalid dates');
+      res.sendStatus(400);
+      return;
+    }
+    // ensure that the start and end dates are within 1 year and 2 days of each other and that there is at least 1 day of data
+    if (end - start > 31536000 || end - start < 86400) {
+      console.log('invalid date range');
+      res.sendStatus(400);
+      return;
+    }
+    // ensure that the user is not already exporting data
+    if (userStorage[userID].exporting) {
+      console.log('already exporting');
+      res.sendStatus(400);
+      return;
+    }
+    // set exporting to true
+    userStorage[userID].exporting = true;
 
     // process the data on a separate thread
     // create a new worker
@@ -220,31 +246,15 @@ router.get('/exportCandles/:product/:granularity/:start/:end', rejectUnauthentic
       params: { userID, username, product, granularity, start, end }
     });
     worker.on('message', (fileName) => {
-
-      // const data = JSON.parse(dataString);
-
       console.log(fileName, 'message from worker');
-      // fs.readFile(`server/exports/${fileName}`, (error, buffer) => {
-      //   if (error) {
-      //     // handle the error
-      //     res.sendStatus(500);
-      //   } else {
-      //     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      //     res.setHeader('Content-Disposition', 'attachment;filename="file.xlsx"');
-      //     // write the buffer to the response body
-      //     res.end(buffer);
-      //     // // delete the file
-      //     // fs.unlink(`server/exports/${fileName}`, (error) => {
-      //     //   if (error) {
-      //     //     console.log(error);
-      //     //   } else {
-      //     //     console.log('file deleted');
-      //     //   }
-      //     // });
-      //   }
-      // });
-      // send okay status to client
+      // if there is a filename, tell client to update files
+      if (fileName) {
+        messenger[userID].fileUpdate();
+      }
+      // kill the worker
       worker.kill();
+      // set exporting to false
+      userStorage[userID].exporting = false;
     });
     worker.on('exit', (code) => {
       console.log('worker exited');
@@ -252,7 +262,8 @@ router.get('/exportCandles/:product/:granularity/:start/:end', rejectUnauthentic
         console.log(`Worker stopped with exit code ${code}`);
       }
     });
-
+    
+    // send okay status to client
     res.sendStatus(200);
 
 

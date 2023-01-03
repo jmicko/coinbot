@@ -183,19 +183,11 @@ function* exportXlsx() {
   }
 }
 
-// export candles for a product and granularity
+// tell server to generate a new xlsx file of exported candles
 function* exportCandles(action) {
   try {
-    const response = yield axios.get(
-      `/api/account/exportCandles/${action.payload.product}/${action.payload.granularity}/${action.payload.start}/${action.payload.end}`,
-      { responseType: 'arraybuffer' });
-    // save the file to the client
-    const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const link = document.createElement('a');
-    link.href = window.URL.createObjectURL(blob);
-    link.download = `${action.payload.product}-${action.payload.granularity}.xlsx`;
-    link.click();
-    // yield put({ type: 'SET_CANDLES', payload: response })
+    yield axios.put(`/api/account/exportCandles`, action.payload);
+
   } catch (error) {
     console.log('export candles route has failed', error);
     if (error.response.status === 403) {

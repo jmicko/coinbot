@@ -64,6 +64,15 @@ async function processCandleData(data) {
     }
   }
 
+  // convert the start property to a date with the format 'yyyy-mm-dd' and save it to a new property called date
+  // also get the time of day from the start property and save it to a new property called time
+  for (let i = 0; i < candleData.length; i++) {
+    const date = new Date(candleData[i].start * 1000);
+    candleData[i].date = date.toISOString().slice(0, 10);
+    candleData[i].time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
+  }
+  
+
   // divide the candle data into an array of objects where the objects have the name of the month and year as the key and the value is an array of the candles for that month
   const candleDataByMonth = candleData.reduce((acc, candle) => {
     const date = new Date(candle.start * 1000);
@@ -81,8 +90,6 @@ async function processCandleData(data) {
   for (let key in candleDataByMonth) {
     console.log(key, candleDataByMonth[key].length);
   }
-
-
 
 
 
@@ -111,11 +118,13 @@ async function processCandleData(data) {
     //   volume: '33135.9741297300000000'
     // }
     candleWorksheet.columns = [
-      { header: 'id', key: 'id', width: 10 },
+      // { header: 'id', key: 'id', width: 10 },
       { header: 'user_id', key: 'user_id', width: 10 },
       { header: 'product_id', key: 'product_id', width: 10 },
-      { header: 'granularity', key: 'granularity', width: 10 },
+      { header: 'granularity', key: 'granularity', width: 12 },
       { header: 'start', key: 'start', width: 15 },
+      { header: 'date', key: 'date', width: 15 },
+      { header: 'time', key: 'time', width: 10 },
       { header: 'low', key: 'low', width: 22 },
       { header: 'high', key: 'high', width: 22 },
       { header: 'high_low_ratio', key: 'high_low_ratio', width: 22 },
@@ -132,23 +141,31 @@ async function processCandleData(data) {
 
     // set the style for the header row
     candleWorksheet.getRow(1).font = { bold: true };
-
   }
-
 
   // set the style for the header row
   // candleWorksheet.getRow(1).font = { bold: true };
   console.log('header row styled');
-  // send workbook to main process and check for errors
-  // const buffer = 
-  await workbook.xlsx.writeFile(`server/exports/${data.userID}-${data.username}-${data.product}-${data.granularity}-${data.start}-${data.end}.xlsx`);
-  // console.log('buffer', buffer);
-  // console.log('buffer created');
+
+  // convert the start and end dates to a readable format with numbers only, without the timezone
+  const startDate = new Date(data.start * 1000).toISOString().split('T')[0];
+  const endDate = new Date(data.end * 1000).toISOString().split('T')[0];
+
   // create and name the file
-  // fs.writeFileSync(`server/exports/${data.userID}-${data.product}-${data.granularity}-${data.start}-${data.end}.xlsx`, buffer);
+  await workbook.xlsx.writeFile(`server/exports/${data.userID}-${data.username}-${data.product}-${data.granularity}-${startDate}-${endDate}.xlsx`);
+
   console.log('file created');
-  // return the file
-  return `${data.userID}-${data.username}-${data.product}-${data.granularity}-${data.start}-${data.end}.xlsx`;
+  // if there are more than 5 files in the exports folder with the userID and username of the user as the start of the file name,
+  // delete the file with the oldest creation date until there are only 5 files left
+  const files = fs.readdirSync('server/exports');
+  const userFiles = files.filter(file => file.startsWith(`${data.userID}-${data.username}`));
+  if (userFiles.length > 5) {
+    const oldestFile = userFiles.sort((a, b) => fs.statSync(`server/exports/${a}`).ctime - fs.statSync(`server/exports/${b}`).ctime)[0];
+    fs.unlinkSync(`server/exports/${oldestFile}`);
+  }
+
+  // return the file name
+  return `${data.userID}-${data.username}-${data.product}-${data.granularity}-${startDate}-${endDate}.xlsx`;
   // return buffer;
   // return workbook;
 }

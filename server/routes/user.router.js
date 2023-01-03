@@ -59,6 +59,10 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
     // console.log('availableFunds', availableFunds);
     req.user.availableFunds = availableFunds;
 
+    // get exporting value from userStorage
+    const exporting = userStorage[req.user.id].exporting;
+    req.user.exporting = exporting;
+
   } catch (err) {
     console.log(err, 'error in user route');
   }

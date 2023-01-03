@@ -86,6 +86,11 @@ export function SocketProvider({ children }) {
       if (message.userUpdate) {
         dispatch({ type: 'FETCH_USER' });
       }
+      if (message.fileUpdate) {
+        console.log('file update in socket provider')
+        dispatch({ type: 'FETCH_EXPORT_FILES' });
+        dispatch({ type: 'FETCH_USER' });
+      }
     });
 
     const ping = setInterval(() => {

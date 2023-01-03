@@ -64,6 +64,7 @@ class User {
     this.deleting = false;
     this.socketStatus = 'closed';
     this.candlesBeingUpdated = new Object();
+    this.exporting = false;
   }
   updateCandlesBeingUpdated(product_id, granularity, boolean) {
     if (!this.candlesBeingUpdated[product_id]) {
@@ -242,6 +243,9 @@ class Messenger {
   }
   profitUpdate() {
     this.instantMessage({ profitUpdate: true })
+  }
+  fileUpdate() {
+    this.instantMessage({ fileUpdate: true })
   }
   // todo - should probably use type: 'error' and get rid of this
   newError(err) {
