@@ -662,6 +662,8 @@ async function updateMultipleOrders(userID, params) {
         } else {
           // if not a reorder, look up the full details on CB
           let updatedOrder = await cbClients[userID].getOrder(orderToCheck.order_id);
+          // console.log(updatedOrder, 'updated order');
+          console.log(orderToCheck, 'order to check');
           // if it was cancelled, set it for reorder
           if (updatedOrder.order.status === 'CANCELLED') {
             console.log('was canceled but should not have been!')
@@ -961,11 +963,11 @@ async function updateProductCandles(userID, productID, granularity) {
       const recentCandle = await databaseClient.getMostRecentCandle(userID, productID, granularity);
       // get the oldest candle from the database
       const oldestCandle = await databaseClient.getOldestCandle(userID, productID, granularity);
-      console.log(recentCandle?.start, 'recentCandle');
-      console.log(oldestCandle?.start, 'oldestCandle');
+      // console.log(recentCandle?.start, 'recentCandle');
+      // console.log(oldestCandle?.start, 'oldestCandle');
       // if there is no recent candle, get the candles from the last month and save them to the database
       if (!recentCandle || !oldestCandle) {
-        console.log('no candle');
+        // console.log('no candle');
         // end date is today in unix time
         const endDate = Math.floor(new Date().getTime() / 1000);
         const startDate = getStartDate(endDate);
@@ -994,7 +996,7 @@ async function updateProductCandles(userID, productID, granularity) {
 
         const end = getEndDate(start);
 
-        console.log(start, end, Date.now(), 'start end now');
+        // console.log(start, end, Date.now(), 'start end now');
 
         // const end = start + 6 * 200 * 3600;
         const result = await cbClients[userID].getMarketCandles({
@@ -1021,10 +1023,10 @@ async function updateProductCandles(userID, productID, granularity) {
             const distance = currentStart - previousStart;
             const distanceNeeded = granularitySeconds[granularity];
             if (distance !== distanceNeeded) {
-              console.log( 'candles array integrity is compromised');
-              console.log(distance, 'distance');
-              console.log(currentStart, previousStart, 'candle start');
-              console.log(candles[i + 1], candles[i], candles[i - 1], candles[i -2], 'candles');
+              // console.log( 'candles array integrity is compromised');
+              // console.log(distance, 'distance');
+              // console.log(currentStart, previousStart, 'candle start');
+              // console.log(candles[i + 1], candles[i], candles[i - 1], candles[i -2], 'candles');
               integrity = false;
               // if the integrity is compromised, find the missing candles
               for (let j = previousStart + distanceNeeded; j < currentStart; j += distanceNeeded) {
@@ -1034,10 +1036,10 @@ async function updateProductCandles(userID, productID, granularity) {
             }
           }
           if(integrity) {
-            console.log('candles array integrity is good');
+            // console.log('candles array integrity is good');
           } else {
-            console.log('candles array integrity is compromised');
-            console.log(missing, 'missing candles');
+            // console.log('candles array integrity is compromised');
+            // console.log(missing, 'missing candles');
           }
         }
         
@@ -1069,11 +1071,11 @@ async function updateProductCandles(userID, productID, granularity) {
             text: 'error getting candles',
             data: err
           });
-          console.log(err, 'error getting more candles');
+          // console.log(err, 'error getting more candles');
         }
       }, 1000);
     } else {
-      console.log(candles.length, 'no more candles to get');
+      // console.log(candles.length, 'no more candles to get');
       // set the user's candlesBeingUpdated for the product and duration to false
       userStorage[userID].updateCandlesBeingUpdated(productID, granularity, false);
     }
