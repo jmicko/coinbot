@@ -198,15 +198,16 @@ function autoSetup(user, options) {
   }
 }
 
-const granularitySeconds = {
-  'ONE_MINUTE': 60,
-  'FIVE_MINUTES': 300,
-  'FIFTEEN_MINUTES': 900,
-  'THIRTY_MINUTES': 1800,
-  'ONE_HOUR': 3600,
-  'TWO_HOURS': 7200,
-  'SIX_HOURS': 21600,
-  'ONE_DAY': 86400,
+function calculateProductDecimals(product) {
+  const baseIncrement = findDecimals(product.base_increment);
+  console.log(baseIncrement, 'baseIncrement');
+  const quoteIncrement = findDecimals(product.quote_increment);
+  console.log(quoteIncrement, 'quoteIncrement');
+  return { baseIncrement, quoteIncrement };
+
+  function findDecimals(number) {
+    return number.split('.')[1].split('').findIndex((char) => char !== '0') + 1;
+  }
 }
 
 const granularities = [
@@ -220,4 +221,4 @@ const granularities = [
   { name: 'ONE_DAY', readable: 'One Day', value: 86400 },
 ]
 
-module.exports = { autoSetup, sleep, numberWithCommas, granularities }
+module.exports = { autoSetup, sleep, numberWithCommas, calculateProductDecimals, granularities }

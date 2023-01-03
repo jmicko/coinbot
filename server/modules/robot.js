@@ -3,7 +3,7 @@ const databaseClient = require("./databaseClient");
 const { cache, botSettings, userStorage, apiStorage, messenger, cbClients } = require("./cache");
 // const botSettings = botSettings;
 const { startWebsocket } = require("./websocket");
-const { sleep, granularities } = require("../../src/shared");
+const { sleep, granularities, calculateProductDecimals } = require("../../src/shared");
 
 // start a sync loop for each active user
 async function startSync() {
@@ -702,11 +702,17 @@ async function reorder(orderToReorder) {
     userStorage[userID].updateStatus('begin reorder');
     try {
       const upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.order_id);
+      // get the product from the db
+      const product = await databaseClient.getProduct(upToDateDbOrder.product_id, userID);
+      console.log(product, 'product');
+      // get the number of decimals for the base_increment of the product. This is used to round the base_size
+      const decimals = calculateProductDecimals(product);
+      
       // make new tradeDetails so client id is not passed from old order
       const tradeDetails = {
         side: upToDateDbOrder.side,
-        limit_price: upToDateDbOrder.limit_price, // USD
-        base_size: upToDateDbOrder.base_size, // BTC
+        limit_price: upToDateDbOrder.limit_price, // quote currency
+        base_size: Number(upToDateDbOrder.base_size).toFixed(decimals.baseIncrement), // base currency
         product_id: upToDateDbOrder.product_id,
       };
       // send the new order with the trade details
@@ -731,7 +737,7 @@ async function reorder(orderToReorder) {
         });
         resolve({ results: results })
       } else {
-        console.log(pendingTrade, 'error in reorder function in robot.js');
+        console.log(pendingTrade, 'success false error in reorder function in robot.js');
         reject(pendingTrade);
       }
     } catch (err) {

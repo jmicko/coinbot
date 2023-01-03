@@ -496,6 +496,20 @@ const insertProducts = (products, userID) => {
   });
 }
 
+// get a product by product id
+const getProduct = (productID, userID) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `SELECT * FROM "products" WHERE "product_id" = $1 AND "user_id" = $2;`;
+      const result = await pool.query(sqlText, [productID, userID]);
+      resolve(result.rows[0]);
+    } catch (error) {
+      console.log('Error in getProduct', error);
+      reject(error);
+    }
+  });
+}
+
 // get all active products in the portfolio
 const getActiveProducts = (userID) => {
   return new Promise(async (resolve, reject) => {
@@ -1491,6 +1505,7 @@ const databaseClient = {
   saveCandles: saveCandles,
   getCandles: getCandles,
   getCandlesAverage: getCandlesAverage,
+  getProduct: getProduct,
 }
 
 module.exports = databaseClient;
