@@ -122,13 +122,9 @@ async function runSimulation(data) {
     // get the current high and low prices
     const high = Number(candle.high);
     const low = Number(candle.low);
-    // console.log('high', high);
-    // console.log('low', low);
+
     // find all the buy orders that are triggered by the current candle
     const triggeredBuyOrders = buyOrders.filter(order => order.original_buy_price >= low);
-    // triggeredBuyOrders.length && console.log('triggeredBuyOrders', triggeredBuyOrders);
-
-    // await sleep(10000);
 
     // flip the triggered buy orders to sell orders
     const flippedSellOrders = await flipTriggeredOrders(triggeredBuyOrders, user);
@@ -154,21 +150,7 @@ async function runSimulation(data) {
       const index = sellOrders.findIndex(sellOrder => sellOrder.client_order_id === order.client_order_id);
       sellOrders.splice(index, 1);
     });
-
-
-
-
   }
-
-  // console.log('buyOrders', buyOrders.length);
-  // console.log('sellOrders', sellOrders.length);
-
-
-
-  // run autoSetup to get a list of orders to place
-
-  // console.log('! ~ simulation complete ~ !');
-  // console.log('profit', profit);
 
   // return the data to the parent process
   return { profit };
@@ -182,10 +164,6 @@ async function runSimulation(data) {
       // calculate the current fees to simulate the fees coinbase would charge on settlement
       originalOrder.total_fees = originalOrder.limit_price * originalOrder.base_size * user.maker_fee
 
-      // console.log(triggeredOrders, 'triggeredOrders')
-
-      // await sleep(10000);
-
       const flippedOrder = flipTrade(originalOrder, user, triggeredOrders, true);
       // add next client unique id to the flipped order. flipTrade needs this
       flippedOrder.next_client_order_id = uuidv4();
@@ -198,46 +176,20 @@ async function runSimulation(data) {
       // calculate the dollar value of the flipped order
       flippedOrder.dollar_value = flippedOrder.limit_price * flippedOrder.base_size;
 
-      // console.log('flippedOrder', flippedOrder, flippedOrder.limit_price * flippedOrder.base_size);
-      // console.log('')
       // add the original_buy_price and original_sell_price to the sell order
       flippedOrder.original_buy_price = originalOrder.original_buy_price;
       flippedOrder.original_sell_price = originalOrder.original_sell_price;
-
-      // calculate the fees that would have been paid for the original order, and the flipped order
-      // const fees = originalOrder.limit_price * originalOrder.base_size * feeRate + flippedOrder.limit_price * originalOrder.base_size * feeRate;
-
       
       // if it is flipping a sell, need to calculate the profit
       if (originalOrder.side === 'SELL') {
-        // console.log(fees, 'what are the fees?')
-        // console.log('originalOrder', originalOrder);
-        // console.log('flippedOrder', flippedOrder);
         // calculate the profit
-        // size will be the original size in both orders
-        // take the sell value and subtract the buy value from it
-        // both orders will have a dollar value that we can use to calculate the profit
-        // const orderProfit = originalOrder.limit_price * originalOrder.base_size - flippedOrder.limit_price * originalOrder.base_size;
-        // console.log('orderProfit', orderProfit);
-        // subtract the fees from the profit
-        // const netProfit = orderProfit - fees;
-        // const netProfit = orderProfit;
-        // console.log('net profit', netProfit);
-
         const allProfit = calculateProfitBTC(originalOrder)
-        // console.log('allProfit', allProfit);
-
         // add the net profit to the total profit
-        // profit += netProfit;
         profit += allProfit.profit;
       }
 
-
       // add the sell order to the newOrders array
       newOrders.push(flippedOrder);
-
-      // console.log('buyOrders', buyOrders.length);
-      // console.log('sellOrders', sellOrders.length);
     }
     // return the new orders
     return newOrders;
@@ -245,8 +197,6 @@ async function runSimulation(data) {
 }
 
 function calculateProfitBTC(dbOrder) {
-
-  // console.log(dbOrder, 'dbOrder in calculateProfitBTC');
 
   // margin is the difference between the original buy price and the original sell price
   let margin = (dbOrder.original_sell_price - dbOrder.original_buy_price)
@@ -257,8 +207,6 @@ function calculateProfitBTC(dbOrder) {
   let grossProfit = Number(margin * dbOrder.base_size)
   let profit = Number(grossProfit - (Number(dbOrder.total_fees) + Number(dbOrder.previous_total_fees)))
   let profitBTC = Number((Math.floor((profit / dbOrder.limit_price) * 100000000) / 100000000))
-
-  // console.log('profitBTC', profitBTC, 'profit', profit, 'grossProfit', grossProfit, 'margin', margin);
 
   return { profitBTC, profit };
 }
