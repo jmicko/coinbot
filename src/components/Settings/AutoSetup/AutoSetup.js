@@ -118,8 +118,8 @@ function AutoSetup(props) {
 
   useEffect(() => {
     if (user) {
-      setAvailableFundsUSD(user.actualavailable_usd);
-      setAvailableFundsBTC(user.actualavailable_btc);
+      setAvailableFundsUSD(user.availableFunds?.[props.product]?.quote_available);
+      setAvailableFundsBTC(user.availableFunds?.[props.product]?.base_available);
     }
   }, [user]);
 
@@ -203,6 +203,7 @@ function AutoSetup(props) {
     <div className="AutoSetup settings-panel scrollable">
       <div className="divider" />
       <h4>Auto Setup</h4>
+      {JSON.stringify(user.availableFunds?.[props.product]?.quote_available)}
       {props.tips && <>
         <p>
           Enter the parameters you want and the bot will keep placing trades for you based on
