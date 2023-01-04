@@ -26,7 +26,7 @@ function AutoSetup(props) {
   const [autoTradeStarted, setAutoTradeStarted] = useState(false);
   const [totalTrades, setTotalTrades] = useState(false);
 
-  const [simulation, setSimulation] = useState(false);
+  const [simulation, setSimulation] = useState(true);
   // start date, default is one month ago
   const [simStartDate, setSimStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().slice(0, 10));
 
