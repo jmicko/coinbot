@@ -123,6 +123,14 @@ function AutoSetup(props) {
     }
   }, [user]);
 
+  // on component unmount, unset the simulation reducer
+  useEffect(() => {
+    return () => {
+      dispatch({ type: 'UNSET_SIMULATION_RESULT' });
+    }
+  }, [dispatch]);
+
+
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
   const numberWithCommas = (x) => {
     // this will work in safari once lookbehind is supported
@@ -207,36 +215,37 @@ function AutoSetup(props) {
 
         {/* <div className="divider" /> */}
       </>}
-      {/* radio buttons to pick live or simulation */}
-      <div className="radio-buttons">
-        <label htmlFor="live">
-          <input
-            type="radio"
-            name="liveOrSim"
-            id="live"
-            value="live"
-            checked={simulation === false}
-            onChange={() => setSimulation(false)}
-          />
-          Live
-        </label>
-        <label htmlFor="simulation">
-          <input
-            type="radio"
-            name="liveOrSim"
-            id="simulation"
-            value="simulation"
-            checked={simulation === true}
-            onChange={() => setSimulation(true)}
-          />
-          Simulation
-        </label>
-      </div>
 
 
       <div className='auto-setup-form-and-results'>
 
         <form className='auto-setup-form left-border' onSubmit={submitAutoSetup}>
+          
+          {/* radio buttons to pick live or simulation */}
+          <div className="radio-buttons">
+            <label htmlFor="live">
+              <input
+                type="radio"
+                name="liveOrSim"
+                id="live"
+                value="live"
+                checked={simulation === false}
+                onChange={() => setSimulation(false)}
+              />
+              Live
+            </label>
+            <label htmlFor="simulation">
+              <input
+                type="radio"
+                name="liveOrSim"
+                id="simulation"
+                value="simulation"
+                checked={simulation === true}
+                onChange={() => setSimulation(true)}
+              />
+              Simulation
+            </label>
+          </div>
 
           {/* STARTING VALUE */}
           {props.tips
@@ -443,7 +452,10 @@ function AutoSetup(props) {
             : simulationReducer.status === "complete" && <div>
               <p>Simulation complete!</p>
               {/* show optimum pair ratio */}
-              <p>Optimum pair percent increase: {simulationReducer.result.bestPairRatio.pairRatio}</p>
+              <p>Optimum pair percent increase: {simulationReducer.result.bestPairRatio.pairRatio}
+                {/* button to set the trade pair ratio to the optimum pair ratio */}
+                &nbsp;<button className={`btn-store-api btn-green medium ${user.theme}`} onClick={(event) => { event.preventDefault(); setTradePairRatio(simulationReducer.result.bestPairRatio.pairRatio) }}>Use It!</button>
+              </p>
               <p>This would have resulted in about ${simulationReducer.result.bestPairRatio.profit.toFixed(2)} in profit over the specified duration.
                 Please note this is a rough estimate based on available historical data</p>
               {/* show optimum increment */}
