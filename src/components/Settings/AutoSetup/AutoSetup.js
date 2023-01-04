@@ -25,6 +25,10 @@ function AutoSetup(props) {
   const [autoTradeStarted, setAutoTradeStarted] = useState(false);
   const [totalTrades, setTotalTrades] = useState(false);
 
+  const [simulation, setSimulation] = useState(false);
+  // start date, default is one month ago
+  const [simStartDate, setSimStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().slice(0, 10));
+
   const [orders, setOrders] = useState(<></>);
   const [btcToBuy, setBtcToBuy] = useState(0);
   const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
@@ -140,6 +144,30 @@ function AutoSetup(props) {
     }, 5000);
   }
 
+  function handleSimulation(event) {
+    event.preventDefault();
+    console.log('simulating trades');
+    dispatch({
+      type: 'SIMULATE_TRADES',
+
+      payload: {
+        simStartDate: simStartDate,
+        availableFunds: availableFundsUSD,
+        // tradingPrice: socket.tickers[props.product].price,
+        startingValue: startingValue,
+        skipFirst: skipFirst,
+        endingValue: endingValue,
+        ignoreFunds: ignoreFunds,
+        incrementType: incrementType,
+        increment: increment,
+        trade_pair_ratio: tradePairRatio,
+        base_size: base_size,
+        sizeType: sizeType,
+        product_id: props.product,
+      }
+    })
+  }
+
   function autoTrader() {
     let availableFunds = availableFundsUSD;
     // console.log('here is the current available funds', availableFunds);
@@ -178,6 +206,33 @@ function AutoSetup(props) {
 
         {/* <div className="divider" /> */}
       </>}
+      {/* radio buttons to pick live or simulation */}
+      <div className="radio-buttons">
+        <label htmlFor="live">
+          <input
+            type="radio"
+            name="liveOrSim"
+            id="live"
+            value="live"
+            checked={simulation === false}
+            onChange={() => setSimulation(false)}
+          />
+          Live
+        </label>
+        <label htmlFor="simulation">
+          <input
+            type="radio"
+            name="liveOrSim"
+            id="simulation"
+            value="simulation"
+            checked={simulation === true}
+            onChange={() => setSimulation(true)}
+          />
+          Simulation
+        </label>
+      </div>
+
+
       <div className='auto-setup-form-and-results'>
 
         <form className='auto-setup-form left-border' onSubmit={submitAutoSetup}>
@@ -354,10 +409,32 @@ function AutoSetup(props) {
           {/* SUBMIT */}
           <br />
           <br />
-          {!autoTradeStarted
-            ? <input className={`btn-store-api btn-blue medium ${user.theme}`} type="submit" name="submit" value="Start Setup" />
-            : <p>Auto setup started!</p>
+          {/* starting date picker that will only show if simulation is true */}
+          {simulation && <div>
+            <label htmlFor='simStartDate'>
+              Start Date:
+              <br />
+              <input
+                name='simStartDate'
+                type='date'
+                value={simStartDate}
+                required
+                onChange={(event) => setSimStartDate(event.target.value)}
+              />
+            </label>
+            <br />
+            <br />
+          </div>}
+
+          
+          {!simulation
+            ? !autoTradeStarted
+              ? <input className={`btn-store-api btn-blue medium ${user.theme}`} type="submit" name="submit" value="Start Setup" />
+              : <p>Auto setup started!</p>
+            /* button to run a simulation */
+            : <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={handleSimulation}>Run Simulation</button>
           }
+
         </form>
 
         <div className='auto-setup-results'>

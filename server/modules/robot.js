@@ -393,7 +393,7 @@ async function processOrders(userID) {
           // get the user of the trade
           let user = await databaseClient.getUserAndSettings(dbOrder.userID);
           // ...flip the trade details
-          let tradeDetails = flipTrade(dbOrder, user, tradeList, i);
+          let tradeDetails = flipTrade(dbOrder, user, tradeList);
           // ...send the new trade
           try {
 
@@ -468,9 +468,9 @@ async function processOrders(userID) {
 
 // function for flipping sides on a trade
 // Returns the tradeDetails object needed to send trade to CB
-function flipTrade(dbOrder, user, allFlips, iteration) {
+function flipTrade(dbOrder, user, allFlips, simulation) {
   const userID = user.id
-  userStorage[userID].updateStatus('start flip trade');
+  !simulation && userStorage[userID].updateStatus('start flip trade');
   const reinvestRatio = user.reinvest_ratio / 100;
   const postMaxReinvestRatio = user.post_max_reinvest_ratio / 100;
   const maxTradeSize = user.max_trade_size;
@@ -494,7 +494,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     // if it was a BUY, sell for more. multiply old price
     tradeDetails.side = "SELL"
     tradeDetails.limit_price = dbOrder.original_sell_price;
-    messenger[userID].newMessage({
+    !simulation && messenger[userID].newMessage({
       type: 'general',
       text: `Selling for $${Number(tradeDetails.limit_price)}`
     });
@@ -503,13 +503,17 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     if (user.reinvest) {
       const orderSize = Number(dbOrder.base_size);
 
-      // console.log('===================== REINVESTING ======================');
+      console.log('===================== REINVESTING ======================');
 
       // get available funds from userStorage
-      const availableFunds = userStorage[userID].getAvailableFunds();
+      const availableFunds = !simulation
+        ? userStorage[userID].getAvailableFunds()
+        : simulation.availableFunds;
 
       // get the available USD funds for the product_id
-      const availableUSD = availableFunds[dbOrder.product_id].quote_available;
+      const availableUSD = !simulation
+        ? availableFunds[dbOrder.product_id].quote_available
+        : availableFunds.availableUSD;
 
       // console.log(availableFunds[dbOrder.product_id].quote_available, 'availableFunds in flipTrade');
       // console.log(user.actualavailable_usd, 'user.actualavailable_usd')
@@ -522,7 +526,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
       if (amountToReinvest <= 0) {
         console.log('negative profit');
         amountToReinvest = 0;
-        messenger[userID].newError({
+        !simulation && messenger[userID].newError({
           type: 'error',
           errorData: dbOrder,
           errorText: `Just saw a negative profit! Maybe increase your trade-pair ratio? 
@@ -596,7 +600,7 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "BUY"
     tradeDetails.limit_price = dbOrder.original_buy_price;
-    messenger[userID].newMessage({
+    !simulation && messenger[userID].newMessage({
       type: 'general',
       text: `Buying for $${Number(tradeDetails.limit_price)}`
     });
@@ -707,7 +711,7 @@ async function reorder(orderToReorder) {
       console.log(product, 'product');
       // get the number of decimals for the base_increment of the product. This is used to round the base_size
       const decimals = calculateProductDecimals(product);
-      
+
       // make new tradeDetails so client id is not passed from old order
       const tradeDetails = {
         side: upToDateDbOrder.side,
@@ -1041,17 +1045,17 @@ async function updateProductCandles(userID, productID, granularity) {
               }
             }
           }
-          if(integrity) {
+          if (integrity) {
             // console.log('candles array integrity is good');
           } else {
             // console.log('candles array integrity is compromised');
             // console.log(missing, 'missing candles');
           }
         }
-        
+
         // save the candles to the database
         await databaseClient.saveCandles(userID, productID, granularity, candles);
-          
+
         doItAgain(candles);
       }
       resolve()
@@ -1064,7 +1068,7 @@ async function updateProductCandles(userID, productID, granularity) {
       reject(err)
     }
   })
-  
+
   function doItAgain(candles) {
     // if candles is 200+, wait 1 second and get the next 200 candles
     if (candles.length > 200) {

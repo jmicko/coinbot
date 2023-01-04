@@ -39,16 +39,18 @@ function* autoSetup(action) {
   }
 }
 
-// function* deleteTrade(action) {
-//   try {
-//     yield axios.delete(`/api/trade/${action.payload.order_id}`);
-//   } catch (error) {
-//     console.log('DELETE order route has failed', error)
-//     if (error.response.status === 403) {
-//       yield put({ type: 'UNSET_USER' });
-//     }
-//   }
-// }
+// handle simulation
+function* simulation(action) {
+  try {
+    console.log('simulation action.payload', action.payload);
+    yield axios.post(`/api/trade/simulation`, action.payload);
+  } catch (error) {
+    console.log('POST order route has failed', error)
+    if (error.response.status === 403) {
+      yield put({ type: 'UNSET_USER' });
+    }
+  }
+}
 
 function* syncTrade(action) {
   try {
@@ -67,6 +69,7 @@ function* tradeSaga() {
   yield takeLatest('AUTO_SETUP', autoSetup);
   // yield takeLatest('DELETE_TRADE', deleteTrade);
   yield takeLatest('SYNC_TRADE', syncTrade);
+  yield takeLatest('SIMULATE_TRADES', simulation);
 }
 
 export default tradeSaga;

@@ -1398,7 +1398,7 @@ async function getOldestCandle(userID, product_id, granularity) {
 // save an array of candles to the database
 async function saveCandles(userID, productID, granularity, candles) {
   return new Promise(async (resolve, reject) => {
-    console.log('saving candles', candles.length);
+    // console.log('saving candles', candles.length);
     try {
       // save each candle to the database unless it already exists
       for (let i = 0; i < candles.length; i++) {
@@ -1436,7 +1436,24 @@ async function getCandles(userID, productID, granularity, start, end) {
   })
 }
 
-// get all candles for a product and granularity
+// get the candle with the lowest start that is higher than the given start
+async function getNextCandles(userID, productID, granularity, start) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      console.log('getting next candles FROM DB', userID, productID, granularity, start);
+      const sqlText = `
+      SELECT * FROM "market_candles" 
+      WHERE "user_id" = $1 AND "product_id" = $2 AND "granularity" = $3 AND "start" > $4 
+      ORDER BY "start" ASC;`;
+      let result = await pool.query(sqlText, [userID, productID, granularity, start]);
+      resolve(result.rows);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+// get average high low ratio for a product and granularity
 async function getCandlesAverage(userID, productID, granularity) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -1505,6 +1522,7 @@ const databaseClient = {
   saveCandles: saveCandles,
   getCandles: getCandles,
   getCandlesAverage: getCandlesAverage,
+  getNextCandles: getNextCandles,
   getProduct: getProduct,
 }
 

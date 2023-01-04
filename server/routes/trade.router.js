@@ -7,6 +7,7 @@ const robot = require('../modules/robot');
 const { cache, userStorage, cbClients, messenger } = require('../modules/cache');
 const { v4: uuidv4 } = require('uuid');
 const { autoSetup } = require('../../src/shared');
+const { flipTrade } = require('../modules/robot');
 // const { autoSetup } = require('../../src/shared');
 
 /**
@@ -311,14 +312,139 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
  * this will not update the orders
  * this will not do anything but return the results of a simulation
  */
-router.get('/simulate', rejectUnauthenticated, async (req, res) => {
+router.post('/simulation', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   const options = req.body;
-  console.log('simulate options:', options);
+  const feeRate = Number(user.maker_fee);
+
+  // get the initial price by getting the first candle from the db for the simStartDate
+  // first turn the simStartDate into a unix timestamp
+  const simStartDate = new Date(options.simStartDate).getTime() / 1000;
+  console.log('simStartDate', simStartDate);
+  // get all candles after the simStartDate
+  const candles = await databaseClient.getNextCandles(user.id, options.product_id, 'ONE_MINUTE', simStartDate - 1);
+  console.log('candles', candles[0].open);
+  // the open price of the first candle is the tradingPrice for auto setup
+  options.tradingPrice = Number(candles[0].open);
+  console.log('simulation options:', user, options);
+
+  // run the auto setup to get the initial orderList
+  const initialSetup = autoSetup(user, options);
+  // give each order a unique id and a next order id
+  initialSetup.orderList.forEach(order => order.client_order_id = uuidv4());
+  initialSetup.orderList.forEach(order => order.next_client_order_id = uuidv4());
+  // divide the setup orderList into two arrays, one for buy orders and one for sell orders
+  const buyOrders = initialSetup.orderList.filter(order => order.side === 'BUY');
+  const sellOrders = initialSetup.orderList.filter(order => order.side === 'SELL');
+  console.log('buyOrders', buyOrders);
+  console.log('sellOrders', sellOrders);
+
+  // hold data that will be returned to the client
+  let profit = 0;
+
+  // set up the user object to be used in the simulation
+  const simUser = { ...user };
+  simUser.reinvest = false;
+
+  // iterate through the candles and run the simulation
+  for (let i = 0; i < candles.length; i++) {
+    // for (let i = 0; i < 100; i++) {
+    // get the current candle
+    const candle = candles[i];
+    // get the current high and low prices
+    const high = Number(candle.high);
+    const low = Number(candle.low);
+    // console.log('high', high);
+    // console.log('low', low);
+    // find all the buy orders that are triggered by the current candle
+    const triggeredBuyOrders = buyOrders.filter(order => order.original_buy_price >= low);
+    // triggeredBuyOrders.length && console.log('triggeredBuyOrders', triggeredBuyOrders);
+    // flip the triggered buy orders to sell orders
+    const flippedSellOrders = flipTriggeredOrders(triggeredBuyOrders, simUser);
+    // add the sell orders to the sellOrders array
+    sellOrders.push(...flippedSellOrders);
+    // remove the buy orders from the buyOrders array. can identify them by the client_order_id
+    triggeredBuyOrders.forEach(order => {
+      const index = buyOrders.findIndex(buyOrder => buyOrder.client_order_id === order.client_order_id);
+      buyOrders.splice(index, 1);
+    });
+
+
+
+    // find all the sell orders that are triggered by the current candle
+    const triggeredSellOrders = sellOrders.filter(order => order.original_sell_price <= high);
+    // triggeredSellOrders.length && console.log('triggeredSellOrders', triggeredSellOrders);
+    // flip the triggered sell orders to buy orders
+    const flippedBuyOrders = flipTriggeredOrders(triggeredSellOrders, simUser);
+    // add the buy orders to the buyOrders array
+    buyOrders.push(...flippedBuyOrders);
+    // remove the sell orders from the sellOrders array. can identify them by the client_order_id
+    triggeredSellOrders.forEach(order => {
+      const index = sellOrders.findIndex(sellOrder => sellOrder.client_order_id === order.client_order_id);
+      sellOrders.splice(index, 1);
+    });
+
+
+
+    
+  }
   
-
-
+  console.log('buyOrders', buyOrders.length);
+  console.log('sellOrders', sellOrders.length);
+  
+  
+  
+  // run autoSetup to get a list of orders to place
+  
+  console.log('! ~ simulation complete ~ !');
+  console.log('profit', profit);
   res.sendStatus(200);
+  
+  
+  function flipTriggeredOrders(triggeredOrders, user) {
+    const newOrders = [];
+    for (let j = 0; j < triggeredOrders.length; j++) {
+      const originalOrder = triggeredOrders[j];
+      const flippedOrder = flipTrade(originalOrder, user, triggeredOrders, { availableFunds: 1000 });
+      // add next client unique id to the flipped order. flipTrade needs this
+      flippedOrder.next_client_order_id = uuidv4();
+      console.log('flippedOrder', flippedOrder, flippedOrder.limit_price * flippedOrder.base_size);
+      // console.log('')
+      // add the original_buy_price and original_sell_price to the sell order
+      flippedOrder.original_buy_price = originalOrder.original_buy_price;
+      flippedOrder.original_sell_price = originalOrder.original_sell_price;
+
+      // calculate the fees that would have been paid for the original order, and the flipped order
+      const fees = originalOrder.limit_price * originalOrder.base_size * feeRate + flippedOrder.limit_price * flippedOrder.base_size * feeRate;
+
+      console.log(fees, 'what are the fees?')
+
+      // if it is flipping a sell, need to calculate the profit
+      if (originalOrder.side === 'SELL') {
+        console.log('originalOrder', originalOrder);
+        console.log('flippedOrder', flippedOrder);
+        // calculate the profit
+        const orderProfit = originalOrder.limit_price * originalOrder.base_size - flippedOrder.limit_price * flippedOrder.base_size;
+        console.log('orderProfit', orderProfit);
+        // subtract the fees from the profit
+        const netProfit = orderProfit - fees;
+        // const netProfit = orderProfit;
+        console.log('net profit', netProfit);
+        // add the net profit to the total profit
+        profit += netProfit;
+      }
+
+
+      // add the sell order to the newOrders array
+      newOrders.push(flippedOrder);
+
+      console.log('buyOrders', buyOrders.length);
+      console.log('sellOrders', sellOrders.length);
+    }
+    // return the new orders
+    return newOrders;
+  }
+
 });
 
 
