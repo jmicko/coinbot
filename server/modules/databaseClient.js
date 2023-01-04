@@ -514,7 +514,7 @@ const getProduct = (productID, userID) => {
 const getActiveProducts = (userID) => {
   return new Promise(async (resolve, reject) => {
     try {
-      const sqlText = `SELECT * FROM "products" WHERE "user_id" = $1 AND "active_for_user" = true ORDER BY "activated_at" DESC;`;
+      const sqlText = `SELECT * FROM "products" WHERE "user_id" = $1 AND "active_for_user" = true ORDER BY "activated_at" ASC;`;
       const result = await pool.query(sqlText, [userID]);
       resolve(result.rows);
     } catch (error) {
