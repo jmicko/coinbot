@@ -433,7 +433,7 @@ function AutoSetup(props) {
               ? <input className={`btn-store-api btn-blue medium ${user.theme}`} type="submit" name="submit" value="Start Setup" />
               : <p>Auto setup started!</p>
             /* button to run a simulation */
-            : <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={handleSimulation}>Run Simulation</button>
+            : (simulationReducer.status === 'idle' || simulationReducer.status === 'complete') && <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={handleSimulation}>Run Simulation</button>
           }
           {/* {JSON.stringify(simulationReducer)} */}
           {simulationReducer.status === "running" ? <div>
@@ -445,10 +445,10 @@ function AutoSetup(props) {
               {/* show optimum pair ratio */}
               <p>Optimum pair percent increase: {simulationReducer.result.bestPairRatio.pairRatio}</p>
               <p>This would have resulted in about ${simulationReducer.result.bestPairRatio.profit.toFixed(2)} in profit over the specified duration.
-              Please note this is a rough estimate based on available historical data</p>
+                Please note this is a rough estimate based on available historical data</p>
               {/* show optimum increment */}
               {/* <p>Optimum increment: {simulationReducer.bestIncrement}</p> */}
-              </div>
+            </div>
           }
         </form>
 
