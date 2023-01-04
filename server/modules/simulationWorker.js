@@ -27,8 +27,9 @@ async function optimize(data) {
   data.options.trade_pair_ratio = 0.1;
   console.log(data.options, 'data.options after setting trade_pair_ratio to 0');
 
-  // run the simulation until the pair ratio is 10, incrementing by 0.1 each time
-  while (data.options.trade_pair_ratio <= 10) {
+
+  // run the simulation until the pair ratio is 20, incrementing by 0.1 each time
+  while (data.options.trade_pair_ratio <= 20) {
     // run the simulation
     const simResult = await runSimulation(data);
     // create an object with the pair ratio and the profit
@@ -38,10 +39,22 @@ async function optimize(data) {
     };
     // add the result to the simResults array
     simResults.push(result);
+
+    // find the pair ratio that produced the highest profit
+    const bestPairRatio = simResults.reduce((prev, current) => (prev.profit > current.profit) ? prev : current);
+    // check if the current pair ratio is 3 greater than the best pair ratio
+    console.log('bestPairRatio:', Number(bestPairRatio.pairRatio), 'current ratio:', data.options.trade_pair_ratio);
+    if (data.options.trade_pair_ratio >= Number(bestPairRatio.pairRatio) + 3) {
+      // if so, break out of the loop
+      console.log('best ratio has been found, breaking out of the loop');
+      break;
+    }
+
     // increment the pair ratio by 0.1
     data.options.trade_pair_ratio += 0.1;
     // round the pair ratio to 1 decimal place
     data.options.trade_pair_ratio = Math.round(data.options.trade_pair_ratio * 10) / 10;
+
   }
 
   // find the pair ratio that produced the highest profit
