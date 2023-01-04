@@ -6,7 +6,7 @@ const databaseClient = require('../modules/databaseClient');
 const robot = require('../modules/robot');
 const { cache, userStorage, cbClients, messenger } = require('../modules/cache');
 const { v4: uuidv4 } = require('uuid');
-const { autoSetup } = require('../../src/shared');
+const { autoSetup, sleep } = require('../../src/shared');
 
 const { fork } = require('child_process');
 // const { autoSetup } = require('../../src/shared');
@@ -306,7 +306,7 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
- * GET route to run a simulation of a setup and return the results
+ * POST route to run a simulation of a setup
  * this will not save the trades to the database
  * this will not place any orders
  * this will not update the funds
@@ -315,12 +315,29 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
  */
 router.post('/simulation', rejectUnauthenticated, async (req, res) => {
   try {
-    console.log('simulation route hit');
+    // check if user is already running a simulation
+    if (userStorage[req.user.id].simulating) {
+      console.log('user is already simulating');
+      res.sendStatus(400);
+      return;
+    }
+    // set user to simulating
+    userStorage[req.user.id].simulating = true;
+
+    // clear out any previous simulation results
+    userStorage[req.user.id].simulationResults = null;
+
+    // tell client to update user
+    messenger[req.user.id].userUpdate();
+
+    console.log('simulation route hit', userStorage[req.user.id]);
 
     const workerData = {
       user: req.user,
       options: req.body
     }
+
+    // res.sendStatus(200);
 
     // start a child process to run the simulation
     const simulationWorker = fork('./server/modules/simulationWorker.js');
@@ -328,7 +345,14 @@ router.post('/simulation', rejectUnauthenticated, async (req, res) => {
     // when the worker sends a message back, send it to the client
     simulationWorker.on('message', (message) => {
       console.log('message from simulationWorker', message);
-      
+
+      messenger[req.user.id].newMessage({
+        type: 'simulationResults',
+        data: message
+      });
+
+      userStorage[req.user.id].simulationResults = message;
+
       res.send(message).status(200);
       // kill the worker after it sends the message
       simulationWorker.kill();
@@ -338,13 +362,47 @@ router.post('/simulation', rejectUnauthenticated, async (req, res) => {
       if (code !== 0) {
         console.log(`simulationWorker stopped with exit code ${code}`);
       }
+      // set user to not simulating
+      userStorage[req.user.id].simulating = false;
+      // tell client to update user
+      messenger[req.user.id].userUpdate();
     });
   } catch (error) {
     console.log('error in simulation route', error);
     res.sendStatus(500);
+    // set user to not simulating
+    userStorage[req.user.id].simulating = false;
+    // tell client to update user
+    messenger[req.user.id].userUpdate();
   }
-
 });
+
+/**
+ * GET route to get the results of a simulation
+ */
+router.get('/simulation', rejectUnauthenticated, async (req, res) => {
+  try {
+    const userID = req.user.id;
+
+    for (let i = 0; i < 20; i++) {
+      const simulationResults = await userStorage[userID].simulationResults;
+      if (simulationResults?.simResults) {
+        console.log('simulation results', simulationResults);
+        res.send(simulationResults).status(200);
+        return;
+      } else {
+        console.log('simulation results', i);
+        await sleep(1000);
+      }
+    }
+
+    res.sendStatus(404);
+  } catch (error) {
+    console.log('error in simulation route', error);
+    res.sendStatus(500);
+  }
+});
+
 
 
 module.exports = router;

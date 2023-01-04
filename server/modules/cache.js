@@ -65,6 +65,8 @@ class User {
     this.socketStatus = 'closed';
     this.candlesBeingUpdated = new Object();
     this.exporting = false;
+    this.simulating = false;
+    this.simulationResults = null;
   }
   updateCandlesBeingUpdated(product_id, granularity, boolean) {
     if (!this.candlesBeingUpdated[product_id]) {

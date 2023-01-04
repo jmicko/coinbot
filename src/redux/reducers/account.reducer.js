@@ -126,7 +126,13 @@ const exportFilesReducer = (state = [], action) => {
 const simulationReducer = (state = { status: 'idle' }, action) => {
   switch (action.type) {
     case 'SET_SIMULATION_RESULT':
-      return { status: 'complete', result: action.payload}
+      // only set the result if the simulation is still running
+      // this prevents race conditions between the socket and REST calls
+      if (state.status === 'running') {
+        return { status: 'complete', result: action.payload}
+      } else {
+        return state;
+      }
     case 'UNSET_SIMULATION_RESULT':
       return { status: 'idle' };
     case 'SET_SIMULATION_RUNNING':

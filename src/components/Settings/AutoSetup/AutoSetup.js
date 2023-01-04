@@ -488,12 +488,23 @@ function AutoSetup(props) {
               ? <input className={`btn-store-api btn-blue medium ${user.theme}`} type="submit" name="submit" value="Start Setup" />
               : <p>Auto setup started!</p>
             /* button to run a simulation */
-            : (simulationReducer.status === 'idle' || simulationReducer.status === 'complete') && <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={handleSimulation}>Run Simulation</button>
+            : (simulationReducer.status === 'idle' || simulationReducer.status === 'complete') && !user.simulating && <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={handleSimulation}>Run Simulation</button>
           }
           {/* if in node dev env */}
           {process.env.NODE_ENV === "development" && <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={handleSimulation}>Force Simulation</button>}
           {/* {JSON.stringify(simulationReducer)} */}
-          {simulationReducer.status === "running" ? <div>
+
+
+
+          {/* {JSON.stringify(user.simulating)} */}
+          {/* {JSON.stringify(simulationReducer)} */}
+          {/* {user.simulating && <p>Simulating...</p>} */}
+
+
+
+
+          {/* {simulationReducer.status === "running" ? <div> */}
+          {user.simulating ? <div>
             {/*  */}
             <p>Simulation running...</p>
           </div>
