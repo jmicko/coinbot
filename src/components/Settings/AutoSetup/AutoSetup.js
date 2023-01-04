@@ -29,12 +29,18 @@ function AutoSetup(props) {
   const [simulation, setSimulation] = useState(true);
   // start date, default is one month ago
   const [simStartDate, setSimStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().slice(0, 10));
+  const [simReinvest, setSimReinvest] = useState(false);
+  const [simReinvestPercent, setSimReinvestPercent] = useState(100);
 
   const [orders, setOrders] = useState(<></>);
   const [btcToBuy, setBtcToBuy] = useState(0);
   const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
   const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
 
+
+  function handleSimReinvest() {
+    setSimReinvest(!simReinvest)
+  }
 
   function handleIncrementType(event) {
     setIncrementType(event.target.value)
@@ -162,7 +168,8 @@ function AutoSetup(props) {
       payload: {
         simStartDate: simStartDate,
         availableFunds: availableFundsUSD,
-        // tradingPrice: socket.tickers[props.product].price,
+        simReinvest: simReinvest,
+        simReinvestPercent: simReinvestPercent,
         startingValue: startingValue,
         skipFirst: skipFirst,
         endingValue: endingValue,
@@ -203,7 +210,7 @@ function AutoSetup(props) {
     <div className="AutoSetup settings-panel scrollable">
       <div className="divider" />
       <h4>Auto Setup</h4>
-      {JSON.stringify(user.availableFunds?.[props.product]?.quote_available)}
+      {/* {JSON.stringify(user.availableFunds?.[props.product]?.quote_available)} */}
       {props.tips && <>
         <p>
           Enter the parameters you want and the bot will keep placing trades for you based on
@@ -221,32 +228,7 @@ function AutoSetup(props) {
       <div className='auto-setup-form-and-results'>
 
         <form className='auto-setup-form left-border' onSubmit={submitAutoSetup}>
-          
-          {/* radio buttons to pick live or simulation */}
-          <div className="radio-buttons">
-            <label htmlFor="live">
-              <input
-                type="radio"
-                name="liveOrSim"
-                id="live"
-                value="live"
-                checked={simulation === false}
-                onChange={() => setSimulation(false)}
-              />
-              Live
-            </label>
-            <label htmlFor="simulation">
-              <input
-                type="radio"
-                name="liveOrSim"
-                id="simulation"
-                value="simulation"
-                checked={simulation === true}
-                onChange={() => setSimulation(true)}
-              />
-              Simulation
-            </label>
-          </div>
+
 
           {/* STARTING VALUE */}
           {props.tips
@@ -420,6 +402,36 @@ function AutoSetup(props) {
           {/* SUBMIT */}
           <br />
           <br />
+
+          {/* radio buttons to pick live or simulation */}
+          <div className="radio-buttons">
+            <label htmlFor="live">
+              <input
+                type="radio"
+                name="liveOrSim"
+                id="live"
+                value="live"
+                checked={simulation === false}
+                onChange={() => setSimulation(false)}
+              />
+              Live
+            </label>
+            <label htmlFor="simulation">
+              <input
+                type="radio"
+                name="liveOrSim"
+                id="simulation"
+                value="simulation"
+                checked={simulation === true}
+                onChange={() => setSimulation(true)}
+              />
+              Simulation
+            </label>
+          </div>
+
+          <br />
+
+
           {/* starting date picker that will only show if simulation is true */}
           {simulation && <div>
             <label htmlFor='simStartDate'>
@@ -437,6 +449,39 @@ function AutoSetup(props) {
             <br />
           </div>}
 
+          {/* SIM REINVEST */}
+          {simulation && <div>
+            <label htmlFor="simReinvest">
+              <input
+                name="simReinvest"
+                type="checkbox"
+                checked={simReinvest}
+                onChange={handleSimReinvest}
+              />
+              Reinvest
+            </label>
+          </div>}
+
+          <br />
+
+          {simReinvest && <div>
+            <label htmlFor='simReinvestPercent'>
+              Reinvest Percent:
+              <br />
+              <input
+                name='simReinvestPercent'
+                type='number'
+                value={simReinvestPercent}
+                max={100}
+                min={1}
+                required
+                onChange={(event) => setSimReinvestPercent(Number(event.target.value))}
+              /> (1-100)
+            </label>
+          </div>
+          }
+
+          <br />
 
           {!simulation
             ? !autoTradeStarted
@@ -445,6 +490,8 @@ function AutoSetup(props) {
             /* button to run a simulation */
             : (simulationReducer.status === 'idle' || simulationReducer.status === 'complete') && <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={handleSimulation}>Run Simulation</button>
           }
+          {/* if in node dev env */}
+          {process.env.NODE_ENV === "development" && <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={handleSimulation}>Force Simulation</button>}
           {/* {JSON.stringify(simulationReducer)} */}
           {simulationReducer.status === "running" ? <div>
             {/*  */}
@@ -457,7 +504,7 @@ function AutoSetup(props) {
                 {/* button to set the trade pair ratio to the optimum pair ratio */}
                 &nbsp;<button className={`btn-store-api btn-green medium ${user.theme}`} onClick={(event) => { event.preventDefault(); setTradePairRatio(simulationReducer.result.bestPairRatio.pairRatio) }}>Use It!</button>
               </p>
-              <p>This would have resulted in about ${simulationReducer.result.bestPairRatio.profit.toFixed(2)} in profit over the specified duration.
+              <p>This would have resulted in about ${simulationReducer.result.bestPairRatio.profit?.toFixed(2)} in profit over the specified duration.
                 Please note this is a rough estimate based on available historical data</p>
               {/* show optimum increment */}
               {/* <p>Optimum increment: {simulationReducer.bestIncrement}</p> */}

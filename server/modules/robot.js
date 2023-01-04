@@ -503,17 +503,17 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
     if (user.reinvest) {
       const orderSize = Number(dbOrder.base_size);
 
-      console.log('===================== REINVESTING ======================');
+      // console.log('===================== REINVESTING ======================', orderSize, 'orderSize');
 
       // get available funds from userStorage
       const availableFunds = !simulation
         ? userStorage[userID].getAvailableFunds()
-        : simulation.availableFunds;
+        : user.availableFunds;
 
       // get the available USD funds for the product_id
       const availableUSD = !simulation
         ? availableFunds[dbOrder.product_id].quote_available
-        : availableFunds.availableUSD;
+        : availableFunds.quote_available;
 
       // console.log(availableFunds[dbOrder.product_id].quote_available, 'availableFunds in flipTrade');
       // console.log(user.actualavailable_usd, 'user.actualavailable_usd')
@@ -521,10 +521,11 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
 
       // find out how much profit there was
       const BTCprofit = calculateProfitBTC(dbOrder);
+      // console.log(BTCprofit, 'BTCprofit ++++++++++++++++++++++++++ STILL BROKEN???');
 
       let amountToReinvest = BTCprofit * reinvestRatio;
       if (amountToReinvest <= 0) {
-        console.log('negative profit');
+        // console.log('negative profit');
         amountToReinvest = 0;
         !simulation && messenger[userID].newError({
           type: 'error',
@@ -537,6 +538,7 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
       // safer to round down the investment amount. 
       // If user invest 100%, it should not round up and potentially take their balance negative
       const newSize = Math.floor((orderSize + amountToReinvest) * 100000000) / 100000000;
+      // console.log(newSize, orderSize, amountToReinvest, 'newSize COULD BREAK HERE IF CONCATENATING STRINGS');
 
       const buyPrice = dbOrder.original_buy_price;
       const maxSizeBTC = Number((maxTradeSize / buyPrice).toFixed(8));
@@ -558,6 +560,7 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
         if (leftoverFunds > user.reserve) {
           // if there is enough money left in the account to reinvest, set the base_size to the max base_size
           tradeDetails.base_size = maxSizeBTC;
+          // console.log( tradeDetails.base_size, 'reinvesting to max size');
         }
 
         // check if the new base_size has already surpassed the user set max. If it has, reinvest based on the user set post-max settings
@@ -568,6 +571,7 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
           const postMaxNewSize = Math.floor((orderSize + postMaxAmountToReinvest) * 100000000) / 100000000;
           // console.log('postMaxNewSize', postMaxNewSize);
           tradeDetails.base_size = postMaxNewSize;
+          // console.log( tradeDetails.base_size, 'reinvesting to post max size');
         }
       } else if (newSize < 0.000016) {
         // todo - this should maybe not be in an else if statement.
@@ -583,19 +587,29 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
             allFlipsValue += (trade.base_size * trade.original_buy_price)
           }
         });
-
+        
         // calculate what funds will be leftover after all pending flips go through
         const leftoverFunds = (Number(availableUSD) - (allFlipsValue * (1 + Number(user.maker_fee))));
-
+        
         // only set the new base_size if it will stay above the reserve
         if (leftoverFunds > user.reserve) {
-          console.log('there is enough money left to reinvest');
+          // console.log('there is enough money left to reinvest', newSize, 'newSize');
           tradeDetails.base_size = newSize.toFixed(8);
+          // console.log( tradeDetails.base_size, 'reinvesting to newSize BUT COULD BREAK HERE');
         } else {
-          console.log('there is NOT enough money left to reinvest');
+          // console.log('there is NOT enough money left to reinvest');
+          // console.log(trade.base_size, 'trade.base_size');
+          // console.log(allFlips, 'allFlips')
+          // console.log(allFlipsValue, 'allFlipsValue');
+          // console.log(user.maker_fee, 'user.maker_fee');
+          // console.log(availableUSD, 'availableUSD')
+
+          // console.log(leftoverFunds, 'leftoverFunds', user.reserve, 'user.reserve');
         }
       }
 
+    } else {
+      // console.log('not reinvesting');
     }
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "BUY"
@@ -619,6 +633,8 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
 }
 
 function calculateProfitBTC(dbOrder) {
+
+  // console.log(dbOrder, 'dbOrder in calculateProfitBTC');
 
   let margin = (dbOrder.original_sell_price - dbOrder.original_buy_price)
   let grossProfit = Number(margin * dbOrder.base_size)

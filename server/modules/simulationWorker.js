@@ -1,4 +1,4 @@
-const { autoSetup } = require("../../src/shared");
+const { autoSetup, sleep } = require("../../src/shared");
 const databaseClient = require("./databaseClient");
 const { flipTrade } = require("./robot");
 const { v4: uuidv4 } = require('uuid');
@@ -13,28 +13,42 @@ process.on("message", async (data) => {
 
 async function optimize(data) {
   console.log(data, 'data');
+  const options = data.options;
+  const user = data.user;
+
+  // modify the user object to contain the sim data
+  user.reinvest_ratio = options.simReinvestPercent;
+  user.reinvest = options.simReinvest;
+  user.availableFunds = { quote_available: 1000 }
 
   // get the initial price by getting the first candle from the db for the simStartDate
   // first turn the simStartDate into a unix timestamp
   const simStartDate = new Date(data.options.simStartDate).getTime() / 1000;
   const candles = await databaseClient.getNextCandles(data.user.id, data.options.product_id, 'ONE_MINUTE', simStartDate - 1);
-  data.candles = candles;
+  // data.candles = candles;
 
   // array to store the results of each simulation
   const simResults = [];
 
-  // start the pair percentage at 0
-  data.options.trade_pair_ratio = 0.1;
-  console.log(data.options, 'data.options after setting trade_pair_ratio to 0');
+  // start the pair percentage at 0.1
+  options.trade_pair_ratio = 0.1;
+  // options.trade_pair_ratio = 2;
+  console.log(options, 'options after setting trade_pair_ratio to 0');
 
+  simData = {
+    candles: candles,
+    options: options,
+    user: user,
+  };
 
   // run the simulation until the pair ratio is 20, incrementing by 0.1 each time
-  while (data.options.trade_pair_ratio <= 20) {
+  while (options.trade_pair_ratio <= 20) {
+  // while (options.trade_pair_ratio <= 2) {
     // run the simulation
-    const simResult = await runSimulation(data);
+    const simResult = await runSimulation(simData);
     // create an object with the pair ratio and the profit
     const result = {
-      pairRatio: data.options.trade_pair_ratio.toFixed(1),
+      pairRatio: options.trade_pair_ratio.toFixed(1),
       profit: simResult.profit,
     };
     // add the result to the simResults array
@@ -42,27 +56,27 @@ async function optimize(data) {
 
     // find the pair ratio that produced the highest profit
     const bestPairRatio = simResults.reduce((prev, current) => (prev.profit > current.profit) ? prev : current);
-    // check if the current pair ratio is 3 greater than the best pair ratio
-    console.log('bestPairRatio:', Number(bestPairRatio.pairRatio), 'current ratio:', data.options.trade_pair_ratio);
-    if (data.options.trade_pair_ratio >= Number(bestPairRatio.pairRatio) + 3) {
+    console.log('bestPairRatio:', Number(bestPairRatio.pairRatio), 'current ratio:', options.trade_pair_ratio);
+
+    // check if the current pair ratio is 5 greater than the best pair ratio
+    if (options.trade_pair_ratio >= Number(bestPairRatio.pairRatio) + 5) {
       // if so, break out of the loop
       console.log('best ratio has been found, breaking out of the loop');
       break;
     }
 
     // increment the pair ratio by 0.1
-    data.options.trade_pair_ratio += 0.1;
+    options.trade_pair_ratio += 0.1;
     // round the pair ratio to 1 decimal place
-    data.options.trade_pair_ratio = Math.round(data.options.trade_pair_ratio * 10) / 10;
-
+    options.trade_pair_ratio = Math.round(options.trade_pair_ratio * 10) / 10;
   }
 
   // find the pair ratio that produced the highest profit
   const bestPairRatio = simResults.reduce((prev, current) => (prev.profit > current.profit) ? prev : current);
-  console.log('bestPairRatio', bestPairRatio);
+  // console.log('bestPairRatio', bestPairRatio);
 
 
-  return {simResults, bestPairRatio};
+  return { simResults, bestPairRatio };
 }
 
 
@@ -86,18 +100,19 @@ async function runSimulation(data) {
   // give each order a unique id and a next order id
   initialSetup.orderList.forEach(order => order.client_order_id = uuidv4());
   initialSetup.orderList.forEach(order => order.next_client_order_id = uuidv4());
+  // calculate the dollar value of each order
+  initialSetup.orderList.forEach(order => order.dollar_value = order.base_size * order.limit_price);
+
   // divide the setup orderList into two arrays, one for buy orders and one for sell orders
   const buyOrders = initialSetup.orderList.filter(order => order.side === 'BUY');
   const sellOrders = initialSetup.orderList.filter(order => order.side === 'SELL');
   // console.log('buyOrders', buyOrders);
   // console.log('sellOrders', sellOrders);
 
+  // await sleep(10000);
+
   // hold data that will be returned to the client
   let profit = 0;
-
-  // set up the user object to be used in the simulation
-  const simUser = { ...user };
-  simUser.reinvest = false;
 
   // iterate through the candles and run the simulation
   for (let i = 0; i < candles.length; i++) {
@@ -112,8 +127,11 @@ async function runSimulation(data) {
     // find all the buy orders that are triggered by the current candle
     const triggeredBuyOrders = buyOrders.filter(order => order.original_buy_price >= low);
     // triggeredBuyOrders.length && console.log('triggeredBuyOrders', triggeredBuyOrders);
+
+    // await sleep(10000);
+
     // flip the triggered buy orders to sell orders
-    const flippedSellOrders = flipTriggeredOrders(triggeredBuyOrders, simUser);
+    const flippedSellOrders = await flipTriggeredOrders(triggeredBuyOrders, user);
     // add the sell orders to the sellOrders array
     sellOrders.push(...flippedSellOrders);
     // remove the buy orders from the buyOrders array. can identify them by the client_order_id
@@ -128,7 +146,7 @@ async function runSimulation(data) {
     const triggeredSellOrders = sellOrders.filter(order => order.original_sell_price <= high);
     // triggeredSellOrders.length && console.log('triggeredSellOrders', triggeredSellOrders);
     // flip the triggered sell orders to buy orders
-    const flippedBuyOrders = flipTriggeredOrders(triggeredSellOrders, simUser);
+    const flippedBuyOrders = await flipTriggeredOrders(triggeredSellOrders, user);
     // add the buy orders to the buyOrders array
     buyOrders.push(...flippedBuyOrders);
     // remove the sell orders from the sellOrders array. can identify them by the client_order_id
@@ -156,13 +174,30 @@ async function runSimulation(data) {
   return { profit };
 
 
-  function flipTriggeredOrders(triggeredOrders, user) {
+  async function flipTriggeredOrders(triggeredOrders, user) {
     const newOrders = [];
     for (let j = 0; j < triggeredOrders.length; j++) {
       const originalOrder = triggeredOrders[j];
-      const flippedOrder = flipTrade(originalOrder, user, triggeredOrders, { availableFunds: 1000 });
+
+      // calculate the current fees to simulate the fees coinbase would charge on settlement
+      originalOrder.total_fees = originalOrder.limit_price * originalOrder.base_size * user.maker_fee
+
+      // console.log(triggeredOrders, 'triggeredOrders')
+
+      // await sleep(10000);
+
+      const flippedOrder = flipTrade(originalOrder, user, triggeredOrders, true);
       // add next client unique id to the flipped order. flipTrade needs this
       flippedOrder.next_client_order_id = uuidv4();
+
+      // calculate the previous fees on sell orders
+      flippedOrder.previous_total_fees = (flippedOrder.side === 'BUY')
+        ? null
+        : originalOrder.original_buy_price * originalOrder.base_size * user.maker_fee;
+
+      // calculate the dollar value of the flipped order
+      flippedOrder.dollar_value = flippedOrder.limit_price * flippedOrder.base_size;
+
       // console.log('flippedOrder', flippedOrder, flippedOrder.limit_price * flippedOrder.base_size);
       // console.log('')
       // add the original_buy_price and original_sell_price to the sell order
@@ -170,23 +205,31 @@ async function runSimulation(data) {
       flippedOrder.original_sell_price = originalOrder.original_sell_price;
 
       // calculate the fees that would have been paid for the original order, and the flipped order
-      const fees = originalOrder.limit_price * originalOrder.base_size * feeRate + flippedOrder.limit_price * flippedOrder.base_size * feeRate;
+      // const fees = originalOrder.limit_price * originalOrder.base_size * feeRate + flippedOrder.limit_price * originalOrder.base_size * feeRate;
 
-      // console.log(fees, 'what are the fees?')
-
+      
       // if it is flipping a sell, need to calculate the profit
       if (originalOrder.side === 'SELL') {
+        // console.log(fees, 'what are the fees?')
         // console.log('originalOrder', originalOrder);
         // console.log('flippedOrder', flippedOrder);
         // calculate the profit
-        const orderProfit = originalOrder.limit_price * originalOrder.base_size - flippedOrder.limit_price * flippedOrder.base_size;
+        // size will be the original size in both orders
+        // take the sell value and subtract the buy value from it
+        // both orders will have a dollar value that we can use to calculate the profit
+        // const orderProfit = originalOrder.limit_price * originalOrder.base_size - flippedOrder.limit_price * originalOrder.base_size;
         // console.log('orderProfit', orderProfit);
         // subtract the fees from the profit
-        const netProfit = orderProfit - fees;
+        // const netProfit = orderProfit - fees;
         // const netProfit = orderProfit;
         // console.log('net profit', netProfit);
+
+        const allProfit = calculateProfitBTC(originalOrder)
+        // console.log('allProfit', allProfit);
+
         // add the net profit to the total profit
-        profit += netProfit;
+        // profit += netProfit;
+        profit += allProfit.profit;
       }
 
 
@@ -199,4 +242,23 @@ async function runSimulation(data) {
     // return the new orders
     return newOrders;
   }
+}
+
+function calculateProfitBTC(dbOrder) {
+
+  // console.log(dbOrder, 'dbOrder in calculateProfitBTC');
+
+  // margin is the difference between the original buy price and the original sell price
+  let margin = (dbOrder.original_sell_price - dbOrder.original_buy_price)
+  // why did I do this?? How does this make sense? 
+  // Because the original buy price is the price of the coin, not the dollar value of the coin
+  // so we need to multiply the margin by the size of the order to get the dollar value of the margin
+  // Copilot has given me an answer that makes sense, but I have no idea how my brain came up with this before.
+  let grossProfit = Number(margin * dbOrder.base_size)
+  let profit = Number(grossProfit - (Number(dbOrder.total_fees) + Number(dbOrder.previous_total_fees)))
+  let profitBTC = Number((Math.floor((profit / dbOrder.limit_price) * 100000000) / 100000000))
+
+  // console.log('profitBTC', profitBTC, 'profit', profit, 'grossProfit', grossProfit, 'margin', margin);
+
+  return { profitBTC, profit };
 }
