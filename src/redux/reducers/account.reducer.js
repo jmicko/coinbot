@@ -122,6 +122,20 @@ const exportFilesReducer = (state = [], action) => {
   }
 };
 
+// store the results of the simulation
+const simulationReducer = (state = { status: 'idle' }, action) => {
+  switch (action.type) {
+    case 'SET_SIMULATION_RESULT':
+      return { status: 'complete', result: action.payload}
+    case 'UNSET_SIMULATION_RESULT':
+      return { status: 'idle' };
+    case 'SET_SIMULATION_RUNNING':
+      return { status: 'running' };
+    default:
+      return state;
+  }
+};
+
 
 export default combineReducers({
   userReducer,
@@ -135,4 +149,5 @@ export default combineReducers({
   botMessages,
   chatMessages,
   exportFilesReducer,
+  simulationReducer,
 });

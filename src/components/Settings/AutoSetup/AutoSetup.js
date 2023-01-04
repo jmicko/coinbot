@@ -9,6 +9,7 @@ import './AutoSetup.css'
 function AutoSetup(props) {
   const dispatch = useDispatch();
   const user = useSelector((store) => store.accountReducer.userReducer);
+  const simulationReducer = useSelector((store) => store.accountReducer.simulationReducer);
   const socket = useSocket();
 
   const [startingValue, setStartingValue] = useState(1000);
@@ -426,7 +427,7 @@ function AutoSetup(props) {
             <br />
           </div>}
 
-          
+
           {!simulation
             ? !autoTradeStarted
               ? <input className={`btn-store-api btn-blue medium ${user.theme}`} type="submit" name="submit" value="Start Setup" />
@@ -434,7 +435,21 @@ function AutoSetup(props) {
             /* button to run a simulation */
             : <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={handleSimulation}>Run Simulation</button>
           }
-
+          {/* {JSON.stringify(simulationReducer)} */}
+          {simulationReducer.status === "running" ? <div>
+            {/*  */}
+            <p>Simulation running...</p>
+          </div>
+            : simulationReducer.status === "complete" && <div>
+              <p>Simulation complete!</p>
+              {/* show optimum pair ratio */}
+              <p>Optimum pair percent increase: {simulationReducer.result.bestPairRatio.pairRatio}</p>
+              <p>This would have resulted in about ${simulationReducer.result.bestPairRatio.profit.toFixed(2)} in profit over the specified duration.
+              Please note this is a rough estimate based on available historical data</p>
+              {/* show optimum increment */}
+              {/* <p>Optimum increment: {simulationReducer.bestIncrement}</p> */}
+              </div>
+          }
         </form>
 
         <div className='auto-setup-results'>

@@ -42,8 +42,11 @@ function* autoSetup(action) {
 // handle simulation
 function* simulation(action) {
   try {
+    yield put({ type: 'SET_SIMULATION_RUNNING' });
     console.log('simulation action.payload', action.payload);
-    yield axios.post(`/api/trade/simulation`, action.payload);
+    const result = yield axios.post(`/api/trade/simulation`, action.payload);
+    console.log('simulation result', result);
+    yield put({ type: 'SET_SIMULATION_RESULT', payload: result.data });
   } catch (error) {
     console.log('POST order route has failed', error)
     if (error.response.status === 403) {
