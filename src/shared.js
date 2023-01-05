@@ -135,13 +135,35 @@ function autoSetup(user, options) {
     // subtract the buy base_size USD from the available funds
     // if sizeType is base, then we need to convert
     if (sizeType === 'base') {
-      let USDSize = base_size * buyPrice;
+      // let USDSize = base_size * buyPrice;
+      // need to convert to USD. If is a buy, use the buy price, if a sell, use the trading price because that is what the bot will use
+      const conversionPrice = (side === 'BUY')
+        ? buyPrice
+        : tradingPrice
+
+      let USDSize = base_size * conversionPrice;
       availableFunds -= USDSize;
       cost += USDSize;
     } else {
+      let quoteSize = base_size;
+
       // console.log('current funds', availableFunds);
-      availableFunds -= base_size;
-      cost += base_size;
+      // if it is a sell, need to convert from quote to base size based on the buy price
+      // then get the cost of the base size at the trading price,
+      // then get the cost of the quote at the c
+      if (side === 'SELL') {
+        // console.log('need to convert to base size');
+        // convert to base size
+        const baseSize = quoteSize / buyPrice;
+        // console.log('base size', baseSize);
+        // convert to USD
+        const USDSize = baseSize * tradingPrice;
+        // console.log('USD size', USDSize);
+        quoteSize = USDSize;
+      }
+
+      availableFunds -= quoteSize;
+      cost += quoteSize;
     }
 
     // increment the buy price

@@ -67,7 +67,7 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
     const simulating = userStorage[req.user.id].simulating;
     req.user.simulating = simulating;
     
-    console.log('simulating', req.user);
+    // console.log('simulating', req.user);
 
   } catch (err) {
     console.log(err, 'error in user route');

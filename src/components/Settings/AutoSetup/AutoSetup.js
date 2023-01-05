@@ -491,6 +491,7 @@ function AutoSetup(props) {
           }
 
           <br />
+          <div className="divider" />
 
           {!simulation
             ? !autoTradeStarted
@@ -559,11 +560,11 @@ function AutoSetup(props) {
                 <br />
                 <strong>${numberWithCommas(((cost) > 0 ? cost : 0).toFixed(2))}</strong>
               </p>
-              {/* <p>
+              <p>
                 USD to reserve:
                 <br />
-                <strong> {cost - (socket.tickers[props.product].price * btcToBuy)}</strong>
-              </p> */}
+                <strong> {(cost - (socket.tickers[props.product].price * btcToBuy)).toFixed(productDecimals.current.quoteIncrement)}</strong>
+              </p>
               <p>
                 {user.availableFunds?.[props.product]?.base_currency} to reserve:
                 <br />
