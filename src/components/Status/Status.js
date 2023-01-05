@@ -79,7 +79,7 @@ function Status(props) {
 
       <center>
         <p className="info status-ticker">
-          <strong>{user.availableFunds?.[props.product]?.base_currency} Price</strong>
+          <strong>{props.product} Price</strong>
           <br />
           {Number(socket.tickers[props.product]?.price)
             .toFixed(Number(user.availableFunds?.[props.product]?.quote_increment.split('1')[0].length - 1))
@@ -92,14 +92,14 @@ function Status(props) {
         {/* {JSON.stringify(user.availableFunds[props.product])} */}
         {availableFundsDisplay
           ? <p className="info status-ticker">
-            <strong>Available</strong>
+            <strong>Available Funds</strong>
             <br />
             {/* {JSON.stringify((user.availableFunds[props.product].base_increment.split('1')[0].length - 1))} */}
             {numberWithCommas(Number(user.availableFunds?.[props.product]?.base_available)
               .toFixed(Number(user.availableFunds?.[props.product]?.base_increment.split('1')[0].length - 1)))} {user.availableFunds?.[props.product]?.base_currency}
           </p>
           : <p className="info status-ticker">
-            <strong>Available</strong>
+            <strong>Available Funds</strong>
             <br />
             {user.availableFunds?.[props.product]?.quote_currency === 'USD' && "$"}{numberWithCommas(Number(user.availableFunds?.[props.product]?.quote_available)
               .toFixed(Number(user.availableFunds?.[props.product]?.quote_increment.split('1')[0].length - 1)))} {user.availableFunds?.[props.product]?.quote_currency !== 'USD' && user.availableFunds?.[props.product]?.quote_currency}
@@ -133,7 +133,7 @@ function Status(props) {
 
       <center>
         <p className="info status-ticker">
-          <strong>Order Counts</strong>
+          <strong>Open Order Counts</strong>
           <br />
           <strong>B:</strong>{numberWithCommas(openBuysQuantity)} <strong>S:</strong>{numberWithCommas(openSellsQuantity)} <strong>T:</strong>{numberWithCommas(openOrderQuantity)}
         </p>
