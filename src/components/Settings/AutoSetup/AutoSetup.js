@@ -31,6 +31,7 @@ function AutoSetup(props) {
   const [simStartDate, setSimStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().slice(0, 10));
   const [simReinvest, setSimReinvest] = useState(false);
   const [simReinvestPercent, setSimReinvestPercent] = useState(100);
+  const [detailedResults, setDetailedResults] = useState(false);
 
   const [orders, setOrders] = useState(<></>);
   const [btcToBuy, setBtcToBuy] = useState(0);
@@ -491,7 +492,6 @@ function AutoSetup(props) {
           }
 
           <br />
-          <div className="divider" />
 
           {!simulation
             ? !autoTradeStarted
@@ -514,21 +514,49 @@ function AutoSetup(props) {
 
 
           {/* {simulationReducer.status === "running" ? <div> */}
-          {user.simulating ? <div>
-            {/*  */}
-            <p>Simulation running...</p>
-          </div>
+          {user.simulating
+            ? <div>
+              <p>Simulation running...</p>
+            </div>
             : simulationReducer.status === "complete" && <div>
+
               <p>Simulation complete!</p>
               {/* show optimum pair ratio */}
               <p>Optimum pair percent increase: {simulationReducer.result.bestPairRatio.pairRatio}
                 {/* button to set the trade pair ratio to the optimum pair ratio */}
-                &nbsp;<button className={`btn-store-api btn-green medium ${user.theme}`} onClick={(event) => { event.preventDefault(); setTradePairRatio(simulationReducer.result.bestPairRatio.pairRatio) }}>Use It!</button>
+                &nbsp;<button className={`btn-store-api btn-green medium ${user.theme}`} onClick={
+                  (event) => {
+                    event.preventDefault();
+                    setTradePairRatio(simulationReducer.result.bestPairRatio.pairRatio);
+                  }
+                }>Use It!</button>
               </p>
               <p>This would have resulted in about ${simulationReducer.result.bestPairRatio.profit?.toFixed(2)} in profit over the specified duration.
                 Please note this is a rough estimate based on available historical data</p>
               {/* show optimum increment */}
               {/* <p>Optimum increment: {simulationReducer.bestIncrement}</p> */}
+
+
+
+
+
+              <h4>Simulation Results</h4>
+              <p>Best pair ratio: {simulationReducer?.result?.bestPairRatio?.pairRatio}</p>
+              {/* button to to detailed results */}
+              <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={() => setDetailedResults(!detailedResults)}>Detailed Results</button>
+              {detailedResults && <div>
+                {/* list of simResults array from the reducer */}
+                <ul>
+                  {simulationReducer?.result?.simResults?.map((result, index) => {
+                    return (
+                      <li key={index}>
+                        <p>Pair Ratio: {result.pairRatio} Profit: {result.profit}</p>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+              }
             </div>
           }
         </form>
