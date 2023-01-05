@@ -83,7 +83,10 @@ function autoSetup(user, options) {
     startingValue <= 0 ||
     size <= 0 ||
     increment <= 0 ||
-    trade_pair_ratio <= 0
+    trade_pair_ratio <= 0 ||
+    steepness <= 0 ||
+    maxSize <= 0 ||
+    tradingPrice <= 0
   ) {
     return {
       cost: cost,

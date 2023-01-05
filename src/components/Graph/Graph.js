@@ -24,11 +24,17 @@ function Graph(props) {
     const maxPrice = Math.max(...data.map(d => d.original_buy_price));
     const minSize = Math.min(...data.map(d => d.buy_quote_size));
     const maxSize = Math.max(...data.map(d => d.buy_quote_size));
+    // ensure that xScale and yScale will not be infinity
+    if (minPrice === maxPrice || minSize === maxSize) {
+      return;
+    }
     const xScale = canvas.width / (maxPrice - minPrice);
     const yScale = canvas.height / (maxSize - minSize);
 
-    console.log(minPrice, maxPrice, minSize, maxSize, 'minPrice, maxPrice, minSize, maxSize');
-    console.log(xScale, yScale, 'xScale, yScale');
+    // console.log(canvas.width, canvas.height, 'canvas.width, canvas.height')
+
+    // console.log(minPrice, maxPrice, minSize, maxSize, 'minPrice, maxPrice, minSize, maxSize');
+    // console.log(xScale, yScale, 'xScale, yScale');
 
     // add 10% padding to the minimum and maximum values
     const padding = 0.1;
@@ -37,7 +43,11 @@ function Graph(props) {
     const minSizeScaled = minSize - yScale * padding;
     const maxSizeScaled = maxSize + yScale * padding;
 
-    console.log(minPriceScaled, maxPriceScaled, minSizeScaled, maxSizeScaled, 'minPriceScaled, maxPriceScaled, minSizeScaled, maxSizeScaled');
+    // console.log(minPriceScaled, maxPriceScaled, minSizeScaled, maxSizeScaled, 'minPriceScaled, maxPriceScaled, minSizeScaled, maxSizeScaled');
+
+    // make the background white with rgba
+    ctx.fillStyle = 'rgba(230, 255, 255, 1)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 
     // set the style for the grid lines a dark grey using rgba
@@ -46,35 +56,35 @@ function Graph(props) {
 
     // draw the vertical grid lines
     // there should be 10 vertical grid lines. the width of the line is the width of the canvas divided by 10
-    for (let i = minSize; i <= maxSize; i += (maxSize - minSize) / 10) {
+    // they should  be drawn within the padding values (10%)
+    for (let i = minPriceScaled; i <= maxPriceScaled; i += (maxPriceScaled - minPriceScaled) / 10) {
       ctx.beginPath();
-      ctx.moveTo((i - minSize) * yScale * 2, 0);
-      ctx.lineTo((i - minSize) * yScale * 2, canvas.height);
+      ctx.moveTo((i - minPrice) * xScale, 0);
+      ctx.lineTo((i - minPrice) * xScale, canvas.height);
       ctx.stroke();
     }
 
     // draw the horizontal grid lines
     // there should be 5 horizontal grid lines. the height of the line is the height of the canvas divided by 5
-    for (let i = minPrice; i <= maxPrice; i += (maxPrice - minPrice) / 20) {
+    // they should be drawn within the padding values (10%)
+    for (let i = minSizeScaled; i <= maxSizeScaled; i += (maxSizeScaled - minSizeScaled) / 5) {
       ctx.beginPath();
-      ctx.moveTo(0, (i - minPrice) * xScale * 2);
-      ctx.lineTo(canvas.width, (i - minPrice) * xScale * 2);
+      ctx.moveTo(0, canvas.height - (i - minSize) * yScale);
+      ctx.lineTo(canvas.width, canvas.height - (i - minSize) * yScale);
       ctx.stroke();
     }
 
 
-
-
-    // draw the x and y axis
+    // draw the x and y axis, within the padding
     ctx.strokeStyle = 'black';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo((0 - minSizeScaled) * yScale, 0);
-    ctx.lineTo((0 - minSizeScaled) * yScale, canvas.height);
+    ctx.moveTo(0, canvas.height - (minSizeScaled - minSize) * yScale);
+    ctx.lineTo(canvas.width, canvas.height - (minSizeScaled - minSize) * yScale);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(0, (maxPriceScaled - minPriceScaled) * xScale);
-    ctx.lineTo(canvas.width, (maxPriceScaled - minPriceScaled) * xScale);
+    ctx.moveTo((minPriceScaled - minPrice) * xScale, 0);
+    ctx.lineTo((minPriceScaled - minPrice) * xScale, canvas.height);
     ctx.stroke();
 
     // draw the x and y axis labels
@@ -101,7 +111,6 @@ function Graph(props) {
     for (let i = minSize; i <= maxSize; i += (maxSize - minSize) / 5) {
       ctx.fillText(i.toFixed(2), 20, canvas.height - (i - minSize) * yScale);
     }
-
 
     // // plot the data points
     ctx.fillStyle = 'red';

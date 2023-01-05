@@ -701,7 +701,7 @@ function AutoSetup(props) {
         </div>
       </div>
       {/* {JSON.stringify(orders[0])} */}
-      {orders.length && sizeCurve !== 'linear' && <Graph data={orders} />}
+      {(orders.length > 0) && sizeCurve !== 'linear' && <Graph data={orders} />}
       <h4>Preview</h4>
       {orders}
 
@@ -711,3 +711,16 @@ function AutoSetup(props) {
 }
 
 export default AutoSetup;
+
+// ctx.strokeStyle = 'black';
+// ctx.lineWidth = 1;
+
+// ctx.beginPath();
+// ctx.moveTo((data[0].original_buy_price - minPrice) * xScale, canvas.height - (data[0].buy_quote_size - minSize) * yScale);
+// for (let i = 1; i < data.length; i++) {
+//   const x = (data[i].original_buy_price - minPrice) * xScale;
+//   const y = canvas.height - (data[i].buy_quote_size - minSize) * yScale;
+
+//   ctx.lineTo(x, y);
+// }
+// ctx.stroke();
