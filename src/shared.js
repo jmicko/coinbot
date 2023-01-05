@@ -45,8 +45,9 @@ const numberWithCommas = (x) => {
 // the exponent also seems to control how sharp the peak is
 
 // function to implement the above equation using the same variable names as above
-function tradeSizeEquation(buyPrice, tradingPrice, maxSize, minSize, increment, steepness) {
-  return maxSize / (1 + (increment * steepness) * (buyPrice - tradingPrice) ** 2) + minSize
+function tradeSizeEquation(options) {
+  const { maxSize, minSize, increment, steepness, buyPrice, tradingPrice } = options;
+  return maxSize / (1 + (increment * steepness) * (buyPrice - tradingPrice) ** 4) + minSize
 }
 
 function autoSetup(user, options) {
@@ -56,17 +57,21 @@ function autoSetup(user, options) {
 
   // SHORTEN PARAMS for better readability
   let availableFunds = options.availableFunds;
-  let cost = 0;
-  let base_size = options.base_size;
-  let startingValue = options.startingValue;
-  let endingValue = options.endingValue;
+  const size = options.base_size;
+  const startingValue = options.startingValue;
+  const endingValue = options.endingValue;
+  const tradingPrice = options.tradingPrice;
+  const increment = options.increment;
+  const incrementType = options.incrementType;
+  const trade_pair_ratio = options.trade_pair_ratio;
+  const skipFirst = options.skipFirst;
+  const sizeType = options.sizeType;
+  const sizeCurve = options.sizeCurve;
+  const maxSize = options.maxSize;
+
+  // initialize values for the loop
   let buyPrice = startingValue;
-  let tradingPrice = options.tradingPrice;
-  let increment = options.increment;
-  let incrementType = options.incrementType;
-  let trade_pair_ratio = options.trade_pair_ratio;
-  let sizeType = options.sizeType;
-  let skipFirst = options.skipFirst;
+  let cost = 0;
   let loopDirection = (endingValue - startingValue < 0) ? "down" : "up";
 
   let btcToBuy = 0;
@@ -75,7 +80,7 @@ function autoSetup(user, options) {
   if (
     (startingValue === 0 && !skipFirst) ||
     startingValue <= 0 ||
-    base_size <= 0 ||
+    size <= 0 ||
     increment <= 0 ||
     trade_pair_ratio <= 0
   ) {
@@ -122,10 +127,35 @@ function autoSetup(user, options) {
       ? original_sell_price
       : buyPrice
 
-    // if the base_size is in base, it will never change. 
-    let actualSize = (sizeType === 'quote')
-      ? Number(Math.floor((base_size / buyPrice) * 100000000)) / 100000000
-      : base_size
+    // if the size is in base, it will never change. 
+    let actualSize = getActualSize();
+
+    // rewrite the actualSize to be the tradeSizeEquation with if else statements
+    function getActualSize() {
+      if (sizeType === 'quote') {
+        // if sizeCurve is curve, use the tradeSizeEquation
+        if (sizeCurve === 'curve') {
+          // console.log(maxSize, 'maxSize')
+          // console.log(maxSize - size, 'maxSize - size')
+
+          const curvedSize = tradeSizeEquation({
+            maxSize: maxSize - size,
+            minSize: size,
+            increment: increment,
+            steepness: 1,
+            buyPrice: buyPrice,
+            tradingPrice: tradingPrice,
+          })
+
+          return Number(Math.floor((curvedSize / buyPrice) * 100000000)) / 100000000
+
+        } else {
+          return Number(Math.floor((size / buyPrice) * 100000000)) / 100000000
+        }
+      } else {
+        return size
+      }
+    }
 
     // count up how much base currency will need to be purchased to reserve for all the sell orders
     if (side === 'SELL') {
@@ -159,20 +189,20 @@ function autoSetup(user, options) {
 
     // SETUP FOR NEXT LOOP - do some math to figure out next iteration, and if we should keep looping
 
-    // subtract the buy base_size USD from the available funds
+    // subtract the buy size USD from the available funds
     // if sizeType is base, then we need to convert
     if (sizeType === 'base') {
-      // let USDSize = base_size * buyPrice;
+      // let USDSize = size * buyPrice;
       // need to convert to USD. If is a buy, use the buy price, if a sell, use the trading price because that is what the bot will use
       const conversionPrice = (side === 'BUY')
         ? buyPrice
         : tradingPrice
 
-      let USDSize = base_size * conversionPrice;
+      let USDSize = size * conversionPrice;
       availableFunds -= USDSize;
       cost += USDSize;
     } else {
-      let quoteSize = base_size;
+      let quoteSize = size;
 
       // console.log('current funds', availableFunds);
       // if it is a sell, need to convert from quote to base size based on the buy price
@@ -210,11 +240,11 @@ function autoSetup(user, options) {
   }
 
   function stopChecker() {
-    let USDSize = base_size * buyPrice;
+    let USDSize = size * buyPrice;
     // calc next round funds
     let nextFunds = (sizeType === 'base')
       ? availableFunds - USDSize
-      : availableFunds - base_size
+      : availableFunds - size
     // console.log(((availableFunds - nextFunds) < 0) && !options.ignoreFunds, nextFunds, 'next funds', availableFunds, !options.ignoreFunds);
     if (((nextFunds) < 0) && !options.ignoreFunds) {
       // console.log('ran out of funds!', availableFunds);

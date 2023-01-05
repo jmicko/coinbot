@@ -19,12 +19,14 @@ function AutoSetup(props) {
   const [increment, setIncrement] = useState(100);
   const [incrementType, setIncrementType] = useState('dollars');
   const [base_size, setSize] = useState(10);
+  const [maxSize, setMaxSize] = useState(100);
   const [sizeType, setSizeType] = useState('quote');
   const [tradePairRatio, setTradePairRatio] = useState(1.1);
   const [setupResults, setSetupResults] = useState(1);
   const [cost, setCost] = useState(0);
   const [autoTradeStarted, setAutoTradeStarted] = useState(false);
   const [totalTrades, setTotalTrades] = useState(false);
+  const [sizeCurve, setSizeCurve] = useState("linear");
 
   const [simulation, setSimulation] = useState(true);
   // start date, default is one month ago
@@ -49,6 +51,10 @@ function AutoSetup(props) {
     }
   }, [props.product])
 
+  function handleSizeCurve(event) {
+    console.log('event.target.value', event.target.value)
+    setSizeCurve(event.target.value)
+  }
 
   function handleSimReinvest() {
     setSimReinvest(!simReinvest)
@@ -91,6 +97,8 @@ function AutoSetup(props) {
         base_size: base_size,
         sizeType: sizeType,
         product_id: props.product,
+        sizeCurve: sizeCurve,
+        maxSize: maxSize,
       }
 
       let setup = autoSetup(user, payload);
@@ -123,14 +131,16 @@ function AutoSetup(props) {
     base_size,
     sizeType,
     props.product,
-    skipFirst
+    skipFirst,
+    sizeCurve,
+    maxSize,
   ])
 
   useEffect(() => {
     if (base_size !== null) {
       calculateResults();
     }
-  }, [startingValue, endingValue, increment, base_size, sizeType, skipFirst, calculateResults])
+  }, [startingValue, endingValue, increment, base_size, sizeType, skipFirst, sizeCurve, maxSize, calculateResults])
 
   useEffect(() => {
     if (user) {
@@ -190,6 +200,8 @@ function AutoSetup(props) {
         base_size: base_size,
         sizeType: sizeType,
         product_id: props.product,
+        sizeCurve: sizeCurve,
+        maxSize: maxSize,
       }
     })
   }
@@ -212,6 +224,8 @@ function AutoSetup(props) {
         base_size: base_size,
         sizeType: sizeType,
         product_id: props.product,
+        sizeCurve: sizeCurve,
+        maxSize: maxSize,
       }
     })
   }
@@ -388,8 +402,35 @@ function AutoSetup(props) {
             {user.availableFunds?.[props.product]?.base_currency}
           </label>
 
+          {/* size curve radio buttons */}
+          <p>Size Curve:</p>
+          {props.tips && <p>
+            "Flat line: same size for each trade-pair"
+            <br />
+            "Bell Curve: bigger size near current price"
+          </p>}
+          {/* {JSON.stringify(sizeCurve)} */}
+          <label htmlFor="size_curve">
+            <input
+              type="radio"
+              name="size_curve"
+              value="linear"
+              checked={sizeCurve === "linear"}
+              onChange={handleSizeCurve}
+            />
+            Linear
+          </label>
 
-
+          <label htmlFor="size_curve">
+            <input
+              type="radio"
+              name="size_curve"
+              value="curve"
+              checked={sizeCurve === "curve"}
+              onChange={handleSizeCurve}
+            />
+            Curve
+          </label>
 
           {props.tips
             ? <p>What size in {sizeType === "quote" ? "USD" : user.availableFunds?.[props.product]?.base_currency} should each trade-pair be? </p>
@@ -397,7 +438,7 @@ function AutoSetup(props) {
 
 
           <label htmlFor='size'>
-            Size in {sizeType === "quote" ? "USD" : user.availableFunds?.[props.product]?.base_currency}:
+            {sizeCurve === "curve" && "Min"} Size in {sizeType === "quote" ? "USD" : user.availableFunds?.[props.product]?.base_currency}:
             <br />
             <input
               name='size'
@@ -408,6 +449,22 @@ function AutoSetup(props) {
               onChange={(event) => setSize(Number(event.target.value))}
             />
           </label>
+
+          {sizeCurve === "curve" && <br />}
+
+          {sizeCurve === "curve" && <label htmlFor='size'>
+            Max Size in {sizeType === "quote" ? "USD" : user.availableFunds?.[props.product]?.base_currency}:
+            <br />
+            <input
+              name='size'
+              type='number'
+              value={maxSize}
+              step={.01}
+              required
+              onChange={(event) => setMaxSize(Number(event.target.value))}
+            />
+          </label>}
+
 
           {/* SUBMIT */}
           <br />
