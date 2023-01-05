@@ -139,7 +139,7 @@ function autoSetup(user, options) {
         // else leave the size alone
         : size;
 
-      const curvedSize = () => {
+      function curvedSize() {
         // if the increment type is percentage, convert it to a number
         // this is the same as the increment in the bellCurve, which is a dollar amount
         const newIncrement = incrementType === 'percentage'
@@ -186,6 +186,8 @@ function autoSetup(user, options) {
       side: side,
       limit_price: limit_price,
       base_size: actualSize,
+      buy_quote_size: (actualSize * buyPrice).toFixed(2),
+      sell_quote_size: (actualSize * original_sell_price).toFixed(2),
       previous_total_fees: previous_total_fees,
       total_fees: 0,
       product_id: options.product_id,

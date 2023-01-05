@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSocket } from '../../../contexts/SocketProvider';
 import { autoSetup, calculateProductDecimals } from '../../../shared';
+import Graph from '../../Graph/Graph';
 import SingleTrade from '../../SingleTrade/SingleTrade';
 import './AutoSetup.css'
 
@@ -699,6 +700,8 @@ function AutoSetup(props) {
 
         </div>
       </div>
+      {/* {JSON.stringify(orders[0])} */}
+      {orders.length && sizeCurve !== 'linear' && <Graph data={orders} />}
       <h4>Preview</h4>
       {orders}
 
