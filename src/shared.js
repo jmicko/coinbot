@@ -47,7 +47,7 @@ const numberWithCommas = (x) => {
 // function to implement the above equation using the same variable names as above
 function tradeSizeEquation(options) {
   const { maxSize, minSize, increment, steepness, buyPrice, tradingPrice } = options;
-  return maxSize / (1 + (1/(steepness*increment)) * (buyPrice - tradingPrice) ** 2) + minSize
+  return maxSize / (1 + (1 / (steepness * increment)) * (buyPrice - tradingPrice) ** 2) + minSize
 }
 
 function autoSetup(user, options) {
@@ -134,21 +134,29 @@ function autoSetup(user, options) {
     // rewrite the actualSize to be the tradeSizeEquation with if else statements
     function getActualSize() {
 
-      const curvedSize = () => tradeSizeEquation({
-        maxSize: maxSize - size,
-        minSize: size,
-        increment: increment,
-        steepness: steepness,
-        buyPrice: buyPrice,
-        tradingPrice: tradingPrice,
-        // tradingPrice: 1250,
-      })
-      
+      const curvedSize = () => {
+
+
+        const newIncrement = incrementType === 'percentage'
+          ? increment * buyPrice
+          : increment
+
+        return tradeSizeEquation({
+          maxSize: maxSize - size,
+          minSize: size,
+          increment: newIncrement,
+          steepness: steepness,
+          buyPrice: buyPrice,
+          tradingPrice: tradingPrice,
+          // tradingPrice: 1250,
+        })
+
+      }
       // if sizeCurve is curve, use the tradeSizeEquation
       const newSize = (sizeCurve === 'curve')
-      ? curvedSize()
-      : size;
-      
+        ? curvedSize()
+        : size;
+
       if (sizeType === 'quote') {
         return Number(Math.floor((newSize / buyPrice) * 100000000)) / 100000000
       } else {
