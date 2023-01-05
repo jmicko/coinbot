@@ -22,6 +22,33 @@ const numberWithCommas = (x) => {
   }
 }
 
+
+// this equation could give us a set of trade sizes that is larger at the current trading price
+// and smaller as you move away
+// where y = trade size, x = pair price and x=0 is the starting price
+// no wait, change the x - 0. O would be replaced with the current trading price
+// y = 5/(1 + 0.1( x - 0 )^2 ) + 1
+// y = 5/(1 + 0.1( x - tradingPrice )^2 ) + 1
+
+// y = 𝑎/(1+𝑏(𝑥−𝑐)^2)+𝑑
+
+// y = a/(1 + b( x - c )^2 ) + d
+
+// pairSize = maxSize / (1 + (increment * steepness) * ( buyPrice - tradingPrice )^2 ) + minSize
+
+// a →represent the maximum value of your function -> this could be the maximum base size?
+// b→ represents how steep your function is -> this could maybe be the increment? maybe multiplied by a steepness factor?
+// c→represents the x co-ordinate of your peak -> this could be the current trading price?
+// d→represents the minima of the function -> this could be the minimum base size?
+// x→represents the x co-ordinate of the point you want to find the value of y for -> this could be the current pair buy price?
+// y→represents the y co-ordinate of the point you want to find the value of y for -> this could be the trade pair size?
+// the exponent also seems to control how sharp the peak is
+
+// function to implement the above equation using the same variable names as above
+function tradeSizeEquation(buyPrice, tradingPrice, maxSize, minSize, increment, steepness) {
+  return maxSize / (1 + (increment * steepness) * (buyPrice - tradingPrice) ** 2) + minSize
+}
+
 function autoSetup(user, options) {
 
   // create an array to hold the new trades to put in
