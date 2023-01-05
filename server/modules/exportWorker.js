@@ -71,25 +71,25 @@ async function processCandleData(data) {
     candleData[i].date = date.toISOString().slice(0, 10);
     candleData[i].time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
   }
-  
+
 
   // divide the candle data into an array of objects where the objects have the name of the month and year as the key and the value is an array of the candles for that month
-  const candleDataByMonth = candleData.reduce((acc, candle) => {
-    const date = new Date(candle.start * 1000);
-    const month = date.toLocaleString('default', { month: 'long' });
-    const year = date.getFullYear();
-    const key = `${month} ${year}`;
-    if (!acc[key]) {
-      acc[key] = [];
-    }
-    acc[key].push(candle);
-    return acc;
-  }, {});
+  // const candleDataByMonth = candleData.reduce((acc, candle) => {
+  //   const date = new Date(candle.start * 1000);
+  //   const month = date.toLocaleString('default', { month: 'long' });
+  //   const year = date.getFullYear();
+  //   const key = `${month} ${year}`;
+  //   if (!acc[key]) {
+  //     acc[key] = [];
+  //   }
+  //   acc[key].push(candle);
+  //   return acc;
+  // }, {});
 
   // log the names of the months and years and the number of candles in each
-  for (let key in candleDataByMonth) {
-    console.log(key, candleDataByMonth[key].length);
-  }
+  // for (let key in candleDataByMonth) {
+  //   console.log(key, candleDataByMonth[key].length);
+  // }
 
 
 
@@ -101,8 +101,10 @@ async function processCandleData(data) {
   // const candleWorksheet = workbook.addWorksheet('Candles');
 
   // create a worksheet for each month
-  for (let key in candleDataByMonth) {
-    const candleWorksheet = workbook.addWorksheet(key);
+  // for (let key in candleDataByMonth) {
+  // for (let key in candleData) {
+    const candleWorksheet = workbook.addWorksheet('Candles');
+    // const candleWorksheet = workbook.addWorksheet(key);
     // add column headers. the object will look like this:
     // {
     //   id: 134246,
@@ -134,14 +136,19 @@ async function processCandleData(data) {
     ];
 
     // add rows for each candle in the month
-    for (let i = 0; i < candleDataByMonth[key].length; i++) {
-      candleWorksheet.addRow(candleDataByMonth[key][i]);
+    // for (let i = 0; i < candleDataByMonth[key].length; i++) {
+    //   candleWorksheet.addRow(candleDataByMonth[key][i]);
+    // }
+    // add rows for each candle
+    for (let i = 0; i < candleData.length; i++) {
+      candleWorksheet.addRow(candleData[i]);
     }
+    
     console.log('all rows added');
 
     // set the style for the header row
     candleWorksheet.getRow(1).font = { bold: true };
-  }
+  // }
 
   // set the style for the header row
   // candleWorksheet.getRow(1).font = { bold: true };
