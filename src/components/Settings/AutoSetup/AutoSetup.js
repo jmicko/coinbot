@@ -27,6 +27,7 @@ function AutoSetup(props) {
   const [autoTradeStarted, setAutoTradeStarted] = useState(false);
   const [totalTrades, setTotalTrades] = useState(false);
   const [sizeCurve, setSizeCurve] = useState("linear");
+  const [steepness, setSteepness] = useState(10);
 
   const [simulation, setSimulation] = useState(true);
   // start date, default is one month ago
@@ -99,6 +100,7 @@ function AutoSetup(props) {
         product_id: props.product,
         sizeCurve: sizeCurve,
         maxSize: maxSize,
+        steepness: steepness,
       }
 
       let setup = autoSetup(user, payload);
@@ -134,13 +136,14 @@ function AutoSetup(props) {
     skipFirst,
     sizeCurve,
     maxSize,
+    steepness,
   ])
 
   useEffect(() => {
     if (base_size !== null) {
       calculateResults();
     }
-  }, [startingValue, endingValue, increment, base_size, sizeType, skipFirst, sizeCurve, maxSize, calculateResults])
+  }, [startingValue, endingValue, increment, base_size, sizeType, skipFirst, sizeCurve, maxSize, steepness, calculateResults])
 
   useEffect(() => {
     if (user) {
@@ -202,6 +205,7 @@ function AutoSetup(props) {
         product_id: props.product,
         sizeCurve: sizeCurve,
         maxSize: maxSize,
+        steepness: steepness,
       }
     })
   }
@@ -226,6 +230,7 @@ function AutoSetup(props) {
         product_id: props.product,
         sizeCurve: sizeCurve,
         maxSize: maxSize,
+        steepness: steepness,
       }
     })
   }
@@ -444,7 +449,7 @@ function AutoSetup(props) {
               name='size'
               type='number'
               value={base_size}
-              step={.01}
+              // step={.01}
               required
               onChange={(event) => setSize(Number(event.target.value))}
             />
@@ -459,11 +464,27 @@ function AutoSetup(props) {
               name='size'
               type='number'
               value={maxSize}
-              step={.01}
+              // step={.01}
               required
               onChange={(event) => setMaxSize(Number(event.target.value))}
             />
           </label>}
+
+          {sizeCurve === "curve" && <br />}
+
+          {
+            sizeCurve === "curve" && <label htmlFor='size'>
+              Steepness:
+              <br />
+              <input
+                name='size'
+                type='number'
+                value={steepness}
+                required
+                onChange={(event) => setSteepness(Number(event.target.value))}
+              />
+            </label>
+          }
 
 
           {/* SUBMIT */}

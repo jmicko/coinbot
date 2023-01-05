@@ -47,7 +47,7 @@ const numberWithCommas = (x) => {
 // function to implement the above equation using the same variable names as above
 function tradeSizeEquation(options) {
   const { maxSize, minSize, increment, steepness, buyPrice, tradingPrice } = options;
-  return maxSize / (1 + (increment * steepness) * (buyPrice - tradingPrice) ** 4) + minSize
+  return maxSize / (1 + (1/(steepness*increment)) * (buyPrice - tradingPrice) ** 2) + minSize
 }
 
 function autoSetup(user, options) {
@@ -68,6 +68,7 @@ function autoSetup(user, options) {
   const sizeType = options.sizeType;
   const sizeCurve = options.sizeCurve;
   const maxSize = options.maxSize;
+  const steepness = options.steepness;
 
   // initialize values for the loop
   let buyPrice = startingValue;
@@ -132,28 +133,26 @@ function autoSetup(user, options) {
 
     // rewrite the actualSize to be the tradeSizeEquation with if else statements
     function getActualSize() {
+
+      const curvedSize = () => tradeSizeEquation({
+        maxSize: maxSize - size,
+        minSize: size,
+        increment: increment,
+        steepness: steepness,
+        buyPrice: buyPrice,
+        tradingPrice: tradingPrice,
+        // tradingPrice: 1250,
+      })
+      
+      // if sizeCurve is curve, use the tradeSizeEquation
+      const newSize = (sizeCurve === 'curve')
+      ? curvedSize()
+      : size;
+      
       if (sizeType === 'quote') {
-        // if sizeCurve is curve, use the tradeSizeEquation
-        if (sizeCurve === 'curve') {
-          // console.log(maxSize, 'maxSize')
-          // console.log(maxSize - size, 'maxSize - size')
-
-          const curvedSize = tradeSizeEquation({
-            maxSize: maxSize - size,
-            minSize: size,
-            increment: increment,
-            steepness: 1,
-            buyPrice: buyPrice,
-            tradingPrice: tradingPrice,
-          })
-
-          return Number(Math.floor((curvedSize / buyPrice) * 100000000)) / 100000000
-
-        } else {
-          return Number(Math.floor((size / buyPrice) * 100000000)) / 100000000
-        }
+        return Number(Math.floor((newSize / buyPrice) * 100000000)) / 100000000
       } else {
-        return size
+        return newSize
       }
     }
 
