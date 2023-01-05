@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSocket } from '../../../contexts/SocketProvider';
-import { autoSetup } from '../../../shared';
+import { autoSetup, calculateProductDecimals } from '../../../shared';
 import SingleTrade from '../../SingleTrade/SingleTrade';
 import './AutoSetup.css'
 
@@ -19,7 +19,7 @@ function AutoSetup(props) {
   const [increment, setIncrement] = useState(100);
   const [incrementType, setIncrementType] = useState('dollars');
   const [base_size, setSize] = useState(10);
-  const [sizeType, setSizeType] = useState('USD');
+  const [sizeType, setSizeType] = useState('quote');
   const [tradePairRatio, setTradePairRatio] = useState(1.1);
   const [setupResults, setSetupResults] = useState(1);
   const [cost, setCost] = useState(0);
@@ -35,7 +35,18 @@ function AutoSetup(props) {
   const [orders, setOrders] = useState(<></>);
   const [btcToBuy, setBtcToBuy] = useState(0);
   const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
-  const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
+  const [availableFundsBase, setAvailableFundsBase] = useState(0);
+
+
+  // save the product decimals to a ref so that it doesn't have to be recalculated every time
+  // but wait until props.product is loaded before calculating
+  const productDecimals = useRef(null);
+  useEffect(() => {
+    if (props.product) {
+      productDecimals.current = calculateProductDecimals(user.availableFunds?.[props.product]);
+      console.log('productDecimals.current', productDecimals)
+    }
+  }, [props.product])
 
 
   function handleSimReinvest() {
@@ -48,12 +59,10 @@ function AutoSetup(props) {
 
   function handleSizeType(event) {
     setSizeType(event.target.value)
-    if (sizeType === "USD") {
-      // setSizeType("BTC");
-      setSize(0.001);
-    } else {
-      // setSizeType("USD");
+    if (event.target.value === "quote") {
       setSize(10);
+    } else {
+      setSize(0.001);
     }
   }
 
@@ -125,7 +134,7 @@ function AutoSetup(props) {
   useEffect(() => {
     if (user) {
       setAvailableFundsUSD(user.availableFunds?.[props.product]?.quote_available);
-      setAvailableFundsBTC(user.availableFunds?.[props.product]?.base_available);
+      setAvailableFundsBase(user.availableFunds?.[props.product]?.base_available);
     }
   }, [user]);
 
@@ -359,35 +368,35 @@ function AutoSetup(props) {
           <input
             type="radio"
             name="size_type"
-            value="USD"
-            checked={sizeType === "USD"}
+            value="quote"
+            checked={sizeType === "quote"}
             onChange={handleSizeType}
           />
-          <label htmlFor='dollars'>
+          <label htmlFor='quote'>
             USD
           </label>
 
           <input
             type="radio"
             name="size_type"
-            value="BTC"
-            checked={sizeType === "BTC"}
+            value="base"
+            checked={sizeType === "base"}
             onChange={handleSizeType}
           />
-          <label htmlFor='BTC'>
-            BTC
+          <label htmlFor='base'>
+            {user.availableFunds?.[props.product]?.base_currency}
           </label>
 
 
 
 
           {props.tips
-            ? <p>What size in {sizeType === "USD" ? "USD" : "BTC"} should each trade-pair be? </p>
+            ? <p>What size in {sizeType === "quote" ? "USD" : user.availableFunds?.[props.product]?.base_currency} should each trade-pair be? </p>
             : <p />}
 
 
           <label htmlFor='size'>
-            Size in {sizeType === "USD" ? "USD" : "BTC"}:
+            Size in {sizeType === "quote" ? "USD" : user.availableFunds?.[props.product]?.base_currency}:
             <br />
             <input
               name='size'
@@ -531,7 +540,7 @@ function AutoSetup(props) {
             <strong>{numberWithCommas(setupResults?.toFixed(2) || 0)}</strong>
           </p>
           {props.tips && <p>
-            This calculation isn't perfect but it will get close. It can also change if the price of BTC moves up or down significantly while the
+            This calculation isn't perfect but it will get close. It can also change if the price of {user.availableFunds?.[props.product]?.base_currency} moves up or down significantly while the
             trades are being set up.
           </p>}
           <p>
@@ -546,24 +555,29 @@ function AutoSetup(props) {
           {ignoreFunds
             ? <>
               <p>
-                USD to reserve:
+                Total USD Cost:
                 <br />
                 <strong>${numberWithCommas(((cost) > 0 ? cost : 0).toFixed(2))}</strong>
               </p>
+              {/* <p>
+                USD to reserve:
+                <br />
+                <strong> {cost - (socket.tickers[props.product].price * btcToBuy)}</strong>
+              </p> */}
               <p>
-                BTC to reserve:
+                {user.availableFunds?.[props.product]?.base_currency} to reserve:
                 <br />
                 <strong>{numberWithCommas(btcToBuy)}</strong>
               </p>
               <p>
-                BTC you have:
+                {user.availableFunds?.[props.product]?.base_currency} you have:
                 <br />
-                <strong>{numberWithCommas(Number(availableFundsBTC))}</strong>
+                <strong>{numberWithCommas(Number(availableFundsBase).toFixed(productDecimals.current.baseIncrement))}</strong>
               </p>
               <p>
-                BTC you need to buy manually:
+                {user.availableFunds?.[props.product]?.base_currency} you need to buy manually:
                 <br />
-                <strong>{numberWithCommas(((btcToBuy - availableFundsBTC) > 0 ? btcToBuy - availableFundsBTC : 0).toFixed(8))}</strong>
+                <strong>{numberWithCommas(((btcToBuy - availableFundsBase) > 0 ? btcToBuy - availableFundsBase : 0).toFixed(productDecimals.current.baseIncrement))}</strong>
               </p>
             </>
             : <>

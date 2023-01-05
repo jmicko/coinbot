@@ -95,12 +95,12 @@ function autoSetup(user, options) {
       ? original_sell_price
       : buyPrice
 
-    // if the base_size is in BTC, it will never change. 
-    let actualSize = (sizeType === 'USD')
+    // if the base_size is in base, it will never change. 
+    let actualSize = (sizeType === 'quote')
       ? Number(Math.floor((base_size / buyPrice) * 100000000)) / 100000000
       : base_size
 
-    // count up how much BTC will need to be purchased to reserve for all the sell orders
+    // count up how much base currency will need to be purchased to reserve for all the sell orders
     if (side === 'SELL') {
       btcToBuy += (actualSize * 100000000)
     }
@@ -133,8 +133,8 @@ function autoSetup(user, options) {
     // SETUP FOR NEXT LOOP - do some math to figure out next iteration, and if we should keep looping
 
     // subtract the buy base_size USD from the available funds
-    // if sizeType is BTC, then we need to convert
-    if (sizeType === 'BTC') {
+    // if sizeType is base, then we need to convert
+    if (sizeType === 'base') {
       let USDSize = base_size * buyPrice;
       availableFunds -= USDSize;
       cost += USDSize;
@@ -163,7 +163,7 @@ function autoSetup(user, options) {
   function stopChecker() {
     let USDSize = base_size * buyPrice;
     // calc next round funds
-    let nextFunds = (sizeType === 'BTC')
+    let nextFunds = (sizeType === 'base')
       ? availableFunds - USDSize
       : availableFunds - base_size
     // console.log(((availableFunds - nextFunds) < 0) && !options.ignoreFunds, nextFunds, 'next funds', availableFunds, !options.ignoreFunds);
@@ -199,6 +199,8 @@ function autoSetup(user, options) {
 }
 
 function calculateProductDecimals(product) {
+
+  console.log(product, '=====================product=====================');
   const baseIncrement = findDecimals(product.base_increment);
   console.log(baseIncrement, 'baseIncrement');
   const quoteIncrement = findDecimals(product.quote_increment);
