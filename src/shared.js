@@ -45,7 +45,7 @@ const numberWithCommas = (x) => {
 // the exponent also seems to control how sharp the peak is
 
 // function to implement the above equation using the same variable names as above
-function tradeSizeEquation(options) {
+function bellCurve(options) {
   const { maxSize, minSize, increment, steepness, buyPrice, tradingPrice } = options;
   return maxSize / (1 + (1 / (steepness * increment)) * (buyPrice - tradingPrice) ** 2) + minSize
 }
@@ -128,44 +128,47 @@ function autoSetup(user, options) {
       ? original_sell_price
       : buyPrice
 
-    // if the size is in base, it will never change. 
     let actualSize = getActualSize();
 
-    // rewrite the actualSize to be the tradeSizeEquation with if else statements
+    // get the actual size in base currency of the trade
     function getActualSize() {
+      // if sizeCurve is curve, use the bellCurve
+      const newSize = (sizeCurve === 'curve')
+        // adjust the size based on the curve
+        ? curvedSize()
+        // else leave the size alone
+        : size;
 
       const curvedSize = () => {
-
-
+        // if the increment type is percentage, convert it to a number
+        // this is the same as the increment in the bellCurve, which is a dollar amount
         const newIncrement = incrementType === 'percentage'
           ? increment * buyPrice
           : increment
 
-        return tradeSizeEquation({
+        // this will adjust the size based on where the buy price is on a curve
+        return bellCurve({
           maxSize: maxSize - size,
           minSize: size,
           increment: newIncrement,
           steepness: steepness,
           buyPrice: buyPrice,
           tradingPrice: tradingPrice,
-          // tradingPrice: 1250,
         })
-
       }
-      // if sizeCurve is curve, use the tradeSizeEquation
-      const newSize = (sizeCurve === 'curve')
-        ? curvedSize()
-        : size;
 
       if (sizeType === 'quote') {
+        // if the size is in quote, convert it to base
         return Number(Math.floor((newSize / buyPrice) * 100000000)) / 100000000
       } else {
+        // if the size is in base, it will not change. 
         return newSize
       }
     }
 
     // count up how much base currency will need to be purchased to reserve for all the sell orders
     if (side === 'SELL') {
+      // okay why does this multiply by 100000000??
       btcToBuy += (actualSize * 100000000)
     }
 
