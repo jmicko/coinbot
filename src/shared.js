@@ -90,7 +90,9 @@ function autoSetup(user, options) {
 
   // prevent infinite loops and bad orders
   if ((startingValue === 0 && !skipFirst) ||
-    startingValue <= 0 ||
+    // startingValue <= 0 ||
+    (startingValue === 0 && incrementType === 'percentage') ||
+    (endingValue <= 0 && loopDirection === "up") ||
     size <= 0 ||
     increment <= 0 ||
     trade_pair_ratio <= 0 ||
@@ -98,9 +100,16 @@ function autoSetup(user, options) {
     maxSize <= 0 ||
     tradingPrice <= 0) {
     return {
+      valid: false,
       cost: cost,
       orderList: [],
-      btcToBuy: (btcToBuy / decimals.baseMultiplier),
+      btcToBuy: (btcToBuy / decimals.baseMultiplier),   
+      
+      lastBuyPrice: buyPrice,
+      options: options,
+      quoteToReserve: 0,
+      buyCount: 0,
+      sellCount: 0,
     }
   }
   // loop until one of the stop triggers is hit
@@ -115,9 +124,16 @@ function autoSetup(user, options) {
       stopChecker();
       if (stop) {
         return {
+          valid: false,
           cost: cost,
           orderList: [],
           btcToBuy: (btcToBuy / decimals.baseMultiplier),
+
+          lastBuyPrice: buyPrice,
+          options: options,
+          quoteToReserve: 0,
+          buyCount: 0,
+          sellCount: 0,
         }
       }
       // skip the rest of the iteration and continue the loop
@@ -274,6 +290,7 @@ function autoSetup(user, options) {
   // console.log(quoteToReserve, 'quoteToReserve');
   // console.log(buyCount, 'buyCount');
   return {
+    valid: true,
     cost: cost,
     orderList: orderList,
     lastBuyPrice: orderList[orderList.length - 1]?.original_buy_price,

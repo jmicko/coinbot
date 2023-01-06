@@ -31,6 +31,10 @@ function AutoSetup(props) {
   const [sizeCurve, setSizeCurve] = useState("linear");
   const [steepness, setSteepness] = useState(10);
 
+  // constants that change based on product
+  const baseID = user.availableFunds?.[props.product]?.base_currency;
+  const decimals = useProductDecimals(props.product, user.availableFunds);
+
   const [simulation, setSimulation] = useState(true);
   // start date, default is one month ago
   const [simStartDate, setSimStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().slice(0, 10));
@@ -38,13 +42,12 @@ function AutoSetup(props) {
   const [simReinvestPercent, setSimReinvestPercent] = useState(100);
   const [detailedResults, setDetailedResults] = useState(false);
 
+  // setup results
   const [orders, setOrders] = useState(<></>);
   const [btcToBuy, setBtcToBuy] = useState(0);
   const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
   const [availableFundsBase, setAvailableFundsBase] = useState(0);
-  const baseID = user.availableFunds?.[props.product]?.base_currency;
 
-  const decimals = useProductDecimals(props.product, user.availableFunds);
 
   function handleSizeCurve(event) {
     console.log('event.target.value', event.target.value)
@@ -249,7 +252,7 @@ function AutoSetup(props) {
 
         <form className='auto-setup-form left-border' onSubmit={submitAutoSetup}>
 
-        <p>Current price: {socket.tickers[props.product].price}</p>
+          <p>Current price: {socket.tickers[props.product].price}</p>
 
           {/* STARTING VALUE */}
           {props.tips
@@ -631,71 +634,78 @@ function AutoSetup(props) {
           }
         </form>
 
-        <div className='auto-setup-results'>
-          <h4>Result</h4>
-          <p>
-            The buy price of the last trade-pair will be close to:
-            <br />
-            <strong>{numberWithCommas(setupResults.lastBuyPrice?.toFixed(2) || 0)}</strong>
-          </p>
-          {props.tips && <p>
-            This calculation isn't perfect but it will get close. It can also change if the price of {baseID} moves up or down significantly while the
-            trades are being set up.
-          </p>}
-          <p>
-            Approximate number of trades to create:
-            <br />
-            Total: <strong>{numberWithCommas(totalTrades)}</strong>&nbsp;
-            Buys: <strong>{numberWithCommas(setupResults?.buyCount)}</strong>&nbsp;
-            Sells: <strong>{numberWithCommas(setupResults?.sellCount)}</strong>
-          </p>
-          {props.tips && <p>
-            However, there is a total limit of 10,000 trades placed per user. Latency may cause it to
-            create more, in which case you got lucky.
-          </p>}
-          {ignoreFunds
-            ? <>
-              <p>
-                Total USD cost at current price:
-                <br />
-                <strong>${numberWithCommas(((cost) > 0 ? cost : 0).toFixed(2))}</strong>
-              </p>
-              <p>
-                USD to reserve:
-                <br />
-                <strong> {(setupResults.quoteToReserve).toFixed(decimals.quoteIncrement)}</strong>
-              </p>
-              <p>
-                {baseID} to reserve:
-                <br />
-                <strong>{numberWithCommas(btcToBuy)}</strong>
-              </p>
-              <p>
-                {baseID} you have:
-                <br />
-                <strong>{numberWithCommas(Number(availableFundsBase).toFixed(decimals.baseIncrement))}</strong>
-              </p>
-              <p>
-                {baseID} you need to buy manually:
-                <br />
-                <strong>{numberWithCommas(((btcToBuy - availableFundsBase) > 0 ? btcToBuy - availableFundsBase : 0).toFixed(decimals.baseIncrement))}</strong>
-              </p>
-            </>
-            : <>
-              <p>
-                It will cost you:
-                <br />
-                <strong>${numberWithCommas(((cost) > 0 ? cost : 0).toFixed(2))}</strong>
-              </p>
-            </>
-          }
+        {setupResults?.valid
+          ? <div className='auto-setup-results'>
+            <h4>Result</h4>
+            <p>
+              The buy price of the last trade-pair will be close to:
+              <br />
+              <strong>{numberWithCommas(setupResults.lastBuyPrice?.toFixed(2) || 0)}</strong>
+            </p>
+            {props.tips && <p>
+              This calculation isn't perfect but it will get close. It can also change if the price of {baseID} moves up or down significantly while the
+              trades are being set up.
+            </p>}
+            <p>
+              Approximate number of trades to create:
+              <br />
+              Total: <strong>{numberWithCommas(totalTrades)}</strong>&nbsp;
+              Buys: <strong>{numberWithCommas(setupResults?.buyCount)}</strong>&nbsp;
+              Sells: <strong>{numberWithCommas(setupResults?.sellCount)}</strong>
+            </p>
+            {props.tips && <p>
+              However, there is a total limit of 10,000 trades placed per user. Latency may cause it to
+              create more, in which case you got lucky.
+            </p>}
+            {ignoreFunds
+              ? <>
+                <p>
+                  Total USD cost at current price:
+                  <br />
+                  <strong>${numberWithCommas(((cost) > 0 ? cost : 0).toFixed(2))}</strong>
+                </p>
+                <p>
+                  USD to reserve:
+                  <br />
+                  <strong> {setupResults?.quoteToReserve.toFixed(decimals.quoteIncrement)}</strong>
+                </p>
+                <p>
+                  {baseID} to reserve:
+                  <br />
+                  <strong>{numberWithCommas(btcToBuy)}</strong>
+                </p>
+                <p>
+                  {baseID} you have:
+                  <br />
+                  <strong>{numberWithCommas(Number(availableFundsBase).toFixed(decimals.baseIncrement))}</strong>
+                </p>
+                <p>
+                  {baseID} you need to buy manually:
+                  <br />
+                  <strong>{numberWithCommas(((btcToBuy - availableFundsBase) > 0 ? btcToBuy - availableFundsBase : 0).toFixed(decimals.baseIncrement))}</strong>
+                </p>
+              </>
+              : <>
+                <p>
+                  It will cost you:
+                  <br />
+                  <strong>${numberWithCommas(((cost) > 0 ? cost : 0).toFixed(2))}</strong>
+                </p>
+              </>
+            }
 
 
-        </div>
+          </div>
+          : <div className='auto-setup-results'>
+            <h4>Result</h4>
+            <p>
+              Please enter valid values to see the result.
+            </p>
+          </div>}
       </div>
       {/* {JSON.stringify(orders[0])} */}
       {/* {console.log(decimals, 'decimals!!!!!!!!!!!!!!!')} */}
-      {(orders.length > 0) && sizeCurve !== 'linear' && <Graph data={orders} product={decimals} setupResults={setupResults} />}
+      {(orders.length > 0) && sizeCurve !== 'linear' && setupResults.valid && <Graph data={orders} product={decimals} setupResults={setupResults} />}
       <h4>Preview</h4>
       {orders}
 
