@@ -148,7 +148,7 @@ function Status(props) {
       </center>
 
       {/* <center> */}
-      <p className="info status-ticker auto-scroll"><strong>Auto Scroll</strong>
+      <p className="info status-ticker auto-scroll"><strong>Scroll</strong>
         {/* <br /> */}
         <input
           type="checkbox"
