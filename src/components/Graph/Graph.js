@@ -7,9 +7,14 @@ function Graph(props) {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    const quoteIncrement = Number(props.product.product.quote_increment)
 
     // clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+        // make the background white with rgba
+        ctx.fillStyle = 'rgba(230, 255, 255, 1)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // get the data and plot the points
     const data = [].concat.apply([], props.data.map(d => d.props.order));
@@ -19,116 +24,118 @@ function Graph(props) {
       return;
     }
 
-    // scale the data to fit the canvas
+    // get the min and max values
     const minPrice = Math.min(...data.map(d => d.original_buy_price));
     const maxPrice = Math.max(...data.map(d => d.original_buy_price));
     const minSize = Math.min(...data.map(d => d.buy_quote_size));
     const maxSize = Math.max(...data.map(d => d.buy_quote_size));
-    // ensure that xScale and yScale will not be infinity
+
+    // ensure that there will not be infinity
     if (minPrice === maxPrice || minSize === maxSize) {
       return;
     }
-    const xScale = canvas.width / (maxPrice - minPrice);
-    const yScale = canvas.height / (maxSize - minSize);
 
-    // console.log(canvas.width, canvas.height, 'canvas.width, canvas.height')
+    // draw a rectangle inside the canvas with 10% padding in the y direction and 5% padding in the x direction
+    // the graph will be drawn inside this rectangle
+    const paddingX = canvas.width * 0.05;
+    const paddingY = canvas.height * 0.1;
+    const graphWidth = canvas.width - 2 * paddingX;
+    const graphHeight = canvas.height - 2 * paddingY;
 
-    // console.log(minPrice, maxPrice, minSize, maxSize, 'minPrice, maxPrice, minSize, maxSize');
-    // console.log(xScale, yScale, 'xScale, yScale');
+    // draw the rectangle
+    ctx.strokeStyle = 'rgba(0, 0, 0, .1)';
+    ctx.strokeRect(paddingX, paddingY, graphWidth, graphHeight);
 
-    // add 10% padding to the minimum and maximum values
-    const padding = 0.1;
-    const minPriceScaled = minPrice - xScale * padding;
-    const maxPriceScaled = maxPrice + xScale * padding;
-    const minSizeScaled = minSize - yScale * padding;
-    const maxSizeScaled = maxSize + yScale * padding;
-
-    // console.log(minPriceScaled, maxPriceScaled, minSizeScaled, maxSizeScaled, 'minPriceScaled, maxPriceScaled, minSizeScaled, maxSizeScaled');
-
-    // make the background white with rgba
-    ctx.fillStyle = 'rgba(230, 255, 255, 1)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-
-    // set the style for the grid lines a dark grey using rgba
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.lineWidth = .5;
-
-    // draw the vertical grid lines
-    // there should be 10 vertical grid lines. the width of the line is the width of the canvas divided by 10
-    // they should  be drawn within the padding values (10%)
-    for (let i = minPriceScaled; i <= maxPriceScaled; i += (maxPriceScaled - minPriceScaled) / 10) {
-      ctx.beginPath();
-      ctx.moveTo((i - minPrice) * xScale, 0);
-      ctx.lineTo((i - minPrice) * xScale, canvas.height);
-      ctx.stroke();
-    }
-
-    // draw the horizontal grid lines
-    // there should be 5 horizontal grid lines. the height of the line is the height of the canvas divided by 5
-    // they should be drawn within the padding values (10%)
-    for (let i = minSizeScaled; i <= maxSizeScaled; i += (maxSizeScaled - minSizeScaled) / 5) {
-      ctx.beginPath();
-      ctx.moveTo(0, canvas.height - (i - minSize) * yScale);
-      ctx.lineTo(canvas.width, canvas.height - (i - minSize) * yScale);
-      ctx.stroke();
-    }
-
-
-    // draw the x and y axis, within the padding
-    ctx.strokeStyle = 'black';
-    ctx.lineWidth = 1;
+    // draw the x axis in black
+    ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
     ctx.beginPath();
-    ctx.moveTo(0, canvas.height - (minSizeScaled - minSize) * yScale);
-    ctx.lineTo(canvas.width, canvas.height - (minSizeScaled - minSize) * yScale);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo((minPriceScaled - minPrice) * xScale, 0);
-    ctx.lineTo((minPriceScaled - minPrice) * xScale, canvas.height);
+    ctx.moveTo(paddingX, canvas.height - paddingY);
+    ctx.lineTo(canvas.width - paddingX, canvas.height - paddingY);
     ctx.stroke();
 
-    // draw the x and y axis labels
+    // draw the y axis in black
+    ctx.beginPath();
+    ctx.moveTo(paddingX, paddingY);
+    ctx.lineTo(paddingX, canvas.height - paddingY);
+    ctx.stroke();
+    
+    // draw the x axis label below the x axis, and below the tick labels
     ctx.font = '12px Arial';
-    ctx.fillStyle = 'black';
     ctx.textAlign = 'center';
-    ctx.fillText('Price', canvas.width / 2, canvas.height - 20);
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    ctx.fillText('Price', canvas.width / 2, canvas.height - paddingY + 20);
+    
+
+    // draw the y axis labels to the left of the y axis
     ctx.save();
-    ctx.translate(10, canvas.height / 2);
+    ctx.translate(paddingX - 5, canvas.height / 2);
     ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
     ctx.fillText('Size', 0, 0);
     ctx.restore();
 
-    // label the grid lines
-    ctx.font = '10px Arial';
+    // draw the x axis ticks
+    // the ticks are drawn with spacing that is a nice round number (e.g. 0.01, 0.1, 1, 10, 100, etc.)
+    // the number should be 10n * the props.product.quoteIncrement
+    // the number of ticks should be between 5 and 10
+    // the ticks should be drawn at the bottom of the graph 
+    // the number of ticks that should be labeled should be 5
+    // the tick labels should be drawn below the tick
+    const xTickSpacing = Math.pow(10, Math.floor(Math.log10((maxPrice - minPrice) / 5)));
+    const xTickSpacingRounded = Math.ceil(xTickSpacing / quoteIncrement) * quoteIncrement;
+    const xTickStart = Math.ceil(minPrice / xTickSpacingRounded) * xTickSpacingRounded;
+    const xTickEnd = Math.floor(maxPrice / xTickSpacingRounded) * xTickSpacingRounded;
+    const xTickValues = [];
+    for (let x = xTickStart; x <= xTickEnd; x += xTickSpacingRounded) {
+      xTickValues.push(x);
+    }
+    console.log(xTickValues);
+
+    // draw the x axis ticks and labels
+    ctx.font = '12px Arial';
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    // draw the vertical grid line labels, which are the price values
-    // only label every other line
-    for (let i = minPrice; i <= maxPrice; i += ((maxPrice - minPrice) / 10) * 2) {
-      ctx.fillText(i.toFixed(2), (i - minPrice) * xScale, canvas.height - 10);
-    }
-    // draw the horizontal grid line labels, which are the size values
-    for (let i = minSize; i <= maxSize; i += (maxSize - minSize) / 5) {
-      ctx.fillText(i.toFixed(2), 20, canvas.height - (i - minSize) * yScale);
-    }
-
-    // // plot the data points
-    ctx.fillStyle = 'red';
-    data.forEach(d => {
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    for (let i = 0; i < xTickValues.length; i++) {
+      const x = paddingX + graphWidth * (xTickValues[i] - minPrice) / (maxPrice - minPrice);
       ctx.beginPath();
-      ctx.arc((d.original_buy_price - minPrice) * xScale, canvas.height - (d.buy_quote_size - minSize) * yScale, 1, 0, 2 * Math.PI);
-      ctx.fill();
-    });
+      ctx.moveTo(x, canvas.height - paddingY);
+      ctx.lineTo(x, canvas.height - paddingY + 5);
+      ctx.stroke();
+      if (i % 5 === 0) {
+        // the labels should be diagonal
+        ctx.save();
+        ctx.translate(x, canvas.height - paddingY + 10);
+        ctx.rotate(-Math.PI / 4);
+        ctx.fillText(xTickValues[i].toFixed(2), 0, 0);
+        ctx.restore();
+        
+        // ctx.fillText(xTickValues[i].toFixed(2), x, canvas.height - paddingY + 10);
+      }
+    }
 
 
-  }, [props.data]);
+
+
+
+
+
+
+
+
+
+// the component should rerender when the data changes
+}, [props.data]);
 
   return (
     <>
+    {/* {JSON.stringify(props.product)} */}
       <h4>{props.title || "Graph"}</h4>
       {/* draw the canvas */}
       <canvas ref={canvasRef}
-        width={400} height={200}
+        width={400} height={300}
       />
     </>
   )

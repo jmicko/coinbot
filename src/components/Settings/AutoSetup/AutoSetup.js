@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSocket } from '../../../contexts/SocketProvider';
+import { useProductDecimals } from '../../../hooks/useProductDecimals';
 import { autoSetup, calculateProductDecimals } from '../../../shared';
 import Graph from '../../Graph/Graph';
 import SingleTrade from '../../SingleTrade/SingleTrade';
@@ -42,16 +43,7 @@ function AutoSetup(props) {
   const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
   const [availableFundsBase, setAvailableFundsBase] = useState(0);
 
-
-  // save the product decimals to a ref so that it doesn't have to be recalculated every time
-  // but wait until props.product is loaded before calculating
-  const productDecimals = useRef(null);
-  useEffect(() => {
-    if (props.product) {
-      productDecimals.current = calculateProductDecimals(user.availableFunds?.[props.product]);
-      console.log('productDecimals.current', productDecimals)
-    }
-  }, [props.product])
+  const decimals = useProductDecimals(props.product, user.availableFunds);
 
   function handleSizeCurve(event) {
     console.log('event.target.value', event.target.value)
@@ -119,7 +111,7 @@ function AutoSetup(props) {
 
       // setup.orderList && 
       setOrders(setup.orderList.reverse().map((order, i) => {
-        return <SingleTrade key={i} order={order} preview={true} />
+        return <SingleTrade key={i} order={order} preview={true} product={props.product} />
       }))
     }, [
     user,
@@ -259,6 +251,7 @@ function AutoSetup(props) {
 
         <form className='auto-setup-form left-border' onSubmit={submitAutoSetup}>
 
+        <p>Current price: {socket.tickers[props.product].price}</p>
 
           {/* STARTING VALUE */}
           {props.tips
@@ -670,7 +663,7 @@ function AutoSetup(props) {
               <p>
                 USD to reserve:
                 <br />
-                <strong> {(cost - (socket.tickers[props.product].price * btcToBuy)).toFixed(productDecimals.current.quoteIncrement)}</strong>
+                <strong> {(cost - (socket.tickers[props.product].price * btcToBuy)).toFixed(decimals.quoteIncrement)}</strong>
               </p>
               <p>
                 {user.availableFunds?.[props.product]?.base_currency} to reserve:
@@ -680,12 +673,12 @@ function AutoSetup(props) {
               <p>
                 {user.availableFunds?.[props.product]?.base_currency} you have:
                 <br />
-                <strong>{numberWithCommas(Number(availableFundsBase).toFixed(productDecimals.current.baseIncrement))}</strong>
+                <strong>{numberWithCommas(Number(availableFundsBase).toFixed(decimals.baseIncrement))}</strong>
               </p>
               <p>
                 {user.availableFunds?.[props.product]?.base_currency} you need to buy manually:
                 <br />
-                <strong>{numberWithCommas(((btcToBuy - availableFundsBase) > 0 ? btcToBuy - availableFundsBase : 0).toFixed(productDecimals.current.baseIncrement))}</strong>
+                <strong>{numberWithCommas(((btcToBuy - availableFundsBase) > 0 ? btcToBuy - availableFundsBase : 0).toFixed(decimals.baseIncrement))}</strong>
               </p>
             </>
             : <>
@@ -701,7 +694,8 @@ function AutoSetup(props) {
         </div>
       </div>
       {/* {JSON.stringify(orders[0])} */}
-      {(orders.length > 0) && sizeCurve !== 'linear' && <Graph data={orders} />}
+      {/* {console.log(decimals, 'decimals!!!!!!!!!!!!!!!')} */}
+      {(orders.length > 0) && sizeCurve !== 'linear' && <Graph data={orders} product={decimals} />}
       <h4>Preview</h4>
       {orders}
 

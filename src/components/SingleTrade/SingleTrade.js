@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useSocket } from '../../contexts/SocketProvider';
+// import { useSocket } from '../../contexts/SocketProvider';
 import { calculateProductDecimals } from '../../shared';
+import { useProductDecimals } from '../../hooks/useProductDecimals';
 import './SingleTrade.css'
 
 function SingleTrade(props) {
@@ -13,9 +14,8 @@ function SingleTrade(props) {
   const [sellFee, setSellFee] = useState();
   const [buyFee, setBuyFee] = useState();
   const product = props.product;
-  // get the decimal places for the product from shared.js
-  // const decimals = calculateProductDecimals(product);
-  const decimals = calculateProductDecimals(user.availableFunds?.[product]);
+  const decimals = useProductDecimals(product, user.availableFunds);
+
 
 // decimals.baseIncrement
 
@@ -37,7 +37,7 @@ function SingleTrade(props) {
     setProfit(profit);
     setBuyFee(buyFee)
     setSellFee(sellFee)
-  }, [props.order.original_sell_price, props.order.original_buy_price, props.order.base_size]);
+  }, [props.order.original_sell_price, props.order.original_buy_price, props.order.base_size, user.maker_fee, decimals.baseMultiplier]);
 
   // delete the order if the abandon button is clicked.
   // the loop already detects deleted orders, so only need to make a call to coinbase

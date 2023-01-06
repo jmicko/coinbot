@@ -294,11 +294,11 @@ function autoSetup(user, options) {
 
 function calculateProductDecimals(product) {
 
-  console.log(product, '=====================product=====================');
+  // console.log(product, '=====================product=====================');
   const baseIncrement = findDecimals(product.base_increment);
-  console.log(baseIncrement, 'baseIncrement');
+  // console.log(baseIncrement, 'baseIncrement');
   const quoteIncrement = findDecimals(product.quote_increment);
-  console.log(quoteIncrement, 'quoteIncrement');
+  // console.log(quoteIncrement, 'quoteIncrement');
   // a 1 with baseIncrement number of 0s
   const baseMultiplier = Math.pow(10, baseIncrement);
   const quoteMultiplier = Math.pow(10, quoteIncrement);
