@@ -26,13 +26,13 @@ function TradeList(props) {
     if (openOrdersInOrder.sells !== undefined) {
       setLowestSell(Number(openOrdersInOrder.sells[0]?.limit_price || 0))
       setSells(openOrdersInOrder.sells.slice(0).reverse().map((sell) => {
-        return <SingleTrade key={sell.order_id} order={sell} />
+        return <SingleTrade key={sell.order_id} order={sell} product={props.product} />
       }))
     }
     if (openOrdersInOrder.buys !== undefined) {
       setHighestBuy(Number(openOrdersInOrder.buys[0]?.limit_price || 0))
       setBuys(openOrdersInOrder.buys.map((buy) => {
-        return <SingleTrade key={buy.order_id} order={buy} />
+        return <SingleTrade key={buy.order_id} order={buy} product={props.product} />
       }))
       // dispatch({
       //   type: 'SET_SCROLL',

@@ -299,7 +299,10 @@ function calculateProductDecimals(product) {
   console.log(baseIncrement, 'baseIncrement');
   const quoteIncrement = findDecimals(product.quote_increment);
   console.log(quoteIncrement, 'quoteIncrement');
-  return { baseIncrement, quoteIncrement };
+  // a 1 with baseIncrement number of 0s
+  const baseMultiplier = Math.pow(10, baseIncrement);
+  const quoteMultiplier = Math.pow(10, quoteIncrement);
+  return { baseIncrement, quoteIncrement, baseMultiplier, quoteMultiplier, product };
 
   function findDecimals(number) {
     return number.split('.')[1].split('').findIndex((char) => char !== '0') + 1;

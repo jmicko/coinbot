@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useSocket } from '../../contexts/SocketProvider';
+import { calculateProductDecimals } from '../../shared';
 import './SingleTrade.css'
 
 function SingleTrade(props) {
@@ -10,6 +12,12 @@ function SingleTrade(props) {
   const [showAll, setShowAll] = useState(false);
   const [sellFee, setSellFee] = useState();
   const [buyFee, setBuyFee] = useState();
+  const product = props.product;
+  // get the decimal places for the product from shared.js
+  // const decimals = calculateProductDecimals(product);
+  const decimals = calculateProductDecimals(user.availableFunds?.[product]);
+
+// decimals.baseIncrement
 
   useEffect(() => {
     // calculate all the numbers when the component renders
@@ -25,7 +33,7 @@ function SingleTrade(props) {
     let buyFee = (maker_fee_rate * original_buy_price * base_size)
 
     // calculate profits
-    const profit = Math.round((((original_sell_price * base_size - original_buy_price * base_size)) - (buyFee + sellFee)) * 100000000) / 100000000;
+    const profit = Math.round((((original_sell_price * base_size - original_buy_price * base_size)) - (buyFee + sellFee)) * decimals.baseMultiplier) / decimals.baseMultiplier;
     setProfit(profit);
     setBuyFee(buyFee)
     setSellFee(sellFee)
@@ -70,6 +78,7 @@ function SingleTrade(props) {
 
   return (
     <div className={`Single-trade ${props.order.side} ${user.theme}`}>
+      {/* {JSON.stringify(decimals)} */}
       {!props.preview && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>}
       {showAll && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={syncTrade}>sync</button>}
       <div className={"overlay"}>
@@ -83,18 +92,18 @@ function SingleTrade(props) {
           <strong>
             Price: </strong>
           {(props.order.side === 'SELL')
-            ? numberWithCommas(Number(props.order.original_sell_price).toFixed(2))
-            : numberWithCommas(Number(props.order.original_buy_price).toFixed(2))
+            ? numberWithCommas(Number(props.order.original_sell_price).toFixed(decimals.quoteIncrement))
+            : numberWithCommas(Number(props.order.original_buy_price).toFixed(decimals.quoteIncrement))
           } <strong>
             {(props.order.side === 'SELL')
               ? '~Buys:'
               : '~Sells:'
             } </strong>
           {(props.order.side === 'SELL')
-            ? numberWithCommas(Number(props.order.original_buy_price).toFixed(2))
-            : numberWithCommas(Number(props.order.original_sell_price).toFixed(2))
-          } ~<strong>Size </strong>{Number(props.order.base_size).toFixed(8)} {!props.preview && <>~</>}
-          {!props.preview ? <strong>Value</strong >:<strong>/</strong >} ${numberWithCommas((Math.round((props.order.limit_price * props.order.base_size) * 100) / 100).toFixed(2))} ~
+            ? numberWithCommas(Number(props.order.original_buy_price).toFixed(decimals.quoteIncrement))
+            : numberWithCommas(Number(props.order.original_sell_price).toFixed(decimals.quoteIncrement))
+          } ~<strong>Size </strong>{Number(props.order.base_size).toFixed(decimals.baseIncrement)} {!props.preview && <>~</>}
+          {!props.preview ? <strong>Value</strong >:<strong>/</strong >} ${numberWithCommas((Math.round((props.order.limit_price * props.order.base_size) * decimals.quoteMultiplier) / decimals.quoteMultiplier).toFixed(decimals.quoteIncrement))} ~
           <strong>Net Profit</strong> ${profit.toFixed(8)}
           {/* <strong> ~Time</strong> {new Date(props.order.created_at).toLocaleString('en-US')} */}
           {!props.preview && <strong> ~Time </strong>} {!props.preview && (props.order.flipped_at
