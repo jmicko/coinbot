@@ -4,6 +4,7 @@ function Graph(props) {
   const canvasRef = useRef(null);
   const [scaleToZeroX, setScaleToZeroX] = useState(false);
   const [scaleToZeroY, setScaleToZeroY] = useState(false);
+  const [showSells, setShowSells] = useState(false);
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
 
   const setupOptions = props.setupResults.options;
@@ -51,7 +52,7 @@ function Graph(props) {
     // clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // make the background white with rgba
+    // make the background a color that will contrast with green and red
     ctx.fillStyle = 'rgba(230, 255, 255, 1)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -167,7 +168,7 @@ function Graph(props) {
     // save the x values of the data points so the mouse can be used to find the closest data point
     const xValues = [];
 
-    // draw a red point for each data point
+    // draw a point for each data point
     ctx.fillStyle = 'rgba(255, 0, 0, 1)';
     data.forEach(d => {
 
@@ -199,7 +200,7 @@ function Graph(props) {
       if (data.indexOf(d) < data.length - 1) {
         ctx.save();
         ctx.lineWidth = .5;
-        ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
         const nextD = data[data.indexOf(d) + 1];
         const nextX = paddingX + (nextD.original_buy_price - minPrice) / (maxPrice - minPrice) * graphWidth;
         const nextY = graphBottom - (nextD[whichSize] - minSize) / (maxSize - minSize) * graphHeight;
@@ -211,10 +212,40 @@ function Graph(props) {
       }
 
       // draw the point
-      ctx.fillStyle = 'rgba(255, 0, 0, 1)';
+      ctx.fillStyle = showSells
+        ? 'rgba(0, 150, 0, 1)'
+        : 'rgba(0, 150, 0, 1)';
       ctx.beginPath();
       ctx.arc(x, y, 1.5, 0, 2 * Math.PI);
       ctx.fill();
+
+      if (showSells) {
+        // draw a green point for the sell price
+        ctx.fillStyle = 'rgba(255, 0, 0, 1)';
+        ctx.beginPath();
+        ctx.arc(paddingX + (d.original_sell_price - minPrice) / (maxPrice - minPrice) * graphWidth, y, 1.5, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // draw a black line from the buy price to the sell price
+        // the line should be drawn from the center of the point to the center of the sell price point
+        ctx.save();
+        ctx.lineWidth = .5;
+        ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(paddingX + (d.original_sell_price - minPrice) / (maxPrice - minPrice) * graphWidth, y);
+        ctx.stroke();
+        ctx.restore();
+
+      }
+
+
+
+
+
+
+
+
 
       // save the x value of the data point
       xValues.push(x);
@@ -242,19 +273,32 @@ function Graph(props) {
       ctx.lineTo(x, paddingY);
       ctx.stroke();
 
-      // draw the tooltip with the price and size data. not other data is shown because it would be too crowded
+      // draw the tooltip with the buy/sell price, and size data. not other data is shown because it would be too crowded
       // if the mouse is too close to the right edge of the canvas, draw the tooltip to the left of the mouse
       const tooltipX = mouse.x > canvas.width - 100 ? mouse.x - 100 : mouse.x;
       // if the mouse is too close to the top edge of the canvas, draw the tooltip below the mouse
-      const tooltipY = mouse.y < 30 ? mouse.y + 20 : mouse.y - 40;
-      ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-      ctx.fillRect(tooltipX, tooltipY, 100, 40);
-      ctx.fillStyle = 'rgba(0, 0, 0, 1)';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-      ctx.fillText(`$${closestPoint.original_buy_price.toFixed(2)}`, tooltipX + 5, tooltipY + 5);
-      ctx.fillText(`${Number(closestPoint[whichSize]).toFixed(2)}`, tooltipX + 5, tooltipY + 20);
-      
+      if (showSells) {
+        const tooltipY = mouse.y < 30 ? mouse.y + 20 : mouse.y - 50;
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.fillRect(tooltipX, tooltipY, 100, 50);
+        ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(`Buy: $${closestPoint.original_buy_price.toFixed(2)}`, tooltipX + 5, tooltipY + 5);
+        ctx.fillText(`Sell: $${closestPoint.original_sell_price.toFixed(2)}`, tooltipX + 5, tooltipY + 20);
+        ctx.fillText(`Size: ${whichSize === 'buy_quote_size' ? '$' : ''}${Number(closestPoint[whichSize]).toFixed(2)} ${whichSize === 'base_size' ? 'ETH' : ''}`, tooltipX + 5, tooltipY + 35);
+      } else {
+
+        const tooltipY = mouse.y < 30 ? mouse.y + 20 : mouse.y - 35;
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.fillRect(tooltipX, tooltipY, 100, 35);
+        ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(`Buy: $${closestPoint.original_buy_price.toFixed(2)}`, tooltipX + 5, tooltipY + 5);
+        ctx.fillText(`Size: ${whichSize === 'buy_quote_size' ? '$' : ''}${Number(closestPoint[whichSize]).toFixed(2)} ${whichSize === 'base_size' ? 'ETH' : ''}`, tooltipX + 5, tooltipY + 20);
+      }
+
 
     }
 
@@ -299,6 +343,12 @@ function Graph(props) {
         <input type="checkbox" checked={scaleToZeroY} onChange={e => setScaleToZeroY(e.target.checked)} />
         Start Size at Zero
       </label>
+      <br />
+      <label>
+        <input type="checkbox" checked={showSells} onChange={e => setShowSells(e.target.checked)} />
+        Show Sell Prices
+      </label>
+
     </>
   )
 }
