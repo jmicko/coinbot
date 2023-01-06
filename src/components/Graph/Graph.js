@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 
 function Graph(props) {
   const canvasRef = useRef(null);
+  console.log('graph props', props.setupResults);
 
   // draw a graph using the canvas element
   useEffect(() => {
@@ -77,44 +78,25 @@ function Graph(props) {
     ctx.restore();
 
     // draw the x axis ticks
-    // the ticks are drawn with spacing that is a nice round number (e.g. 0.01, 0.1, 1, 10, 100, etc.)
-    // the number should be 10n * the props.product.quoteIncrement
-    // the number of ticks should be between 5 and 10
-    // the ticks should be drawn at the bottom of the graph 
-    // the number of ticks that should be labeled should be 5
-    // the tick labels should be drawn below the tick
-    const xTickSpacing = Math.pow(10, Math.floor(Math.log10((maxPrice - minPrice) / 5)));
-    const xTickSpacingRounded = Math.ceil(xTickSpacing / quoteIncrement) * quoteIncrement;
-    const xTickStart = Math.ceil(minPrice / xTickSpacingRounded) * xTickSpacingRounded;
-    const xTickEnd = Math.floor(maxPrice / xTickSpacingRounded) * xTickSpacingRounded;
-    const xTickValues = [];
-    for (let x = xTickStart; x <= xTickEnd; x += xTickSpacingRounded) {
-      xTickValues.push(x);
-    }
-    console.log(xTickValues);
-
-    // draw the x axis ticks and labels
-    ctx.font = '12px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
-    for (let i = 0; i < xTickValues.length; i++) {
-      const x = paddingX + graphWidth * (xTickValues[i] - minPrice) / (maxPrice - minPrice);
+    const numXTicks = 5;
+    // tick interval should take padding into account
+    const xTickInterval = graphWidth / (numXTicks - 1);
+    for (let i = 0; i < numXTicks; i++) {
+      // draw the tick
       ctx.beginPath();
-      ctx.moveTo(x, canvas.height - paddingY);
-      ctx.lineTo(x, canvas.height - paddingY + 5);
+      ctx.moveTo(paddingX + i * xTickInterval, canvas.height - paddingY);
+      ctx.lineTo(paddingX + i * xTickInterval, canvas.height - paddingY + 5);
       ctx.stroke();
-      if (i % 5 === 0) {
-        // the labels should be diagonal
-        ctx.save();
-        ctx.translate(x, canvas.height - paddingY + 10);
-        ctx.rotate(-Math.PI / 4);
-        ctx.fillText(xTickValues[i].toFixed(2), 0, 0);
-        ctx.restore();
-        
-        // ctx.fillText(xTickValues[i].toFixed(2), x, canvas.height - paddingY + 10);
-      }
+
+      // draw the tick label
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText((minPrice + i * (maxPrice - minPrice) / (numXTicks - 1)).toFixed(2), paddingX + i * xTickInterval, canvas.height - paddingY + 10);
     }
+
+
+
+
 
 
 

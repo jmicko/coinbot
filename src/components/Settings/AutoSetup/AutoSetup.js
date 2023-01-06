@@ -56,6 +56,12 @@ function AutoSetup(props) {
 
   function handleIncrementType(event) {
     setIncrementType(event.target.value)
+    console.log('event.target.value', event.target.value)
+    if (event.target.value === "dollars") {
+      setIncrement(100);
+    } else {
+      setIncrement(0.5);
+    }
   }
 
   function handleSizeType(event) {
@@ -94,13 +100,15 @@ function AutoSetup(props) {
         sizeCurve: sizeCurve,
         maxSize: maxSize,
         steepness: steepness,
+        user: user,
       }
 
       let setup = autoSetup(user, payload);
 
       setCost(setup.cost)
       // this will be the buy price of the last trade pair
-      setSetupResults(setup.orderList[setup.orderList.length - 1]?.original_buy_price);
+      // setSetupResults(setup.orderList[setup.orderList.length - 1]?.original_buy_price);
+      setSetupResults(setup);
 
       // this will be the total number of trades made
       setTotalTrades(setup.orderList.length);
@@ -638,7 +646,7 @@ function AutoSetup(props) {
           <p>
             The buy price of the last trade-pair will be close to:
             <br />
-            <strong>{numberWithCommas(setupResults?.toFixed(2) || 0)}</strong>
+            <strong>{numberWithCommas(setupResults.lastBuyPrice?.toFixed(2) || 0)}</strong>
           </p>
           {props.tips && <p>
             This calculation isn't perfect but it will get close. It can also change if the price of {user.availableFunds?.[props.product]?.base_currency} moves up or down significantly while the
@@ -695,7 +703,7 @@ function AutoSetup(props) {
       </div>
       {/* {JSON.stringify(orders[0])} */}
       {/* {console.log(decimals, 'decimals!!!!!!!!!!!!!!!')} */}
-      {(orders.length > 0) && sizeCurve !== 'linear' && <Graph data={orders} product={decimals} />}
+      {(orders.length > 0) && sizeCurve !== 'linear' && <Graph data={orders} product={decimals} setupResults={setupResults} />}
       <h4>Preview</h4>
       {orders}
 

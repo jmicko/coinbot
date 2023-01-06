@@ -51,6 +51,13 @@ function bellCurve(options) {
 }
 
 function autoSetup(user, options) {
+  const product_id = options.product_id;
+  // console.log(product_id, 'product_id')
+  // console.log(options.user, options.availableFunds, 'user')
+  const available = user.availableFunds[product_id];
+  // console.log(available, 'available')
+  const decimals = calculateProductDecimals(available);
+  // console.log(decimals, 'decimals')
 
   // create an array to hold the new trades to put in
   const orderList = [];
@@ -78,20 +85,18 @@ function autoSetup(user, options) {
   let btcToBuy = 0;
 
   // prevent infinite loops and bad orders
-  if (
-    (startingValue === 0 && !skipFirst) ||
+  if ((startingValue === 0 && !skipFirst) ||
     startingValue <= 0 ||
     size <= 0 ||
     increment <= 0 ||
     trade_pair_ratio <= 0 ||
     steepness <= 0 ||
     maxSize <= 0 ||
-    tradingPrice <= 0
-  ) {
+    tradingPrice <= 0) {
     return {
       cost: cost,
       orderList: [],
-      btcToBuy: (btcToBuy / 100000000),
+      btcToBuy: (btcToBuy / decimals.baseMultiplier),
     }
   }
   // loop until one of the stop triggers is hit
@@ -108,7 +113,7 @@ function autoSetup(user, options) {
         return {
           cost: cost,
           orderList: [],
-          btcToBuy: (btcToBuy / 100000000),
+          btcToBuy: (btcToBuy / decimals.baseMultiplier),
         }
       }
       // skip the rest of the iteration and continue the loop
@@ -119,7 +124,7 @@ function autoSetup(user, options) {
     buyPrice = Number(buyPrice.toFixed(2));
 
     // get the sell price with the same math as is used by the bot when flipping
-    let original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + 100))) / 100);
+    let original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + decimals.quoteMultiplier))) / decimals.quoteMultiplier);
 
     // figure out if it is going to be a BUY or a sell. Buys will be below current trade price, sells above.
     let side = (buyPrice > tradingPrice)
@@ -162,7 +167,7 @@ function autoSetup(user, options) {
 
       if (sizeType === 'quote') {
         // if the size is in quote, convert it to base
-        return Number(Math.floor((newSize / buyPrice) * 100000000)) / 100000000
+        return Number(Math.floor((newSize / buyPrice) * decimals.baseMultiplier)) / decimals.baseMultiplier
       } else {
         // if the size is in base, it will not change. 
         return newSize
@@ -171,8 +176,10 @@ function autoSetup(user, options) {
 
     // count up how much base currency will need to be purchased to reserve for all the sell orders
     if (side === 'SELL') {
-      // okay why does this multiply by 100000000??
-      btcToBuy += (actualSize * 100000000)
+      // console.log(actualSize, 'actualSize', (actualSize * decimals.baseMultiplier));
+      // okay why does this multiply by decimals.baseMultiplier??
+      // because later on, the actualSize is divided by decimals.baseMultiplier before returning it
+      btcToBuy += (actualSize * decimals.baseMultiplier)
     }
 
     // calculate the previous fees on sell orders
@@ -251,7 +258,9 @@ function autoSetup(user, options) {
   return {
     cost: cost,
     orderList: orderList,
-    btcToBuy: (btcToBuy / 100000000),
+    lastBuyPrice: orderList[orderList.length - 1]?.original_buy_price,
+    btcToBuy: (btcToBuy / decimals.baseMultiplier),
+    options: options,
   }
 
   function stopChecker() {
