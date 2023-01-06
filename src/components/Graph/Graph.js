@@ -5,12 +5,14 @@ function Graph(props) {
   const [scaleToZeroX, setScaleToZeroX] = useState(false);
   const [scaleToZeroY, setScaleToZeroY] = useState(false);
   const [showSells, setShowSells] = useState(false);
+  const [showCurrentPrice, setShowCurrentPrice] = useState(true);
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
 
   const setupOptions = props.setupResults.options;
 
   const setupMinSize = props.setupResults.options.base_size;
   const setupMaxSize = props.setupResults.options.maxSize;
+  const currentPrice = Number(props.setupResults.options.tradingPrice);
 
   const whichSize = setupOptions.sizeType === 'base' ? 'base_size' : 'buy_quote_size';
 
@@ -302,23 +304,32 @@ function Graph(props) {
 
     }
 
+    // show the current price if it is within the range of the graph
+    if (showCurrentPrice && currentPrice >= minPrice && currentPrice <= maxPrice) {
+      // draw a blue vertical line showing the current price
+      // it should extend above the top of the graph, and show the current price
+      ctx.strokeStyle = 'rgba(0, 0, 255, 1)';
+      ctx.beginPath();
+      const x = paddingX + (currentPrice - minPrice) / (maxPrice - minPrice) * graphWidth;
+      ctx.moveTo(x, graphBottom);
+      ctx.lineTo(x, paddingY);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(`$${currentPrice.toFixed(2)}`, x, paddingY - 15);
+    }
+
+
+
 
     // add the mouse move listener
     canvas.addEventListener('mousemove', handleMouseMove);
 
-    // // remove the mousemove event listener when the mouse leaves the canvas
-    // canvas.addEventListener('mouseleave', () => {
-    //   canvas.removeEventListener('mousemove', handleMouseMove);
-    //   setMouse({});
-    // });
-
-    // remove all event listeners when the component unmounts if they haven't been removed already
+    // remove the event listener when the component unmounts
     return () => {
       canvas.removeEventListener('mousemove', handleMouseMove);
-      // canvas.removeEventListener('mouseleave', () => {
-      //   canvas.removeEventListener('mousemove', handleMouseMove);
-      //   setMouse({});
-      // });
+
     }
 
 
@@ -347,6 +358,11 @@ function Graph(props) {
       <label>
         <input type="checkbox" checked={showSells} onChange={e => setShowSells(e.target.checked)} />
         Show Sell Prices
+      </label>
+      {/* checkbox to show current price */}
+      <label>
+        <input type="checkbox" checked={showCurrentPrice} onChange={e => setShowCurrentPrice(e.target.checked)} />
+        Show Current Price
       </label>
 
     </>
