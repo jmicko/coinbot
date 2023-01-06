@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSocket } from '../../../contexts/SocketProvider';
 import { useProductDecimals } from '../../../hooks/useProductDecimals';
-import { autoSetup, calculateProductDecimals } from '../../../shared';
+import { autoSetup, calculateProductDecimals, numberWithCommas } from '../../../shared';
 import Graph from '../../Graph/Graph';
 import SingleTrade from '../../SingleTrade/SingleTrade';
 import './AutoSetup.css'
@@ -159,17 +159,6 @@ function AutoSetup(props) {
       dispatch({ type: 'UNSET_SIMULATION_RESULT' });
     }
   }, [dispatch]);
-
-
-  // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
-  const numberWithCommas = (x) => {
-    // this will work in safari once lookbehind is supported
-    // return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
-    // for now, use this
-    let parts = x.toString().split(".");
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return parts.join(".");
-  }
 
 
 
@@ -655,7 +644,9 @@ function AutoSetup(props) {
           <p>
             Approximate number of trades to create:
             <br />
-            <strong>{numberWithCommas(totalTrades)}</strong>
+            Total: <strong>{numberWithCommas(totalTrades)}</strong>&nbsp;
+            Buys: <strong>{numberWithCommas(setupResults?.buyCount)}</strong>&nbsp;
+            Sells: <strong>{numberWithCommas(totalTrades)}</strong>
           </p>
           {props.tips && <p>
             However, there is a total limit of 10,000 trades placed per user. Latency may cause it to

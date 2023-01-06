@@ -13,8 +13,9 @@ const numberWithCommas = (x) => {
   // this will work in safari once lookbehind is supported
   // return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
   // for now, use this
-  if (x !== null) {
-    let parts = x.toString().split(".");
+  console.log('x', x)
+  if (x !== null && x !== undefined) {
+    let parts = Number(x).toString().split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     return parts.join(".");
   } else {
@@ -83,6 +84,9 @@ function autoSetup(user, options) {
   let loopDirection = (endingValue - startingValue < 0) ? "down" : "up";
 
   let btcToBuy = 0;
+  let quoteToReserve = 0;
+  let buyCount = 0;
+  let sellCount = 0;
 
   // prevent infinite loops and bad orders
   if ((startingValue === 0 && !skipFirst) ||
@@ -209,6 +213,11 @@ function autoSetup(user, options) {
     // push that order into the order list
     orderList.push(singleOrder);
 
+    // increase the buy count or sell count depending on the side
+    side === 'BUY'
+      ? buyCount++
+      : sellCount++;
+
     // SETUP FOR NEXT LOOP - do some math to figure out next iteration, and if we should keep looping
 
     // subtract the buy size USD from the available funds
@@ -223,14 +232,17 @@ function autoSetup(user, options) {
       let USDSize = size * conversionPrice;
       availableFunds -= USDSize;
       cost += USDSize;
+      // buy orders need to add quote value to quoteToReserve
+      side === 'BUY' && (quoteToReserve += USDSize);
     } else {
       let quoteSize = size;
 
       // console.log('current funds', availableFunds);
       // if it is a sell, need to convert from quote to base size based on the buy price
       // then get the cost of the base size at the trading price,
-      // then get the cost of the quote at the c
+      // then get the cost of the quote at the current price
       if (side === 'SELL') {
+        // console.log(quoteSize, 'quote size SELLING');
         // console.log('need to convert to base size');
         // convert to base size
         const baseSize = quoteSize / buyPrice;
@@ -239,6 +251,10 @@ function autoSetup(user, options) {
         const USDSize = baseSize * tradingPrice;
         // console.log('USD size', USDSize);
         quoteSize = USDSize;
+        // console.log(quoteSize, 'quote size actual cost SELLING');
+      } else {
+        // buy orders need to add quote value to quoteToReserve
+        quoteToReserve += quoteSize;
       }
 
       availableFunds -= quoteSize;
@@ -255,12 +271,17 @@ function autoSetup(user, options) {
     stopChecker();
   }
 
+  console.log(quoteToReserve, 'quoteToReserve');
+  console.log(buyCount, 'buyCount');
   return {
     cost: cost,
     orderList: orderList,
     lastBuyPrice: orderList[orderList.length - 1]?.original_buy_price,
     btcToBuy: (btcToBuy / decimals.baseMultiplier),
     options: options,
+    quoteToReserve: quoteToReserve,
+    buyCount: buyCount,
+    sellCount: sellCount,
   }
 
   function stopChecker() {

@@ -2,7 +2,8 @@ import React, { useEffect, useRef } from 'react';
 
 function Graph(props) {
   const canvasRef = useRef(null);
-  console.log('graph props', props.setupResults);
+  console.log('graph props', props.setupResults.options.startingValue);
+  console.log('graph props', props.setupResults.options.endingValue);
 
   // draw a graph using the canvas element
   useEffect(() => {
