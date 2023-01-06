@@ -11,7 +11,7 @@ const useProductDecimals = (product, availableFunds) => {
     } else {
       console.log('no product or funds');
     }
-  }, [product, availableFunds?.[product]]);
+  }, [product, availableFunds]);
 
   return decimals;
 }

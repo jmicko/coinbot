@@ -13,7 +13,7 @@ const numberWithCommas = (x) => {
   // this will work in safari once lookbehind is supported
   // return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
   // for now, use this
-  console.log('x', x)
+  // console.log('x', x)
   if (x !== null && x !== undefined) {
     let parts = Number(x).toString().split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -271,8 +271,8 @@ function autoSetup(user, options) {
     stopChecker();
   }
 
-  console.log(quoteToReserve, 'quoteToReserve');
-  console.log(buyCount, 'buyCount');
+  // console.log(quoteToReserve, 'quoteToReserve');
+  // console.log(buyCount, 'buyCount');
   return {
     cost: cost,
     orderList: orderList,

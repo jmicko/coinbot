@@ -42,6 +42,7 @@ function AutoSetup(props) {
   const [btcToBuy, setBtcToBuy] = useState(0);
   const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
   const [availableFundsBase, setAvailableFundsBase] = useState(0);
+  const baseID = user.availableFunds?.[props.product]?.base_currency;
 
   const decimals = useProductDecimals(props.product, user.availableFunds);
 
@@ -395,7 +396,7 @@ function AutoSetup(props) {
             onChange={handleSizeType}
           />
           <label htmlFor='base'>
-            {user.availableFunds?.[props.product]?.base_currency}
+            {baseID}
           </label>
 
           {/* size curve radio buttons */}
@@ -429,12 +430,12 @@ function AutoSetup(props) {
           </label>
 
           {props.tips
-            ? <p>What size in {sizeType === "quote" ? "USD" : user.availableFunds?.[props.product]?.base_currency} should each trade-pair be? </p>
+            ? <p>What size in {sizeType === "quote" ? "USD" : baseID} should each trade-pair be? </p>
             : <p />}
 
 
           <label htmlFor='size'>
-            {sizeCurve === "curve" && "Min"} Size in {sizeType === "quote" ? "USD" : user.availableFunds?.[props.product]?.base_currency}:
+            {sizeCurve === "curve" && "Min"} Size in {sizeType === "quote" ? "USD" : baseID}:
             <br />
             <input
               name='size'
@@ -449,7 +450,7 @@ function AutoSetup(props) {
           {sizeCurve === "curve" && <br />}
 
           {sizeCurve === "curve" && <label htmlFor='size'>
-            Max Size in {sizeType === "quote" ? "USD" : user.availableFunds?.[props.product]?.base_currency}:
+            Max Size in {sizeType === "quote" ? "USD" : baseID}:
             <br />
             <input
               name='size'
@@ -638,7 +639,7 @@ function AutoSetup(props) {
             <strong>{numberWithCommas(setupResults.lastBuyPrice?.toFixed(2) || 0)}</strong>
           </p>
           {props.tips && <p>
-            This calculation isn't perfect but it will get close. It can also change if the price of {user.availableFunds?.[props.product]?.base_currency} moves up or down significantly while the
+            This calculation isn't perfect but it will get close. It can also change if the price of {baseID} moves up or down significantly while the
             trades are being set up.
           </p>}
           <p>
@@ -646,7 +647,7 @@ function AutoSetup(props) {
             <br />
             Total: <strong>{numberWithCommas(totalTrades)}</strong>&nbsp;
             Buys: <strong>{numberWithCommas(setupResults?.buyCount)}</strong>&nbsp;
-            Sells: <strong>{numberWithCommas(totalTrades)}</strong>
+            Sells: <strong>{numberWithCommas(setupResults?.sellCount)}</strong>
           </p>
           {props.tips && <p>
             However, there is a total limit of 10,000 trades placed per user. Latency may cause it to
@@ -655,27 +656,27 @@ function AutoSetup(props) {
           {ignoreFunds
             ? <>
               <p>
-                Total USD Cost:
+                Total USD cost at current price:
                 <br />
                 <strong>${numberWithCommas(((cost) > 0 ? cost : 0).toFixed(2))}</strong>
               </p>
               <p>
                 USD to reserve:
                 <br />
-                <strong> {(cost - (socket.tickers[props.product].price * btcToBuy)).toFixed(decimals.quoteIncrement)}</strong>
+                <strong> {(setupResults.quoteToReserve).toFixed(decimals.quoteIncrement)}</strong>
               </p>
               <p>
-                {user.availableFunds?.[props.product]?.base_currency} to reserve:
+                {baseID} to reserve:
                 <br />
                 <strong>{numberWithCommas(btcToBuy)}</strong>
               </p>
               <p>
-                {user.availableFunds?.[props.product]?.base_currency} you have:
+                {baseID} you have:
                 <br />
                 <strong>{numberWithCommas(Number(availableFundsBase).toFixed(decimals.baseIncrement))}</strong>
               </p>
               <p>
-                {user.availableFunds?.[props.product]?.base_currency} you need to buy manually:
+                {baseID} you need to buy manually:
                 <br />
                 <strong>{numberWithCommas(((btcToBuy - availableFundsBase) > 0 ? btcToBuy - availableFundsBase : 0).toFixed(decimals.baseIncrement))}</strong>
               </p>
