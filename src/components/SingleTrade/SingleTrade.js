@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-// import { useSocket } from '../../contexts/SocketProvider';
-import { calculateProductDecimals } from '../../shared';
 import { useProductDecimals } from '../../hooks/useProductDecimals';
 import './SingleTrade.css'
 
