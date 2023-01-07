@@ -80,9 +80,9 @@ function Trade(props) {
     let pairMargin = volumeCostSell - volumeCostBuy;
     let pairProfit = pairMargin - totalfees;
 
-    console.log(tradePairRatio, 'tradePairRatio')
-    console.log(price, 'price')
-    console.log(sellPrice, 'sellPrice')
+    // console.log(tradePairRatio, 'tradePairRatio')
+    // console.log(price, 'price')
+    // console.log(sellPrice, 'sellPrice')
 
     
     setSellPrice(sellPrice);
@@ -139,15 +139,15 @@ function Trade(props) {
       if (event) {
         event.preventDefault();
       }
-      console.log(currentProductPrice, typeof currentProductPrice, 'currentProductPrice')
-      console.log(currentProductId, 'currentProductId')
-      console.log(currentProduct, 'currentProduct')
-      console.log(qidp, 'qidp')
-      console.log(qidp_int, 'qidp_int')
-      console.log(bidp, 'bidp')
-      console.log(bidp_int, 'bidp_int')
-      console.log(price_rounding, 'price_rounding')
-      console.log(amount_rounding, 'amount_rounding')
+      // console.log(currentProductPrice, typeof currentProductPrice, 'currentProductPrice')
+      // console.log(currentProductId, 'currentProductId')
+      // console.log(currentProduct, 'currentProduct')
+      // console.log(qidp, 'qidp')
+      // console.log(qidp_int, 'qidp_int')
+      // console.log(bidp, 'bidp')
+      // console.log(bidp_int, 'bidp_int')
+      // console.log(price_rounding, 'price_rounding')
+      // console.log(amount_rounding, 'amount_rounding')
       // check if the current price has been stored and is a number to prevent NaN errors
       if (currentProductPrice && typeof currentProductPrice === 'number') {
         // round the price to nearest 100
@@ -156,7 +156,7 @@ function Trade(props) {
         // const roundedPrice = currentProductPrice;
         // const roundedPrice = Math.round(currentProductPrice / price_rounding) * price_rounding;
         const roundedPrice = Math.round(currentProductPrice * price_rounding) / price_rounding;
-        console.log(roundedPrice, 'roundedPrice')
+        // console.log(roundedPrice, 'roundedPrice')
         // change input box to reflect rounded value
         setTransactionPrice(roundedPrice)
       }
