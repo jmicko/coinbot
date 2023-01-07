@@ -1,63 +1,51 @@
-import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useEffect, useRef, useState } from 'react';
+// import { useSelector } from 'react-redux';
 import { useSocket } from '../../contexts/SocketProvider';
 import './Meter.css'
 
 
 function Meter(props) {
   // const dispatch = useDispatch();
-  const [difference, setDifference] = useState(1);
-  const [segmentMap, setSegmentMap] = useState();
+  // const [difference, setDifference] = useState(1);
+  const difference = (props.max - props.min).toFixed(0);
+  // const [segmentMap, setSegmentMap] = useState();
   const socket = useSocket();
-  // const tickers = useSelector((store) => store.statusReducer.tickers);
+  const canvasRef = useRef(null);
 
+  // draw a meter bar on the canvas
   useEffect(() => {
-    // do not make these calculations unless there are props coming in
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // set the height and width of the meter bar
+    const height = 65;
+    const width = 8;
+
+    // set the canvas height and width
+    canvas.height = height;
+    canvas.width = width;
+
     if (props.max > 0 && props.min >= 0) {
 
-      // let difference = (props.max - props.min).toFixed(0);
-      setDifference((props.max - props.min).toFixed(0));
       let adjustedCurrent = socket.tickers[props.product]?.price - props.min;
 
       // this is the important number
       let percentage = ((adjustedCurrent / difference) * 100).toFixed(0);
 
-      // start an empty array to store the segments of the meter bar
-      let segments = []
-      for (let i = 0; i < 100; i++) {
-        const element = i;
-        segments.unshift({ id: i, percentage })
-      }
+      // draw the meter bar
+      // the bottom will be green and take up the percentage of the meter bar that is the percentage value
+      // the top will be red and take up the top part of the meter bar
+      ctx.fillStyle = "rgb(125, 209, 132)";
+      ctx.fillRect(0, height - (height * (percentage / 100)), width, height * (percentage / 100));
+      ctx.fillStyle = "rgb(167, 119, 92)";
+      ctx.fillRect(0, 0, width, height - (height * (percentage / 100)));
 
-      // use the array to map out segment components. They will just be stacked
-      setSegmentMap(segments.map(seg => {
-        return (
-          <Segment key={seg.id} id={seg.id} percentage={seg.percentage} />
-        )
-      }))
     }
-  }, [props, socket.tickers[props.product]?.price])
 
-  function Segment(props) {
-    return (
-      <div
-      // compare the segment to the percentage, and set the background color accordingly
-        className={
-          props.id < props.percentage
-            ? "black-segment segment"
-            : "white-segment segment"
-        }
-      >
-      </div>
-    )
-  }
-
-
+  }, [props, socket.tickers, difference])
 
   return (
-    <div className="Meter">
-      {props.max > 0 && segmentMap}
-    </div>
+    <canvas className="Meter" ref={canvasRef} />
   )
 }
 
