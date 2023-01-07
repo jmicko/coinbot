@@ -45,10 +45,17 @@ export function DataProvider({ children }) {
     // yield put({ type: 'UNSET_PROFITS' });
   }
 
+  async function login(payload) {
+    console.log(payload, 'payload in login')
+    // hit the login POST route
+    await fetch('/api/user/login', {...userConfig, method: 'POST', body: JSON.stringify(payload)})
+    refreshUser()
+  }
+
   return (
     <DataContext.Provider
       value={
-        { user, userLoading, userError, refreshUser, logout }
+        { user, userLoading, userError, refreshUser, logout, login }
       }>
       {children}
     </DataContext.Provider>

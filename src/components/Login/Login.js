@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useData } from '../../contexts/DataContext';
 import './Login.css'
 
 
@@ -12,19 +13,22 @@ function Login() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const dispatch = useDispatch();
   const errors = useSelector((store) => store.errorsReducer);
+  const { login } = useData();
+
 
   function loginAccount(event) {
     event.preventDefault();
     // send login credentials
     // console.log('logging in user');
     if (username && password) {
-      dispatch({
-        type: 'LOGIN',
-        payload: {
-          username: username,
-          password: password,
-        },
-      });
+      // dispatch({
+      //   type: 'LOGIN',
+      //   payload: {
+      //     username: username,
+      //     password: password,
+      //   },
+      // });
+      login({ username, password });
     } else {
       // this.props.dispatch({ type: 'LOGIN_INPUT_ERROR' });
       console.log('problem: put in your cred');
