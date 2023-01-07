@@ -19,7 +19,9 @@ function Home() {
   const user = useSelector((store) => store.accountReducer.userReducer);
   const { height, width } = useWindowDimensions();
   const socket = useSocket();
-  const data = useData();
+  // const data = useData();
+
+  const { refreshUser } = useData();
 
   const [product, setProduct] = useState('BTC-USD');
   const [showSettings, setShowSettings] = useState(false);
@@ -72,9 +74,21 @@ function Home() {
     getProducts();
   }, []);
 
+  // data.refreshUser();
 
   return (
     <div className={`Home ${user.theme}`}>
+      {/* button to refresh user data */}
+      {/* <button onClick={refreshUser}>Refresh User</button> */}
+      {/* {JSON.stringify(data)} */}
+      {/* map a JSON string for each key in data.user on it's own line */}
+       {/* {Object.keys(data.user).map((key) => {
+        return <p key={key}>
+          {key}: {JSON.stringify(data.user[key])}
+        </p>
+      })} */}
+
+
       {/* {JSON.stringify(socket.product)}{JSON.stringify(product)} */}
       <Menu clickSettings={clickSettings} product={product} setProduct={handleProductChange} />
 
