@@ -42,7 +42,7 @@ function TradeList(props) {
       // });
     }
 
-  }, [openOrdersInOrder.sells, openOrdersInOrder.buys]);
+  }, [openOrdersInOrder.sells, openOrdersInOrder.buys, props.product]);
 
   const robotRef = useRef()
 
