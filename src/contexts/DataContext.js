@@ -4,12 +4,17 @@ import { useFetchData } from '../hooks/fetchData'
 
 const DataContext = createContext()
 
+const userConfig = {
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
+};
+
 export function DataProvider({ children }) {
   // const [data, setData] = useState(null)
   // const [user, setUser] = useState(null)
   // const [isLoading, setIsLoading] = useState(true)
   // const [error, setError] = useState(null)
-  const { data: user, isLoading: userLoading, error: userError, refreshData: refreshUser, clearData: clearUser } = useFetchData('/api/user', { defaultState: {} })
+  const { data: user, isLoading: userLoading, error: userError, refreshData: refreshUser, clearData: clearUser } = useFetchData('/api/user', { defaultState: {}, config: userConfig })
 
 
 
@@ -26,7 +31,8 @@ export function DataProvider({ children }) {
   }, [refreshUser, user])
 
   async function logout() {
-    await fetch('/api/user/logout')
+    // hit the logout POST route
+    await fetch('/api/user/logout', {...userConfig, method: 'POST'})
     clearUser()
     // here is a list of things from the old saga that will need to be migrated
     // yield put({ type: 'CLEAR_LOGIN_ERROR' });
