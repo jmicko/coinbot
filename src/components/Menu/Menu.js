@@ -1,11 +1,17 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useData } from '../../contexts/DataContext';
 import './Menu.css'
 
 function Menu(props) {
   const dispatch = useDispatch();
-  const user = useSelector((store) => store.accountReducer.userReducer);
   const products = useSelector((store) => store.accountReducer.productsReducer);
+  const { logout, user } = useData();
+
+  function handleLogout() {
+    // dispatch({ type: 'LOGOUT' })
+    logout();
+  }
 
   
   // if products.activeProducts changes, the selected product will be set to the first product in the list
@@ -40,7 +46,7 @@ function Menu(props) {
         {process.env.NODE_ENV === 'development' && user.admin && <button className={`btn-blue btn-logout ${user.theme}`} onClick={() => dispatch({ type: 'TEST' })}>Test</button>}
         {/* add dropdown selector */}
         <button className={`btn-blue btn-logout ${user.theme}`} onClick={() => { props.clickSettings() }}>Settings</button>
-        <button className={`btn-blue btn-logout ${user.theme}`} onClick={() => dispatch({ type: 'LOGOUT' })}>Log Out</button>
+        <button className={`btn-blue btn-logout ${user.theme}`} onClick={handleLogout}>Log Out</button>
       </div>
     </div>
 

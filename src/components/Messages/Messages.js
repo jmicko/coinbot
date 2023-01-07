@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useData } from '../../contexts/DataContext';
 import { useSocket } from '../../contexts/SocketProvider';
 import './Messages.css'
 
@@ -7,7 +8,7 @@ import './Messages.css'
 function Messages() {
   const dispatch = useDispatch();
   const socket = useSocket();
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  const { user } = useData();
   const botMessages = useSelector((store) => store.accountReducer.botMessages);
   const botErrors = useSelector((store) => store.errorsReducer.botErrors);
   const chatMessages = useSelector((store) => store.accountReducer.chatMessages);

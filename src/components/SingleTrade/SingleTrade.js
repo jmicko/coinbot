@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
+import { useData } from '../../contexts/DataContext';
 import { useProductDecimals } from '../../hooks/useProductDecimals';
 import './SingleTrade.css'
 
 function SingleTrade(props) {
   const dispatch = useDispatch();
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  const {user} = useData();
   const [profit, setProfit] = useState(0);
   const [deleting, setDeleting] = useState(false);
   const [showAll, setShowAll] = useState(false);

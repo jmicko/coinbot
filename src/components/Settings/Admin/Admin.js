@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useData } from '../../../contexts/DataContext';
 import Confirm from '../../Confirm/Confirm';
 import SingleUser from '../../SingleUser/SingleUser';
 import './Admin.css'
@@ -7,7 +8,7 @@ import './Admin.css'
 
 function Admin(props) {
   const dispatch = useDispatch();
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  const { user } = useData();
   const allSettings = useSelector((store) => store.settingsReducer.allSettingsReducer);
   const allUsers = useSelector((store) => store.usersReducer.allUsersReducer);
 

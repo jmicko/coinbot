@@ -6,6 +6,7 @@ import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 import './Trade.css';
 import IncrementButtons from './IncrementButtons';
 import { numberWithCommas } from '../../shared';
+import { useData } from '../../contexts/DataContext';
 
 
 function Trade(props) {
@@ -36,7 +37,7 @@ function Trade(props) {
   const [basicAmount, setBasicAmount] = useState(0);
   const [basicSide, setBasicSide] = useState('BUY');
   const dispatch = useDispatch();
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  const { user } = useData();
   const socket = useSocket();
   const [initialPriceSet, setInitialPriceSet] = useState(false);
 
@@ -69,7 +70,7 @@ function Trade(props) {
   // calculate New Position values every time a number in the calculator changes
   useEffect(() => {
 
-    
+
     let sellPrice = (price * (Number(tradePairRatio) + 100)) / 100;
     let priceMargin = sellPrice - price;
     let volumeCostBuy = price * transactionAmountBTC;
@@ -84,7 +85,7 @@ function Trade(props) {
     // console.log(price, 'price')
     // console.log(sellPrice, 'sellPrice')
 
-    
+
     setSellPrice(sellPrice);
     setPriceMargin(priceMargin);
     setVolumeCostBuy(volumeCostBuy);
@@ -318,12 +319,12 @@ function Trade(props) {
                 onChange={(event) => setTradePairRatio(Number(event.target.value))}
               />
               <IncrementButtons
-                  firstButton={0.001}
-                  roundTo={3}
-                  currentValue={tradePairRatio}
-                  changeValue={setTradePairRatio}
-                  theme={user.theme}
-                />
+                firstButton={0.001}
+                roundTo={3}
+                currentValue={tradePairRatio}
+                changeValue={setTradePairRatio}
+                theme={user.theme}
+              />
               <input className={`btn-send-trade btn-blue ${user.theme}`} type="submit" name="submit" value="Start New Trade-Pair" />
             </div>
 

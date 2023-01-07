@@ -6,11 +6,12 @@ import coinbotFilled from "../../../src/coinbotFilled.png";
 // import coinbotFilledGif from "../../../src/coinbotFilled.gif";
 import './TradeList.css'
 import Meter from '../Meter/Meter';
+import { useData } from '../../contexts/DataContext';
 
 
 function TradeList(props) {
   const socket = useSocket();
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  const { user } = useData();
   const openOrdersInOrder = useSelector((store) => store.ordersReducer.openOrdersInOrder);
 
   // these will store mapped arrays as html so they can be used after page loads

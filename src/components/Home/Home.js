@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import Trade from '../Trade/Trade.js';
 import Messages from '../Messages/Messages.js';
 import Menu from '../Menu/Menu'
@@ -16,7 +16,6 @@ import { useData } from '../../contexts/DataContext.js';
 
 function Home() {
   const dispatch = useDispatch();
-  // const user = useSelector((store) => store.accountReducer.userReducer);
   const { height, width } = useWindowDimensions();
   const socket = useSocket();
   // const data = useData();

@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useData } from '../../../contexts/DataContext';
 import { numberWithCommas } from '../../../shared';
 import './Products.css'
 
 
 function Products(props) {
   const dispatch = useDispatch();
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  const { user } = useData();
   const products = useSelector((store) => store.accountReducer.productsReducer);
 
   const [max_trade_load, setMaxTradeLoad] = useState(100);

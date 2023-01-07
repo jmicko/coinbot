@@ -30,5 +30,11 @@ export function useFetchData(url, {defaultState}) {
     fetchData()
   }
 
-  return [data, isLoading, error, refreshData]
+  function clearData() {
+    setData(defaultState)
+    setIsLoading(false)
+    setError(null)
+  }
+
+  return {data, isLoading, error, refreshData, clearData}
 }

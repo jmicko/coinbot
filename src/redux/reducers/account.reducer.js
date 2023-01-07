@@ -1,17 +1,5 @@
 import { combineReducers } from 'redux';
 
-const userReducer = (state = {}, action) => {
-  switch (action.type) {
-    case 'SET_USER':
-      // console.log('setting user', action.payload);
-      return action.payload;
-    case 'UNSET_USER':
-      return {};
-    default:
-      return state;
-  }
-};
-
 // reducer for holding the user's products
 const productsReducer = (state = [], action) => {
   switch (action.type) {
@@ -35,17 +23,6 @@ const profitsReducer = (state = [{ sum: "0" }], action) => {
   }
 };
 
-// does this do anything?
-// const accountReducer = (state = 0, action) => {
-//   switch (action.type) {
-//     case 'SET_ACCOUNT':
-//       return action.payload;
-//     case 'UNSET_ACCOUNT':
-//       return 0;
-//     default:
-//       return state;
-//   }
-// };
 
 const xlsxReducer = (state = [], action) => {
   switch (action.type) {
@@ -144,7 +121,7 @@ const simulationReducer = (state = { status: 'idle' }, action) => {
 
 
 export default combineReducers({
-  userReducer,
+  // userReducer,
   // feeReducer,
   profitsReducer,
   productsReducer,

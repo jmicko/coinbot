@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useData } from '../../contexts/DataContext';
 import { useSocket } from '../../contexts/SocketProvider';
 import { numberWithCommas } from '../../shared';
 import './Status.css'
@@ -7,7 +8,7 @@ import './Status.css'
 
 function Status(props) {
   const dispatch = useDispatch();
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  const { user } = useData();
   const socket = useSocket();
   const profitsReducer = useSelector((store) => store.accountReducer.profitsReducer);
   const openOrdersInOrder = useSelector((store) => store.ordersReducer.openOrdersInOrder);
@@ -69,11 +70,11 @@ function Status(props) {
       <center onClick={() => { setProfitDisplay(profitDisplay + 1) }}>
         {<p className="info status-ticker">
           {/* {JSON.stringify(profitsReducer[profitDisplay])} */}
-            <strong>{profitsReducer[profitDisplay]?.duration} Profit</strong>
-            <br />
-            ${numberWithCommas(Number(profitsReducer[profitDisplay]?.productProfit).toFixed(profitAccuracy))} /
-            ${numberWithCommas(Number(profitsReducer[profitDisplay]?.allProfit).toFixed(profitAccuracy))}
-          </p>
+          <strong>{profitsReducer[profitDisplay]?.duration} Profit</strong>
+          <br />
+          ${numberWithCommas(Number(profitsReducer[profitDisplay]?.productProfit).toFixed(profitAccuracy))} /
+          ${numberWithCommas(Number(profitsReducer[profitDisplay]?.allProfit).toFixed(profitAccuracy))}
+        </p>
         }
       </center>
 

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
+import { useData } from '../../../contexts/DataContext';
 import Confirm from '../../Confirm/Confirm';
 import './Reset.css'
 
 
 function Reset(props) {
   const dispatch = useDispatch();
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  const { user } = useData();
 
   const [deleting, setDeleting] = useState(false);
 

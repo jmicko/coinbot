@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import {  useDispatch, useSelector } from 'react-redux';
+import {  useDispatch } from 'react-redux';
+import { useData } from '../../../contexts/DataContext';
 import './Investment.css'
 
 
 function Investment(props) {
   const dispatch = useDispatch();
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  const { user } = useData();
 
   const [reinvest_ratio, setReinvest_ratio] = useState(0);
   const [reserve, setReserve] = useState(0);

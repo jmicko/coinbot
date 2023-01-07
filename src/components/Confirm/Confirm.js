@@ -1,9 +1,9 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
+import { useData } from '../../contexts/DataContext';
 import './Confirm.css';
 
 function Confirm(props) {
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  const { user } = useData();
 
   return (
     <div className={`Confirm`}>

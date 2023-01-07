@@ -9,7 +9,9 @@ export function DataProvider({ children }) {
   // const [user, setUser] = useState(null)
   // const [isLoading, setIsLoading] = useState(true)
   // const [error, setError] = useState(null)
-  const [user, userLoading, userError, refreshUser] = useFetchData('/api/user', { defaultState: {} })
+  const { data: user, isLoading: userLoading, error: userError, refreshData: refreshUser, clearData: clearUser } = useFetchData('/api/user', { defaultState: {} })
+
+
 
   useEffect(() => {
 
@@ -23,8 +25,25 @@ export function DataProvider({ children }) {
     }
   }, [refreshUser, user])
 
+  async function logout() {
+    await fetch('/api/user/logout')
+    clearUser()
+    // here is a list of things from the old saga that will need to be migrated
+    // yield put({ type: 'CLEAR_LOGIN_ERROR' });
+    // yield put({ type: 'CLEAR_REGISTRATION_ERROR' });
+    // yield put({ type: 'CLEAR_BOT_ERRORS' });
+    // yield put({ type: 'CLEAR_API_ERROR' });
+    // yield put({ type: 'UNSET_USER' }); ======== DONE
+    // yield put({ type: 'UNSET_ORDERS' });
+    // yield put({ type: 'UNSET_ACCOUNT' });
+    // yield put({ type: 'UNSET_PROFITS' });
+  }
+
   return (
-    <DataContext.Provider value={{ user, userLoading, userError, refreshUser }}>
+    <DataContext.Provider
+      value={
+        { user, userLoading, userError, refreshUser, logout }
+      }>
       {children}
     </DataContext.Provider>
   )

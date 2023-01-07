@@ -3,10 +3,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import './History.css'
 import xlsx from 'json-as-xlsx'
 import { granularities } from '../../../shared';
+import { useData } from '../../../contexts/DataContext';
 
 function History(props) {
   const dispatch = useDispatch();
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  const { user } = useData();
   const xlsxReducer = useSelector((store) => store.accountReducer.xlsxReducer);
   const currentJSONReducer = useSelector((store) => store.accountReducer.currentJSONReducer);
   const exportFilesReducer = useSelector((store) => store.accountReducer.exportFilesReducer);
