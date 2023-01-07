@@ -62,11 +62,11 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
     // get exporting value from userStorage
     const exporting = userStorage[req.user.id].exporting;
     req.user.exporting = exporting;
-    
+
     // get simulating value from userStorage
     const simulating = userStorage[req.user.id].simulating;
     req.user.simulating = simulating;
-    
+
     // console.log('simulating', req.user);
 
   } catch (err) {
@@ -81,7 +81,29 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
 // is that the password gets encrypted before being inserted
 router.post('/register', userCount, async (req, res, next) => {
   const username = req.body.username;
-  const password = encryptLib.encryptPassword(req.body.password);
+  const pass = req.body.password;
+  console.log('registering user', username, pass);
+  if (
+    !username ||
+    !pass ||
+    username !== username.toLowerCase() ||
+    pass !== pass.toLowerCase() ||
+    username.includes(' ') ||
+    pass.includes(' ') ||
+    username.includes('\'') ||
+    pass.includes('\'') ||
+    username.includes('\"') ||
+    pass.includes('\"') ||
+    username.includes('`') ||
+    pass.includes('`') ||
+    username.includes('!')
+
+  ) {
+    res.sendStatus(403);
+    return;
+  }
+
+  const password = encryptLib.encryptPassword(pass);
   try {
     let adminCount = await anyAdmins();
     let user;

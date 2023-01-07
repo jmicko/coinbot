@@ -32,7 +32,7 @@ export function DataProvider({ children }) {
 
   async function logout() {
     // hit the logout POST route
-    await fetch('/api/user/logout', {...userConfig, method: 'POST'})
+    await fetch('/api/user/logout', { ...userConfig, method: 'POST' })
     clearUser()
     // here is a list of things from the old saga that will need to be migrated
     // yield put({ type: 'CLEAR_LOGIN_ERROR' });
@@ -48,14 +48,22 @@ export function DataProvider({ children }) {
   async function login(payload) {
     console.log(payload, 'payload in login')
     // hit the login POST route
-    await fetch('/api/user/login', {...userConfig, method: 'POST', body: JSON.stringify(payload)})
+    await fetch('/api/user/login', { ...userConfig, method: 'POST', body: JSON.stringify(payload) })
     refreshUser()
   }
+
+  async function registerNew(payload) {
+    console.log(payload, 'payload in register')
+    // hit the register POST route
+    await fetch('/api/user/register', { headers: { 'Content-Type': 'application/json' }, method: 'POST', body: JSON.stringify(payload) })
+    login(payload);
+  }
+
 
   return (
     <DataContext.Provider
       value={
-        { user, userLoading, userError, refreshUser, logout, login }
+        { user, userLoading, userError, refreshUser, logout, login, registerNew }
       }>
       {children}
     </DataContext.Provider>

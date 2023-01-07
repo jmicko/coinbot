@@ -13,7 +13,7 @@ function Login() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const dispatch = useDispatch();
   const errors = useSelector((store) => store.errorsReducer);
-  const { login } = useData();
+  const { login, registerNew } = useData();
 
 
   function loginAccount(event) {
@@ -21,13 +21,6 @@ function Login() {
     // send login credentials
     // console.log('logging in user');
     if (username && password) {
-      // dispatch({
-      //   type: 'LOGIN',
-      //   payload: {
-      //     username: username,
-      //     password: password,
-      //   },
-      // });
       login({ username, password });
     } else {
       // this.props.dispatch({ type: 'LOGIN_INPUT_ERROR' });
@@ -45,13 +38,14 @@ function Login() {
     // console.log('registering new user');
     // send registration stuff
     if (username && password && confirmPassword && (password === confirmPassword)) {
-      dispatch({
-        type: 'REGISTER',
-        payload: {
-          username: username,
-          password: password,
-        },
-      });
+      // dispatch({
+      //   type: 'REGISTER',
+      //   payload: {
+      //     username: username,
+      //     password: password,
+      //   },
+      // });
+      registerNew({ username, password });
     } else {
       dispatch({ type: 'REGISTRATION_INPUT_ERROR' });
       console.log('problem: put in your cred');

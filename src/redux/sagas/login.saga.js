@@ -88,9 +88,9 @@ function* logoutUser(action) {
 }
 
 function* loginSaga() {
-  yield takeLatest('LOGIN', loginUser);
-  yield takeLatest('REGISTER', registerUser);
-  yield takeLatest('LOGOUT', logoutUser);
+  // yield takeLatest('LOGIN', loginUser);
+  // yield takeLatest('REGISTER', registerUser);
+  // yield takeLatest('LOGOUT', logoutUser);
 }
 
 export default loginSaga;
