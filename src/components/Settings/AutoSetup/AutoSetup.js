@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useData } from '../../../contexts/DataContext';
+import { useUser } from '../../../contexts/UserContext';
 import { useSocket } from '../../../contexts/SocketProvider';
 import { useProductDecimals } from '../../../hooks/useProductDecimals';
 import { autoSetup, numberWithCommas } from '../../../shared';
@@ -11,7 +11,7 @@ import './AutoSetup.css'
 
 function AutoSetup(props) {
   const dispatch = useDispatch();
-  const { user } = useData();
+  const { user } = useUser();
   const simulationReducer = useSelector((store) => store.accountReducer.simulationReducer);
   const socket = useSocket();
 

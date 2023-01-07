@@ -6,7 +6,7 @@ import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 import './Trade.css';
 import IncrementButtons from './IncrementButtons';
 import { numberWithCommas } from '../../shared';
-import { useData } from '../../contexts/DataContext';
+import { useUser } from '../../contexts/UserContext';
 
 
 function Trade(props) {
@@ -37,7 +37,7 @@ function Trade(props) {
   const [basicAmount, setBasicAmount] = useState(0);
   const [basicSide, setBasicSide] = useState('BUY');
   const dispatch = useDispatch();
-  const { user } = useData();
+  const { user } = useUser();
   const socket = useSocket();
   const [initialPriceSet, setInitialPriceSet] = useState(false);
 

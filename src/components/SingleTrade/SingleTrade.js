@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useData } from '../../contexts/DataContext';
+import { useUser } from '../../contexts/UserContext';
 import { useProductDecimals } from '../../hooks/useProductDecimals';
 import './SingleTrade.css'
 
 function SingleTrade(props) {
   const dispatch = useDispatch();
-  const {user} = useData();
+  const { user } = useUser();
   const [profit, setProfit] = useState(0);
   const [deleting, setDeleting] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -16,7 +16,7 @@ function SingleTrade(props) {
   const decimals = useProductDecimals(product, user.availableFunds);
 
 
-// decimals.baseIncrement
+  // decimals.baseIncrement
 
   useEffect(() => {
     // calculate all the numbers when the component renders
@@ -102,7 +102,7 @@ function SingleTrade(props) {
             ? numberWithCommas(Number(props.order.original_buy_price).toFixed(decimals.quoteIncrement))
             : numberWithCommas(Number(props.order.original_sell_price).toFixed(decimals.quoteIncrement))
           } ~<strong>Size </strong>{Number(props.order.base_size).toFixed(decimals.baseIncrement)} {!props.preview && <>~</>}
-          {!props.preview ? <strong>Value</strong >:<strong>/</strong >} ${numberWithCommas((Math.round((props.order.limit_price * props.order.base_size) * decimals.quoteMultiplier) / decimals.quoteMultiplier).toFixed(decimals.quoteIncrement))} ~
+          {!props.preview ? <strong>Value</strong > : <strong>/</strong >} ${numberWithCommas((Math.round((props.order.limit_price * props.order.base_size) * decimals.quoteMultiplier) / decimals.quoteMultiplier).toFixed(decimals.quoteIncrement))} ~
           <strong>Net Profit</strong> ${profit.toFixed(8)}
           {/* <strong> ~Time</strong> {new Date(props.order.created_at).toLocaleString('en-US')} */}
           {!props.preview && <strong> ~Time </strong>} {!props.preview && (props.order.flipped_at

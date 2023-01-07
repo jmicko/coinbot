@@ -1,9 +1,9 @@
 import React from 'react';
-import { useData } from '../../contexts/DataContext';
+import { useUser } from '../../contexts/UserContext';
 import './Confirm.css';
 
 function Confirm(props) {
-  const { user } = useData();
+  const { user } = useUser();
 
   return (
     <div className={`Confirm`}>

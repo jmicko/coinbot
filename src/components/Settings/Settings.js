@@ -9,14 +9,14 @@ import History from './History/History';
 import './Settings.css'
 import SettingsNav from './SettingsNav/SettingsNav';
 import BulkDelete from './BulkDelete/BulkDelete';
-import { useData } from '../../contexts/DataContext';
+import { useUser } from '../../contexts/UserContext';
 
 
 
 function Settings(props) {
   const [settingsPage, setSettingsPage] = useState('general');
   const [tips, setTips] = useState(false);
-  const { user } = useData();
+  const { user } = useUser();
 
 
 

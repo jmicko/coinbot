@@ -1,10 +1,10 @@
 import React from 'react';
-import { useData } from '../../../contexts/DataContext';
+import { useUser } from '../../../contexts/UserContext';
 import './SettingsNav.css'
 
 
 function SettingsNav(props) {
-  const { user } = useData();
+  const { user } = useUser();
 
   return (
     <div className="SettingsNav">

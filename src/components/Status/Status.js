@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useData } from '../../contexts/DataContext';
 import { useSocket } from '../../contexts/SocketProvider';
+import { useUser } from '../../contexts/UserContext';
 import { numberWithCommas } from '../../shared';
 import './Status.css'
 
 
 function Status(props) {
   const dispatch = useDispatch();
-  const { user } = useData();
+  const { user } = useUser();
   const socket = useSocket();
   const profitsReducer = useSelector((store) => store.accountReducer.profitsReducer);
   const openOrdersInOrder = useSelector((store) => store.ordersReducer.openOrdersInOrder);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useData } from '../../contexts/DataContext';
+import { useUser } from '../../contexts/UserContext';
 import './Login.css'
 
 
@@ -13,7 +13,7 @@ function Login() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const dispatch = useDispatch();
   const errors = useSelector((store) => store.errorsReducer);
-  const { login, registerNew } = useData();
+  const { login, registerNew } = useUser();
 
 
   function loginAccount(event) {

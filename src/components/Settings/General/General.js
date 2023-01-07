@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useData } from '../../../contexts/DataContext';
+import { useUser } from '../../../contexts/UserContext';
 import './General.css'
 
 
 function General(props) {
   const dispatch = useDispatch();
-  const { user } = useData();
+  const { user } = useUser();
 
   const [max_trade_load, setMaxTradeLoad] = useState(100);
   const [profit_accuracy, setProfit_accuracy] = useState(2);

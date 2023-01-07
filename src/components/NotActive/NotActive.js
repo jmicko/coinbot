@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import permissions from "../../../src/permissions.png";
-import { useData } from '../../contexts/DataContext';
+import { useUser } from '../../contexts/UserContext';
 import './NotActive.css';
 
 
 function NotActive() {
   const dispatch = useDispatch();
-  const { user } = useData();
+  const { user } = useUser();
   const errors = useSelector((store) => store.errorsReducer.apiMessage);
 
   const [key, setKey] = useState('');

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useData } from '../../contexts/DataContext';
+import { useUser } from '../../contexts/UserContext';
 import Confirm from '../Confirm/Confirm';
 import './SingleUser.css'
 
 function SingleUser(props) {
   const dispatch = useDispatch();
-  const user = useData();
+  const { user } = useUser();
   const debugReducer = useSelector((store) => store.accountReducer.debugReducer);
   const [deleting, setDeleting] = useState(false);
   const [approving, setApproving] = useState(false);

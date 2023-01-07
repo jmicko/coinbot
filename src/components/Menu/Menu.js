@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useData } from '../../contexts/DataContext';
+import { useUser } from '../../contexts/UserContext';
 import './Menu.css'
 
 function Menu(props) {
   const dispatch = useDispatch();
   const products = useSelector((store) => store.accountReducer.productsReducer);
-  const { logout, user } = useData();
+  const { logout, user } = useUser();
 
   function handleLogout() {
     // dispatch({ type: 'LOGOUT' })

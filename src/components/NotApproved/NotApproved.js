@@ -1,12 +1,12 @@
 import React from 'react';
-import { useData } from '../../contexts/DataContext';
+import { useUser } from '../../contexts/UserContext';
 import './NotApproved.css'
 
 
 
 
 function NotApproved() {
-  const { user } = useData();
+  const { user } = useUser();
 
   return (
     <div className="NotApproved scrollable boxed">

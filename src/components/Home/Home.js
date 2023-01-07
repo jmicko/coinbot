@@ -12,15 +12,15 @@ import NotActive from '../NotActive/NotActive.js';
 import MobileNav from '../MobileNav/MobileNav.js';
 import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 import { useSocket } from '../../contexts/SocketProvider.js';
-import { useData } from '../../contexts/DataContext.js';
+import { useUser } from '../../contexts/UserContext.js';
 
 function Home() {
   const dispatch = useDispatch();
   const { height, width } = useWindowDimensions();
   const socket = useSocket();
-  // const data = useData();
+  // const data = useUser();
 
-  const { user, refreshUser } = useData();
+  const { user, refreshUser } = useUser();
 
   const [product, setProduct] = useState('BTC-USD');
   const [showSettings, setShowSettings] = useState(false);

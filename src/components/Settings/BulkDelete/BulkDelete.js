@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useData } from '../../../contexts/DataContext';
+import { useUser } from '../../../contexts/UserContext';
 import './BulkDelete.css'
 
 
 function BulkDelete(props) {
   const dispatch = useDispatch();
-  const { user } = useData();
+  const { user } = useUser();
 
   const [lowerLimit, setLowerLimit] = useState(0);
   const [upperLimit, setUpperLimit] = useState(0);

@@ -1,9 +1,9 @@
 import React from 'react';
-import { useData } from '../../contexts/DataContext';
+import { useUser } from '../../contexts/UserContext';
 import './MobileNav.css'
 
 function MobileNav(props) {
-  const { user } = useData();
+  const { user } = useUser();
   return (
     <div className={`MobileNav dark ${user.theme}`}>
       <div className="MobileNav-buttons">

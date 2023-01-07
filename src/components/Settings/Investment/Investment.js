@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import {  useDispatch } from 'react-redux';
-import { useData } from '../../../contexts/DataContext';
+import { useDispatch } from 'react-redux';
+import { useUser } from '../../../contexts/UserContext';
 import './Investment.css'
 
 
 function Investment(props) {
   const dispatch = useDispatch();
-  const { user } = useData();
+  const { user } = useUser();
 
   const [reinvest_ratio, setReinvest_ratio] = useState(0);
   const [reserve, setReserve] = useState(0);
