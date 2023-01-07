@@ -16,12 +16,12 @@ import { useData } from '../../contexts/DataContext.js';
 
 function Home() {
   const dispatch = useDispatch();
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  // const user = useSelector((store) => store.accountReducer.userReducer);
   const { height, width } = useWindowDimensions();
   const socket = useSocket();
   // const data = useData();
 
-  const { refreshUser } = useData();
+  const { user, refreshUser } = useData();
 
   const [product, setProduct] = useState('BTC-USD');
   const [showSettings, setShowSettings] = useState(false);

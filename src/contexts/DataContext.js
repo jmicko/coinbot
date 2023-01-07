@@ -9,7 +9,11 @@ export function DataProvider({ children }) {
   // const [user, setUser] = useState(null)
   // const [isLoading, setIsLoading] = useState(true)
   // const [error, setError] = useState(null)
-  const [user, userLoading, userError, refreshUser] = useFetchData('/api/user')
+  const [user, userLoading, userError, refreshUser] = useFetchData('/api/user', {
+    defaultState: {
+      // theme: 'dark',
+    }
+  })
 
   useEffect(() => {
     // async function fetchData() {
@@ -29,8 +33,15 @@ export function DataProvider({ children }) {
     // fetchData()
 
     // get user data on component load
-    console.log('==============useEffect in data context==============')
-    if (!user && !userLoading && !userError) {
+    console.log(user, '==============useEffect in data context==============')
+    // check if user is an empty object
+    // if (user && Object.keys(user).length === 0) {
+    //   console.log('==============empty object==============')
+    //   refreshUser()
+    // }
+
+
+    if (user && Object.keys(user).length === 0 && !userLoading && !userError) {
       console.log('==============refreshing user==============')
       refreshUser()
     }

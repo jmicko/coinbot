@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 
-export function useFetchData(url) {
-  const [data, setData] = useState(null)
+export function useFetchData(url, {defaultState}) {
+  const [data, setData] = useState(defaultState)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -16,6 +16,7 @@ export function useFetchData(url) {
       setIsLoading(true)
       const response = await fetch(url)
       const data = await response.json()
+      console.log(data, 'fetched data')
       setData(data)
       setIsLoading(false)
       setError(null)
