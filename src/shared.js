@@ -103,8 +103,8 @@ function autoSetup(user, options) {
       valid: false,
       cost: cost,
       orderList: [],
-      btcToBuy: (btcToBuy / decimals.baseMultiplier),   
-      
+      btcToBuy: (btcToBuy / decimals.baseMultiplier),
+
       lastBuyPrice: buyPrice,
       options: options,
       quoteToReserve: 0,
@@ -158,41 +158,6 @@ function autoSetup(user, options) {
 
     let actualSize = getActualSize();
 
-    // get the actual size in base currency of the trade
-    function getActualSize() {
-      // if sizeCurve is curve, use the bellCurve
-      const newSize = (sizeCurve === 'curve')
-        // adjust the size based on the curve
-        ? curvedSize()
-        // else leave the size alone
-        : size;
-
-      function curvedSize() {
-        // if the increment type is percentage, convert it to a number
-        // this is the same as the increment in the bellCurve, which is a dollar amount
-        const newIncrement = incrementType === 'percentage'
-          ? increment * buyPrice
-          : increment
-
-        // this will adjust the size based on where the buy price is on a curve
-        return bellCurve({
-          maxSize: maxSize - size,
-          minSize: size,
-          increment: newIncrement,
-          steepness: steepness,
-          buyPrice: buyPrice,
-          tradingPrice: tradingPrice,
-        })
-      }
-
-      if (sizeType === 'quote') {
-        // if the size is in quote, convert it to base
-        return Number(Math.floor((newSize / buyPrice) * decimals.baseMultiplier)) / decimals.baseMultiplier
-      } else {
-        // if the size is in base, it will not change. 
-        return newSize
-      }
-    }
 
     // count up how much base currency will need to be purchased to reserve for all the sell orders
     if (side === 'SELL') {
@@ -285,6 +250,42 @@ function autoSetup(user, options) {
 
     // stop if run out of funds unless user specifies to ignore that
     stopChecker();
+  }
+
+  // get the actual size in base currency of the trade
+  function getActualSize() {
+    // if sizeCurve is curve, use the bellCurve
+    const newSize = (sizeCurve === 'curve')
+      // adjust the size based on the curve
+      ? curvedSize()
+      // else leave the size alone
+      : size;
+
+    function curvedSize() {
+      // if the increment type is percentage, convert it to a number
+      // this is the same as the increment in the bellCurve, which is a dollar amount
+      const newIncrement = incrementType === 'percentage'
+        ? increment * buyPrice
+        : increment
+
+      // this will adjust the size based on where the buy price is on a curve
+      return bellCurve({
+        maxSize: maxSize - size,
+        minSize: size,
+        increment: newIncrement,
+        steepness: steepness,
+        buyPrice: buyPrice,
+        tradingPrice: tradingPrice,
+      })
+    }
+
+    if (sizeType === 'quote') {
+      // if the size is in quote, convert it to base
+      return Number(Math.floor((newSize / buyPrice) * decimals.baseMultiplier)) / decimals.baseMultiplier
+    } else {
+      // if the size is in base, it will not change. 
+      return newSize
+    }
   }
 
   // console.log(quoteToReserve, 'quoteToReserve');
