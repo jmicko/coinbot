@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSocket } from '../../../contexts/SocketProvider';
 import { useProductDecimals } from '../../../hooks/useProductDecimals';
-import { autoSetup, calculateProductDecimals, numberWithCommas } from '../../../shared';
+import { autoSetup, numberWithCommas } from '../../../shared';
 import Graph from '../../Graph/Graph';
 import SingleTrade from '../../SingleTrade/SingleTrade';
 import './AutoSetup.css'
@@ -128,7 +128,7 @@ function AutoSetup(props) {
     }, [
     user,
     availableFundsUSD,
-    socket.tickers[props.product].price,
+    socket.tickers,
     startingValue,
     endingValue,
     ignoreFunds,
@@ -151,11 +151,11 @@ function AutoSetup(props) {
   }, [startingValue, endingValue, increment, base_size, sizeType, skipFirst, sizeCurve, maxSize, steepness, calculateResults])
 
   useEffect(() => {
-    if (user) {
+    if (user?.availableFunds?.[props.product]?.quote_available) {
       setAvailableFundsUSD(user.availableFunds?.[props.product]?.quote_available);
       setAvailableFundsBase(user.availableFunds?.[props.product]?.base_available);
     }
-  }, [user]);
+  }, [user.availableFunds, props.product])
 
   // on component unmount, unset the simulation reducer
   useEffect(() => {
