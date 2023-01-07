@@ -169,6 +169,9 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
   // POST route code here
   const user = req.user;
   if (user.active && user.approved) {
+    // get the user available funds
+    const funds = userStorage[user.id].getAvailableFunds();
+    user.availableFunds = funds;
     let options = req.body;
     let setup = autoSetup(user, options)
     // console.log('setup is:', setup);
@@ -330,10 +333,15 @@ router.post('/simulation', rejectUnauthenticated, async (req, res) => {
     // tell client to update user
     messenger[req.user.id].userUpdate();
 
-    console.log('simulation route hit', userStorage[req.user.id]);
+    const user = req.user;
+
+    const funds = userStorage[user.id].getAvailableFunds();
+    user.availableFunds = funds;
+
+    // console.log('simulation route hit', userStorage[req.user.id]);
 
     const workerData = {
-      user: req.user,
+      user: user,
       options: req.body
     }
 

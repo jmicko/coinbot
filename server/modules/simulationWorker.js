@@ -12,14 +12,14 @@ process.on("message", async (data) => {
 });
 
 async function optimize(data) {
-  console.log(data, 'data');
+  // console.log(data, 'data');
   const options = data.options;
   const user = data.user;
 
   // modify the user object to contain the sim data
   user.reinvest_ratio = options.simReinvestPercent;
   user.reinvest = options.simReinvest;
-  user.availableFunds = { quote_available: 1000 }
+  // user.availableFunds = { quote_available: 1000 }
 
   // get the initial price by getting the first candle from the db for the simStartDate
   // first turn the simStartDate into a unix timestamp
@@ -33,7 +33,7 @@ async function optimize(data) {
   // start the pair percentage at 0.1
   options.trade_pair_ratio = 0.1;
   // options.trade_pair_ratio = 2;
-  console.log(options, 'options after setting trade_pair_ratio to 0');
+  // console.log(options, 'options after setting trade_pair_ratio to 0');
 
   simData = {
     candles: candles,
@@ -87,6 +87,9 @@ async function runSimulation(data) {
   const feeRate = Number(user.maker_fee);
   const candles = data.candles;
 
+  const product = user.availableFunds[options.product_id];
+
+  options.product = product;
 
   // console.log('simStartDate', simStartDate);
   // get all candles after the simStartDate
