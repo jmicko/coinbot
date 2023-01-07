@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useData } from '../../contexts/DataContext';
 import Confirm from '../Confirm/Confirm';
 import './SingleUser.css'
 
 function SingleUser(props) {
   const dispatch = useDispatch();
-  const userReducer = useSelector((store) => store.accountReducer.userReducer);
+  const user = useData();
   const debugReducer = useSelector((store) => store.accountReducer.debugReducer);
   const [deleting, setDeleting] = useState(false);
   const [approving, setApproving] = useState(false);
@@ -54,8 +55,8 @@ function SingleUser(props) {
 
   return (
     <div className={`Single-trade`}>
-      <button className={`btn-blue expand-single-trade ${userReducer.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>
-      {showAll && <button className={`btn-blue expand-single-trade ${userReducer.theme}`} onClick={debug}>debug</button>}
+      <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>
+      {showAll && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={debug}>debug</button>}
       {deleting && <Confirm execute={deleteUser} ignore={cancelDeleteUser} />}
       <div className={"overlay"}>
         {/* Delete a user */}
