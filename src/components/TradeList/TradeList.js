@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, } from 'react';
 import { useSelector } from 'react-redux';
 import { useSocket } from '../../contexts/SocketProvider';
 import SingleTrade from '../SingleTrade/SingleTrade'
@@ -34,34 +34,26 @@ function TradeList(props) {
       setBuys(openOrdersInOrder.buys.map((buy) => {
         return <SingleTrade key={buy.order_id} order={buy} product={props.product} />
       }))
-      // dispatch({
-      //   type: 'SET_SCROLL',
-      //   payload: {
-      //     canScroll: true
-      //   }
-      // });
     }
-
   }, [openOrdersInOrder.sells, openOrdersInOrder.buys, props.product]);
 
   const robotRef = useRef()
+  const canScrollRef = useRef(true);
 
-  const scrollToRobot = () => {
-    robotRef.current.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-  };
-
-  // let alreadyScrolled = false
-
+  // set the canScrollRef to the value of props.isAutoScroll
   useEffect(() => {
-    // if (!props.store.settingsReducer.scrollingReducer.canScroll || props.isAutoScroll) {
-    if (props.isAutoScroll) {
-      scrollToRobot();
+    canScrollRef.current = props.isAutoScroll;
+  }, [props.isAutoScroll]);
+
+  // scroll to the robot when the canScrollRef is true
+  useEffect(() => {
+    if (canScrollRef.current) {
+      robotRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
     }
-    // triggered on buys because they will load last
-  }, [buys])
+  }, [buys]);
 
 
   return (
@@ -89,12 +81,10 @@ function TradeList(props) {
           </div>
         </div>
 
-
         {user.botMaintenance
           ? <strong className='red'>~~~UNDER MAINTENANCE~~~</strong>
           : <img className="coinbot-image" src={coinbotFilled} alt="coinbot" />
         }
-
 
         {lowestSell !== 0 && highestBuy >= 0
           ? <center><p><strong>Margin</strong><br />${(lowestSell - highestBuy).toFixed(2)}</p></center>
