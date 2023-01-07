@@ -56,6 +56,20 @@ function autoSetup(user, options) {
   // console.log(product_id, 'product_id')
   // console.log(options.user, options.availableFunds, 'user')
   const available = user.availableFunds[product_id];
+
+  if (!available) {
+    return {
+      valid: false,
+      cost: 0,
+      orderList: [],
+      btcToBuy: 0,
+      lastBuyPrice: 0,
+      options: options,
+      quoteToReserve: 0,
+      buyCount: 0,
+      sellCount: 0,
+    }
+  }
   // console.log(available, 'available')
   const decimals = calculateProductDecimals(available);
   // console.log(decimals, 'decimals')
@@ -343,9 +357,9 @@ function autoSetup(user, options) {
 function calculateProductDecimals(product) {
 
   // console.log(product, '=====================product=====================');
-  const baseIncrement = findDecimals(product.base_increment);
+  const baseIncrement = findDecimals(product?.base_increment);
   // console.log(baseIncrement, 'baseIncrement');
-  const quoteIncrement = findDecimals(product.quote_increment);
+  const quoteIncrement = findDecimals(product?.quote_increment);
   // console.log(quoteIncrement, 'quoteIncrement');
   // a 1 with baseIncrement number of 0s
   const baseMultiplier = Math.pow(10, baseIncrement);

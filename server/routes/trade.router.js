@@ -348,11 +348,27 @@ router.post('/simulation', rejectUnauthenticated, async (req, res) => {
     // res.sendStatus(200);
 
     // start a child process to run the simulation
-    const simulationWorker = fork('./server/modules/simulationWorker.js');
+    // get the path
+    const path = __dirname;
+    console.log('path', path);
+
+    const simulationWorker = fork(path + '../../../src/workers/simulationWorker.js');
     simulationWorker.send(workerData);
     // when the worker sends a message back, send it to the client
     simulationWorker.on('message', (message) => {
       console.log('message from simulationWorker', message);
+
+      if (!message.valid) {
+        console.log('simulation was not valid');
+        res.sendStatus(400);
+        // set user to not simulating
+        userStorage[req.user.id].simulating = false;
+        // tell client to update user
+        messenger[req.user.id].userUpdate();
+        // kill the worker after it sends the message
+        simulationWorker.kill();
+        return;
+      }
 
       messenger[req.user.id].newMessage({
         type: 'simulationResults',

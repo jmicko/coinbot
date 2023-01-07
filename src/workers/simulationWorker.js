@@ -1,6 +1,6 @@
-const { autoSetup, sleep } = require("../../src/shared");
-const databaseClient = require("./databaseClient");
-const { flipTrade } = require("./robot");
+const { autoSetup, sleep } = require("../shared");
+const databaseClient = require("../../server/modules/databaseClient");
+const { flipTrade } = require("../../server/modules/robot");
 const { v4: uuidv4 } = require('uuid');
 
 // receive data from the parent process
@@ -43,9 +43,15 @@ async function optimize(data) {
 
   // run the simulation until the pair ratio is 20, incrementing by 0.1 each time
   while (options.trade_pair_ratio <= 20) {
-  // while (options.trade_pair_ratio <= 2) {
+    // while (options.trade_pair_ratio <= 2) {
     // run the simulation
     const simResult = await runSimulation(simData);
+
+    if(!simResult.valid) {
+      console.log(simResult, 'invalid sim result');
+      return { valid: false, message: 'Invalid simulation result' };
+    }
+
     // create an object with the pair ratio and the profit
     const result = {
       pairRatio: options.trade_pair_ratio.toFixed(1),
@@ -76,7 +82,7 @@ async function optimize(data) {
   // console.log('bestPairRatio', bestPairRatio);
 
 
-  return { simResults, bestPairRatio };
+  return { simResults, bestPairRatio, valid: true };
 }
 
 
@@ -97,6 +103,13 @@ async function runSimulation(data) {
   // the open price of the first candle is the tradingPrice for auto setup
   options.tradingPrice = Number(candles[0].open);
   // console.log('simulation options:', user, options);
+
+  // need to have user.availableFunds[product_id] valid for autoSetup
+
+  if (!user.availableFunds[options.product_id]) {
+    console.log('no available funds for product_id');
+    return { valid: false, profit: 0 };
+  }
 
   // run the auto setup to get the initial orderList
   const initialSetup = autoSetup(user, options);
@@ -156,7 +169,7 @@ async function runSimulation(data) {
   }
 
   // return the data to the parent process
-  return { profit };
+  return { valid: true, profit };
 
 
   async function flipTriggeredOrders(triggeredOrders, user) {
@@ -182,7 +195,7 @@ async function runSimulation(data) {
       // add the original_buy_price and original_sell_price to the sell order
       flippedOrder.original_buy_price = originalOrder.original_buy_price;
       flippedOrder.original_sell_price = originalOrder.original_sell_price;
-      
+
       // if it is flipping a sell, need to calculate the profit
       if (originalOrder.side === 'SELL') {
         // calculate the profit

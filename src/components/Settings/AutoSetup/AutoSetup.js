@@ -600,7 +600,7 @@ function AutoSetup(props) {
                 &nbsp;<button className={`btn-store-api btn-green medium ${user.theme}`} onClick={
                   (event) => {
                     event.preventDefault();
-                    setTradePairRatio(simulationReducer.result.bestPairRatio.pairRatio);
+                    setTradePairRatio(simulationReducer?.result?.bestPairRatio?.pairRatio);
                   }
                 }>Use It!</button>
               </p>

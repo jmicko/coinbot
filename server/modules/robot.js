@@ -160,11 +160,15 @@ async function syncOrders(userID) {
       await updateMultipleOrders(userID);
       // console.log('success!!!!!!');
       // update funds after everything has been processed
-      await updateFunds(userID);
-
+      // await updateFunds(userID);
+      
     } else {
       // if the user is not active or is paused, loop every 5 seconds
       await sleep(5000);
+    }
+    // update funds if the user is all of the above except for maintenance
+    if (user?.active && user?.approved && !botSettings.maintenance) {
+    await updateFunds(userID);
     }
   } catch (err) {
     MainLoopErrors(userID, err);
