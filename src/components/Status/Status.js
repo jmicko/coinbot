@@ -53,7 +53,7 @@ function Status(props) {
       setOpenSellsQuantity(openOrdersInOrder.counts.totalOpenSells.count)
       setOpenBuysQuantity(openOrdersInOrder.counts.totalOpenBuys.count)
     }
-  }, [openOrdersInOrder.counts]);
+  }, [openOrdersInOrder.counts, openOrdersInOrder.sells, openOrdersInOrder.buys]);
 
   useEffect(() => {
     if (profitDisplay > 4) {
