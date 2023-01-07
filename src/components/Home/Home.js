@@ -12,12 +12,14 @@ import NotActive from '../NotActive/NotActive.js';
 import MobileNav from '../MobileNav/MobileNav.js';
 import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 import { useSocket } from '../../contexts/SocketProvider.js';
+import { useData } from '../../contexts/DataContext.js';
 
 function Home() {
   const dispatch = useDispatch();
   const user = useSelector((store) => store.accountReducer.userReducer);
   const { height, width } = useWindowDimensions();
   const socket = useSocket();
+  const data = useData();
 
   const [product, setProduct] = useState('BTC-USD');
   const [showSettings, setShowSettings] = useState(false);

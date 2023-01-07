@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import Home from '../Home/Home';
 import Login from '../Login/Login';
 import { SocketProvider } from '../../contexts/SocketProvider';
+import { DataProvider } from '../../contexts/DataContext';
 
 function App() {
   const dispatch = useDispatch();
@@ -20,15 +21,17 @@ function App() {
 
 
   return (
-    <div className={`App darkTheme`}>
-      {user.id
-        ?
-        < SocketProvider >
-          <Home />
-        </SocketProvider>
-        : <Login />
-      }
-    </div >
+    <DataProvider >
+      <div className={`App darkTheme`}>
+        {user.id
+          ?
+          < SocketProvider >
+            <Home />
+          </SocketProvider>
+          : <Login />
+        }
+      </div >
+    </DataProvider>
   );
 }
 
