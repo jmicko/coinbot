@@ -1,5 +1,5 @@
 // UserContext.js
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect } from 'react'
 import { useFetchData } from '../hooks/fetchData'
 
 const UserContext = createContext()
@@ -10,24 +10,15 @@ const userConfig = {
 };
 
 export function UserProvider({ children }) {
-  // const [data, setData] = useState(null)
-  // const [user, setUser] = useState(null)
-  // const [isLoading, setIsLoading] = useState(true)
-  // const [error, setError] = useState(null)
-  const { data: user, isLoading: userLoading, error: userError, refreshData: refreshUser, clearData: clearUser } = useFetchData('/api/user', { defaultState: {}, config: userConfig })
-
+  const { data: user, isLoading: userLoading, error: userError, refresh: refreshUser, clear: clearUser } = useFetchData('/api/user', { defaultState: {}, config: userConfig })
 
   useEffect(() => {
-
-    // get user data on component load
-    console.log(user, '==============useEffect in user context==============')
-
     // check if user is an empty object
     if (user && Object.keys(user).length === 0 && !userLoading && !userError) {
-      console.log('+++++++++++++++++refreshing user+++++++++++++++++')
+      // console.log('+++++++++++++++++refreshing user+++++++++++++++++')
       refreshUser()
     }
-  }, [refreshUser, user])
+  }, [refreshUser, user, userError, userLoading])
 
   async function logout() {
     // hit the logout POST route

@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import './App.css';
 
 // Directory imports
 import Home from '../Home/Home';
 import Login from '../Login/Login';
 import { SocketProvider } from '../../contexts/SocketProvider';
-import { DataProvider, useData } from '../../contexts/DataContext';
+import { DataProvider } from '../../contexts/DataContext';
 import { UserProvider, useUser } from '../../contexts/UserContext';
 
 function App() {
@@ -13,7 +13,7 @@ function App() {
   // if not, redirect to login page
   function CheckUser() {
 
-    const { user, refreshUser } = useUser();
+    const { user } = useUser();
     // const { data } = useData();
     console.log(user, 'user in checkuser');
     return (

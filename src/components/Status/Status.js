@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useData } from '../../contexts/DataContext';
 import { useSocket } from '../../contexts/SocketProvider';
 import { useUser } from '../../contexts/UserContext';
 import { numberWithCommas } from '../../shared';
@@ -11,7 +12,8 @@ function Status(props) {
   const { user } = useUser();
   const socket = useSocket();
   const profitsReducer = useSelector((store) => store.accountReducer.profitsReducer);
-  const openOrdersInOrder = useSelector((store) => store.ordersReducer.openOrdersInOrder);
+  const {orders} = useData();
+  const openOrdersInOrder = orders;
   const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
   const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);

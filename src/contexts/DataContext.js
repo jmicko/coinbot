@@ -1,74 +1,59 @@
 // DataContext.js
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { useFetchData } from '../hooks/fetchData'
+// import { useUser } from './UserContext';
 
 const DataContext = createContext()
 
-const userConfig = {
-  headers: { 'Content-Type': 'application/json' },
-  withCredentials: true,
-};
+// const config = {
+//   headers: { 'Content-Type': 'application/json' },
+//   withCredentials: true,
+// };
 
 export function DataProvider({ children }) {
-  // const [data, setData] = useState(null)
-  // const [user, setUser] = useState(null)
-  // const [isLoading, setIsLoading] = useState(true)
-  // const [error, setError] = useState(null)
-  const [productID, setProductID] = useState('BTC-USD');
-  // const { data: user, isLoading: userLoading, error: userError, refreshData: refreshUser, clearData: clearUser } = useFetchData('/api/user', { defaultState: {}, config: userConfig })
-  const { data: orders, isLoading: ordersLoading, error: ordersError, refreshData: refreshOrders, clearData: clearOrders } = useFetchData(`/api/orders/${productID}`, { defaultState: [] })
+  // const { user } = useUser();
+  const [productID, setProductID] = useState(null);
+  const { data: products, refresh: refreshProducts, isLoading: loadingProducts, error: productsError } = useFetchData('/api/account/products', { defaultState: {} })
+  const { data: orders, refresh: refreshOrders } = useFetchData(`/api/orders/${productID}`, { defaultState: {} })
+
+  // get products on component load
+  useEffect(() => {
+    // check if products is an empty object
+    if (products && Object.keys(products).length === 0 && !loadingProducts && !productsError) {
+      console.log('+++++++++++++++++refreshing products+++++++++++++++++')
+      refreshProducts()
+    }
+  }, [products, loadingProducts, productsError, refreshProducts])
 
 
-  // useEffect(() => {
 
-  //   // get user data on component load
-  //   console.log(user, '==============useEffect in data context==============')
+  // create a ref to the orders refresh function so that it doesn't need to be a dependency
+  const ordersRefresh = useRef();
+  // update the ref.current value to the latest function
 
-  //   // check if user is an empty object
-  //   if (user && Object.keys(user).length === 0 && !userLoading && !userError) {
-  //     console.log('+++++++++++++++++refreshing user+++++++++++++++++')
-  //     refreshUser()
-  //   }
-  // }, [refreshUser, 
-  //   user
-  // ])
+  useEffect(() => {
+    console.log(productID, '++++++++++++++++UPDATING ORDERS URL WHEN ID CHANGED++++++++++++++++')
+    ordersRefresh.current = refreshOrders;
+  }, [refreshOrders, productID]);
 
-  // async function logout() {
-  //   // hit the logout POST route
-  //   await fetch('/api/user/logout', { ...userConfig, method: 'POST' })
-  //   clearUser()
-  //   // here is a list of things from the old saga that will need to be migrated
-  //   // yield put({ type: 'CLEAR_LOGIN_ERROR' });
-  //   // yield put({ type: 'CLEAR_REGISTRATION_ERROR' });
-  //   // yield put({ type: 'CLEAR_BOT_ERRORS' });
-  //   // yield put({ type: 'CLEAR_API_ERROR' });
-  //   // yield put({ type: 'UNSET_USER' }); ======== DONE
-  //   // yield put({ type: 'UNSET_ORDERS' });
-  //   // yield put({ type: 'UNSET_ACCOUNT' });
-  //   // yield put({ type: 'UNSET_PROFITS' });
-  // }
+  // refresh orders when productID changes
+  useEffect(() => {
+    if (productID !== null && productID !== undefined) {
+      console.log(productID, '+++++++++++++++++PRODUCT CHANGED+++++++++++++++++')
+      ordersRefresh.current();
+    }
+  }, [productID])
 
-  // async function login(payload) {
-  //   console.log(payload, 'payload in login')
-  //   // hit the login POST route
-  //   await fetch('/api/user/login', { ...userConfig, method: 'POST', body: JSON.stringify(payload) })
-  //   refreshUser()
-  // }
 
-  // async function registerNew(payload) {
-  //   console.log(payload, 'payload in register')
-  //   // hit the register POST route
-  //   await fetch('/api/user/register', { headers: { 'Content-Type': 'application/json' }, method: 'POST', body: JSON.stringify(payload) })
-  //   login(payload);
-  // }
 
 
   return (
     <DataContext.Provider
       value={
-        { 
-          // user, userLoading, userError, refreshUser, logout, login, registerNew,
-          orders, ordersLoading, ordersError, refreshOrders, clearOrders }
+        {
+          productID, setProductID,
+          orders, products,
+        }
       }>
       {children}
     </DataContext.Provider>

@@ -55,7 +55,7 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
 
 /** GET route to get user products from db **/
 router.get('/products', rejectUnauthenticated, async (req, res) => {
-  console.log('get products route hit');
+  console.log(req.user.username, 'get products route hit+++++++++++++++++++++++++++++');
   const userID = req.user.id;
   try {
     // get active products from db
@@ -68,7 +68,10 @@ router.get('/products', rejectUnauthenticated, async (req, res) => {
     }
     // get all products from db
     let allProducts = await databaseClient.getUserProducts(userID);
-    res.send({ activeProducts, allProducts });
+    // console.log(activeProducts.length, 'active products');
+    const products = { activeProducts, allProducts }
+    // console.log(products, 'products');
+    res.send(products).status(200);
   }
   catch (err) {
     console.log(err, 'error getting products');

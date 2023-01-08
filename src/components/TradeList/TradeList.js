@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, } from 'react';
-import { useSelector } from 'react-redux';
+
 import { useSocket } from '../../contexts/SocketProvider';
 import SingleTrade from '../SingleTrade/SingleTrade'
 import coinbotFilled from "../../../src/coinbotFilled.png";
@@ -7,13 +7,13 @@ import coinbotFilled from "../../../src/coinbotFilled.png";
 import './TradeList.css'
 import Meter from '../Meter/Meter';
 import { useUser } from '../../contexts/UserContext';
+import { useData } from '../../contexts/DataContext';
 
 
 function TradeList(props) {
   const socket = useSocket();
   const { user } = useUser();
-  const openOrdersInOrder = useSelector((store) => store.ordersReducer.openOrdersInOrder);
-
+  const { orders } = useData();
   // these will store mapped arrays as html so they can be used after page loads
   const [buys, setBuys] = useState(<></>);
   const [sells, setSells] = useState(<></>);
@@ -24,19 +24,19 @@ function TradeList(props) {
 
   // this watches the store and maps arrays to html when it changes because can't map nothing
   useEffect(() => {
-    if (openOrdersInOrder.sells !== undefined) {
-      setLowestSell(Number(openOrdersInOrder.sells[0]?.limit_price || 0))
-      setSells(openOrdersInOrder.sells.slice(0).reverse().map((sell) => {
+    if (orders.sells !== undefined) {
+      setLowestSell(Number(orders.sells[0]?.limit_price || 0))
+      setSells(orders.sells.slice(0).reverse().map((sell) => {
         return <SingleTrade key={sell.order_id} order={sell} product={props.product} />
       }))
     }
-    if (openOrdersInOrder.buys !== undefined) {
-      setHighestBuy(Number(openOrdersInOrder.buys[0]?.limit_price || 0))
-      setBuys(openOrdersInOrder.buys.map((buy) => {
+    if (orders.buys !== undefined) {
+      setHighestBuy(Number(orders.buys[0]?.limit_price || 0))
+      setBuys(orders.buys.map((buy) => {
         return <SingleTrade key={buy.order_id} order={buy} product={props.product} />
       }))
     }
-  }, [openOrdersInOrder.sells, openOrdersInOrder.buys, props.product]);
+  }, [orders, orders.sells, orders.buys, props.product]);
 
   const robotRef = useRef()
   const canScrollRef = useRef(true);
@@ -92,6 +92,7 @@ function TradeList(props) {
           : <p>No Sells!</p>
         }
       </div>
+      {/* {JSON.stringify(orders)} */}
       {buys}
     </div>
   )

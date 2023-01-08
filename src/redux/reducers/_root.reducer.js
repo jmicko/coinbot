@@ -1,7 +1,6 @@
 import { combineReducers } from 'redux';
 import statusReducer from './status.reducer';
 import accountReducer from './account.reducer';
-import ordersReducer from './orders.reducer';
 import usersReducer from './users.reducer';
 import settingsReducer from './settings.reducer';
 import errorsReducer from './errors.reducer';
@@ -16,7 +15,6 @@ import errorsReducer from './errors.reducer';
 const rootReducer = combineReducers({
   statusReducer,
   accountReducer,
-  ordersReducer,
   usersReducer,
   settingsReducer,
   errorsReducer,
