@@ -11,7 +11,7 @@ import { useData } from '../../contexts/DataContext';
 
 
 function Trade(props) {
-
+// console.log('rendering trade');
   // todo - default price value should automatically start out at the current price
   // of bitcoin, rounded to the closest $100
   // const [transactionSide, setTransactionSide] = useState('BUY');

@@ -2,18 +2,6 @@ import { put, takeLatest } from 'redux-saga/effects';
 import axios from 'axios';
 
 
-function* fetchOrders(action) {
-  try {
-    // console.log(action.payload, 'payload');
-    const response = yield axios.get(`/api/orders/${action?.payload?.product || ''}`);
-    yield put({ type: 'SET_ORDERS', payload: response.data })
-  } catch (error) {
-    console.log('GET orders route has failed', error);
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
 
 function* syncOrders() {
   try {
@@ -74,7 +62,6 @@ function* deleteOrder(action) {
 }
 
 function* orderSaga() {
-  yield takeLatest('FETCH_ORDERS', fetchOrders);
   yield takeLatest('SYNC_ORDERS', syncOrders);
   yield takeLatest('DELETE_ALL_ORDERS', deleteAllOrders);
   yield takeLatest('DELETE_ALL_PRODUCT_ORDERS', deleteAllOrdersForProduct);

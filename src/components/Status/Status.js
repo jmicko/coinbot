@@ -8,6 +8,7 @@ import './Status.css'
 
 
 function Status(props) {
+  // console.log('rendering status');
   const dispatch = useDispatch();
   const { user, refreshUser } = useUser();
   const socket = useSocket();

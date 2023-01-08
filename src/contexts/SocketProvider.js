@@ -1,5 +1,5 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { useDispatch } from 'react-redux';
+import React, { useContext, useEffect, useRef, useState } from 'react'
+// import { useDispatch } from 'react-redux';
 // import { useSelector } from 'react-redux';
 import io from "socket.io-client";
 import { useData } from './DataContext';
@@ -17,10 +17,28 @@ export function SocketProvider({ children }) {
   const [socket, setSocket] = useState();
   const [socketStatus, setSocketStatus] = useState('closed');
   const { refreshUser } = useUser();
-  const { product, refreshProfits, refreshOrders, refreshProducts } = useData();
+  const { products, refreshProfits, refreshOrders, refreshProducts } = useData();
   const [tickers, setTickers] = useState({ "BTC-USD": { price: 0 }, "ETH-USD": { price: 0 } });
   const [heartbeat, setHeartbeat] = useState({ heart: 'heart', beat: 'beat', count: 0 });
-  const dispatch = useDispatch();
+  // const dispatch = useDispatch();
+
+  // // create ref for refreshOrders, refreshProfits, refreshProducts, refreshUser, and product
+  const refreshOrdersRef = useRef();
+  const refreshProfitsRef = useRef();
+  const refreshProductsRef = useRef();
+  const refreshUserRef = useRef();
+  const productRef = useRef();
+
+  // // update the refs when the functions change
+  useEffect(() => {
+    refreshOrdersRef.current = refreshOrders;
+    refreshProfitsRef.current = refreshProfits;
+    refreshProductsRef.current = refreshProducts;
+    refreshUserRef.current = refreshUser;
+    productRef.current = products;
+  }, [refreshOrders, refreshProfits, refreshProducts, refreshUser, products]);
+
+
   // useEffect to prevent from multiple connections
   useEffect(() => {
     // check if on dev server or build, and set endpoint appropriately
@@ -59,38 +77,39 @@ export function SocketProvider({ children }) {
       }
       // handle errors
       if (message.type === 'error') {
-        dispatch({ type: 'FETCH_BOT_ERRORS' });
+        // dispatch({ type: 'FETCH_BOT_ERRORS' });
       }
       // handle messages
       if (message.type === 'messageUpdate' || message.type === 'chat' || message.type === 'general') {
-        dispatch({ type: 'FETCH_BOT_MESSAGES' });
+        // dispatch({ type: 'FETCH_BOT_MESSAGES' });
       }
       // fetch orders if orderUpdate
       if (message.orderUpdate) {
-        refreshOrders();
+        // refreshOrders();
+        refreshOrdersRef.current();
       }
       // fetch products if productUpdate
       if (message.productUpdate) {
-        refreshProducts();
+        refreshProductsRef.current();
       }
       if (message.profitUpdate || message.orderUpdate) {
-        refreshProfits();
+        refreshProfitsRef.current();
 
       }
       if (message.userUpdate) {
-        refreshUser();
+        refreshUserRef.current();
       }
       if (message.fileUpdate) {
         console.log('file update in socket provider')
-        dispatch({ type: 'FETCH_EXPORT_FILES' });
-        dispatch({ type: 'FETCH_USER' });
+        // dispatch({ type: 'FETCH_EXPORT_FILES' });
+        // dispatch({ type: 'FETCH_USER' });
       }
       if (message.type === 'simulationResults') {
         console.log(message.data, 'simulation results in socket provider')
-        dispatch({
-          type: 'SET_SIMULATION_RESULT',
-          payload: message.data
-        });
+        // dispatch({
+        //   type: 'SET_SIMULATION_RESULT',
+        //   payload: message.data
+        // });
       }
 
     });
@@ -120,12 +139,20 @@ export function SocketProvider({ children }) {
     // save the new socket and close the old one
     setSocket(newSocket);
     return () => {
+      console.log('closing socket')
       clearInterval(ping);
       newSocket.off('message')
       newSocket.off('connect_error')
       newSocket.close();
     }
-  }, [dispatch, product, refreshOrders, refreshProfits, refreshProducts, refreshUser]);
+  }, [
+    // products,
+    // refreshOrders, 
+    // refreshProfits,
+    //  refreshProducts, 
+    // refreshUser
+    productRef, refreshOrdersRef, refreshProfitsRef, refreshProductsRef, refreshUserRef
+  ]);
 
 
   return (

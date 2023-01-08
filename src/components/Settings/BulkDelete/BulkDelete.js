@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { useData } from '../../../contexts/DataContext';
 import { useUser } from '../../../contexts/UserContext';
 import './BulkDelete.css'
 
@@ -7,6 +8,7 @@ import './BulkDelete.css'
 function BulkDelete(props) {
   const dispatch = useDispatch();
   const { user } = useUser();
+  const { syncOrders} = useData();
 
   const [lowerLimit, setLowerLimit] = useState(0);
   const [upperLimit, setUpperLimit] = useState(0);
@@ -48,7 +50,7 @@ function BulkDelete(props) {
         This will delete all open orders from coinbase and replace them based on the trades stored in the
         database. It can sometimes fix issues that cause repeated errors, and may take a few minutes to complete.
       </p>}
-      <button className={`btn-blue medium ${user.theme}`} onClick={() => dispatch({ type: 'SYNC_ORDERS' })}>Sync All Trades</button>
+      <button className={`btn-blue medium ${user.theme}`} onClick={syncOrders}>Sync All Trades</button>
 
       {/* DELETE RANGE */}
       <div className="divider" />

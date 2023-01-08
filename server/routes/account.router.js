@@ -148,8 +148,15 @@ router.get('/profit/:product', rejectUnauthenticated, async (req, res) => {
 /**
 * PUT route to reset profits
 */
-router.put('/profit/:product', rejectUnauthenticated, async (req, res) => {
+router.put('/profit', rejectUnauthenticated, async (req, res) => {
   console.log('reset profit route');
+  // get the object keys
+
+  console.assert(process.env.NODE_ENV === 'development', process.env , 'reset profit route should only be used in development');
+  Object.keys(process.env).forEach(key => {
+    console.log(key, 'key');
+  });
+
   const profit_reset = new Date();
   const userID = req.user.id;
   const queryText = `UPDATE "limit_orders" SET "include_in_profit" = false WHERE "userID"=$1 AND "settled"=true;`;
