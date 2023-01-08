@@ -37,10 +37,7 @@ export function usePostData(url, data, { defaultState, config, notNull }) {
     }
   }
 
-  const postDataCallback = useCallback(
-    postData
-    , [url, config]
-  )
+  const postDataCallback = useCallback(postData, [url, config])
 
   // check if any of the notNull values are null or undefined
   function checkFailure() {

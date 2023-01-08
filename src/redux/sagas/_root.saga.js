@@ -3,7 +3,6 @@ import tradeSaga from './trade.saga';
 import accountSaga from './account.saga';
 import orderSaga from './order.saga';
 import userSaga from './user.saga';
-import loginSaga from './login.saga';
 import settingsSaga from './settings.saga';
 
 // rootSaga is the primary saga.
@@ -19,7 +18,6 @@ export default function* rootSaga() {
       accountSaga(),
       orderSaga(),
       userSaga(),
-      loginSaga(),
       settingsSaga(),
   ]);
 }
