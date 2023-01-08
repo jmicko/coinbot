@@ -113,7 +113,7 @@ router.put('/products', rejectUnauthenticated, async (req, res) => {
 /**
 * GET route to get total profit estimate
 */
-router.get('/profits/:product', rejectUnauthenticated, async (req, res) => {
+router.get('/profit/:product', rejectUnauthenticated, async (req, res) => {
   console.log('profits get route');
   const userID = req.user.id;
   const product = req.params.product;
@@ -142,6 +142,27 @@ router.get('/profits/:product', rejectUnauthenticated, async (req, res) => {
   } catch (err) {
     console.log(err, 'error in profits route:');
     res.sendStatus(500)
+  }
+});
+
+/**
+* PUT route to reset profits
+*/
+router.put('/profit/:product', rejectUnauthenticated, async (req, res) => {
+  console.log('reset profit route');
+  const profit_reset = new Date();
+  const userID = req.user.id;
+  const queryText = `UPDATE "limit_orders" SET "include_in_profit" = false WHERE "userID"=$1 AND "settled"=true;`;
+  const timeQuery = `UPDATE "user_settings" SET "profit_reset" = $1 WHERE "userID" = $2;`
+  try {
+    await pool.query(queryText, [userID]);
+    await pool.query(timeQuery, [profit_reset, userID]);
+
+    await userStorage[userID].update();
+    res.sendStatus(200);
+  } catch (err) {
+    console.log(err, 'problem resetting profit');
+    res.sendStatus(500);
   }
 });
 
@@ -580,26 +601,6 @@ router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
   }
 });
 
-/**
-* POST route to reset profits
-*/
-router.post('/resetProfit', rejectUnauthenticated, async (req, res) => {
-  console.log('reset profit route');
-  const profit_reset = new Date();
-  const userID = req.user.id;
-  const queryText = `UPDATE "limit_orders" SET "include_in_profit" = false WHERE "userID"=$1 AND "settled"=true;`;
-  const timeQuery = `UPDATE "user_settings" SET "profit_reset" = $1 WHERE "userID" = $2;`
-  try {
-    await pool.query(queryText, [userID]);
-    await pool.query(timeQuery, [profit_reset, userID]);
-
-    await userStorage[userID].update();
-    res.sendStatus(200);
-  } catch (err) {
-    console.log(err, 'problem resetting profit');
-    res.sendStatus(500);
-  }
-});
 
 /**
 * POST route to store API details

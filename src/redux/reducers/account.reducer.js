@@ -1,28 +1,5 @@
 import { combineReducers } from 'redux';
 
-// reducer for holding the user's products
-// const productsReducer = (state = [], action) => {
-//   switch (action.type) {
-//     case 'SET_PRODUCTS':
-//       return action.payload;
-//     case 'UNSET_PRODUCTS':
-//       return [];
-//     default:
-//       return state;
-//   }
-// };
-
-const profitsReducer = (state = [{ sum: "0" }], action) => {
-  switch (action.type) {
-    case 'SET_PROFITS':
-      return action.payload;
-    case 'UNSET_PROFITS':
-      return [{ sum: "0" }];
-    default:
-      return state;
-  }
-};
-
 
 const xlsxReducer = (state = [], action) => {
   switch (action.type) {
@@ -123,7 +100,7 @@ const simulationReducer = (state = { status: 'idle' }, action) => {
 export default combineReducers({
   // userReducer,
   // feeReducer,
-  profitsReducer,
+  // profitsReducer,
   // productsReducer,
   // accountReducer,
   xlsxReducer,
