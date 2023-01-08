@@ -2,20 +2,6 @@ import { put, takeLatest } from 'redux-saga/effects';
 import axios from 'axios';
 
 
-
-function* fetchProfits(action) {
-  try {
-    // send the product id as a query parameter
-    const response = yield axios.get(`/api/account/profits/${action.payload.product}`);
-    yield put({ type: 'SET_PROFITS', payload: response.data })
-  } catch (error) {
-    // console.log('GET profits route has failed', error);
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
-
 // get all products
 function* fetchProducts() {
   try {
@@ -89,7 +75,6 @@ function* storeApi(action) {
 function* resetProfit(action) {
   try {
     yield axios.post(`/api/account/resetProfit`);
-    yield put({ type: 'FETCH_PROFITS', payload: action.payload });
     yield put({ type: 'FETCH_USER' });
   } catch (error) {
     // console.log('put account route resetProfit has failed', error);
@@ -269,7 +254,6 @@ function* downloadFile(action) {
 
 
 function* accountSaga() {
-  yield takeLatest('FETCH_PROFITS', fetchProfits);
   yield takeLatest('FETCH_PRODUCTS', fetchProducts);
   yield takeLatest('TOGGLE_ACTIVE_PRODUCT', toggleActiveProduct);
   yield takeLatest('FETCH_BOT_ERRORS', fetchErrors);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import Trade from '../Trade/Trade.js';
 import Messages from '../Messages/Messages.js';
@@ -11,18 +11,13 @@ import NotApproved from '../NotApproved/NotApproved.js';
 import NotActive from '../NotActive/NotActive.js';
 import MobileNav from '../MobileNav/MobileNav.js';
 import useWindowDimensions from '../../hooks/useWindowDimensions.js';
-import { useSocket } from '../../contexts/SocketProvider.js';
 import { useUser } from '../../contexts/UserContext.js';
 
 function Home() {
   const dispatch = useDispatch();
-  const { height, width } = useWindowDimensions();
-  const socket = useSocket();
-  // const data = useUser();
+  const { width } = useWindowDimensions();
+  const { user } = useUser();
 
-  const { user, refreshUser } = useUser();
-
-  const [product, setProduct] = useState('BTC-USD');
   const [showSettings, setShowSettings] = useState(false);
   const [mobilePage, setMobilePage] = useState('tradeList');
   const [tradeType, setTradeType] = useState('pair');
@@ -34,19 +29,6 @@ function Home() {
     setIsAutoScroll(!isAutoScroll);
   };
 
-  useEffect(() => {
-    if(product){
-      dispatch({
-        type: 'FETCH_ORDERS',
-        payload: { product: product }
-      });
-      dispatch({
-        type: 'FETCH_PROFITS',
-        // send current product to fetch profits for
-        payload: { product: product }
-      });
-    }
-  }, [dispatch, product]);
 
 
   const clickSettings = () => {
@@ -56,40 +38,10 @@ function Home() {
     }
   }
 
-  const handleProductChange = (value) => {
-    setProduct(value);
-    socket.setProduct(value);
-  }
-
-  // function to dispatch to get all products
-  function getProducts() {
-    dispatch({
-      type: 'FETCH_PRODUCTS',
-    });
-  }
-
-  // get products on component load
-  useEffect(() => {
-    getProducts();
-  }, []);
-
-  // data.refreshUser();
-
   return (
     <div className={`Home ${user.theme}`}>
-      {/* button to refresh user data */}
-      {/* <button onClick={refreshUser}>Refresh User</button>
-      {JSON.stringify(user)} */}
-      {/* map a JSON string for each key in data.user on it's own line */}
-       {/* {Object.keys(data.user).map((key) => {
-        return <p key={key}>
-          {key}: {JSON.stringify(data.user[key])}
-        </p>
-      })} */}
-
-
       {/* {JSON.stringify(socket.product)}{JSON.stringify(product)} */}
-      <Menu clickSettings={clickSettings} product={product} setProduct={handleProductChange} />
+      <Menu clickSettings={clickSettings} />
 
 
       {
@@ -100,22 +52,22 @@ function Home() {
           ? mobilePage === 'newPair'
             // is the user active
             ? user.active
-              ? <Trade setTradeType={setTradeType} tradeType={tradeType} product={product} />
+              ? <Trade setTradeType={setTradeType} tradeType={tradeType} />
               : <NotActive />
             : mobilePage === 'tradeList'
               // is the user approved
               ? user.approved
-                ? <TradeList isAutoScroll={isAutoScroll} product={product} />
+                ? <TradeList isAutoScroll={isAutoScroll} />
                 : <NotApproved />
               : mobilePage === 'messages' && <Messages />
 
           // show all pages
           : <>
             {user.active
-              ? <Trade setTradeType={setTradeType} tradeType={tradeType} product={product} />
+              ? <Trade setTradeType={setTradeType} tradeType={tradeType} />
               : <NotActive />}
             {user.approved
-              ? <TradeList isAutoScroll={isAutoScroll} product={product} />
+              ? <TradeList isAutoScroll={isAutoScroll} />
               : <NotApproved />}
             <Messages />
           </>
@@ -124,12 +76,10 @@ function Home() {
       }
 
       <Status
-        product={product}
         isAutoScroll={isAutoScroll}
         handleAutoScrollChange={handleAutoScrollChange}
       />
       <Settings
-        product={product}
         showSettings={showSettings}
         clickSettings={clickSettings}
       />

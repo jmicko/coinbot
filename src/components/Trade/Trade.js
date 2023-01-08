@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { connect, useDispatch, useSelector } from 'react-redux';
+import { connect, useDispatch } from 'react-redux';
 import { useSocket } from '../../contexts/SocketProvider';
 import mapStoreToProps from '../../redux/mapStoreToProps';
 import useWindowDimensions from '../../hooks/useWindowDimensions.js';
@@ -7,6 +7,7 @@ import './Trade.css';
 import IncrementButtons from './IncrementButtons';
 import { numberWithCommas } from '../../shared';
 import { useUser } from '../../contexts/UserContext';
+import { useData } from '../../contexts/DataContext';
 
 
 function Trade(props) {
@@ -42,9 +43,9 @@ function Trade(props) {
   const [initialPriceSet, setInitialPriceSet] = useState(false);
 
   // product info for the current product
-  const products = useSelector((store) => store.accountReducer.productsReducer);
-  const currentProductId = props.product;
-  const currentProduct = products?.allProducts?.find((product) => product.product_id === currentProductId);
+  const { products, productID } = useData();
+  // const currentProductId = props.product;
+  const currentProduct = products?.allProducts?.find((product) => product.product_id === productID);
   const currentProductPrice = Number(socket.tickers?.[props.product]?.price);
   // find the decimal places of the quote_increment
   const quote_increment = currentProduct?.quote_increment;
@@ -59,13 +60,13 @@ function Trade(props) {
   // create an integer version of the bidp
   const bidp_int = Math.pow(10, bidp);
   // create an integer version of the qidp
-  const qidp_int = Math.pow(10, qidp);
+  // const qidp_int = Math.pow(10, qidp);
   // create a rounding decimal place for the price
   // const price_rounding = Math.pow(10, qidp - 2);
   const price_rounding = Math.pow(10, qidp - 2);
   // create a rounding decimal place for the amount
-  const amount_rounding = Math.pow(10, bidp - 2);
-  const minBaseSize = currentProduct?.base_min_size;
+  // const amount_rounding = Math.pow(10, bidp - 2);
+  // const minBaseSize = currentProduct?.base_min_size;
 
   // calculate New Position values every time a number in the calculator changes
   useEffect(() => {
@@ -114,7 +115,7 @@ function Trade(props) {
         side: transactionSide,
         limit_price: price,
         base_size: transactionAmountBTC,
-        product_id: currentProductId,
+        product_id: productID,
         trade_pair_ratio: tradePairRatio,
         type: type
       }
@@ -127,7 +128,7 @@ function Trade(props) {
     dispatch({
       type: 'START_BASIC_TRADE', payload: {
         base_size: basicAmount,
-        product_id: currentProductId,
+        product_id: productID,
         side: basicSide,
         tradingPrice: currentProductPrice
       }
@@ -141,7 +142,7 @@ function Trade(props) {
         event.preventDefault();
       }
       // console.log(currentProductPrice, typeof currentProductPrice, 'currentProductPrice')
-      // console.log(currentProductId, 'currentProductId')
+      // console.log(productID, 'productID')
       // console.log(currentProduct, 'currentProduct')
       // console.log(qidp, 'qidp')
       // console.log(qidp_int, 'qidp_int')

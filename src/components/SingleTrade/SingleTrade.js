@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { useData } from '../../contexts/DataContext';
 import { useUser } from '../../contexts/UserContext';
 import { useProductDecimals } from '../../hooks/useProductDecimals';
 import './SingleTrade.css'
@@ -12,9 +13,9 @@ function SingleTrade(props) {
   const [showAll, setShowAll] = useState(false);
   const [sellFee, setSellFee] = useState();
   const [buyFee, setBuyFee] = useState();
-  const product = props.product;
-  const decimals = useProductDecimals(product, user.availableFunds);
-
+  const { productID } = useData();
+  
+  const decimals = useProductDecimals(productID, user.availableFunds);
 
   // decimals.baseIncrement
 

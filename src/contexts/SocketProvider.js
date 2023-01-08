@@ -2,6 +2,8 @@ import React, { useContext, useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux';
 // import { useSelector } from 'react-redux';
 import io from "socket.io-client";
+import { useData } from './DataContext';
+import { useUser } from './UserContext';
 
 // followed this guide for setting up the socket provider in its own component and not cluttering up App.js
 
@@ -14,9 +16,8 @@ export function useSocket() {
 export function SocketProvider({ children }) {
   const [socket, setSocket] = useState();
   const [socketStatus, setSocketStatus] = useState('closed');
-  const [messenger, setMessenger] = useState();
-  const [disconnect, setDisconnect] = useState();
-  const [product, setProduct] = useState('BTC-USD');
+  const { refreshUser } = useUser();
+  const { product, refreshProfits, refreshOrders, refreshProducts } = useData();
   const [tickers, setTickers] = useState({ "BTC-USD": { price: 0 }, "ETH-USD": { price: 0 } });
   const [heartbeat, setHeartbeat] = useState({ heart: 'heart', beat: 'beat', count: 0 });
   const dispatch = useDispatch();
@@ -35,6 +36,7 @@ export function SocketProvider({ children }) {
       if (message.type === 'ticker') {
         const ticker = message.ticker
         // set the ticker based on the product id
+        // console.log('ticker', ticker);
         setTickers(prevTickers => ({ ...prevTickers, [ticker.product_id]: ticker }));
       }
       // handle heartbeat
@@ -65,26 +67,18 @@ export function SocketProvider({ children }) {
       }
       // fetch orders if orderUpdate
       if (message.orderUpdate) {
-        console.log('order update in socket provider')
-        dispatch({
-          type: 'FETCH_ORDERS',
-          // send current product to fetch orders for
-          payload: { product: product }
-        });
+        refreshOrders();
       }
       // fetch products if productUpdate
       if (message.productUpdate) {
-        dispatch({ type: 'FETCH_PRODUCTS' });
+        refreshProducts();
       }
       if (message.profitUpdate || message.orderUpdate) {
-        dispatch({
-          type: 'FETCH_PROFITS',
-          // send current product to fetch profits for
-          payload: { product: product }
-        });
+        refreshProfits();
+
       }
       if (message.userUpdate) {
-        dispatch({ type: 'FETCH_USER' });
+        refreshUser();
       }
       if (message.fileUpdate) {
         console.log('file update in socket provider')
@@ -98,7 +92,7 @@ export function SocketProvider({ children }) {
           payload: message.data
         });
       }
-      
+
     });
 
     const ping = setInterval(() => {
@@ -131,20 +125,16 @@ export function SocketProvider({ children }) {
       newSocket.off('connect_error')
       newSocket.close();
     }
-  }, [dispatch, product]);
+  }, [dispatch, product, refreshOrders, refreshProfits, refreshProducts, refreshUser]);
 
 
   return (
     <SocketContext.Provider value={{
       socket: socket,
       socketStatus: socketStatus,
-      messenger: messenger,
-      product: product,
-      setProduct: setProduct,
       tickers: tickers,
       heartbeat: heartbeat
     }}>
-      {/* <>Props: {JSON.stringify()}</> */}
       {children}
     </SocketContext.Provider>
   )
