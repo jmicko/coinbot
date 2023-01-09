@@ -15,6 +15,10 @@ export function DataProvider({ children }) {
   const { data: profit, refresh: refreshProfit, } = useFetchData(`/api/account/profit/${productID}`, { defaultState: {}, notNull: [productID] })
   const { updateData: resetProfitTEST } = useFetchData(`/api/account/profit`, { defaultState: {}, notNull: [productID] })
 
+  const { data:exportableFiles, refresh: refreshExportableFiles } = useFetchData(`/api/account/exportableFiles`, { defaultState: [] })
+
+  const currentProduct = products?.allProducts?.find((product) => product.product_id === productID);
+
   // if products.activeProducts changes, the selected product will be set to the first product in the list
   useEffect(() => {
     setProductID(products?.activeProducts?.[0]?.product_id);
@@ -31,7 +35,8 @@ export function DataProvider({ children }) {
         {
           productID, setProductID, refreshProducts, products,
           orders, refreshOrders, syncOrders,
-          profit, refreshProfit, resetProfit
+          profit, refreshProfit, resetProfit,
+          exportableFiles, refreshExportableFiles
         }
       }>
       {children}

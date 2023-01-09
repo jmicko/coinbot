@@ -2,18 +2,6 @@ import { put, takeLatest } from 'redux-saga/effects';
 import axios from 'axios';
 
 
-
-function* syncOrders() {
-  try {
-    yield axios.put(`/api/orders/`);
-  } catch (error) {
-    console.log('PUT orders route has failed', error);
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
-
 function* deleteRange(action) {
   try {
     yield axios.delete(`/api/orders/range`, { data: action.payload });
@@ -62,7 +50,6 @@ function* deleteOrder(action) {
 }
 
 function* orderSaga() {
-  yield takeLatest('SYNC_ORDERS', syncOrders);
   yield takeLatest('DELETE_ALL_ORDERS', deleteAllOrders);
   yield takeLatest('DELETE_ALL_PRODUCT_ORDERS', deleteAllOrdersForProduct);
   yield takeLatest('DELETE_RANGE', deleteRange);

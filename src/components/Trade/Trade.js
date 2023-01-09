@@ -10,8 +10,8 @@ import { useUser } from '../../contexts/UserContext';
 import { useData } from '../../contexts/DataContext';
 
 
-function Trade(props) {
-// console.log('rendering trade');
+function Trade() {
+  console.log('rendering trade');
   // todo - default price value should automatically start out at the current price
   // of bitcoin, rounded to the closest $100
   // const [transactionSide, setTransactionSide] = useState('BUY');
@@ -39,14 +39,15 @@ function Trade(props) {
   const [basicSide, setBasicSide] = useState('BUY');
   const dispatch = useDispatch();
   const { user } = useUser();
+  
   const socket = useSocket();
   const [initialPriceSet, setInitialPriceSet] = useState(false);
 
   // product info for the current product
   const { products, productID } = useData();
-  // const currentProductId = props.product;
+  // const currentProductId = productID;
   const currentProduct = products?.allProducts?.find((product) => product.product_id === productID);
-  const currentProductPrice = Number(socket.tickers?.[props.product]?.price);
+  const currentProductPrice = Number(socket.tickers?.[productID]?.price);
   // find the decimal places of the quote_increment
   const quote_increment = currentProduct?.quote_increment;
   const quote_increment_decimal_places = quote_increment?.split('1')[0]?.length - 1;
@@ -83,7 +84,7 @@ function Trade(props) {
     let pairProfit = pairMargin - totalfees;
 
     // console.log(tradePairRatio, 'tradePairRatio')
-    // console.log(price, 'price')
+    console.log(price, 'price')
     // console.log(sellPrice, 'sellPrice')
 
 
@@ -141,8 +142,8 @@ function Trade(props) {
       if (event) {
         event.preventDefault();
       }
-      // console.log(currentProductPrice, typeof currentProductPrice, 'currentProductPrice')
-      // console.log(productID, 'productID')
+      console.log(currentProductPrice, typeof currentProductPrice, 'currentProductPrice')
+      console.log(productID, 'productID')
       // console.log(currentProduct, 'currentProduct')
       // console.log(qidp, 'qidp')
       // console.log(qidp_int, 'qidp_int')
@@ -153,7 +154,7 @@ function Trade(props) {
       // check if the current price has been stored and is a number to prevent NaN errors
       if (currentProductPrice && typeof currentProductPrice === 'number') {
         // round the price to nearest 100
-        // const roundedPrice = Math.round(socket.tickers[props.product].price)
+        // const roundedPrice = Math.round(socket.tickers[productID].price)
         // const roundedPrice = Math.round(currentProductPrice / 100) * 100;
         // const roundedPrice = currentProductPrice;
         // const roundedPrice = Math.round(currentProductPrice / price_rounding) * price_rounding;
@@ -305,7 +306,6 @@ function Trade(props) {
 
 
             <div className="number-inputs">
-              {/* {JSON.stringify(props.store.statusReducer.tickers[props.product])} */}
               {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
               <label htmlFor="trade-pair-ratio">
                 Trade pair percent increase:
@@ -392,13 +392,16 @@ function Trade(props) {
               onChange={(event) => setBasicAmount(Number(event.target.value))}
             />
 
-            {/* {JSON.stringify(user.availableFunds?.[props.product].base_available)} */}
-
-            {(basicSide === 'SELL') && <input className={`btn-blue ${user.theme}`} onClick={() => setBasicAmount(Number(user.availableFunds?.[props.product].base_available))} type="button" name="submit" value="Max" />}
+            {(basicSide === 'SELL') && <input
+              className={`btn-blue ${user.theme}`}
+              onClick={() => setBasicAmount(Number(user.availableFunds?.[productID].base_available))}
+              type="button"
+              name="submit"
+              value="Max" />}
             <br />
             <p>
               This equates to about
-              <br />${numberWithCommas((basicAmount * socket.tickers[props.product]?.price).toFixed(2))}
+              <br />${numberWithCommas((basicAmount * socket.tickers[productID]?.price).toFixed(2))}
               <br />before fees
             </p>
             <br />

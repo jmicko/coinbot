@@ -284,6 +284,40 @@ button.medium{
   background-color: #7773b398;
 }
 
+.btn-yellow {
+  background-color: #fff7a0;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-yellow.darkTheme {
+  color: #ffffff;
+  background-color: #867124;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-yellow:hover {
+  background-color: #a0956c;
+}
+
+.btn-yellow.darkTheme:focus {
+  outline         : none;
+  background-color: #614f11;
+  box-shadow      : inset 2px 2px #00000099, inset -2px -2px #ffffff99;
+}
+
+.btn-yellow:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: #afb37398;
+}
+
+.btn-file{
+  margin-bottom: .2rem;
+}
+
 button:active {
   box-shadow: inset -2px -2px #ffffff99, inset 2px 2px #00000099;
 }

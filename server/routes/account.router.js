@@ -308,9 +308,10 @@ router.put('/exportCandles', rejectUnauthenticated, async (req, res) => {
 
 /**
  * GET route to find all files in the exports folder with the user's username in the filename
+ * send the file names to the client
 */
-router.get('/exportFiles', rejectUnauthenticated, async (req, res) => {
-  console.log('export files route hit');
+router.get('/exportableFiles', rejectUnauthenticated, async (req, res) => {
+  console.log('export files files files files files route hit');
   try {
     const username = req.user.username;
     const files = await fs.readdirSync('server/exports');

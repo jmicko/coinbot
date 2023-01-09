@@ -17,7 +17,7 @@ export function SocketProvider({ children }) {
   const [socket, setSocket] = useState();
   const [socketStatus, setSocketStatus] = useState('closed');
   const { refreshUser } = useUser();
-  const { products, refreshProfits, refreshOrders, refreshProducts } = useData();
+  const { products, refreshProfits, refreshOrders, refreshProducts, refreshExportableFiles } = useData();
   const [tickers, setTickers] = useState({ "BTC-USD": { price: 0 }, "ETH-USD": { price: 0 } });
   const [heartbeat, setHeartbeat] = useState({ heart: 'heart', beat: 'beat', count: 0 });
   // const dispatch = useDispatch();
@@ -28,6 +28,7 @@ export function SocketProvider({ children }) {
   const refreshProductsRef = useRef();
   const refreshUserRef = useRef();
   const productRef = useRef();
+  const refreshExportableFilesRef = useRef();
 
   // // update the refs when the functions change
   useEffect(() => {
@@ -36,7 +37,8 @@ export function SocketProvider({ children }) {
     refreshProductsRef.current = refreshProducts;
     refreshUserRef.current = refreshUser;
     productRef.current = products;
-  }, [refreshOrders, refreshProfits, refreshProducts, refreshUser, products]);
+    refreshExportableFilesRef.current = refreshExportableFiles;
+  }, [refreshOrders, refreshProfits, refreshProducts, refreshUser, products, refreshExportableFiles]);
 
 
   // useEffect to prevent from multiple connections
@@ -101,6 +103,7 @@ export function SocketProvider({ children }) {
       }
       if (message.fileUpdate) {
         console.log('file update in socket provider')
+        refreshExportableFilesRef.current();
         // dispatch({ type: 'FETCH_EXPORT_FILES' });
         // dispatch({ type: 'FETCH_USER' });
       }

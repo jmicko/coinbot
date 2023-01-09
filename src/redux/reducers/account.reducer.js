@@ -63,18 +63,6 @@ const chatMessages = (state = [], action) => {
   }
 };
 
-// store user's list of files for export
-const exportFilesReducer = (state = [], action) => {
-  switch (action.type) {
-    case 'SET_EXPORT_FILES':
-      console.log('setting files', action.payload);
-      return action.payload;
-    case 'UNSET_EXPORT_FILES':
-      return [];
-    default:
-      return state;
-  }
-};
 
 // store the results of the simulation
 const simulationReducer = (state = { status: 'idle' }, action) => {
@@ -108,6 +96,5 @@ export default combineReducers({
   debugReducer,
   botMessages,
   chatMessages,
-  exportFilesReducer,
   simulationReducer,
 });

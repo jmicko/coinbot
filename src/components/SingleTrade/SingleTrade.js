@@ -14,12 +14,13 @@ function SingleTrade(props) {
   const [sellFee, setSellFee] = useState();
   const [buyFee, setBuyFee] = useState();
   const { productID } = useData();
-  
+
   const decimals = useProductDecimals(productID, user.availableFunds);
 
   // decimals.baseIncrement
 
   useEffect(() => {
+    console.log('rendering single trade');
     // calculate all the numbers when the component renders
 
     // pull from props and make more manageable
