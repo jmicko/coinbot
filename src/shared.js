@@ -71,7 +71,7 @@ function autoSetup(user, options) {
     }
   }
   // console.log(available, 'available')
-  const decimals = calculateProductDecimals(available);
+  const decimals = addProductDecimals(available);
   // console.log(decimals, 'decimals')
 
   // create an array to hold the new trades to put in
@@ -354,20 +354,42 @@ function autoSetup(user, options) {
   }
 }
 
-function calculateProductDecimals(product) {
+function addProductDecimals(product) {
 
   // console.log(product, '=====================product=====================');
-  const baseIncrement = findDecimals(product?.base_increment);
+  const baseIncrementDecimals = findDecimals(product?.base_increment);
   // console.log(baseIncrement, 'baseIncrement');
-  const quoteIncrement = findDecimals(product?.quote_increment);
-  // console.log(quoteIncrement, 'quoteIncrement');
-  // a 1 with baseIncrement number of 0s
-  const baseMultiplier = Math.pow(10, baseIncrement);
-  const quoteMultiplier = Math.pow(10, quoteIncrement);
-  return { baseIncrement, quoteIncrement, baseMultiplier, quoteMultiplier, product };
+  // const quoteIncrement = findDecimals(product?.quote_increment);
+  const quoteIncrementDecimals = findDecimals(product?.quote_increment);
+  // inverse of the quote increment. This is used to round the size in quote to the nearest quote increment
+  const quoteInverseIncrement = Math.pow(10, quoteIncrementDecimals);
+  // inverse of the base increment. This is used to round the size in base to the nearest base increment
+  const baseInverseIncrement = Math.pow(10, baseIncrementDecimals);
+  // console.log(baseInverseIncrement, 'baseInverseIncrement', baseMultiplier === baseInverseIncrement, 'baseMultiplier');
+  // create a rounding decimal place for the price. This is just nice to have and is not required
+  const price_rounding = Math.pow(10, quoteIncrementDecimals - 2);
+
+
+
+
+
+  return {
+    ...product,
+    baseIncrementDecimals,
+    // quoteIncrement,
+    quoteIncrementDecimals,
+    // baseMultiplier,
+    // quoteMultiplier,
+    price_rounding,
+    baseInverseIncrement,
+    quoteInverseIncrement,
+    // bidp,
+    // qidp,
+    
+  };
 
   function findDecimals(number) {
-    return number.split('.')[1].split('').findIndex((char) => char !== '0') + 1;
+    return number?.split('.')[1]?.split('').findIndex((char) => char !== '0') + 1;
   }
 }
 
@@ -382,4 +404,4 @@ const granularities = [
   { name: 'ONE_DAY', readable: 'One Day', value: 86400 },
 ]
 
-module.exports = { autoSetup, sleep, numberWithCommas, calculateProductDecimals, granularities }
+module.exports = { autoSetup, sleep, numberWithCommas, addProductDecimals, granularities }

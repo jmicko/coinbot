@@ -11,7 +11,7 @@ import { useData } from '../../contexts/DataContext';
 
 
 function Trade() {
-  console.log('rendering trade');
+  // console.log('rendering trade');
   // todo - default price value should automatically start out at the current price
   // of bitcoin, rounded to the closest $100
   // const [transactionSide, setTransactionSide] = useState('BUY');
@@ -39,35 +39,23 @@ function Trade() {
   const [basicSide, setBasicSide] = useState('BUY');
   const dispatch = useDispatch();
   const { user } = useUser();
-  
+
   const socket = useSocket();
   const [initialPriceSet, setInitialPriceSet] = useState(false);
 
   // product info for the current product
   const { productID, currentProduct } = useData();
-  // const currentProductId = productID;
-  // const currentProduct = products?.allProducts?.find((product) => product.product_id === productID);
   const currentProductPrice = Number(socket.tickers?.[productID]?.price);
-  // find the decimal places of the quote_increment
-  const quote_increment = currentProduct?.quote_increment;
-  const quote_increment_decimal_places = quote_increment?.split('1')[0]?.length - 1;
-  // rename the quote_increment_decimal_places to something shorter
-  const qidp = quote_increment_decimal_places;
-  // find the decimal places of the base_increment
-  const base_increment = currentProduct?.base_increment;
-  const base_increment_decimal_places = base_increment?.split('1')[0]?.length - 1;
-  // rename the base_increment_decimal_places to something shorter
-  const bidp = base_increment_decimal_places;
-  // create an integer version of the bidp
-  const bidp_int = Math.pow(10, bidp);
-  // create an integer version of the qidp
-  // const qidp_int = Math.pow(10, qidp);
-  // create a rounding decimal place for the price
-  // const price_rounding = Math.pow(10, qidp - 2);
-  const price_rounding = Math.pow(10, qidp - 2);
-  // create a rounding decimal place for the amount
-  // const amount_rounding = Math.pow(10, bidp - 2);
-  // const minBaseSize = currentProduct?.base_min_size;
+  const {
+    price_rounding,
+    baseInverseIncrement,
+    baseIncrementDecimals,
+    quoteIncrementDecimals,
+    quote_increment,
+    base_currency_id,
+    base_increment,
+    quote_currency_id
+  } = currentProduct;
 
   // calculate New Position values every time a number in the calculator changes
   useEffect(() => {
@@ -142,16 +130,8 @@ function Trade() {
       if (event) {
         event.preventDefault();
       }
-      console.log(currentProductPrice, typeof currentProductPrice, 'currentProductPrice')
-      // console.log(productID, 'productID')
-      // console.log(currentProduct, 'currentProduct')
-      // console.log(qidp, 'qidp')
-      // console.log(qidp_int, 'qidp_int')
-      // console.log(bidp, 'bidp')
-      // console.log(bidp_int, 'bidp_int')
-      // console.log(price_rounding, 'price_rounding')
-      // console.log(amount_rounding, 'amount_rounding')
-      // check if the current price has been stored and is a number to prevent NaN errors
+      console.log(currentProductPrice, typeof currentProductPrice, price_rounding, 'currentProductPrice')
+
       if (currentProductPrice && typeof currentProductPrice === 'number') {
         // round the price to nearest 100
         // const roundedPrice = Math.round(socket.tickers[productID].price)
@@ -186,21 +166,21 @@ function Trade() {
     }
     setAmountTypeIsUSD(type);
     if (!type) {
-      setTransactionAmountBTC(Number(transactionAmountBTC).toFixed(bidp))
+      setTransactionAmountBTC(Number(transactionAmountBTC).toFixed(baseIncrementDecimals))
     }
   }
 
   function handleTransactionAmount(amount) {
     if (amountTypeIsUSD) {
       // setTransactionAmountBTC(Math.floor(price / amount * 1000) / 1000)
-      setTransactionAmountUSD(Number(amount).toFixed(qidp))
-      const convertedAmount = Number(Math.floor((amount / price) * bidp_int)) / bidp_int;
+      setTransactionAmountUSD(Number(amount).toFixed(quoteIncrementDecimals))
+      const convertedAmount = Number(Math.floor((amount / price) * baseInverseIncrement)) / baseInverseIncrement;
       setTransactionAmountBTC(convertedAmount);
     }
     if (!amountTypeIsUSD) {
       // setTransactionAmountBTC(Math.floor(amount *100000000) / 100000000)
-      setTransactionAmountBTC(Number(amount).toFixed(bidp))
-      setTransactionAmountUSD(Number(price * amount).toFixed(qidp))
+      setTransactionAmountBTC(Number(amount).toFixed(baseIncrementDecimals))
+      setTransactionAmountUSD(Number(price * amount).toFixed(quoteIncrementDecimals))
       // setTransactionAmountUSD(Number(Math.round(price * amount * 100) / 100))
     }
   }
@@ -243,9 +223,10 @@ function Trade() {
                 required
                 onChange={(event) => setTransactionPrice(Number(event.target.value))}
               />
+
               <IncrementButtons
-                firstButton={currentProduct.quote_increment * 10}
-                roundTo={qidp}
+                firstButton={quote_increment * 10}
+                roundTo={quoteIncrementDecimals}
                 currentValue={price}
                 changeValue={setTransactionPrice}
                 theme={user.theme}
@@ -257,7 +238,7 @@ function Trade() {
               ? <div className="number-inputs">
                 {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
                 <label htmlFor="transaction_amount">
-                  Trade amount in {currentProduct.base_currency_id}:
+                  Trade amount in {base_currency_id}:
                   <button className={`btn-blue ${user.theme}`} onClick={(event) => amountTypeHandler(event, true)}>Switch</button>
                 </label>
                 <input
@@ -270,8 +251,8 @@ function Trade() {
                   onChange={(event) => handleTransactionAmount(event.target.value)}
                 />
                 <IncrementButtons
-                  firstButton={currentProduct.base_increment * 10000}
-                  roundTo={bidp}
+                  firstButton={base_increment * 10000}
+                  roundTo={baseIncrementDecimals}
                   currentValue={transactionAmountBTC}
                   changeValue={handleTransactionAmount}
                   theme={user.theme}
@@ -282,7 +263,7 @@ function Trade() {
               : <div className="number-inputs">
                 {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
                 <label htmlFor="transaction_amount">
-                  Trade amount in {currentProduct.quote_currency_id}:
+                  Trade amount in {quote_currency_id}:
                   <button className={`btn-blue ${user.theme}`} onClick={(event) => amountTypeHandler(event, false)}>Switch</button>
                 </label>
                 <input
@@ -295,8 +276,8 @@ function Trade() {
                   onChange={(event) => handleTransactionAmount(event.target.value)}
                 />
                 <IncrementButtons
-                  firstButton={currentProduct.quote_increment * 10}
-                  roundTo={qidp}
+                  firstButton={quote_increment * 10}
+                  roundTo={quoteIncrementDecimals}
                   currentValue={transactionAmountUSD}
                   changeValue={handleTransactionAmount}
                   theme={user.theme}
@@ -334,13 +315,13 @@ function Trade() {
             <div className={`boxed dark ${user.theme}`}>
               <h4 className={`title ${user.theme}`}>New position</h4>
               <p><strong>Trade Pair Details:</strong></p>
-              <p className="info">Buy price: <strong>${numberWithCommas(Number(price).toFixed(qidp))}</strong> </p>
-              <p className="info">Sell price <strong>${numberWithCommas(sellPrice.toFixed(qidp))}</strong></p>
-              <p className="info">Price margin: <strong>{numberWithCommas(priceMargin.toFixed(qidp))}</strong> </p>
+              <p className="info">Buy price: <strong>${numberWithCommas(Number(price).toFixed(quoteIncrementDecimals))}</strong> </p>
+              <p className="info">Sell price <strong>${numberWithCommas(sellPrice.toFixed(quoteIncrementDecimals))}</strong></p>
+              <p className="info">Price margin: <strong>{numberWithCommas(priceMargin.toFixed(quoteIncrementDecimals))}</strong> </p>
               <p className="info">Volume <strong>{transactionAmountBTC}</strong> </p>
               <p><strong>Cost at this volume:</strong></p>
-              <p className="info"><strong>BUY*:</strong> ${numberWithCommas(volumeCostBuy.toFixed(qidp))}</p>
-              <p className="info"><strong>SELL*:</strong>${numberWithCommas(volumeCostSell.toFixed(qidp))}</p>
+              <p className="info"><strong>BUY*:</strong> ${numberWithCommas(volumeCostBuy.toFixed(quoteIncrementDecimals))}</p>
+              <p className="info"><strong>SELL*:</strong>${numberWithCommas(volumeCostSell.toFixed(quoteIncrementDecimals))}</p>
               <p className="info"><strong>BUY FEE*:</strong> ${buyFee.toFixed(8)}</p>
               <p className="info"><strong>SELL FEE*:</strong> ${sellFee.toFixed(8)}</p>
               <p className="info"><strong>TOTAL FEES*:</strong> ${totalfees.toFixed(8)}</p>

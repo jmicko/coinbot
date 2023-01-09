@@ -13,7 +13,7 @@ export function useFetchData(url, { defaultState, config, notNull }) {
   const checkFailureCallback = useCallback(checkFailure, [notNullRef, url])
   const fetchDataCallback = useCallback(fetchData, [url, config, checkFailureCallback])
   const postDataCallback = useCallback(postData, [url, config, checkFailureCallback])
-  const putDataCallback = useCallback(putData, [url, config, checkFailureCallback])
+  const putDataCallback = useCallback(putData, [url, checkFailureCallback])
 
   // GET function
   async function fetchData() {
@@ -86,9 +86,12 @@ export function useFetchData(url, { defaultState, config, notNull }) {
 
       setIsLoading(true)
 
-      const response = config
-        ? await fetch(url, { ...config, body: JSON.stringify(dataToPut), method: 'PUT' })
-        : await fetch(url, { method: 'PUT', body: JSON.stringify(dataToPut) })
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataToPut)
+      })
+      console.log(response, 'response in usePutdataToPut hook')
       // check if the response is ok
       if (!response.ok) {
         console.log(response, 'response not ok in usePutdataToPut hook')
@@ -133,13 +136,24 @@ export function useFetchData(url, { defaultState, config, notNull }) {
     fetchDataCallback()
   }
 
-  function createData() {
-    postDataCallback()
+  async function createData(data) {
+    try {
+      console.log(data, 'creating data in useFetchData hook ')
+      await postDataCallback(data)
+      await fetchDataCallback();
+    } catch (err) {
+      console.log(err, 'error in updateData function in useFetchData hook')
+    }
   }
 
-  function updateData(data) {
-    console.log(data, 'updating data in useFetchData hook')
-    putDataCallback(data)
+  async function updateData(data) {
+    try {
+      console.log(data, 'updating data in useFetchData hook  %%%%%%%%%%%%%%')
+      await putDataCallback(data);
+      await fetchDataCallback();
+    } catch (err) {
+      console.log(err, 'error in updateData function in useFetchData hook')
+    }
   }
 
   function clear() {

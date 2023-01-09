@@ -1,25 +1,15 @@
-import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useUser } from '../../../contexts/UserContext';
+import React from 'react';
+import { useData } from '../../../contexts/DataContext';
 import { numberWithCommas } from '../../../shared';
 import './Products.css'
 
 
 function Products(props) {
-  const dispatch = useDispatch();
-  const { user } = useUser();
-  const products = useSelector((store) => store.accountReducer.productsReducer);
-
-  const [max_trade_load, setMaxTradeLoad] = useState(100);
-  const [profit_accuracy, setProfit_accuracy] = useState(2);
-
+  const { products, toggleActiveProduct } = useData();
 
   function toggleActive(product) {
     console.log('toggleActive?', product);
-    dispatch({
-      type: 'TOGGLE_ACTIVE_PRODUCT',
-      payload: product,
-    });
+    toggleActiveProduct(product);
   }
 
   return (

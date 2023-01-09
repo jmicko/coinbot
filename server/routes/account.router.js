@@ -83,7 +83,7 @@ router.get('/products', rejectUnauthenticated, async (req, res) => {
 router.put('/products', rejectUnauthenticated, async (req, res) => {
   console.log('put products route hit');
   const userID = req.user.id;
-  // console.log(req.body, 'req.body');
+  console.log(req.body, 'req.body');
   const productID = req.body.product_id;
   const active = !req.body.active_for_user;
   console.log(productID, active, 'productID and active');

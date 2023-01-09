@@ -1,6 +1,7 @@
 // DataContext.js
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useFetchData } from '../hooks/fetchData'
+import { addProductDecimals } from '../shared';
 // import { useUser } from './UserContext';
 
 const DataContext = createContext()
@@ -8,7 +9,7 @@ const DataContext = createContext()
 export function DataProvider({ children }) {
   // const { user } = useUser();
   const [productID, setProductID] = useState(null);
-  const { data: products, refresh: refreshProducts } = useFetchData('/api/account/products', { defaultState: {} })
+  const { data: products, refresh: refreshProducts, updateData:toggleActiveProduct } = useFetchData('/api/account/products', { defaultState: {} })
   const { data: orders, refresh: refreshOrders } = useFetchData(`/api/orders/${productID}`, { defaultState: {}, notNull: [productID] })
   const { updateData: syncOrders } = useFetchData(`/api/orders/`, { defaultState: {} })
   // get the profits for the selected product with fetchData hook
@@ -17,7 +18,8 @@ export function DataProvider({ children }) {
 
   const { data:exportableFiles, refresh: refreshExportableFiles } = useFetchData(`/api/account/exportableFiles`, { defaultState: [] })
 
-  const currentProduct = products?.allProducts?.find((product) => product.product_id === productID);
+  const currentProductNoDecimals = products?.allProducts?.find((product) => product.product_id === productID);
+  const currentProduct = addProductDecimals(currentProductNoDecimals);
 
   // if products.activeProducts changes, the selected product will be set to the first product in the list
   useEffect(() => {
@@ -33,7 +35,7 @@ export function DataProvider({ children }) {
     <DataContext.Provider
       value={
         {
-          productID, setProductID, refreshProducts, products, currentProduct,
+          productID, setProductID, refreshProducts, products, currentProduct, toggleActiveProduct,
           orders, refreshOrders, syncOrders,
           profit, refreshProfit, resetProfit,
           exportableFiles, refreshExportableFiles
