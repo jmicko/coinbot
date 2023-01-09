@@ -86,11 +86,6 @@ const simulationReducer = (state = { status: 'idle' }, action) => {
 
 
 export default combineReducers({
-  // userReducer,
-  // feeReducer,
-  // profitsReducer,
-  // productsReducer,
-  // accountReducer,
   xlsxReducer,
   currentJSONReducer,
   debugReducer,

@@ -33,7 +33,7 @@ export function DataProvider({ children }) {
     <DataContext.Provider
       value={
         {
-          productID, setProductID, refreshProducts, products,
+          productID, setProductID, refreshProducts, products, currentProduct,
           orders, refreshOrders, syncOrders,
           profit, refreshProfit, resetProfit,
           exportableFiles, refreshExportableFiles

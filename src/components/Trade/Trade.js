@@ -44,9 +44,9 @@ function Trade() {
   const [initialPriceSet, setInitialPriceSet] = useState(false);
 
   // product info for the current product
-  const { products, productID } = useData();
+  const { productID, currentProduct } = useData();
   // const currentProductId = productID;
-  const currentProduct = products?.allProducts?.find((product) => product.product_id === productID);
+  // const currentProduct = products?.allProducts?.find((product) => product.product_id === productID);
   const currentProductPrice = Number(socket.tickers?.[productID]?.price);
   // find the decimal places of the quote_increment
   const quote_increment = currentProduct?.quote_increment;
@@ -143,7 +143,7 @@ function Trade() {
         event.preventDefault();
       }
       console.log(currentProductPrice, typeof currentProductPrice, 'currentProductPrice')
-      console.log(productID, 'productID')
+      // console.log(productID, 'productID')
       // console.log(currentProduct, 'currentProduct')
       // console.log(qidp, 'qidp')
       // console.log(qidp_int, 'qidp_int')

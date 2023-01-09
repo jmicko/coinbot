@@ -104,8 +104,6 @@ export function SocketProvider({ children }) {
       if (message.fileUpdate) {
         console.log('file update in socket provider')
         refreshExportableFilesRef.current();
-        // dispatch({ type: 'FETCH_EXPORT_FILES' });
-        // dispatch({ type: 'FETCH_USER' });
       }
       if (message.type === 'simulationResults') {
         console.log(message.data, 'simulation results in socket provider')

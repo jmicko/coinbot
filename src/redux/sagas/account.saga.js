@@ -2,20 +2,6 @@ import { put, takeLatest } from 'redux-saga/effects';
 import axios from 'axios';
 
 
-// get all products
-function* fetchProducts() {
-  try {
-    const response = yield axios.get(`/api/account/products`);
-    yield put({ type: 'SET_PRODUCTS', payload: response.data })
-    // console.log(response.data);
-  } catch (error) {
-    // console.log('GET products route has failed', error);
-    if (error?.response?.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
-
 // toggle active status of product
 function* toggleActiveProduct(action) {
   try {
@@ -28,7 +14,6 @@ function* toggleActiveProduct(action) {
     }
   }
 }
-
 
 function* fetchErrors() {
   try {
@@ -193,7 +178,6 @@ function* exportCurrentJSON() {
   }
 }
 
-
 function* importCurrentJSON(action) {
   try {
     yield axios.post(`/api/account/importCurrentJSON`, action.payload);
@@ -211,20 +195,6 @@ function* debug(action) {
     yield put({ type: 'SET_DEBUG', payload: response.data })
   } catch (error) {
     console.log('debug route has failed', error);
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
-
-// fetch list of files that can be exported
-function* fetchExportFiles() {
-  try {
-    const response = yield axios.get(`/api/account/exportFiles`);
-    console.log('fetch export files route has succeeded', response.data);
-    yield put({ type: 'SET_EXPORT_FILES', payload: response.data })
-  } catch (error) {
-    console.log('fetch export files route has failed', error);
     if (error.response.status === 403) {
       yield put({ type: 'UNSET_USER' });
     }
@@ -254,7 +224,6 @@ function* downloadFile(action) {
 
 
 function* accountSaga() {
-  yield takeLatest('FETCH_PRODUCTS', fetchProducts);
   yield takeLatest('TOGGLE_ACTIVE_PRODUCT', toggleActiveProduct);
   yield takeLatest('FETCH_BOT_ERRORS', fetchErrors);
   yield takeLatest('FETCH_BOT_MESSAGES', fetchMessages);
@@ -271,7 +240,6 @@ function* accountSaga() {
   yield takeLatest('EXPORT_CURRENT_JSON', exportCurrentJSON);
   yield takeLatest('IMPORT_CURRENT_JSON', importCurrentJSON);
   yield takeLatest('DEBUG', debug);
-  yield takeLatest('FETCH_EXPORT_FILES', fetchExportFiles);
   yield takeLatest('DOWNLOAD_FILE', downloadFile);
 }
 
