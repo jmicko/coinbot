@@ -132,6 +132,7 @@ export function useFetchData(url, { defaultState, config, notNull }) {
   }, [fetchDataCallback, url])
 
 
+  // okay I think I should be exporting useCallbacks instead of the functions themselves
   function refresh() {
     fetchDataCallback()
   }
@@ -146,6 +147,8 @@ export function useFetchData(url, { defaultState, config, notNull }) {
     }
   }
 
+  const createDataCallback = useCallback(createData, [postDataCallback, fetchDataCallback])
+
   async function updateData(data) {
     try {
       console.log(data, 'updating data in useFetchData hook  %%%%%%%%%%%%%%')
@@ -156,11 +159,18 @@ export function useFetchData(url, { defaultState, config, notNull }) {
     }
   }
 
+  const updateDataCallback = useCallback(updateData, [putDataCallback, fetchDataCallback])
+
   function clear() {
     setData(defaultState)
     setIsLoading(false)
     setError(null)
   }
 
-  return { data, isLoading, error, refresh, clear, createData, updateData }
+  return {
+    data, isLoading, error, clear,
+    refresh: fetchDataCallback,
+    createData: createDataCallback,
+    updateData: updateDataCallback
+  }
 }

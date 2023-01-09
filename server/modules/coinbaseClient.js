@@ -97,7 +97,7 @@ class Coinbase {
     }
 
     ws.on('close', function () {
-      console.log('Socket was closed');
+      console.log('Socket to Coinbase was closed');
       if (setup.statusHandler) {
         setup.statusHandler('closed')
       }
@@ -120,7 +120,7 @@ class Coinbase {
     });
 
     ws.on('open', function () {
-      console.log('Socket open!');
+      console.log('Socket to coinbase open!');
       if (setup.statusHandler) {
         setup.statusHandler('open')
       }

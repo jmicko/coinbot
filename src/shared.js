@@ -358,13 +358,18 @@ function addProductDecimals(product) {
 
   // console.log(product, '=====================product=====================');
   const baseIncrementDecimals = findDecimals(product?.base_increment);
+  const base_increment_decimals = findDecimals(product?.base_increment);
   // console.log(baseIncrement, 'baseIncrement');
   // const quoteIncrement = findDecimals(product?.quote_increment);
   const quoteIncrementDecimals = findDecimals(product?.quote_increment);
+  const quote_increment_decimals = findDecimals(product?.quote_increment);
+  // change that to this_style_of_variable which is called snake_case
   // inverse of the quote increment. This is used to round the size in quote to the nearest quote increment
   const quoteInverseIncrement = Math.pow(10, quoteIncrementDecimals);
+  const quote_inverse_increment = Math.pow(10, quote_increment_decimals);
   // inverse of the base increment. This is used to round the size in base to the nearest base increment
   const baseInverseIncrement = Math.pow(10, baseIncrementDecimals);
+  const base_inverse_increment = Math.pow(10, base_increment_decimals);
   // console.log(baseInverseIncrement, 'baseInverseIncrement', baseMultiplier === baseInverseIncrement, 'baseMultiplier');
   // create a rounding decimal place for the price. This is just nice to have and is not required
   const price_rounding = Math.pow(10, quoteIncrementDecimals - 2);
@@ -385,6 +390,10 @@ function addProductDecimals(product) {
     quoteInverseIncrement,
     // bidp,
     // qidp,
+    base_increment_decimals,
+    quote_increment_decimals,
+    base_inverse_increment,
+    quote_inverse_increment,
     
   };
 

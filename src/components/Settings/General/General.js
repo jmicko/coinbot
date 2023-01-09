@@ -6,7 +6,7 @@ import './General.css'
 
 function General(props) {
   const dispatch = useDispatch();
-  const { user } = useUser();
+  const { user, refreshUser } = useUser();
 
   const [max_trade_load, setMaxTradeLoad] = useState(100);
   const [profit_accuracy, setProfit_accuracy] = useState(2);
@@ -16,12 +16,14 @@ function General(props) {
     dispatch({
       type: 'PAUSE',
     });
+    refreshUser();
   }
 
   function killLock() {
     dispatch({
       type: 'KILL_LOCK',
     });
+    refreshUser();
   }
 
   function setTheme(theme) {
@@ -31,8 +33,9 @@ function General(props) {
         theme: theme
       }
     });
+    refreshUser();
   }
-
+  
   function sendTradeLoadMax(event) {
     dispatch({
       type: 'SET_MAX_TRADE_LOAD',
@@ -40,8 +43,9 @@ function General(props) {
         max_trade_load: max_trade_load
       }
     });
+    refreshUser();
   }
-
+  
   function sendProfitAccuracy(event) {
     dispatch({
       type: 'SET_PROFIT_ACCURACY',
@@ -49,6 +53,7 @@ function General(props) {
         profit_accuracy: profit_accuracy
       }
     });
+    refreshUser();
   }
 
 
