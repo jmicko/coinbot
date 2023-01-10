@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
 import { useData } from '../../contexts/DataContext';
 import { useUser } from '../../contexts/UserContext';
 import { useProductDecimals } from '../../hooks/useProductDecimals';
 import './SingleTrade.css'
 
 function SingleTrade(props) {
-  const dispatch = useDispatch();
   const { user } = useUser();
-  const { productID, deleteOrder } = useData();
+  const { productID, deleteOrder, syncPair } = useData();
 
   const [profit, setProfit] = useState(0);
   const [deleting, setDeleting] = useState(false);
@@ -35,30 +33,17 @@ function SingleTrade(props) {
     let buyFee = (maker_fee_rate * original_buy_price * base_size)
 
     // calculate profits
-    const profit = Math.round((((original_sell_price * base_size - original_buy_price * base_size)) - (buyFee + sellFee)) * decimals.baseMultiplier) / decimals.baseMultiplier;
+    const profit = Math.round((((original_sell_price * base_size - original_buy_price * base_size)) - (buyFee + sellFee)) * decimals.base_inverse_increment) / decimals.base_inverse_increment;
     setProfit(profit);
     setBuyFee(buyFee)
     setSellFee(sellFee)
-  }, [props.order.original_sell_price, props.order.original_buy_price, props.order.base_size, user.maker_fee, decimals.baseMultiplier]);
-
-  // delete the order if the abandon button is clicked.
-  // the loop already detects deleted orders, so only need to make a call to coinbase
-  // no need to bother the database if it is busy
-  // function deleteOrder() {
-  //   setDeleting(true)
-  //   // dispatch({
-  //   //   type: 'DELETE_TRADE', payload: {
-  //   //     order_id: props.order.order_id,
-  //   //   }
-  //   // })
-
-  // }
+  }, [props.order.original_sell_price, props.order.original_buy_price, props.order.base_size, user.maker_fee, decimals.base_inverse_increment]);
 
   function syncTrade() {
-    dispatch({
-      type: 'SYNC_TRADE', payload: {
+    syncPair({
+      // type: 'SYNC_TRADE', payload: {
         order_id: props.order.order_id,
-      }
+      // }
     })
   }
 

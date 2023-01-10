@@ -67,23 +67,9 @@ function* getSimulationResults() {
   }
 }
 
-
-function* syncTrade(action) {
-  try {
-    yield axios.put(`/api/trade/`, action.payload);
-  } catch (error) {
-    console.log('PUT trade route has failed', error)
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
-
 function* tradeSaga() {
   yield takeLatest('START_TRADE', startTrade);
   yield takeLatest('AUTO_SETUP', autoSetup);
-  // yield takeLatest('DELETE_TRADE', deleteTrade);
-  yield takeLatest('SYNC_TRADE', syncTrade);
   yield takeLatest('SIMULATE_TRADES', simulation);
   yield takeLatest('GET_SIMULATION_RESULTS', getSimulationResults);
 }

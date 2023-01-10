@@ -27,7 +27,8 @@ export function DataProvider({ children }) {
   const deleteOrder = async (orderID) => { await deleteOrderNoRefresh(orderID); refreshOrders() }
 
   // trade routes - for active "hot" trading
-  const { createData: createMarketTrade } = useFetchData(`/api/trade/market`, { defaultState: {}, noLoad: true })
+  const { updateData: syncPair } = useFetchData(`/api/trade/`, { defaultState: {}, noLoad: true });
+  const { createData: createMarketTrade } = useFetchData(`/api/trade/market`, { defaultState: {}, noLoad: true });
 
   const { data: exportableFiles, refresh: refreshExportableFiles } = useFetchData(`/api/account/exportableFiles`, { defaultState: [] })
 
@@ -49,7 +50,7 @@ export function DataProvider({ children }) {
       value={
         {
           productID, setProductID, refreshProducts, products, currentProduct, toggleActiveProduct,
-          orders, refreshOrders, syncOrders, deleteOrder, deleteAllForProduct, deleteRange, createOrderPair,
+          orders, refreshOrders, syncOrders, deleteOrder, deleteAllForProduct, deleteRange, createOrderPair, syncPair,
           createMarketTrade,
           profit, refreshProfit, resetProfit,
           exportableFiles, refreshExportableFiles

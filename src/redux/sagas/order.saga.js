@@ -38,22 +38,10 @@ function* deleteAllOrdersForProduct(action) {
 }
 
 
-function* deleteOrder(action) {
-  try {
-    yield axios.delete(`/api/orders/${action.payload.order_id}`);
-  } catch (error) {
-    console.log('DELETE order route has failed', error)
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
-
 function* orderSaga() {
   yield takeLatest('DELETE_ALL_ORDERS', deleteAllOrders);
   yield takeLatest('DELETE_ALL_PRODUCT_ORDERS', deleteAllOrdersForProduct);
   yield takeLatest('DELETE_RANGE', deleteRange);
-  yield takeLatest('DELETE_TRADE', deleteOrder);
 }
 
 export default orderSaga;

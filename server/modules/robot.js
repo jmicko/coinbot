@@ -3,7 +3,7 @@ const databaseClient = require("./databaseClient");
 const { cache, botSettings, userStorage, apiStorage, messenger, cbClients } = require("./cache");
 // const botSettings = botSettings;
 const { startWebsocket } = require("./websocket");
-const { sleep, granularities, calculateProductDecimals } = require("../../src/shared");
+const { sleep, granularities, addProductDecimals } = require("../../src/shared");
 
 // start a sync loop for each active user
 async function startSync() {
@@ -730,13 +730,13 @@ async function reorder(orderToReorder) {
       const product = await databaseClient.getProduct(upToDateDbOrder.product_id, userID);
       console.log(product, 'product');
       // get the number of decimals for the base_increment of the product. This is used to round the base_size
-      const decimals = calculateProductDecimals(product);
+      const decimals = addProductDecimals(product);
 
       // make new tradeDetails so client id is not passed from old order
       const tradeDetails = {
         side: upToDateDbOrder.side,
         limit_price: upToDateDbOrder.limit_price, // quote currency
-        base_size: Number(upToDateDbOrder.base_size).toFixed(decimals.baseIncrement), // base currency
+        base_size: Number(upToDateDbOrder.base_size).toFixed(decimals.base_increment_decimals), // base currency
         product_id: upToDateDbOrder.product_id,
       };
       // send the new order with the trade details
