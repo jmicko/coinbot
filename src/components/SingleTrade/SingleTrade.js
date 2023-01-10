@@ -102,18 +102,21 @@ function SingleTrade(props) {
           <strong>
             Price: </strong>
           {(props.order.side === 'SELL')
-            ? numberWithCommas(Number(props.order.original_sell_price).toFixed(decimals.quoteIncrement))
-            : numberWithCommas(Number(props.order.original_buy_price).toFixed(decimals.quoteIncrement))
+            ? numberWithCommas(Number(props.order.original_sell_price).toFixed(decimals.quote_increment_decimals))
+            : numberWithCommas(Number(props.order.original_buy_price).toFixed(decimals.quote_increment_decimals))
           } <strong>
             {(props.order.side === 'SELL')
               ? '~Buys:'
               : '~Sells:'
             } </strong>
           {(props.order.side === 'SELL')
-            ? numberWithCommas(Number(props.order.original_buy_price).toFixed(decimals.quoteIncrement))
-            : numberWithCommas(Number(props.order.original_sell_price).toFixed(decimals.quoteIncrement))
-          } ~<strong>Size </strong>{Number(props.order.base_size).toFixed(decimals.baseIncrement)} {!props.preview && <>~</>}
-          {!props.preview ? <strong>Value</strong > : <strong>/</strong >} ${numberWithCommas((Math.round((props.order.limit_price * props.order.base_size) * decimals.quoteMultiplier) / decimals.quoteMultiplier).toFixed(decimals.quoteIncrement))} ~
+            ? numberWithCommas(Number(props.order.original_buy_price).toFixed(decimals.quote_increment_decimals))
+            : numberWithCommas(Number(props.order.original_sell_price).toFixed(decimals.quote_increment_decimals))
+          } ~<strong>Size </strong>{Number(props.order.base_size).toFixed(decimals.base_increment_decimals)} {!props.preview && <>~</>}
+          {!props.preview ? <strong>Value</strong > : <strong>/</strong >}
+          &nbsp;${numberWithCommas((
+            Math.round((props.order.limit_price * props.order.base_size) * decimals.quote_inverse_increment)
+            / decimals.quote_inverse_increment).toFixed(decimals.quote_increment_decimals))} ~
           <strong>Net Profit</strong> ${profit.toFixed(8)}
           {/* <strong> ~Time</strong> {new Date(props.order.created_at).toLocaleString('en-US')} */}
           {!props.preview && <strong> ~Time </strong>} {!props.preview && (props.order.flipped_at
