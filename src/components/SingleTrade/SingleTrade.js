@@ -41,9 +41,7 @@ function SingleTrade(props) {
 
   function syncTrade() {
     syncPair({
-      // type: 'SYNC_TRADE', payload: {
-        order_id: props.order.order_id,
-      // }
+      order_id: props.order.order_id,
     })
   }
 

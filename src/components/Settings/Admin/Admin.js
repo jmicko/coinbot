@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useUser } from '../../../contexts/UserContext';
+import { useFetchData } from '../../../hooks/fetchData';
 import Confirm from '../../Confirm/Confirm';
 import SingleUser from '../../SingleUser/SingleUser';
 import './Admin.css'
@@ -9,8 +10,10 @@ import './Admin.css'
 function Admin(props) {
   const dispatch = useDispatch();
   const { user } = useUser();
+  const { data: allUsers, updateRefreshData: approveUser, deleteRefreshData: deleteUser } = useFetchData('api/admin/users', { defaultState: [] });
+
   const allSettings = useSelector((store) => store.settingsReducer.allSettingsReducer);
-  const allUsers = useSelector((store) => store.usersReducer.allUsersReducer);
+  // const allUsers = useSelector((store) => store.usersReducer.allUsersReducer);
 
   const [loopSpeed, setLoopSpeed] = useState(1);
   const [fullSync, setFullSync] = useState(10);
@@ -18,14 +21,6 @@ function Admin(props) {
   const [resettingOrders, setResettingOrders] = useState(false);
   const [factoryResetting, setFactoryResetting] = useState(false);
 
-
-  const getUsers = useCallback(
-    () => {
-      if (user.admin) {
-        dispatch({ type: 'FETCH_USERS' })
-      }
-    }, [dispatch, user.admin]
-  )
 
   const getAllSettings = useCallback(
     () => {
@@ -104,9 +99,9 @@ function Admin(props) {
   }, [allSettings.orders_to_sync]);
 
   useEffect(() => {
-    getUsers();
+    // getUsers();
     getAllSettings();
-  }, [getUsers, getAllSettings]);
+  }, [getAllSettings]);
 
   return (
     <div className="Admin settings-panel scrollable">
@@ -141,7 +136,7 @@ function Admin(props) {
         ? <div>
           <h4>Manage Users</h4>
           {allUsers.map((user) => {
-            return <SingleUser key={user.id} user={user} />
+            return <SingleUser key={user.id} user={user} deleteUser={deleteUser} approveUser={approveUser} />
           })}
         </div>
         : <></>

@@ -6,38 +6,44 @@ import './SingleUser.css'
 
 function SingleUser(props) {
   const dispatch = useDispatch();
+  // IMPORTANT to not that this is the user from the context, not the user from the props
+  // This is the user that is logged in
   const { user } = useUser();
   const debugReducer = useSelector((store) => store.accountReducer.debugReducer);
   const [deleting, setDeleting] = useState(false);
   const [approving, setApproving] = useState(false);
   const [showAll, setShowAll] = useState(false);
 
+  // functions passed in from the parent
+  const deleteUser = () => props.deleteUser(props.user.id);
+  const approveUser = () => props.approveUser({ id: props.user.id });
+
   function toggleShowAll() {
     setShowAll(!showAll);
   }
 
-  function deleteUser() {
-    dispatch({
-      type: 'DELETE_USER', payload: {
-        id: props.user.id,
-        fromAdmin: true
-      }
-    })
-  }
+  // function deleteUser() {
+  //   dispatch({
+  //     type: 'DELETE_USER', payload: {
+  //       id: props.user.id,
+  //       fromAdmin: true
+  //     }
+  //   })
+  // }
 
   function cancelDeleteUser(params) {
     setDeleting(false)
     // deleteUser()
   }
 
-  function approveUser() {
-    setApproving(true)
-    dispatch({
-      type: 'APPROVE_USER', payload: {
-        id: props.user.id,
-      }
-    })
-  }
+  // function approveUser() {
+  //   setApproving(true)
+  //   dispatch({
+  //     type: 'APPROVE_USER', payload: {
+  //       id: props.user.id,
+  //     } 
+  //   })
+  // }
 
   function confirmDelete(params) {
     setDeleting(true)

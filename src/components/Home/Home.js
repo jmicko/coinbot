@@ -33,9 +33,6 @@ function Home() {
 
   const clickSettings = () => {
     setShowSettings(!showSettings);
-    if (user.admin) {
-      dispatch({ type: 'FETCH_USERS' });
-    }
   }
 
   return (
