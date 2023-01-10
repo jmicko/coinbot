@@ -1,5 +1,9 @@
 // DataContext.js
-import { createContext, useContext, useEffect, useState } from 'react'
+import {
+  createContext,
+  // useCallback,
+  useContext, useEffect, useState
+} from 'react'
 import { useFetchData } from '../hooks/fetchData'
 import { addProductDecimals } from '../shared';
 // import { useUser } from './UserContext';
@@ -7,16 +11,25 @@ import { addProductDecimals } from '../shared';
 const DataContext = createContext()
 
 export function DataProvider({ children }) {
-  // const { user } = useUser();
+  // state for this context
   const [productID, setProductID] = useState(null);
-  const { data: products, refresh: refreshProducts, updateData:toggleActiveProduct } = useFetchData('/api/account/products', { defaultState: {} })
-  const { data: orders, refresh: refreshOrders } = useFetchData(`/api/orders/${productID}`, { defaultState: {}, notNull: [productID] })
-  const { updateData: syncOrders } = useFetchData(`/api/orders/`, { defaultState: {} })
-  // get the profits for the selected product with fetchData hook
-  const { data: profit, refresh: refreshProfit, } = useFetchData(`/api/account/profit/${productID}`, { defaultState: {}, notNull: [productID] })
-  const { updateData: resetProfitTEST } = useFetchData(`/api/account/profit`, { defaultState: {}, notNull: [productID] })
 
-  const { data:exportableFiles, refresh: refreshExportableFiles } = useFetchData(`/api/account/exportableFiles`, { defaultState: [] })
+  // account routes
+  const { data: products, refresh: refreshProducts, updateData: toggleActiveProduct } = useFetchData('/api/account/products', { defaultState: {} })
+  // get the profits for the selected product
+  const { data: profit, refresh: refreshProfit, updateData: resetProfitTEST } = useFetchData(`/api/account/profit/${productID}`, { defaultState: {}, notNull: [productID] })
+
+  // orders routes
+  // delete range will take an array with the start and end values. deleteAllForProduct will take nothing?
+  const { data: orders, refresh: refreshOrders, createRefreshData: createOrderPair, deleteRefreshData: deleteAllForProduct, deleteRefreshData: deleteRange } = useFetchData(`/api/orders/${productID}`, { defaultState: {}, notNull: [productID] })
+  const { updateData: syncOrders, deleteData: deleteOrderNoRefresh } = useFetchData(`/api/orders`, { defaultState: {}, noLoad: true })
+  // combine delete and refresh into one function because they hit different routes
+  const deleteOrder = async (orderID) => { await deleteOrderNoRefresh(orderID); refreshOrders() }
+
+  // trade routes - for active "hot" trading
+  const { createData: createMarketTrade } = useFetchData(`/api/trade/market`, { defaultState: {}, noLoad: true })
+
+  const { data: exportableFiles, refresh: refreshExportableFiles } = useFetchData(`/api/account/exportableFiles`, { defaultState: [] })
 
   const currentProductNoDecimals = products?.allProducts?.find((product) => product.product_id === productID);
   const currentProduct = addProductDecimals(currentProductNoDecimals);
@@ -36,7 +49,8 @@ export function DataProvider({ children }) {
       value={
         {
           productID, setProductID, refreshProducts, products, currentProduct, toggleActiveProduct,
-          orders, refreshOrders, syncOrders,
+          orders, refreshOrders, syncOrders, deleteOrder, deleteAllForProduct, deleteRange, createOrderPair,
+          createMarketTrade,
           profit, refreshProfit, resetProfit,
           exportableFiles, refreshExportableFiles
         }

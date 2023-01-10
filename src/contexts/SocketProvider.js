@@ -17,14 +17,14 @@ export function SocketProvider({ children }) {
   const [socket, setSocket] = useState();
   const [socketStatus, setSocketStatus] = useState('closed');
   const { refreshUser } = useUser();
-  const { products, refreshProfits, refreshOrders, refreshProducts, refreshExportableFiles } = useData();
+  const { products, refreshProfit, refreshOrders, refreshProducts, refreshExportableFiles } = useData();
   const [tickers, setTickers] = useState({ "BTC-USD": { price: 0 }, "ETH-USD": { price: 0 } });
   const [heartbeat, setHeartbeat] = useState({ heart: 'heart', beat: 'beat', count: 0 });
   // const dispatch = useDispatch();
 
-  // // create ref for refreshOrders, refreshProfits, refreshProducts, refreshUser, and product
+  // // create ref for refreshOrders, refreshProfit, refreshProducts, refreshUser, and product
   const refreshOrdersRef = useRef();
-  const refreshProfitsRef = useRef();
+  const refreshProfitRef = useRef();
   const refreshProductsRef = useRef();
   const refreshUserRef = useRef();
   const productRef = useRef();
@@ -33,12 +33,12 @@ export function SocketProvider({ children }) {
   // // update the refs when the functions change
   useEffect(() => {
     refreshOrdersRef.current = refreshOrders;
-    refreshProfitsRef.current = refreshProfits;
+    refreshProfitRef.current = refreshProfit;
     refreshProductsRef.current = refreshProducts;
     refreshUserRef.current = refreshUser;
     productRef.current = products;
     refreshExportableFilesRef.current = refreshExportableFiles;
-  }, [refreshOrders, refreshProfits, refreshProducts, refreshUser, products, refreshExportableFiles]);
+  }, [refreshOrders, refreshProfit, refreshProducts, refreshUser, products, refreshExportableFiles]);
 
 
   // useEffect to prevent from multiple connections
@@ -95,7 +95,7 @@ export function SocketProvider({ children }) {
         refreshProductsRef.current();
       }
       if (message.profitUpdate || message.orderUpdate) {
-        refreshProfitsRef.current();
+        refreshProfitRef.current();
 
       }
       if (message.userUpdate) {
@@ -149,10 +149,10 @@ export function SocketProvider({ children }) {
   }, [
     // products,
     // refreshOrders, 
-    // refreshProfits,
+    // refreshProfit,
     //  refreshProducts, 
     // refreshUser
-    productRef, refreshOrdersRef, refreshProfitsRef, refreshProductsRef, refreshUserRef
+    productRef, refreshOrdersRef, refreshProfitRef, refreshProductsRef, refreshUserRef
   ]);
 
 

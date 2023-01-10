@@ -113,11 +113,11 @@ router.put('/products', rejectUnauthenticated, async (req, res) => {
 /**
 * GET route to get total profit estimate
 */
-router.get('/profit/:product', rejectUnauthenticated, async (req, res) => {
+router.get('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
   console.log('profits get route');
   const userID = req.user.id;
-  const product = req.params.product;
-  // console.log(product, 'product');
+  const product_id = req.params.product_id;
+  // console.log(product_id, 'product_id');
   // console.log(req.user, 'req.user in profits route');
 
   const durations = ['24 hour', '1 week', '30 day', '1 year'];
@@ -126,14 +126,14 @@ router.get('/profit/:product', rejectUnauthenticated, async (req, res) => {
     for (let i = 0; i < durations.length; i++) {
       const duration = durations[i];
       // get profit for each duration by product
-      let productProfit = await databaseClient.getProfitForDurationByProduct(userID, product, duration);
+      let productProfit = await databaseClient.getProfitForDurationByProduct(userID, product_id, duration);
       // get profit for each duration by all products
       let allProfit = await databaseClient.getProfitForDurationByAllProducts(userID, duration);
       // add profit to profits array along with duration
       profits.push({ duration, productProfit, allProfit });
     }
 
-    const sinceDate = await databaseClient.getProfitSinceDate(userID, req.user.profit_reset, product)
+    const sinceDate = await databaseClient.getProfitSinceDate(userID, req.user.profit_reset, product_id)
     // add since reset to profits array
     profits.push(sinceDate);
 
@@ -148,7 +148,9 @@ router.get('/profit/:product', rejectUnauthenticated, async (req, res) => {
 /**
 * PUT route to reset profits
 */
-router.put('/profit', rejectUnauthenticated, async (req, res) => {
+// todo - add profit reset date column to products table and enable resetting per product
+// also this should take in a date in the params so the user can reset profits for a specific date
+router.put('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
   console.log('reset profit route');
   // get the object keys
 

@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { connect, useDispatch } from 'react-redux';
 import { useSocket } from '../../contexts/SocketProvider';
-import mapStoreToProps from '../../redux/mapStoreToProps';
 import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 import './Trade.css';
 import IncrementButtons from './IncrementButtons';
@@ -37,14 +35,13 @@ function Trade() {
   const { width } = useWindowDimensions();
   const [basicAmount, setBasicAmount] = useState(0);
   const [basicSide, setBasicSide] = useState('BUY');
-  const dispatch = useDispatch();
   const { user } = useUser();
 
   const socket = useSocket();
   const [initialPriceSet, setInitialPriceSet] = useState(false);
 
   // product info for the current product
-  const { productID, currentProduct } = useData();
+  const { productID, currentProduct, createOrderPair, createMarketTrade } = useData();
   const currentProductPrice = Number(socket.tickers?.[productID]?.price);
   const {
     price_rounding,
@@ -97,30 +94,31 @@ function Trade() {
     if (currentProductPrice < price) {
       type = 'market';
     }
-    dispatch({
-      type: 'START_TRADE', payload: {
-        original_sell_price: original_sell_price,
-        original_buy_price: price,
-        side: transactionSide,
-        limit_price: price,
-        base_size: transactionAmountBTC,
-        product_id: productID,
-        trade_pair_ratio: tradePairRatio,
-        type: type
-      }
+
+    createOrderPair({
+      // type: 'START_TRADE', payload: {
+      original_sell_price: original_sell_price,
+      original_buy_price: price,
+      side: transactionSide,
+      limit_price: price,
+      base_size: transactionAmountBTC,
+      product_id: productID,
+      trade_pair_ratio: tradePairRatio,
+      type: type
+      // }
     })
   }
 
   function submitBasicTransaction(event) {
     event.preventDefault();
     console.log('BASIC TRADE STARTED');
-    dispatch({
-      type: 'START_BASIC_TRADE', payload: {
-        base_size: basicAmount,
-        product_id: productID,
-        side: basicSide,
-        tradingPrice: currentProductPrice
-      }
+    createMarketTrade({
+      // type: 'START_BASIC_TRADE', payload: {
+      base_size: basicAmount,
+      product_id: productID,
+      side: basicSide,
+      tradingPrice: currentProductPrice
+      // }
     })
   }
 
@@ -397,4 +395,4 @@ function Trade() {
   );
 }
 
-export default connect(mapStoreToProps)(Trade);
+export default Trade;

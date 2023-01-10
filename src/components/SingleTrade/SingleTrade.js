@@ -8,12 +8,13 @@ import './SingleTrade.css'
 function SingleTrade(props) {
   const dispatch = useDispatch();
   const { user } = useUser();
+  const { productID, deleteOrder } = useData();
+
   const [profit, setProfit] = useState(0);
   const [deleting, setDeleting] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [sellFee, setSellFee] = useState();
   const [buyFee, setBuyFee] = useState();
-  const { productID } = useData();
 
   const decimals = useProductDecimals(productID, user.availableFunds);
 
@@ -43,14 +44,15 @@ function SingleTrade(props) {
   // delete the order if the abandon button is clicked.
   // the loop already detects deleted orders, so only need to make a call to coinbase
   // no need to bother the database if it is busy
-  function deleteOrder() {
-    setDeleting(true)
-    dispatch({
-      type: 'DELETE_TRADE', payload: {
-        order_id: props.order.order_id,
-      }
-    })
-  }
+  // function deleteOrder() {
+  //   setDeleting(true)
+  //   // dispatch({
+  //   //   type: 'DELETE_TRADE', payload: {
+  //   //     order_id: props.order.order_id,
+  //   //   }
+  //   // })
+
+  // }
 
   function syncTrade() {
     dispatch({
@@ -85,7 +87,14 @@ function SingleTrade(props) {
       <div className={"overlay"}>
         {(deleting === true)
           ? <p className="deleting">Deleting...</p>
-          : !props.preview && !user.kill_locked && <button className={`btn-red kill-button ${user.theme}`} onClick={() => { deleteOrder() }}>Kill</button>
+          : !props.preview && !user.kill_locked && <button
+            className={`btn-red kill-button ${user.theme}`}
+            onClick={() => {
+              deleteOrder(props.order.order_id);
+              setDeleting(true)
+            }}>
+            Kill
+          </button>
 
         }
         <p className="single-trade-text" >
