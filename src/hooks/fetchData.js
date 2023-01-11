@@ -130,7 +130,12 @@ export function useFetchData(url, { defaultState, notNull, noLoad }) {
       // check if the urlArray is an array or if it's a notNull string. 
       // if urlArray is an array,  join it with '/' to create the url
       // if urlArray is a string, use it as the url
-      const deleteUrl = Array.isArray(urlArray) ? `${url}/${urlArray.join('/')}` : `${url}/${urlArray}`
+      const deleteUrl = Array.isArray(urlArray)
+        ? `${url}/${urlArray.join('/')}`
+        // check if null or undefined. If it is, use the url as is
+        : urlArray === null || urlArray === undefined
+          ? url
+          : `${url}/${urlArray}`
       console.log(deleteUrl, 'url in useDeleteData hook', urlArray, 'urlArray in useDeleteData hook')
 
 

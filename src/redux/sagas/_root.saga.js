@@ -16,7 +16,6 @@ export default function* rootSaga() {
   yield all([
       tradeSaga(),
       accountSaga(),
-      // orderSaga(),
       userSaga(),
       settingsSaga(),
   ]);

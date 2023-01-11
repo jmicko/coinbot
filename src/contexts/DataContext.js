@@ -21,10 +21,11 @@ export function DataProvider({ children }) {
 
   // orders routes
   // delete range will take an array with the start and end values. deleteAllForProduct will take nothing?
-  const { data: orders, refresh: refreshOrders, createRefreshData: createOrderPair, deleteRefreshData: deleteAllForProduct, deleteRefreshData: deleteRange } = useFetchData(`/api/orders/${productID}`, { defaultState: {}, notNull: [productID] })
-  const { updateData: syncOrders, deleteData: deleteOrderNoRefresh } = useFetchData(`/api/orders`, { defaultState: {}, noLoad: true })
+  const { data: orders, refresh: refreshOrders, createRefreshData: createOrderPair, deleteRefreshData: deleteRangeForProduct } = useFetchData(`/api/orders/${productID}`, { defaultState: {}, notNull: [productID] })
+  const { updateData: syncOrders, deleteData: deleteOrderNoRefresh, deleteData: deleteAllNoRefresh } = useFetchData(`/api/orders`, { defaultState: {}, noLoad: true })
   // combine delete and refresh into one function because they hit different routes
   const deleteOrder = async (orderID) => { await deleteOrderNoRefresh(orderID); refreshOrders() }
+  const deleteAll = async () => { await deleteAllNoRefresh(); refreshOrders() }
 
   // trade routes - for active "hot" trading
   const { updateData: syncPair } = useFetchData(`/api/trade/`, { defaultState: {}, noLoad: true });
@@ -49,9 +50,9 @@ export function DataProvider({ children }) {
     <DataContext.Provider
       value={
         {
-          productID, setProductID, refreshProducts, products, currentProduct, toggleActiveProduct,
-          orders, refreshOrders, syncOrders, deleteOrder, deleteAllForProduct, deleteRange, createOrderPair, syncPair,
-          createMarketTrade,
+          products, currentProduct, productID, setProductID, refreshProducts, toggleActiveProduct,
+          orders, refreshOrders, createMarketTrade, createOrderPair, syncPair, syncOrders,
+          deleteOrder, deleteRangeForProduct, deleteAll,
           profit, refreshProfit, resetProfit,
           exportableFiles, refreshExportableFiles
         }
