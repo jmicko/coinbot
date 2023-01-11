@@ -12,7 +12,7 @@ const DataContext = createContext()
 
 export function DataProvider({ children }) {
   // state for this context
-  const [productID, setProductID] = useState(null);
+  const [productID, setProductID] = useState('BTC-USD');
 
   // account routes
   const { data: products, refresh: refreshProducts, updateData: toggleActiveProduct } = useFetchData('/api/account/products', { defaultState: {} })

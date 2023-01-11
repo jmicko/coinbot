@@ -8,7 +8,7 @@ const useProductDecimals = (product, availableFunds) => {
     if (product && availableFunds?.[product]) {
       const decimals = addProductDecimals(availableFunds?.[product]);
       setDecimals(decimals);
-      console.log('decimals', decimals);
+      // console.log('decimals', decimals);
     } else {
       console.log('no product or funds');
     }

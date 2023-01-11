@@ -19,7 +19,7 @@ function SingleTrade(props) {
   // decimals.baseIncrement
 
   useEffect(() => {
-    console.log('rendering single trade');
+    // console.log('rendering single trade');
     // calculate all the numbers when the component renders
 
     // pull from props and make more manageable

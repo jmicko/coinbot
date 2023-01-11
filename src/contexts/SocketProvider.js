@@ -17,10 +17,16 @@ export function SocketProvider({ children }) {
   const [socket, setSocket] = useState();
   const [socketStatus, setSocketStatus] = useState('closed');
   const { refreshUser } = useUser();
-  const { products, refreshProfit, refreshOrders, refreshProducts, refreshExportableFiles } = useData();
+  const { products, productID, refreshProfit, refreshOrders, refreshProducts, refreshExportableFiles } = useData();
   const [tickers, setTickers] = useState({ "BTC-USD": { price: 0 }, "ETH-USD": { price: 0 } });
   const [heartbeat, setHeartbeat] = useState({ heart: 'heart', beat: 'beat', count: 0 });
-  // const dispatch = useDispatch();
+
+  const currentPriceRef = useRef();
+  useEffect(() => {
+    currentPriceRef.current = tickers[productID]?.price;
+  }, [tickers, productID]);
+
+  const currentPrice = currentPriceRef.current;
 
   // // create ref for refreshOrders, refreshProfit, refreshProducts, refreshUser, and product
   const refreshOrdersRef = useRef();
@@ -158,10 +164,11 @@ export function SocketProvider({ children }) {
 
   return (
     <SocketContext.Provider value={{
-      socket: socket,
-      socketStatus: socketStatus,
-      tickers: tickers,
-      heartbeat: heartbeat
+      socket,
+      socketStatus,
+      tickers,
+      heartbeat,
+      currentPrice,
     }}>
       {children}
     </SocketContext.Provider>

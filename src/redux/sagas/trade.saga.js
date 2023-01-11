@@ -2,21 +2,6 @@ import { put, takeLatest } from 'redux-saga/effects';
 import axios from 'axios';
 
 
-function* startTrade(action) {
-  try {
-    yield axios.post(`/api/trade/`, action.payload);
-    yield put({
-      type: 'FETCH_ORDERS',
-      payload: { product: action.payload.product_id }
-    });
-  } catch (error) {
-    console.log('POST order route has failed', error)
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
-
 function* autoSetup(action) {
   try {
     yield axios.post(`/api/trade/autoSetup`, action.payload);
