@@ -22,32 +22,13 @@ function SingleUser(props) {
     setShowAll(!showAll);
   }
 
-  // function deleteUser() {
-  //   dispatch({
-  //     type: 'DELETE_USER', payload: {
-  //       id: props.user.id,
-  //       fromAdmin: true
-  //     }
-  //   })
-  // }
 
   function cancelDeleteUser(params) {
     setDeleting(false)
-    // deleteUser()
   }
-
-  // function approveUser() {
-  //   setApproving(true)
-  //   dispatch({
-  //     type: 'APPROVE_USER', payload: {
-  //       id: props.user.id,
-  //     } 
-  //   })
-  // }
 
   function confirmDelete(params) {
     setDeleting(true)
-    // deleteUser()
   }
 
   function debug() {
@@ -72,11 +53,11 @@ function SingleUser(props) {
         }
 
         {/* Approve a user */}
-        {(props.user.approved)
+        {!deleting && ((props.user.approved)
           ? <p className="deleting">Approved</p>
           : (approving === true)
             ? <p className="deleting">Approving...</p>
-            : <button className="btn-green deleting" onClick={() => { approveUser() }}>Approve</button>
+            : <button className="btn-green deleting" onClick={() => { approveUser() }}>Approve</button>)
         }
         {/* User details */}
         <p className="single-trade-text">
