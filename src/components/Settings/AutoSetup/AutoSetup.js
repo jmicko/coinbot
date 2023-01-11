@@ -7,11 +7,14 @@ import { autoSetup, numberWithCommas } from '../../../shared';
 import Graph from '../../Graph/Graph';
 import SingleTrade from '../../SingleTrade/SingleTrade';
 import './AutoSetup.css'
+import { useData } from '../../../contexts/DataContext';
 
 
 function AutoSetup(props) {
   const dispatch = useDispatch();
   const { user } = useUser();
+  const { productID } = useData();
+
   const simulationReducer = useSelector((store) => store.accountReducer.simulationReducer);
   const socket = useSocket();
 
@@ -33,8 +36,8 @@ function AutoSetup(props) {
   const [steepness, setSteepness] = useState(10);
 
   // constants that change based on product
-  const baseID = user.availableFunds?.[props.product]?.base_currency;
-  const decimals = useProductDecimals(props.product, user.availableFunds);
+  const baseID = user.availableFunds?.[productID]?.base_currency;
+  const decimals = useProductDecimals(productID, user.availableFunds);
 
   const [simulation, setSimulation] = useState(true);
   // start date, default is one month ago
@@ -90,7 +93,7 @@ function AutoSetup(props) {
     () => {
       let payload = {
         availableFunds: availableFundsUSD,
-        tradingPrice: socket.tickers[props.product].price,
+        tradingPrice: socket.tickers[productID].price,
         // tradingPrice: 16000,
         startingValue: startingValue,
         skipFirst: skipFirst,
@@ -101,7 +104,7 @@ function AutoSetup(props) {
         trade_pair_ratio: tradePairRatio,
         base_size: base_size,
         sizeType: sizeType,
-        product_id: props.product,
+        product_id: productID,
         sizeCurve: sizeCurve,
         maxSize: maxSize,
         steepness: steepness,
@@ -124,7 +127,7 @@ function AutoSetup(props) {
 
       // setup.orderList && 
       setOrders(setup.orderList.reverse().map((order, i) => {
-        return <SingleTrade key={i} order={order} preview={true} product={props.product} />
+        return <SingleTrade key={i} order={order} preview={true} product={productID} />
       }))
     }, [
     user,
@@ -138,7 +141,7 @@ function AutoSetup(props) {
     tradePairRatio,
     base_size,
     sizeType,
-    props.product,
+    productID,
     skipFirst,
     sizeCurve,
     maxSize,
@@ -152,11 +155,11 @@ function AutoSetup(props) {
   }, [startingValue, endingValue, increment, base_size, sizeType, skipFirst, sizeCurve, maxSize, steepness, calculateResults])
 
   useEffect(() => {
-    if (user?.availableFunds?.[props.product]?.quote_available) {
-      setAvailableFundsUSD(user.availableFunds?.[props.product]?.quote_available);
-      setAvailableFundsBase(user.availableFunds?.[props.product]?.base_available);
+    if (user?.availableFunds?.[productID]?.quote_available) {
+      setAvailableFundsUSD(user.availableFunds?.[productID]?.quote_available);
+      setAvailableFundsBase(user.availableFunds?.[productID]?.base_available);
     }
-  }, [user.availableFunds, props.product])
+  }, [user.availableFunds, productID])
 
   // on component unmount, unset the simulation reducer
   useEffect(() => {
@@ -197,7 +200,7 @@ function AutoSetup(props) {
         trade_pair_ratio: tradePairRatio,
         base_size: base_size,
         sizeType: sizeType,
-        product_id: props.product,
+        product_id: productID,
         sizeCurve: sizeCurve,
         maxSize: maxSize,
         steepness: steepness,
@@ -212,7 +215,7 @@ function AutoSetup(props) {
     dispatch({
       type: 'AUTO_SETUP', payload: {
         availableFunds: availableFunds,
-        tradingPrice: socket.tickers[props.product].price,
+        tradingPrice: socket.tickers[productID].price,
         startingValue: startingValue,
         skipFirst: skipFirst,
         endingValue: endingValue,
@@ -222,7 +225,7 @@ function AutoSetup(props) {
         trade_pair_ratio: tradePairRatio,
         base_size: base_size,
         sizeType: sizeType,
-        product_id: props.product,
+        product_id: productID,
         sizeCurve: sizeCurve,
         maxSize: maxSize,
         steepness: steepness,
@@ -234,7 +237,7 @@ function AutoSetup(props) {
     <div className="AutoSetup settings-panel scrollable">
       <div className="divider" />
       <h4>Auto Setup</h4>
-      {/* {JSON.stringify(user.availableFunds?.[props.product]?.quote_available)} */}
+      {/* {JSON.stringify(user.availableFunds?.[productID]?.quote_available)} */}
       {props.tips && <>
         <p>
           Enter the parameters you want and the bot will keep placing trades for you based on
@@ -253,7 +256,7 @@ function AutoSetup(props) {
 
         <form className='auto-setup-form left-border' onSubmit={submitAutoSetup}>
 
-          <p>Current price: {socket.tickers[props.product].price}</p>
+          <p>Current price: {socket.tickers[productID].price}</p>
 
           {/* STARTING VALUE */}
           {props.tips

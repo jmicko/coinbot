@@ -96,7 +96,6 @@ function Trade() {
     }
 
     createOrderPair({
-      // type: 'START_TRADE', payload: {
       original_sell_price: original_sell_price,
       original_buy_price: price,
       side: transactionSide,
@@ -105,7 +104,6 @@ function Trade() {
       product_id: productID,
       trade_pair_ratio: tradePairRatio,
       type: type
-      // }
     })
   }
 

@@ -68,7 +68,6 @@ function* getSimulationResults() {
 }
 
 function* tradeSaga() {
-  yield takeLatest('START_TRADE', startTrade);
   yield takeLatest('AUTO_SETUP', autoSetup);
   yield takeLatest('SIMULATE_TRADES', simulation);
   yield takeLatest('GET_SIMULATION_RESULTS', getSimulationResults);
