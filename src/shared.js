@@ -62,29 +62,46 @@ function autoSetup(user, options) {
     valid: false,
   }
 
+  // if any key in the options object is null or undefined or is currently set to NaN, return falseReturn
+  // don't compute isNaN, just see if it already is NaN
+  for (let key in options) {
+    if (options[key] === null || options[key] === undefined || options[key] === NaN) {
+      console.log('bad options')
+      return falseReturn;
+    } 
+    // else {
+    //   console.log(options[key], 'options[key]')
+    // }
+  }
+  
+
   if (!available) {
     console.log('no available funds for this product')
     return falseReturn;
   }
-  // console.log(product, 'product')
+  // console.log(options, 'options')
 
   // create an array to hold the new trades to put in
   const orderList = [];
 
   // SHORTEN PARAMS for better readability
   let availableFunds = options.availableFunds;
-  const size = options.size;
-  const startingValue = options.startingValue;
-  const endingValue = options.endingValue;
-  const tradingPrice = options.tradingPrice;
-  const increment = options.increment;
-  const incrementType = options.incrementType;
-  const trade_pair_ratio = options.trade_pair_ratio;
-  const skipFirst = options.skipFirst;
-  const sizeType = options.sizeType;
-  const sizeCurve = options.sizeCurve;
-  const maxSize = options.maxSize;
-  const steepness = options.steepness;
+
+  const { 
+    size,
+    startingValue,
+    endingValue,
+    tradingPrice,
+    increment,
+    incrementType,
+    trade_pair_ratio,
+    skipFirst,
+    sizeType,
+    sizeCurve,
+    maxSize,
+    steepness
+  } = options;
+
 
   // initialize values for the loop
   let buyPrice = startingValue;
@@ -99,9 +116,11 @@ function autoSetup(user, options) {
 
   // prevent infinite loops and bad orders
   if ((startingValue === 0 && !skipFirst) ||
-    // startingValue <= 0 ||
+    startingValue <= 0 ||
+    // startingValue === null ||
+    // startingValue === undefined ||
     (startingValue === 0 && incrementType === 'percentage') ||
-    (endingValue <= 0 && loopDirection === "up") ||
+    (endingValue <= startingValue && loopDirection === "up") ||
     size <= 0 ||
     increment <= 0 ||
     trade_pair_ratio <= 0 ||
@@ -113,8 +132,12 @@ function autoSetup(user, options) {
   }
   // loop until one of the stop triggers is hit
   let stop = false;
+  // for (let index = 0; index < array.length; index++) {
+  //   const element = array[index];
+    
+  // }
 
-  for (let i = 0; !stop; i++) {
+  for (let i = 0; (!stop && i < 1000) ; i++) {
     if (i === 0 && skipFirst) {
       // console.log('need to skip first one!');
       // increment buy price, but don't remove cost from funds
