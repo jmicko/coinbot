@@ -10,17 +10,21 @@ function Graph(props) {
 
   const setupOptions = props.setupResults.options;
 
-  const setupMinSize = props.setupResults.options.base_size;
-  const setupMaxSize = props.setupResults.options.maxSize;
-  const currentPrice = Number(props.setupResults.options.tradingPrice);
+  console.log(setupOptions, 'props.setupResults in Graph.js');
+
+  const setupMinSize = setupOptions.size;
+  const maxSize = setupOptions.sizeCurve === 'curve'
+    ? setupOptions.maxSize
+    : setupMinSize * 2;
+  const currentPrice = Number(setupOptions.tradingPrice);
 
   const whichSize = setupOptions.sizeType === 'base' ? 'base_size' : 'buy_quote_size';
 
-  const startingValueX = scaleToZeroX ? 0 : props.setupResults.options.startingValue;
-  const endingValue = props.setupResults.options.endingValue;
+  const startingValueX = scaleToZeroX ? 0 : setupOptions.startingValue;
+  const endingValue = setupOptions.endingValue;
 
   const minSize = scaleToZeroY ? 0 : setupMinSize;
-  const maxSize = setupMaxSize;
+  // const maxSize = setupMaxSize;
 
   // get the min and max values
   const minPrice = startingValueX;
@@ -47,8 +51,11 @@ function Graph(props) {
     }
   }, []);
 
+  // console.log(props.data, 'props.data in Graph.js')
+
   // get the data
-  const data = [].concat.apply([], props.data.map(d => d.props.order));
+  // const data = [].concat.apply([], props.data.map(d => d));
+  const data = props.data;
 
   // draw a boundary around the graph
   const drawGraphBoundary = useCallback((canvas) => {
@@ -78,55 +85,11 @@ function Graph(props) {
       ctx.textBaseline = 'top';
       ctx.fillText(`$${currentPrice.toFixed(2)}`, x, paddingY - 15);
     }
-  }, [currentPrice, maxPrice, minPrice, showCurrentPrice]);
 
-  const drawToolTip = useCallback((canvas) => {
-    const ctx = canvas.getContext('2d');
-    const { paddingX, paddingY, graphWidth, graphBottom, graphRight } = getGraphDimensions(canvas);
+  }, [currentPrice, maxPrice, minPrice, showCurrentPrice,
+    // mouse
+  ]);
 
-    if (mouse.x > paddingX && mouse.x < graphRight && mouse.y > paddingY && mouse.y < graphBottom) {
-      // find the closest point to the mouse
-      const closestPoint = data.reduce((prev, curr) => {
-        const prevX = paddingX + (prev.original_buy_price - minPrice) / (maxPrice - minPrice) * graphWidth;
-        const currX = paddingX + (curr.original_buy_price - minPrice) / (maxPrice - minPrice) * graphWidth;
-        return Math.abs(prevX - mouse.x) < Math.abs(currX - mouse.x) ? prev : curr;
-      });
-
-      // draw the vertical line
-      ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
-      ctx.beginPath();
-      const x = paddingX + (closestPoint.original_buy_price - minPrice) / (maxPrice - minPrice) * graphWidth;
-      ctx.moveTo(x, graphBottom);
-      ctx.lineTo(x, paddingY);
-      ctx.stroke();
-
-      // draw the tooltip with the buy/sell price, and size data. not other data is shown because it would be too crowded
-      // if the mouse is too close to the right edge of the canvas, draw the tooltip to the left of the mouse
-      const tooltipX = mouse.x > canvas.width - 100 ? mouse.x - 100 : mouse.x;
-      // if the mouse is too close to the top edge of the canvas, draw the tooltip below the mouse
-      if (showSells) {
-        const tooltipY = mouse.y < 30 ? mouse.y + 20 : mouse.y - 50;
-        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-        ctx.fillRect(tooltipX, tooltipY, 100, 50);
-        ctx.fillStyle = 'rgba(0, 0, 0, 1)';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        ctx.fillText(`Buy: $${closestPoint.original_buy_price.toFixed(2)}`, tooltipX + 5, tooltipY + 5);
-        ctx.fillText(`Sell: $${closestPoint.original_sell_price.toFixed(2)}`, tooltipX + 5, tooltipY + 20);
-        ctx.fillText(`Size: ${whichSize === 'buy_quote_size' ? '$' : ''}${Number(closestPoint[whichSize]).toFixed(2)} ${whichSize === 'base_size' ? 'ETH' : ''}`, tooltipX + 5, tooltipY + 35);
-      } else {
-
-        const tooltipY = mouse.y < 30 ? mouse.y + 20 : mouse.y - 35;
-        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-        ctx.fillRect(tooltipX, tooltipY, 100, 35);
-        ctx.fillStyle = 'rgba(0, 0, 0, 1)';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        ctx.fillText(`Buy: $${closestPoint.original_buy_price.toFixed(2)}`, tooltipX + 5, tooltipY + 5);
-        ctx.fillText(`Size: ${whichSize === 'buy_quote_size' ? '$' : ''}${Number(closestPoint[whichSize]).toFixed(2)} ${whichSize === 'base_size' ? 'ETH' : ''}`, tooltipX + 5, tooltipY + 20);
-      }
-    }
-  }, [mouse, maxPrice, minPrice, showSells, whichSize, data]);
 
   const drawDataPoints = useCallback((canvas) => {
     const ctx = canvas.getContext('2d');
@@ -338,14 +301,118 @@ function Graph(props) {
     // show the current price if it is within the range of the graph
     drawPriceTicker(canvas);
 
-  }, [data, canvasRef, scaleToZeroX, scaleToZeroY, drawAxis, drawTicks, drawDataPoints, drawPriceTicker, drawGraphBoundary, maxPrice, minPrice, maxSize, minSize]);
+  }, [data, canvasRef, scaleToZeroX, scaleToZeroY, drawAxis, drawTicks, drawDataPoints, drawPriceTicker, drawGraphBoundary, maxPrice, minPrice, maxSize, minSize,
+    mouse
+  ]);
+
+
+  const drawToolTip = useCallback((canvas) => {
+    const ctx = canvas.getContext('2d');
+    const { paddingX, paddingY, graphWidth, graphBottom, graphRight } = getGraphDimensions(canvas);
+
+    if (mouse.x > paddingX && mouse.x < graphRight && mouse.y > paddingY && mouse.y < graphBottom) {
+      // find the closest point to the mouse
+      const closestPoint = data.reduce((prev, curr) => {
+        const prevX = paddingX + (prev.original_buy_price - minPrice) / (maxPrice - minPrice) * graphWidth;
+        const currX = paddingX + (curr.original_buy_price - minPrice) / (maxPrice - minPrice) * graphWidth;
+        return Math.abs(prevX - mouse.x) < Math.abs(currX - mouse.x) ? prev : curr;
+      });
+
+      // draw the vertical line
+      ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
+      ctx.beginPath();
+      const x = paddingX + (closestPoint.original_buy_price - minPrice) / (maxPrice - minPrice) * graphWidth;
+      ctx.moveTo(x, graphBottom);
+      ctx.lineTo(x, paddingY);
+      ctx.stroke();
+
+      // draw the tooltip with the buy/sell price, and size data. not other data is shown because it would be too crowded
+      // if the mouse is too close to the right edge of the canvas, draw the tooltip to the left of the mouse
+      const tooltipX = mouse.x > canvas.width - 100 ? mouse.x - 100 : mouse.x;
+      // if the mouse is too close to the top edge of the canvas, draw the tooltip below the mouse
+      if (showSells) {
+        const tooltipY = mouse.y < 30 ? mouse.y + 20 : mouse.y - 50;
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.fillRect(tooltipX, tooltipY, 100, 50);
+        ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(`Buy: $${closestPoint.original_buy_price.toFixed(2)}`, tooltipX + 5, tooltipY + 5);
+        ctx.fillText(`Sell: $${closestPoint.original_sell_price.toFixed(2)}`, tooltipX + 5, tooltipY + 20);
+        ctx.fillText(`Size: ${whichSize === 'buy_quote_size' ? '$' : ''}${Number(closestPoint[whichSize]).toFixed(2)} ${whichSize === 'base_size' ? 'ETH' : ''}`, tooltipX + 5, tooltipY + 35);
+      } else {
+
+        const tooltipY = mouse.y < 30 ? mouse.y + 20 : mouse.y - 35;
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.fillRect(tooltipX, tooltipY, 100, 35);
+        ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(`Buy: $${closestPoint.original_buy_price.toFixed(2)}`, tooltipX + 5, tooltipY + 5);
+        ctx.fillText(`Size: ${whichSize === 'buy_quote_size' ? '$' : ''}${Number(closestPoint[whichSize]).toFixed(2)} ${whichSize === 'base_size' ? 'ETH' : ''}`, tooltipX + 5, tooltipY + 20);
+      }
+    }
+  }, [mouse, maxPrice, minPrice, showSells, whichSize, data]);
 
   useEffect(() => {
     // draw the mouse tooltip in a separate useEffect so that only the tooltip is redrawn when the mouse moves
     // draw a vertical line through whichever point is closest to the mouse based on the x values array if the mouse is over the graph
     // need to draw this last so it is on top of the other elements
     const canvas = canvasRef.current;
-    drawToolTip(canvas);
+    // will need to clear the old tooltip before drawing a new one, so save the tooltip data so it can be cleared
+    const oldTooltip = {
+      x: mouse.x,
+      y: mouse.y
+    };
+    // clear the old tooltip
+    const ctx = canvas.getContext('2d');
+    const { paddingX, paddingY, graphWidth, graphBottom, graphRight } = getGraphDimensions(canvas);
+    if (oldTooltip.x > paddingX && oldTooltip.x < graphRight && oldTooltip.y > paddingY && oldTooltip.y < graphBottom) {
+      // find the closest point to the mouse
+      const closestPoint = data.reduce((prev, curr) => {
+        const prevX = paddingX + (prev.original_buy_price - minPrice) / (maxPrice - minPrice) * graphWidth;
+        const currX = paddingX + (curr.original_buy_price - minPrice) / (maxPrice - minPrice) * graphWidth;
+        return Math.abs(prevX - oldTooltip.x) < Math.abs(currX - oldTooltip.x) ? prev : curr;
+      });
+      // console.log(closestPoint, 'closestPoint');
+      // draw the vertical line
+      ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
+      ctx.beginPath();
+      const x = paddingX + (closestPoint.original_buy_price - minPrice) / (maxPrice - minPrice) * graphWidth;
+      ctx.moveTo(x, graphBottom);
+      ctx.lineTo(x, paddingY);
+      ctx.stroke();
+      // draw the tooltip with the buy/sell price, and size data. not other data is shown because it would be too crowded 
+      // if the mouse is too close to the right edge of the canvas, draw the tooltip to the left of the mouse
+      const tooltipX = oldTooltip.x > canvas.width - 100 ? oldTooltip.x - 100 : oldTooltip.x;
+      // if the mouse is too close to the top edge of the canvas, draw the tooltip below the mouse
+      if (showSells) {
+        const tooltipY = oldTooltip.y < 30 ? oldTooltip.y + 20 : oldTooltip.y - 50;
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.fillRect(tooltipX, tooltipY, 100, 50);
+        ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(`Buy: $${closestPoint.original_buy_price.toFixed(2)}`, tooltipX + 5, tooltipY + 5);
+        ctx.fillText(`Sell: $${closestPoint.original_sell_price.toFixed(2)}`, tooltipX + 5, tooltipY + 20);
+        ctx.fillText(`Size: ${whichSize === 'buy_quote_size' ? '$' : ''}${Number(closestPoint[whichSize]).toFixed(2)} ${whichSize === 'base_size' ? 'ETH' : ''}`, tooltipX + 5, tooltipY + 35);
+      } else {
+        const tooltipY = oldTooltip.y < 30 ? oldTooltip.y + 20 : oldTooltip.y - 35;
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.fillRect(tooltipX, tooltipY, 100, 35);
+        ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+
+        ctx.fillText(`Buy: $${closestPoint.original_buy_price.toFixed(2)}`, tooltipX + 5, tooltipY + 5);
+        ctx.fillText(`Size: ${whichSize === 'buy_quote_size' ? '$' : ''}${Number(closestPoint[whichSize]).toFixed(2)} ${whichSize === 'base_size' ? 'ETH' : ''}`, tooltipX + 5, tooltipY + 20);
+      }
+    }
+
+
+
+
+
   }, [mouse, data, drawToolTip]);
 
 

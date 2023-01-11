@@ -32,10 +32,13 @@ function AutoSetup(props) {
   const simulationReducer = useSelector((store) => store.accountReducer.simulationReducer);
   const { currentPrice } = useSocket();
 
+  // console.log('currentPrice', (currentPrice / 2).toFixed(currentProduct.quote_increment_decimals));
+
   const [auto, setAuto] = useState({
-    startingValue: 1000,
+    // startingValue: 1000,
+    startingValue: Number((currentPrice / 2).toFixed(currentProduct.price_rounding - 2 > 0 ? currentProduct.price_rounding - 2 : 0)),
     skipFirst: false,
-    endingValue: 100000,
+    endingValue: Number((currentPrice * 1.5).toFixed(currentProduct.price_rounding - 2 > 0 ? currentProduct.price_rounding - 2 : 0)),
     ignoreFunds: false,
     increment: 100,
     incrementType: 'dollars',
@@ -61,7 +64,7 @@ function AutoSetup(props) {
   });
 
   const [autoTradeStarted, setAutoTradeStarted] = useState(false);
-  const [sizeCurve, setSizeCurve] = useState("linear");
+  // const [sizeCurve, setSizeCurve] = useState("linear");
   // store a time stamp of when the last input was changed
   // this will be used to determine if the autoSetup function should be called
   // it should only be called if the last input change was more than 1 second ago
@@ -189,7 +192,11 @@ function AutoSetup(props) {
 
   function handleSizeCurve(event) {
     console.log('event.target.value', event.target.value)
-    setSizeCurve(event.target.value)
+    // setSizeCurve(event.target.value)
+    setAuto({
+      ...auto,
+      sizeCurve: event.target.value
+    })
   }
 
   function handleSimReinvest() {
@@ -281,7 +288,7 @@ function AutoSetup(props) {
             ? <p>What dollar amount to start at?</p>
             : <p />}
           <label htmlFor='startingValue'>
-            Starting Value: {auto.startingValue}
+            Starting Value: <span>{auto.startingValue}</span>
             <br />
             {/* <input
               name='startingValue'
@@ -290,12 +297,12 @@ function AutoSetup(props) {
               required
               onChange={(event) => setAuto({ ...auto, startingValue: Number(event.target.value) })}
             /> */}
-            <DebouncedInput 
-            onChange={(e) => setAuto({ ...auto, startingValue: Number(e) || 133 })} 
-            initValue={auto.startingValue}
-            type='number'
-            name='startingValue'
-             />
+            <DebouncedInput
+              onChange={(n) => setAuto({ ...auto, startingValue: Number(n) || 133 })}
+              initValue={auto.startingValue}
+              type='number'
+              name='startingValue'
+            />
           </label>
           {(auto.startingValue === 0 && !auto.skipFirst) && <p className='red'>Starting value cannot be zero unless you skip first!</p>}
           {(auto.startingValue < 0 && !auto.skipFirst) && <p className='red'>Starting value cannot be negative!</p>}
@@ -320,15 +327,21 @@ function AutoSetup(props) {
             : <p />}
           {/* <br /> */}
           <label htmlFor='startingValue'>
-            Ending Value:
+            Ending Value: <span>{auto.endingValue}</span>
             <br />
-            <input
+            {/* <input
               name='startingValue'
               type='number'
               value={auto.endingValue}
               // step={10}
               required
               onChange={(event) => setAuto({ ...auto, endingValue: Number(event.target.value) })}
+            /> */}
+            <DebouncedInput
+              onChange={(n) => setAuto({ ...auto, endingValue: Number(n) || 133 })}
+              initValue={auto.endingValue}
+              type='number'
+              name='endingValue'
             />
           </label>
 
@@ -347,25 +360,25 @@ function AutoSetup(props) {
           {/* INCREMENT TYPE */}
           <p>Increment by:</p>
 
-          <input
-            type="radio"
-            name="increment_type"
-            value="dollars"
-            checked={auto.incrementType === "dollars"}
-            onChange={handleIncrementType}
-          />
           <label htmlFor='dollars'>
+            <input
+              type="radio"
+              name="increment_type"
+              value="dollars"
+              checked={auto.incrementType === "dollars"}
+              onChange={handleIncrementType}
+            />
             Dollars
           </label>
 
-          <input
-            type="radio"
-            name="increment_type"
-            value="percentage"
-            checked={auto.incrementType === "percentage"}
-            onChange={handleIncrementType}
-          />
           <label htmlFor='percentage'>
+            <input
+              type="radio"
+              name="increment_type"
+              value="percentage"
+              checked={auto.incrementType === "percentage"}
+              onChange={handleIncrementType}
+            />
             Percentage
           </label>
 
@@ -375,14 +388,20 @@ function AutoSetup(props) {
             ? <p>What {auto.incrementType === "dollars" ? "dollar amount" : "percentage"} to increment by?</p>
             : <p />}
           <label htmlFor='increment'>
-            Increment:
+            Increment: <span>{auto.increment}</span>
             <br />
-            <input
+            {/* <input
               name='increment'
               type='number'
               value={auto.increment}
               required
               onChange={(event) => setAuto({ ...auto, increment: Number(event.target.value) })}
+            /> */}
+            <DebouncedInput
+              onChange={(n) => setAuto({ ...auto, increment: Number(n) || 133 })}
+              initValue={auto.increment}
+              type='number'
+              name='increment'
             />
           </label>
 
@@ -391,14 +410,20 @@ function AutoSetup(props) {
             ? <p>What is the trade-pair percent increase (how much each BUY should increase in price before selling)?</p>
             : <p />}
           <label htmlFor='ratio'>
-            Trade-pair percent increase:
+            Trade-pair percent increase: <span>{auto.tradePairRatio}</span>
             <br />
-            <input
+            {/* <input
               name='ratio'
               type='number'
               value={auto.tradePairRatio}
               required
               onChange={(event) => setAuto({ ...auto, tradePairRatio: Number(event.target.value) })}
+            /> */}
+            <DebouncedInput
+              onChange={(n) => setAuto({ ...auto, tradePairRatio: Number(n) || 133 })}
+              initValue={auto.tradePairRatio}
+              type='number'
+              name='ratio'
             />
           </label>
 
@@ -442,8 +467,8 @@ function AutoSetup(props) {
               type="radio"
               name="size_curve"
               value="linear"
-              checked={sizeCurve === "linear"}
-              onChange={handleSizeCurve}
+              checked={auto.sizeCurve === "linear"}
+              onChange={(e) => setAuto({ ...auto, sizeCurve: e.target.value })}
             />
             Linear
           </label>
@@ -453,8 +478,8 @@ function AutoSetup(props) {
               type="radio"
               name="size_curve"
               value="curve"
-              checked={sizeCurve === "curve"}
-              onChange={handleSizeCurve}
+              checked={auto.sizeCurve === "curve"}
+              onChange={(e) => setAuto({ ...auto, sizeCurve: e.target.value })}
             />
             Curve
           </label>
@@ -465,45 +490,67 @@ function AutoSetup(props) {
 
 
           <label htmlFor='size'>
-            {sizeCurve === "curve" && "Min"} Size in {auto.sizeType === "quote" ? "USD" : baseID}:
+            {auto.sizeCurve === "curve" && "Min"} Size in {
+              auto.sizeType === "quote"
+                ? "USD"
+                : baseID
+            }: <span>{auto.size}</span>
             <br />
-            <input
+            {/* <input
               name='size'
               type='number'
               value={auto.size}
               // step={.01}
               required
               onChange={(event) => setAuto({ ...auto, size: Number(event.target.value) })}
+            /> */}
+            <DebouncedInput
+              onChange={(n) => setAuto({ ...auto, size: Number(n) || 133 })}
+              initValue={auto.size}
+              type='number'
+              name='size'
             />
           </label>
 
-          {sizeCurve === "curve" && <br />}
+          {auto.sizeCurve === "curve" && <br />}
 
-          {sizeCurve === "curve" && <label htmlFor='size'>
-            Max Size in {auto.sizeType === "quote" ? "USD" : baseID}:
+          {auto.sizeCurve === "curve" && <label htmlFor='size'>
+            Max Size in {auto.sizeType === "quote" ? "USD" : baseID}: <span>{auto.maxSize}</span>
             <br />
-            <input
+            {/* <input
               name='size'
               type='number'
               value={auto.maxSize}
               // step={.01}
               required
               onChange={(event) => setAuto({ ...auto, maxSize: Number(event.target.value) })}
+            /> */}
+            <DebouncedInput
+              onChange={(n) => setAuto({ ...auto, maxSize: Number(n) || 133 })}
+              initValue={auto.maxSize}
+              type='number'
+              name='size'
             />
           </label>}
 
-          {sizeCurve === "curve" && <br />}
+          {auto.sizeCurve === "curve" && <br />}
 
           {
-            sizeCurve === "curve" && <label htmlFor='size'>
-              Steepness:
+            auto.sizeCurve === "curve" && <label htmlFor='size'>
+              Steepness: <span>{auto.steepness}</span>
               <br />
-              <input
+              {/* <input
                 name='size'
                 type='number'
                 value={auto.steepness}
                 required
                 onChange={(event) => setAuto({ ...auto, steepness: Number(event.target.value) })}
+              /> */}
+              <DebouncedInput
+                onChange={(n) => setAuto({ ...auto, steepness: Number(n) || 133 })}
+                initValue={auto.steepness}
+                type='number'
+                name='size'
               />
             </label>
           }
@@ -732,7 +779,10 @@ function AutoSetup(props) {
       </div>
       {/* {JSON.stringify(orders[0])} */}
       {/* {console.log(decimals, 'decimals!!!!!!!!!!!!!!!')} */}
-      {(setupResults.valid && setupResults.orderList.length > 0) && sizeCurve !== 'linear' && <Graph data={setupResults.orderList} product={decimals} setupResults={setupResults} />}
+      {(setupResults.valid
+        && setupResults.orderList.length > 0)
+        // && auto.sizeCurve !== 'linear'
+        && <Graph data={setupResults.orderList} product={decimals} setupResults={setupResults} />}
       <h4>Preview</h4>
       {setupResults.valid
         && setupResults?.orderList?.length > 0

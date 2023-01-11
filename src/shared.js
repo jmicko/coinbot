@@ -62,10 +62,9 @@ function autoSetup(user, options) {
     valid: false,
   }
 
-  // if any key in the options object is null or undefined or is currently set to NaN, return falseReturn
-  // don't compute isNaN, just see if it already is NaN
+  // if any key in the options object is null or undefined, return falseReturn
   for (let key in options) {
-    if (options[key] === null || options[key] === undefined || options[key] === NaN) {
+    if (options[key] === null || options[key] === undefined) {
       console.log('bad options')
       return falseReturn;
     } 
@@ -190,7 +189,7 @@ function autoSetup(user, options) {
     // CREATE ONE ORDER
     const singleOrder = {
       original_buy_price: buyPrice,
-      original_sell_price: original_sell_price,
+      original_sell_price: Number(original_sell_price),
       side: side,
       limit_price: limit_price,
       base_size: actualSize,

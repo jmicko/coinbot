@@ -337,13 +337,13 @@ input {
   /* margin       : 0% .2%; */
 }
 
+label span {
+  color: #ab1f1f;
+}
+
 input.darkTheme {
-  /* background      : rgb(240, 235, 229); */
-  /* color        : rgb(209, 202, 192); */
   background-color: rgb(145, 145, 145);
   font-family     : inherit;
-  /* width        : 100%; */
-  /* margin       : 0% .2%; */
 }
 
 select {
