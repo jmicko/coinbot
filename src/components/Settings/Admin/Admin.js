@@ -1,107 +1,60 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useState, useEffect } from 'react';
 import { useUser } from '../../../contexts/UserContext';
 import { useFetchData } from '../../../hooks/fetchData';
-import Confirm from '../../Confirm/Confirm';
+// import Confirm from '../../Confirm/Confirm';
 import SingleUser from '../../SingleUser/SingleUser';
 import './Admin.css'
 
 
 function Admin(props) {
-  const dispatch = useDispatch();
   const { user } = useUser();
   const { data: allUsers, updateRefreshData: approveUser, deleteRefreshData: deleteUser } = useFetchData('api/admin/users', { defaultState: [] });
 
-  const allSettings = useSelector((store) => store.settingsReducer.allSettingsReducer);
-  // const allUsers = useSelector((store) => store.usersReducer.allUsersReducer);
+  const { data: allSettings, refresh: refreshSettings } = useFetchData('api/settings', { defaultState: [] });
+  const { updateData: updateLoopSpeed } = useFetchData('api/admin/loop_speed', { defaultState: [], noLoad: true });
+  const { updateData: updateFullSync } = useFetchData('api/admin/full_sync', { defaultState: [], noLoad: true });
+  const { updateData: updateSyncQuantity } = useFetchData('api/admin/order_sync_quantity', { defaultState: [], noLoad: true });
+  const { updateData: toggleMaintenanceMode } = useFetchData('api/admin/maintenance', { defaultState: [], noLoad: true });
 
   const [loopSpeed, setLoopSpeed] = useState(1);
   const [fullSync, setFullSync] = useState(10);
   const [syncQuantity, setSyncQuantity] = useState(100);
-  const [resettingOrders, setResettingOrders] = useState(false);
-  const [factoryResetting, setFactoryResetting] = useState(false);
+  // const [resettingOrders, setResettingOrders] = useState(false);
+  // const [factoryResetting, setFactoryResetting] = useState(false);
 
 
-  const getAllSettings = useCallback(
-    () => {
-      if (user.admin) {
-        dispatch({ type: 'FETCH_SETTINGS' })
-      }
-    }, [dispatch, user.admin]
-  )
-
-  function sendLoopSpeed() {
-    dispatch({
-      type: 'SEND_LOOP_SPEED',
-      payload: {
-        loopSpeed: loopSpeed
-      }
-    })
-  }
-
-  function sendFullSync() {
-    dispatch({
-      type: 'SEND_FULL_SYNC',
-      payload: {
-        fullSync: fullSync
-      }
-    })
-  }
-
-  function sendSyncQuantity() {
-    dispatch({
-      type: 'SEND_SYNC_QUANTITY',
-      payload: {
-        syncQuantity: syncQuantity
-      }
-    })
-  }
-
-  function toggleMaintenance() {
-    dispatch({
-      type: 'TOGGLE_MAINTENANCE',
-      // payload: {
-      //   loopSpeed: loopSpeed
-      // }
-    })
-  }
-
-  function handleLoopSpeedChange(speed) {
+  async function sendLoopSpeed(speed) {
     setLoopSpeed(speed);
+    await updateLoopSpeed({ loopSpeed: speed });
+    refreshSettings();
   }
 
-  function handleFullSyncChange(speed) {
-    setFullSync(speed);
+  async function sendFullSync() {
+    await updateFullSync({ fullSync: fullSync });
+    refreshSettings();
   }
 
-  function handleSyncQuantityChange(quantity) {
-    setSyncQuantity(quantity);
+  async function sendSyncQuantity() {
+    await updateSyncQuantity({ syncQuantity: syncQuantity });
+    refreshSettings();
+  }
+
+  async function toggleMaintenance() {
+    await toggleMaintenanceMode();
+    refreshSettings();
   }
 
   useEffect(() => {
-    if (allSettings.loop_speed) {
-      handleLoopSpeedChange(allSettings.loop_speed);
-    }
-  }, [allSettings.loop_speed]);
-
-  useEffect(() => {
+    // if (allSettings.loop_speed) {
+    //   setLoopSpeed(allSettings.loop_speed);
+    // }
     if (allSettings.full_sync) {
-      handleFullSyncChange(allSettings.full_sync);
+      setFullSync(allSettings.full_sync);
     }
-
-  }, [allSettings.full_sync]);
-
-  useEffect(() => {
     if (allSettings.orders_to_sync) {
-      handleSyncQuantityChange(allSettings.orders_to_sync);
+      setSyncQuantity(allSettings.orders_to_sync);
     }
-
-  }, [allSettings.orders_to_sync]);
-
-  useEffect(() => {
-    // getUsers();
-    getAllSettings();
-  }, [getAllSettings]);
+  }, [allSettings]);
 
   return (
     <div className="Admin settings-panel scrollable">
@@ -163,7 +116,7 @@ function Admin(props) {
           max={100}
           min={1}
           required
-          onChange={(event) => handleLoopSpeedChange(Number(event.target.value))}
+          onChange={(event) => sendLoopSpeed(Number(event.target.value))}
         />
         <br />
         <br />
@@ -192,7 +145,7 @@ function Admin(props) {
           max={100}
           min={1}
           required
-          onChange={(event) => handleFullSyncChange(Number(event.target.value))}
+          onChange={(event) => setFullSync(Number(event.target.value))}
         />
         <br />
         <br />
@@ -223,7 +176,7 @@ function Admin(props) {
           max={200}
           min={1}
           required
-          onChange={(event) => handleSyncQuantityChange(Number(event.target.value))}
+          onChange={(event) => setSyncQuantity(Number(event.target.value))}
         />
         <br />
         <br />
@@ -232,7 +185,7 @@ function Admin(props) {
       <div className="divider" />
 
       {/* FACTORY RESET */}
-      {(user.admin)
+      {/* {(user.admin)
         ? <>
           {factoryResetting && <Confirm
             // if confirm, dispatch to factory reset bot
@@ -275,6 +228,7 @@ function Admin(props) {
         : <></>
       }
       <div className="divider" />
+       */}
     </div>
   );
 }
