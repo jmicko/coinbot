@@ -23,24 +23,6 @@ const currentJSONReducer = (state = false, action) => {
   }
 };
 
-const debugReducer = (state = [], action) => {
-  switch (action.type) {
-    case 'SET_DEBUG':
-      console.log('action.payload', action.payload);
-      console.log(action.payload, 'payload');
-      const userInfo = action.payload;
-      // copy old state
-      const newState = [...state];
-      // replace user info at user.id index of new state
-      newState[userInfo.id] = userInfo;
-      return newState;
-    case 'UNSET_ALL_DEBUG':
-      return [];
-    default:
-      return state;
-  }
-};
-
 const botMessages = (state = [], action) => {
   switch (action.type) {
     case 'CLEAR_BOT_MESSAGES':
@@ -88,7 +70,6 @@ const simulationReducer = (state = { status: 'idle' }, action) => {
 export default combineReducers({
   xlsxReducer,
   currentJSONReducer,
-  debugReducer,
   botMessages,
   chatMessages,
   simulationReducer,

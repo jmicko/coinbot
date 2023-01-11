@@ -189,18 +189,6 @@ function* importCurrentJSON(action) {
   }
 }
 
-function* debug(action) {
-  try {
-    const response = yield axios.get(`/api/account/debug`, { params: { id: action.payload.id } });
-    yield put({ type: 'SET_DEBUG', payload: response.data })
-  } catch (error) {
-    console.log('debug route has failed', error);
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
-
 // download a file from the server
 function* downloadFile(action) {
   try {
@@ -238,7 +226,6 @@ function* accountSaga() {
   yield takeLatest('EXPORT_CANDLE_XLSX', exportCandles);
   yield takeLatest('EXPORT_CURRENT_JSON', exportCurrentJSON);
   yield takeLatest('IMPORT_CURRENT_JSON', importCurrentJSON);
-  yield takeLatest('DEBUG', debug);
   yield takeLatest('DOWNLOAD_FILE', downloadFile);
 }
 

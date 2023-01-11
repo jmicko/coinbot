@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { useUser } from '../../contexts/UserContext';
+import { useFetchData } from '../../hooks/fetchData';
 import Confirm from '../Confirm/Confirm';
 import './SingleUser.css'
 
 function SingleUser(props) {
-  const dispatch = useDispatch();
   // IMPORTANT to not that this is the user from the context, not the user from the props
   // This is the user that is logged in
   const { user } = useUser();
-  const debugReducer = useSelector((store) => store.accountReducer.debugReducer);
+
   const [deleting, setDeleting] = useState(false);
   const [approving, setApproving] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -17,6 +16,8 @@ function SingleUser(props) {
   // functions passed in from the parent
   const deleteUser = () => props.deleteUser(props.user.id);
   const approveUser = () => props.approveUser({ id: props.user.id });
+  const { data: debugData, refresh: debug } = useFetchData(`api/admin/debug/${props.user.id}`, { defaultState: [] });
+
 
   function toggleShowAll() {
     setShowAll(!showAll);
@@ -29,15 +30,6 @@ function SingleUser(props) {
 
   function confirmDelete(params) {
     setDeleting(true)
-  }
-
-  function debug() {
-    dispatch({
-      type: 'DEBUG',
-      payload: {
-        id: props.user.id
-      }
-    })
   }
 
   return (
@@ -78,9 +70,9 @@ function SingleUser(props) {
           {/* BOT STATUS LIST */}
           <h4>User Bot Status</h4>
           <ol>
-            <li>Loop #{debugReducer[props.user.userID]?.loopNumber}</li>
+            <li>Loop #{debugData?.loopNumber}</li>
             {/* <p>{JSON.stringify(}</p> */}
-            {debugReducer[props.user.userID]?.botStatus.slice(0).reverse().map((statusItem, i = 1) => {
+            {debugData?.botStatus.slice(0).reverse().map((statusItem, i = 1) => {
               i++
               return <li key={i}>{statusItem}</li>
             }) || <p>Click debug to get info. This will return a snapshot of the user, and does not update live.</p>}

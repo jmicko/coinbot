@@ -28,6 +28,31 @@ router.get('/users', rejectUnauthenticated, async (req, res) => {
   }
 });
 
+
+/**
+* GET route to log status of a user's loop
+*/
+router.get('/debug/:user_id', rejectUnauthenticated, async (req, res) => {
+  const userID = req.params.user_id;
+  if (req.user.admin) {
+    try {
+      const userInfo = cache.getSafeStorage(userID);
+      const userErrors = cache.getErrors(userID);
+      console.log('debug - full storage', userInfo);
+      console.log('errors', userErrors);
+      userInfo.userID !== null
+        ? res.send(userInfo).status(200)
+        : res.sendStatus(500);
+    } catch (err) {
+      console.log(err, 'problem debug route');
+      res.sendStatus(500)
+    }
+  } else {
+    console.log('error debug user route - not admin');
+    res.sendStatus(403);
+  }
+});
+
 /**
 * PUT route - Approve a single user. Only admin can do this
 */
