@@ -6,7 +6,6 @@ import React, {
   useCallback,
   useMemo
 } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { useUser } from '../../../contexts/UserContext';
 import { useSocket } from '../../../contexts/SocketProvider';
 import { useProductDecimals } from '../../../hooks/useProductDecimals';
@@ -20,22 +19,19 @@ import DebouncedInput from '../../DebouncedInput.js/DebouncedInput';
 
 
 function AutoSetup(props) {
-  const dispatch = useDispatch();
+
   const { user } = useUser();
   const { productID, currentProduct } = useData();
 
-  const { createData: startAutoSetup } = useFetchData('/api/trade/autoSetup', { noLoad: true });
+  const { createData: startAutoSetup } = useFetchData('/api/orders/autoSetup', { noLoad: true });
   const {
     data: simulationResults,
-    refresh: refreshSimResults,
+    // refresh: refreshSimResults,
     createRefreshData: startSimulation,
     isLoading: simLoading
   } = useFetchData(`/api/trade/simulation`, { defaultState: null, noLoad: true });
 
-  // const simulationReducer = useSelector((store) => store.accountReducer.simulationReducer);
   const { currentPrice } = useSocket();
-
-  // console.log('currentPrice', (currentPrice / 2).toFixed(currentProduct.quote_increment_decimals));
 
   const [auto, setAuto] = useState({
     // startingValue: 1000,
@@ -48,7 +44,7 @@ function AutoSetup(props) {
     size: 10,
     maxSize: 100,
     sizeType: 'quote',
-    trade_pair_ratio: 1.1,
+    // trade_pair_ratio: 1.1,
     sizeCurve: 'linear',
     steepness: 10,
     trade_pair_ratio: 5
@@ -107,64 +103,66 @@ function AutoSetup(props) {
   }, [])
 
 
-  // useEffect(() => {
-  //   // console.log('running autoSetup useEffect', loadingRef.current)
-  //   // if any of the dependencies are undefined, don't run the autoSetup function
-  //   if (!user || !availableQuote || !currentPrice || !currentProduct) return;
-
-  //   // check if the last input change was more than 1 second ago
-  //   // if it wasn't, don't run the autoSetup function
-  //   if (loadingRef.current || (Date.now() - lastInputChange < 2000)) return;
-
-  //   loadingRef.current = true;
-
-  //   // console.log(loadingRef.current, 'running autoSetup')
-  //   const results = autoSetup(user, {
-  //     ...auto,
-  //     availableQuote: availableQuote,
-  //     tradingPrice: currentPrice,
-  //     product: currentProduct,
-  //     user: user,
-  //   });
-  //   setSetupResults(results);
-  //   // console.log('setting loading to false')
-  //   loadingRef.current = false;
-
-  // }, [
-  //   lastInputChange,
-  //   user,
-  //   availableQuote,
-  //   currentPrice,
-  //   currentProduct,
-  //   auto,
-  // ])
-
-  // can we maybe rewrite the above useEffect using useCallback and useMemo?
-  // first create a memoized result of the autoSetup function as imported from the autoSetup.js file
-  const memoizedAutoSetup = useCallback(autoSetup, []);
-  // then create a memoized result of the autoSetup function with the user, availableQuote, currentPrice, currentProduct, and auto objects as dependencies
-  const memoizedAutoSetupWithDependencies = useMemo(() => memoizedAutoSetup(user, {
-    ...auto,
-    availableQuote: availableQuote,
-    tradingPrice: currentPrice,
-    product: currentProduct,
-    user: user,
-  }), [user, availableQuote, currentPrice, currentProduct, auto])
-  // then create a useEffect that will run the memoizedAutoSetupWithDependencies function
   useEffect(() => {
     // console.log('running autoSetup useEffect', loadingRef.current)
+    // if any of the dependencies are undefined, don't run the autoSetup function
     if (!user || !availableQuote || !currentPrice || !currentProduct) return;
-    // if (loadingRef.current || (Date.now() - lastInputChange < 2000)) return;
-    if (loadingRef.current) return;
+
+    // check if the last input change was more than 1 second ago
+    // if it wasn't, don't run the autoSetup function
+    if (loadingRef.current || (Date.now() - lastInputChange < 2000)) return;
+
     loadingRef.current = true;
+
     // console.log(loadingRef.current, 'running autoSetup')
-    const results = memoizedAutoSetupWithDependencies;
+    const results = autoSetup(user, {
+      ...auto,
+      availableQuote: availableQuote,
+      tradingPrice: currentPrice,
+      product: currentProduct,
+      user: user,
+    });
     setSetupResults(results);
     // console.log('setting loading to false')
     loadingRef.current = false;
-  }, [memoizedAutoSetupWithDependencies, lastInputChange])
-  // look man, I don't know what I'm doing, but this seems to at least not work any worse before
-  // I'll come back to it later and rewrite it since I've integrated debouncing
+
+  }, [
+    lastInputChange,
+    user,
+    availableQuote,
+    currentPrice,
+    currentProduct,
+    auto,
+  ])
+
+  // // can we maybe rewrite the above useEffect using useCallback and useMemo?
+  // // first create a memoized result of the autoSetup function as imported from the autoSetup.js file
+  // const memoizedAutoSetup = useCallback(autoSetup, []);
+  // // then create a memoized result of the autoSetup function with the user, availableQuote, currentPrice, currentProduct, and auto objects as dependencies
+  // const memoizedAutoSetupWithDependencies = useMemo(() => memoizedAutoSetup(user, {
+  //   ...auto,
+  //   availableQuote: availableQuote,
+  //   tradingPrice: currentPrice,
+  //   product: currentProduct,
+  //   user: user,
+  // }), [user, availableQuote, currentPrice, currentProduct, auto])
+  // // then create a useEffect that will run the memoizedAutoSetupWithDependencies function
+  // useEffect(() => {
+  //   // console.log('running autoSetup useEffect', loadingRef.current)
+  //   if (!user || !availableQuote || !currentPrice || !currentProduct) return;
+  //   // if (loadingRef.current || (Date.now() - lastInputChange < 2000)) return;
+  //   if (loadingRef.current) return;
+  //   loadingRef.current = true;
+  //   // console.log(loadingRef.current, 'running autoSetup')
+  //   const results = memoizedAutoSetupWithDependencies;
+  //   setSetupResults(results);
+  //   // console.log('setting loading to false')
+  //   loadingRef.current = false;
+  // }, [memoizedAutoSetupWithDependencies, lastInputChange])
+  // // look man, I don't know what I'm doing, but this seems to at least not work any worse before
+  // // I'll come back to it later and rewrite it since I've integrated debouncing
+
+
 
   function handleIncrementType(event) {
     // set the type of increment, dollars or percent
@@ -188,7 +186,7 @@ function AutoSetup(props) {
     event.preventDefault();
     setAutoTradeStarted(true);
     console.log('automatically setting up bot');
-    // autoTrader();
+    autoTrader();
     setTimeout(() => {
       setAutoTradeStarted(false);
     }, 5000);
@@ -202,25 +200,24 @@ function AutoSetup(props) {
     startSimulation({
       ...auto,
       simStartDate: simStartDate,
-      // availableFunds: availableQuote,
-      // simReinvest: simReinvest,
-      // simReinvestPercent: simReinvestPercent,
       availableQuote: availableQuote,
 
       tradingPrice: currentPrice,
       product: currentProduct,
       simUser: { ...user, availableQuote: availableQuote, reinvest: simReinvest, reinvest_ratio: simReinvestPercent },
     })
-
-
+    
+    
   }
-
+  
   function autoTrader() {
     // console.log('here is the current available funds', availableFunds);
     startAutoSetup({
       ...auto,
       availableFunds: availableQuote,
       tradingPrice: currentPrice,
+      
+      product: currentProduct,
     })
   }
 

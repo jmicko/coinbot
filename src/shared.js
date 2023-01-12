@@ -56,7 +56,7 @@ function autoSetup(user, options) {
   const product = options.product;
   // console.log(product_id, 'product_id')
   // console.log(options.user, options.availableFunds, 'user')
-  const available = options.availableQuote;
+  // const available = options.availableQuote;
   // a false return object to use when the function fails
   const falseReturn = {
     valid: false,
@@ -74,10 +74,10 @@ function autoSetup(user, options) {
   }
   
 
-  if (!available) {
-    console.log('no available funds for this product')
-    return falseReturn;
-  }
+  // if (!available) {
+  //   console.log('no available funds for this product')
+  //   return falseReturn;
+  // }
   // console.log(options, 'options')
 
   // create an array to hold the new trades to put in
@@ -206,7 +206,7 @@ function autoSetup(user, options) {
       sell_quote_size: (actualSize * original_sell_price).toFixed(product.quote_increment_decimals),
       previous_total_fees: previous_total_fees,
       total_fees: 0,
-      product_id: options.product_id,
+      product_id: product.product_id,
       stp: 'cn',
       userID: user.id,
       trade_pair_ratio: options.trade_pair_ratio,
