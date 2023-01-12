@@ -196,7 +196,7 @@ function AutoSetup(props) {
 
   function handleSimulation(event) {
     event.preventDefault();
-    console.log('simulating trades');
+    console.log('simulating trades', availableQuote);
 
 
     startSimulation({
@@ -205,14 +205,14 @@ function AutoSetup(props) {
       // availableFunds: availableQuote,
       // simReinvest: simReinvest,
       // simReinvestPercent: simReinvestPercent,
-
       availableQuote: availableQuote,
+
       tradingPrice: currentPrice,
       product: currentProduct,
-      simUser: { ...user, simReinvest, simReinvestPercent },
+      simUser: { ...user, availableQuote: availableQuote, reinvest: simReinvest, reinvest_ratio: simReinvestPercent },
     })
 
-    
+
   }
 
   function autoTrader() {
