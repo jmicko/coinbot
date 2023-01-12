@@ -150,13 +150,22 @@ function autoSetup(user, options) {
       // skip the rest of the iteration and continue the loop
       continue;
     }
-    // console.log(decimals, 'decimals')
+    // console.log(product.quote_increment_decimals, 'product.quote_increment_decimals')
 
     // get buy price rounded to cents the precision of the quote currency
     buyPrice = Number(buyPrice.toFixed(product.quote_increment_decimals));
     // get the sell price by mulltiplying the buy price by the trade pair ratio
-    let original_sell_price = (buyPrice * Number(trade_pair_ratio)).toFixed(product.quote_increment_decimals);
 
+
+
+    // let original_sell_price = (buyPrice * Number(trade_pair_ratio)).toFixed(product.quote_increment_decimals);
+
+    let original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + product.quote_inverse_increment))) / product.quote_inverse_increment);
+
+
+
+
+    // console.log(tradingPrice, '<-tradingPrice', buyPrice > tradingPrice, '<-true if SELL', buyPrice, '<-buyPrice', original_sell_price, 'original_sell_price', trade_pair_ratio, 'trade_pair_ratio')
     // figure out if it is going to be a BUY or a sell. Buys will be below current trade price, sells above.
     let side = (buyPrice > tradingPrice)
       ? 'SELL'
@@ -202,6 +211,7 @@ function autoSetup(user, options) {
       userID: user.id,
       trade_pair_ratio: options.trade_pair_ratio,
     }
+    // console.log(singleOrder, 'singleOrder')
 
     // break out of the loop if the order is invalid
     if (singleOrder.base_size <= 0) {

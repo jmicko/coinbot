@@ -23,7 +23,7 @@ function Trade() {
   const [volumeCostSell, setVolumeCostSell] = useState(0);
   const [transactionAmountBTC, setTransactionAmountBTC] = useState(0.001);
   const [transactionAmountUSD, setTransactionAmountUSD] = useState(10);
-  const [tradePairRatio, setTradePairRatio] = useState(1.1);
+  const [trade_pair_ratio, setTradePairRatio] = useState(1.1);
   const [fees, setFees] = useState(0.005);
   const [buyFee, setBuyFee] = useState(0.005);
   const [sellFee, setSellFee] = useState(0.005);
@@ -58,7 +58,7 @@ function Trade() {
   useEffect(() => {
 
 
-    let sellPrice = (price * (Number(tradePairRatio) + 100)) / 100;
+    let sellPrice = (price * (Number(trade_pair_ratio) + 100)) / 100;
     let priceMargin = sellPrice - price;
     let volumeCostBuy = price * transactionAmountBTC;
     let volumeCostSell = sellPrice * transactionAmountBTC;
@@ -68,7 +68,7 @@ function Trade() {
     let pairMargin = volumeCostSell - volumeCostBuy;
     let pairProfit = pairMargin - totalfees;
 
-    // console.log(tradePairRatio, 'tradePairRatio')
+    // console.log(trade_pair_ratio, 'trade_pair_ratio')
     console.log(price, 'price')
     // console.log(sellPrice, 'sellPrice')
 
@@ -83,13 +83,13 @@ function Trade() {
     setPairMargin(pairMargin);
     setPairProfit(pairProfit);
 
-  }, [fees, price, transactionAmountBTC, transactionAmountUSD, tradePairRatio, amountTypeIsUSD]);
+  }, [fees, price, transactionAmountBTC, transactionAmountUSD, trade_pair_ratio, amountTypeIsUSD]);
 
 
   function submitTransaction(event) {
     event.preventDefault();
     // calculate flipped price
-    let original_sell_price = (Math.round((price * (Number(tradePairRatio) + 100))) / 100);
+    let original_sell_price = (Math.round((price * (Number(trade_pair_ratio) + 100))) / 100);
     let type = false;
     if (currentProductPrice < price) {
       type = 'market';
@@ -102,7 +102,7 @@ function Trade() {
       limit_price: price,
       base_size: transactionAmountBTC,
       product_id: productID,
-      trade_pair_ratio: tradePairRatio,
+      trade_pair_ratio: trade_pair_ratio,
       type: type
     })
   }
@@ -291,7 +291,7 @@ function Trade() {
                 className={user.theme}
                 type="number"
                 name="trade-pair-ratio"
-                value={Number(tradePairRatio)}
+                value={Number(trade_pair_ratio)}
                 step={0.001}
                 required
                 onChange={(event) => setTradePairRatio(Number(event.target.value))}
@@ -299,7 +299,7 @@ function Trade() {
               <IncrementButtons
                 firstButton={0.001}
                 roundTo={3}
-                currentValue={tradePairRatio}
+                currentValue={trade_pair_ratio}
                 changeValue={setTradePairRatio}
                 theme={user.theme}
               />

@@ -10,7 +10,7 @@ function Graph(props) {
 
   const setupOptions = props.setupResults.options;
 
-  console.log(setupOptions, 'props.setupResults in Graph.js');
+  // console.log(setupOptions, 'props.setupResults in Graph.js');
 
   const setupMinSize = setupOptions.size;
   const maxSize = setupOptions.sizeCurve === 'curve'

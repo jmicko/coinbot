@@ -11,20 +11,22 @@ process.on("message", async (data) => {
   process.send(simResults);
 });
 
+
+//////////////////////////////////
+//// find the best pair ratio - run the simulation for many ratios until the profit stops increasing
+//////////////////////////////////
 async function optimize(data) {
   // console.log(data, 'data');
   const options = data.options;
+  options.product_id = options.product.product_id
+  // this user is the user who sent the request to run the simulation
   const user = data.user;
-
-  // modify the user object to contain the sim data
-  user.reinvest_ratio = options.simReinvestPercent;
-  user.reinvest = options.simReinvest;
-  // user.availableFunds = { quote_available: 1000 }
 
   // get the initial price by getting the first candle from the db for the simStartDate
   // first turn the simStartDate into a unix timestamp
-  const simStartDate = new Date(data.options.simStartDate).getTime() / 1000;
-  const candles = await databaseClient.getNextCandles(data.user.id, data.options.product_id, 'ONE_MINUTE', simStartDate - 1);
+  const simStartDate = new Date(options.simStartDate).getTime() / 1000;
+  // console.log(data, 'data');
+  const candles = await databaseClient.getNextCandles(user.id, options.product.product_id, 'ONE_MINUTE', simStartDate - 1);
   // data.candles = candles;
 
   // array to store the results of each simulation
@@ -35,19 +37,19 @@ async function optimize(data) {
   // options.trade_pair_ratio = 2;
   // console.log(options, 'options after setting trade_pair_ratio to 0');
 
-  simData = {
-    candles: candles,
-    options: options,
-    user: user,
-  };
+  options.candles = candles;
+
 
   // run the simulation until the pair ratio is 20, incrementing by 0.1 each time
   while (options.trade_pair_ratio <= 20) {
     // while (options.trade_pair_ratio <= 2) {
-    // run the simulation
-    const simResult = await runSimulation(simData);
 
-    if(!simResult.valid) {
+    /////////////////////
+    // run the simulation
+    const simResult = await runSimulation(options);
+    console.log(simResult, 'simResult');
+
+    if (!simResult.valid) {
       console.log(simResult, 'invalid sim result');
       return { valid: false, message: 'Invalid simulation result' };
     }
@@ -85,17 +87,44 @@ async function optimize(data) {
   return { simResults, bestPairRatio, valid: true };
 }
 
-
-// run the simulation
+////////////////////////////
+//// run the simulation - run the simulation for one pair ratio
+////////////////////////////
 async function runSimulation(data) {
-  const user = data.user;
-  const options = data.options;
+  // console.log(data, 'data in runSimulation');
+  const user = data.simUser;
+  const options = data;
+  // console log each key in options
+  // Object.keys(options).forEach(key => console.log(key, key === 'candles' ? options[key].length : options[key], 'options key'));
+  // startingValue options key
+  // skipFirst options key
+  // endingValue options key
+  // ignoreFunds options key
+  // increment options key
+  // incrementType options key
+  // size options key
+  // maxSize options key
+  // sizeType options key
+  // trade_pair_ratio options key
+  // sizeCurve options key
+  // steepness options key
+  // simStartDate options key
+  // availableQuote options key
+  // tradingPrice options key
+  // product options key
+  // simUser options key
+  // candles options key
+
+  const product = options.product;
+  const product_id = product.product_id;
   const feeRate = Number(user.maker_fee);
   const candles = data.candles;
 
-  const product = user.availableFunds[options.product_id];
+  // console.log(candles.length, 'candle length in runSimulation');
 
-  options.product = product;
+  // const product = user.availableFunds[options.product.product_id];
+
+  // options.product = product;
 
   // console.log('simStartDate', simStartDate);
   // get all candles after the simStartDate
@@ -104,15 +133,19 @@ async function runSimulation(data) {
   options.tradingPrice = Number(candles[0].open);
   // console.log('simulation options:', user, options);
 
-  // need to have user.availableFunds[product_id] valid for autoSetup
+  // // need to have user.availableFunds[product_id] valid for autoSetup
+  // console.log(user.availableFunds[options.product.product_id], 'user.availableFunds[options.product.product_id]');
 
-  if (!user.availableFunds[options.product_id]) {
-    console.log('no available funds for product_id');
-    return { valid: false, profit: 0 };
-  }
+  // if (!user.availableFunds[options.product.product_id]) {
+  //   console.log('no available funds for product_id');
+  //   return { valid: false, profit: 0 };
+  // }
 
   // run the auto setup to get the initial orderList
+  // console.log('running auto======= setup', options.tradingPrice);
+  // await sleep(30000);
   const initialSetup = autoSetup(user, options);
+  // console.log('initialSetup', initialSetup.orderList.length);
   // give each order a unique id and a next order id
   initialSetup.orderList.forEach(order => order.client_order_id = uuidv4());
   initialSetup.orderList.forEach(order => order.next_client_order_id = uuidv4());
@@ -122,14 +155,15 @@ async function runSimulation(data) {
   // divide the setup orderList into two arrays, one for buy orders and one for sell orders
   const buyOrders = initialSetup.orderList.filter(order => order.side === 'BUY');
   const sellOrders = initialSetup.orderList.filter(order => order.side === 'SELL');
-  // console.log('buyOrders', buyOrders);
-  // console.log('sellOrders', sellOrders);
+  // console.log('buyOrders', buyOrders.length);
+  // console.log('sellOrders', sellOrders[0]);
 
-  // await sleep(10000);
+  // await sleep(1000);
 
   // hold data that will be returned to the client
   let profit = 0;
 
+  console.log('starting simulation');
   // iterate through the candles and run the simulation
   for (let i = 0; i < candles.length; i++) {
     // for (let i = 0; i < 100; i++) {
@@ -168,6 +202,7 @@ async function runSimulation(data) {
     });
   }
 
+  console.log('simulation complete', profit);
   // return the data to the parent process
   return { valid: true, profit };
 
@@ -179,6 +214,8 @@ async function runSimulation(data) {
 
       // calculate the current fees to simulate the fees coinbase would charge on settlement
       originalOrder.total_fees = originalOrder.limit_price * originalOrder.base_size * user.maker_fee
+
+      // console.log('originalOrder', originalOrder);
 
       const flippedOrder = flipTrade(originalOrder, user, triggeredOrders, true);
       // add next client unique id to the flipped order. flipTrade needs this
