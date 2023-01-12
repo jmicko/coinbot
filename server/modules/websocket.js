@@ -224,16 +224,29 @@ function setupSocketIO(io) {
 
     if (!userID) {
       console.log('socket connected but client is not logged in');
+      // disconnect the socket if the user is not logged in
+      socket.disconnect();
     } else {
       console.log(`client connected! with user id ${userID} socket id: ${id}`);
     }
 
+    // send a ping to the client every 5 seconds
+    const pingInterval = setInterval(() => {
+      socket.emit('ping', 'ping');
+    }, 5000);
+
+    // server side pong handler
+    socket.on('pong', (data) => {
+      console.log(data, 'pong from client');
+    });
+    
+
     // handle disconnect
-    // socket.on("disconnect", (reason) => {
-    //   const userID = socket.request.session.passport?.user;
-    //   console.log(`client with id: ${id} disconnected, reason:`, reason);
-    //   messenger[userID].deleteSocket(socket);
-    // });
+    socket.on("disconnect", (reason) => {
+      const userID = socket.request.session.passport?.user;
+      console.log(`client with id: ${id} disconnected, reason:`, reason);
+      messenger[userID].deleteSocket(socket);
+    });
 
     socket.on('message', (message) => {
       // console.log(message);
@@ -259,7 +272,7 @@ function setupSocketIO(io) {
 
   io.on('connect', (socket) => {
     const session = socket.request.session;
-    // console.log(`saving sid ${socket.id} in session ${session.id}`);
+    console.log(`saving sid ${socket.id} in session ${session.id}`);
     session.socketId = socket.id;
     session.save();
   })

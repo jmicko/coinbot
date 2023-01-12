@@ -15,6 +15,10 @@ export function DataProvider({ children }) {
   const [productID, setProductID] = useState('BTC-USD');
   // user
   const { refreshUser } = useUser();
+  // sockets
+  const [coinbotSocket, setCoinbotSocket] = useState('closed');
+  const [socketStatus, setSocketStatus] = useState('closed');
+
 
   /////////////////////////
   //////// ACCOUNT ////////
@@ -95,7 +99,9 @@ export function DataProvider({ children }) {
           // TRADE
           exportableFiles, refreshExportableFiles,
           // SETTINGS
-          pause, killLock, setTheme, sendTradeLoadMax, updateProfitAccuracy
+          pause, killLock, setTheme, sendTradeLoadMax, updateProfitAccuracy,
+          // SOCKETS
+          coinbotSocket, setCoinbotSocket, socketStatus, setSocketStatus,
         }
       }>
       {children}

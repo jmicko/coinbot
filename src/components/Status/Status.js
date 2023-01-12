@@ -11,8 +11,13 @@ function Status(props) {
   // console.log('rendering status');
   const dispatch = useDispatch();
   const { user, refreshUser } = useUser();
-  const socket = useSocket();
-  const { orders, productID, profit, refreshProfit, refreshOrders, refreshProducts } = useData();
+  const { tickers, heartbeat } = useSocket();
+  const {
+    socketStatus, coinbotSocket,
+    orders, refreshOrders,
+    productID, refreshProducts,
+    profit, refreshProfit,
+  } = useData();
   const openOrdersInOrder = orders;
   const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
   const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
@@ -27,7 +32,7 @@ function Status(props) {
     refreshOrders();
     refreshProducts();
     refreshUser();
-    
+
     dispatch({ type: 'FETCH_BOT_ERRORS' });
     dispatch({ type: 'FETCH_BOT_MESSAGES' });
   }
@@ -73,7 +78,7 @@ function Status(props) {
         <p className="info status-ticker">
           <strong>{productID} Price</strong>
           <br />
-          {Number(socket.tickers[productID]?.price)
+          {Number(tickers[productID]?.price)
             .toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1))
             // .toFixed(2)
           }
@@ -132,8 +137,12 @@ function Status(props) {
       </center>
 
       <center>
-        <p className={`info status-ticker ${user.theme} ${socket.heartbeat.count === 0 && 'blue'}`}>
-          <strong>{socket.heartbeat.heart}{socket.heartbeat.beat}<span className={socket.socketStatus}>&#x2022;</span></strong>
+        <p className={`info status-ticker ${user.theme} ${heartbeat.count === 0 && 'blue'}`}>
+          <strong>
+            <span className={coinbotSocket}>&#x2022;</span>
+            {heartbeat.heart}{heartbeat.beat}
+            <span className={socketStatus}>&#x2022;</span>
+          </strong>
           <br />
           <button className={`btn-blue ${user.theme}`} onClick={updateUser}>Refresh</button>
         </p>
