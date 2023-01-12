@@ -1,13 +1,13 @@
 import React from 'react';
-import { useDispatch } from 'react-redux';
 import { useData } from '../../contexts/DataContext';
 import { useUser } from '../../contexts/UserContext';
+import { useFetchData } from '../../hooks/fetchData';
 import './Menu.css'
 
 function Menu(props) {
-  const dispatch = useDispatch();
   const { logout, user } = useUser();
   const { productID, setProductID, products } = useData();
+  const { refresh: refreshTestData } = useFetchData('/api/settings/test/cheese', { defaultState: {}, noLoad: true })
 
   return (
     <div className={`Menu dark ${user.theme}`}>
@@ -32,7 +32,9 @@ function Menu(props) {
       </center>
       <div className="menu-buttons">
         {/* only show Test button in dev mode */}
-        {process.env.NODE_ENV === 'development' && user.admin && <button className={`btn-blue btn-logout ${user.theme}`} onClick={() => dispatch({ type: 'TEST' })}>Test</button>}
+        {process.env.NODE_ENV === 'development' && user.admin && <button 
+        className={`btn-blue btn-logout ${user.theme}`} 
+        onClick={refreshTestData}>Test</button>}
         {/* control buttons */}
         <button className={`btn-blue btn-logout ${user.theme}`} onClick={() => { props.clickSettings() }}>Settings</button>
         <button className={`btn-blue btn-logout ${user.theme}`} onClick={logout}>Log Out</button>

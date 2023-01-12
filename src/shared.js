@@ -159,8 +159,8 @@ function autoSetup(user, options) {
 
 
     // let original_sell_price = (buyPrice * Number(trade_pair_ratio)).toFixed(product.quote_increment_decimals);
-
-    let original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + product.quote_inverse_increment))) / product.quote_inverse_increment);
+    // THIS IS NOT OLD CODE FROM WHEN BTC-USD WAS THE ONLY PRODUCT. Using 100 here because the trade_pair_ratio is a percentage. 
+    let original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + 100))) / 100);
 
 
 

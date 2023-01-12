@@ -77,18 +77,6 @@ function* killLock(action) {
 }
 
 
-function* test() {
-  try {
-    const response = yield axios.get(`/api/settings/test/cheese`);
-    console.log(response, '<- response from test');
-  } catch (error) {
-    console.log('post account route factoryReset has failed', error);
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
-
 function* settingsSaga() {
   yield takeLatest('SET_BULK_PAIR_RATIO', bulkPairRatio);
   yield takeLatest('SET_PROFIT_ACCURACY', sendProfitAccuracy);
@@ -96,7 +84,6 @@ function* settingsSaga() {
   yield takeLatest('POST_MAX_REINVEST_RATIO', postMaxReinvestRatio);
   yield takeLatest('SAVE_RESERVE', reserve);
   yield takeLatest('KILL_LOCK', killLock);
-  yield takeLatest('TEST', test);
 }
 
 export default settingsSaga;
