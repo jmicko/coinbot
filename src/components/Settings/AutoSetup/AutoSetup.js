@@ -3,8 +3,6 @@ import React, {
   useEffect,
   // useCallback,
   useRef,
-  useCallback,
-  useMemo
 } from 'react';
 import { useUser } from '../../../contexts/UserContext';
 import { useSocket } from '../../../contexts/SocketProvider';

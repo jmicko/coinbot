@@ -77,6 +77,46 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
   }
 });
 
+
+/**
+ * PUT route to change status of pause
+ */
+router.put('/pause', rejectUnauthenticated, async (req, res) => {
+  console.log('pause route');
+  const user = req.user;
+  try {
+    await databaseClient.setPause(!user.paused, user.id);
+
+    await userStorage[user.id].update();
+
+    // tell user to update user
+    messenger[req.user.id].userUpdate();
+    res.sendStatus(200);
+  } catch (err) {
+    console.log(err, 'problem in PAUSE ROUTE');
+    res.sendStatus(500);
+  }
+});
+
+/**
+* PUT route to change theme
+*/
+router.put('/theme', rejectUnauthenticated, async (req, res) => {
+  const user = req.user;
+  const theme = req.body.theme;
+  console.log('theme route', theme);
+  try {
+    const queryText = `UPDATE "user_settings" SET "theme" = $1 WHERE "userID" = $2`;
+    await pool.query(queryText, [theme, user.id]);
+    await userStorage[user.id].update();
+    res.sendStatus(200);
+  } catch (err) {
+    console.log(err, 'problem in THEME ROUTE');
+    res.sendStatus(500);
+  }
+});
+
+
 /**
  * PUT route setting Trade Load Max
  */

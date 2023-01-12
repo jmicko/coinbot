@@ -43,42 +43,6 @@ function* storeApi(action) {
   }
 }
 
-function* resetProfit(action) {
-  try {
-    yield axios.post(`/api/account/resetProfit`);
-    yield put({ type: 'FETCH_USER' });
-  } catch (error) {
-    // console.log('put account route resetProfit has failed', error);
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
-
-function* pause(action) {
-  try {
-    yield axios.put(`/api/account/pause`, action.payload);
-    yield put({ type: 'FETCH_USER' });
-  } catch (error) {
-    console.log('put account route pause has failed', error);
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
-
-function* setTheme(action) {
-  try {
-    yield axios.put(`/api/account/theme`, action.payload);
-    yield put({ type: 'FETCH_USER' });
-  } catch (error) {
-    console.log('put account route reinvest ratio has failed', error);
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
-
 function* reinvest(action) {
   try {
     yield axios.put(`/api/account/reinvest`, action.payload);
@@ -201,9 +165,6 @@ function* accountSaga() {
   yield takeLatest('FETCH_BOT_ERRORS', fetchErrors);
   yield takeLatest('FETCH_BOT_MESSAGES', fetchMessages);
   yield takeLatest('STORE_API', storeApi);
-  yield takeLatest('RESET_PROFIT', resetProfit);
-  yield takeLatest('PAUSE', pause);
-  yield takeLatest('SET_THEME', setTheme);
   yield takeLatest('REINVEST', reinvest);
   yield takeLatest('REINVEST_RATIO', reinvestRatio);
   yield takeLatest('TOGGLE_TRADE_MAX', tradeMax);

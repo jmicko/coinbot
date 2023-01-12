@@ -1,61 +1,16 @@
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useData } from '../../../contexts/DataContext';
 import { useUser } from '../../../contexts/UserContext';
 import './General.css'
 
+const themes = { original: 'Original', darkTheme: 'Dark' }
 
 function General(props) {
-  const dispatch = useDispatch();
-  const { user, refreshUser } = useUser();
+  const { user } = useUser();
+  const { pause, killLock, setTheme, sendTradeLoadMax, updateProfitAccuracy } = useData();
 
   const [max_trade_load, setMaxTradeLoad] = useState(100);
   const [profit_accuracy, setProfit_accuracy] = useState(2);
-
-
-  function pause() {
-    dispatch({
-      type: 'PAUSE',
-    });
-    refreshUser();
-  }
-
-  function killLock() {
-    dispatch({
-      type: 'KILL_LOCK',
-    });
-    refreshUser();
-  }
-
-  function setTheme(theme) {
-    dispatch({
-      type: 'SET_THEME',
-      payload: {
-        theme: theme
-      }
-    });
-    refreshUser();
-  }
-  
-  function sendTradeLoadMax(event) {
-    dispatch({
-      type: 'SET_MAX_TRADE_LOAD',
-      payload: {
-        max_trade_load: max_trade_load
-      }
-    });
-    refreshUser();
-  }
-  
-  function sendProfitAccuracy(event) {
-    dispatch({
-      type: 'SET_PROFIT_ACCURACY',
-      payload: {
-        profit_accuracy: profit_accuracy
-      }
-    });
-    refreshUser();
-  }
-
 
   return (
     <div className="General settings-panel scrollable">
@@ -63,20 +18,24 @@ function General(props) {
 
       {/* THEME */}
       <h4>Theme</h4>
-      <button className="btn-blue medium" onClick={() => { setTheme("original") }}>Original</button>
-      <button className={`btn-blue medium darkTheme`} onClick={() => { setTheme("darkTheme") }}>Dark</button>
+      {Object.keys(themes).map((theme) => {
+        return (
+          <button key={theme} className={`btn-blue medium ${theme}`} onClick={() => { setTheme(theme) }}>
+            {themes[theme]}
+          </button>
+        )
+      })}
       <div className="divider" />
 
       {/* KILL PREVENTION */}
-
       <h4>Kill Prevention</h4>
       {props.tips && <p>
-        Removes the kill button from the trade pairs. This helps prevent accidental deletion of trades. Highly recommended to leave this on.
+        Removes the kill button from the trade pairs. 
+        This helps prevent accidental deletion of trades. 
+        Highly recommended to leave this on.
       </p>}
-      {user.kill_locked
-        ? <button className={`btn-blue medium ${user.theme}`} onClick={() => { killLock() }}>Unlock</button>
-        : <button className={`btn-blue medium ${user.theme}`} onClick={() => { killLock() }}>Lock</button>
-      }
+      <button className={`btn-blue medium ${user.theme}`} onClick={killLock}>{user.kill_locked ? 'Unlock' : 'Lock'}</button>
+      {/* <button className={`btn-blue medium ${user.theme}`} onClick={killLock}>Lock</button> */}
       <div className="divider" />
 
       {/* PAUSE */}
@@ -85,24 +44,30 @@ function General(props) {
         Pauses the bot. Trades will stay in place, but the bot will not check on them or flip them. If they are cancelled on Coinbase, the bot will not notice until it is unpaused.
         Be careful not to trade funds away manually while the bot is paused, or there might be an insufficient funds error.
       </p>}
-      {user.paused
-        ? <button className={`btn-blue medium ${user.theme}`} onClick={() => { pause() }}>Unpause</button>
-        : <button className={`btn-blue medium ${user.theme}`} onClick={() => { pause() }}>Pause</button>
-      }
+      {/* {user.paused
+        ? <button className={`btn-blue medium ${user.theme}`} onClick={pause}>Unpause</button>
+        : <button className={`btn-blue medium ${user.theme}`} onClick={pause}>Pause</button>
+      } */}
+      <button className={`btn-blue medium ${user.theme}`} onClick={pause}>{user.paused ? 'Unpause' : 'Pause'}</button>
       <div className="divider" />
 
       {/* MAX TRADES ON SCREEN */}
       <h4>Max Trades on Screen</h4>
-      {props.tips && <p>
-        Limit the number of trades to load per side (buy/sell). This can make load times shorter and limit the amount of scrolling
+      {props.tips && <div>
+      <p>
+        Limit the number of trades to load per side (buy/sell). 
+        This can make load times shorter and limit the amount of scrolling
         needed to get to the split.
-        <br />
-        <br />
-        Since it is PER SIDE, setting the value to 10 for example would potentially load up to 20 trades total.
-        <br />
-        <br />
-        There is a hard limit of 10,000 open trades per user, so there is no reason to set the value higher than that.
-      </p>}
+      </p>
+      <p>
+        Since it is PER SIDE, setting the value to 10 for example 
+        would potentially load up to 20 trades total.
+      </p>
+      <p>
+        There is a soft limit of 10,000 open trades per user, 
+        so there is no reason to set the value higher than that.
+      </p>
+      </div>}
       <p>Current max trades to load per side: {Number(user.max_trade_load)}</p>
       <div className='left-border'>
         <label htmlFor="reinvest_ratio">
@@ -116,7 +81,7 @@ function General(props) {
           onChange={(event) => setMaxTradeLoad(Number(event.target.value))}
         />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={(event) => { sendTradeLoadMax(event) }}>Save Max</button>
+        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { sendTradeLoadMax(max_trade_load) }}>Save Max</button>
       </div>
       <div className="divider" />
 
@@ -138,7 +103,7 @@ function General(props) {
           onChange={(event) => setProfit_accuracy(Number(event.target.value))}
         />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={(event) => { sendProfitAccuracy(event) }}>Save</button>
+        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={(event) => { updateProfitAccuracy(profit_accuracy) }}>Save</button>
       </div>
       <div className="divider" />
     </div>
