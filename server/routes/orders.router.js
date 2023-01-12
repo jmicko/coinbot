@@ -4,7 +4,7 @@ const router = express.Router();
 const pool = require('../modules/pool');
 const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 const databaseClient = require('../modules/databaseClient');
-const { cbClients, messenger, userStorage } = require('../modules/cache');
+const { cbClients, messenger, userStorage, botSettings } = require('../modules/cache');
 const { sleep, autoSetup } = require('../../src/shared');
 const { v4: uuidv4 } = require('uuid');
 const robot = require('../modules/robot');
@@ -302,6 +302,93 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
   }
 });
 
+
+/**
+ * PUT route bulk updating trade pair ratio
+ */
+router.put('/bulkPairRatio/:product_id', rejectUnauthenticated, async (req, res) => {
+  const user = req.user;
+  const userID = req.user.id;
+  const previousPauseStatus = req.user.paused;
+  const bulk_pair_ratio = req.body.bulk_pair_ratio;
+  const product_id = req.params.product_id;
+  console.log('in bulkPairRatio PUT route', bulk_pair_ratio, '<-bulk_pair_ratio', product_id, '<-product_id', userID, '<-userID');
+  try {
+    // pause trading before cancelling all orders or it will reorder them before done, making it take longer
+    await databaseClient.setPause(true, userID);
+    await userStorage[user.id].update();
+
+    // wait 5 seconds to give the sync loop more time to finish
+    await sleep(5000);
+
+    console.log('updating trade pair ratio for all trades for that user')
+    // update the trade-pair ratio for all trades for that user
+    const updateTradesQueryText = `UPDATE limit_orders
+    SET "trade_pair_ratio" = $1
+    WHERE "settled" = false AND "product_id" = $2 AND "userID" = $3;`
+
+    await pool.query(updateTradesQueryText, [
+      bulk_pair_ratio,
+      product_id,
+      userID
+    ]);
+
+    console.log('updating original sell price for all trades for that user')
+    // update original sell price after ratio is set
+    const updateOGSellPriceQueryText = `UPDATE limit_orders
+    SET "original_sell_price" = ROUND(((original_buy_price * ("trade_pair_ratio" + 100)) / 100), 2)
+    WHERE "settled" = false AND "product_id" = $1 AND "userID" = $2;`
+
+    await pool.query(updateOGSellPriceQueryText, [
+      product_id,
+      userID
+    ]);
+
+    console.log('updating limit price for all trades for that user')
+    // need to update the current price on all sells after changing numbers on all trades
+    const updateSellsPriceQueryText = `UPDATE limit_orders
+    SET "limit_price" = "original_sell_price"
+    WHERE "side" = 'SELL' AND "product_id" = $1 AND "userID" = $2;`;
+
+    await pool.query(updateSellsPriceQueryText, [
+      product_id,
+      userID
+    ]);
+
+    // Now cancel all trades so they can be reordered with the new numbers
+    // mark all open orders as reorder
+    await databaseClient.setReorder(userID);
+
+    let openOrders = await databaseClient.getLimitedUnsettledTrades(userID, botSettings.orders_to_sync);
+
+    if (openOrders.length > 0) {
+      // build an array of just the IDs that should be set to reorder
+      const idArray = [];
+      for (let i = 0; i < openOrders.length; i++) {
+        const order = openOrders[i];
+        idArray.push(order.order_id)
+      } //end for loop
+
+      // cancel all orders. The sync loop will take care of replacing them
+      await cbClients[userID].cancelOrders(idArray);
+    }
+
+    // set pause status to what it was before route was hit
+    await databaseClient.setPause(previousPauseStatus, userID);
+    await userStorage[user.id].update();
+    // update orders on client
+    messenger[userID].newMessage({
+      type: 'general',
+      text: `Bulk trade pair ratio updated to ${bulk_pair_ratio}`,
+      orderUpdate: true
+    })
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.log(err, 'error with bulk updating trade pair ratio route');
+    res.sendStatus(500);
+  }
+});
 
 ///////////////////////////
 ////// DELETE ROUTES //////

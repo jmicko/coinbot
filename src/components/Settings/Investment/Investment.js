@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
+import { useData } from '../../../contexts/DataContext';
 import { useUser } from '../../../contexts/UserContext';
+import { useFetchData } from '../../../hooks/fetchData';
 import './Investment.css'
 
 
 function Investment(props) {
   const dispatch = useDispatch();
   const { user } = useUser();
+  const { productID } = useData();
+  const { updateData: setBulkPairRatio } = useFetchData(`/api/orders/bulkPairRatio/${productID}`, { defaultState: null, noLoad: true })
 
   const [reinvest_ratio, setReinvest_ratio] = useState(0);
   const [reserve, setReserve] = useState(0);
@@ -88,11 +92,10 @@ function Investment(props) {
 
   function bulkPairRatio(event) {
     event.preventDefault();
-    dispatch({
-      type: 'SET_BULK_PAIR_RATIO',
-      payload: {
+    setBulkPairRatio({
+      // type: 'SET_BULK_PAIR_RATIO',      payload: {
         bulk_pair_ratio: bulk_pair_ratio
-      }
+      // }
     });
   }
 
