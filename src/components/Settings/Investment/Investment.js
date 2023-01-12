@@ -9,14 +9,34 @@ import './Investment.css'
 function Investment(props) {
   const dispatch = useDispatch();
   const { user } = useUser();
-  const { productID } = useData();
-  const { updateData: setBulkPairRatio } = useFetchData(`/api/orders/bulkPairRatio/${productID}`, { defaultState: null, noLoad: true })
+  const { productID, refreshOrders } = useData();
 
+  // ROUTES
+  const { updateData:updateBulkPairRatio } = useFetchData(`/api/orders/bulkPairRatio/${productID}`, { defaultState: null, noLoad: true })
+
+  // STATE
   const [reinvest_ratio, setReinvest_ratio] = useState(0);
   const [reserve, setReserve] = useState(0);
   const [bulk_pair_ratio, setBulk_pair_ratio] = useState(1.1);
   const [max_trade_size, setMaxTradeSize] = useState(30);
   const [postMaxReinvestRatio, setPostMaxReinvestRatio] = useState(0);
+
+  // FUNCTIONS
+  async function setBulkPairRatio() {
+    // event?.preventDefault()
+    await updateBulkPairRatio({ bulk_pair_ratio })
+    // todo - this will refresh the orders twice, because the server will also send a refresh orders message
+    // which the socket will act on so that any other logged in client devices will also refresh
+    // this rest fallback is good to have however, because some networks will block the websocket protocol.
+    // should send an id or something with the refresh orders message so that the socket knows to ignore it
+
+    // maybe the socket should ping pong with the server to make sure it's still connected
+    // and if it's not, then the client should refresh the orders
+    refreshOrders();
+  }
+
+
+  // EFFECTS
 
   // make sure ratio is within percentage range
   useEffect(() => {
@@ -87,15 +107,6 @@ function Investment(props) {
       payload: {
         max_trade_size: max_trade_size
       }
-    });
-  }
-
-  function bulkPairRatio(event) {
-    event.preventDefault();
-    setBulkPairRatio({
-      // type: 'SET_BULK_PAIR_RATIO',      payload: {
-        bulk_pair_ratio: bulk_pair_ratio
-      // }
     });
   }
 
@@ -249,7 +260,7 @@ function Investment(props) {
           onChange={(event) => setBulk_pair_ratio(Number(event.target.value))}
         />
         <br />
-        <button className={`btn-blue btn-bulk-pair-ratio medium ${user.theme}`} onClick={(event) => { bulkPairRatio(event) }}>Set all trades to new ratio</button>
+        <button className={`btn-blue btn-bulk-pair-ratio medium ${user.theme}`} onClick={() => { setBulkPairRatio({ bulk_pair_ratio }) }}>Set all trades to new ratio</button>
       </div>
       <div className="divider" />
 
