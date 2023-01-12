@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
 import { useData } from '../../../contexts/DataContext';
 import { useUser } from '../../../contexts/UserContext';
 import { useFetchData } from '../../../hooks/fetchData';
@@ -7,12 +6,17 @@ import './Investment.css'
 
 
 function Investment(props) {
-  const dispatch = useDispatch();
-  const { user } = useUser();
-  const { productID, refreshOrders } = useData();
+  const { user, refreshUser } = useUser();
+  const { productID, refreshOrders, deadCon } = useData();
 
   // ROUTES
-  const { updateData:updateBulkPairRatio } = useFetchData(`/api/orders/bulkPairRatio/${productID}`, { defaultState: null, noLoad: true })
+  const { updateData: updateBulkPairRatio } = useFetchData(`/api/orders/bulkPairRatio/${productID}`, { defaultState: null, noLoad: true });
+  const { updateData: updateReinvest } = useFetchData(`/api/account/reinvest`, { defaultState: null, noLoad: true })
+  const { updateData: updateReinvestRatio } = useFetchData(`/api/account/reinvestRatio`, { defaultState: null, noLoad: true })
+  const { updateData: updateReserve } = useFetchData(`/api/account/reserve`, { defaultState: null, noLoad: true })
+  const { updateData: updatePostMaxReinvest } = useFetchData(`/api/account/postMaxReinvestRatio`, { defaultState: null, noLoad: true })
+  const { updateData: updateMaxTradeSize } = useFetchData(`/api/account/maxTradeSize`, { defaultState: null, noLoad: true })
+  const { updateData: updateTradeMax } = useFetchData(`/api/account/tradeMax`, { defaultState: null, noLoad: true })
 
   // STATE
   const [reinvest_ratio, setReinvest_ratio] = useState(0);
@@ -21,28 +25,50 @@ function Investment(props) {
   const [max_trade_size, setMaxTradeSize] = useState(30);
   const [postMaxReinvestRatio, setPostMaxReinvestRatio] = useState(0);
 
-  // FUNCTIONS
-  async function setBulkPairRatio() {
-    // event?.preventDefault()
-    await updateBulkPairRatio({ bulk_pair_ratio })
-    // todo - this will refresh the orders twice, because the server will also send a refresh orders message
-    // which the socket will act on so that any other logged in client devices will also refresh
-    // this rest fallback is good to have however, because some networks will block the websocket protocol.
-    // should send an id or something with the refresh orders message so that the socket knows to ignore it
 
-    // maybe the socket should ping pong with the server to make sure it's still connected
-    // and if it's not, then the client should refresh the orders
-    refreshOrders();
+  // FUNCTIONS
+
+  async function storeMaxTradeSize() {
+    await updateMaxTradeSize({ max_trade_size });
+    deadCon && refreshUser();
   }
 
+  async function savePostMaxReinvestRatio() {
+    await updatePostMaxReinvest({ postMaxReinvestRatio });
+    deadCon && refreshUser();
+  }
+
+  async function setBulkPairRatio() {
+    await updateBulkPairRatio({ bulk_pair_ratio })
+    deadCon && refreshOrders();
+  }
+
+  // this will toggle user reinvestment, and does not send any data
+  async function reinvest() {
+    await updateReinvest()
+    deadCon && refreshUser();
+  }
+
+  async function reinvestRatio() {
+    await updateReinvestRatio({ reinvest_ratio });
+    deadCon && refreshUser();
+  }
+
+  async function saveReserve() {
+    await updateReserve({ reserve });
+    deadCon && refreshUser();
+  }
+
+  async function tradeMax() {
+    await updateTradeMax();
+    deadCon && refreshUser();
+  }
 
   // EFFECTS
 
   // make sure ratio is within percentage range
+  // hey this is probably not a good way to do this
   useEffect(() => {
-    // if (reinvest_ratio > 500) {
-    //   setReinvest_ratio(500)
-    // }
     if (reinvest_ratio < 0) {
       setReinvest_ratio(0)
     }
@@ -56,60 +82,6 @@ function Investment(props) {
     setMaxTradeSize(Number(user.max_trade_size))
   }, [user.max_trade_size])
 
-  function reinvest(event) {
-    // event.preventDefault();
-    dispatch({
-      type: 'REINVEST',
-    });
-  }
-
-  function reinvestRatio(event) {
-    event.preventDefault();
-    dispatch({
-      type: 'REINVEST_RATIO',
-      payload: {
-        reinvest_ratio: reinvest_ratio
-      }
-    });
-  }
-
-  function saveReserve(event) {
-    event.preventDefault();
-    dispatch({
-      type: 'SAVE_RESERVE',
-      payload: {
-        reserve: reserve
-      }
-    });
-  }
-
-  function savePostMaxReinvestRatio(event) {
-    event.preventDefault();
-    dispatch({
-      type: 'POST_MAX_REINVEST_RATIO',
-      payload: {
-        postMaxReinvestRatio: postMaxReinvestRatio
-      }
-    });
-  }
-
-  function tradeMax(event) {
-    // event.preventDefault();
-    dispatch({
-      type: 'TOGGLE_TRADE_MAX',
-    });
-  }
-
-  function storeMaxTradeSize(event) {
-    event.preventDefault();
-    dispatch({
-      type: 'STORE_MAX_TRADE_SIZE',
-      payload: {
-        max_trade_size: max_trade_size
-      }
-    });
-  }
-
 
   return (
     <div className="Investment settings-panel scrollable">
@@ -121,8 +93,8 @@ function Investment(props) {
         work if the profit is too small.
       </p>}
       {(user.reinvest)
-        ? <button className={`btn-blue medium ${user.theme}`} onClick={() => { reinvest() }}>Turn off</button>
-        : <button className={`btn-blue medium ${user.theme}`} onClick={() => { reinvest() }}>Turn on</button>
+        ? <button className={`btn-blue medium ${user.theme}`} onClick={reinvest}>Turn off</button>
+        : <button className={`btn-blue medium ${user.theme}`} onClick={reinvest}>Turn on</button>
       }
       {user.reinvest &&
         <>

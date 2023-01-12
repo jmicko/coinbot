@@ -120,9 +120,15 @@ export function useFetchData(url, { defaultState, notNull, noLoad }) {
           setError(response)
           return
         }
-        const json = await response.json()
-        console.log(json, 'put data to', url, 'in usePutData hook')
-        // setResponse(json)
+        if (response.status === 201) { // created. this should return data if relevant
+          console.log('response status 201 in usePostData hook')
+          const data = await response.json()
+          console.log(data, 'received data after posting to', url, 'in usePutData hook')
+          setData(data)
+          setIsLoading(false)
+          setError(null)
+          return
+        }
         setIsLoading(false)
         setError(null)
       } catch (error) {

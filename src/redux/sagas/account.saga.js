@@ -43,29 +43,6 @@ function* storeApi(action) {
   }
 }
 
-function* reinvest(action) {
-  try {
-    yield axios.put(`/api/account/reinvest`, action.payload);
-    yield put({ type: 'FETCH_USER' });
-  } catch (error) {
-    console.log('put account route reinvest has failed', error);
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
-
-function* reinvestRatio(action) {
-  try {
-    yield axios.put(`/api/account/reinvestRatio`, action.payload);
-    yield put({ type: 'FETCH_USER' });
-  } catch (error) {
-    console.log('put account route reinvest ratio has failed', error);
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-  }
-}
 
 function* tradeMax(action) {
   try {
@@ -165,10 +142,7 @@ function* accountSaga() {
   yield takeLatest('FETCH_BOT_ERRORS', fetchErrors);
   yield takeLatest('FETCH_BOT_MESSAGES', fetchMessages);
   yield takeLatest('STORE_API', storeApi);
-  yield takeLatest('REINVEST', reinvest);
-  yield takeLatest('REINVEST_RATIO', reinvestRatio);
   yield takeLatest('TOGGLE_TRADE_MAX', tradeMax);
-  yield takeLatest('STORE_MAX_TRADE_SIZE', storeMaxTradeSize);
   yield takeLatest('EXPORT_XLSX', exportXlsx);
   yield takeLatest('EXPORT_CANDLE_XLSX', exportCandles);
   yield takeLatest('EXPORT_CURRENT_JSON', exportCurrentJSON);

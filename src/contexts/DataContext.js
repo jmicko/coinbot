@@ -17,6 +17,7 @@ export function DataProvider({ children }) {
   const { refreshUser } = useUser();
   // sockets
   const [coinbotSocket, setCoinbotSocket] = useState('closed');
+  const deadCon = (coinbotSocket !== 'open') ? true : false;
   const [socketStatus, setSocketStatus] = useState('closed');
 
 
@@ -101,7 +102,7 @@ export function DataProvider({ children }) {
           // SETTINGS
           pause, killLock, setTheme, sendTradeLoadMax, updateProfitAccuracy,
           // SOCKETS
-          coinbotSocket, setCoinbotSocket, socketStatus, setSocketStatus,
+          coinbotSocket, setCoinbotSocket, socketStatus, setSocketStatus, deadCon
         }
       }>
       {children}
