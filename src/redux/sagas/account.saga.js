@@ -3,21 +3,6 @@ import axios from 'axios';
 
 
 
-function* storeApi(action) {
-  try {
-    yield axios.post(`/api/account/storeApi`, action.payload);
-    yield put({ type: 'FETCH_USER' });
-  } catch (error) {
-    // console.log('post account route storeApi has failed', error);
-    if (error.response.status === 403) {
-      yield put({ type: 'UNSET_USER' });
-    }
-    if (error.response.status === 500) {
-      yield put({ type: 'REGISTRATION_FAILED' });
-    }
-  }
-}
-
 
 function* exportXlsx() {
   try {
@@ -37,7 +22,6 @@ function* exportXlsx() {
 
 
 function* accountSaga() {
-  // yield takeLatest('STORE_API', storeApi);
   yield takeLatest('EXPORT_XLSX', exportXlsx);
 
 }

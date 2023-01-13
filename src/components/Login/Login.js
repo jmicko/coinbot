@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { useUser } from '../../contexts/UserContext';
 import './Login.css'
 
 
 
 function Login() {
+  const { login, registerNew } = useUser();
+
+  const [errors, setErrors] = useState({ loginMessage: '', registrationMessage: '' });
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [register, setRegister] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
-  const dispatch = useDispatch();
-  const errors = useSelector((store) => store.errorsReducer);
-  const { login, registerNew } = useUser();
+  // const errors = useSelector((store) => store.errorsReducer);
 
 
   function loginAccount(event) {
@@ -28,29 +28,29 @@ function Login() {
     }
   }
 
-  function clearErrors() {
-    dispatch({ type: 'CLEAR_REGISTRATION_ERROR', });
-    dispatch({ type: 'CLEAR_LOGIN_ERROR', });
-  }
-
   function registerAccount(event) {
     event.preventDefault();
     // console.log('registering new user');
     // send registration stuff
     if (username && password && confirmPassword && (password === confirmPassword)) {
-      // dispatch({
-      //   type: 'REGISTER',
-      //   payload: {
-      //     username: username,
-      //     password: password,
-      //   },
-      // });
       registerNew({ username, password });
     } else {
-      dispatch({ type: 'REGISTRATION_INPUT_ERROR' });
-      console.log('problem: put in your cred');
+      if (password !== confirmPassword) {
+        setErrors({ ...errors, registrationMessage: 'Passwords do not match' });
+      } else if (!username || !password || !confirmPassword) {
+        setErrors({ ...errors, registrationMessage: 'Please fill out all fields' });
+      } else {
+        setErrors({ ...errors, registrationMessage: 'Something went wrong' });
+      }
     }
   }
+
+  function clearErrors() {
+    setUsername("");
+    setPassword("");
+    setConfirmPassword("");
+  }
+
 
   return (
     <div className="Login">

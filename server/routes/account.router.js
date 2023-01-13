@@ -637,7 +637,7 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   } catch (err) {
     if (err.response?.status === 401) {
       console.log('Invalid API key');
-      res.sendStatus(500);
+      res.sendStatus(401);
     } else {
       console.log(err, 'problem updating api details');
       res.sendStatus(500);

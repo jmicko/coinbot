@@ -75,7 +75,12 @@ export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }
       if (!response.ok) {
         console.log(response, 'response not ok in usePostData hook')
         setIsLoading(false)
-        setError(response)
+        console.log('=============================================================')
+        console.log('=============================================================')
+        console.log('=============================================================')
+        console.log('=============================================================')
+        setError(response?.status)
+        console.log('=============================================================', response)
         return
       }
       if (response.status === 204) { // no content
