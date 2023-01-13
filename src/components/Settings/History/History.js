@@ -1,19 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useState } from 'react';
 import './History.css'
-import xlsx from 'json-as-xlsx'
+// import xlsx from 'json-as-xlsx'
 import { granularities } from '../../../shared';
 import { useUser } from '../../../contexts/UserContext';
 import { useData } from '../../../contexts/DataContext';
 import { useFetchData } from '../../../hooks/fetchData';
 
 function History(props) {
-  const dispatch = useDispatch();
   const { user, refreshUser } = useUser();
-  const xlsxReducer = useSelector((store) => store.accountReducer.xlsxReducer);
-  const currentJSONReducer = useSelector((store) => store.accountReducer.currentJSONReducer);
-  const { exportableFiles } = useData();
+  const { exportableFiles, productID: product } = useData();
   const { downloadFile } = useFetchData(`/api/account/downloadFile`, { noLoad: true, refreshUser });
+  const { updateData: generateCandleFile } = useFetchData(`/api/account/exportCandles`, { noLoad: true, refreshUser });
+  const { data: currentJSON, refresh: refreshCurrentJSON, clear: clearJSON } = useFetchData(`/api/account/exportCurrentJSON`, { noLoad: true, refreshUser });
   // const [jsonImport, setJSONImport] = useState('');
   // const [ignoreDuplicates, setIgnoreDuplicates] = useState(false);
   // end should start as the current date withouth the time
@@ -22,83 +20,27 @@ function History(props) {
   const [start, setStart] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().slice(0, 10));
   const [granularity, setGranularity] = useState('ONE_MINUTE');
 
-  // function handleIgnoreDuplicates() {
-  //   setIgnoreDuplicates(!ignoreDuplicates)
-  // }
-
-  async function exportXlxs() {
-    dispatch({
-      type: 'EXPORT_XLSX'
-    });
-  }
-
   async function exportCandleXlxs() {
-    dispatch({
-      type: 'EXPORT_CANDLE_XLSX',
-      payload: {
-        product: props.product,
-        granularity: granularity,
-        start: start,
-        end: end
-      }
+    await generateCandleFile({
+      product: product,
+      granularity: granularity,
+      start: start,
+      end: end
     })
-    dispatch({ type: 'FETCH_USER' });
+    refreshUser();
   }
-
-  // // download a file
-  // async function downloadFile(file) {
-  //   dispatch({
-  //     type: 'DOWNLOAD_FILE',
-  //     payload: file
-  //   })
-  // }
 
   async function exportCurrentJSON(params) {
     if (params === 'clear') {
-      dispatch({
-        type: 'UNSET_CURRENT_JSON'
-      })
+      clearJSON();
     } else {
-      dispatch({
-        type: 'EXPORT_CURRENT_JSON'
-      })
+      refreshCurrentJSON()
     }
   }
 
-  // async function importCurrentJSON() {
-  //   if (jsonImport) {
-
-  //     dispatch({
-  //       type: 'IMPORT_CURRENT_JSON',
-  //       payload: {
-  //         jsonImport: jsonImport,
-  //         ignoreDuplicates: ignoreDuplicates
-  //       }
-  //     })
-  //   }
-  // }
-
-  // function copyToClipboard() {
-  //   navigator.clipboard.writeText(jsonImport);
-  // }
-
-  useEffect(() => {
-
-    if (xlsxReducer?.data) {
-
-      let settings = {
-        fileName: 'Coinbot Orders Export ' + new Date().toLocaleString('en-US'), // Name of the resulting spreadsheet
-        extraLength: 3, // A bigger number means that columns will be wider
-        writeOptions: {} // Style options from https://github.com/SheetJS/sheetjs#writing-options
-      }
-
-      xlsx(xlsxReducer.data, settings);
-      dispatch({
-        type: 'UNSET_XLSX'
-      })
-    }
-
-  }, [xlsxReducer, dispatch])
+  function copyToClipboard() {
+    navigator.clipboard.writeText(JSON.stringify(currentJSON));
+  }
 
 
   return (
@@ -161,31 +103,42 @@ function History(props) {
 
 
       <div className="divider" />
+
+      {/*       
       <h4>Export .xlsx spreadsheet</h4>
       <p>
         Export and download your entire trade history as an xlsx spreadsheet.
       </p>
       <button className={`btn-red medium ${user.theme}`} onClick={() => { exportXlxs() }}>Export</button>
       <div className="divider" />
+ */}
+
+
       <h4>Export current trade-pairs</h4>
       <p>
         Export all your current trade-pairs in JSON format.
         {/* You can copy this to a text document
         and use it later to import the same trades. This is useful if you want to transfer your
-        trades to a different bot and can't or don't want to mess around with the database. */}
+      trades to a different bot and can't or don't want to mess around with the database. */}
       </p>
-      {currentJSONReducer
+      {currentJSON
         ? <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCurrentJSON('clear') }}>Clear</button>
         : <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCurrentJSON() }}>Export</button>
       }
-      <br></br>
-      <br></br>
-      {/* {currentJSONReducer
-        && <button className={`btn-blue medium ${user.theme}`} onClick={() => { copyToClipboard() }}>copy</button>
-      } */}
-      <br></br>
-      {currentJSONReducer
-        && <code>{JSON.stringify(currentJSONReducer)}</code>
+      {currentJSON && <p>You should probably hit that copy all button instead of trying to copy the text from the box.</p>}
+      {/* <br></br> */}
+      {/* <br></br> */}
+      {currentJSON
+        && <textarea
+          rows="4"
+          cols="20"
+        >
+          {JSON.stringify(currentJSON)}
+        </textarea>
+      }
+      <br />
+      {currentJSON
+        && <button className={`btn-blue medium ${user.theme}`} onClick={() => { copyToClipboard() }}>Copy All</button>
       }
       <div className="divider" />
       {/* 
