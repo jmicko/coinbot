@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useUser } from '../../contexts/UserContext';
-import { useSocket } from '../../contexts/SocketProvider';
+import { useUser } from '../../contexts/UserContext.js';
+import { useSocket } from '../../contexts/SocketProvider.js';
 import './Messages.css'
-import { useData } from '../../contexts/DataContext';
+import { useData } from '../../contexts/DataContext.js';
 
 
 function Messages() {

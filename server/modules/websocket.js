@@ -1,10 +1,13 @@
-const WebSocket = require('ws');
-const CryptoJS = require('crypto-js');
-const fs = require('fs');
-const { cache, messenger, userStorage, botSettings, cbClients } = require('./cache');
-const databaseClient = require('./databaseClient');
-const { rejectUnauthenticatedSocket } = require('./authentication-middleware');
-const { sleep } = require('../../src/shared');
+// const CryptoJS = require('crypto-js');
+// const fs = require('fs');
+// const { cache, messenger, userStorage, botSettings, cbClients } = require('./cache');
+import { cache, messenger, userStorage, botSettings, cbClients } from './cache.js';
+// const databaseClient = require('./databaseClient');
+import { databaseClient } from './databaseClient.js';
+// const { rejectUnauthenticatedSocket } = require('./authentication-middleware');
+import { rejectUnauthenticatedSocket } from './authentication-middleware.js';
+// const { sleep } = require('../../src/shared');
+// import { sleep } from '../../src/shared';
 
 async function startWebsocket(userID) {
 
@@ -287,4 +290,4 @@ function setupSocketIO(io) {
   console.log('socket setup done');
 }
 
-module.exports = { startWebsocket, setupSocketIO };
+export { startWebsocket, setupSocketIO };

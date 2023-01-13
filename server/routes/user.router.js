@@ -1,12 +1,21 @@
-const express = require('express');
-const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
-const { userCount } = require('../modules/userCount-middleware');
-const encryptLib = require('../modules/encryption');
-const pool = require('../modules/pool');
-const userStrategy = require('../strategies/user.strategy');
-const robot = require('../modules/robot');
-const databaseClient = require('../modules/databaseClient');
-const { cache, userStorage, messenger } = require('../modules/cache');
+// const express = require('express');
+import express from 'express';
+// const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
+import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
+// const { userCount } = require('../modules/userCount-middleware');
+import { userCount } from '../modules/userCount-middleware.js';
+// const encryptLib = require('../modules/encryption');
+import  encryptLib  from '../modules/encryption.js';
+// const pool = require('../modules/pool');
+import { pool } from '../modules/pool.js';
+// const userStrategy = require('../strategies/user.strategy');
+import userStrategy from '../strategies/user.strategy.js';
+// const robot = require('../modules/robot');
+import { robot } from '../modules/robot.js';
+// const databaseClient = require('../modules/databaseClient');
+import { databaseClient } from '../modules/databaseClient.js';
+// const { cache, userStorage, messenger } = require('../modules/cache');
+import { cache, userStorage, messenger } from '../modules/cache.js';
 
 const router = express.Router();
 
@@ -258,4 +267,4 @@ router.delete('/:user_id', rejectUnauthenticated, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router ;

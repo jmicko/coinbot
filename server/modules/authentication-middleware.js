@@ -26,4 +26,4 @@ const rejectUnauthenticatedSocket = (socket, next) => {
   }
 };
 
-module.exports = { rejectUnauthenticated, rejectUnauthenticatedSocket };
+export { rejectUnauthenticated, rejectUnauthenticatedSocket };

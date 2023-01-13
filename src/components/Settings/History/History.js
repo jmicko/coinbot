@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import './History.css'
 // import xlsx from 'json-as-xlsx'
-import { granularities } from '../../../shared';
-import { useUser } from '../../../contexts/UserContext';
-import { useData } from '../../../contexts/DataContext';
-import { useFetchData } from '../../../hooks/fetchData';
+import { granularities } from '../../../shared.js';
+import { useUser } from '../../../contexts/UserContext.js';
+import { useData } from '../../../contexts/DataContext.js';
+import { useFetchData } from '../../../hooks/fetchData.js';
 
 function History(props) {
   const { user, refreshUser } = useUser();

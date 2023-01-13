@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useData } from '../../../contexts/DataContext';
-import { useUser } from '../../../contexts/UserContext';
-import Confirm from '../../Confirm/Confirm';
+import { useData } from '../../../contexts/DataContext.js';
+import { useUser } from '../../../contexts/UserContext.js';
+import Confirm from '../../Confirm/Confirm.js';
 import './Reset.css'
 
 

@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import Admin from './Admin/Admin';
-import AutoSetup from './AutoSetup/AutoSetup';
-import General from './General/General';
-import Products from './Products/Products';
-import Investment from './Investment/Investment';
-import Reset from './Reset/Reset';
-import History from './History/History';
+import Admin from './Admin/Admin.js';
+import AutoSetup from './AutoSetup/AutoSetup.js';
+import General from './General/General.js';
+import Products from './Products/Products.js';
+import Investment from './Investment/Investment.js';
+import Reset from './Reset/Reset.js';
+import History from './History/History.js';
 import './Settings.css'
-import SettingsNav from './SettingsNav/SettingsNav';
-import BulkDelete from './BulkDelete/BulkDelete';
-import { useUser } from '../../contexts/UserContext';
+import SettingsNav from './SettingsNav/SettingsNav.js';
+import BulkDelete from './BulkDelete/BulkDelete.js';
+import { useUser } from '../../contexts/UserContext.js';
 
 
 

@@ -1,8 +1,12 @@
-const WebSocket = require('ws');
-const CryptoJS = require("crypto-js");
-const axios = require("axios").default;
+// const WebSocket = require('ws');
+import  WebSocket  from 'ws';
+// const CryptoJS = require("crypto-js");
+import CryptoJS from 'crypto-js';
+// const axios = require("axios").default;
+import  axios  from 'axios';
 // const { cache } = require("./cache");
-const { v4: uuidv4 } = require('uuid');
+// const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 
 class Coinbase {
   constructor(key, secret) {
@@ -647,4 +651,4 @@ class Coinbase {
 }
 
 
-module.exports = { Coinbase };
+export { Coinbase };

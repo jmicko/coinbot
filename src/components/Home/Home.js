@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
+import './Home.css';
 
 import Trade from '../Trade/Trade.js';
 import Messages from '../Messages/Messages.js';
-import Menu from '../Menu/Menu'
-import TradeList from '../TradeList/TradeList'
-import Status from '../Status/Status'
-import Settings from '../Settings/Settings'
-import './Home.css'
+import Menu from '../Menu/Menu.js';
+import TradeList from '../TradeList/TradeList.js';
+import Status from '../Status/Status.js';
+import Settings from '../Settings/Settings.js';
 import NotApproved from '../NotApproved/NotApproved.js';
 import NotActive from '../NotActive/NotActive.js';
 import MobileNav from '../MobileNav/MobileNav.js';

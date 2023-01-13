@@ -1,9 +1,14 @@
-const session = require('express-session');
-const pgSession = require('connect-pg-simple')(session);
-const pool = require('./pool');
+// const session = require('express-session');
+// const pgSession = require('connect-pg-simple')(session);
+// const pool = require('./pool');
+import session from 'express-session';
+import pgSession from 'connect-pg-simple';
+const pgS = pgSession(session);
+import { pool } from './pool.js';
 
+// (session)
 const sessionMiddleware = session({
-  store: new pgSession({
+  store: new pgS({
     pool: pool, // Connection pool
   }),
   /* session secret could be changed to generate a cryptographically sound random number
@@ -25,4 +30,4 @@ const sessionMiddleware = session({
 
 const wrap = (expressMiddleware) => (socket, next) => expressMiddleware(socket.request, {}, next);
 
-module.exports = { sessionMiddleware, wrap };
+export { sessionMiddleware, wrap };

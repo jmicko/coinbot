@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useData } from '../../contexts/DataContext';
-import { useSocket } from '../../contexts/SocketProvider';
-import { useUser } from '../../contexts/UserContext';
-import { numberWithCommas } from '../../shared';
+import { useData } from '../../contexts/DataContext.js';
+import { useSocket } from '../../contexts/SocketProvider.js';
+import { useUser } from '../../contexts/UserContext.js';
+import { numberWithCommas } from '../../shared.js';
 import './Status.css'
 
 

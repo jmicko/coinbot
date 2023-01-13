@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useData } from '../../contexts/DataContext';
-import { useUser } from '../../contexts/UserContext';
-import { useProductDecimals } from '../../hooks/useProductDecimals';
+import { useData } from '../../contexts/DataContext.js';
+import { useUser } from '../../contexts/UserContext.js';
+import { useProductDecimals } from '../../hooks/useProductDecimals.js';
 import './SingleTrade.css'
 
 function SingleTrade(props) {

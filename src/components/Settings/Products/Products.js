@@ -1,6 +1,6 @@
 import React from 'react';
-import { useData } from '../../../contexts/DataContext';
-import { numberWithCommas } from '../../../shared';
+import { useData } from '../../../contexts/DataContext.js';
+import { numberWithCommas } from '../../../shared.js';
 import './Products.css'
 
 

@@ -450,4 +450,4 @@ const granularities = [
   { name: 'ONE_DAY', readable: 'One Day', value: 86400 },
 ]
 
-module.exports = { autoSetup, sleep, numberWithCommas, addProductDecimals, granularities }
+export { autoSetup, sleep, numberWithCommas, addProductDecimals, granularities }

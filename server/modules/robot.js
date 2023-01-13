@@ -1,9 +1,13 @@
 // importing this way makes it easier to see when you are accessing the database or coinbase
-const databaseClient = require("./databaseClient");
-const { cache, botSettings, userStorage, apiStorage, messenger, cbClients } = require("./cache");
+// const databaseClient = require("./databaseClient");
+import { databaseClient } from "./databaseClient.js";
+// const { cache, botSettings, userStorage, apiStorage, messenger, cbClients } = require("./cache");
+import { cache, botSettings, userStorage, messenger, cbClients } from "./cache.js";
 // const botSettings = botSettings;
-const { startWebsocket } = require("./websocket");
-const { sleep, granularities, addProductDecimals } = require("../../src/shared");
+// const { startWebsocket } = require("./websocket");
+import { startWebsocket } from "./websocket.js";
+// const { sleep, granularities, addProductDecimals } = require("../../src/shared");
+import { sleep, granularities, addProductDecimals } from "../../src/shared.js";
 
 // start a sync loop for each active user
 async function startSync() {
@@ -1214,4 +1218,4 @@ const robot = {
 }
 
 
-module.exports = robot;
+export { robot };

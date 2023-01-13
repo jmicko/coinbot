@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useData } from '../../../contexts/DataContext';
-import { useUser } from '../../../contexts/UserContext';
+import { useData } from '../../../contexts/DataContext.js';
+import { useUser } from '../../../contexts/UserContext.js';
 import './General.css'
 
 const themes = { original: 'Original', darkTheme: 'Dark' }

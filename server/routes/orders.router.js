@@ -1,13 +1,21 @@
 // orders.router.js
-const express = require('express');
+// const express = require('express');
+import express from 'express';
 const router = express.Router();
-const pool = require('../modules/pool');
-const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
-const databaseClient = require('../modules/databaseClient');
-const { cbClients, messenger, userStorage, botSettings } = require('../modules/cache');
-const { sleep, autoSetup } = require('../../src/shared');
-const { v4: uuidv4 } = require('uuid');
-const robot = require('../modules/robot');
+// const pool = require('../modules/pool');
+import { pool } from '../modules/pool.js';
+// const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
+import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
+// const databaseClient = require('../modules/databaseClient');
+import { databaseClient } from '../modules/databaseClient.js';
+// const { cbClients, messenger, userStorage, botSettings } = require('../modules/cache');
+import { cbClients, messenger, userStorage, botSettings } from '../modules/cache.js';
+// const { sleep, autoSetup } = require('../../src/shared');
+import { sleep, autoSetup } from '../../src/shared.js';
+// const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
+// const robot = require('../modules/robot');
+import { robot } from '../modules/robot.js';
 
 
 // This router is used for orders that are stored in the database
@@ -571,4 +579,4 @@ router.delete('/:product_id/:start/:end', rejectUnauthenticated, async (req, res
 
 
 
-module.exports = router;
+export default router;

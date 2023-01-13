@@ -1,5 +1,10 @@
-const pg = require('pg');
-const url = require('url');
+// const pg = require('pg');
+import pg from 'pg';
+// const url = require('url');
+import url from 'url';
+
+import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
+dotenv.config()
 
 let config = {};
 
@@ -46,4 +51,4 @@ pool.on('error', (err) => {
   // process.exit(-1);
 });
 
-module.exports = pool;
+export { pool };

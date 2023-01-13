@@ -1,6 +1,6 @@
 // UserContext.js
 import { createContext, useContext, useEffect } from 'react'
-import { useFetchData } from '../hooks/fetchData'
+import { useFetchData } from '../hooks/fetchData.js'
 
 const UserContext = createContext()
 

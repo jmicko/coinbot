@@ -1,16 +1,28 @@
-const express = require('express');
+// const express = require('express');
+import express from 'express';
 const router = express.Router();
-const pool = require('../modules/pool');
-const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
-const databaseClient = require('../modules/databaseClient');
-const { cache, cbClients, userStorage, messenger } = require('../modules/cache');
-const { Coinbase } = require('../modules/coinbaseClient');
-const excel = require('exceljs');
-const { granularities } = require('../../src/shared');
-const { fork } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+// const pool = require('../modules/pool');
+import { pool } from '../modules/pool.js';
+// const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
+import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
+// const databaseClient = require('../modules/databaseClient');
+import { databaseClient } from '../modules/databaseClient.js';
+// const { cache, cbClients, userStorage, messenger } = require('../modules/cache');
+import { cache, cbClients, userStorage, messenger } from '../modules/cache.js';
+// const { Coinbase } = require('../modules/coinbaseClient');
+import { Coinbase } from '../modules/coinbaseClient.js';
+// const excel = require('exceljs');
+import excel from 'exceljs';
+// const { granularities } = require('../../src/shared');
+import { granularities } from '../../src/shared.js';
+// const { fork } = require('child_process');
+import { fork } from 'child_process';
+// const fs = require('fs');
+import fs from 'fs';
+// const path = require('path');
+import path from 'path';
 // const databaseClient = require('../modules/databaseClient/databaseClient');
+// import { databaseClient } from '../modules/databaseClient/databaseClient.js';
 
 
 /**
@@ -646,7 +658,6 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
 });
 
 
-module.exports = router;
 function convertJSONImport(TRADES_TO_IMPORT, IGNORE_DUPLICATES) {
   let errors = false;
   // make a new object so we can ignore any JSON nonsense that should not be there
@@ -839,4 +850,4 @@ function convertJSONImport(TRADES_TO_IMPORT, IGNORE_DUPLICATES) {
   return { errors, newTradeList };
 }
 
-module.exports = router;
+export default router;
