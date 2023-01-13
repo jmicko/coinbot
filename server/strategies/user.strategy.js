@@ -1,7 +1,11 @@
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-const encryptLib = require('../modules/encryption');
-const pool = require('../modules/pool');
+// const passport = require('passport');
+import passport from 'passport';
+// const LocalStrategy = require('passport-local').Strategy;
+import { Strategy as LocalStrategy } from 'passport-local';
+// const encryptLib = require('../modules/encryption');
+import encryptLib from '../modules/encryption.js';
+// const pool = require('../modules/pool');
+import { pool } from '../modules/pool.js';
 
 // explanation of serialization: https://stackoverflow.com/questions/27637609/understanding-passport-serialize-deserialize
 passport.serializeUser((user, done) => {
@@ -68,4 +72,4 @@ passport.use(
     })
 );
 
-module.exports = passport;
+export default passport;

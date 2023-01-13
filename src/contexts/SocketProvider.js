@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import io from "socket.io-client";
-import { useData } from './DataContext';
-import { useUser } from './UserContext';
+import { useData } from './DataContext.js';
+import { useUser } from './UserContext.js';
 
 // followed this guide for setting up the socket provider in its own component and not cluttering up App.js
 

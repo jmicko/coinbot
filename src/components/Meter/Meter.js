@@ -1,11 +1,11 @@
-import React, { useEffect, useRef } from 'react'; 
-import { useSocket } from '../../contexts/SocketProvider';
+import React, { useEffect, useRef } from 'react';
+import { useSocket } from '../../contexts/SocketProvider.js';
 import './Meter.css'
 
 
 function Meter(props) {
   const difference = (props.max - props.min).toFixed(0);
-  const socket = useSocket();
+  const { currentPrice } = useSocket();
   const canvasRef = useRef(null);
 
   // draw a meter bar on the canvas
@@ -23,7 +23,7 @@ function Meter(props) {
 
     if (props.max > 0 && props.min >= 0) {
 
-      let adjustedCurrent = socket.tickers[props.product]?.price - props.min;
+      let adjustedCurrent = currentPrice - props.min;
 
       // this is the important number
       let percentage = ((adjustedCurrent / difference) * 100).toFixed(0);
@@ -38,7 +38,7 @@ function Meter(props) {
 
     }
 
-  }, [props, socket.tickers, difference])
+  }, [props, currentPrice, difference])
 
   return (
     <canvas className="Meter" ref={canvasRef} />

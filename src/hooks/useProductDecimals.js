@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { addProductDecimals } from '../shared';
+import { addProductDecimals } from '../shared.js';
 
 const useProductDecimals = (product, availableFunds) => {
   const [decimals, setDecimals] = useState({ baseIncrement: 0.1, baseMultiplier: 10, quoteIncrement: 0.01, quoteMultiplier: 10 });

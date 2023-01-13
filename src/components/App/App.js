@@ -2,11 +2,11 @@ import React from 'react';
 import './App.css';
 
 // Directory imports
-import Home from '../Home/Home';
-import Login from '../Login/Login';
-import { SocketProvider } from '../../contexts/SocketProvider';
-import { DataProvider } from '../../contexts/DataContext';
-import { UserProvider, useUser } from '../../contexts/UserContext';
+import Home from '../Home/Home.js';
+import Login from '../Login/Login.js';
+import { SocketProvider } from '../../contexts/SocketProvider.js';
+import { DataProvider } from '../../contexts/DataContext.js';
+import { UserProvider, useUser } from '../../contexts/UserContext.js';
 
 function App() {
   // small component to check if user is logged in

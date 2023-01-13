@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useUser } from '../../../contexts/UserContext';
-import { useFetchData } from '../../../hooks/fetchData';
+import { useUser } from '../../../contexts/UserContext.js';
+import { useFetchData } from '../../../hooks/fetchData.js';
 // import Confirm from '../../Confirm/Confirm';
-import SingleUser from '../../SingleUser/SingleUser';
+import SingleUser from '../../SingleUser/SingleUser.js';
 import './Admin.css'
 
 

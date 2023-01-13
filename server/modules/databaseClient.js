@@ -1,5 +1,7 @@
-const pool = require('./pool');
-const { v4: uuidv4 } = require('uuid');
+// const pool = require('./pool');
+import { pool } from './pool.js';
+// const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 
 // stores the details of a trade-pair. The originalDetails are details that stay with a trade-pair when it is flipped
 // flipped_at is the "Time" shown on the interface. It has no other function
@@ -752,7 +754,7 @@ const getSettledTrades = (userID) => {
   return new Promise(async (resolve, reject) => {
     try {
       // check all trades in db that are both settled and NOT flipped
-      sqlText = `SELECT * FROM "limit_orders" WHERE "settled"=true AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
+      const sqlText = `SELECT * FROM "limit_orders" WHERE "settled"=true AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
 
       const results = await pool.query(sqlText, [userID])
       // .then((results) => {
@@ -772,7 +774,7 @@ const getAllOrders = (userID) => {
   return new Promise(async (resolve, reject) => {
     try {
       // check all trades in db that are both settled and NOT flipped
-      sqlText = `SELECT * FROM "limit_orders" WHERE "userID"=$1;`;
+      const sqlText = `SELECT * FROM "limit_orders" WHERE "userID"=$1;`;
 
       const results = await pool.query(sqlText, [userID])
       // .then((results) => {
@@ -1064,7 +1066,7 @@ async function deleteMarkedOrders(userID) {
 async function getUser(userID) {
   return new Promise(async (resolve, reject) => {
     try {
-      sqlText = `SELECT * FROM "user" WHERE "id"=$1;`;
+      const sqlText = `SELECT * FROM "user" WHERE "id"=$1;`;
       let result = await pool.query(sqlText, [userID]);
       const user = result.rows[0];
       resolve(user);
@@ -1078,7 +1080,7 @@ async function getUser(userID) {
 async function getAllUsers() {
   return new Promise(async (resolve, reject) => {
     try {
-      sqlText = `SELECT "id", "username", "active", "admin", "approved", "joined_at" FROM "user";`;
+      const sqlText = `SELECT "id", "username", "active", "admin", "approved", "joined_at" FROM "user";`;
       let result = await pool.query(sqlText);
       const users = result.rows;
       resolve(users);
@@ -1093,7 +1095,7 @@ async function getAllUsers() {
 async function getUserAndSettings(userID) {
   return new Promise(async (resolve, reject) => {
     try {
-      sqlText = `SELECT * 
+      const sqlText = `SELECT * 
       FROM "user" JOIN "user_settings" ON ("user"."id" = "user_settings"."userID")
       WHERE id = $1;`;
       let result = await pool.query(sqlText, [userID]);
@@ -1109,7 +1111,7 @@ async function getUserAndSettings(userID) {
 async function getUserAPI(userID) {
   return new Promise(async (resolve, reject) => {
     try {
-      sqlText = `SELECT * FROM "user_api" WHERE "userID"=$1;`;
+      const sqlText = `SELECT * FROM "user_api" WHERE "userID"=$1;`;
       let result = await pool.query(sqlText, [userID]);
       const userAPI = result.rows[0];
       resolve(userAPI);
@@ -1123,7 +1125,7 @@ async function getUserAPI(userID) {
 async function getBotSettings() {
   return new Promise(async (resolve, reject) => {
     try {
-      sqlText = `SELECT * FROM "bot_settings";`;
+      const sqlText = `SELECT * FROM "bot_settings";`;
       let result = await pool.query(sqlText);
       const settings = result.rows[0];
       resolve(settings);
@@ -1524,6 +1526,6 @@ const databaseClient = {
   getCandlesAverage: getCandlesAverage,
   getNextCandles: getNextCandles,
   getProduct: getProduct,
-}
+};
 
-module.exports = databaseClient;
+export {databaseClient};

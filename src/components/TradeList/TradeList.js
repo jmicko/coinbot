@@ -1,17 +1,16 @@
 import React, { useEffect, useState, useRef, } from 'react';
-
-import { useSocket } from '../../contexts/SocketProvider';
-import SingleTrade from '../SingleTrade/SingleTrade'
+import { useSocket } from '../../contexts/SocketProvider.js';
+import SingleTrade from '../SingleTrade/SingleTrade.js'
 import coinbotFilled from "../../../src/coinbotFilled.png";
 // import coinbotFilledGif from "../../../src/coinbotFilled.gif";
 import './TradeList.css'
-import Meter from '../Meter/Meter';
-import { useUser } from '../../contexts/UserContext';
-import { useData } from '../../contexts/DataContext';
+import Meter from '../Meter/Meter.js';
+import { useUser } from '../../contexts/UserContext.js';
+import { useData } from '../../contexts/DataContext.js';
 
 
 function TradeList(props) {
-  const socket = useSocket();
+  const { socket, currentPrice } = useSocket();
   const { user } = useUser();
   const { orders } = useData();
   // these will store mapped arrays as html so they can be used after page loads
@@ -65,7 +64,7 @@ function TradeList(props) {
 
         <div className='live-price'>
           <Meter
-            product={props.product}
+            // product={props.product}
             max={lowestSell}
             min={highestBuy}
           // current={socket.tickers[props.product].price}
@@ -73,9 +72,9 @@ function TradeList(props) {
           <div>
 
             {lowestSell !== 0 && highestBuy >= 0
-              ? <p className='price'>&#9650; ${(lowestSell - socket.tickers?.[props.product]?.price).toFixed(2)}
+              ? <p className='price'>&#9650; ${(lowestSell - currentPrice).toFixed(2)}
                 <br />
-                &#9660; ${(socket.tickers?.[props.product]?.price - highestBuy).toFixed(2)}
+                &#9660; ${(currentPrice - highestBuy).toFixed(2)}
               </p>
               : <p>No Sells!</p>
             }

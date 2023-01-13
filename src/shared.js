@@ -67,12 +67,12 @@ function autoSetup(user, options) {
     if (options[key] === null || options[key] === undefined) {
       console.log('bad options')
       return falseReturn;
-    } 
+    }
     // else {
     //   console.log(options[key], 'options[key]')
     // }
   }
-  
+
 
   // if (!available) {
   //   console.log('no available funds for this product')
@@ -86,7 +86,7 @@ function autoSetup(user, options) {
   // SHORTEN PARAMS for better readability
   let availableFunds = options.availableFunds;
 
-  const { 
+  const {
     size,
     startingValue,
     endingValue,
@@ -126,17 +126,17 @@ function autoSetup(user, options) {
     steepness <= 0 ||
     maxSize <= 0 ||
     tradingPrice <= 0) {
-    console.log('bad options')  
+    console.log('bad options')
     return falseReturn;
   }
   // loop until one of the stop triggers is hit
   let stop = false;
   // for (let index = 0; index < array.length; index++) {
   //   const element = array[index];
-    
+
   // }
 
-  for (let i = 0; (!stop && i < 1000) ; i++) {
+  for (let i = 0; (!stop && i < 1000); i++) {
     if (i === 0 && skipFirst) {
       // console.log('need to skip first one!');
       // increment buy price, but don't remove cost from funds
@@ -176,7 +176,7 @@ function autoSetup(user, options) {
       ? original_sell_price
       : buyPrice
 
-      // console.log(product.base_inverse_increment, 'product.base_inverse_increment')
+    // console.log(product.base_inverse_increment, 'product.base_inverse_increment')
     const actualSize = (getActualSize() * product.base_inverse_increment) / product.base_inverse_increment;
 
 
@@ -450,4 +450,11 @@ const granularities = [
   { name: 'ONE_DAY', readable: 'One Day', value: 86400 },
 ]
 
-module.exports = { autoSetup, sleep, numberWithCommas, addProductDecimals, granularities }
+// dev version of console.log that only logs when in dev mode
+function devLog(...args) {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(...args);
+  }
+}
+
+export { autoSetup, sleep, numberWithCommas, addProductDecimals, granularities, devLog }

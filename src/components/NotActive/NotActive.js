@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import permissions from "../../../src/permissions.png";
-import { useUser } from '../../contexts/UserContext';
-import { useFetchData } from '../../hooks/fetchData';
+import { useUser } from '../../contexts/UserContext.js';
+import { useFetchData } from '../../hooks/fetchData.js';
 import './NotActive.css';
 
 

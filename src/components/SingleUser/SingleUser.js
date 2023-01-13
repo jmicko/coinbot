@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useUser } from '../../contexts/UserContext';
-import { useFetchData } from '../../hooks/fetchData';
-import Confirm from '../Confirm/Confirm';
+import { useUser } from '../../contexts/UserContext.js';
+import { useFetchData } from '../../hooks/fetchData.js';
+import Confirm from '../Confirm/Confirm.js';
 import './SingleUser.css'
 
 function SingleUser(props) {
@@ -15,7 +15,10 @@ function SingleUser(props) {
 
   // functions passed in from the parent
   const deleteUser = () => props.deleteUser(props.user.id);
-  const approveUser = () => props.approveUser({ id: props.user.id });
+  const approveUser = () => {
+    setApproving(true);
+    props.approveUser({ id: props.user.id })
+  };
   const { data: debugData, refresh: debug } = useFetchData(`api/admin/debug/${props.user.id}`, { defaultState: [] });
 
 

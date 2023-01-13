@@ -4,9 +4,9 @@ import {
   // useCallback,
   useContext, useEffect, useState
 } from 'react'
-import { useFetchData } from '../hooks/fetchData'
-import { addProductDecimals } from '../shared';
-import { useUser } from './UserContext';
+import { useFetchData } from '../hooks/fetchData.js'
+import { addProductDecimals } from '../shared.js';
+import { useUser } from './UserContext.js';
 
 const DataContext = createContext()
 

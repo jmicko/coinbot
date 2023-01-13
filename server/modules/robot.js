@@ -1,9 +1,13 @@
 // importing this way makes it easier to see when you are accessing the database or coinbase
-const databaseClient = require("./databaseClient");
-const { cache, botSettings, userStorage, apiStorage, messenger, cbClients } = require("./cache");
+// const databaseClient = require("./databaseClient");
+import { databaseClient } from "./databaseClient.js";
+// const { cache, botSettings, userStorage, apiStorage, messenger, cbClients } = require("./cache");
+import { cache, botSettings, userStorage, messenger, cbClients } from "./cache.js";
 // const botSettings = botSettings;
-const { startWebsocket } = require("./websocket");
-const { sleep, granularities, addProductDecimals } = require("../../src/shared");
+// const { startWebsocket } = require("./websocket");
+import { startWebsocket } from "./websocket.js";
+// const { sleep, granularities, addProductDecimals } = require("../../src/shared");
+import { sleep, granularities, addProductDecimals } from "../../src/shared.js";
 
 // start a sync loop for each active user
 async function startSync() {
@@ -115,7 +119,7 @@ async function syncOrders(userID) {
         for (let j = 0; j < durations.length; j++) {
           // check if the candles are currently being updated
           if (userStorage[userID].candlesBeingUpdated[activeProducts[i].product_id]?.[durations[j]]) {
-            // if they are, skip this productππ
+            // if they are, skip this product
             console.log('====================skipping candles for ', activeProducts[i].product_id, ' because they are already being updated====================');
             continue;
           }
@@ -292,7 +296,7 @@ async function fullSync(userID) {
         // get fees
         cbClients[userID].getTransactionSummary({ user_native_currency: 'USD' })
       ]);
-      // store the lists of orders in the corresponding consts so they can be compared
+      // store the lists of orders in the corresponding constants so they can be compared
       const dbOrders = results[0];
       const allCbOrders = results[1].orders;
       const fees = results[2];
@@ -1214,4 +1218,4 @@ const robot = {
 }
 
 
-module.exports = robot;
+export { robot };

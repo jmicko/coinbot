@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSocket } from '../../contexts/SocketProvider';
+import { useSocket } from '../../contexts/SocketProvider.js';
 import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 import './Trade.css';
-import IncrementButtons from './IncrementButtons';
-import { numberWithCommas } from '../../shared';
-import { useUser } from '../../contexts/UserContext';
-import { useData } from '../../contexts/DataContext';
+import IncrementButtons from './IncrementButtons.js';
+import { numberWithCommas } from '../../shared.js';
+import { useUser } from '../../contexts/UserContext.js';
+import { useData } from '../../contexts/DataContext.js';
 
 
 function Trade() {

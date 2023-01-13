@@ -4,16 +4,16 @@ import React, {
   // useCallback,
   useRef,
 } from 'react';
-import { useUser } from '../../../contexts/UserContext';
-import { useSocket } from '../../../contexts/SocketProvider';
-import { useProductDecimals } from '../../../hooks/useProductDecimals';
-import { autoSetup, numberWithCommas } from '../../../shared';
-import Graph from '../../Graph/Graph';
-import SingleTrade from '../../SingleTrade/SingleTrade';
+import { useUser } from '../../../contexts/UserContext.js';
+import { useSocket } from '../../../contexts/SocketProvider.js';
+import { useProductDecimals } from '../../../hooks/useProductDecimals.js';
+import { autoSetup, numberWithCommas } from '../../../shared.js';
+import Graph from '../../Graph/Graph.js';
+import SingleTrade from '../../SingleTrade/SingleTrade.js';
 import './AutoSetup.css'
-import { useData } from '../../../contexts/DataContext';
-import { useFetchData } from '../../../hooks/fetchData';
-import DebouncedInput from '../../DebouncedInput.js/DebouncedInput';
+import { useData } from '../../../contexts/DataContext.js';
+import { useFetchData } from '../../../hooks/fetchData.js';
+import DebouncedInput from '../../DebouncedInput.js/DebouncedInput.js';
 
 
 function AutoSetup(props) {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useData } from '../../../contexts/DataContext';
-import { useUser } from '../../../contexts/UserContext';
-import { useFetchData } from '../../../hooks/fetchData';
+import { useData } from '../../../contexts/DataContext.js';
+import { useUser } from '../../../contexts/UserContext.js';
+import { useFetchData } from '../../../hooks/fetchData.js';
 import './Investment.css'
 
 

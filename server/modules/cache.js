@@ -1,5 +1,7 @@
-const { Coinbase } = require("./coinbaseClient");
-const databaseClient = require("./databaseClient");
+// const { Coinbase } = require("./coinbaseClient");
+import { Coinbase } from "./coinbaseClient.js";
+// const databaseClient = require("./databaseClient");
+import { databaseClient } from "./databaseClient.js";
 
 const botSettings = new class BotSettings {
   constructor() {
@@ -592,4 +594,4 @@ const cache = {
   }
 }
 
-module.exports = { cache, messenger, botSettings, userStorage, cbClients };
+export { cache, messenger, botSettings, userStorage, cbClients };

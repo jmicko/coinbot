@@ -1,12 +1,21 @@
-const express = require('express');
-const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
-const { userCount } = require('../modules/userCount-middleware');
-const encryptLib = require('../modules/encryption');
-const pool = require('../modules/pool');
-const userStrategy = require('../strategies/user.strategy');
-const robot = require('../modules/robot');
-const databaseClient = require('../modules/databaseClient');
-const { cache, userStorage, messenger } = require('../modules/cache');
+// const express = require('express');
+import express from 'express';
+// const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
+import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
+// const { userCount } = require('../modules/userCount-middleware');
+import { userCount } from '../modules/userCount-middleware.js';
+// const encryptLib = require('../modules/encryption');
+import encryptLib from '../modules/encryption.js';
+// const pool = require('../modules/pool');
+import { pool } from '../modules/pool.js';
+// const userStrategy = require('../strategies/user.strategy');
+import userStrategy from '../strategies/user.strategy.js';
+// const robot = require('../modules/robot');
+import { robot } from '../modules/robot.js';
+// const databaseClient = require('../modules/databaseClient');
+import { databaseClient } from '../modules/databaseClient.js';
+// const { cache, userStorage, messenger } = require('../modules/cache');
+import { cache, userStorage, messenger } from '../modules/cache.js';
 
 const router = express.Router();
 
@@ -80,31 +89,31 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
 // The only thing different from this and every other post we've seen
 // is that the password gets encrypted before being inserted
 router.post('/register', userCount, async (req, res, next) => {
-  const username = req.body.username;
-  const pass = req.body.password;
-  console.log('registering user', username, pass);
-  if (
-    !username ||
-    !pass ||
-    username !== username.toLowerCase() ||
-    pass !== pass.toLowerCase() ||
-    username.includes(' ') ||
-    pass.includes(' ') ||
-    username.includes('\'') ||
-    pass.includes('\'') ||
-    username.includes('\"') ||
-    pass.includes('\"') ||
-    username.includes('`') ||
-    pass.includes('`') ||
-    username.includes('!')
-
-  ) {
-    res.sendStatus(403);
-    return;
-  }
-
-  const password = encryptLib.encryptPassword(pass);
   try {
+    const username = req.body.username;
+    const pass = req.body.password;
+    console.log('registering user', username, pass);
+    if (
+      !username ||
+      !pass ||
+      username !== username.toLowerCase() ||
+      pass !== pass.toLowerCase() ||
+      username.includes(' ') ||
+      pass.includes(' ') ||
+      username.includes('\'') ||
+      pass.includes('\'') ||
+      username.includes('\"') ||
+      pass.includes('\"') ||
+      username.includes('`') ||
+      pass.includes('`') ||
+      username.includes('!')
+
+    ) {
+      res.sendStatus(403);
+      return;
+    }
+
+    const password = encryptLib.encryptPassword(pass);
     let adminCount = await anyAdmins();
     let user;
     const joined_at = new Date();
@@ -258,4 +267,4 @@ router.delete('/:user_id', rejectUnauthenticated, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

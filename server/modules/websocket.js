@@ -1,10 +1,14 @@
-const WebSocket = require('ws');
-const CryptoJS = require('crypto-js');
-const fs = require('fs');
-const { cache, messenger, userStorage, botSettings, cbClients } = require('./cache');
-const databaseClient = require('./databaseClient');
-const { rejectUnauthenticatedSocket } = require('./authentication-middleware');
-const { sleep } = require('../../src/shared');
+// const CryptoJS = require('crypto-js');
+// const fs = require('fs');
+// const { cache, messenger, userStorage, botSettings, cbClients } = require('./cache');
+import { cache, messenger, userStorage, botSettings, cbClients } from './cache.js';
+// const databaseClient = require('./databaseClient');
+import { databaseClient } from './databaseClient.js';
+// const { rejectUnauthenticatedSocket } = require('./authentication-middleware');
+import { rejectUnauthenticatedSocket } from './authentication-middleware.js';
+import { devLog } from '../../src/shared.js';
+// const { sleep } = require('../../src/shared');
+// import { sleep } from '../../src/shared';
 
 async function startWebsocket(userID) {
 
@@ -73,7 +77,7 @@ async function startWebsocket(userID) {
   // const products = ['BTC-USD', 'ETH-USD'];
   const products = await getProducts();
   cbClients[userID].setProducts(products);
-  console.log(cbClients[userID].products, 'cbClients[userID]');
+  // devLog(cbClients[userID].products, 'cbClients[userID]');
   // console.log(products, 'products in ws');
 
   async function getProducts() {
@@ -287,4 +291,4 @@ function setupSocketIO(io) {
   console.log('socket setup done');
 }
 
-module.exports = { startWebsocket, setupSocketIO };
+export { startWebsocket, setupSocketIO };
