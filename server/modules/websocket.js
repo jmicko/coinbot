@@ -237,7 +237,7 @@ function setupSocketIO(io) {
 
     // server side pong handler
     socket.on('pong', (data) => {
-      console.log(data, 'pong from client');
+      // console.log(data, 'pong from client');
     });
     
 

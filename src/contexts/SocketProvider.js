@@ -1,6 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from 'react'
-// import { useDispatch } from 'react-redux';
-// import { useSelector } from 'react-redux';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import io from "socket.io-client";
 import { useData } from './DataContext';
 import { useUser } from './UserContext';
@@ -164,7 +162,7 @@ export function SocketProvider({ children }) {
 
     newSocket.on('ping', () => {
       timer();
-      console.log('ping')
+      // console.log('ping')
     })
 
 

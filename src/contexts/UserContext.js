@@ -29,15 +29,6 @@ export function UserProvider({ children }) {
     // hit the logout POST route
     await fetch('/api/user/logout', { ...userConfig, method: 'POST' })
     clearUser()
-    // here is a list of things from the old saga that will need to be migrated
-    // yield put({ type: 'CLEAR_LOGIN_ERROR' });
-    // yield put({ type: 'CLEAR_REGISTRATION_ERROR' });
-    // yield put({ type: 'CLEAR_BOT_ERRORS' });
-    // yield put({ type: 'CLEAR_API_ERROR' });
-    // yield put({ type: 'UNSET_USER' }); ======== DONE
-    // yield put({ type: 'UNSET_ORDERS' });
-    // yield put({ type: 'UNSET_ACCOUNT' });
-    // yield put({ type: 'UNSET_PROFITS' });
   }
 
   async function login(payload) {

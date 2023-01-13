@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-// import { useDispatch } from 'react-redux';
 import { useData } from '../../../contexts/DataContext';
 import { useUser } from '../../../contexts/UserContext';
 import Confirm from '../../Confirm/Confirm';
@@ -7,7 +6,6 @@ import './Reset.css'
 
 
 function Reset() {
-  // const dispatch = useDispatch();
   const { user, refreshUser, deleteYourself } = useUser();
   const { resetProfit } = useData();
 

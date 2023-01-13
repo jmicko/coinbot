@@ -151,7 +151,7 @@ function Trade() {
     }
   }, [getCurrentPrice, currentProductPrice, initialPriceSet, setInitialPriceSet])
 
-  // once the account fees load into redux, 
+  // once the account fees load
   useEffect(() => {
     setFees(user.maker_fee)
   }, [user])
