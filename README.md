@@ -99,9 +99,9 @@ Before you get started, make sure you have the following software installed on y
 
 Postgresql should be setup and a new database should be created with the name "coinbot". There is a database.sql file that can be used to generate the required tables.
 
-### .env file
+### Environment Variables
 
-- A .env file should be created at the base of the file tree. There is an example in the root folder named 'env'. Change the name to '.env', and change the values appropriately. Server session secret should be a long string that is not easily guessed, as it is used to. If you do not change it, anyone with this repo will be able to guess it.
+- Environment variables will need to be set. There is an example .env file in the root folder named 'env'. Change the name to '.env', and change the values appropriately, or you can set the variables in your OS if you prefer. Server session secret should be a long string that is not easily guessed, as it is used to identify sessions. If you do not change it, anyone with this repo will be able to guess it. Setting the NODE_ENV variable to 'production' will generate a cryptographically sound string for you. This will log out any users, but is more secure.
 
 ## Available Scripts
 

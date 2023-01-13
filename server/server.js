@@ -1,67 +1,48 @@
-// console.log('server', server);
-// const express = require('express');
+// Express
 import express from 'express';
-import { pool } from './modules/pool.js';
-// require('dotenv').config();
-const app = express();
-// const server = require("http").createServer(app);
 import http from 'http';
+// Socket.io
+import { setupSocketIO } from './modules/websocket.js';
+import { Server as socketIO } from 'socket.io';
+// Middleware
+import { sessionMiddleware, wrap } from './modules/session-middleware.js';
+import passport from './strategies/user.strategy.js';
+// Route includes
+import userRouter from './routes/user.router.js';
+import tradeRouter from './routes/trade.router.js';
+import accountRouter from './routes/account.router.js';
+import ordersRouter from './routes/orders.router.js';
+import settingsRouter from './routes/settings.router.js';
+import adminRouter from './routes/admin.router.js';
+// bot process
+import { robot } from './modules/robot.js';
+// create the express app
+const app = express();
 const server = http.createServer(app);
 const options = {
   cors: {
     origin: ["http://localhost:3000"]
   }
 };
-// Socket.io
-// const { setupSocketIO } = require('./modules/websocket');
-import { setupSocketIO } from './modules/websocket.js';
-
-// Middleware
-// const { sessionMiddleware, wrap } = require('./modules/session-middleware');
-import { sessionMiddleware, wrap } from './modules/session-middleware.js';
-// const passport = require('./strategies/user.strategy');
-import passport from './strategies/user.strategy.js';
-
-// Route includes
-// const userRouter = require('./routes/user.router');
-import userRouter from './routes/user.router.js';
-// const tradeRouter = require('./routes/trade.router');
-import tradeRouter from './routes/trade.router.js';
-// const accountRouter = require('./routes/account.router');
-import accountRouter from './routes/account.router.js';
-// const ordersRouter = require('./routes/orders.router');
-import ordersRouter from './routes/orders.router.js';
-// const settingsRouter = require('./routes/settings.router');
-import settingsRouter from './routes/settings.router.js';
-// const adminRouter = require('./routes/admin.router');
-import adminRouter from './routes/admin.router.js';
-
-// bot processes
-
-// const robot = require('./modules/robot');
-import { robot } from './modules/robot.js';
-
-// Body parser middleware
+// Body parsing middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Passport Session Configuration //
+// Configure session middleware
 app.use(sessionMiddleware);
 
-// start up passport sessions
+// Start up passport sessions
 app.use(passport.initialize());
 app.use(passport.session());
 
-// start up socket.io 
-// const io = require("socket.io")(server, options);
-import { Server as socketIO } from 'socket.io';
+// Attach the socket.io server to the express server
 const io = new socketIO(server, options);
-// start up socket.io passport sessions
+// Wrap the express middlewares so they can be used with socket.io
 io.use(wrap(sessionMiddleware));
 io.use(wrap(passport.initialize()));
 io.use(wrap(passport.session()));
 
-/* REST Routes */
+// REST API Routes
 app.use('/api/user', userRouter);
 app.use('/api/trade', tradeRouter);
 app.use('/api/account', accountRouter);
@@ -69,19 +50,19 @@ app.use('/api/orders', ordersRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/admin', adminRouter);
 
-// Serve static files
+// Serve static files from the React app build folder
 app.use(express.static('build'));
 
-// Start the syncOrders loop
+// Start the robot
 robot.startSync();
 
-/* socket.io */
+// Initialize the socket.io server
 setupSocketIO(io);
 
-// App Set //
+// Configure the port
 const PORT = process.env.PORT || 5000;
 
-/** Listen * */
+// Start the server listening on the port
 server.listen(PORT, () => {
   console.log(`Listening on port: ${PORT}`);
 });
