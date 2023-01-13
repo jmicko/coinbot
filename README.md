@@ -93,7 +93,8 @@ Before you get started, make sure you have the following software installed on y
 
 - [Node.js](https://nodejs.org/en/)
 - [PostrgeSQL](https://www.postgresql.org/)
-- [Nodemon](https://nodemon.io/) - optional, but included in the npm script
+- [Nodemon](https://nodemon.io/) - optional, but makes development easier
+- [PM2](https://pm2.keymetrics.io/) - optional, for running in a production environment
 
 ### Database
 
@@ -110,7 +111,21 @@ In the project directory, you can run:
 ### `npm run server`
 
 Runs the express server in the backend.\
-This is where the coinbot lives, and must be done.
+This is where the coinbot lives, and must be done.\
+This will call the server in plain node.js. You can choose your own daemon.
+
+### `npm run nodemonServer`
+
+Runs the server with nodemon to watch the files and restart on changes.\
+This is ideal for development, but can cause problems with trade duplication if restarted when maintenance mode is off.
+
+### `npm run pm2server`
+
+Runs the server as a background process so it will continue to run even if you close the terminal.\
+You should only run this once, or you will have multiple instances running.\
+The included script contains the configuration for pm2, but you will need to configure PM2 for persistence etc to your liking.\
+Note that this script is not set to watch the files for changes, so you will need to restart the process manually if you make changes to the production server. But you should not be doing that anyway.\
+PM2 is not required, but it is better for production environments.
 
 ### `npm run start`
 
