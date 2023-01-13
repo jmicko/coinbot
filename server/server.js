@@ -16,6 +16,8 @@ import settingsRouter from './routes/settings.router.js';
 import adminRouter from './routes/admin.router.js';
 // bot process
 import { robot } from './modules/robot.js';
+import { devLog } from '../src/shared.js';
+devLog('!!!!!!!! you are running in DEVELOPMENT mode !!!!!!!!');
 // create the express app
 const app = express();
 const server = http.createServer(app);
