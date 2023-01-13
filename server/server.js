@@ -1,6 +1,3 @@
-import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
-dotenv.config()
-
 // console.log('server', server);
 // const express = require('express');
 import express from 'express';
