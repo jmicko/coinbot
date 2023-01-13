@@ -5,13 +5,15 @@ import xlsx from 'json-as-xlsx'
 import { granularities } from '../../../shared';
 import { useUser } from '../../../contexts/UserContext';
 import { useData } from '../../../contexts/DataContext';
+import { useFetchData } from '../../../hooks/fetchData';
 
 function History(props) {
   const dispatch = useDispatch();
-  const { user } = useUser();
+  const { user, refreshUser } = useUser();
   const xlsxReducer = useSelector((store) => store.accountReducer.xlsxReducer);
   const currentJSONReducer = useSelector((store) => store.accountReducer.currentJSONReducer);
   const { exportableFiles } = useData();
+  const { downloadFile } = useFetchData(`/api/account/downloadFile`, { noLoad: true, refreshUser });
   // const [jsonImport, setJSONImport] = useState('');
   // const [ignoreDuplicates, setIgnoreDuplicates] = useState(false);
   // end should start as the current date withouth the time
@@ -43,13 +45,13 @@ function History(props) {
     dispatch({ type: 'FETCH_USER' });
   }
 
-  // download a file
-  async function downloadFile(file) {
-    dispatch({
-      type: 'DOWNLOAD_FILE',
-      payload: file
-    })
-  }
+  // // download a file
+  // async function downloadFile(file) {
+  //   dispatch({
+  //     type: 'DOWNLOAD_FILE',
+  //     payload: file
+  //   })
+  // }
 
   async function exportCurrentJSON(params) {
     if (params === 'clear') {

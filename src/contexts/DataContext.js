@@ -26,9 +26,17 @@ export function DataProvider({ children }) {
   /////////////////////////
 
   // ACCOUNT ROUTES
-  const { data: products, refresh: refreshProducts, updateData: toggleActiveProduct } = useFetchData('/api/account/products', { defaultState: {} })
+  const { data: products, refresh: refreshProducts, updateData: toggleActiveProduct }
+    = useFetchData('/api/account/products', { defaultState: {} })
   // get the profits for the selected product
-  const { data: profit, refresh: refreshProfit, updateData: resetProfit } = useFetchData(`/api/account/profit/${productID}`, { defaultState: {}, notNull: [productID] })
+  const { data: profit, refresh: refreshProfit, updateData: resetProfit }
+    = useFetchData(`/api/account/profit/${productID}`, { defaultState: {}, notNull: [productID] })
+  // get messages sent from the bot
+  const { data: messages, refresh: refreshBotMessages }
+    = useFetchData(`/api/account/messages`, { defaultState: { botMessages: [], chatMessages: [] } })
+  // get errors sent from the bot
+  const { data: botErrors, refresh: refreshBotErrors }
+    = useFetchData(`/api/account/errors`, { defaultState: [] })
 
   ////////////////////////
   //////// ORDERS ////////
@@ -94,6 +102,7 @@ export function DataProvider({ children }) {
           // ACCOUNT
           profit, refreshProfit, resetProfit,
           products, currentProduct, productID, setProductID, refreshProducts, toggleActiveProduct,
+          messages, refreshBotMessages, botErrors, refreshBotErrors,
           // ORDERS
           orders, refreshOrders, createMarketTrade, createOrderPair, syncPair, syncOrders,
           deleteOrder, deleteRangeForProduct, deleteAll,

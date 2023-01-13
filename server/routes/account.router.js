@@ -464,8 +464,8 @@ router.get('/messages', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   try {
     const userMessages = {}
-    userMessages.general = cache.getMessages(userID);
-    userMessages.chat = cache.getChatMessages(userID);
+    userMessages.botMessages = cache.getMessages(userID);
+    userMessages.chatMessages = cache.getChatMessages(userID);
     // console.log('getting Messages', userMessages);
     res.send(userMessages);
   } catch (err) {

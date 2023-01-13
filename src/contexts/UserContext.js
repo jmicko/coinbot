@@ -18,6 +18,11 @@ export function UserProvider({ children }) {
       // console.log('+++++++++++++++++refreshing user+++++++++++++++++')
       refreshUser()
     }
+    // if (user && userError) {
+    //   console.log('+++++++++++++++++clearing user+++++++++++++++++')
+    //   clearUser()
+    // }
+
   }, [refreshUser, user, userError, userLoading])
 
   async function logout() {

@@ -17,7 +17,8 @@ export function SocketProvider({ children }) {
   const [socket, setSocket] = useState();
   const { refreshUser } = useUser();
   const { products, productID, refreshProfit, refreshOrders, refreshProducts, refreshExportableFiles,
-    socketStatus, setSocketStatus, setCoinbotSocket } = useData();
+    socketStatus, setSocketStatus, setCoinbotSocket,
+    refreshBotMessages, refreshBotErrors, } = useData();
   const [tickers, setTickers] = useState({ "BTC-USD": { price: 0 }, "ETH-USD": { price: 0 } });
   const [heartbeat, setHeartbeat] = useState({ heart: 'heart', beat: 'beat', count: 0 });
 
@@ -38,6 +39,8 @@ export function SocketProvider({ children }) {
   const refreshExportableFilesRef = useRef();
   const setCoinbotSocketRef = useRef();
   const setSocketStatusRef = useRef();
+  const refreshBotMessagesRef = useRef();
+  const refreshBotErrorsRef = useRef();
 
   // // update the refs when the functions change
   useEffect(() => {
@@ -49,7 +52,11 @@ export function SocketProvider({ children }) {
     refreshExportableFilesRef.current = refreshExportableFiles;
     setCoinbotSocketRef.current = setCoinbotSocket;
     setSocketStatusRef.current = setSocketStatus;
-  }, [refreshOrders, refreshProfit, refreshProducts, refreshUser, products, refreshExportableFiles, setCoinbotSocket, setSocketStatus]);
+    refreshBotMessagesRef.current = refreshBotMessages;
+    refreshBotErrorsRef.current = refreshBotErrors;
+  }, [refreshOrders, refreshProfit, refreshProducts, refreshUser, products, 
+    refreshExportableFiles, setCoinbotSocket, setSocketStatus,
+    refreshBotMessages, refreshBotErrors]);
 
 
 
@@ -92,10 +99,12 @@ export function SocketProvider({ children }) {
       // handle errors
       if (message.type === 'error') {
         // dispatch({ type: 'FETCH_BOT_ERRORS' });
+        refreshBotErrorsRef.current();
       }
       // handle messages
       if (message.type === 'messageUpdate' || message.type === 'chat' || message.type === 'general') {
         // dispatch({ type: 'FETCH_BOT_MESSAGES' });
+        refreshBotMessagesRef.current();
       }
       // fetch orders if orderUpdate
       if (message.orderUpdate) {
