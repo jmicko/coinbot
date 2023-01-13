@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+// import { useDispatch } from 'react-redux';
 import { useData } from '../../../contexts/DataContext';
 import { useUser } from '../../../contexts/UserContext';
 import Confirm from '../../Confirm/Confirm';
@@ -7,19 +7,15 @@ import './Reset.css'
 
 
 function Reset() {
-  const dispatch = useDispatch();
-  const { user } = useUser();
+  // const dispatch = useDispatch();
+  const { user, refreshUser, deleteYourself } = useUser();
   const { resetProfit } = useData();
 
   const [deleting, setDeleting] = useState(false);
 
-  function deleteUser() {
-    // setDeleting(true)
-    dispatch({
-      type: 'DELETE_USER', payload: {
-        id: user.id,
-      }
-    })
+  async function deleteUser() {
+    await deleteYourself(user.id);
+    refreshUser();
   }
 
   function cancelDeleteUser(params) {

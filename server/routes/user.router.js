@@ -198,8 +198,8 @@ router.put('/approve', rejectUnauthenticated, async (req, res) => {
 /**
 * DELETE route - Delete a single user. Only admin can do this
 */
-router.delete('/', rejectUnauthenticated, async (req, res) => {
-  const userToDelete = req.body.id;
+router.delete('/:user_id', rejectUnauthenticated, async (req, res) => {
+  const userToDelete = Number(req.params.user_id);
   const userID = req.user.id;
   try {
     console.log('in delete user route');
@@ -227,7 +227,9 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       // const userToDelete = req.body.id;
       console.log('you are NOT admin');
       // check to make sure the user ID that was sent is the same as the user requesting the delete
+      // if (userID === userToDelete) {
       if (userID === userToDelete) {
+        console.log('you are deleting yourself');
 
         // delete from user table
         const userQueryText = `DELETE from "user" WHERE "id" = $1;`;
@@ -253,8 +255,6 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
     res.sendStatus(500);
   } finally {
     userStorage.deleteUser(userToDelete);
-
-
   }
 });
 
