@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
 import { useData } from '../../contexts/DataContext';
 import { useSocket } from '../../contexts/SocketProvider';
 import { useUser } from '../../contexts/UserContext';
@@ -9,7 +8,7 @@ import './Status.css'
 
 function Status(props) {
   // console.log('rendering status');
-  const dispatch = useDispatch();
+
   const { user, refreshUser } = useUser();
   const { tickers, heartbeat } = useSocket();
   const {
@@ -33,8 +32,8 @@ function Status(props) {
     refreshProducts();
     refreshUser();
 
-    dispatch({ type: 'FETCH_BOT_ERRORS' });
-    dispatch({ type: 'FETCH_BOT_MESSAGES' });
+    // dispatch({ type: 'FETCH_BOT_ERRORS' });
+    // dispatch({ type: 'FETCH_BOT_MESSAGES' });
   }
 
   // watch to see if accuracy changes

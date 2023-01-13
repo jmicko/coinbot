@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+
 import Trade from '../Trade/Trade.js';
 import Messages from '../Messages/Messages.js';
 import Menu from '../Menu/Menu'
@@ -14,7 +14,7 @@ import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 import { useUser } from '../../contexts/UserContext.js';
 
 function Home() {
-  const dispatch = useDispatch();
+
   const { width } = useWindowDimensions();
   const { user } = useUser();
 

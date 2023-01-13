@@ -10,7 +10,7 @@ const userConfig = {
 };
 
 export function UserProvider({ children }) {
-  const { data: user, isLoading: userLoading, error: userError, refresh: refreshUser, clear: clearUser } = useFetchData('/api/user', { defaultState: {}, config: userConfig })
+  const { data: user, isLoading: userLoading, error: userError, refresh: refreshUser, clear: clearUser, deleteData: deleteYourself } = useFetchData('/api/user', { defaultState: {}, config: userConfig })
 
   useEffect(() => {
     // check if user is an empty object
@@ -58,7 +58,7 @@ export function UserProvider({ children }) {
   return (
     <UserContext.Provider
       value={
-        { user, userLoading, userError, refreshUser, logout, login, registerNew}
+        { user, userLoading, userError, refreshUser, logout, login, registerNew, deleteYourself }
       }>
       {children}
     </UserContext.Provider>
