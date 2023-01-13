@@ -52,45 +52,55 @@ function bellCurve(options) {
 }
 
 function autoSetup(user, options) {
-  const product_id = options.product_id;
+  // console.log('running autoSetup')
+  const product = options.product;
   // console.log(product_id, 'product_id')
   // console.log(options.user, options.availableFunds, 'user')
-  const available = user.availableFunds[product_id];
-
-  if (!available) {
-    return {
-      valid: false,
-      cost: 0,
-      orderList: [],
-      btcToBuy: 0,
-      lastBuyPrice: 0,
-      options: options,
-      quoteToReserve: 0,
-      buyCount: 0,
-      sellCount: 0,
-    }
+  // const available = options.availableQuote;
+  // a false return object to use when the function fails
+  const falseReturn = {
+    valid: false,
   }
-  // console.log(available, 'available')
-  const decimals = calculateProductDecimals(available);
-  // console.log(decimals, 'decimals')
+
+  // if any key in the options object is null or undefined, return falseReturn
+  for (let key in options) {
+    if (options[key] === null || options[key] === undefined) {
+      console.log('bad options')
+      return falseReturn;
+    } 
+    // else {
+    //   console.log(options[key], 'options[key]')
+    // }
+  }
+  
+
+  // if (!available) {
+  //   console.log('no available funds for this product')
+  //   return falseReturn;
+  // }
+  // console.log(options, 'options')
 
   // create an array to hold the new trades to put in
   const orderList = [];
 
   // SHORTEN PARAMS for better readability
   let availableFunds = options.availableFunds;
-  const size = options.base_size;
-  const startingValue = options.startingValue;
-  const endingValue = options.endingValue;
-  const tradingPrice = options.tradingPrice;
-  const increment = options.increment;
-  const incrementType = options.incrementType;
-  const trade_pair_ratio = options.trade_pair_ratio;
-  const skipFirst = options.skipFirst;
-  const sizeType = options.sizeType;
-  const sizeCurve = options.sizeCurve;
-  const maxSize = options.maxSize;
-  const steepness = options.steepness;
+
+  const { 
+    size,
+    startingValue,
+    endingValue,
+    tradingPrice,
+    increment,
+    incrementType,
+    trade_pair_ratio,
+    skipFirst,
+    sizeType,
+    sizeCurve,
+    maxSize,
+    steepness
+  } = options;
+
 
   // initialize values for the loop
   let buyPrice = startingValue;
@@ -102,34 +112,31 @@ function autoSetup(user, options) {
   let buyCount = 0;
   let sellCount = 0;
 
+
   // prevent infinite loops and bad orders
   if ((startingValue === 0 && !skipFirst) ||
-    // startingValue <= 0 ||
+    startingValue <= 0 ||
+    // startingValue === null ||
+    // startingValue === undefined ||
     (startingValue === 0 && incrementType === 'percentage') ||
-    (endingValue <= 0 && loopDirection === "up") ||
+    (endingValue <= startingValue && loopDirection === "up") ||
     size <= 0 ||
     increment <= 0 ||
     trade_pair_ratio <= 0 ||
     steepness <= 0 ||
     maxSize <= 0 ||
     tradingPrice <= 0) {
-    return {
-      valid: false,
-      cost: cost,
-      orderList: [],
-      btcToBuy: (btcToBuy / decimals.baseMultiplier),
-
-      lastBuyPrice: buyPrice,
-      options: options,
-      quoteToReserve: 0,
-      buyCount: 0,
-      sellCount: 0,
-    }
+    console.log('bad options')  
+    return falseReturn;
   }
   // loop until one of the stop triggers is hit
   let stop = false;
+  // for (let index = 0; index < array.length; index++) {
+  //   const element = array[index];
+    
+  // }
 
-  for (let i = 0; !stop; i++) {
+  for (let i = 0; (!stop && i < 1000) ; i++) {
     if (i === 0 && skipFirst) {
       // console.log('need to skip first one!');
       // increment buy price, but don't remove cost from funds
@@ -137,29 +144,28 @@ function autoSetup(user, options) {
       // check if need to stop
       stopChecker();
       if (stop) {
-        return {
-          valid: false,
-          cost: cost,
-          orderList: [],
-          btcToBuy: (btcToBuy / decimals.baseMultiplier),
-
-          lastBuyPrice: buyPrice,
-          options: options,
-          quoteToReserve: 0,
-          buyCount: 0,
-          sellCount: 0,
-        }
+        console.log('stop triggered on first iteration')
+        return falseReturn;
       }
       // skip the rest of the iteration and continue the loop
       continue;
     }
+    // console.log(product.quote_increment_decimals, 'product.quote_increment_decimals')
 
-    // get buy price rounded to cents
-    buyPrice = Number(buyPrice.toFixed(2));
+    // get buy price rounded to cents the precision of the quote currency
+    buyPrice = Number(buyPrice.toFixed(product.quote_increment_decimals));
+    // get the sell price by mulltiplying the buy price by the trade pair ratio
 
-    // get the sell price with the same math as is used by the bot when flipping
-    let original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + decimals.quoteMultiplier))) / decimals.quoteMultiplier);
 
+
+    // let original_sell_price = (buyPrice * Number(trade_pair_ratio)).toFixed(product.quote_increment_decimals);
+    // THIS IS NOT OLD CODE FROM WHEN BTC-USD WAS THE ONLY PRODUCT. Using 100 here because the trade_pair_ratio is a percentage. 
+    let original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + 100))) / 100);
+
+
+
+
+    // console.log(tradingPrice, '<-tradingPrice', buyPrice > tradingPrice, '<-true if SELL', buyPrice, '<-buyPrice', original_sell_price, 'original_sell_price', trade_pair_ratio, 'trade_pair_ratio')
     // figure out if it is going to be a BUY or a sell. Buys will be below current trade price, sells above.
     let side = (buyPrice > tradingPrice)
       ? 'SELL'
@@ -170,15 +176,16 @@ function autoSetup(user, options) {
       ? original_sell_price
       : buyPrice
 
-    let actualSize = getActualSize();
+      // console.log(product.base_inverse_increment, 'product.base_inverse_increment')
+    const actualSize = (getActualSize() * product.base_inverse_increment) / product.base_inverse_increment;
 
 
     // count up how much base currency will need to be purchased to reserve for all the sell orders
     if (side === 'SELL') {
-      // console.log(actualSize, 'actualSize', (actualSize * decimals.baseMultiplier));
-      // okay why does this multiply by decimals.baseMultiplier??
-      // because later on, the actualSize is divided by decimals.baseMultiplier before returning it
-      btcToBuy += (actualSize * decimals.baseMultiplier)
+      // console.log(actualSize, 'actualSize', (actualSize * product.base_inverse_increment));
+      // okay why does this multiply by product.base_inverse_increment??
+      // because later on, the actualSize is divided by product.base_inverse_increment before returning it
+      btcToBuy += (actualSize * product.base_inverse_increment)
     }
 
     // calculate the previous fees on sell orders
@@ -191,20 +198,40 @@ function autoSetup(user, options) {
     // CREATE ONE ORDER
     const singleOrder = {
       original_buy_price: buyPrice,
-      original_sell_price: original_sell_price,
+      original_sell_price: Number(original_sell_price),
       side: side,
       limit_price: limit_price,
       base_size: actualSize,
-      buy_quote_size: (actualSize * buyPrice).toFixed(2),
-      sell_quote_size: (actualSize * original_sell_price).toFixed(2),
+      buy_quote_size: (actualSize * buyPrice).toFixed(product.quote_increment_decimals),
+      sell_quote_size: (actualSize * original_sell_price).toFixed(product.quote_increment_decimals),
       previous_total_fees: previous_total_fees,
       total_fees: 0,
-      product_id: options.product_id,
+      product_id: product.product_id,
       stp: 'cn',
       userID: user.id,
       trade_pair_ratio: options.trade_pair_ratio,
     }
+    // console.log(singleOrder, 'singleOrder')
 
+    // break out of the loop if the order is invalid
+    if (singleOrder.base_size <= 0) {
+      stop = true;
+      continue;
+    }
+    if (singleOrder.limit_price <= 0) {
+      stop = true;
+      continue;
+    }
+    if (singleOrder.buy_quote_size <= 0) {
+      stop = true;
+      continue;
+    }
+    if (singleOrder.sell_quote_size <= 0) {
+      stop = true;
+      continue;
+    }
+
+    // console.log(singleOrder, 'singleOrder');
     // push that order into the order list
     orderList.push(singleOrder);
 
@@ -213,7 +240,9 @@ function autoSetup(user, options) {
       ? buyCount++
       : sellCount++;
 
+    ////////////////////////////
     // SETUP FOR NEXT LOOP - do some math to figure out next iteration, and if we should keep looping
+    ////////////////////////////
 
     // subtract the buy size USD from the available funds
     // if sizeType is base, then we need to convert
@@ -266,8 +295,29 @@ function autoSetup(user, options) {
     stopChecker();
   }
 
+  ////////////////////
+  ////// RESULT ////// 
+  ////////////////////
+  // console.log('valid result')
+  return {
+    valid: true,
+    cost: cost,
+    orderList: orderList,
+    lastBuyPrice: orderList[orderList.length - 1]?.original_buy_price,
+    btcToBuy: (btcToBuy / product.base_inverse_increment),
+    options: options,
+    quoteToReserve: quoteToReserve,
+    buyCount: buyCount,
+    sellCount: sellCount,
+  }
+
+  ////////////////////
+  ////// HELPERS /////
+  ////////////////////
+
   // get the actual size in base currency of the trade
   function getActualSize() {
+    // console.log(size, 'size');
     // if sizeCurve is curve, use the bellCurve
     const newSize = (sizeCurve === 'curve')
       // adjust the size based on the curve
@@ -275,6 +325,7 @@ function autoSetup(user, options) {
       // else leave the size alone
       : size;
 
+    // console.log(newSize, 'newSize');
     function curvedSize() {
       // if the increment type is percentage, convert it to a number
       // this is the same as the increment in the bellCurve, which is a dollar amount
@@ -295,7 +346,9 @@ function autoSetup(user, options) {
 
     if (sizeType === 'quote') {
       // if the size is in quote, convert it to base
-      return Number(Math.floor((newSize / buyPrice) * decimals.baseMultiplier)) / decimals.baseMultiplier
+      const convertedToBase = Number(Math.floor((newSize / buyPrice) * product.base_inverse_increment)) / product.base_inverse_increment
+      // console.log(convertedToBase, 'convertedToBase', buyPrice, 'buyPrice', product.base_inverse_increment, 'product.base_inverse_increment');
+      return convertedToBase
     } else {
       // if the size is in base, it will not change. 
       return newSize
@@ -304,17 +357,6 @@ function autoSetup(user, options) {
 
   // console.log(quoteToReserve, 'quoteToReserve');
   // console.log(buyCount, 'buyCount');
-  return {
-    valid: true,
-    cost: cost,
-    orderList: orderList,
-    lastBuyPrice: orderList[orderList.length - 1]?.original_buy_price,
-    btcToBuy: (btcToBuy / decimals.baseMultiplier),
-    options: options,
-    quoteToReserve: quoteToReserve,
-    buyCount: buyCount,
-    sellCount: sellCount,
-  }
 
   function stopChecker() {
     let USDSize = size * buyPrice;
@@ -348,26 +390,52 @@ function autoSetup(user, options) {
     } else {
       // if incrementing by percentage
       (loopDirection === 'up')
+        // the hardcoded 100 is because the increment is a percentage, not old code
         ? buyPrice = buyPrice * (1 + (increment / 100))
         : buyPrice = buyPrice / (1 + (increment / 100));
     }
   }
 }
 
-function calculateProductDecimals(product) {
+function addProductDecimals(product) {
 
   // console.log(product, '=====================product=====================');
-  const baseIncrement = findDecimals(product?.base_increment);
+  const baseIncrementDecimals = findDecimals(product?.base_increment);
+  const base_increment_decimals = findDecimals(product?.base_increment);
   // console.log(baseIncrement, 'baseIncrement');
-  const quoteIncrement = findDecimals(product?.quote_increment);
-  // console.log(quoteIncrement, 'quoteIncrement');
-  // a 1 with baseIncrement number of 0s
-  const baseMultiplier = Math.pow(10, baseIncrement);
-  const quoteMultiplier = Math.pow(10, quoteIncrement);
-  return { baseIncrement, quoteIncrement, baseMultiplier, quoteMultiplier, product };
+  // const quoteIncrement = findDecimals(product?.quote_increment);
+  const quoteIncrementDecimals = findDecimals(product?.quote_increment);
+  const quote_increment_decimals = findDecimals(product?.quote_increment);
+  // change that to this_style_of_variable which is called snake_case
+  // inverse of the quote increment. This is used to round the size in quote to the nearest quote increment
+  const quoteInverseIncrement = Math.pow(10, quoteIncrementDecimals);
+  const quote_inverse_increment = Math.pow(10, quote_increment_decimals);
+  // inverse of the base increment. This is used to round the size in base to the nearest base increment
+  const baseInverseIncrement = Math.pow(10, baseIncrementDecimals);
+  const base_inverse_increment = Math.pow(10, base_increment_decimals);
+  // console.log(baseInverseIncrement, 'baseInverseIncrement', base_inverse_increment === baseInverseIncrement, 'base_inverse_increment');
+  // create a rounding decimal place for the price. This is just nice to have and is not required
+  const price_rounding = Math.pow(10, quoteIncrementDecimals - 2);
+
+
+
+
+
+  return {
+    ...product,
+    baseIncrementDecimals,
+    quoteIncrementDecimals,
+    price_rounding,
+    baseInverseIncrement,
+    quoteInverseIncrement,
+    base_increment_decimals,
+    quote_increment_decimals,
+    base_inverse_increment,
+    quote_inverse_increment,
+  };
 
   function findDecimals(number) {
-    return number.split('.')[1].split('').findIndex((char) => char !== '0') + 1;
+    return number?.split('.')[1]?.split('').findIndex((char) => char !== '0') + 1;
   }
 }
 
@@ -382,4 +450,4 @@ const granularities = [
   { name: 'ONE_DAY', readable: 'One Day', value: 86400 },
 ]
 
-module.exports = { autoSetup, sleep, numberWithCommas, calculateProductDecimals, granularities }
+module.exports = { autoSetup, sleep, numberWithCommas, addProductDecimals, granularities }

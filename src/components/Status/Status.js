@@ -1,16 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useData } from '../../contexts/DataContext';
 import { useSocket } from '../../contexts/SocketProvider';
+import { useUser } from '../../contexts/UserContext';
 import { numberWithCommas } from '../../shared';
 import './Status.css'
 
 
 function Status(props) {
-  const dispatch = useDispatch();
-  const user = useSelector((store) => store.accountReducer.userReducer);
-  const socket = useSocket();
-  const profitsReducer = useSelector((store) => store.accountReducer.profitsReducer);
-  const openOrdersInOrder = useSelector((store) => store.ordersReducer.openOrdersInOrder);
+  // console.log('rendering status');
+
+  const { user, refreshUser } = useUser();
+  const { tickers, heartbeat } = useSocket();
+  const {
+    socketStatus, coinbotSocket,
+    orders, refreshOrders,
+    productID, refreshProducts,
+    profit, refreshProfit,
+  } = useData();
+  const openOrdersInOrder = orders;
   const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
   const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
@@ -19,25 +26,14 @@ function Status(props) {
   const [feeDisplay, setFeeDisplay] = useState(true);
   const [profitAccuracy, setProfitAccuracy] = useState(2);
 
-  // const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
-  // const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
-
   const updateUser = () => {
-    dispatch({
-      type: 'FETCH_PROFITS',
-      // send current product to fetch profits for
-      payload: { product: props.product }
-    });
-    dispatch({ type: 'FETCH_ACCOUNT' });
+    refreshProfit();
+    refreshOrders();
+    refreshProducts();
+    refreshUser();
 
-    dispatch({
-      type: 'FETCH_ORDERS',
-      payload: { product: props.product }
-    });
-    dispatch({ type: 'FETCH_USER' });
-    dispatch({ type: 'FETCH_BOT_ERRORS' });
-    dispatch({ type: 'FETCH_BOT_MESSAGES' });
-    dispatch({ type: 'FETCH_PRODUCTS' });
+    // dispatch({ type: 'FETCH_BOT_ERRORS' });
+    // dispatch({ type: 'FETCH_BOT_MESSAGES' });
   }
 
   // watch to see if accuracy changes
@@ -68,41 +64,41 @@ function Status(props) {
       {/* todo - maybe style in some divider lines here or something */}
       <center onClick={() => { setProfitDisplay(profitDisplay + 1) }}>
         {<p className="info status-ticker">
-          {/* {JSON.stringify(profitsReducer[profitDisplay])} */}
-            <strong>{profitsReducer[profitDisplay]?.duration} Profit</strong>
-            <br />
-            ${numberWithCommas(Number(profitsReducer[profitDisplay]?.productProfit).toFixed(profitAccuracy))} /
-            ${numberWithCommas(Number(profitsReducer[profitDisplay]?.allProfit).toFixed(profitAccuracy))}
-          </p>
+          {/* {JSON.stringify(profit[profitDisplay])} */}
+          <strong>{profit[profitDisplay]?.duration} Profit</strong>
+          <br />
+          ${numberWithCommas(Number(profit[profitDisplay]?.productProfit).toFixed(profitAccuracy))} /
+          ${numberWithCommas(Number(profit[profitDisplay]?.allProfit).toFixed(profitAccuracy))}
+        </p>
         }
       </center>
 
       <center>
         <p className="info status-ticker">
-          <strong>{props.product} Price</strong>
+          <strong>{productID} Price</strong>
           <br />
-          {Number(socket.tickers[props.product]?.price)
-            .toFixed(Number(user.availableFunds?.[props.product]?.quote_increment.split('1')[0].length - 1))
+          {Number(tickers[productID]?.price)
+            .toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1))
             // .toFixed(2)
           }
         </p>
       </center>
 
       <center onClick={() => { setAvailableFundsDisplay(!availableFundsDisplay) }}>
-        {/* {JSON.stringify(user.availableFunds[props.product])} */}
+        {/* {JSON.stringify(user.availableFunds[productID])} */}
         {availableFundsDisplay
           ? <p className="info status-ticker">
             <strong>Available Funds</strong>
             <br />
-            {/* {JSON.stringify((user.availableFunds[props.product].base_increment.split('1')[0].length - 1))} */}
-            {numberWithCommas(Number(user.availableFunds?.[props.product]?.base_available)
-              .toFixed(Number(user.availableFunds?.[props.product]?.base_increment.split('1')[0].length - 1)))} {user.availableFunds?.[props.product]?.base_currency}
+            {/* {JSON.stringify((user.availableFunds[productID].base_increment.split('1')[0].length - 1))} */}
+            {numberWithCommas(Number(user.availableFunds?.[productID]?.base_available)
+              .toFixed(Number(user.availableFunds?.[productID]?.base_increment.split('1')[0].length - 1)))} {user.availableFunds?.[productID]?.base_currency}
           </p>
           : <p className="info status-ticker">
             <strong>Available Funds</strong>
             <br />
-            {user.availableFunds?.[props.product]?.quote_currency === 'USD' && "$"}{numberWithCommas(Number(user.availableFunds?.[props.product]?.quote_available)
-              .toFixed(Number(user.availableFunds?.[props.product]?.quote_increment.split('1')[0].length - 1)))} {user.availableFunds?.[props.product]?.quote_currency !== 'USD' && user.availableFunds?.[props.product]?.quote_currency}
+            {user.availableFunds?.[productID]?.quote_currency === 'USD' && "$"}{numberWithCommas(Number(user.availableFunds?.[productID]?.quote_available)
+              .toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1)))} {user.availableFunds?.[productID]?.quote_currency !== 'USD' && user.availableFunds?.[productID]?.quote_currency}
           </p>
         }
       </center>
@@ -140,8 +136,12 @@ function Status(props) {
       </center>
 
       <center>
-        <p className={`info status-ticker ${user.theme} ${socket.heartbeat.count === 0 && 'blue'}`}>
-          <strong>{socket.heartbeat.heart}{socket.heartbeat.beat}<span className={socket.socketStatus}>&#x2022;</span></strong>
+        <p className={`info status-ticker ${user.theme} ${heartbeat.count === 0 && 'blue'}`}>
+          <strong>
+            <span className={coinbotSocket}>&#x2022;</span>
+            {heartbeat.heart}{heartbeat.beat}
+            <span className={socketStatus}>&#x2022;</span>
+          </strong>
           <br />
           <button className={`btn-blue ${user.theme}`} onClick={updateUser}>Refresh</button>
         </p>

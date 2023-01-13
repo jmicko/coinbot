@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useData } from '../../../contexts/DataContext';
+import { useUser } from '../../../contexts/UserContext';
+import { useFetchData } from '../../../hooks/fetchData';
 import './BulkDelete.css'
 
 
 function BulkDelete(props) {
-  const dispatch = useDispatch();
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  const { user } = useUser();
+  const { syncOrders, deleteRangeForProduct, deleteAll, productID } = useData();
+  const { deleteData:deleteAllForProduct } = useFetchData(`/api/orders/product/${productID}`, { defaultState: {}, notNull: [productID], noLoad: true })
 
   const [lowerLimit, setLowerLimit] = useState(0);
   const [upperLimit, setUpperLimit] = useState(0);
@@ -15,25 +18,16 @@ function BulkDelete(props) {
   // no need to bother the database if it is busy
   function deleteAllOrders() {
     // call the orders delete route
-    dispatch({ type: 'DELETE_ALL_ORDERS' });
+    deleteAll();
   }
-
+  
   // delete all orders for a given product
   function deleteAllOrdersForProduct() {
-    // call the orders delete route
-    dispatch({ type: 'DELETE_ALL_PRODUCT_ORDERS', payload: { product_id: props.product } });
+    deleteAllForProduct();
   }
 
   function deleteRange() {
-    // call the orders delete route
-    dispatch({
-      type: 'DELETE_RANGE',
-      payload: {
-        lowerLimit: lowerLimit,
-        upperLimit: upperLimit,
-        product_id: props.product
-      }
-    });
+    deleteRangeForProduct([productID, lowerLimit, upperLimit])
   }
 
 
@@ -47,7 +41,7 @@ function BulkDelete(props) {
         This will delete all open orders from coinbase and replace them based on the trades stored in the
         database. It can sometimes fix issues that cause repeated errors, and may take a few minutes to complete.
       </p>}
-      <button className={`btn-blue medium ${user.theme}`} onClick={() => dispatch({ type: 'SYNC_ORDERS' })}>Sync All Trades</button>
+      <button className={`btn-blue medium ${user.theme}`} onClick={syncOrders}>Sync All Trades</button>
 
       {/* DELETE RANGE */}
       <div className="divider" />
@@ -84,21 +78,21 @@ function BulkDelete(props) {
         <br />
         <br />
 
-        <button className={`btn-red medium ${user.theme}`} onClick={() => { deleteRange() }}>Delete Range For {props.product}</button>
+        <button className={`btn-red medium ${user.theme}`} onClick={() => { deleteRange() }}>Delete Range For {productID}</button>
       </div>
 
       {/* DELETE ALL TRADES FOR CURRENT PRODUCT */}
 
       <div className="divider" />
-      <h4>Delete All Trades for {props.product}</h4>
-      <p>Danger! This button will delete all your positions for {props.product}! Press it carefully!</p>
-      <button className={`btn-red medium ${user.theme}`} onClick={() => { deleteAllOrdersForProduct() }}>Delete All {props.product}</button>
-      
+      <h4>Delete All Trades for {productID}</h4>
+      <p>Danger! This button will delete all your positions for {productID}! Press it carefully!</p>
+      <button className={`btn-red medium ${user.theme}`} onClick={() => { deleteAllOrdersForProduct() }}>Delete All {productID}</button>
+
 
       {/* DELETE ALL TRADES */}
       <div className="divider" />
       <h4>Delete All Trades</h4>
-      <p>Danger! This button will delete ALL your positions for ALL your products! Not just {props.product}! Press it carefully!</p>
+      <p>Danger! This button will delete ALL your positions for ALL your products! Not just {productID}! Press it carefully!</p>
       <button className={`btn-red medium ${user.theme}`} onClick={() => { deleteAllOrders() }}>Delete All</button>
 
       <div className="divider" />

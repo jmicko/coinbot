@@ -1,17 +1,17 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
+import { useUser } from '../../../contexts/UserContext';
 import './SettingsNav.css'
 
 
 function SettingsNav(props) {
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  const { user } = useUser();
 
   return (
     <div className="SettingsNav">
       <center>
-        <button className = {`btn-nav ${props.settingsPage === "general" && "selected"}`} onClick={() => { props.setSettingsPage('general') }}>General</button>
-        <button className = {`btn-nav ${props.settingsPage === "products" && "selected"}`} onClick={() => { props.setSettingsPage('products') }}>Products</button>
-        <button className = {`btn-nav ${props.settingsPage === "investment" && "selected"}`} onClick={() => { props.setSettingsPage('investment') }}>Investment</button>
+        <button className={`btn-nav ${props.settingsPage === "general" && "selected"}`} onClick={() => { props.setSettingsPage('general') }}>General</button>
+        <button className={`btn-nav ${props.settingsPage === "products" && "selected"}`} onClick={() => { props.setSettingsPage('products') }}>Products</button>
+        <button className={`btn-nav ${props.settingsPage === "investment" && "selected"}`} onClick={() => { props.setSettingsPage('investment') }}>Investment</button>
         <button className={`btn-nav ${props.settingsPage === "autoSetup" && "selected"}`} onClick={() => { props.setSettingsPage('autoSetup') }}>Auto Setup</button>
         <button className={`btn-nav ${props.settingsPage === "bulkDelete" && "selected"}`} onClick={() => { props.setSettingsPage('bulkDelete') }}>Bulk Delete</button>
         <button className={`btn-nav ${props.settingsPage === "history" && "selected"}`} onClick={() => { props.setSettingsPage('history') }}>History</button>

@@ -1,34 +1,55 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import './App.css';
-import { useDispatch, useSelector } from 'react-redux';
 
 // Directory imports
 import Home from '../Home/Home';
 import Login from '../Login/Login';
 import { SocketProvider } from '../../contexts/SocketProvider';
+import { DataProvider } from '../../contexts/DataContext';
+import { UserProvider, useUser } from '../../contexts/UserContext';
 
 function App() {
-  const dispatch = useDispatch();
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  // small component to check if user is logged in
+  // if not, redirect to login page
+  function CheckUser() {
 
-  useEffect(() => {
-    dispatch({ type: 'FETCH_USER' });
-    return
-  }, [dispatch])
+    const { user } = useUser();
+    // const { data } = useData();
+    console.log(user, 'user in checkuser');
+    return (
 
-
-
+      <div className={`App darkTheme`}>
+        {user.id
+          ?
+          < DataProvider >
+            < SocketProvider >
+              <Home />
+            </SocketProvider>
+          </DataProvider>
+          : <Login />
+        }
+      </div >
+    )
+  }
 
   return (
-    <div className={`App darkTheme`}>
-      {user.id
-        ?
-        < SocketProvider >
-          <Home />
-        </SocketProvider>
-        : <Login />
-      }
-    </div >
+    <UserProvider >
+      <CheckUser />
+    </UserProvider>
+
+
+    // <div className={`App darkTheme`}>
+    //   < UserProvider >
+    //     {user.id
+    //       ? < DataProvider >
+    //         < SocketProvider >
+    //           <Home />
+    //         </SocketProvider>
+    //       </DataProvider>
+    //       : <Login />
+    //     }
+    //   </UserProvider>
+    // </div >
   );
 }
 

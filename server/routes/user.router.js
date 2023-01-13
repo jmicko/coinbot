@@ -62,11 +62,11 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
     // get exporting value from userStorage
     const exporting = userStorage[req.user.id].exporting;
     req.user.exporting = exporting;
-    
+
     // get simulating value from userStorage
     const simulating = userStorage[req.user.id].simulating;
     req.user.simulating = simulating;
-    
+
     // console.log('simulating', req.user);
 
   } catch (err) {
@@ -81,7 +81,29 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
 // is that the password gets encrypted before being inserted
 router.post('/register', userCount, async (req, res, next) => {
   const username = req.body.username;
-  const password = encryptLib.encryptPassword(req.body.password);
+  const pass = req.body.password;
+  console.log('registering user', username, pass);
+  if (
+    !username ||
+    !pass ||
+    username !== username.toLowerCase() ||
+    pass !== pass.toLowerCase() ||
+    username.includes(' ') ||
+    pass.includes(' ') ||
+    username.includes('\'') ||
+    pass.includes('\'') ||
+    username.includes('\"') ||
+    pass.includes('\"') ||
+    username.includes('`') ||
+    pass.includes('`') ||
+    username.includes('!')
+
+  ) {
+    res.sendStatus(403);
+    return;
+  }
+
+  const password = encryptLib.encryptPassword(pass);
   try {
     let adminCount = await anyAdmins();
     let user;
@@ -143,6 +165,7 @@ router.post('/login', userStrategy.authenticate('local'), (req, res) => {
 
 // clear all server session information about this user
 router.post('/logout', (req, res) => {
+  console.log('LOGGING OUT USER');
   // Use passport's built-in method to log out the user
   req.logout();
   res.sendStatus(200);
@@ -175,8 +198,8 @@ router.put('/approve', rejectUnauthenticated, async (req, res) => {
 /**
 * DELETE route - Delete a single user. Only admin can do this
 */
-router.delete('/', rejectUnauthenticated, async (req, res) => {
-  const userToDelete = req.body.id;
+router.delete('/:user_id', rejectUnauthenticated, async (req, res) => {
+  const userToDelete = Number(req.params.user_id);
   const userID = req.user.id;
   try {
     console.log('in delete user route');
@@ -204,7 +227,9 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       // const userToDelete = req.body.id;
       console.log('you are NOT admin');
       // check to make sure the user ID that was sent is the same as the user requesting the delete
+      // if (userID === userToDelete) {
       if (userID === userToDelete) {
+        console.log('you are deleting yourself');
 
         // delete from user table
         const userQueryText = `DELETE from "user" WHERE "id" = $1;`;
@@ -230,8 +255,6 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
     res.sendStatus(500);
   } finally {
     userStorage.deleteUser(userToDelete);
-
-
   }
 });
 

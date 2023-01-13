@@ -1,14 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
-// import { useSelector } from 'react-redux';
+import React, { useEffect, useRef } from 'react'; 
 import { useSocket } from '../../contexts/SocketProvider';
 import './Meter.css'
 
 
 function Meter(props) {
-  // const dispatch = useDispatch();
-  // const [difference, setDifference] = useState(1);
   const difference = (props.max - props.min).toFixed(0);
-  // const [segmentMap, setSegmentMap] = useState();
   const socket = useSocket();
   const canvasRef = useRef(null);
 

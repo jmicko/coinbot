@@ -1,23 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useData } from '../../contexts/DataContext';
+import { useUser } from '../../contexts/UserContext';
 import { useProductDecimals } from '../../hooks/useProductDecimals';
 import './SingleTrade.css'
 
 function SingleTrade(props) {
-  const dispatch = useDispatch();
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  const { user } = useUser();
+  const { productID, deleteOrder, syncPair } = useData();
+
   const [profit, setProfit] = useState(0);
   const [deleting, setDeleting] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [sellFee, setSellFee] = useState();
   const [buyFee, setBuyFee] = useState();
-  const product = props.product;
-  const decimals = useProductDecimals(product, user.availableFunds);
 
+  const decimals = useProductDecimals(productID, user.availableFunds);
 
-// decimals.baseIncrement
+  // decimals.baseIncrement
 
   useEffect(() => {
+    // console.log('rendering single trade');
     // calculate all the numbers when the component renders
 
     // pull from props and make more manageable
@@ -31,29 +33,15 @@ function SingleTrade(props) {
     let buyFee = (maker_fee_rate * original_buy_price * base_size)
 
     // calculate profits
-    const profit = Math.round((((original_sell_price * base_size - original_buy_price * base_size)) - (buyFee + sellFee)) * decimals.baseMultiplier) / decimals.baseMultiplier;
+    const profit = Math.round((((original_sell_price * base_size - original_buy_price * base_size)) - (buyFee + sellFee)) * decimals.base_inverse_increment) / decimals.base_inverse_increment;
     setProfit(profit);
     setBuyFee(buyFee)
     setSellFee(sellFee)
-  }, [props.order.original_sell_price, props.order.original_buy_price, props.order.base_size, user.maker_fee, decimals.baseMultiplier]);
-
-  // delete the order if the abandon button is clicked.
-  // the loop already detects deleted orders, so only need to make a call to coinbase
-  // no need to bother the database if it is busy
-  function deleteOrder() {
-    setDeleting(true)
-    dispatch({
-      type: 'DELETE_TRADE', payload: {
-        order_id: props.order.order_id,
-      }
-    })
-  }
+  }, [props.order.original_sell_price, props.order.original_buy_price, props.order.base_size, user.maker_fee, decimals.base_inverse_increment]);
 
   function syncTrade() {
-    dispatch({
-      type: 'SYNC_TRADE', payload: {
-        order_id: props.order.order_id,
-      }
+    syncPair({
+      order_id: props.order.order_id,
     })
   }
 
@@ -82,7 +70,14 @@ function SingleTrade(props) {
       <div className={"overlay"}>
         {(deleting === true)
           ? <p className="deleting">Deleting...</p>
-          : !props.preview && !user.kill_locked && <button className={`btn-red kill-button ${user.theme}`} onClick={() => { deleteOrder() }}>Kill</button>
+          : !props.preview && !user.kill_locked && <button
+            className={`btn-red kill-button ${user.theme}`}
+            onClick={() => {
+              deleteOrder(props.order.order_id);
+              setDeleting(true)
+            }}>
+            Kill
+          </button>
 
         }
         <p className="single-trade-text" >
@@ -90,18 +85,21 @@ function SingleTrade(props) {
           <strong>
             Price: </strong>
           {(props.order.side === 'SELL')
-            ? numberWithCommas(Number(props.order.original_sell_price).toFixed(decimals.quoteIncrement))
-            : numberWithCommas(Number(props.order.original_buy_price).toFixed(decimals.quoteIncrement))
+            ? numberWithCommas(Number(props.order.original_sell_price).toFixed(decimals.quote_increment_decimals))
+            : numberWithCommas(Number(props.order.original_buy_price).toFixed(decimals.quote_increment_decimals))
           } <strong>
             {(props.order.side === 'SELL')
               ? '~Buys:'
               : '~Sells:'
             } </strong>
           {(props.order.side === 'SELL')
-            ? numberWithCommas(Number(props.order.original_buy_price).toFixed(decimals.quoteIncrement))
-            : numberWithCommas(Number(props.order.original_sell_price).toFixed(decimals.quoteIncrement))
-          } ~<strong>Size </strong>{Number(props.order.base_size).toFixed(decimals.baseIncrement)} {!props.preview && <>~</>}
-          {!props.preview ? <strong>Value</strong >:<strong>/</strong >} ${numberWithCommas((Math.round((props.order.limit_price * props.order.base_size) * decimals.quoteMultiplier) / decimals.quoteMultiplier).toFixed(decimals.quoteIncrement))} ~
+            ? numberWithCommas(Number(props.order.original_buy_price).toFixed(decimals.quote_increment_decimals))
+            : numberWithCommas(Number(props.order.original_sell_price).toFixed(decimals.quote_increment_decimals))
+          } ~<strong>Size </strong>{Number(props.order.base_size).toFixed(decimals.base_increment_decimals)} {!props.preview && <>~</>}
+          {!props.preview ? <strong>Value</strong > : <strong>/</strong >}
+          &nbsp;${numberWithCommas((
+            Math.round((props.order.limit_price * props.order.base_size) * decimals.quote_inverse_increment)
+            / decimals.quote_inverse_increment).toFixed(decimals.quote_increment_decimals))} ~
           <strong>Net Profit</strong> ${profit.toFixed(8)}
           {/* <strong> ~Time</strong> {new Date(props.order.created_at).toLocaleString('en-US')} */}
           {!props.preview && <strong> ~Time </strong>} {!props.preview && (props.order.flipped_at

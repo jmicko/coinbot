@@ -3,7 +3,7 @@ const databaseClient = require("./databaseClient");
 const { cache, botSettings, userStorage, apiStorage, messenger, cbClients } = require("./cache");
 // const botSettings = botSettings;
 const { startWebsocket } = require("./websocket");
-const { sleep, granularities, calculateProductDecimals } = require("../../src/shared");
+const { sleep, granularities, addProductDecimals } = require("../../src/shared");
 
 // start a sync loop for each active user
 async function startSync() {
@@ -161,14 +161,14 @@ async function syncOrders(userID) {
       // console.log('success!!!!!!');
       // update funds after everything has been processed
       // await updateFunds(userID);
-      
+
     } else {
       // if the user is not active or is paused, loop every 5 seconds
       await sleep(5000);
     }
     // update funds if the user is all of the above except for maintenance
     if (user?.active && user?.approved && !botSettings.maintenance) {
-    await updateFunds(userID);
+      await updateFunds(userID);
     }
   } catch (err) {
     MainLoopErrors(userID, err);
@@ -505,6 +505,7 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
   } else {
     // if it is a sell turning into a buy, check if user wants to reinvest the funds
     if (user.reinvest) {
+      // console.log(user.reinvest, 'reinvesting');
       const orderSize = Number(dbOrder.base_size);
 
       // console.log('===================== REINVESTING ======================', orderSize, 'orderSize');
@@ -517,7 +518,9 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
       // get the available USD funds for the product_id
       const availableUSD = !simulation
         ? availableFunds[dbOrder.product_id].quote_available
-        : availableFunds.quote_available;
+        : user.availableQuote;
+
+      // console.log(availableUSD, 'availableUSD');
 
       // console.log(availableFunds[dbOrder.product_id].quote_available, 'availableFunds in flipTrade');
       // console.log(user.actualavailable_usd, 'user.actualavailable_usd')
@@ -528,6 +531,7 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
       // console.log(BTCprofit, 'BTCprofit ++++++++++++++++++++++++++ STILL BROKEN???');
 
       let amountToReinvest = BTCprofit * reinvestRatio;
+      console.log(amountToReinvest, 'amountToReinvest');
       if (amountToReinvest <= 0) {
         // console.log('negative profit');
         amountToReinvest = 0;
@@ -546,6 +550,8 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
 
       const buyPrice = dbOrder.original_buy_price;
       const maxSizeBTC = Number((maxTradeSize / buyPrice).toFixed(8));
+
+      console.log(maxSizeBTC, 'maxSizeBTC', maxTradeSize, 'maxTradeSize');
 
       // now check if the new base_size after reinvesting is higher than the user set max
       if ((newSize > maxSizeBTC) && (maxTradeSize > 0)) {
@@ -591,10 +597,10 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
             allFlipsValue += (trade.base_size * trade.original_buy_price)
           }
         });
-        
+
         // calculate what funds will be leftover after all pending flips go through
         const leftoverFunds = (Number(availableUSD) - (allFlipsValue * (1 + Number(user.maker_fee))));
-        
+
         // only set the new base_size if it will stay above the reserve
         if (leftoverFunds > user.reserve) {
           // console.log('there is enough money left to reinvest', newSize, 'newSize');
@@ -730,13 +736,13 @@ async function reorder(orderToReorder) {
       const product = await databaseClient.getProduct(upToDateDbOrder.product_id, userID);
       console.log(product, 'product');
       // get the number of decimals for the base_increment of the product. This is used to round the base_size
-      const decimals = calculateProductDecimals(product);
+      const decimals = addProductDecimals(product);
 
       // make new tradeDetails so client id is not passed from old order
       const tradeDetails = {
         side: upToDateDbOrder.side,
         limit_price: upToDateDbOrder.limit_price, // quote currency
-        base_size: Number(upToDateDbOrder.base_size).toFixed(decimals.baseIncrement), // base currency
+        base_size: Number(upToDateDbOrder.base_size).toFixed(decimals.base_increment_decimals), // base currency
         product_id: upToDateDbOrder.product_id,
       };
       // send the new order with the trade details

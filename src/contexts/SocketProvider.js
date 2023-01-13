@@ -1,7 +1,7 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { useDispatch } from 'react-redux';
-// import { useSelector } from 'react-redux';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import io from "socket.io-client";
+import { useData } from './DataContext';
+import { useUser } from './UserContext';
 
 // followed this guide for setting up the socket provider in its own component and not cluttering up App.js
 
@@ -13,13 +13,51 @@ export function useSocket() {
 
 export function SocketProvider({ children }) {
   const [socket, setSocket] = useState();
-  const [socketStatus, setSocketStatus] = useState('closed');
-  const [messenger, setMessenger] = useState();
-  const [disconnect, setDisconnect] = useState();
-  const [product, setProduct] = useState('BTC-USD');
+  const { refreshUser } = useUser();
+  const { products, productID, refreshProfit, refreshOrders, refreshProducts, refreshExportableFiles,
+    socketStatus, setSocketStatus, setCoinbotSocket,
+    refreshBotMessages, refreshBotErrors, } = useData();
   const [tickers, setTickers] = useState({ "BTC-USD": { price: 0 }, "ETH-USD": { price: 0 } });
   const [heartbeat, setHeartbeat] = useState({ heart: 'heart', beat: 'beat', count: 0 });
-  const dispatch = useDispatch();
+
+  const currentProductPrice = tickers[productID]?.price;
+  const currentPriceRef = useRef();
+  useEffect(() => {
+    currentPriceRef.current = currentProductPrice;
+  }, [currentProductPrice, productID]);
+
+  const currentPrice = currentPriceRef.current;
+
+  // // create ref for refreshOrders, refreshProfit, refreshProducts, refreshUser, and product
+  const refreshOrdersRef = useRef();
+  const refreshProfitRef = useRef();
+  const refreshProductsRef = useRef();
+  const refreshUserRef = useRef();
+  const productRef = useRef();
+  const refreshExportableFilesRef = useRef();
+  const setCoinbotSocketRef = useRef();
+  const setSocketStatusRef = useRef();
+  const refreshBotMessagesRef = useRef();
+  const refreshBotErrorsRef = useRef();
+
+  // // update the refs when the functions change
+  useEffect(() => {
+    refreshOrdersRef.current = refreshOrders;
+    refreshProfitRef.current = refreshProfit;
+    refreshProductsRef.current = refreshProducts;
+    refreshUserRef.current = refreshUser;
+    productRef.current = products;
+    refreshExportableFilesRef.current = refreshExportableFiles;
+    setCoinbotSocketRef.current = setCoinbotSocket;
+    setSocketStatusRef.current = setSocketStatus;
+    refreshBotMessagesRef.current = refreshBotMessages;
+    refreshBotErrorsRef.current = refreshBotErrors;
+  }, [refreshOrders, refreshProfit, refreshProducts, refreshUser, products, 
+    refreshExportableFiles, setCoinbotSocket, setSocketStatus,
+    refreshBotMessages, refreshBotErrors]);
+
+
+
   // useEffect to prevent from multiple connections
   useEffect(() => {
     // check if on dev server or build, and set endpoint appropriately
@@ -35,6 +73,7 @@ export function SocketProvider({ children }) {
       if (message.type === 'ticker') {
         const ticker = message.ticker
         // set the ticker based on the product id
+        // console.log('ticker', ticker);
         setTickers(prevTickers => ({ ...prevTickers, [ticker.product_id]: ticker }));
       }
       // handle heartbeat
@@ -53,57 +92,91 @@ export function SocketProvider({ children }) {
       }
       // handle cb websocket status
       if (message.type === 'socketStatus') {
-        setSocketStatus(message.socketStatus)
+        setSocketStatusRef.current(message.socketStatus)
       }
       // handle errors
       if (message.type === 'error') {
-        dispatch({ type: 'FETCH_BOT_ERRORS' });
+        // dispatch({ type: 'FETCH_BOT_ERRORS' });
+        refreshBotErrorsRef.current();
       }
       // handle messages
       if (message.type === 'messageUpdate' || message.type === 'chat' || message.type === 'general') {
-        dispatch({ type: 'FETCH_BOT_MESSAGES' });
+        // dispatch({ type: 'FETCH_BOT_MESSAGES' });
+        refreshBotMessagesRef.current();
       }
       // fetch orders if orderUpdate
       if (message.orderUpdate) {
-        console.log('order update in socket provider')
-        dispatch({
-          type: 'FETCH_ORDERS',
-          // send current product to fetch orders for
-          payload: { product: product }
-        });
+        // refreshOrders();
+        refreshOrdersRef.current();
       }
       // fetch products if productUpdate
       if (message.productUpdate) {
-        dispatch({ type: 'FETCH_PRODUCTS' });
+        refreshProductsRef.current();
       }
       if (message.profitUpdate || message.orderUpdate) {
-        dispatch({
-          type: 'FETCH_PROFITS',
-          // send current product to fetch profits for
-          payload: { product: product }
-        });
+        refreshProfitRef.current();
+
       }
       if (message.userUpdate) {
-        dispatch({ type: 'FETCH_USER' });
+        refreshUserRef.current();
       }
       if (message.fileUpdate) {
         console.log('file update in socket provider')
-        dispatch({ type: 'FETCH_EXPORT_FILES' });
-        dispatch({ type: 'FETCH_USER' });
+        refreshExportableFilesRef.current();
       }
       if (message.type === 'simulationResults') {
         console.log(message.data, 'simulation results in socket provider')
-        dispatch({
-          type: 'SET_SIMULATION_RESULT',
-          payload: message.data
-        });
+        // dispatch({
+        //   type: 'SET_SIMULATION_RESULT',
+        //   payload: message.data
+        // });
       }
-      
+
     });
 
     const ping = setInterval(() => {
-      newSocket.emit('message', 'ping')
-    }, 1000);
+      newSocket.emit('pong', 'pong')
+    }, 5000);
+
+    // should receive a ping from the server every 5 seconds
+    // if not, then reconnect
+    function timer() {
+      // console.log('clearing timeout')
+
+      clearTimeout(newSocket.timeout);
+
+      newSocket.timeout = setTimeout(() => {
+        console.log('disconnecting after timeout')
+        setCoinbotSocketRef.current('timeout');// socket can pass 'closed', 'open', 'timeout', and 'reopening' 
+        newSocket.disconnect();
+
+        setTimeout(() => {
+          console.log('reconnecting after timeout');
+          setCoinbotSocketRef.current('reopening');// socket can pass 'closed', 'open', 'timeout', and 'reopening'
+          newSocket.connect();
+        }, 5000);
+
+      }, 10000);
+
+    }
+
+    newSocket.on('ping', () => {
+      timer();
+      // console.log('ping')
+    })
+
+
+    // newSocket.on('ping', timer);
+    newSocket.on('connect', () => {
+      console.log('connected')
+      setCoinbotSocketRef.current('open'); // socket can pass 'closed', 'open', 'timeout', and 'reopening' 
+      timer();
+    });
+    
+    newSocket.on('disconnect', () => {
+      console.log('disconnected')
+      setCoinbotSocketRef.current('closed'); // socket can pass 'closed', 'open', 'timeout', and 'reopening'
+    });
 
     newSocket.sendChat = (chat) => {
       newSocket.emit('message', { type: 'chat', data: chat })
@@ -126,25 +199,34 @@ export function SocketProvider({ children }) {
     // save the new socket and close the old one
     setSocket(newSocket);
     return () => {
+      console.log('closing socket')
       clearInterval(ping);
+      clearTimeout(newSocket.timeout);
       newSocket.off('message')
+      newSocket.off('ping')
+      newSocket.off('connect')
       newSocket.off('connect_error')
       newSocket.close();
     }
-  }, [dispatch, product]);
+  }, [
+    // products,
+    // refreshOrders, 
+    // refreshProfit,
+    //  refreshProducts, 
+    // refreshUser
+    // productRef, refreshOrdersRef, refreshProfitRef, refreshProductsRef, refreshUserRef
+    // setSocketStatus
+  ]);
 
 
   return (
     <SocketContext.Provider value={{
-      socket: socket,
-      socketStatus: socketStatus,
-      messenger: messenger,
-      product: product,
-      setProduct: setProduct,
-      tickers: tickers,
-      heartbeat: heartbeat
+      socket,
+      socketStatus,
+      tickers,
+      heartbeat,
+      currentPrice,
     }}>
-      {/* <>Props: {JSON.stringify()}</> */}
       {children}
     </SocketContext.Provider>
   )

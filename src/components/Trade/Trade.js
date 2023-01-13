@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { connect, useDispatch, useSelector } from 'react-redux';
 import { useSocket } from '../../contexts/SocketProvider';
-import mapStoreToProps from '../../redux/mapStoreToProps';
 import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 import './Trade.css';
 import IncrementButtons from './IncrementButtons';
 import { numberWithCommas } from '../../shared';
+import { useUser } from '../../contexts/UserContext';
+import { useData } from '../../contexts/DataContext';
 
 
-function Trade(props) {
-
+function Trade() {
+  // console.log('rendering trade');
   // todo - default price value should automatically start out at the current price
   // of bitcoin, rounded to the closest $100
   // const [transactionSide, setTransactionSide] = useState('BUY');
@@ -23,7 +23,7 @@ function Trade(props) {
   const [volumeCostSell, setVolumeCostSell] = useState(0);
   const [transactionAmountBTC, setTransactionAmountBTC] = useState(0.001);
   const [transactionAmountUSD, setTransactionAmountUSD] = useState(10);
-  const [tradePairRatio, setTradePairRatio] = useState(1.1);
+  const [trade_pair_ratio, setTradePairRatio] = useState(1.1);
   const [fees, setFees] = useState(0.005);
   const [buyFee, setBuyFee] = useState(0.005);
   const [sellFee, setSellFee] = useState(0.005);
@@ -35,42 +35,30 @@ function Trade(props) {
   const { width } = useWindowDimensions();
   const [basicAmount, setBasicAmount] = useState(0);
   const [basicSide, setBasicSide] = useState('BUY');
-  const dispatch = useDispatch();
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  const { user } = useUser();
+
   const socket = useSocket();
   const [initialPriceSet, setInitialPriceSet] = useState(false);
 
   // product info for the current product
-  const products = useSelector((store) => store.accountReducer.productsReducer);
-  const currentProductId = props.product;
-  const currentProduct = products?.allProducts?.find((product) => product.product_id === currentProductId);
-  const currentProductPrice = Number(socket.tickers?.[props.product]?.price);
-  // find the decimal places of the quote_increment
-  const quote_increment = currentProduct?.quote_increment;
-  const quote_increment_decimal_places = quote_increment?.split('1')[0]?.length - 1;
-  // rename the quote_increment_decimal_places to something shorter
-  const qidp = quote_increment_decimal_places;
-  // find the decimal places of the base_increment
-  const base_increment = currentProduct?.base_increment;
-  const base_increment_decimal_places = base_increment?.split('1')[0]?.length - 1;
-  // rename the base_increment_decimal_places to something shorter
-  const bidp = base_increment_decimal_places;
-  // create an integer version of the bidp
-  const bidp_int = Math.pow(10, bidp);
-  // create an integer version of the qidp
-  const qidp_int = Math.pow(10, qidp);
-  // create a rounding decimal place for the price
-  // const price_rounding = Math.pow(10, qidp - 2);
-  const price_rounding = Math.pow(10, qidp - 2);
-  // create a rounding decimal place for the amount
-  const amount_rounding = Math.pow(10, bidp - 2);
-  const minBaseSize = currentProduct?.base_min_size;
+  const { productID, currentProduct, createOrderPair, createMarketTrade } = useData();
+  const currentProductPrice = Number(socket.tickers?.[productID]?.price);
+  const {
+    price_rounding,
+    baseInverseIncrement,
+    baseIncrementDecimals,
+    quoteIncrementDecimals,
+    quote_increment,
+    base_currency_id,
+    base_increment,
+    quote_currency_id
+  } = currentProduct;
 
   // calculate New Position values every time a number in the calculator changes
   useEffect(() => {
 
-    
-    let sellPrice = (price * (Number(tradePairRatio) + 100)) / 100;
+
+    let sellPrice = (price * (Number(trade_pair_ratio) + 100)) / 100;
     let priceMargin = sellPrice - price;
     let volumeCostBuy = price * transactionAmountBTC;
     let volumeCostSell = sellPrice * transactionAmountBTC;
@@ -80,11 +68,11 @@ function Trade(props) {
     let pairMargin = volumeCostSell - volumeCostBuy;
     let pairProfit = pairMargin - totalfees;
 
-    console.log(tradePairRatio, 'tradePairRatio')
+    // console.log(trade_pair_ratio, 'trade_pair_ratio')
     console.log(price, 'price')
-    console.log(sellPrice, 'sellPrice')
+    // console.log(sellPrice, 'sellPrice')
 
-    
+
     setSellPrice(sellPrice);
     setPriceMargin(priceMargin);
     setVolumeCostBuy(volumeCostBuy);
@@ -95,41 +83,40 @@ function Trade(props) {
     setPairMargin(pairMargin);
     setPairProfit(pairProfit);
 
-  }, [fees, price, transactionAmountBTC, transactionAmountUSD, tradePairRatio, amountTypeIsUSD]);
+  }, [fees, price, transactionAmountBTC, transactionAmountUSD, trade_pair_ratio, amountTypeIsUSD]);
 
 
   function submitTransaction(event) {
     event.preventDefault();
     // calculate flipped price
-    let original_sell_price = (Math.round((price * (Number(tradePairRatio) + 100))) / 100);
+    let original_sell_price = (Math.round((price * (Number(trade_pair_ratio) + 100))) / 100);
     let type = false;
     if (currentProductPrice < price) {
       type = 'market';
     }
-    dispatch({
-      type: 'START_TRADE', payload: {
-        original_sell_price: original_sell_price,
-        original_buy_price: price,
-        side: transactionSide,
-        limit_price: price,
-        base_size: transactionAmountBTC,
-        product_id: currentProductId,
-        trade_pair_ratio: tradePairRatio,
-        type: type
-      }
+
+    createOrderPair({
+      original_sell_price: original_sell_price,
+      original_buy_price: price,
+      side: transactionSide,
+      limit_price: price,
+      base_size: transactionAmountBTC,
+      product_id: productID,
+      trade_pair_ratio: trade_pair_ratio,
+      type: type
     })
   }
 
   function submitBasicTransaction(event) {
     event.preventDefault();
     console.log('BASIC TRADE STARTED');
-    dispatch({
-      type: 'START_BASIC_TRADE', payload: {
-        base_size: basicAmount,
-        product_id: currentProductId,
-        side: basicSide,
-        tradingPrice: currentProductPrice
-      }
+    createMarketTrade({
+      // type: 'START_BASIC_TRADE', payload: {
+      base_size: basicAmount,
+      product_id: productID,
+      side: basicSide,
+      tradingPrice: currentProductPrice
+      // }
     })
   }
 
@@ -139,24 +126,16 @@ function Trade(props) {
       if (event) {
         event.preventDefault();
       }
-      console.log(currentProductPrice, typeof currentProductPrice, 'currentProductPrice')
-      console.log(currentProductId, 'currentProductId')
-      console.log(currentProduct, 'currentProduct')
-      console.log(qidp, 'qidp')
-      console.log(qidp_int, 'qidp_int')
-      console.log(bidp, 'bidp')
-      console.log(bidp_int, 'bidp_int')
-      console.log(price_rounding, 'price_rounding')
-      console.log(amount_rounding, 'amount_rounding')
-      // check if the current price has been stored and is a number to prevent NaN errors
+      console.log(currentProductPrice, typeof currentProductPrice, price_rounding, 'currentProductPrice')
+
       if (currentProductPrice && typeof currentProductPrice === 'number') {
         // round the price to nearest 100
-        // const roundedPrice = Math.round(socket.tickers[props.product].price)
+        // const roundedPrice = Math.round(socket.tickers[productID].price)
         // const roundedPrice = Math.round(currentProductPrice / 100) * 100;
         // const roundedPrice = currentProductPrice;
         // const roundedPrice = Math.round(currentProductPrice / price_rounding) * price_rounding;
         const roundedPrice = Math.round(currentProductPrice * price_rounding) / price_rounding;
-        console.log(roundedPrice, 'roundedPrice')
+        // console.log(roundedPrice, 'roundedPrice')
         // change input box to reflect rounded value
         setTransactionPrice(roundedPrice)
       }
@@ -172,7 +151,7 @@ function Trade(props) {
     }
   }, [getCurrentPrice, currentProductPrice, initialPriceSet, setInitialPriceSet])
 
-  // once the account fees load into redux, 
+  // once the account fees load
   useEffect(() => {
     setFees(user.maker_fee)
   }, [user])
@@ -183,21 +162,21 @@ function Trade(props) {
     }
     setAmountTypeIsUSD(type);
     if (!type) {
-      setTransactionAmountBTC(Number(transactionAmountBTC).toFixed(bidp))
+      setTransactionAmountBTC(Number(transactionAmountBTC).toFixed(baseIncrementDecimals))
     }
   }
 
   function handleTransactionAmount(amount) {
     if (amountTypeIsUSD) {
       // setTransactionAmountBTC(Math.floor(price / amount * 1000) / 1000)
-      setTransactionAmountUSD(Number(amount).toFixed(qidp))
-      const convertedAmount = Number(Math.floor((amount / price) * bidp_int)) / bidp_int;
+      setTransactionAmountUSD(Number(amount).toFixed(quoteIncrementDecimals))
+      const convertedAmount = Number(Math.floor((amount / price) * baseInverseIncrement)) / baseInverseIncrement;
       setTransactionAmountBTC(convertedAmount);
     }
     if (!amountTypeIsUSD) {
       // setTransactionAmountBTC(Math.floor(amount *100000000) / 100000000)
-      setTransactionAmountBTC(Number(amount).toFixed(bidp))
-      setTransactionAmountUSD(Number(price * amount).toFixed(qidp))
+      setTransactionAmountBTC(Number(amount).toFixed(baseIncrementDecimals))
+      setTransactionAmountUSD(Number(price * amount).toFixed(quoteIncrementDecimals))
       // setTransactionAmountUSD(Number(Math.round(price * amount * 100) / 100))
     }
   }
@@ -240,9 +219,10 @@ function Trade(props) {
                 required
                 onChange={(event) => setTransactionPrice(Number(event.target.value))}
               />
+
               <IncrementButtons
-                firstButton={currentProduct.quote_increment * 10}
-                roundTo={qidp}
+                firstButton={quote_increment * 10}
+                roundTo={quoteIncrementDecimals}
                 currentValue={price}
                 changeValue={setTransactionPrice}
                 theme={user.theme}
@@ -254,7 +234,7 @@ function Trade(props) {
               ? <div className="number-inputs">
                 {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
                 <label htmlFor="transaction_amount">
-                  Trade amount in {currentProduct.base_currency_id}:
+                  Trade amount in {base_currency_id}:
                   <button className={`btn-blue ${user.theme}`} onClick={(event) => amountTypeHandler(event, true)}>Switch</button>
                 </label>
                 <input
@@ -267,8 +247,8 @@ function Trade(props) {
                   onChange={(event) => handleTransactionAmount(event.target.value)}
                 />
                 <IncrementButtons
-                  firstButton={currentProduct.base_increment * 10000}
-                  roundTo={bidp}
+                  firstButton={base_increment * 10000}
+                  roundTo={baseIncrementDecimals}
                   currentValue={transactionAmountBTC}
                   changeValue={handleTransactionAmount}
                   theme={user.theme}
@@ -279,7 +259,7 @@ function Trade(props) {
               : <div className="number-inputs">
                 {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
                 <label htmlFor="transaction_amount">
-                  Trade amount in {currentProduct.quote_currency_id}:
+                  Trade amount in {quote_currency_id}:
                   <button className={`btn-blue ${user.theme}`} onClick={(event) => amountTypeHandler(event, false)}>Switch</button>
                 </label>
                 <input
@@ -292,8 +272,8 @@ function Trade(props) {
                   onChange={(event) => handleTransactionAmount(event.target.value)}
                 />
                 <IncrementButtons
-                  firstButton={currentProduct.quote_increment * 10}
-                  roundTo={qidp}
+                  firstButton={quote_increment * 10}
+                  roundTo={quoteIncrementDecimals}
                   currentValue={transactionAmountUSD}
                   changeValue={handleTransactionAmount}
                   theme={user.theme}
@@ -303,7 +283,6 @@ function Trade(props) {
 
 
             <div className="number-inputs">
-              {/* {JSON.stringify(props.store.statusReducer.tickers[props.product])} */}
               {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
               <label htmlFor="trade-pair-ratio">
                 Trade pair percent increase:
@@ -312,18 +291,18 @@ function Trade(props) {
                 className={user.theme}
                 type="number"
                 name="trade-pair-ratio"
-                value={Number(tradePairRatio)}
+                value={Number(trade_pair_ratio)}
                 step={0.001}
                 required
                 onChange={(event) => setTradePairRatio(Number(event.target.value))}
               />
               <IncrementButtons
-                  firstButton={0.001}
-                  roundTo={3}
-                  currentValue={tradePairRatio}
-                  changeValue={setTradePairRatio}
-                  theme={user.theme}
-                />
+                firstButton={0.001}
+                roundTo={3}
+                currentValue={trade_pair_ratio}
+                changeValue={setTradePairRatio}
+                theme={user.theme}
+              />
               <input className={`btn-send-trade btn-blue ${user.theme}`} type="submit" name="submit" value="Start New Trade-Pair" />
             </div>
 
@@ -332,13 +311,13 @@ function Trade(props) {
             <div className={`boxed dark ${user.theme}`}>
               <h4 className={`title ${user.theme}`}>New position</h4>
               <p><strong>Trade Pair Details:</strong></p>
-              <p className="info">Buy price: <strong>${numberWithCommas(Number(price).toFixed(qidp))}</strong> </p>
-              <p className="info">Sell price <strong>${numberWithCommas(sellPrice.toFixed(qidp))}</strong></p>
-              <p className="info">Price margin: <strong>{numberWithCommas(priceMargin.toFixed(qidp))}</strong> </p>
+              <p className="info">Buy price: <strong>${numberWithCommas(Number(price).toFixed(quoteIncrementDecimals))}</strong> </p>
+              <p className="info">Sell price <strong>${numberWithCommas(sellPrice.toFixed(quoteIncrementDecimals))}</strong></p>
+              <p className="info">Price margin: <strong>{numberWithCommas(priceMargin.toFixed(quoteIncrementDecimals))}</strong> </p>
               <p className="info">Volume <strong>{transactionAmountBTC}</strong> </p>
               <p><strong>Cost at this volume:</strong></p>
-              <p className="info"><strong>BUY*:</strong> ${numberWithCommas(volumeCostBuy.toFixed(qidp))}</p>
-              <p className="info"><strong>SELL*:</strong>${numberWithCommas(volumeCostSell.toFixed(qidp))}</p>
+              <p className="info"><strong>BUY*:</strong> ${numberWithCommas(volumeCostBuy.toFixed(quoteIncrementDecimals))}</p>
+              <p className="info"><strong>SELL*:</strong>${numberWithCommas(volumeCostSell.toFixed(quoteIncrementDecimals))}</p>
               <p className="info"><strong>BUY FEE*:</strong> ${buyFee.toFixed(8)}</p>
               <p className="info"><strong>SELL FEE*:</strong> ${sellFee.toFixed(8)}</p>
               <p className="info"><strong>TOTAL FEES*:</strong> ${totalfees.toFixed(8)}</p>
@@ -390,13 +369,16 @@ function Trade(props) {
               onChange={(event) => setBasicAmount(Number(event.target.value))}
             />
 
-            {/* {JSON.stringify(user.availableFunds?.[props.product].base_available)} */}
-
-            {(basicSide === 'SELL') && <input className={`btn-blue ${user.theme}`} onClick={() => setBasicAmount(Number(user.availableFunds?.[props.product].base_available))} type="button" name="submit" value="Max" />}
+            {(basicSide === 'SELL') && <input
+              className={`btn-blue ${user.theme}`}
+              onClick={() => setBasicAmount(Number(user.availableFunds?.[productID].base_available))}
+              type="button"
+              name="submit"
+              value="Max" />}
             <br />
             <p>
               This equates to about
-              <br />${numberWithCommas((basicAmount * socket.tickers[props.product]?.price).toFixed(2))}
+              <br />${numberWithCommas((basicAmount * socket.tickers[productID]?.price).toFixed(2))}
               <br />before fees
             </p>
             <br />
@@ -411,4 +393,4 @@ function Trade(props) {
   );
 }
 
-export default connect(mapStoreToProps)(Trade);
+export default Trade;

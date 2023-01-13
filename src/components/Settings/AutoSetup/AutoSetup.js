@@ -1,39 +1,84 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, {
+  useState,
+  useEffect,
+  // useCallback,
+  useRef,
+} from 'react';
+import { useUser } from '../../../contexts/UserContext';
 import { useSocket } from '../../../contexts/SocketProvider';
 import { useProductDecimals } from '../../../hooks/useProductDecimals';
 import { autoSetup, numberWithCommas } from '../../../shared';
 import Graph from '../../Graph/Graph';
 import SingleTrade from '../../SingleTrade/SingleTrade';
 import './AutoSetup.css'
+import { useData } from '../../../contexts/DataContext';
+import { useFetchData } from '../../../hooks/fetchData';
+import DebouncedInput from '../../DebouncedInput.js/DebouncedInput';
 
 
 function AutoSetup(props) {
-  const dispatch = useDispatch();
-  const user = useSelector((store) => store.accountReducer.userReducer);
-  const simulationReducer = useSelector((store) => store.accountReducer.simulationReducer);
-  const socket = useSocket();
 
-  const [startingValue, setStartingValue] = useState(1000);
-  const [skipFirst, setSkipFirst] = useState(false);
-  const [endingValue, setEndingValue] = useState(100000);
-  const [ignoreFunds, setIgnoreFunds] = useState(false);
-  const [increment, setIncrement] = useState(100);
-  const [incrementType, setIncrementType] = useState('dollars');
-  const [base_size, setSize] = useState(10);
-  const [maxSize, setMaxSize] = useState(100);
-  const [sizeType, setSizeType] = useState('quote');
-  const [tradePairRatio, setTradePairRatio] = useState(1.1);
-  const [setupResults, setSetupResults] = useState(1);
-  const [cost, setCost] = useState(0);
+  const { user } = useUser();
+  const { productID, currentProduct } = useData();
+
+  const { createData: startAutoSetup } = useFetchData('/api/orders/autoSetup', { noLoad: true });
+  const {
+    data: simulationResults,
+    // refresh: refreshSimResults,
+    createRefreshData: startSimulation,
+    isLoading: simLoading
+  } = useFetchData(`/api/trade/simulation`, { defaultState: null, noLoad: true });
+
+  const { currentPrice } = useSocket();
+
+  const [auto, setAuto] = useState({
+    // startingValue: 1000,
+    startingValue: Number(((currentPrice || 1000) / 2).toFixed(currentProduct.price_rounding - 2 > 0 ? currentProduct.price_rounding - 2 : 0)),
+    skipFirst: false,
+    endingValue: Number(((currentPrice || 1000) * 1.5).toFixed(currentProduct.price_rounding - 2 > 0 ? currentProduct.price_rounding - 2 : 0)),
+    ignoreFunds: false,
+    increment: 0.5,
+    incrementType: 'percentage',
+    size: 10,
+    maxSize: 100,
+    sizeType: 'quote',
+    // trade_pair_ratio: 1.1,
+    sizeCurve: 'linear',
+    steepness: 10,
+    trade_pair_ratio: 5
+  });
+
+  const [setupResults, setSetupResults] = useState({
+    valid: false,
+    orderList: [],
+    cost: 0,
+    lastBuyPrice: 0,
+    btcToBuy: 0,
+    options: {},
+    quoteToReserve: 0,
+    buyCount: 0,
+    sellCount: 0,
+  });
+
   const [autoTradeStarted, setAutoTradeStarted] = useState(false);
-  const [totalTrades, setTotalTrades] = useState(false);
-  const [sizeCurve, setSizeCurve] = useState("linear");
-  const [steepness, setSteepness] = useState(10);
+  // const [sizeCurve, setSizeCurve] = useState("linear");
+  // store a time stamp of when the last input was changed
+  // this will be used to determine if the autoSetup function should be called
+  // it should only be called if the last input change was more than 1 second ago
+  // this will make the inputs more responsive
+  const [lastInputChange, setLastInputChange] = useState(Date.now());
+  // input values are all stored in the auto object
+  // make a useEffect that will watch the auto object for changes and update the lastInputChange
+
+  useEffect(() => {
+    // console.log('auto object CHANGED!!!!!!!!!!!');
+    setLastInputChange(Date.now());
+  }, [auto]);
+
 
   // constants that change based on product
-  const baseID = user.availableFunds?.[props.product]?.base_currency;
-  const decimals = useProductDecimals(props.product, user.availableFunds);
+  const baseID = user.availableFunds?.[productID]?.base_currency;
+  const decimals = useProductDecimals(productID, user.availableFunds);
 
   const [simulation, setSimulation] = useState(true);
   // start date, default is one month ago
@@ -42,129 +87,98 @@ function AutoSetup(props) {
   const [simReinvestPercent, setSimReinvestPercent] = useState(100);
   const [detailedResults, setDetailedResults] = useState(false);
 
-  // setup results
-  const [orders, setOrders] = useState(<></>);
-  const [btcToBuy, setBtcToBuy] = useState(0);
-  const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
-  const [availableFundsBase, setAvailableFundsBase] = useState(0);
+  // const [btcToBuy, setBtcToBuy] = useState(0);
+  // const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
+  const availableQuote = user.availableFunds?.[productID]?.quote_available;
+  // const [availableFundsBase, setAvailableFundsBase] = useState(0);
+  const availableBase = user.availableFunds?.[productID]?.base_available;
+
+  // update the ref when the values change
+  // turn loading into a ref so it doesn't cause the useEffect to run when it changes, since the useEffect is what changes it
+  const loadingRef = useRef();
+  useEffect(() => {
+    loadingRef.current = false;
+  }, [])
 
 
-  function handleSizeCurve(event) {
-    console.log('event.target.value', event.target.value)
-    setSizeCurve(event.target.value)
-  }
+  useEffect(() => {
+    // console.log('running autoSetup useEffect', loadingRef.current)
+    // if any of the dependencies are undefined, don't run the autoSetup function
+    if (!user || !availableQuote || !currentPrice || !currentProduct) return;
 
-  function handleSimReinvest() {
-    setSimReinvest(!simReinvest)
-  }
+    // check if the last input change was more than 1 second ago
+    // if it wasn't, don't run the autoSetup function
+    if (loadingRef.current || (Date.now() - lastInputChange < 2000)) return;
+
+    loadingRef.current = true;
+
+    // console.log(loadingRef.current, 'running autoSetup')
+    const results = autoSetup(user, {
+      ...auto,
+      availableQuote: availableQuote,
+      tradingPrice: currentPrice,
+      product: currentProduct,
+      user: user,
+    });
+    setSetupResults(results);
+    // console.log('setting loading to false')
+    loadingRef.current = false;
+
+  }, [
+    lastInputChange,
+    user,
+    availableQuote,
+    currentPrice,
+    currentProduct,
+    auto,
+  ])
+
+  // // can we maybe rewrite the above useEffect using useCallback and useMemo?
+  // // first create a memoized result of the autoSetup function as imported from the autoSetup.js file
+  // const memoizedAutoSetup = useCallback(autoSetup, []);
+  // // then create a memoized result of the autoSetup function with the user, availableQuote, currentPrice, currentProduct, and auto objects as dependencies
+  // const memoizedAutoSetupWithDependencies = useMemo(() => memoizedAutoSetup(user, {
+  //   ...auto,
+  //   availableQuote: availableQuote,
+  //   tradingPrice: currentPrice,
+  //   product: currentProduct,
+  //   user: user,
+  // }), [user, availableQuote, currentPrice, currentProduct, auto])
+  // // then create a useEffect that will run the memoizedAutoSetupWithDependencies function
+  // useEffect(() => {
+  //   // console.log('running autoSetup useEffect', loadingRef.current)
+  //   if (!user || !availableQuote || !currentPrice || !currentProduct) return;
+  //   // if (loadingRef.current || (Date.now() - lastInputChange < 2000)) return;
+  //   if (loadingRef.current) return;
+  //   loadingRef.current = true;
+  //   // console.log(loadingRef.current, 'running autoSetup')
+  //   const results = memoizedAutoSetupWithDependencies;
+  //   setSetupResults(results);
+  //   // console.log('setting loading to false')
+  //   loadingRef.current = false;
+  // }, [memoizedAutoSetupWithDependencies, lastInputChange])
+  // // look man, I don't know what I'm doing, but this seems to at least not work any worse before
+  // // I'll come back to it later and rewrite it since I've integrated debouncing
+
+
 
   function handleIncrementType(event) {
-    setIncrementType(event.target.value)
-    console.log('event.target.value', event.target.value)
-    if (event.target.value === "dollars") {
-      setIncrement(100);
-    } else {
-      setIncrement(0.5);
-    }
+    // set the type of increment, dollars or percent
+    setAuto({
+      ...auto,
+      incrementType: event.target.value,
+      increment: (event.target.value === "dollars" ? 10 : 0.5)
+    });
   }
 
   function handleSizeType(event) {
-    setSizeType(event.target.value)
-    if (event.target.value === "quote") {
-      setSize(10);
-    } else {
-      setSize(0.001);
-    }
+    const sizeType = event.target.value;
+    setAuto({
+      ...auto,
+      sizeType: sizeType,
+      size: (sizeType === "quote" ? 10 : 0.001)
+    })
   }
-
-  function handleSkipFirst() {
-    setSkipFirst(!skipFirst)
-  }
-
-  function handleIgnoreFunds() {
-    setIgnoreFunds(!ignoreFunds)
-  }
-
-  const calculateResults = useCallback(
-    () => {
-      let payload = {
-        availableFunds: availableFundsUSD,
-        tradingPrice: socket.tickers[props.product].price,
-        // tradingPrice: 16000,
-        startingValue: startingValue,
-        skipFirst: skipFirst,
-        endingValue: endingValue,
-        ignoreFunds: ignoreFunds,
-        incrementType: incrementType,
-        increment: increment,
-        trade_pair_ratio: tradePairRatio,
-        base_size: base_size,
-        sizeType: sizeType,
-        product_id: props.product,
-        sizeCurve: sizeCurve,
-        maxSize: maxSize,
-        steepness: steepness,
-        user: user,
-      }
-
-      let setup = autoSetup(user, payload);
-
-      setCost(setup.cost)
-      // this will be the buy price of the last trade pair
-      // setSetupResults(setup.orderList[setup.orderList.length - 1]?.original_buy_price);
-      setSetupResults(setup);
-
-      // this will be the total number of trades made
-      setTotalTrades(setup.orderList.length);
-
-      // this will be how much btc goes on the books
-      setBtcToBuy(setup.btcToBuy)
-      // setBtcToBuy(0)
-
-      // setup.orderList && 
-      setOrders(setup.orderList.reverse().map((order, i) => {
-        return <SingleTrade key={i} order={order} preview={true} product={props.product} />
-      }))
-    }, [
-    user,
-    availableFundsUSD,
-    socket.tickers,
-    startingValue,
-    endingValue,
-    ignoreFunds,
-    incrementType,
-    increment,
-    tradePairRatio,
-    base_size,
-    sizeType,
-    props.product,
-    skipFirst,
-    sizeCurve,
-    maxSize,
-    steepness,
-  ])
-
-  useEffect(() => {
-    if (base_size !== null) {
-      calculateResults();
-    }
-  }, [startingValue, endingValue, increment, base_size, sizeType, skipFirst, sizeCurve, maxSize, steepness, calculateResults])
-
-  useEffect(() => {
-    if (user?.availableFunds?.[props.product]?.quote_available) {
-      setAvailableFundsUSD(user.availableFunds?.[props.product]?.quote_available);
-      setAvailableFundsBase(user.availableFunds?.[props.product]?.base_available);
-    }
-  }, [user.availableFunds, props.product])
-
-  // on component unmount, unset the simulation reducer
-  useEffect(() => {
-    return () => {
-      dispatch({ type: 'UNSET_SIMULATION_RESULT' });
-    }
-  }, [dispatch]);
-
-
 
   function submitAutoSetup(event) {
     event.preventDefault();
@@ -178,54 +192,30 @@ function AutoSetup(props) {
 
   function handleSimulation(event) {
     event.preventDefault();
-    console.log('simulating trades');
-    dispatch({
-      type: 'SIMULATE_TRADES',
+    console.log('simulating trades', availableQuote);
 
-      payload: {
-        simStartDate: simStartDate,
-        availableFunds: availableFundsUSD,
-        simReinvest: simReinvest,
-        simReinvestPercent: simReinvestPercent,
-        startingValue: startingValue,
-        skipFirst: skipFirst,
-        endingValue: endingValue,
-        ignoreFunds: ignoreFunds,
-        incrementType: incrementType,
-        increment: increment,
-        trade_pair_ratio: tradePairRatio,
-        base_size: base_size,
-        sizeType: sizeType,
-        product_id: props.product,
-        sizeCurve: sizeCurve,
-        maxSize: maxSize,
-        steepness: steepness,
-      }
+
+    startSimulation({
+      ...auto,
+      simStartDate: simStartDate,
+      availableQuote: availableQuote,
+
+      tradingPrice: currentPrice,
+      product: currentProduct,
+      simUser: { ...user, availableQuote: availableQuote, reinvest: simReinvest, reinvest_ratio: simReinvestPercent },
     })
+    
+    
   }
-
+  
   function autoTrader() {
-    let availableFunds = availableFundsUSD;
     // console.log('here is the current available funds', availableFunds);
-
-    dispatch({
-      type: 'AUTO_SETUP', payload: {
-        availableFunds: availableFunds,
-        tradingPrice: socket.tickers[props.product].price,
-        startingValue: startingValue,
-        skipFirst: skipFirst,
-        endingValue: endingValue,
-        ignoreFunds: ignoreFunds,
-        incrementType: incrementType,
-        increment: increment,
-        trade_pair_ratio: tradePairRatio,
-        base_size: base_size,
-        sizeType: sizeType,
-        product_id: props.product,
-        sizeCurve: sizeCurve,
-        maxSize: maxSize,
-        steepness: steepness,
-      }
+    startAutoSetup({
+      ...auto,
+      availableFunds: availableQuote,
+      tradingPrice: currentPrice,
+      
+      product: currentProduct,
     })
   }
 
@@ -233,7 +223,7 @@ function AutoSetup(props) {
     <div className="AutoSetup settings-panel scrollable">
       <div className="divider" />
       <h4>Auto Setup</h4>
-      {/* {JSON.stringify(user.availableFunds?.[props.product]?.quote_available)} */}
+      {/* {JSON.stringify(user.availableFunds?.[productID]?.quote_available)} */}
       {props.tips && <>
         <p>
           Enter the parameters you want and the bot will keep placing trades for you based on
@@ -243,43 +233,35 @@ function AutoSetup(props) {
         <p>
           Please be aware that the bot may slow down slightly with extremely large numbers of trades.
         </p>
-
-        {/* <div className="divider" /> */}
       </>}
 
-
       <div className='auto-setup-form-and-results'>
-
         <form className='auto-setup-form left-border' onSubmit={submitAutoSetup}>
-
-          <p>Current price: {socket.tickers[props.product].price}</p>
-
+          <p>Current price: {currentPrice}</p>
           {/* STARTING VALUE */}
           {props.tips
             ? <p>What dollar amount to start at?</p>
             : <p />}
           <label htmlFor='startingValue'>
-            Starting Value:
+            Starting Value: <span>{auto.startingValue}</span>
             <br />
-            <input
-              name='startingValue'
+            <DebouncedInput
+              onChange={(n) => setAuto({ ...auto, startingValue: Number(n) || 133 })}
+              initValue={auto.startingValue}
               type='number'
-              value={startingValue}
-              // step={10}
-              required
-              onChange={(event) => setStartingValue(Number(event.target.value))}
+              name='startingValue'
             />
           </label>
-          {(startingValue === 0 && !skipFirst) && <p className='red'>Starting value cannot be zero unless you skip first!</p>}
-          {(startingValue < 0 && !skipFirst) && <p className='red'>Starting value cannot be negative!</p>}
+          {(auto.startingValue === 0 && !auto.skipFirst) && <p className='red'>Starting value cannot be zero unless you skip first!</p>}
+          {(auto.startingValue < 0 && !auto.skipFirst) && <p className='red'>Starting value cannot be negative!</p>}
           <br />
 
           {/* SKIP FIRST */}
           <input
             name="skip_first"
             type="checkbox"
-            checked={skipFirst}
-            onChange={handleSkipFirst}
+            checked={auto.skipFirst}
+            onChange={(event) => setAuto({ ...auto, skipFirst: event.target.checked })}
           />
           <label htmlFor="skip_first">
             Skip first
@@ -293,15 +275,13 @@ function AutoSetup(props) {
             : <p />}
           {/* <br /> */}
           <label htmlFor='startingValue'>
-            Ending Value:
+            Ending Value: <span>{auto.endingValue}</span>
             <br />
-            <input
-              name='startingValue'
+            <DebouncedInput
+              onChange={(n) => setAuto({ ...auto, endingValue: Number(n) || 133 })}
+              initValue={auto.endingValue}
               type='number'
-              value={endingValue}
-              // step={10}
-              required
-              onChange={(event) => setEndingValue(Number(event.target.value))}
+              name='endingValue'
             />
           </label>
 
@@ -310,8 +290,8 @@ function AutoSetup(props) {
           <input
             name="ignore_funds"
             type="checkbox"
-            checked={ignoreFunds}
-            onChange={handleIgnoreFunds}
+            checked={auto.ignoreFunds}
+            onChange={(event) => setAuto({ ...auto, ignoreFunds: event.target.checked })}
           />
           <label htmlFor="ignore_funds">
             Ignore Available Funds
@@ -320,42 +300,41 @@ function AutoSetup(props) {
           {/* INCREMENT TYPE */}
           <p>Increment by:</p>
 
-          <input
-            type="radio"
-            name="increment_type"
-            value="dollars"
-            checked={incrementType === "dollars"}
-            onChange={handleIncrementType}
-          />
           <label htmlFor='dollars'>
+            <input
+              type="radio"
+              name="increment_type"
+              value="dollars"
+              checked={auto.incrementType === "dollars"}
+              onChange={handleIncrementType}
+            />
             Dollars
           </label>
 
-          <input
-            type="radio"
-            name="increment_type"
-            value="percentage"
-            checked={incrementType === "percentage"}
-            onChange={handleIncrementType}
-          />
           <label htmlFor='percentage'>
+            <input
+              type="radio"
+              name="increment_type"
+              value="percentage"
+              checked={auto.incrementType === "percentage"}
+              onChange={handleIncrementType}
+            />
             Percentage
           </label>
 
 
           {/* INCREMENT */}
           {props.tips
-            ? <p>What {incrementType === "dollars" ? "dollar amount" : "percentage"} to increment by?</p>
+            ? <p>What {auto.incrementType === "dollars" ? "dollar amount" : "percentage"} to increment by?</p>
             : <p />}
           <label htmlFor='increment'>
-            Increment:
+            Increment: <span>{auto.increment}</span>
             <br />
-            <input
-              name='increment'
+            <DebouncedInput
+              onChange={(n) => setAuto({ ...auto, increment: Number(n) || 133 })}
+              initValue={auto.increment}
               type='number'
-              value={increment}
-              required
-              onChange={(event) => setIncrement(Number(event.target.value))}
+              name='increment'
             />
           </label>
 
@@ -364,14 +343,13 @@ function AutoSetup(props) {
             ? <p>What is the trade-pair percent increase (how much each BUY should increase in price before selling)?</p>
             : <p />}
           <label htmlFor='ratio'>
-            Trade-pair percent increase:
+            Trade-pair percent increase: <span>{auto.trade_pair_ratio}</span>
             <br />
-            <input
-              name='ratio'
+            <DebouncedInput
+              onChange={(n) => setAuto({ ...auto, trade_pair_ratio: Number(n) || 133 })}
+              initValue={auto.trade_pair_ratio}
               type='number'
-              value={tradePairRatio}
-              required
-              onChange={(event) => setTradePairRatio(Number(event.target.value))}
+              name='ratio'
             />
           </label>
 
@@ -380,14 +358,14 @@ function AutoSetup(props) {
           {/* SIZE */}
           <p>Size in:</p>
 
-          <input
-            type="radio"
-            name="size_type"
-            value="quote"
-            checked={sizeType === "quote"}
-            onChange={handleSizeType}
-          />
           <label htmlFor='quote'>
+            <input
+              type="radio"
+              name="size_type"
+              value="quote"
+              checked={auto.sizeType === "quote"}
+              onChange={handleSizeType}
+            />
             USD
           </label>
 
@@ -395,7 +373,7 @@ function AutoSetup(props) {
             type="radio"
             name="size_type"
             value="base"
-            checked={sizeType === "base"}
+            checked={auto.sizeType === "base"}
             onChange={handleSizeType}
           />
           <label htmlFor='base'>
@@ -415,8 +393,8 @@ function AutoSetup(props) {
               type="radio"
               name="size_curve"
               value="linear"
-              checked={sizeCurve === "linear"}
-              onChange={handleSizeCurve}
+              checked={auto.sizeCurve === "linear"}
+              onChange={(e) => setAuto({ ...auto, sizeCurve: e.target.value })}
             />
             Linear
           </label>
@@ -426,62 +404,58 @@ function AutoSetup(props) {
               type="radio"
               name="size_curve"
               value="curve"
-              checked={sizeCurve === "curve"}
-              onChange={handleSizeCurve}
+              checked={auto.sizeCurve === "curve"}
+              onChange={(e) => setAuto({ ...auto, sizeCurve: e.target.value })}
             />
             Curve
           </label>
 
           {props.tips
-            ? <p>What size in {sizeType === "quote" ? "USD" : baseID} should each trade-pair be? </p>
+            ? <p>What size in {auto.sizeType === "quote" ? "USD" : baseID} should each trade-pair be? </p>
             : <p />}
 
-
           <label htmlFor='size'>
-            {sizeCurve === "curve" && "Min"} Size in {sizeType === "quote" ? "USD" : baseID}:
+            {auto.sizeCurve === "curve" && "Min"} Size in {
+              auto.sizeType === "quote"
+                ? "USD"
+                : baseID
+            }: <span>{auto.size}</span>
             <br />
-            <input
-              name='size'
+            <DebouncedInput
+              onChange={(n) => setAuto({ ...auto, size: Number(n) || 133 })}
+              initValue={auto.size}
               type='number'
-              value={base_size}
-              // step={.01}
-              required
-              onChange={(event) => setSize(Number(event.target.value))}
+              name='size'
             />
           </label>
 
-          {sizeCurve === "curve" && <br />}
+          {auto.sizeCurve === "curve" && <br />}
 
-          {sizeCurve === "curve" && <label htmlFor='size'>
-            Max Size in {sizeType === "quote" ? "USD" : baseID}:
+          {auto.sizeCurve === "curve" && <label htmlFor='size'>
+            Max Size in {auto.sizeType === "quote" ? "USD" : baseID}: <span>{auto.maxSize}</span>
             <br />
-            <input
-              name='size'
+            <DebouncedInput
+              onChange={(n) => setAuto({ ...auto, maxSize: Number(n) || 133 })}
+              initValue={auto.maxSize}
               type='number'
-              value={maxSize}
-              // step={.01}
-              required
-              onChange={(event) => setMaxSize(Number(event.target.value))}
+              name='size'
             />
           </label>}
 
-          {sizeCurve === "curve" && <br />}
+          {auto.sizeCurve === "curve" && <br />}
 
           {
-            sizeCurve === "curve" && <label htmlFor='size'>
-              Steepness:
+            auto.sizeCurve === "curve" && <label htmlFor='size'>
+              Steepness: <span>{auto.steepness}</span>
               <br />
-              <input
-                name='size'
+              <DebouncedInput
+                onChange={(n) => setAuto({ ...auto, steepness: Number(n) || 133 })}
+                initValue={auto.steepness}
                 type='number'
-                value={steepness}
-                required
-                onChange={(event) => setSteepness(Number(event.target.value))}
+                name='size'
               />
             </label>
           }
-
-
           {/* SUBMIT */}
           <br />
           <br />
@@ -539,7 +513,7 @@ function AutoSetup(props) {
                 name="simReinvest"
                 type="checkbox"
                 checked={simReinvest}
-                onChange={handleSimReinvest}
+                onChange={() => setSimReinvest(!simReinvest)}
               />
               Reinvest
             </label>
@@ -571,7 +545,8 @@ function AutoSetup(props) {
               ? <input className={`btn-store-api btn-blue medium ${user.theme}`} type="submit" name="submit" value="Start Setup" />
               : <p>Auto setup started!</p>
             /* button to run a simulation */
-            : (simulationReducer.status === 'idle' || simulationReducer.status === 'complete') && !user.simulating && <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={handleSimulation}>Run Simulation</button>
+            // : (!simLoading || simulationReducer.status === 'complete') && !user.simulating && <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={handleSimulation}>Run Simulation</button>
+            : !simLoading && !user.simulating && <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={handleSimulation}>Run Simulation</button>
           }
           {/* if in node dev env */}
           {process.env.NODE_ENV === "development" && <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={handleSimulation}>Force Simulation</button>}
@@ -591,36 +566,31 @@ function AutoSetup(props) {
             ? <div>
               <p>Simulation running...</p>
             </div>
-            : simulationReducer.status === "complete" && <div>
+            : simulationResults && !simLoading && <div>
 
               <p>Simulation complete!</p>
               {/* show optimum pair ratio */}
-              <p>Optimum pair percent increase: {simulationReducer.result.bestPairRatio.pairRatio}
+              <p>Optimum pair percent increase: {simulationResults.bestPairRatio.pairRatio}
                 {/* button to set the trade pair ratio to the optimum pair ratio */}
                 &nbsp;<button className={`btn-store-api btn-green medium ${user.theme}`} onClick={
                   (event) => {
                     event.preventDefault();
-                    setTradePairRatio(simulationReducer?.result?.bestPairRatio?.pairRatio);
+                    setAuto({ ...auto, trade_pair_ratio: simulationResults.bestPairRatio?.pairRatio });
                   }
                 }>Use It!</button>
               </p>
-              <p>This would have resulted in about ${simulationReducer.result.bestPairRatio.profit?.toFixed(2)} in profit over the specified duration.
+              <p>This would have resulted in about ${simulationResults.bestPairRatio.profit?.toFixed(2)} in profit over the specified duration.
                 Please note this is a rough estimate based on available historical data</p>
               {/* show optimum increment */}
               {/* <p>Optimum increment: {simulationReducer.bestIncrement}</p> */}
-
-
-
-
-
               <h4>Simulation Results</h4>
-              <p>Best pair ratio: {simulationReducer?.result?.bestPairRatio?.pairRatio}</p>
+              <p>Best pair ratio: {simulationResults.bestPairRatio?.pairRatio}</p>
               {/* button to to detailed results */}
               <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={() => setDetailedResults(!detailedResults)}>Detailed Results</button>
               {detailedResults && <div>
                 {/* list of simResults array from the reducer */}
                 <ul>
-                  {simulationReducer?.result?.simResults?.map((result, index) => {
+                  {simulationResults.simResults?.map((result, index) => {
                     return (
                       <li key={index}>
                         <p>Pair Ratio: {result.pairRatio} Profit: {result.profit}</p>
@@ -634,7 +604,7 @@ function AutoSetup(props) {
           }
         </form>
 
-        {setupResults?.valid
+        {setupResults.valid
           ? <div className='auto-setup-results'>
             <h4>Result</h4>
             <p>
@@ -649,7 +619,7 @@ function AutoSetup(props) {
             <p>
               Approximate number of trades to create:
               <br />
-              Total: <strong>{numberWithCommas(totalTrades)}</strong>&nbsp;
+              Total: <strong>{numberWithCommas(setupResults.orderList.length)}</strong>&nbsp;
               Buys: <strong>{numberWithCommas(setupResults?.buyCount)}</strong>&nbsp;
               Sells: <strong>{numberWithCommas(setupResults?.sellCount)}</strong>
             </p>
@@ -657,12 +627,12 @@ function AutoSetup(props) {
               However, there is a total limit of 10,000 trades placed per user. Latency may cause it to
               create more, in which case you got lucky.
             </p>}
-            {ignoreFunds
+            {auto.ignoreFunds
               ? <>
                 <p>
                   Total USD cost at current price:
                   <br />
-                  <strong>${numberWithCommas(((cost) > 0 ? cost : 0).toFixed(2))}</strong>
+                  <strong>${numberWithCommas(((setupResults.cost) > 0 ? setupResults.cost : 0).toFixed(2))}</strong>
                 </p>
                 <p>
                   USD to reserve:
@@ -672,28 +642,27 @@ function AutoSetup(props) {
                 <p>
                   {baseID} to reserve:
                   <br />
-                  <strong>{numberWithCommas(btcToBuy)}</strong>
+                  <strong>{numberWithCommas(setupResults.btcToBuy)}</strong>
                 </p>
                 <p>
                   {baseID} you have:
                   <br />
-                  <strong>{numberWithCommas(Number(availableFundsBase).toFixed(decimals.baseIncrement))}</strong>
+                  <strong>{numberWithCommas(Number(availableBase).toFixed(decimals.baseIncrement))}</strong>
                 </p>
                 <p>
                   {baseID} you need to buy manually:
                   <br />
-                  <strong>{numberWithCommas(((btcToBuy - availableFundsBase) > 0 ? btcToBuy - availableFundsBase : 0).toFixed(decimals.baseIncrement))}</strong>
+                  <strong>{numberWithCommas(((setupResults.btcToBuy - availableBase) > 0 ? setupResults.btcToBuy - availableBase : 0).toFixed(decimals.baseIncrement))}</strong>
                 </p>
               </>
               : <>
                 <p>
                   It will cost you:
                   <br />
-                  <strong>${numberWithCommas(((cost) > 0 ? cost : 0).toFixed(2))}</strong>
+                  <strong>${numberWithCommas(((setupResults.cost) > 0 ? setupResults.cost : 0).toFixed(2))}</strong>
                 </p>
               </>
             }
-
 
           </div>
           : <div className='auto-setup-results'>
@@ -703,11 +672,16 @@ function AutoSetup(props) {
             </p>
           </div>}
       </div>
-      {/* {JSON.stringify(orders[0])} */}
-      {/* {console.log(decimals, 'decimals!!!!!!!!!!!!!!!')} */}
-      {(orders.length > 0) && sizeCurve !== 'linear' && setupResults.valid && <Graph data={orders} product={decimals} setupResults={setupResults} />}
+
+      {(setupResults.valid
+        && setupResults.orderList.length > 0)
+        && <Graph data={setupResults.orderList} product={decimals} setupResults={setupResults} />}
       <h4>Preview</h4>
-      {orders}
+      {setupResults.valid
+        && setupResults?.orderList?.length > 0
+        && structuredClone(setupResults.orderList).reverse().map((order, i) => {
+          return <SingleTrade key={i} order={order} preview={true} product={decimals} />
+        })}
 
       <div className="divider" />
     </div>
@@ -715,16 +689,3 @@ function AutoSetup(props) {
 }
 
 export default AutoSetup;
-
-// ctx.strokeStyle = 'black';
-// ctx.lineWidth = 1;
-
-// ctx.beginPath();
-// ctx.moveTo((data[0].original_buy_price - minPrice) * xScale, canvas.height - (data[0].buy_quote_size - minSize) * yScale);
-// for (let i = 1; i < data.length; i++) {
-//   const x = (data[i].original_buy_price - minPrice) * xScale;
-//   const y = canvas.height - (data[i].buy_quote_size - minSize) * yScale;
-
-//   ctx.lineTo(x, y);
-// }
-// ctx.stroke();

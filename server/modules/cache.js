@@ -349,11 +349,15 @@ const userStorage = new class {
   }
   // delete the user if there is one
   deleteUser(userID) {
-    console.log(this.idList.indexOf(Number(userID)), userID, 'index to delete');
-    this.idList.splice(this.idList.indexOf(Number(userID)), 1);
-    this[userID].deleting = true;
-    // send an orderUpdate which will log out the user
-    messenger[userID].orderUpdate();
+    try {
+      console.log(this.idList.indexOf(Number(userID)), userID, '<-index to delete', this.idList);
+      this.idList.splice(this.idList.indexOf(Number(userID)), 1);
+      this[userID].deleting = true;
+      // send an orderUpdate which will log out the user
+      messenger[userID].orderUpdate();
+    } catch (err) {
+      console.log(err, 'error deleting user');
+    }
   }
 
 };

@@ -20,6 +20,7 @@ const tradeRouter = require('./routes/trade.router');
 const accountRouter = require('./routes/account.router');
 const ordersRouter = require('./routes/orders.router');
 const settingsRouter = require('./routes/settings.router');
+const adminRouter = require('./routes/admin.router');
 
 // bot processes
 
@@ -49,6 +50,7 @@ app.use('/api/trade', tradeRouter);
 app.use('/api/account', accountRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/admin', adminRouter);
 
 // Serve static files
 app.use(express.static('build'));

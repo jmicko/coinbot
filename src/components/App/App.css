@@ -4,30 +4,30 @@
 
 html {
   --scrollbarBG: #50575a;
-  --thumbBG: #41bcc060;
+  --thumbBG    : #41bcc060;
 }
 
 body {
   /* background-color: #c7c7b1; */
-  background-color: #313131;
+  background-color   : #313131;
   /* font-family     : 'Syne Mono', monospace; */
 }
 
 /* .body.darkTheme { */
-  /* color: white; */
-  /* font-family     : 'Syne Mono', monospace; */
+/* color: white; */
+/* font-family     : 'Syne Mono', monospace; */
 /* } */
 
 .App {
   /* height: 100vh; */
-  background-color: #c7c7b1;
-  font-family     : 'Syne Mono', monospace;
+  background-color   : #c7c7b1;
+  font-family        : 'Syne Mono', monospace;
   /* background-color: #313131; */
 }
 
 .App.darkTheme {
   background-color: #313131;
-  color: white;
+  color           : white;
   font-family     : 'Syne Mono', monospace;
 }
 
@@ -47,7 +47,7 @@ body {
 }
 
 .info {
-  margin     : .4rem;
+  margin: .4rem;
 }
 
 .small {
@@ -58,8 +58,8 @@ body {
 
 body,
 .scrollable {
-  overflow-y: auto;
-  max-height: 100%;
+  overflow-y     : auto;
+  max-height     : 100%;
   scrollbar-color: var(--thumbBG) var(--scrollbarBG);
 }
 
@@ -75,33 +75,35 @@ body::-webkit-scrollbar-track,
 
 body::-webkit-scrollbar-thumb,
 .scrollable::-webkit-scrollbar-thumb {
-  background-color: var(--thumbBG) ;
+  background-color: var(--thumbBG);
   /* border-radius: 6px; */
-  border: 3px solid var(--scrollbarBG);
+  border          : 3px solid var(--scrollbarBG);
 }
+
 @media (max-width: 800px) {
+
   body,
   .scrollable {
-    overflow-y: auto;
-    /* max-height: unset; */
+    overflow-y     : auto;
+    /* max-height  : unset; */
     scrollbar-color: var(--thumbBG) var(--scrollbarBG);
   }
-  
+
   body::-webkit-scrollbar,
   .scrollable::-webkit-scrollbar {
     width: 18px;
   }
-  
+
   body::-webkit-scrollbar-track,
   .scrollable::-webkit-scrollbar-track {
     background: var(--scrollbarBG);
   }
-  
+
   body::-webkit-scrollbar-thumb,
   .scrollable::-webkit-scrollbar-thumb {
-    background-color: var(--thumbBG) ;
+    background-color: var(--thumbBG);
     /* border-radius: 6px; */
-    border: 3px solid var(--scrollbarBG);
+    border          : 3px solid var(--scrollbarBG);
   }
 }
 
@@ -109,24 +111,24 @@ body::-webkit-scrollbar-thumb,
   border: 1px solid black;
 }
 
-.left-border{
+.left-border {
   /* border-left: #7b7b7b 2px solid; */
   /* border-top: black 1px solid; */
   padding-left: .8rem;
-  position: relative;
+  position    : relative;
 }
 
 .left-border::before,
 .left-border::after {
   position: absolute;
-  width: .3rem;
-  height: 100%;
-  content: "";
+  width   : .3rem;
+  height  : 100%;
+  content : "";
 
-  left: 0;
-  top: 0;
-  border-left: 3px solid #7b7b7b;
-  border-top: 3px solid #7b7b7b;
+  left         : 0;
+  top          : 0;
+  border-left  : 3px solid #7b7b7b;
+  border-top   : 3px solid #7b7b7b;
   border-bottom: 3px solid #7b7b7b;
 }
 
@@ -135,11 +137,13 @@ body::-webkit-scrollbar-thumb,
   /* this variable is the size of the notch */
   --notchSize: 1rem;
   /* clip-path shows whatever is inside the specified region. Everything else is hidden */
-  clip-path: /* the region is a polygon. 8 points are defined, one for each corner */
-  polygon( 0% var(--notchSize), var(--notchSize) 0%, /* to keep corner sizes the same, the position is calculated as the 
+  clip-path  :
+    /* the region is a polygon. 8 points are defined, one for each corner */
+    polygon(0% var(--notchSize), var(--notchSize) 0%,
+      /* to keep corner sizes the same, the position is calculated as the 
       difference between the notch size (1rem), and the total length of the 
       side our point is on */
-  calc(100% - var(--notchSize)) 0%, 100% var(--notchSize), 100% calc(100% - var(--notchSize)), calc(100% - var(--notchSize)) 100%, var(--notchSize) 100%, 0% calc(100% - var(--notchSize)));
+      calc(100% - var(--notchSize)) 0%, 100% var(--notchSize), 100% calc(100% - var(--notchSize)), calc(100% - var(--notchSize)) 100%, var(--notchSize) 100%, 0% calc(100% - var(--notchSize)));
   /* 1rem of padding to more than account for the size of the notch */
   padding: 1rem;
 }
@@ -150,37 +154,37 @@ body::-webkit-scrollbar-thumb,
 
 .divider {
   background-color: black;
-  height: 1px;
-  width: 100%;
-  margin-top: 1rem;
+  height          : 1px;
+  width           : 100%;
+  margin-top      : 1rem;
 }
 
 .dark {
   background-color: darkgrey;
-  border: none;
+  border          : none;
 }
 
 .dark.darkTheme {
   background-color: rgb(70, 70, 70);
-  border: none;
+  border          : none;
 }
 
 /* === BUTTONS === */
 
-button.medium{
-  font-size:medium;
+button.medium {
+  font-size: medium;
 }
 
 .btn-nav {
-  color: white;
-  font-size:larger;
+  color           : white;
+  font-size       : larger;
   background-color: #363535;
   font-family     : inherit;
   box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
 }
 
 .btn-nav.selected {
-  color: black;
+  color           : black;
   background-color: #ffffff;
   font-family     : inherit;
   box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
@@ -216,7 +220,7 @@ button.medium{
 
 .btn-red.darkTheme {
   background-color: #7c3434;
-  color: #ffffff;
+  color           : #ffffff;
   font-family     : inherit;
   box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
 }
@@ -243,7 +247,7 @@ button.medium{
 }
 
 .btn-green.darkTheme {
-  color: #ffffff;
+  color           : #ffffff;
   background-color: rgb(84, 109, 83);
   font-family     : inherit;
   box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
@@ -267,7 +271,7 @@ button.medium{
 }
 
 .btn-blue.darkTheme {
-  color: #ffffff;
+  color           : #ffffff;
   background-color: rgb(48, 55, 66);
   font-family     : inherit;
   box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
@@ -282,6 +286,40 @@ button.medium{
   outline         : none;
   /* change color when focused to resolve accessibility concerns */
   background-color: #7773b398;
+}
+
+.btn-yellow {
+  background-color: #fff7a0;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-yellow.darkTheme {
+  color           : #ffffff;
+  background-color: #867124;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-yellow:hover {
+  background-color: #a0956c;
+}
+
+.btn-yellow.darkTheme:focus {
+  outline         : none;
+  background-color: #614f11;
+  box-shadow      : inset 2px 2px #00000099, inset -2px -2px #ffffff99;
+}
+
+.btn-yellow:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: #afb37398;
+}
+
+.btn-file {
+  margin-bottom: .2rem;
 }
 
 button:active {
@@ -299,11 +337,24 @@ input {
   /* margin       : 0% .2%; */
 }
 
+label span {
+  color: #ab1f1f;
+}
+
 input.darkTheme {
-  /* background      : rgb(240, 235, 229); */
-  /* color        : rgb(209, 202, 192); */
   background-color: rgb(145, 145, 145);
   font-family     : inherit;
-  /* width        : 100%; */
-  /* margin       : 0% .2%; */
+}
+
+select {
+  color           : #ffffff;
+  background-color: #2b2b2b;
+  font-family     : inherit;
+}
+
+select:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: #6d6d6dd3;
 }

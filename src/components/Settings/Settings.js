@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
 import Admin from './Admin/Admin';
 import AutoSetup from './AutoSetup/AutoSetup';
 import General from './General/General';
@@ -10,13 +9,14 @@ import History from './History/History';
 import './Settings.css'
 import SettingsNav from './SettingsNav/SettingsNav';
 import BulkDelete from './BulkDelete/BulkDelete';
+import { useUser } from '../../contexts/UserContext';
 
 
 
 function Settings(props) {
   const [settingsPage, setSettingsPage] = useState('general');
   const [tips, setTips] = useState(false);
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  const { user } = useUser();
 
 
 

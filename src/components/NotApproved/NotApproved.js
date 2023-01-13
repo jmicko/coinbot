@@ -1,12 +1,12 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
+import { useUser } from '../../contexts/UserContext';
 import './NotApproved.css'
 
 
 
 
 function NotApproved() {
-  const user = useSelector((store) => store.accountReducer.userReducer);
+  const { user } = useUser();
 
   return (
     <div className="NotApproved scrollable boxed">

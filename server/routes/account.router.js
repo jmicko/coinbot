@@ -55,7 +55,7 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
 
 /** GET route to get user products from db **/
 router.get('/products', rejectUnauthenticated, async (req, res) => {
-  console.log('get products route hit');
+  console.log(req.user.username, 'get products route hit+++++++++++++++++++++++++++++');
   const userID = req.user.id;
   try {
     // get active products from db
@@ -68,7 +68,10 @@ router.get('/products', rejectUnauthenticated, async (req, res) => {
     }
     // get all products from db
     let allProducts = await databaseClient.getUserProducts(userID);
-    res.send({ activeProducts, allProducts });
+    // console.log(activeProducts.length, 'active products');
+    const products = { activeProducts, allProducts }
+    // console.log(products, 'products');
+    res.send(products).status(200);
   }
   catch (err) {
     console.log(err, 'error getting products');
@@ -80,7 +83,7 @@ router.get('/products', rejectUnauthenticated, async (req, res) => {
 router.put('/products', rejectUnauthenticated, async (req, res) => {
   console.log('put products route hit');
   const userID = req.user.id;
-  // console.log(req.body, 'req.body');
+  console.log(req.body, 'req.body');
   const productID = req.body.product_id;
   const active = !req.body.active_for_user;
   console.log(productID, active, 'productID and active');
@@ -110,11 +113,11 @@ router.put('/products', rejectUnauthenticated, async (req, res) => {
 /**
 * GET route to get total profit estimate
 */
-router.get('/profits/:product', rejectUnauthenticated, async (req, res) => {
+router.get('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
   console.log('profits get route');
   const userID = req.user.id;
-  const product = req.params.product;
-  // console.log(product, 'product');
+  const product_id = req.params.product_id;
+  // console.log(product_id, 'product_id');
   // console.log(req.user, 'req.user in profits route');
 
   const durations = ['24 hour', '1 week', '30 day', '1 year'];
@@ -123,14 +126,14 @@ router.get('/profits/:product', rejectUnauthenticated, async (req, res) => {
     for (let i = 0; i < durations.length; i++) {
       const duration = durations[i];
       // get profit for each duration by product
-      let productProfit = await databaseClient.getProfitForDurationByProduct(userID, product, duration);
+      let productProfit = await databaseClient.getProfitForDurationByProduct(userID, product_id, duration);
       // get profit for each duration by all products
       let allProfit = await databaseClient.getProfitForDurationByAllProducts(userID, duration);
       // add profit to profits array along with duration
       profits.push({ duration, productProfit, allProfit });
     }
 
-    const sinceDate = await databaseClient.getProfitSinceDate(userID, req.user.profit_reset, product)
+    const sinceDate = await databaseClient.getProfitSinceDate(userID, req.user.profit_reset, product_id)
     // add since reset to profits array
     profits.push(sinceDate);
 
@@ -139,6 +142,36 @@ router.get('/profits/:product', rejectUnauthenticated, async (req, res) => {
   } catch (err) {
     console.log(err, 'error in profits route:');
     res.sendStatus(500)
+  }
+});
+
+/**
+* PUT route to reset profits
+*/
+// todo - add profit reset date column to products table and enable resetting per product
+// also this should take in a date in the params so the user can reset profits for a specific date
+router.put('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
+  console.log('reset profit route');
+  // get the object keys
+
+  console.assert(process.env.NODE_ENV === 'development', process.env , 'reset profit route should only be used in development');
+  Object.keys(process.env).forEach(key => {
+    console.log(key, 'key');
+  });
+
+  const profit_reset = new Date();
+  const userID = req.user.id;
+  const queryText = `UPDATE "limit_orders" SET "include_in_profit" = false WHERE "userID"=$1 AND "settled"=true;`;
+  const timeQuery = `UPDATE "user_settings" SET "profit_reset" = $1 WHERE "userID" = $2;`
+  try {
+    await pool.query(queryText, [userID]);
+    await pool.query(timeQuery, [profit_reset, userID]);
+
+    await userStorage[userID].update();
+    res.sendStatus(200);
+  } catch (err) {
+    console.log(err, 'problem resetting profit');
+    res.sendStatus(500);
   }
 });
 
@@ -277,9 +310,10 @@ router.put('/exportCandles', rejectUnauthenticated, async (req, res) => {
 
 /**
  * GET route to find all files in the exports folder with the user's username in the filename
+ * send the file names to the client
 */
-router.get('/exportFiles', rejectUnauthenticated, async (req, res) => {
-  console.log('export files route hit');
+router.get('/exportableFiles', rejectUnauthenticated, async (req, res) => {
+  console.log('export files files files files files route hit');
   try {
     const username = req.user.username;
     const files = await fs.readdirSync('server/exports');
@@ -405,29 +439,6 @@ router.post('/importCurrentJSON', rejectUnauthenticated, async (req, res) => {
   // }
 });
 
-/**
-* GET route to log status of a user's loop
-*/
-router.get('/debug', rejectUnauthenticated, async (req, res) => {
-  const userID = req.query.id;
-  if (req.user.admin) {
-    try {
-      const userInfo = cache.getSafeStorage(userID);
-      const userErrors = cache.getErrors(userID);
-      console.log('debug - full storage', userInfo);
-      console.log('errors', userErrors);
-      userInfo.userID !== null
-        ? res.send(userInfo).status(200)
-        : res.sendStatus(500);
-    } catch (err) {
-      console.log(err, 'problem debug route');
-      res.sendStatus(500)
-    }
-  } else {
-    console.log('error debug user route - not admin');
-    res.sendStatus(403);
-  }
-});
 
 /**
 * GET route to get user's errors from cache
@@ -453,50 +464,13 @@ router.get('/messages', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   try {
     const userMessages = {}
-    userMessages.general = cache.getMessages(userID);
-    userMessages.chat = cache.getChatMessages(userID);
+    userMessages.botMessages = cache.getMessages(userID);
+    userMessages.chatMessages = cache.getChatMessages(userID);
     // console.log('getting Messages', userMessages);
     res.send(userMessages);
   } catch (err) {
     console.log(err, 'problem debug route');
     res.sendStatus(500)
-  }
-});
-
-/**
- * PUT route to change status of pause
- */
-router.put('/pause', rejectUnauthenticated, async (req, res) => {
-  console.log('pause route');
-  const user = req.user;
-  try {
-    await databaseClient.setPause(!user.paused, user.id);
-
-    await userStorage[user.id].update();
-
-    // tell user to update user
-    messenger[req.user.id].userUpdate();
-    res.sendStatus(200);
-  } catch (err) {
-    console.log(err, 'problem in PAUSE ROUTE');
-    res.sendStatus(500);
-  }
-});
-
-/**
-* PUT route to change theme
-*/
-router.put('/theme', rejectUnauthenticated, async (req, res) => {
-  console.log('theme route');
-  const user = req.user;
-  try {
-    const queryText = `UPDATE "user_settings" SET "theme" = $1 WHERE "userID" = $2`;
-    await pool.query(queryText, [req.body.theme, user.id]);
-    await userStorage[user.id].update();
-    res.sendStatus(200);
-  } catch (err) {
-    console.log(err, 'problem in THEME ROUTE');
-    res.sendStatus(500);
   }
 });
 
@@ -511,6 +485,7 @@ router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
     await pool.query(queryText, [!user.reinvest, user.id]);
 
     await userStorage[user.id].update();
+    messenger[user.id].userUpdate();
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in REINVEST ROUTE');
@@ -529,6 +504,7 @@ router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
     await pool.query(queryText, [req.body.reinvest_ratio, user.id]);
 
     await userStorage[user.id].update();
+    messenger[user.id].userUpdate();
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in REINVEST ROUTE');
@@ -537,7 +513,7 @@ router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
-* PUT route to change status of reinvestment
+* PUT route to change maximum size of trades
 */
 router.put('/tradeMax', rejectUnauthenticated, async (req, res) => {
   console.log('trade max route');
@@ -547,9 +523,28 @@ router.put('/tradeMax', rejectUnauthenticated, async (req, res) => {
     await pool.query(queryText, [!user.max_trade, user.id]);
 
     await userStorage[user.id].update();
+    messenger[user.id].userUpdate();
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in tradeMax ROUTE');
+    res.sendStatus(500);
+  }
+});
+
+
+/**
+* PUT route to set reserve
+*/
+router.put('/reserve', rejectUnauthenticated, async (req, res) => {
+  const user = req.user;
+  try {
+    const queryText = `UPDATE "user_settings" SET "reserve" = $1 WHERE "userID" = $2`;
+    await pool.query(queryText, [req.body.reserve, user.id]);
+    await userStorage[user.id].update();
+    res.sendStatus(200);
+    messenger[user.id].userUpdate();
+  } catch (err) {
+    console.log(err, 'problem in reserve ROUTE');
     res.sendStatus(500);
   }
 });
@@ -570,6 +565,7 @@ router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
     }
 
     await userStorage[user.id].update();
+    messenger[user.id].userUpdate();
     res.sendStatus(200);
   } catch (err) {
     console.log(err, 'problem in maxTradeSize ROUTE');
@@ -578,25 +574,23 @@ router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
-* POST route to reset profits
+* PUT route to change status of reinvestment ratio
 */
-router.post('/resetProfit', rejectUnauthenticated, async (req, res) => {
-  console.log('reset profit route');
-  const profit_reset = new Date();
-  const userID = req.user.id;
-  const queryText = `UPDATE "limit_orders" SET "include_in_profit" = false WHERE "userID"=$1 AND "settled"=true;`;
-  const timeQuery = `UPDATE "user_settings" SET "profit_reset" = $1 WHERE "userID" = $2;`
+router.put('/postMaxReinvestRatio', rejectUnauthenticated, async (req, res) => {
+  const user = req.user;
   try {
-    await pool.query(queryText, [userID]);
-    await pool.query(timeQuery, [profit_reset, userID]);
-
-    await userStorage[userID].update();
+    console.log("postMaxReinvestRatio route hit", req.body);
+    const queryText = `UPDATE "user_settings" SET "post_max_reinvest_ratio" = $1 WHERE "userID" = $2`;
+    await pool.query(queryText, [req.body.postMaxReinvestRatio, user.id]);
+    await userStorage[user.id].update();
+    messenger[user.id].userUpdate();
     res.sendStatus(200);
   } catch (err) {
-    console.log(err, 'problem resetting profit');
+    console.log(err, 'problem in postMaxReinvestRatio ROUTE');
     res.sendStatus(500);
   }
 });
+
 
 /**
 * POST route to store API details
@@ -643,7 +637,7 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   } catch (err) {
     if (err.response?.status === 401) {
       console.log('Invalid API key');
-      res.sendStatus(500);
+      res.sendStatus(401);
     } else {
       console.log(err, 'problem updating api details');
       res.sendStatus(500);

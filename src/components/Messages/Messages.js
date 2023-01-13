@@ -1,28 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useState } from 'react';
+import { useUser } from '../../contexts/UserContext';
 import { useSocket } from '../../contexts/SocketProvider';
 import './Messages.css'
+import { useData } from '../../contexts/DataContext';
 
 
 function Messages() {
-  const dispatch = useDispatch();
   const socket = useSocket();
-  const user = useSelector((store) => store.accountReducer.userReducer);
-  const botMessages = useSelector((store) => store.accountReducer.botMessages);
-  const botErrors = useSelector((store) => store.errorsReducer.botErrors);
-  const chatMessages = useSelector((store) => store.accountReducer.chatMessages);
+  const { user } = useUser();
+  const { messages: { botMessages, chatMessages }, botErrors } = useData()
+
   const [collapsed, setCollapsed] = useState(false);
   const [newMessage, setNewMessage] = useState('');
 
   function toggleCollapse() {
     setCollapsed(!collapsed);
   }
-
-  useEffect(() => {
-    dispatch({ type: 'FETCH_BOT_ERRORS' });
-    dispatch({ type: 'FETCH_BOT_MESSAGES' });
-  }, [])
-
 
   function sendChat(event) {
     event.preventDefault();
