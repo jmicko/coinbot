@@ -6,6 +6,7 @@ import { cache, messenger, userStorage, botSettings, cbClients } from './cache.j
 import { databaseClient } from './databaseClient.js';
 // const { rejectUnauthenticatedSocket } = require('./authentication-middleware');
 import { rejectUnauthenticatedSocket } from './authentication-middleware.js';
+import { devLog } from '../../src/shared.js';
 // const { sleep } = require('../../src/shared');
 // import { sleep } from '../../src/shared';
 
@@ -76,7 +77,7 @@ async function startWebsocket(userID) {
   // const products = ['BTC-USD', 'ETH-USD'];
   const products = await getProducts();
   cbClients[userID].setProducts(products);
-  console.log(cbClients[userID].products, 'cbClients[userID]');
+  // devLog(cbClients[userID].products, 'cbClients[userID]');
   // console.log(products, 'products in ws');
 
   async function getProducts() {

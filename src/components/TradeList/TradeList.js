@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef, } from 'react';
-
 import { useSocket } from '../../contexts/SocketProvider.js';
 import SingleTrade from '../SingleTrade/SingleTrade.js'
 import coinbotFilled from "../../../src/coinbotFilled.png";

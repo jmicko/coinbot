@@ -3,6 +3,7 @@ import session from 'express-session';
 import pgSession from 'connect-pg-simple';
 const pgS = pgSession(session);
 import { pool } from './pool.js';
+import { devLog } from '../../src/shared.js';
 
 if (process.env.SERVER_SESSION_SECRET === 'pleaseForTheLoveOfMoneyPutADifferentSecretHere') {
   console.log('Please change the session secret environment variable in .env');
@@ -20,8 +21,6 @@ const secret = process.env.NODE_ENV === 'production'
   ? CryptoJS.lib.WordArray.random(256).toString()
   : process.env.SERVER_SESSION_SECRET;
 process.env.SERVER_SESSION_SECRET = secret;
-
-console.log('Session secret:', secret);
 
 const sessionMiddleware = session({
   store: new pgS({
