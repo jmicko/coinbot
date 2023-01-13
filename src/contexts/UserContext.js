@@ -34,7 +34,11 @@ export function UserProvider({ children }) {
   async function login(payload) {
     console.log(payload, 'payload in login')
     // hit the login POST route
-    await fetch('/api/user/login', { ...userConfig, method: 'POST', body: JSON.stringify(payload) })
+    await fetch('/api/user/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
     refreshUser()
   }
 

@@ -23,15 +23,17 @@ if (process.env.DATABASE_URL) {
     idleTimeoutMillis: 30000, // how long a client is allowed to remain idle before being closed
   };
 } else {
+  // alert if no env variables are set
+  if (!process.env.PGHOST || !process.env.PGUSER || !process.env.PGPASSWORD || !process.env.PGPORT || !process.env.PGDATABASE) {
+    console.log('No environment variables set for database connection. Using defaults, this may not work.');
+  }
   config = {
-    // you can change the below line manually but 
-    // be carefull uploading to github or other public repo!
-    // Or configure your own process.env.
+    // will refer to defaults if no env variables are set
     host: process.env.PGHOST || 'localhost', // Server hosting the postgres database. Assuming locally hosted database if none specified.
     // next 2 lines can be removed if hosting as a user with access to postgres. Otherwise set up 
     // in .env file
-    user: process.env.PGUSER,
-    password: process.env.PGPASSWORD,
+    user: process.env.PGUSER || 'postgres',
+    password: process.env.PGPASSWORD || 'postgres',
     port: process.env.PGPORT || 5432, // env var: PGPORT
     database: process.env.PGDATABASE || 'coinbot', // env var: PGDATABASE
     max: 10, // max number of clients in the pool

@@ -119,7 +119,7 @@ async function syncOrders(userID) {
         for (let j = 0; j < durations.length; j++) {
           // check if the candles are currently being updated
           if (userStorage[userID].candlesBeingUpdated[activeProducts[i].product_id]?.[durations[j]]) {
-            // if they are, skip this productππ
+            // if they are, skip this product
             console.log('====================skipping candles for ', activeProducts[i].product_id, ' because they are already being updated====================');
             continue;
           }
@@ -296,7 +296,7 @@ async function fullSync(userID) {
         // get fees
         cbClients[userID].getTransactionSummary({ user_native_currency: 'USD' })
       ]);
-      // store the lists of orders in the corresponding consts so they can be compared
+      // store the lists of orders in the corresponding constants so they can be compared
       const dbOrders = results[0];
       const allCbOrders = results[1].orders;
       const fees = results[2];

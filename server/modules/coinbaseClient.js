@@ -510,7 +510,7 @@ class Coinbase {
 
         const options = this.signRequest(data, API);
         // make the call
-        // console.log(data, 'new order confige thing');
+        // console.log(data, 'new order config thing');
         let response = await axios.request(options);
         resolve(response.data);
       } catch (err) {
