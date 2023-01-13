@@ -373,7 +373,7 @@ async function quickSync(userID) {
       // todo - maybe this should go after the updateMultipleOrders function so it will fire on same loop
       const reorders = await databaseClient.getReorders(userID, botSettings.orders_to_sync)
       // combine the arrays
-      toCheck = unsettledFills.concat(reorders);
+      const toCheck = unsettledFills.concat(reorders);
       // set orders to check so the next process can access them without needing to pass params through
       userStorage[userID].addToCheck(toCheck);
       resolve(toCheck);
