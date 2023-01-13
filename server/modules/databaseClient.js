@@ -267,7 +267,7 @@ const updateTrade = (order) => {
     }
     // console.log(columns.length, 'columns');
 
-    finalSqlText = (columns.length === 1)
+    let finalSqlText = (columns.length === 1)
       ? singleSqlText + sqlText + ` = `
       : multiSqlText + sqlText + `) = (`
 
