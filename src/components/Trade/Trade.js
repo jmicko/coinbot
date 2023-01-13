@@ -6,6 +6,7 @@ import IncrementButtons from './IncrementButtons.js';
 import { numberWithCommas } from '../../shared.js';
 import { useUser } from '../../contexts/UserContext.js';
 import { useData } from '../../contexts/DataContext.js';
+import LimitOrder from './LimitOrder.js';
 
 
 function Trade() {
@@ -31,7 +32,7 @@ function Trade() {
   const [amountTypeIsUSD, setAmountTypeIsUSD] = useState(true);
   const [tradeType, setTradeType] = useState(true);
 
-  const [collapse, setCollapse] = useState(true);
+  const [collapse, setCollapse] = useState(false);
   const { width } = useWindowDimensions();
   const [basicAmount, setBasicAmount] = useState(0);
   const [basicSide, setBasicSide] = useState('BUY');
@@ -200,135 +201,11 @@ function Trade() {
   return (
     !collapse || width < 800
       ? tradeType
+        // ? <LimitOrder />
         ? <div className="Trade scrollable boxed" >
           <h3 className={`title ${user.theme}`}>{width > 800 && <button className={`btn-blue ${user.theme}`} onClick={toggleCollapse} >&#9664;</button>} New Trade-Pair <button className={`btn-blue ${user.theme}`} onClick={toggleTradeType} >Switch</button></h3>
           {/* form for setting up individual trade-pairs */}
-          <form className="new-trade-form" onSubmit={submitTransaction} >
-            <div className="number-inputs">
-              {/* input for setting the price/BTC per transaction. Can be adjusted in $500 steps, or manually input */}
-              <label htmlFor="transaction_price">
-                Trade price per 1 BTC (in USD): <button className={`btn-blue ${user.theme}`} onClick={(event) => getCurrentPrice(event)}> Get Current (rounded)</button>
-              </label>
-              <input
-                className={user.theme}
-                type="number"
-                name="transaction_price"
-                value={Number(price)}
-                // todo - this could possibly be changed to 100, or add a selector menu thing to toggle between different amounts
-                step={1}
-                required
-                onChange={(event) => setTransactionPrice(Number(event.target.value))}
-              />
-
-              <IncrementButtons
-                firstButton={quote_increment * 10}
-                roundTo={quoteIncrementDecimals}
-                currentValue={price}
-                changeValue={setTransactionPrice}
-                theme={user.theme}
-              />
-            </div>
-
-            {/* INPUT FOR AMOUNT IN BTC */}
-            {!amountTypeIsUSD
-              ? <div className="number-inputs">
-                {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
-                <label htmlFor="transaction_amount">
-                  Trade amount in {base_currency_id}:
-                  <button className={`btn-blue ${user.theme}`} onClick={(event) => amountTypeHandler(event, true)}>Switch</button>
-                </label>
-                <input
-                  className={user.theme}
-                  type="number"
-                  name="transaction_amount"
-                  value={Number(transactionAmountBTC)}
-                  // step={0.001}
-                  required
-                  onChange={(event) => handleTransactionAmount(event.target.value)}
-                />
-                <IncrementButtons
-                  firstButton={base_increment * 10000}
-                  roundTo={baseIncrementDecimals}
-                  currentValue={transactionAmountBTC}
-                  changeValue={handleTransactionAmount}
-                  theme={user.theme}
-                />
-              </div>
-
-              /* INPUT FOR AMOUNT IN USD */
-              : <div className="number-inputs">
-                {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
-                <label htmlFor="transaction_amount">
-                  Trade amount in {quote_currency_id}:
-                  <button className={`btn-blue ${user.theme}`} onClick={(event) => amountTypeHandler(event, false)}>Switch</button>
-                </label>
-                <input
-                  className={user.theme}
-                  type="number"
-                  name="transaction_amount"
-                  value={Number(transactionAmountUSD)}
-                  // step={0.001}
-                  required
-                  onChange={(event) => handleTransactionAmount(event.target.value)}
-                />
-                <IncrementButtons
-                  firstButton={quote_increment * 10}
-                  roundTo={quoteIncrementDecimals}
-                  currentValue={transactionAmountUSD}
-                  changeValue={handleTransactionAmount}
-                  theme={user.theme}
-                />
-              </div>
-            }
-
-
-            <div className="number-inputs">
-              {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
-              <label htmlFor="trade-pair-ratio">
-                Trade pair percent increase:
-              </label>
-              <input
-                className={user.theme}
-                type="number"
-                name="trade-pair-ratio"
-                value={Number(trade_pair_ratio)}
-                step={0.001}
-                required
-                onChange={(event) => setTradePairRatio(Number(event.target.value))}
-              />
-              <IncrementButtons
-                firstButton={0.001}
-                roundTo={3}
-                currentValue={trade_pair_ratio}
-                changeValue={setTradePairRatio}
-                theme={user.theme}
-              />
-              <input className={`btn-send-trade btn-blue ${user.theme}`} type="submit" name="submit" value="Start New Trade-Pair" />
-            </div>
-
-
-            {/* display some details about the new transaction that is going to be made */}
-            <div className={`boxed dark ${user.theme}`}>
-              <h4 className={`title ${user.theme}`}>New position</h4>
-              <p><strong>Trade Pair Details:</strong></p>
-              <p className="info">Buy price: <strong>${numberWithCommas(Number(price).toFixed(quoteIncrementDecimals))}</strong> </p>
-              <p className="info">Sell price <strong>${numberWithCommas(sellPrice.toFixed(quoteIncrementDecimals))}</strong></p>
-              <p className="info">Price margin: <strong>{numberWithCommas(priceMargin.toFixed(quoteIncrementDecimals))}</strong> </p>
-              <p className="info">Volume <strong>{transactionAmountBTC}</strong> </p>
-              <p><strong>Cost at this volume:</strong></p>
-              <p className="info"><strong>BUY*:</strong> ${numberWithCommas(volumeCostBuy.toFixed(quoteIncrementDecimals))}</p>
-              <p className="info"><strong>SELL*:</strong>${numberWithCommas(volumeCostSell.toFixed(quoteIncrementDecimals))}</p>
-              <p className="info"><strong>BUY FEE*:</strong> ${buyFee.toFixed(8)}</p>
-              <p className="info"><strong>SELL FEE*:</strong> ${sellFee.toFixed(8)}</p>
-              <p className="info"><strong>TOTAL FEES*:</strong> ${totalfees.toFixed(8)}</p>
-              <p className="info"><strong>PAIR MARGIN*:</strong> ${numberWithCommas(pairMargin.toFixed(8))}</p>
-              <p className="info"><strong>PAIR PROFIT*:</strong> ${numberWithCommas(pairProfit.toFixed(8))}</p>
-              <p className="small info">
-                *Costs, fees, margins, and profits, are estimated and may be different at the time of transaction.
-                This is mostly due to rounding issues and market conditions.
-              </p>
-            </div>
-          </form>
+          <LimitOrder />
           {/* </div> */}
         </div>
 

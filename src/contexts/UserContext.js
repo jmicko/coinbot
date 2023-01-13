@@ -53,7 +53,7 @@ export function UserProvider({ children }) {
   return (
     <UserContext.Provider
       value={
-        { user, userLoading, userError, refreshUser, logout, login, registerNew, deleteYourself }
+        { user, takerFee: user.taker_fee, makerFee: user.maker_fee, userLoading, userError, refreshUser, logout, login, registerNew, deleteYourself }
       }>
       {children}
     </UserContext.Provider>

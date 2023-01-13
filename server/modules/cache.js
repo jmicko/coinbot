@@ -452,12 +452,8 @@ const cache = {
   },
 
   getUser: (userID) => {
-    // make a deep copy so you don't delete the api from the user
-    // !userStorage[userID] && console.log(userStorage[userID], 'getting user from storage!!');
+    // make a deep copy so you don't accidentally change the user
     const user = structuredClone(userStorage[userID])
-    // console.log(user, 'GETTTINGH USER FROM STORAGE');
-    // console.log(user, userStorage[userID], 'user from get user function');
-    // delete user.api
     return user
   },
 
