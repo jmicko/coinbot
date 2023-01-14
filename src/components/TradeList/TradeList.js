@@ -83,7 +83,11 @@ function TradeList(props) {
 
         {user.botMaintenance
           ? <strong className='red'>~~~UNDER MAINTENANCE~~~</strong>
-          : <img className="coinbot-image" src={coinbotFilled} alt="coinbot" />
+          : <div>
+            <div className='pixelart-to-css-coinbot' />
+            <div className='pixelart-to-css-btc' />
+          </div>
+          // <img className="coinbot-image" src={coinbotFilled} alt="coinbot" />
         }
 
         {lowestSell !== 0 && highestBuy >= 0
