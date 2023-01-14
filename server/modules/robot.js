@@ -301,6 +301,8 @@ async function fullSync(userID) {
       const allCbOrders = results[1].orders;
       const fees = results[2];
 
+      // console.log('full sync', dbOrders.length, allCbOrders.length);
+
       // need to save the fees for more accurate Available funds reporting
       // fees don't change frequently so only need to do this during full sync
       await databaseClient.saveFees(fees, userID);

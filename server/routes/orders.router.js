@@ -186,7 +186,7 @@ router.post('/:product_id', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   const userID = req.user.id;
   const order = req.body;
-  console.log('in post order route', order);
+  // console.log('in post order route', order);
   if (user.active && user.approved) {
     // tradeDetails const should take in values sent from trade component form
     const tradeDetails = {
@@ -201,10 +201,7 @@ router.post('/:product_id', rejectUnauthenticated, async (req, res) => {
       trade_pair_ratio: Number(order.trade_pair_ratio),
       client_order_id: uuidv4()
     };
-    if (order.type) {
-      tradeDetails.type = 'market';
-      // delete tradeDetails.limit_price;
-    }
+    console.log('trade details', tradeDetails);
     try {
       // create a fake order, but set it to reorder
       let fakeOrder = {
@@ -243,6 +240,7 @@ router.post('/:product_id', rejectUnauthenticated, async (req, res) => {
         cancel_message: '',
         reorder: true
       }
+      console.log('order to store', fakeOrder);
       // store the fake order in the db. It will be ordered later in the reorder function
       await databaseClient.storeTrade(fakeOrder, tradeDetails, fakeOrder.created_time);
       // console.log(fakeOrder, 'trade saved to db');

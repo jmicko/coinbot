@@ -15,7 +15,7 @@ const numberWithCommas = (x) => {
   // for now, use this
   // console.log('x', x)
   if (x !== null && x !== undefined) {
-    let parts = Number(x).toString().split(".");
+    let parts = x.toString().split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     return parts.join(".");
   } else {
@@ -457,4 +457,23 @@ function devLog(...args) {
   }
 }
 
-export { autoSetup, sleep, numberWithCommas, addProductDecimals, granularities, devLog }
+const no = (e) => { e.preventDefault(); }
+const tNum = (e) => { no(e); return Number(e.target.value); }
+
+const toFloor = (value, rounding) => {
+  
+  return Math.floor(value * rounding) / rounding;
+}
+const fixedFloor = (value, rounding) => {
+  // find number of times rounding can be divided by 10
+  const logRound = Math.floor(Math.log10(rounding));
+  devLog(logRound, 'logRound');
+  return (Math.floor(value * rounding) / rounding).toFixed(Number(logRound));
+}
+const fixedRound = (value, rounding) => {
+  const logRound = Math.floor(Math.log10(rounding));
+  devLog(logRound, 'logRound');
+  return (Math.round(value * rounding) / rounding).toFixed(Number(logRound));
+}
+
+export { autoSetup, sleep, numberWithCommas, addProductDecimals, granularities, devLog, no, tNum, toFloor, fixedFloor, fixedRound }
