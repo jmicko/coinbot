@@ -19,7 +19,6 @@ class Coinbase {
     this.ws = null;
     this.products = null;
     // this.openSocket = this.openSocket.bind(this);
-    // console.log(this,'new coinbase class thing');
   }
 
   // update the products array
@@ -54,7 +53,6 @@ class Coinbase {
     }
 
     function subscribe(products, channelName, ws) {
-      // console.log('products: %s', products.join(','));
       const message = {
         type: 'subscribe',
         channel: channelName,
@@ -95,7 +93,6 @@ class Coinbase {
         if (setup.statusHandler) {
           setup.statusHandler('timeout')
         }
-        // console.log(setup.timeout, 'timeout')
         this.terminate();
       }, setup.timeout || 10000);
     }
@@ -179,10 +176,8 @@ class Coinbase {
       // add new param
       options.url += `${key}=${params[key]}&`;
     });
-    // console.log(options.url);
     // cut off the last & symbol
     options.url = options.url.slice(0, -1)
-    // console.log(options.url);
   }
 
   // CALL IT LIKE THIS coinbase.getAccounts({ limit: 250, someKey:whateverValue })
@@ -331,7 +326,6 @@ class Coinbase {
         const product_id = params.product_id;
         // delete product_id from params
         delete params.product_id;
-        // console.log(params);
         // data should just be blank
         const data = null;
         const API = {
@@ -359,7 +353,6 @@ class Coinbase {
         const product_id = params.product_id;
         // delete product_id from params
         delete params.product_id;
-        // console.log(params);
         // data should just be blank
         const data = null;
         const API = {
@@ -480,7 +473,6 @@ class Coinbase {
         }
 
         // sign the request
-        // console.log(data, 'is it a MARKET ORDER');
 
         if (data.order_configuration?.market_market_ioc?.base_size) {
           // this will be a market order and we need to fake it by making limit orders with extreme prices
@@ -500,17 +492,14 @@ class Coinbase {
             // .toFixed(8)
           };
 
-          // console.log(tradeDetails, 'details for placeMarketOrder');
           const result = await this.placeMarketOrder(tradeDetails)
           resolve(result);
           return
           // get current price
         }
-        // console.log('market order should not go past this line');
 
         const options = this.signRequest(data, API);
         // make the call
-        // console.log(data, 'new order config thing');
         let response = await axios.request(options);
         resolve(response.data);
       } catch (err) {

@@ -14,11 +14,9 @@ const botSettings = new class BotSettings {
     const newBotSettings = await databaseClient.getBotSettings();
     // save settings to the cache
     Object.assign(this, newBotSettings)
-    // console.log(botSettings, 'refreshing bot settings');
   }
   change(settings) {
     Object.assign(this, settings)
-    // console.log(this);
   }
   get() {
     return structuredClone(this);
@@ -77,7 +75,6 @@ class User {
     this.candlesBeingUpdated[product_id][granularity] = boolean;
   }
   getUser() {
-    // console.log('getting the user')
     return structuredClone(this);
   }
   // update available funds
@@ -132,7 +129,6 @@ class User {
   }
   async update() {
     const user = await databaseClient.getUserAndSettings(this.userID);
-    // console.log(this.userID, user, 'the user in update()');
     this.userID = user.id;
     this.username = user.username;
     this.admin = user.admin;
@@ -279,7 +275,6 @@ const cbClients = new class {
 
     Object.assign(apiStorage[userID], userAPI)
 
-    // console.log(this, userAPI, 'the new cbClient');
     if (userAPI.CB_ACCESS_KEY?.length) {
       this[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET, ['BTC-USD', 'ETH-USD']);
       userStorage[userID].activate(true);
@@ -309,7 +304,6 @@ const userStorage = new class {
     // get the user id
     const userID = user.id;
     const userAndSettings = await databaseClient.getUserAndSettings(userID)
-    // console.log(userAndSettings,'user and settings when creating new user');
     this.idList.push(userID);
     // create user object at index of user id for user storage
     // need to create user first because other things depend on it
@@ -398,12 +392,10 @@ const cache = {
     // create user object at index of user id for user storage
     // need to create user first because other things depend on it
     userStorage[userID] = new User(user)
-    // console.log(userStorage[userID], 'after storing user in storage');
     // create an object to store messages and errors and sockets to send them with
     messenger[userID] = new Messenger(userID);
     // create object for api at index of user id
     // apiStorage[userID] = new Api(userID);
-    // console.log(messenger, userID, 'new socket storage');
 
     // cache the API from the db
     try {
@@ -503,12 +495,10 @@ const cache = {
     if (messenger[userID].errors.length > 1000) {
       messenger[userID].errors.length = 1000;
     }
-    // console.log(messenger);
     // tell Dom to update errors
     messenger[userID].sockets.forEach(socket => {
       // find all open sockets for the user
       if (socket.userID === userID) {
-        // console.log(socket.userID, userID)
         const msg = {
           type: 'errorUpdate',
         }
@@ -532,7 +522,6 @@ const cache = {
 
 
   getMessages: (userID) => {
-    // console.log(messenger[userID], 'user messenger');
     return messenger[userID].messages;
   },
 
@@ -542,7 +531,6 @@ const cache = {
     const messages = structuredClone(messenger[userID].messages);
     // extract the chats
 
-    // console.log(messages, '<-- what is this');
     messages.forEach(message => {
       if (message.type === 'chat') {
         chats.push(message);
@@ -568,7 +556,6 @@ const cache = {
   // API STORAGE
   storeAPI: (userID, api) => {
     Object.assign(apiStorage[userID], api)
-    // console.log(apiStorage[userID], 'SAVING NEW API TO STORAGE______________');
   },
 
   getAPI: (userID) => {
@@ -578,7 +565,6 @@ const cache = {
   // get all cache storage for a user but remove API before returning
   getSafeStorage: (userID) => {
     // create a deep copy of the user's storage object so that it can be changed
-    // console.log('getting safe storage');
     const safeStorage = userStorage[userID]
       ? structuredClone(userStorage[userID])
       : { user: null, api: null };

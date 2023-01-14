@@ -7,7 +7,7 @@ import { cache, botSettings, userStorage, messenger, cbClients } from "./cache.j
 // const { startWebsocket } = require("./websocket");
 import { startWebsocket } from "./websocket.js";
 // const { sleep, granularities, addProductDecimals } = require("../../src/shared");
-import { sleep, granularities, addProductDecimals } from "../../src/shared.js";
+import { sleep, granularities, addProductDecimals, devLog } from "../../src/shared.js";
 
 // start a sync loop for each active user
 async function startSync() {
@@ -18,7 +18,6 @@ async function startSync() {
     // get all users from the db
     const userList = await databaseClient.getAllUsers();
     // start the loops for each user
-    // console.log(userList, 'user list user list000000000000000000000');
     userList.forEach(async user => {
       await initializeUserLoops(user);
       // deSyncOrderLoop(user, 0);
@@ -73,7 +72,6 @@ async function processingLoop(userID) {
     await sleep(1000);
   }
   heartBeat(userID, 'beat');
-  // console.log('orders processed for user:', userID);
   if (user) {
     setTimeout(() => {
       processingLoop(userID);
@@ -100,7 +98,6 @@ async function syncOrders(userID) {
 
   try {
     const loopNumber = userStorage[userID].getLoopNumber();
-    // console.log(loopNumber, '<-loop number', (loopNumber - 1) % botSettings.full_sync, '<-shrek', botSettings.full_sync);
     // send heartbeat signifying start of new loop
     if (user) {
       heartBeat(userID, 'heart');
@@ -111,7 +108,6 @@ async function syncOrders(userID) {
       // update the candles in the database for each product that the user has active
       // first get the active products
       const activeProducts = await databaseClient.getActiveProducts(userID);
-      // console.log(activeProducts, 'active products');
       // then update the candles for each product
       console.log('====================updating candles====================');
       for (let i = 0; i < activeProducts.length; i++) {
@@ -153,7 +149,6 @@ async function syncOrders(userID) {
       } else {
 
         // *** QUICK SYNC ***
-        // console.log('quick sync');
         //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
         await quickSync(userID);
         // desync extra orders
@@ -162,7 +157,6 @@ async function syncOrders(userID) {
 
       // *** UPDATE ORDERS IN DATABASE ***
       await updateMultipleOrders(userID);
-      // console.log('success!!!!!!');
       // update funds after everything has been processed
       // await updateFunds(userID);
 
@@ -182,10 +176,8 @@ async function syncOrders(userID) {
       const t1 = performance.now();
       // API is limited to 10/sec, so make sure the bot waits that long between loops
       if (100 - (t1 - t0) > 0) {
-        // console.log(`sync took ${t1 - t0} milliseconds.`, 100 - (t1 - t0));
         await sleep(100 - (t1 - t0));
       }
-      // console.log(user?.id, 'user');
       // wait however long the admin requires, then start new loop
       setTimeout(() => {
         userStorage[userID].clearStatus();
@@ -268,7 +260,6 @@ async function deSync(userID) {
       allToDeSync.push(...buysToDeSync);
       allToDeSync.push(...sellsToDeSync);
 
-      // console.log(ordersToDeSync[0], 'all to desync');
 
       // cancel them all
       await cancelAndReorder(allToDeSync, userID);
@@ -301,7 +292,6 @@ async function fullSync(userID) {
       const allCbOrders = results[1].orders;
       const fees = results[2];
 
-      // console.log('full sync', dbOrders.length, allCbOrders.length);
 
       // need to save the fees for more accurate Available funds reporting
       // fees don't change frequently so only need to do this during full sync
@@ -338,7 +328,6 @@ async function quickSync(userID) {
       // get the 100 most recent fills for the account
       const response = await cbClients[userID].getFills({ limit: 100 });
       const fills = response.fills; //this is the same as allFills
-      // console.log(fillResponse);
       // get an array of just the IDs
       const fillsIds = []
       fills.forEach(fill => fillsIds.push(fill.order_id))
@@ -411,11 +400,9 @@ async function processOrders(userID) {
             // check if the trade should be canceled. This is the point of no return
             const willCancel = userStorage[userID].checkCancel(dbOrder.order_id);
             if (!willCancel) {
-              // console.log(tradeDetails,'trade details');
               // place the new trade on coinbase
               let cbOrder = await cbClients[userID].placeOrder(tradeDetails);
               // let cbOrder = false
-              // console.log(cbOrder, 'cbOrder');
               // if the new trade was successfully placed...
               if (cbOrder.success) {
                 // ...get the new order from coinbase since not all details are returned when placing
@@ -511,10 +498,8 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
   } else {
     // if it is a sell turning into a buy, check if user wants to reinvest the funds
     if (user.reinvest) {
-      // console.log(user.reinvest, 'reinvesting');
       const orderSize = Number(dbOrder.base_size);
 
-      // console.log('===================== REINVESTING ======================', orderSize, 'orderSize');
 
       // get available funds from userStorage
       const availableFunds = !simulation
@@ -527,20 +512,12 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
         ? availableFunds[productID]?.quote_available
         : user.availableQuote;
 
-      // console.log(availableUSD, 'availableUSD');
-
-      // console.log(availableFunds[dbOrder.product_id].quote_available, 'availableFunds in flipTrade');
-      // console.log(user.actualavailable_usd, 'user.actualavailable_usd')
-      // console.log(dbOrder, 'dbOrder in flipTrade');
-
       // find out how much profit there was
       const BTCprofit = calculateProfitBTC(dbOrder);
-      // console.log(BTCprofit, 'BTCprofit ++++++++++++++++++++++++++ STILL BROKEN???');
 
       let amountToReinvest = BTCprofit * reinvestRatio;
       console.log(amountToReinvest, 'amountToReinvest');
       if (amountToReinvest <= 0) {
-        // console.log('negative profit');
         amountToReinvest = 0;
         !simulation && messenger[userID].newError({
           type: 'error',
@@ -553,7 +530,6 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
       // safer to round down the investment amount. 
       // If user invest 100%, it should not round up and potentially take their balance negative
       const newSize = Math.floor((orderSize + amountToReinvest) * 100000000) / 100000000;
-      // console.log(newSize, orderSize, amountToReinvest, 'newSize COULD BREAK HERE IF CONCATENATING STRINGS');
 
       const buyPrice = dbOrder.original_buy_price;
       const maxSizeBTC = Number((maxTradeSize / buyPrice).toFixed(8));
@@ -577,18 +553,14 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
         if (leftoverFunds > user.reserve) {
           // if there is enough money left in the account to reinvest, set the base_size to the max base_size
           tradeDetails.base_size = maxSizeBTC;
-          // console.log( tradeDetails.base_size, 'reinvesting to max size');
         }
 
         // check if the new base_size has already surpassed the user set max. If it has, reinvest based on the user set post-max settings
         if ((orderSize >= maxSizeBTC) && (postMaxReinvestRatio > 0)) {
           // at this point, the post max ratio should be used
           const postMaxAmountToReinvest = BTCprofit * postMaxReinvestRatio;
-          // console.log('postMaxAmountToReinvest', postMaxAmountToReinvest);
           const postMaxNewSize = Math.floor((orderSize + postMaxAmountToReinvest) * 100000000) / 100000000;
-          // console.log('postMaxNewSize', postMaxNewSize);
           tradeDetails.base_size = postMaxNewSize;
-          // console.log( tradeDetails.base_size, 'reinvesting to post max size');
         }
       } else if (newSize < 0.000016) {
         // todo - this should maybe not be in an else if statement.
@@ -610,23 +582,10 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
 
         // only set the new base_size if it will stay above the reserve
         if (leftoverFunds > user.reserve) {
-          // console.log('there is enough money left to reinvest', newSize, 'newSize');
           tradeDetails.base_size = newSize.toFixed(8);
-          // console.log( tradeDetails.base_size, 'reinvesting to newSize BUT COULD BREAK HERE');
-        } else {
-          // console.log('there is NOT enough money left to reinvest');
-          // console.log(trade.base_size, 'trade.base_size');
-          // console.log(allFlips, 'allFlips')
-          // console.log(allFlipsValue, 'allFlipsValue');
-          // console.log(user.maker_fee, 'user.maker_fee');
-          // console.log(availableUSD, 'availableUSD')
-
-          // console.log(leftoverFunds, 'leftoverFunds', user.reserve, 'user.reserve');
         }
       }
 
-    } else {
-      // console.log('not reinvesting');
     }
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "BUY"
@@ -644,14 +603,11 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
     }
   }
 
-  // console.log('tradeDetails in flipTrade', tradeDetails);
   // return the tradeDetails object
   return tradeDetails;
 }
 
 function calculateProfitBTC(dbOrder) {
-
-  // console.log(dbOrder, 'dbOrder in calculateProfitBTC');
 
   let margin = (dbOrder.original_sell_price - dbOrder.original_buy_price)
   let grossProfit = Number(margin * dbOrder.base_size)
@@ -670,7 +626,6 @@ async function updateMultipleOrders(userID, params) {
     const ordersArray = params?.ordersArray
       ? params.ordersArray
       : userStorage[userID].getToCheck();;
-    // console.log(ordersArray, 'orders array');
 
     if (ordersArray?.length > 0) {
       messenger[userID].newMessage({
@@ -699,7 +654,6 @@ async function updateMultipleOrders(userID, params) {
         } else {
           // if not a reorder, look up the full details on CB
           let updatedOrder = await cbClients[userID].getOrder(orderToCheck.order_id);
-          // console.log(updatedOrder, 'updated order');
           console.log(orderToCheck, 'order to check');
           // if it was cancelled, set it for reorder
           if (updatedOrder.order.status === 'CANCELLED') {
@@ -741,7 +695,7 @@ async function reorder(orderToReorder) {
       const upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.order_id);
       // get the product from the db
       const product = await databaseClient.getProduct(upToDateDbOrder.product_id, userID);
-      console.log(product, 'product');
+      devLog(product, 'product in reorder');
       // get the number of decimals for the base_increment of the product. This is used to round the base_size
       const decimals = addProductDecimals(product);
 
@@ -754,10 +708,8 @@ async function reorder(orderToReorder) {
       };
       // send the new order with the trade details
       let pendingTrade = await cbClients[userID].placeOrder(tradeDetails);
-      // console.log(pendingTrade, 'pending trade');
       if (pendingTrade.success) {
         let newTrade = await cbClients[userID].getOrder(pendingTrade.order_id)
-        // console.log(newTrade, 'newTrade');
         // because the storeDetails function will see the upToDateDbOrder as the "old order", need to store previous_total_fees as just total_fees
         upToDateDbOrder.total_fees = upToDateDbOrder.previous_total_fees;
         // store the new trade in the db. the trade details are also sent to store trade position prices
@@ -834,17 +786,14 @@ function orderElimination(dbOrders, cbOrders) {
 
 
 async function getAvailableFunds(userID, userSettings) {
-  // console.log('getting available funds');
   userStorage[userID].updateStatus('get available funds');
   return new Promise(async (resolve, reject) => {
     try {
-      // console.log(userSettings.active);
       if (!userSettings?.active) {
         console.log('not active!');
         reject('user is not active')
         return;
       }
-      // console.log('user is active');
       const takerFee = Number(userSettings.taker_fee) + 1;
 
       const results = await Promise.all([
@@ -869,8 +818,6 @@ async function getAvailableFunds(userID, userSettings) {
         const quoteCurrency = product.quote_currency_id;
         const baseSpent = await databaseClient.getSpentBase(userID, product.product_id);
         const quoteSpent = await databaseClient.getSpentQuote(userID, takerFee, product.product_id);
-        // console.log(baseSpent, 'baseSpent');
-        // console.log(quoteSpent, 'quoteSpent');
 
         // if the base currency is already in the array, add the amount spent to the existing amount spent
         if (currencyArray.some(currency => currency.currency_id === baseCurrency)) {
@@ -890,23 +837,16 @@ async function getAvailableFunds(userID, userSettings) {
           currencyArray.push({ currency_id: quoteCurrency, amount_spent: quoteSpent })
         }
       }
-      // console.log(currencyArray, 'currencyArray');
-
       // calculate the available funds for each currency rounded to 16 decimal places
       const availableFundsNew = [];
-      // console.log(accounts, 'accounts');
       for (let i = 0; i < currencyArray.length; i++) {
         const currency = currencyArray[i];
-        // console.log(currency, 'currency');
         // get the currency from the accounts
         const [account] = accounts.filter(account => account.currency === currency.currency_id);
-        // console.log(currency, account, 'account');
         // calculate the available funds
         const available = Number(account?.available_balance?.value || 0) + Number(account?.hold?.value || 0) - currency.amount_spent;
-        // console.log(available, 'available');
         // round to 16 decimal places
         const availableRounded = available.toFixed(16);
-        // console.log(availableRounded, 'availableRounded');
         // add the currency and available funds to the array
         availableFundsNew.push({ currency_id: currency.currency_id, available: availableRounded })
       }
@@ -1003,14 +943,12 @@ async function updateProductCandles(userID, productID, granularity) {
         'ONE_DAY': 86400,
       }
       // get the the candle from the database with the most recent time
-      const recentCandle = await databaseClient.getMostRecentCandle(userID, productID, granularity);
+      const recentCandle = await databaseClient.getMostRecentCandle(productID, granularity);
       // get the oldest candle from the database
-      const oldestCandle = await databaseClient.getOldestCandle(userID, productID, granularity);
-      // console.log(recentCandle?.start, 'recentCandle');
-      // console.log(oldestCandle?.start, 'oldestCandle');
+      const oldestCandle = await databaseClient.getOldestCandle(productID, granularity);
       // if there is no recent candle, get the candles from the last month and save them to the database
       if (!recentCandle || !oldestCandle) {
-        // console.log('no candle');
+        console.log('no candle');
         // end date is today in unix time
         const endDate = Math.floor(new Date().getTime() / 1000);
         const startDate = getStartDate(endDate);
@@ -1025,11 +963,11 @@ async function updateProductCandles(userID, productID, granularity) {
           granularity: granularity
         });
         const candles = result.candles;
-        // console.log(candles, 'candles');
         // save the candles to the database
-        await databaseClient.saveCandles(userID, productID, granularity, candles);
+        await databaseClient.saveCandles(productID, granularity, candles);
         doItAgain(candles);
       } else {
+        // devLog('recent candle', recentCandle);
         // if there is a recent candle, get the candles that are after the recent candle and save them to the database
         // start date in unix time should be 1 second after the recent candle
         const start = recentCandle.start + 1;
@@ -1038,8 +976,6 @@ async function updateProductCandles(userID, productID, granularity) {
         const startDate = getStartDate(endDate);
 
         const end = getEndDate(start);
-
-        // console.log(start, end, Date.now(), 'start end now');
 
         // const end = start + 6 * 200 * 3600;
         const result = await cbClients[userID].getMarketCandles({
@@ -1054,7 +990,6 @@ async function updateProductCandles(userID, productID, granularity) {
         candles.unshift(recentCandle);
         // ensure that the candles are in order by start property
         candles.sort((a, b) => a.start - b.start);
-        // console.log(candles, 'candles');
         // if there are more than one candle, 
         // ensure that the distance between each candle is the same as the seconds of granularity as defined in the granularitySeconds object
         if (candles.length > 1) {
@@ -1066,15 +1001,10 @@ async function updateProductCandles(userID, productID, granularity) {
             const distance = currentStart - previousStart;
             const distanceNeeded = granularitySeconds[granularity];
             if (distance !== distanceNeeded) {
-              // console.log( 'candles array integrity is compromised');
-              // console.log(distance, 'distance');
-              // console.log(currentStart, previousStart, 'candle start');
-              // console.log(candles[i + 1], candles[i], candles[i - 1], candles[i -2], 'candles');
               integrity = false;
               // if the integrity is compromised, find the missing candles
               for (let j = previousStart + distanceNeeded; j < currentStart; j += distanceNeeded) {
                 missing.push(j);
-                // console.log(j, 'missing candle');
               }
             }
           }
@@ -1087,7 +1017,7 @@ async function updateProductCandles(userID, productID, granularity) {
         }
 
         // save the candles to the database
-        await databaseClient.saveCandles(userID, productID, granularity, candles);
+        await databaseClient.saveCandles(productID, granularity, candles);
 
         doItAgain(candles);
       }
@@ -1114,11 +1044,9 @@ async function updateProductCandles(userID, productID, granularity) {
             text: 'error getting candles',
             data: err
           });
-          // console.log(err, 'error getting more candles');
         }
       }, 1000);
     } else {
-      // console.log(candles.length, 'no more candles to get');
       // set the user's candlesBeingUpdated for the product and duration to false
       userStorage[userID].updateCandlesBeingUpdated(productID, granularity, false);
     }
@@ -1186,11 +1114,9 @@ async function updateProductCandles(userID, productID, granularity) {
 
 
 async function alertAllUsers(alertMessage) {
-  // console.log('alerting all users of change');
   try {
     const userList = await databaseClient.getAllUsers();
     userList.forEach(user => {
-      // console.log(user);
       messenger[user.id].newMessage({
         type: 'general',
         text: alertMessage,

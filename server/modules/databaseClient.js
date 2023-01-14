@@ -2,13 +2,13 @@
 import { pool } from './pool.js';
 // const { v4: uuidv4 } = require('uuid');
 import { v4 as uuidv4 } from 'uuid';
+import { devLog } from '../../src/shared.js';
 
 // stores the details of a trade-pair. The originalDetails are details that stay with a trade-pair when it is flipped
 // flipped_at is the "Time" shown on the interface. It has no other function
 const storeTrade = (newOrder, originalDetails, flipped_at) => {
   console.log('NEW ORDER IN STORETRADE', newOrder, 'originalDetails', originalDetails, 'flipped_at', flipped_at);
   return new Promise(async (resolve, reject) => {
-    // console.log('NEW ORDER IN STORETRADE', newOrder);
     // add new order to the database
     const sqlText = `INSERT INTO "limit_orders" 
       (
@@ -103,9 +103,7 @@ const storeTrade = (newOrder, originalDetails, flipped_at) => {
 // update a trade by any set of parameters
 const updateTrade = (order) => {
   return new Promise(async (resolve, reject) => {
-    // console.log(order, 'order to build string from');
     const columns = []
-    // console.log('NEW ORDER IN STORETRADE', newOrder);
     // add new order to the database
     let first = true;
     let singleSqlText = `UPDATE "limit_orders" SET `;
@@ -266,7 +264,6 @@ const updateTrade = (order) => {
       first ? first = false : sqlText += ', '
       order.cancel_message && (sqlText += `"cancel_message"`) && columns.push(order.cancel_message);
     }
-    // console.log(columns.length, 'columns');
 
     let finalSqlText = (columns.length === 1)
       ? singleSqlText + sqlText + ` = `
@@ -284,9 +281,6 @@ const updateTrade = (order) => {
       : `)\nWHERE "order_id" = $${columns.length + 1}\nRETURNING *;`;
 
     columns.push(order.order_id)
-
-    // console.log(finalSqlText, 'finalSqlText');
-    // console.log(columns, 'columns');
 
 
     if (columns.length === 2) {
@@ -308,7 +302,7 @@ const updateTrade = (order) => {
 // IT MUST USE THE USER ID FROM PASSPORT AUTHENTICATION!!!
 // otherwise you could import false trades for someone else!
 const importTrade = (details, userID) => {
-  console.log(details.id);
+  console.log(details.id, 'details.id in importTrade');
   return new Promise((resolve, reject) => {
     // add new order to the database
     const sqlText = `INSERT INTO "orders"
@@ -361,7 +355,6 @@ const insertProducts = (products, userID) => {
       for (let i = 0; i < products.length; i++) {
         const product = products[i];
         if (productsInPortfolio.includes(product.product_id)) {
-          // console.log('updating product', product.mid_market_price);
           // update the product
           const updateSqlText = `UPDATE "products" SET
           "quote_currency_id" = $1,
@@ -422,7 +415,6 @@ const insertProducts = (products, userID) => {
             userID,
           ]);
         } else {
-          // console.log('inserting product', product, product.mid_market_price || 'null');
           // insert the product
           const insertSqlText = `INSERT INTO "products" (
           "product_id",
@@ -588,7 +580,7 @@ const getLimitedUnsettledTrades = (userID, limit) => {
     try {
       // first get which products are in the portfolio
       const products = await getActiveProductIDs(userID);
-console.log('products', products);
+      console.log('products', products);
       let sqlText = `
       (SELECT * FROM "limit_orders" WHERE "side" = 'SELL' AND "flipped" = false AND "settled" = false AND "will_cancel" = false AND "userID" = $1 AND "product_id" = $2 ORDER BY "limit_price" ASC LIMIT $3)
       UNION
@@ -619,7 +611,6 @@ const getUnsettledTradesByProduct = (side, product, userID, max_trade_load) => {
     // the only time 'BUY' or 'SELL' is passed is when the frontend is calling for all trades. 
     // can request a limited amount of data to save on network costs
     if (side == 'BUY') {
-      // console.log('getting buys', max_trade_load);
       // gets all unsettled buys, sorted by price
       sqlText = `SELECT * FROM "limit_orders" 
       WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "product_id"=$1 AND "userID"=$2
@@ -635,7 +626,6 @@ const getUnsettledTradesByProduct = (side, product, userID, max_trade_load) => {
           reject(err);
         })
     } else if (side == 'SELL') {
-      // console.log('getting sells', max_trade_load);
       // gets all unsettled sells, sorted by price
       sqlText = `SELECT * FROM "limit_orders" 
       WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "product_id"=$1 AND "userID"=$2
@@ -680,7 +670,6 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
     // the only time 'BUY' or 'SELL' is passed is when the frontend is calling for all trades. 
     // can request a limited amount of data to save on network costs
     if (side == 'BUY') {
-      // console.log('getting buys', max_trade_load);
       // gets all unsettled buys, sorted by price
       sqlText = `SELECT * FROM "limit_orders" 
       WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
@@ -696,7 +685,6 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
           reject(err);
         })
     } else if (side == 'SELL') {
-      // console.log('getting sells', max_trade_load);
       // gets all unsettled sells, sorted by price
       sqlText = `SELECT * FROM "limit_orders" 
       WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
@@ -1283,7 +1271,6 @@ async function saveFees(fees, userID) {
   return new Promise(async (resolve, reject) => {
     try {
       const totalVolume = Number(fees.advanced_trade_only_volume) + Number(fees.coinbase_pro_volume);
-      // console.log('saving fees', fees);
       const sqlText = `UPDATE "user_settings" SET "maker_fee" = $1, "taker_fee" = $2, "usd_volume" = $3  WHERE "userID" = $4`;
       let result = await pool.query(sqlText, [fees.fee_tier.maker_fee_rate, fees.fee_tier.taker_fee_rate, totalVolume, userID]);
       resolve(result);
@@ -1297,7 +1284,7 @@ async function saveFees(fees, userID) {
 async function markAsFlipped(order_id) {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log('marking as flipped', order_id);
+      devLog('marking as flipped', order_id);
       const sqlText = `UPDATE "limit_orders" SET "flipped" = true WHERE "order_id"=$1;`;
       let result = await pool.query(sqlText, [order_id]);
       resolve(result);
@@ -1310,13 +1297,12 @@ async function markAsFlipped(order_id) {
 // get profit for a product and for all products for a duration of time
 async function getProfitForDurationByProduct(userID, product, duration) {
   return new Promise(async (resolve, reject) => {
-    // console.log('getting profit for duration', userID, product, duration);
     try {
       const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
       FROM limit_orders 
       WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "product_id" = $2 AND "filled_at" > now() - $3::interval;`;
       let result = await pool.query(sqlText, [userID, product, duration]);
-      // console.log('result', result.rows[0].sum);
+      
       resolve(result.rows[0].sum);
     } catch (err) {
       reject(err);
@@ -1327,7 +1313,6 @@ async function getProfitForDurationByProduct(userID, product, duration) {
 // get profit for a product and for all products for a duration of time
 async function getProfitForDurationByAllProducts(userID, duration) {
   return new Promise(async (resolve, reject) => {
-    // console.log('getting profit for duration', userID, duration);
     try {
       const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
       FROM limit_orders 
@@ -1360,7 +1345,7 @@ async function getProfitSinceDate(userID, date, product) {
         allProfit: result.rows[0].sum || 0,
         productProfit: productResult.rows[0].sum || 0
       }
-      console.log('profit', profit);
+      devLog('profit', profit);
       resolve(profit);
     } catch (err) {
       reject(err);
@@ -1368,70 +1353,74 @@ async function getProfitSinceDate(userID, date, product) {
   })
 }
 
-async function getMostRecentCandle(userID, product_id, granularity) {
+async function getMostRecentCandle(product_id, granularity) {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `
       SELECT * FROM "market_candles" 
-      WHERE "user_id" = $1 AND "product_id" = $2 AND "granularity" = $3 
+      WHERE "product_id" = $1 AND "granularity" = $2
       ORDER BY "start" DESC LIMIT 1;`;
-      let result = await pool.query(sqlText, [userID, product_id, granularity]);
+      const result = await pool.query(sqlText, [product_id, granularity]);
       resolve(result.rows[0]);
     } catch (err) {
+      devLog('error getting most recent candle', err);
       reject(err);
     }
   })
 }
 
-async function getOldestCandle(userID, product_id, granularity) {
+async function getOldestCandle(product_id, granularity) {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `
       SELECT * FROM "market_candles" 
-      WHERE "user_id" = $1 AND "product_id" = $2 AND "granularity" = $3 
+      WHERE "product_id" = $1 AND "granularity" = $2
       ORDER BY "start" ASC LIMIT 1;`;
-      let result = await pool.query(sqlText, [userID, product_id, granularity]);
+      const result = await pool.query(sqlText, [product_id, granularity]);
       resolve(result.rows[0]);
     } catch (err) {
+      devLog('error getting oldest candle', err);
       reject(err);
     }
   })
 }
 
 // save an array of candles to the database
-async function saveCandles(userID, productID, granularity, candles) {
+async function saveCandles(productID, granularity, candles) {
   return new Promise(async (resolve, reject) => {
-    // console.log('saving candles', candles.length);
     try {
       // save each candle to the database unless it already exists
       for (let i = 0; i < candles.length; i++) {
         const candle = candles[i];
-        // console.log('candle', candle.start, productID, granularity, Date.now());
+        // devLog('candle', candle, productID, granularity);
+        // candleID is a concatenation of the productID, the granularity and the start time
+        const candleID = productID + granularity + candle.start;
         // check if the candle already exists
-        const sqlText = `SELECT * FROM "market_candles" WHERE "user_id" = $1 AND "product_id" = $2 AND "granularity" = $3 AND "start" = $4;`;
-        let result = await pool.query(sqlText, [userID, productID, granularity, candle.start]);
-        // console.log('result', result.rows[0]);
+        // const sqlText = `SELECT * FROM "market_candles" WHERE "product_id" = $1 AND "granularity" = $2 AND "start" = $3;`;
+        // let result = await pool.query(sqlText, [productID, granularity, candle.start]);
         // if the candle doesn't exist, save it
-        if (result.rows.length === 0) {
-          const insertSqlText = `INSERT INTO market_candles (user_id, product_id, granularity, start, low, high, high_low_ratio, open, close, volume)
-          VALUES ($1, $2, $3, $4, $5, $6, ($6::numeric / $5::numeric), $7, $8, $9);`;
-          await pool.query(insertSqlText, [userID, productID, granularity, candle.start, candle.low, candle.high, candle.open, candle.close, candle.volume]);
-        }
+        // if (result.rows.length === 0) {
+        const insertSqlText = `INSERT INTO market_candles (candle_id, product_id, granularity, start, low, high, high_low_ratio, open, close, volume)
+          VALUES ($1, $2, $3, $4, $5, $6, ($6::numeric / $5::numeric), $7, $8, $9)
+          ON CONFLICT (candle_id) DO NOTHING;`;
+        await pool.query(insertSqlText, [candleID, productID, granularity, candle.start, candle.low, candle.high, candle.open, candle.close, candle.volume]);
+        // }
       }
       resolve();
     } catch (err) {
+      devLog('error saving candles');
       reject(err);
     }
   })
 }
 
 // get all candles for a product and granularity
-async function getCandles(userID, productID, granularity, start, end) {
+async function getCandles(productID, granularity, start, end) {
   return new Promise(async (resolve, reject) => {
     try {
       console.log('getting candles FROM DB', userID, productID, granularity, start, end);
-      const sqlText = `SELECT * FROM "market_candles" WHERE "user_id" = $1 AND "product_id" = $2 AND "granularity" = $3 AND "start" BETWEEN $4 AND $5;`;
-      let result = await pool.query(sqlText, [userID, productID, granularity, start, end]);
+      const sqlText = `SELECT * FROM "market_candles" WHERE "product_id" = $1 AND "granularity" = $2 AND "start" BETWEEN $3 AND $4;`;
+      let result = await pool.query(sqlText, [productID, granularity, start, end]);
       resolve(result.rows);
     } catch (err) {
       reject(err);
@@ -1440,15 +1429,15 @@ async function getCandles(userID, productID, granularity, start, end) {
 }
 
 // get the candle with the lowest start that is higher than the given start
-async function getNextCandles(userID, productID, granularity, start) {
+async function getNextCandles(productID, granularity, start) {
   return new Promise(async (resolve, reject) => {
     try {
       console.log('getting next candles FROM DB', userID, productID, granularity, start);
       const sqlText = `
       SELECT * FROM "market_candles" 
-      WHERE "user_id" = $1 AND "product_id" = $2 AND "granularity" = $3 AND "start" > $4 
+      WHERE "product_id" = $1 AND "granularity" = $2 AND "start" > $3 
       ORDER BY "start" ASC;`;
-      let result = await pool.query(sqlText, [userID, productID, granularity, start]);
+      let result = await pool.query(sqlText, [productID, granularity, start]);
       resolve(result.rows);
     } catch (err) {
       reject(err);
@@ -1457,14 +1446,14 @@ async function getNextCandles(userID, productID, granularity, start) {
 }
 
 // get average high low ratio for a product and granularity
-async function getCandlesAverage(userID, productID, granularity) {
+async function getCandlesAverage(productID, granularity) {
   return new Promise(async (resolve, reject) => {
     try {
       // get the unix date in seconds for 30 days ago
       const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (60 * 60 * 24 * 30);
       // get the average high low ratio for the last 30 days
-      const sqlText = `SELECT AVG("high_low_ratio") AS "average" FROM "market_candles" WHERE "user_id" = $1 AND "product_id" = $2 AND "granularity" = $3 AND "start" > $4;`;
-      let result = await pool.query(sqlText, [userID, productID, granularity, thirtyDaysAgo]);
+      const sqlText = `SELECT AVG("high_low_ratio") AS "average" FROM "market_candles" WHERE "product_id" = $1 AND "granularity" = $2 AND "start" > $3;`;
+      let result = await pool.query(sqlText, [productID, granularity, thirtyDaysAgo]);
       resolve(result.rows[0]);
     } catch (err) {
       reject(err);
@@ -1529,4 +1518,4 @@ const databaseClient = {
   getProduct: getProduct,
 };
 
-export {databaseClient};
+export { databaseClient };

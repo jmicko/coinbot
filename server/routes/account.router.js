@@ -63,7 +63,7 @@ router.get('/products', rejectUnauthenticated, async (req, res) => {
     let activeProducts = await databaseClient.getActiveProducts(userID);
     // for each active product, get the candle average and add it to the product object
     for (let product of activeProducts) {
-      let average = await databaseClient.getCandlesAverage(userID, product.product_id, 'SIX_HOUR');
+      let average = await databaseClient.getCandlesAverage(product.product_id, 'SIX_HOUR');
       console.log(average, 'average');
       product.average = average.average;
     }

@@ -39,7 +39,6 @@ async function processCandleData(data) {
   // // ensure that the difference between the start and end dates divided by the granularity is less than 150_000
   // // get the value of the granularity
   // const granularityValue = granularities.find(granularityObj => granularityObj.name === granularity).value;
-  // // console.log(granularityValue, 'granularity value');
   // // if the difference between the start and end dates divided by the granularity is greater than 150_000, send an error
   // if ((end - start) / granularityValue >= 35_000_000) {
   //   res.status(400).send(`The difference between the start and end dates divided by the granularity is greater than 100_000.
@@ -51,7 +50,7 @@ async function processCandleData(data) {
 
 
   // retrieve candle data from db
-  const candleData = await databaseClient.getCandles(data.userID, data.product, data.granularity, data.start, data.end);
+  const candleData = await databaseClient.getCandles(data.product, data.granularity, data.start, data.end);
 
   console.log('candle data', candleData.length);
 
@@ -60,7 +59,6 @@ async function processCandleData(data) {
       if (!isNaN(candleData[i][key])) {
         candleData[i][key] = Number(candleData[i][key]);
       }
-      // console.log(candleData[i][key], 'candle key');
     }
   }
 
@@ -183,7 +181,6 @@ async function processOrderData(data) {
   // // retrieve order data from db
   // const orderData = await databaseClient.getAllOrders(data.userID);
 
-  // console.log('order data', orderData.length);
 
   // // convert all the values to numbers if they are numbers
   // for (let i = 0; i < orderData.length; i++) {
@@ -191,7 +188,6 @@ async function processOrderData(data) {
   //     if (!isNaN(orderData[i][key])) {
   //       orderData[i][key] = Number(orderData[i][key]);
   //     }
-  //     // console.log(orderData[i][key], 'order key');
   //   }
   // }
 

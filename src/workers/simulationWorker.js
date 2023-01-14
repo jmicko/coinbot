@@ -26,7 +26,7 @@ async function optimize(data) {
   // first turn the simStartDate into a unix timestamp
   const simStartDate = new Date(options.simStartDate).getTime() / 1000;
   // console.log(data, 'data');
-  const candles = await databaseClient.getNextCandles(user.id, options.product.product_id, 'ONE_MINUTE', simStartDate - 1);
+  const candles = await databaseClient.getNextCandles(options.product.product_id, 'ONE_MINUTE', simStartDate - 1);
   // data.candles = candles;
 
   // array to store the results of each simulation

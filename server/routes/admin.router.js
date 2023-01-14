@@ -16,6 +16,7 @@ import { robot } from '../modules/robot.js';
 import { databaseClient } from '../modules/databaseClient.js';
 // const { cache, userStorage, messenger, botSettings } = require('../modules/cache');
 import { cache, userStorage, messenger, botSettings } from '../modules/cache.js';
+import { devLog } from '../../src/shared.js';
 
 const router = express.Router();
 
@@ -367,7 +368,7 @@ router.put('/loop_speed', rejectUnauthenticated, async (req, res) => {
     // botSettings = await databaseClient.getBotSettings();
     botSettings.change({ loop_speed: loopSpeed })
 
-    console.log(botSettings);
+    devLog(botSettings, 'bot settings after change');
 
     res.sendStatus(200);
   } catch (err) {

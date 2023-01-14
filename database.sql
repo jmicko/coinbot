@@ -79,8 +79,7 @@ CREATE TABLE IF NOT EXISTS "products"
 
 CREATE TABLE IF NOT EXISTS "market_candles"
 (
-  "id" SERIAL PRIMARY KEY,
-  "user_id" character varying COLLATE pg_catalog."default" NOT NULL,
+  "candle_id" character varying PRIMARY KEY COLLATE pg_catalog."default" NOT NULL,
   "product_id" character varying COLLATE pg_catalog."default" NOT NULL,
   "granularity" character varying COLLATE pg_catalog."default" NOT NULL,
   "start" integer NOT NULL,
@@ -195,4 +194,4 @@ ON "products" ("user_id","quote_currency_id","active_for_user");
 
 -- this will index the market_candles table so that looking up candles is faster
 CREATE INDEX candles
-ON "market_candles" ("user_id","product_id","granularity","start");
+ON "market_candles" ("product_id","granularity","start");
