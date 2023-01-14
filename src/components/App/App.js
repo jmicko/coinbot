@@ -1,6 +1,6 @@
 import React from 'react';
 import './App.css';
-import './art.css';
+// import './art.css';
 
 // Directory imports
 import Home from '../Home/Home.js';
