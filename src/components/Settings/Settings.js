@@ -10,6 +10,7 @@ import './Settings.css'
 import SettingsNav from './SettingsNav/SettingsNav.js';
 import BulkDelete from './BulkDelete/BulkDelete.js';
 import { useUser } from '../../contexts/UserContext.js';
+import Draggable from '../Draggable/Draggable.js';
 
 
 
@@ -22,7 +23,8 @@ function Settings(props) {
 
   if (props.showSettings) {
     return (
-      <div className={`Settings ${theme}`}>
+      <Draggable className={`Settings ${theme}`}>
+        {/* <div > */}
         <button className={`btn-logout btn-red ${theme}`} onClick={() => { props.clickSettings() }}>X</button>
 
         <p className="info tips">
@@ -50,7 +52,8 @@ function Settings(props) {
             'admin': <Admin product={props.product} theme={theme} tips={tips} />
           }[settingsPage]
         }
-      </div>
+        {/* </div> */}
+      </Draggable>
     );
   } else {
     return (
