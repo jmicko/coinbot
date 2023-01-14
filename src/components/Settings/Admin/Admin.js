@@ -7,7 +7,7 @@ import './Admin.css'
 
 
 function Admin(props) {
-  const { user } = useUser();
+  const { user, theme } = useUser();
   const { data: allUsers, updateRefreshData: approveUser, deleteRefreshData: deleteUser } = useFetchData('api/admin/users', { defaultState: [] });
 
   const { data: allSettings, refresh: refreshSettings } = useFetchData('api/settings', { defaultState: [] });
@@ -61,7 +61,7 @@ function Admin(props) {
       {/* <center>
         <p>Admin Settings Page</p>
       </center> */}
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
       {/* TOGGLE MAINTENANCE */}
 
       <h4>Toggle Maintenance Mode</h4>
@@ -77,12 +77,12 @@ function Admin(props) {
       }
       {allSettings.maintenance
         ?
-        <button className={`btn-green btn-reinvest medium ${user.theme}`} onClick={() => { toggleMaintenance() }}>Turn off</button>
+        <button className={`btn-green btn-reinvest medium ${theme}`} onClick={() => { toggleMaintenance() }}>Turn off</button>
         :
-        <button className={`btn-red btn-reinvest medium ${user.theme}`} onClick={() => { toggleMaintenance() }}>Turn on</button>
+        <button className={`btn-red btn-reinvest medium ${theme}`} onClick={() => { toggleMaintenance() }}>Turn on</button>
       }
 
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
 
       {/* MANAGE USERS */}
       {(user.admin)
@@ -94,7 +94,7 @@ function Admin(props) {
         </div>
         : <></>
       }
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
 
       {/* SET LOOP SPEED */}
 
@@ -120,10 +120,10 @@ function Admin(props) {
         />
         <br />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { sendLoopSpeed() }}>Save speed</button>
+        <button className={`btn-blue btn-reinvest medium ${theme}`} onClick={() => { sendLoopSpeed() }}>Save speed</button>
       </div>
 
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
 
       {/* SET FULL SYNC FREQUENCY */}
 
@@ -149,10 +149,10 @@ function Admin(props) {
         />
         <br />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { sendFullSync() }}>Save Frequency</button>
+        <button className={`btn-blue btn-reinvest medium ${theme}`} onClick={() => { sendFullSync() }}>Save Frequency</button>
       </div>
 
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
 
       {/* SET ORDER SYNC QUANTITY */}
 
@@ -180,9 +180,9 @@ function Admin(props) {
         />
         <br />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { sendSyncQuantity() }}>Save Quantity</button>
+        <button className={`btn-blue btn-reinvest medium ${theme}`} onClick={() => { sendSyncQuantity() }}>Save Quantity</button>
       </div>
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
 
       {/* FACTORY RESET */}
       {/* {(user.admin)
@@ -227,7 +227,7 @@ function Admin(props) {
         </>
         : <></>
       }
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
        */}
     </div>
   );

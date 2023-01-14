@@ -6,7 +6,7 @@ import './Investment.css'
 
 
 function Investment(props) {
-  const { user, refreshUser } = useUser();
+  const { user, refreshUser, theme } = useUser();
   const { productID, refreshOrders, deadCon } = useData();
 
   // ROUTES
@@ -85,7 +85,7 @@ function Investment(props) {
 
   return (
     <div className="Investment settings-panel scrollable">
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
 
       {/* REINVEST */}
       <h4>Reinvestment</h4>
@@ -118,7 +118,7 @@ function Investment(props) {
           />
           <br />
           <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={(event) => { reinvestRatio(event) }}>Save reinvestment ratio</button>
-          <div className="divider" />
+          <div className={`divider ${theme}`} />
         </>
       }
 
@@ -146,7 +146,7 @@ function Investment(props) {
         <br />
         <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={(event) => { saveReserve(event) }}>Save reserve</button>
       </div>
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
 
 
 
@@ -204,11 +204,11 @@ function Investment(props) {
                 />
                 <br />
                 <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={(event) => { savePostMaxReinvestRatio(event) }}>Save post-max ratio</button>
-                {/* <div className="divider" /> */}
+                {/* <div className={`divider ${theme}`} /> */}
               </>
             </>
           }
-          <div className="divider" />
+          <div className={`divider ${theme}`} />
         </>
       }
 
@@ -234,7 +234,7 @@ function Investment(props) {
         <br />
         <button className={`btn-blue btn-bulk-pair-ratio medium ${user.theme}`} onClick={() => { setBulkPairRatio({ bulk_pair_ratio }) }}>Set all trades to new ratio</button>
       </div>
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
 
     </div>
   );

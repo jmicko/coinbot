@@ -5,17 +5,17 @@ import { useFetchData } from '../../hooks/fetchData.js';
 import './Menu.css'
 
 function Menu(props) {
-  const { logout, user } = useUser();
+  const { logout, user, theme, btnColor } = useUser();
   const { productID, setProductID, products } = useData();
   const { refresh: refreshTestData } = useFetchData('/api/settings/test/cheese', { defaultState: {}, noLoad: true })
 
   return (
-    <div className={`Menu dark ${user.theme}`}>
+    <div className={`Menu dark ${theme}`}>
       <center>
         {products.activeProducts && <p className="greeting">{user.username}
           &nbsp;
           <select
-            className={`select-product ${user.theme}`}
+            className={`select-product ${theme}`}
             onChange={(event) => {
               // props.setProduct(event.target.value);
               setProductID(event.target.value)
@@ -34,11 +34,11 @@ function Menu(props) {
       <div className="menu-buttons">
         {/* only show Test button in dev mode */}
         {process.env.NODE_ENV === 'development' && user.admin && <button 
-        className={`btn-blue btn-logout ${user.theme}`} 
+        className={`${btnColor} btn-logout ${theme}`} 
         onClick={refreshTestData}>Test</button>}
         {/* control buttons */}
-        <button className={`btn-blue btn-logout ${user.theme}`} onClick={() => { props.clickSettings() }}>Settings</button>
-        <button className={`btn-blue btn-logout ${user.theme}`} onClick={logout}>Log Out</button>
+        <button className={`${btnColor} btn-logout ${theme}`} onClick={() => { props.clickSettings() }}>Settings</button>
+        <button className={`${btnColor} btn-logout ${theme}`} onClick={logout}>Log Out</button>
       </div>
     </div>
 

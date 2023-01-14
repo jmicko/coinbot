@@ -159,6 +159,10 @@ body::-webkit-scrollbar-thumb,
   margin-top      : 1rem;
 }
 
+.divider.darkTheme {
+  background-color: rgb(153, 153, 153);
+}
+
 .dark {
   background-color: darkgrey;
   border          : none;
@@ -320,8 +324,8 @@ button.medium {
 }
 
 .btn-yellow.darkTheme {
-  color           : #ffffff;
-  background-color: #867124;
+  color           : #d7d7d7;
+  background-color: #360937;
   font-family     : inherit;
   box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
 }
@@ -330,9 +334,18 @@ button.medium {
   background-color: #a0956c;
 }
 
+.btn-yellow.darkTheme:hover {
+  background-color: #5a165b;
+}
+
 .btn-yellow.darkTheme:focus {
   outline         : none;
-  background-color: #614f11;
+  background-color: #632364;
+  /* box-shadow      : inset 2px 2px #00000099, inset -2px -2px #ffffff99; */
+}
+button:focus:active {
+  /* outline         : none;
+  background-color: #632364; */
   box-shadow      : inset 2px 2px #00000099, inset -2px -2px #ffffff99;
 }
 
@@ -348,7 +361,8 @@ button.medium {
 }
 
 button:active {
-  box-shadow: inset -2px -2px #ffffff99, inset 2px 2px #00000099;
+  box-shadow      : inset 2px 2px #00000099, inset -2px -2px #ffffff99;
+  /* box-shadow: inset -2px -2px #ffffff99, inset 2px 2px #00000099; */
 }
 
 /* === INPUTS === */
@@ -364,6 +378,7 @@ input {
 
 label span {
   color: #ab1f1f;
+  color              : rgb(199, 144, 112);
 }
 
 input.darkTheme {

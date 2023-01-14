@@ -18,7 +18,7 @@ import DebouncedInput from '../../DebouncedInput.js/DebouncedInput.js';
 
 function AutoSetup(props) {
 
-  const { user } = useUser();
+  const { user, theme } = useUser();
   const { productID, currentProduct } = useData();
 
   const { createData: startAutoSetup } = useFetchData('/api/orders/autoSetup', { noLoad: true });
@@ -221,7 +221,7 @@ function AutoSetup(props) {
 
   return (
     <div className="AutoSetup settings-panel scrollable">
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
       <h4>Auto Setup</h4>
       {/* {JSON.stringify(user.availableFunds?.[productID]?.quote_available)} */}
       {props.tips && <>
@@ -683,7 +683,7 @@ function AutoSetup(props) {
           return <SingleTrade key={i} order={order} preview={true} product={decimals} />
         })}
 
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
     </div>
   );
 }

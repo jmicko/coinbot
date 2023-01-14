@@ -12,6 +12,10 @@ const userConfig = {
 export function UserProvider({ children }) {
   const { data: user, isLoading: userLoading, error: userError, refresh: refreshUser, clear: clearUser, deleteData: deleteYourself } = useFetchData('/api/user', { defaultState: {}, config: userConfig })
 
+  // infer theme from user object
+  const theme = user.theme;
+  const btnColor = user.theme === 'darkTheme' ? 'btn-black' : 'btn-blue';
+
   useEffect(() => {
     // check if user is an empty object
     if (user && Object.keys(user).length === 0 && !userLoading && !userError) {
@@ -53,7 +57,11 @@ export function UserProvider({ children }) {
   return (
     <UserContext.Provider
       value={
-        { user, takerFee: user.taker_fee, makerFee: user.maker_fee, userLoading, userError, refreshUser, logout, login, registerNew, deleteYourself }
+        {
+          user, takerFee: user.taker_fee, makerFee: user.maker_fee, userLoading, userError,
+          refreshUser, logout, login, registerNew, deleteYourself,
+          theme, btnColor
+        }
       }>
       {children}
     </UserContext.Provider>

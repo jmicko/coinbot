@@ -6,7 +6,7 @@ import './General.css'
 const themes = { original: 'Original', darkTheme: 'Dark' }
 
 function General(props) {
-  const { user } = useUser();
+  const { user, theme } = useUser();
   const { pause, killLock, setTheme, sendTradeLoadMax, updateProfitAccuracy } = useData();
 
   const [max_trade_load, setMaxTradeLoad] = useState(100);
@@ -14,7 +14,7 @@ function General(props) {
 
   return (
     <div className="General settings-panel scrollable">
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
 
       {/* THEME */}
       <h4>Theme</h4>
@@ -25,7 +25,7 @@ function General(props) {
           </button>
         )
       })}
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
 
       {/* KILL PREVENTION */}
       <h4>Kill Prevention</h4>
@@ -36,7 +36,7 @@ function General(props) {
       </p>}
       <button className={`btn-blue medium ${user.theme}`} onClick={killLock}>{user.kill_locked ? 'Unlock' : 'Lock'}</button>
       {/* <button className={`btn-blue medium ${user.theme}`} onClick={killLock}>Lock</button> */}
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
 
       {/* PAUSE */}
       <h4>Pause</h4>
@@ -49,7 +49,7 @@ function General(props) {
         : <button className={`btn-blue medium ${user.theme}`} onClick={pause}>Pause</button>
       } */}
       <button className={`btn-blue medium ${user.theme}`} onClick={pause}>{user.paused ? 'Unpause' : 'Pause'}</button>
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
 
       {/* MAX TRADES ON SCREEN */}
       <h4>Max Trades on Screen</h4>
@@ -83,7 +83,7 @@ function General(props) {
         <br />
         <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { sendTradeLoadMax(max_trade_load) }}>Save Max</button>
       </div>
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
 
       {/* PROFIT ACCURACY */}
       <h4>Profit accuracy</h4>
@@ -105,7 +105,7 @@ function General(props) {
         <br />
         <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={(event) => { updateProfitAccuracy(profit_accuracy) }}>Save</button>
       </div>
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
     </div>
   );
 }

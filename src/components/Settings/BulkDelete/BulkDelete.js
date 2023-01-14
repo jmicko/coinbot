@@ -6,7 +6,7 @@ import './BulkDelete.css'
 
 
 function BulkDelete(props) {
-  const { user } = useUser();
+  const { user, theme } = useUser();
   const { syncOrders, deleteRangeForProduct, deleteAll, productID } = useData();
   const { deleteData:deleteAllForProduct } = useFetchData(`/api/orders/product/${productID}`, { defaultState: {}, notNull: [productID], noLoad: true })
 
@@ -35,7 +35,7 @@ function BulkDelete(props) {
     <div className="BulkDelete settings-panel scrollable">
 
       {/* SYNC ALL TRADES */}
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
       <h4>Synchronize All Trades</h4>
       {props.tips && <p>
         This will delete all open orders from coinbase and replace them based on the trades stored in the
@@ -44,7 +44,7 @@ function BulkDelete(props) {
       <button className={`btn-blue medium ${user.theme}`} onClick={syncOrders}>Sync All Trades</button>
 
       {/* DELETE RANGE */}
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
       <h4>Delete Range</h4>
       {props.tips && <p>
         Delete all trades that fall within a price range, inclusive of the numbers set. This is based on the current price,
@@ -83,19 +83,19 @@ function BulkDelete(props) {
 
       {/* DELETE ALL TRADES FOR CURRENT PRODUCT */}
 
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
       <h4>Delete All Trades for {productID}</h4>
       <p>Danger! This button will delete all your positions for {productID}! Press it carefully!</p>
       <button className={`btn-red medium ${user.theme}`} onClick={() => { deleteAllOrdersForProduct() }}>Delete All {productID}</button>
 
 
       {/* DELETE ALL TRADES */}
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
       <h4>Delete All Trades</h4>
       <p>Danger! This button will delete ALL your positions for ALL your products! Not just {productID}! Press it carefully!</p>
       <button className={`btn-red medium ${user.theme}`} onClick={() => { deleteAllOrders() }}>Delete All</button>
 
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
     </div>
   );
 }

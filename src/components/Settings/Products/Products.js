@@ -1,10 +1,12 @@
 import React from 'react';
 import { useData } from '../../../contexts/DataContext.js';
+import { useUser } from '../../../contexts/UserContext.js';
 import { numberWithCommas } from '../../../shared.js';
 import './Products.css'
 
 
 function Products(props) {
+  const { theme } = useUser();
   const { products, toggleActiveProduct } = useData();
 
   function toggleActive(product) {
@@ -14,7 +16,7 @@ function Products(props) {
 
   return (
     <div className="Products settings-panel scrollable">
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
 
       {/* ACTIVE PRODUCTS */}
       <h4>Currently Active ({products?.activeProducts?.length})</h4>
@@ -82,7 +84,7 @@ function Products(props) {
           }
         </tbody>
       </table>
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
       {/* AVAILABLE PRODUCTS */}
       <h4>Available ({products?.allProducts?.length})</h4>
       {props.tips && <p>
@@ -148,7 +150,7 @@ function Products(props) {
           }
         </tbody>
       </table>
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
     </div>
   );
 }

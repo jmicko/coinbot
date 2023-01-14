@@ -9,7 +9,7 @@ import './Status.css'
 function Status(props) {
   // console.log('rendering status');
 
-  const { user, refreshUser } = useUser();
+  const { user, refreshUser, theme, btnColor } = useUser();
   const { tickers, heartbeat } = useSocket();
   const {
     socketStatus, coinbotSocket,
@@ -136,14 +136,14 @@ function Status(props) {
       </center>
 
       <center>
-        <p className={`info status-ticker ${user.theme} ${heartbeat.count === 0 && 'blue'}`}>
+        <p className={`info status-ticker ${theme} ${heartbeat.count === 0 && 'blue'}`}>
           <strong>
             <span className={coinbotSocket}>&#x2022;</span>
             {heartbeat.heart}{heartbeat.beat}
             <span className={socketStatus}>&#x2022;</span>
           </strong>
           <br />
-          <button className={`btn-blue ${user.theme}`} onClick={updateUser}>Refresh</button>
+          <button className={`${btnColor} ${theme}`} onClick={updateUser}>Refresh</button>
         </p>
       </center>
 

@@ -11,7 +11,7 @@ import { useData } from '../../contexts/DataContext.js';
 function LimitOrder(props) {
 
   // contexts
-  const { user } = useUser();
+  const { user, theme, btnColor } = useUser();
   const { socket, currentPrice } = useSocket();
   const { productID, createMarketTrade, currentProduct } = useData();
   
@@ -55,13 +55,13 @@ function LimitOrder(props) {
   return (
     <div className={`Trade scrollable boxed`} >
 
-      <h3 className={`title market-order ${user.theme}`}>{width > 800
+      <h3 className={`title market-order ${theme}`}>{width > 800
         && <button
-          className={`btn-black ${user.theme}`}
+          className={`${btnColor} ${theme}`}
           onClick={toggleCollapse}
         >&#9664;</button>
       } Market Order <button
-        className={`btn-black ${user.theme}`}
+        className={`${btnColor} ${theme}`}
         onClick={toggleTradeType} >Switch</button></h3>
       {/* form with a single input. Input takes a price point at which to make a trade */}
       <div className={`Trade ${side}-color`}>
@@ -69,12 +69,12 @@ function LimitOrder(props) {
 
           {/* SIDE BUTTONS */}
           <div className={`basic-trade-buttons`}>
-            <input className={`btn-green btn-side ${user.theme}`} onClick={(e) => {
+            <input className={`btn-green btn-side ${theme}`} onClick={(e) => {
               no(e);
               setMarketOrder((prevMarketOrder) => { return { ...prevMarketOrder, side: 'BUY' } })
             }
             } type="button" name="submit" value="BUY" />
-            <input className={`btn-red btn-side ${user.theme}`} onClick={(e) => {
+            <input className={`btn-red btn-side ${theme}`} onClick={(e) => {
               no(e);
               setMarketOrder((prevMarketOrder) => { return { ...prevMarketOrder, side: 'SELL' } })
             }
@@ -97,7 +97,7 @@ function LimitOrder(props) {
           </label>
           <br />
           <input
-            className={user.theme}
+            className={theme}
             type="number"
             name="trade-amount"
             value={Number(base_size)}
@@ -110,7 +110,7 @@ function LimitOrder(props) {
           />
 
           {(side === 'SELL') && <input
-            className={`btn-black ${user.theme}`}
+            className={`${btnColor} ${theme}`}
             // onClick={() => setBasicAmount(Number(user.availableFunds?.[productID].base_available))}
             onClick={() => setMarketOrder((prevMarketOrder) => { return { ...prevMarketOrder, base_size: Number(fixedFloor(user.availableFunds?.[productID].base_available, currentProduct.base_increment_decimals)) } })}
             type="button"
@@ -119,7 +119,7 @@ function LimitOrder(props) {
           <br />
 
           {/* SUBMIT ORDER BUTTON */}
-          <input className={`btn-send-trade market btn-black ${user.theme}`} type="submit" name="submit" value={`${side === 'BUY' ? 'Buy' : 'Sell'} ${base_size} ${currentProduct?.base_currency_id}`} />
+          <input className={`btn-send-trade market ${btnColor} ${theme}`} type="submit" name="submit" value={`${side === 'BUY' ? 'Buy' : 'Sell'} ${base_size} ${currentProduct?.base_currency_id}`} />
           <p>
             This equates to about
             <br />${numberWithCommas((base_size * currentPrice).toFixed(2))}

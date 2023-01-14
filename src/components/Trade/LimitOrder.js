@@ -9,7 +9,7 @@ import { useData } from '../../contexts/DataContext.js';
 
 function LimitOrder(props) {
   // contexts
-  const { user, makerFee } = useUser();
+  const { user, makerFee, theme, btnColor } = useUser();
   const { currentPrice } = useSocket();
   const { productID, currentProduct, createOrderPair } = useData();
 
@@ -122,13 +122,13 @@ function LimitOrder(props) {
 
   return (
     <div className="Trade scrollable boxed" >
-      <h3 className={`title ${user.theme}`}>
+      <h3 className={`title ${theme}`}>
         {width > 800
           && <button
-            className={`btn-black ${user.theme}`}
+            className={`${btnColor} ${theme}`}
             onClick={toggleCollapse} >&#9664;</button>
         } New Trade-Pair <button
-          className={`btn-black ${user.theme}`}
+          className={`${btnColor} ${theme}`}
           onClick={toggleTradeType}
         >Switch</button>
       </h3>
@@ -137,13 +137,13 @@ function LimitOrder(props) {
         <div className="number-inputs">
           {/* input for setting the price/BTC per transaction. Can be adjusted in $500 steps, or manually input */}
           <label htmlFor="transaction_price">
-            Trade price per 1 {base_currency_id} (in {quote_currency_id}): <button className={`btn-blue ${user.theme}`} onClick={(e) => {
+            Trade price per 1 {base_currency_id} (in {quote_currency_id}): <button className={`btn-blue ${theme}`} onClick={(e) => {
               no(e);
               getCurrentPrice();
             }}> Get Current (rounded)</button>
           </label>
           <input
-            className={user.theme}
+            className={theme}
             type="number"
             name="transaction_price"
             value={Number(price)}
@@ -158,13 +158,13 @@ function LimitOrder(props) {
             roundTo={quote_inverse_increment}
             currentValue={price}
             changeValue={(value) => { changeLimitOrder('price', Number(value)) }}
-            theme={user.theme}
+            theme={theme}
           />
         </div>
 
         <label htmlFor="transaction_amount">
           Trade amount in {sizeType === 'quote' ? quote_currency_id : base_currency_id}:
-          <button className={`btn-blue ${user.theme}`} onClick={(e) => {
+          <button className={`btn-blue ${theme}`} onClick={(e) => {
             no(e);
             // setSizeType(sizeType === 'quote' ? 'base' : 'quote') 
             changeLimitOrder('sizeType', sizeType === 'quote' ? 'base' : 'quote')
@@ -175,7 +175,7 @@ function LimitOrder(props) {
         <div className="number-inputs">
           {/* input for setting how much bitcoin should be traded per transaction at the specified price */}
           <input
-            className={user.theme}
+            className={theme}
             type="number"
             name="transaction_amount"
             value={Number(sizeType === 'quote' ? quote_size : base_size)}
@@ -188,7 +188,7 @@ function LimitOrder(props) {
             roundTo={base_increment_decimals}
             currentValue={sizeType === 'quote' ? quote_size : base_size}
             changeValue={(v) => { changeLimitOrder(sizeType === 'quote' ? 'quote_size' : 'base_size', Number(v)) }}
-            theme={user.theme}
+            theme={theme}
           />
         </div>
 
@@ -200,7 +200,7 @@ function LimitOrder(props) {
             Trade pair percent increase:
           </label>
           <input
-            className={user.theme}
+            className={theme}
             type="number"
             name="trade-pair-ratio"
             value={Number(trade_pair_ratio)}
@@ -219,15 +219,15 @@ function LimitOrder(props) {
               ...limitOrder,
               trade_pair_ratio: value
             })}
-            theme={user.theme}
+            theme={theme}
           />
-          <input className={`btn-send-trade btn-blue ${user.theme}`} type="submit" name="submit" value="Start New Trade-Pair" />
+          <input className={`btn-send-trade btn-blue ${theme}`} type="submit" name="submit" value="Start New Trade-Pair" />
         </div>
 
 
         {/* display some details about the new transaction that is going to be made */}
-        <div className={`boxed dark ${user.theme}`}>
-          <h4 className={`title ${user.theme}`}>New position</h4>
+        <div className={`boxed dark ${theme}`}>
+          <h4 className={`title ${theme}`}>New position</h4>
           <p><strong>Trade Pair Details:</strong></p>
           <p className="info">Buy price: <strong>${numberWithCommas(price)}</strong> </p>
           {/* <p className="info">Sell price <strong>${numberWithCommas(Number(sellPrice)?.toFixed(quote_increment_decimals))}</strong></p> */}

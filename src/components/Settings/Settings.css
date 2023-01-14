@@ -15,7 +15,8 @@
 }
 
 .Settings.darkTheme {
-  color: black;
+  color: rgb(215, 215, 215);
+  background-color: rgb(41, 41, 41);
 }
 
 @media (max-width: 800px) {

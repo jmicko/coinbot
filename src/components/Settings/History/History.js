@@ -6,8 +6,8 @@ import { useUser } from '../../../contexts/UserContext.js';
 import { useData } from '../../../contexts/DataContext.js';
 import { useFetchData } from '../../../hooks/fetchData.js';
 
-function History(props) {
-  const { user, refreshUser } = useUser();
+function History() {
+  const { user, refreshUser, theme } = useUser();
   const { exportableFiles, productID: product } = useData();
   const { downloadFile } = useFetchData(`/api/account/downloadFile`, { noLoad: true, refreshUser });
   const { updateData: generateCandleFile } = useFetchData(`/api/account/exportCandles`, { noLoad: true, refreshUser });
@@ -46,7 +46,7 @@ function History(props) {
   return (
     <div className="History settings-panel scrollable">
 
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
       <h4>Candles</h4>
       <p>
         select a date range and granularity and a file will be generated for you to download. This may take a few minutes.
@@ -102,7 +102,7 @@ function History(props) {
 
 
 
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
 
       {/*       
       <h4>Export .xlsx spreadsheet</h4>
@@ -110,7 +110,7 @@ function History(props) {
         Export and download your entire trade history as an xlsx spreadsheet.
       </p>
       <button className={`btn-red medium ${user.theme}`} onClick={() => { exportXlxs() }}>Export</button>
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
  */}
 
 
@@ -140,7 +140,7 @@ function History(props) {
       {currentJSON
         && <button className={`btn-blue medium ${user.theme}`} onClick={() => { copyToClipboard() }}>Copy All</button>
       }
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
       {/* 
       <h4>Import current trade-pairs</h4>
       <p>
@@ -185,7 +185,7 @@ function History(props) {
         <button className={`import-button btn-red medium ${user.theme}`} onClick={() => { importCurrentJSON() }}>Import</button>
         <br />
       </div>
-      <div className="divider" /> */}
+      <div className={`divider ${theme}`} /> */}
     </div>
   );
 }
