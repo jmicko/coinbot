@@ -520,10 +520,11 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
       const availableFunds = !simulation
         ? userStorage[userID].getAvailableFunds()
         : user.availableFunds;
+        const productID = dbOrder.product_id;
 
       // get the available USD funds for the product_id
       const availableUSD = !simulation
-        ? availableFunds[dbOrder.product_id].quote_available
+        ? availableFunds[productID]?.quote_available
         : user.availableQuote;
 
       // console.log(availableUSD, 'availableUSD');
