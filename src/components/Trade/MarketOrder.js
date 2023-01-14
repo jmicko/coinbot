@@ -1,19 +1,22 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import './IncrementButtons.css';
+import React, { useState } from 'react';
 import { useSocket } from '../../contexts/SocketProvider.js';
 import useWindowDimensions from '../../hooks/useWindowDimensions.js';
-import './IncrementButtons.css';
-import IncrementButtons from './IncrementButtons.js';
-import { numberWithCommas, tNum, no, fixedFloor, toFloor, fixedRound, devLog } from '../../shared.js';
+// import IncrementButtons from './IncrementButtons.js';
+import { numberWithCommas, tNum, no, fixedFloor, devLog } from '../../shared.js';
 import { useUser } from '../../contexts/UserContext.js';
 import { useData } from '../../contexts/DataContext.js';
 
 
-function LimitOrder() {
+function LimitOrder(props) {
 
   // contexts
   const { user } = useUser();
   const { socket, currentPrice } = useSocket();
   const { productID, createMarketTrade, currentProduct } = useData();
+  
+  // hooks
+  const { width } = useWindowDimensions();
 
   // state
   const [marketOrder, setMarketOrder] = useState({
@@ -22,8 +25,10 @@ function LimitOrder() {
     side: 'BUY',
   });
 
-  // derived state
+  // destructuring
   const { base_size, side } = marketOrder;
+  const toggleCollapse = props.toggleCollapse;
+  const toggleTradeType = props.toggleTradeType;
 
   // functions
   function submitTransaction(e) {
@@ -48,69 +53,81 @@ function LimitOrder() {
 
 
   return (
-    <div className={`Trade ${side}-color`}>
-      <form className={`basic-trade-form`} onSubmit={submitTransaction} >
+    <div className={`Trade scrollable boxed`} >
 
-        {/* SIDE BUTTONS */}
-        <div className={`basic-trade-buttons`}>
-          <input className={`btn-green btn-side ${user.theme}`} onClick={(e) => {
-            no(e);
-            setMarketOrder((prevMarketOrder) => { return { ...prevMarketOrder, side: 'BUY' } })
-          }
-          } type="button" name="submit" value="BUY" />
-          <input className={`btn-red btn-side ${user.theme}`} onClick={(e) => {
-            no(e);
-            setMarketOrder((prevMarketOrder) => { return { ...prevMarketOrder, side: 'SELL' } })
-          }
-          } type="button" name="submit" value="SELL" />
-        </div>
+      <h3 className={`title market-order ${user.theme}`}>{width > 800
+        && <button
+          className={`btn-black ${user.theme}`}
+          onClick={toggleCollapse}
+        >&#9664;</button>
+      } Market Order <button
+        className={`btn-black ${user.theme}`}
+        onClick={toggleTradeType} >Switch</button></h3>
+      {/* form with a single input. Input takes a price point at which to make a trade */}
+      <div className={`Trade ${side}-color`}>
+        <form className={`basic-trade-form`} onSubmit={submitTransaction} >
 
-        <p>
-          <strong>
-            {
-              side === 'BUY'
-                ? 'Buying'
-                : 'Selling'
+          {/* SIDE BUTTONS */}
+          <div className={`basic-trade-buttons`}>
+            <input className={`btn-green btn-side ${user.theme}`} onClick={(e) => {
+              no(e);
+              setMarketOrder((prevMarketOrder) => { return { ...prevMarketOrder, side: 'BUY' } })
             }
-          </strong>
-        </p>
+            } type="button" name="submit" value="BUY" />
+            <input className={`btn-red btn-side ${user.theme}`} onClick={(e) => {
+              no(e);
+              setMarketOrder((prevMarketOrder) => { return { ...prevMarketOrder, side: 'SELL' } })
+            }
+            } type="button" name="submit" value="SELL" />
+          </div>
 
-        {/* SIZE INPUT */}
-        <label htmlFor="trade-amount">
-          Trade size in {currentProduct?.base_currency_id}:
-        </label>
-        <br />
-        <input
-          className={user.theme}
-          type="number"
-          name="trade-amount"
-          value={Number(base_size)}
-          required
-          onChange={(e) => {
-            // no(e);
-            setMarketOrder((prevMarketOrder) => { return { ...prevMarketOrder, base_size: tNum(e) } })
-          }
-          }
-        />
+          <p>
+            <strong>
+              {
+                side === 'BUY'
+                  ? 'Buying'
+                  : 'Selling'
+              }
+            </strong>
+          </p>
 
-        {(side === 'SELL') && <input
-          className={`btn-blue ${user.theme}`}
-          // onClick={() => setBasicAmount(Number(user.availableFunds?.[productID].base_available))}
-          onClick={() => setMarketOrder((prevMarketOrder) => { return { ...prevMarketOrder, base_size: Number(fixedFloor(user.availableFunds?.[productID].base_available, currentProduct.base_increment_decimals)) } })}
-          type="button"
-          name="submit"
-          value="Max" />}
-        <br />
+          {/* SIZE INPUT */}
+          <label htmlFor="trade-amount">
+            Trade size in {currentProduct?.base_currency_id}:
+          </label>
+          <br />
+          <input
+            className={user.theme}
+            type="number"
+            name="trade-amount"
+            value={Number(base_size)}
+            required
+            onChange={(e) => {
+              // no(e);
+              setMarketOrder((prevMarketOrder) => { return { ...prevMarketOrder, base_size: tNum(e) } })
+            }
+            }
+          />
 
-        {/* SUBMIT ORDER BUTTON */}
-        <input className={`btn-send-trade market btn-blue ${user.theme}`} type="submit" name="submit" value={`${side === 'BUY' ? 'Buy' : 'Sell'} ${base_size} ${currentProduct?.base_currency_id}`} />
-        <p>
-          This equates to about
-          <br />${numberWithCommas((base_size * currentPrice).toFixed(2))}
-          <br />before fees
-        </p>
+          {(side === 'SELL') && <input
+            className={`btn-black ${user.theme}`}
+            // onClick={() => setBasicAmount(Number(user.availableFunds?.[productID].base_available))}
+            onClick={() => setMarketOrder((prevMarketOrder) => { return { ...prevMarketOrder, base_size: Number(fixedFloor(user.availableFunds?.[productID].base_available, currentProduct.base_increment_decimals)) } })}
+            type="button"
+            name="submit"
+            value="Max" />}
+          <br />
 
-      </form>
+          {/* SUBMIT ORDER BUTTON */}
+          <input className={`btn-send-trade market btn-black ${user.theme}`} type="submit" name="submit" value={`${side === 'BUY' ? 'Buy' : 'Sell'} ${base_size} ${currentProduct?.base_currency_id}`} />
+          <p>
+            This equates to about
+            <br />${numberWithCommas((base_size * currentPrice).toFixed(2))}
+            <br />before fees
+          </p>
+
+        </form>
+      </div>
     </div>
   )
 }

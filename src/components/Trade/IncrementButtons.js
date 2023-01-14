@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { no, tNum } from '../../shared.js';
+import './IncrementButtons.css';
+
 
 
 function IncrementButtons(props) {
@@ -37,7 +39,7 @@ function IncrementButtons(props) {
   // return the increment buttons and decrement buttons in a div.
   return (
     <div className="increment-buttons">
-      <button className={`btn-blue ${theme} changers left`} onClick={(e) =>{no(e); setMultiply(multiply / 10)}}>{'<'}</button>
+      <button className={`btn-blue ${theme} changers left`} onClick={(e) => { no(e); setMultiply(multiply / 10) }}>{'<'}</button>
       {/* {JSON.stringify(buttonValues)} */}
       <div className='changers'>
         <div className="increase">
@@ -47,7 +49,7 @@ function IncrementButtons(props) {
           {decrementButtons}
         </div>
       </div>
-      <button className={`btn-blue ${theme} changers right`} onClick={(e) =>{no(e); setMultiply(multiply * 10)}}>{'>'}</button>
+      <button className={`btn-blue ${theme} changers right`} onClick={(e) => { no(e); setMultiply(multiply * 10) }}>{'>'}</button>
     </div >
   );
 }

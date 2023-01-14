@@ -15,6 +15,7 @@ function Menu(props) {
         {products.activeProducts && <p className="greeting">{user.username}
           &nbsp;
           <select
+            className={`select-product ${user.theme}`}
             onChange={(event) => {
               // props.setProduct(event.target.value);
               setProductID(event.target.value)
