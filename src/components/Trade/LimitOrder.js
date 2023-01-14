@@ -1,28 +1,20 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSocket } from '../../contexts/SocketProvider.js';
-import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 import './IncrementButtons.css';
 import IncrementButtons from './IncrementButtons.js';
-import { numberWithCommas, tNum, no, fixedFloor, toFloor, fixedRound } from '../../shared.js';
+import { numberWithCommas, tNum, no, fixedRound } from '../../shared.js';
 import { useUser } from '../../contexts/UserContext.js';
 import { useData } from '../../contexts/DataContext.js';
 
 
 function LimitOrder() {
+  // contexts
   const { user, makerFee } = useUser();
-  const { width } = useWindowDimensions();
-  const { productID, currentProduct, createOrderPair } = useData();
   const { currentPrice } = useSocket();
-
+  const { productID, currentProduct, createOrderPair } = useData();
+  
+  // state
   const [priceLoaded, setPriceLoaded] = useState(false);
-  // const [sizeType, setSizeType] = useState('quote');
-  // destructure currentProduct
-  const {
-    base_currency_id, quote_currency_id, quote_increment, base_increment, quote_inverse_increment,
-    base_increment_decimals, quote_increment_decimals, price_rounding
-  } = currentProduct;
-  // console.log('currentProduct', currentProduct)
-
   const [limitOrder, setLimitOrder] = useState({
     side: 'BUY',
     price: null,
@@ -32,9 +24,13 @@ function LimitOrder() {
     trade_pair_ratio: 5
   });
 
+  // derived state
+  const { base_currency_id, quote_currency_id, quote_increment, base_increment, quote_inverse_increment,
+    base_increment_decimals, quote_increment_decimals, price_rounding } = currentProduct;
+
+
   // change limitOrder function that takes in a key and value and sets the limitOrder state
   function changeLimitOrder(key, value) {
-    // console.log('changeLimitOrder', key, value);
     setLimitOrder(prevState => ({
       ...prevState,
       [key]: value
