@@ -11,7 +11,7 @@ import { databaseClient } from '../modules/databaseClient.js';
 // const { cbClients, messenger, userStorage, botSettings } = require('../modules/cache');
 import { cbClients, messenger, userStorage, botSettings } from '../modules/cache.js';
 // const { sleep, autoSetup } = require('../../src/shared');
-import { sleep, autoSetup } from '../../src/shared.js';
+import { sleep, autoSetup, devLog } from '../../src/shared.js';
 // const { v4: uuidv4 } = require('uuid');
 import { v4 as uuidv4 } from 'uuid';
 // const robot = require('../modules/robot');
@@ -34,8 +34,6 @@ router.get('/:product', rejectUnauthenticated, (req, res) => {
   console.log('in get all orders for a product route');
   const userID = req.user.id;
   const product = req.params.product;
-  // console.log('user in get all orders route', product);
-  // console.log('getting all orders for...', userID);
   // ask db for an array of buys and an array of sells
   return Promise.all([
     // get all open orders from db and from coinbase
@@ -45,7 +43,6 @@ router.get('/:product', rejectUnauthenticated, (req, res) => {
   ])
     .then((result) => {
       const buys = result[0], sells = result[1], counts = result[2];
-      // console.log('buys', buys);
       const openOrdersInOrder = {
         sells: sells,
         buys: buys,
@@ -78,7 +75,6 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
     let options = req.body;
     console.log('options in auto setup route', options.product);
     let setup = autoSetup(user, options)
-    // console.log('setup is:', setup);
     try {
       console.log('setup options:', options);
       // put a market order in for how much BTC need to be purchase for all the sell orders
@@ -153,7 +149,6 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
           cancel_message: '',
           reorder: true
         }
-        // console.log('order to store', fakeOrder);
         await databaseClient.storeTrade(fakeOrder, tradeDetails, fakeOrder.created_time);
         // await databaseClient.storeTrade(order, order, time);
       }
@@ -186,7 +181,7 @@ router.post('/:product_id', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   const userID = req.user.id;
   const order = req.body;
-  // console.log('in post order route', order);
+  devLog('in post order route');
   if (user.active && user.approved) {
     // tradeDetails const should take in values sent from trade component form
     const tradeDetails = {
@@ -243,7 +238,6 @@ router.post('/:product_id', rejectUnauthenticated, async (req, res) => {
       console.log('order to store', fakeOrder);
       // store the fake order in the db. It will be ordered later in the reorder function
       await databaseClient.storeTrade(fakeOrder, tradeDetails, fakeOrder.created_time);
-      // console.log(fakeOrder, 'trade saved to db');
       await robot.updateFunds(userID);
       // tell DOM to update orders
       messenger[userID].newMessage({
@@ -301,7 +295,6 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
 
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID)
-    // console.log('+++++++ synchronization complete +++++++');
     res.sendStatus(200)
   } catch (err) {
     console.log('problem in synch orders PUT route');

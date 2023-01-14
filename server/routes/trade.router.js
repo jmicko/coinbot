@@ -14,7 +14,7 @@ import { cache, userStorage, cbClients, messenger } from '../modules/cache.js';
 // const { v4: uuidv4 } = require('uuid');
 import { v4 as uuidv4 } from 'uuid';
 // const { autoSetup, sleep } = require('../../src/shared');
-import { autoSetup, sleep } from '../../src/shared.js';
+import { autoSetup, devLog, sleep } from '../../src/shared.js';
 
 // const { fork } = require('child_process');
 import { fork } from 'child_process';
@@ -121,6 +121,7 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
  */
 router.post('/simulation', rejectUnauthenticated, async (req, res) => {
   try {
+    devLog('simulation route hit', req.body);
     // check if user is already running a simulation
     if (userStorage[req.user.id].simulating) {
       console.log('user is already simulating');

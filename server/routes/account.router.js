@@ -69,9 +69,7 @@ router.get('/products', rejectUnauthenticated, async (req, res) => {
     }
     // get all products from db
     let allProducts = await databaseClient.getUserProducts(userID);
-    // console.log(activeProducts.length, 'active products');
     const products = { activeProducts, allProducts }
-    // console.log(products, 'products');
     res.send(products).status(200);
   }
   catch (err) {
@@ -118,8 +116,6 @@ router.get('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
   console.log('profits get route');
   const userID = req.user.id;
   const product_id = req.params.product_id;
-  // console.log(product_id, 'product_id');
-  // console.log(req.user, 'req.user in profits route');
 
   const durations = ['24 hour', '1 week', '30 day', '1 year'];
   const profits = [];
@@ -138,7 +134,6 @@ router.get('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
     // add since reset to profits array
     profits.push(sinceDate);
 
-    // console.log(profits, 'duration profits');
     res.send(profits);
   } catch (err) {
     console.log(err, 'error in profits route:');
@@ -449,7 +444,6 @@ router.get('/errors', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   try {
     const userErrors = cache.getErrors(userID);
-    // console.log('getting errors', userErrors);
     res.send(userErrors);
   } catch (err) {
     console.log(err, 'problem debug route');
@@ -467,7 +461,6 @@ router.get('/messages', rejectUnauthenticated, async (req, res) => {
     const userMessages = {}
     userMessages.botMessages = cache.getMessages(userID);
     userMessages.chatMessages = cache.getChatMessages(userID);
-    // console.log('getting Messages', userMessages);
     res.send(userMessages);
   } catch (err) {
     console.log(err, 'problem debug route');

@@ -13,19 +13,16 @@ import { devLog } from '../../src/shared.js';
 async function startWebsocket(userID) {
 
   const user = cache?.getUser(userID);
-  // console.log(user, 'ws user');
   // don't start ws if user is not approved and active
   if (!user?.active || !user?.approved) {
     if (user) {
       setTimeout(() => {
         const ws = startWebsocket(userID);
-        // console.log(ws, 'retry ws success', user);
       }, 5000);
     }
     return { success: false }
   }
   const userAPI = cache.getAPI(userID)
-  // console.log(userAPI, 'api details in ws');
   const secret = userAPI.CB_SECRET;
   const key = userAPI.CB_ACCESS_KEY;
 
@@ -48,15 +45,12 @@ async function startWebsocket(userID) {
           handleSnapshot(event);
         } else if (event.type === 'update' && event.orders) {
           handleOrdersUpdate(event.orders);
-        } else {
-          // console.log(event, event.type, 'unhandled event from ws');
         }
       });
     }
   }
 
   function statusHandler(socketStatus) {
-    // console.log(socketStatus, '<-- socketStatus');
     // send status message to user
     const statMessage = {
       type: 'socketStatus',
@@ -78,7 +72,6 @@ async function startWebsocket(userID) {
   const products = await getProducts();
   cbClients[userID].setProducts(products);
   // devLog(cbClients[userID].products, 'cbClients[userID]');
-  // console.log(products, 'products in ws');
 
   async function getProducts() {
     const products = await databaseClient.getActiveProducts(userID);
@@ -114,7 +107,6 @@ async function startWebsocket(userID) {
       orders.forEach(order => {
         if (order.status === 'FILLED') {
           orderIds.push(order.order_id)
-          // console.log(order, 'filled order');
         }
       })
       // find unsettled orders in the db based on the IDs array
@@ -158,7 +150,6 @@ async function updateMultipleOrders(userID, params) {
     const ordersArray = params?.ordersArray
       ? params.ordersArray
       : cache.getKey(userID, 'ordersToCheck');
-    // console.log(ordersArray, 'orders array in ws');
     if (ordersArray.length > 0) {
       messenger[userID].newMessage({
         type: 'general',
@@ -203,7 +194,6 @@ async function updateMultipleOrders(userID, params) {
 
 
 function setupSocketIO(io) {
-  // console.log('setting up socket.io');
 
   io.use(rejectUnauthenticatedSocket);
 
@@ -212,11 +202,8 @@ function setupSocketIO(io) {
     let id = socket.id;
     const userID = socket.request.session.passport?.user;
     socket.userID = userID;
-    // console.log(userID, 'the user id in socketIO');
     // add the socket to the user's socket storage
     messenger?.[userID]?.addSocket(socket);
-
-    // console.log(userStorage?.[userID]?.socketStatus, '<-- current status');
 
     const statMessage = {
       type: 'socketStatus',
@@ -253,7 +240,6 @@ function setupSocketIO(io) {
     });
 
     socket.on('message', (message) => {
-      // console.log(message);
       if (message === 'ping') {
         // put some timeout function in here
         // console.log(message, 'message from socket');
@@ -262,7 +248,6 @@ function setupSocketIO(io) {
         const allUsers = userStorage.getAllUsers()
         console.log(allUsers, 'ALLLLLLL OF THE user');
         allUsers.forEach(userID => {
-          // console.log(user,'user to send message to', message.data);
           messenger[userID].newMessage({
             text: message.data,
             type: 'chat'
@@ -283,7 +268,6 @@ function setupSocketIO(io) {
 
   // handle abnormal disconnects
   io.engine.on("connection_error", (err) => {
-    // console.log(err.req, 'error request object');	     // the request object
     console.log(err.code, 'the error code');     // the error code, for example 1
     console.log(err.message, 'the error message');  // the error message, for example "Session ID unknown"
     console.log(err.context, 'some additional error context');  // some additional error context
