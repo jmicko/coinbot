@@ -24,6 +24,11 @@ function devLog(...args) {
   const year = new Date().getFullYear();
   const monthFolder = `${year}-${month}`;
 
+  // if the logs folder doesn't exist, create it
+  if (!fs.existsSync('./server/logs')) {
+    fs.mkdirSync('./server/logs');
+  }
+
   // if the folder doesn't exist, create it
   if (!fs.existsSync(`./server/logs/${monthFolder}`)) {
     fs.mkdirSync(`./server/logs/${monthFolder}`);
