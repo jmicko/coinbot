@@ -16,8 +16,24 @@ function devLog(...args) {
     return arg;
   });
 
+  // the file name is the current date
+  const fileName = `${new Date().toISOString().split('T')[0]}.log`;
+
+  // files should go in a subfolder by month
+  const month = new Date().getMonth() + 1;
+  const year = new Date().getFullYear();
+  const monthFolder = `${year}-${month}`;
+
+  // if the folder doesn't exist, create it
+  if (!fs.existsSync(`./server/logs/${monthFolder}`)) {
+    fs.mkdirSync(`./server/logs/${monthFolder}`);
+  }
+
+  // write the log to the file
+  fs.appendFile(`./server/logs/${monthFolder}/${fileName}`,
+
   
-  fs.appendFile('./server/logs/log.log',
+  // fs.appendFile(`./server/logs/${fileName}.log`,
   
     `${new Date().toISOString()} ${args.join(' ')}\n`,
 
