@@ -580,7 +580,7 @@ const getLimitedUnsettledTrades = (userID, limit) => {
     try {
       // first get which products are in the portfolio
       const products = await getActiveProductIDs(userID);
-      console.log('products', products);
+      // console.log('products', products);
       let sqlText = `
       (SELECT * FROM "limit_orders" WHERE "side" = 'SELL' AND "flipped" = false AND "settled" = false AND "will_cancel" = false AND "userID" = $1 AND "product_id" = $2 ORDER BY "limit_price" ASC LIMIT $3)
       UNION
@@ -1448,8 +1448,6 @@ async function getMissingCandles({ productID, granularity }) {
       const result = await pool.query(sqlText, [productID, granularity.name]);
       // devLog('result.rows', result.rows);
       const candleStarts = result.rows.map(candle => candle.start);
-
-
 
       // if there are more than one candle, 
       // ensure that the distance between each candle is the same as the seconds of granularity as defined in the granularitySeconds object

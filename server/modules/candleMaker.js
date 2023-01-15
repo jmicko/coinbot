@@ -3,7 +3,7 @@ import { userStorage, cbClients } from "./cache.js";
 // import { Coinbase } from "./coinbaseClient.js";
 import { databaseClient } from "./databaseClient.js";
 
-const sleepyTime = 300; // can adjust rate limiting here
+const sleepyTime = 500; // can adjust rate limiting here
 
 console.log('candle maker is making candles');
 
@@ -27,18 +27,12 @@ process.on('message', async (data) => {
     default: devLog('candle maker received unknown data type', data?.type);
       break;
   }
-  // user will be an object like this:
-  // user = {
-  //   id: 1,
-  //   username: 'admin',
-  //   active: true,
-  //   admin: true,
-  //   approved: true,
-  //   joined_at: '2022-11-29T17:49:02.916Z'
-  // }
 
 
 });
+
+
+
 
 async function downloadCandles(user) {
   // devLog('downloadCandles', user, granularities);
@@ -47,16 +41,47 @@ async function downloadCandles(user) {
   // first get the active products
   const activeProducts = await databaseClient.getActiveProducts(userID);
 
-  // loop through the products and update the candles for each product one at a time
-  // this is to avoid rate limiting
+
+  // update candles like 1000 times. Can change this number to adjust how frequently maintenance is done
+  for (let j = 0; j < 1000; j++) {
+
+    // loop through the products and update the candles for each product one at a time
+    // this is to avoid rate limiting
+    for (let i = 0; i < activeProducts.length; i++) {
+      const productID = activeProducts[i].product_id;
+
+      devLog('product', productID);
+      await updateCandlesForProduct({ productID, userID });
+      // sleep in between to avoid rate limiting
+      await sleep(sleepyTime);
+    } // end for loop of products
+    devLog('candle maker small loop done');
+  }
+
+
+  // now do some maintenance stuff that takes a long time and should only be done once in a while
+  devLog('candle maker is done making candles for this big loop');
+
+  // check the integrity of the candles and get missing data if available
   for (let i = 0; i < activeProducts.length; i++) {
     const productID = activeProducts[i].product_id;
+    // get the missing candles for each product
+    for (let j = 0; j < granularities.length; j++) {
+      const granularity = granularities[j];
 
-    devLog('product', productID);
-    await updateCandlesForProduct({ productID, userID });
-    // sleep in between to avoid rate limiting
-    await sleep(sleepyTime);
-  } // end for loop of products
+      const missing = await databaseClient.getMissingCandles({ productID, granularity });
+      devLog('missing', missing);
+      
+      for (let i = 0; i < missing.length; i++) {
+        const missingCandle = missing[i];
+        // get the candles from 1 second before the missing candle to 1 second after the missing candle
+        await getCandles({ userID, productID, granularity, start: missingCandle - 1, end: missingCandle + 1 });
+        await sleep(sleepyTime);
+      }
+    }
+  }
+
+
   setTimeout(() => {
     downloadCandles(user);
   }, 10000);
@@ -95,10 +120,10 @@ async function updateCandlesForProduct({ productID, userID }) {
       }
 
       // get the next newest candles...
-      await getCandles({userID, productID, granularity, start: newestCandle?.start });
+      await getCandles({ userID, productID, granularity, start: newestCandle?.start });
       await sleep(sleepyTime);
       // ...then get the next oldest candles...
-      await getCandles({userID, productID, granularity, end: oldestCandle?.start });
+      await getCandles({ userID, productID, granularity, end: oldestCandle?.start });
       // then verify the integrity of the candles data in the database
       // can check for missing candles by getting an array of numbers of the start value from the oldest to the newest candle based on the granularity
       // then check if there are any missing numbers in the array for the product and granularity
@@ -107,8 +132,7 @@ async function updateCandlesForProduct({ productID, userID }) {
         startValues.push(i);
       }
       devLog('startValues', startValues.length);
-      const missing = await databaseClient.getMissingCandles({ productID, granularity });
-      devLog('missing', missing.length);
+
 
     } catch (err) {
       console.log(err);
@@ -158,8 +182,9 @@ async function getCandles({ userID, productID, granularity, start, end }) {
 
   const result = await cbClients[userID].getMarketCandles(params);
   const candles = result.candles;
-  devLog('saving candles', candles.length);
 
+  if (candles.length === 0) return;
   // // insert the candles into the database
+  devLog('saving candles', candles.length);
   await databaseClient.saveCandles(productID, granularity.name, candles);
 }
