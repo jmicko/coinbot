@@ -16,6 +16,24 @@ function devLog(...args) {
     return arg;
   });
 
+  // check if it is an error
+  if (args[0] instanceof Error) {
+    // if it is an error, get the error message and stack trace
+    // log each on a separate line, and each property on a separate line if they are objects or arrays
+    const error = args[0];
+    const errorMessage = error.message;
+    const errorStack = error.stack;
+    const errorName = error.name;
+    const errorDate = new Date().toISOString();
+    const errorArgs = args.slice(1);
+    const errorArgsString = errorArgs.join(' ');
+    const errorString = `${errorDate} ${errorName} ${errorMessage} ${errorStack} ${errorArgsString}`;
+    args = [errorString];
+
+
+  }
+
+
   // the file name is the current date
   const fileName = `${new Date().toISOString().split('T')[0]}.log`;
 

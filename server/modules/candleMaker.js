@@ -4,7 +4,7 @@ import { userStorage, cbClients } from "./cache.js";
 import { databaseClient } from "./databaseClient.js";
 import { devLog } from "./utilities.js";
 
-const sleepyTime = 500; // can adjust rate limiting here
+const sleepyTime = 1000; // can adjust rate limiting here
 
 console.log('candle maker is making candles');
 
@@ -70,7 +70,7 @@ async function downloadCandles(user) {
 
       const missing = await databaseClient.getMissingCandles({ productID, granularity });
       devLog('missing', missing);
-      
+
       for (let i = 0; i < missing.length; i++) {
         const missingCandle = missing[i];
         // get the candles from 1 second before the missing candle to 1 second after the missing candle
@@ -142,48 +142,52 @@ async function updateCandlesForProduct({ productID, userID }) {
 }
 
 async function getCandles({ userID, productID, granularity, start, end }) {
-  // can change this number to change the number of candles, 300 max
-  const numCandles = 300;
-  const granMillis = granularity.value * 1000 * numCandles;
-  // devLog('granMillis', granMillis, granularity)
+  try {
+    // can change this number to change the number of candles, 300 max
+    const numCandles = 300;
+    const granMillis = granularity.value * 1000 * numCandles;
+    // devLog('granMillis', granMillis, granularity)
 
-  // if there is only a start date, calc the future end date based on the granularity
-  // if there is only an end date, calc the past start date based on the granularity value, which is in seconds
-  if (start && !end) {
-    const startDate = start * 1000;
-    // devLog('start date', startDate);
-    const endDate = startDate + granMillis;
-    // end date should be unix time in seconds
-    end = Math.floor(endDate / 1000);
-    // devLog('end date', end);
-  } else if (end && !start) {
-    const endDate = end * 1000;
-    // devLog('end date', endDate);
-    const startDate = endDate - granMillis;
-    // start date should be unix time in seconds
-    start = Math.floor(startDate / 1000);
-    // devLog('start date', start);
+    // if there is only a start date, calc the future end date based on the granularity
+    // if there is only an end date, calc the past start date based on the granularity value, which is in seconds
+    if (start && !end) {
+      const startDate = start * 1000;
+      // devLog('start date', startDate);
+      const endDate = startDate + granMillis;
+      // end date should be unix time in seconds
+      end = Math.floor(endDate / 1000);
+      // devLog('end date', end);
+    } else if (end && !start) {
+      const endDate = end * 1000;
+      // devLog('end date', endDate);
+      const startDate = endDate - granMillis;
+      // start date should be unix time in seconds
+      start = Math.floor(startDate / 1000);
+      // devLog('start date', start);
+    }
+
+
+
+    // devLog(productID, 'product id to get candles for')
+    // get the most recent candles for the product and granularity
+    // this will get the most recent 300 candles
+    const params = {
+      product_id: productID,
+      start: start,
+      end: end,
+      granularity: granularity.name
+    }
+
+    // devLog('params', params, userID);
+
+    const result = await cbClients[userID].getMarketCandles(params);
+    const candles = result.candles;
+
+    if (candles.length === 0) return;
+    // // insert the candles into the database
+    devLog('saving candles', candles.length);
+    await databaseClient.saveCandles(productID, granularity.name, candles);
+  } catch (err) {
+    devLog(err);
   }
-
-
-
-  // devLog(productID, 'product id to get candles for')
-  // get the most recent candles for the product and granularity
-  // this will get the most recent 300 candles
-  const params = {
-    product_id: productID,
-    start: start,
-    end: end,
-    granularity: granularity.name
-  }
-
-  // devLog('params', params, userID);
-
-  const result = await cbClients[userID].getMarketCandles(params);
-  const candles = result.candles;
-
-  if (candles.length === 0) return;
-  // // insert the candles into the database
-  devLog('saving candles', candles.length);
-  await databaseClient.saveCandles(productID, granularity.name, candles);
 }
