@@ -10,6 +10,7 @@ html {
 
 body {
   /* background-color: #c7c7b1; */
+  overflow: hidden;
   background-color   : #313131;
   /* font-family     : 'Syne Mono', monospace; */
 }

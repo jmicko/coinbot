@@ -1,25 +1,54 @@
 .drag-button {
+  display: flex;
+  justify-content: space-between;
   background-color: #1c1c1c;
   /* color        : #eaeaea; */
   /* font-family  : inherit; */
   /* box-shadow   : inset 2px 2px #ffffff99, inset -2px -2px #00000099; */
   /* width should fill all remaining space  */
-  /* width        : 80%; */
+  /* width        : 50%; */
   flex-grow       : 100;
   margin-left     : 10px;
   margin-right    : 10px;
   height          : 1.5rem;
 }
 .drag-button-touch{
+  background-color: #1c1c1c;
+
   flex-grow       : 100;
   margin-left     : 10px;
   margin-right    : 10px;
   height          : 1.5rem;
 }
 
+.drag-arrows-right{
+  float: right;
+  margin-right: .5rem;
+}
+
+.collapse-arrows{
+  margin-left: 10px;
+  margin-right: 10px;
+}
+.drag-arrows-center{
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.drag-arrows-left{
+  float: left;
+  margin-left: .5rem;
+}
+
 .drag-div {
+
   display       : flex;
   flex-direction: row;
+  justify-content: space-evenly;
   /* overflow should not scroll */
-  /* overflow      : hidden; */
+
+}
+
+.hide {
+  display: none;
 }

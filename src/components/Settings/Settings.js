@@ -25,49 +25,51 @@ function Settings(props) {
     )
   }
 
-  function afterDrag() {
+  function AfterDrag({ collapseParent }) {
     return (
-          <p className="info tips">
-            <strong>Show Tips</strong>
-            {/* <br /> */}
-            <input
-              type="checkbox"
-              checked={tips}
-              onChange={() => setTips(!tips)}
-            />
-          </p>
+      <p className="info tips">
+        {!collapseParent && <strong>Show Tips</strong>}
+        {/* <br /> */}
+        <input
+          type="checkbox"
+          checked={tips}
+          onChange={() => setTips(!tips)}
+        />
+      </p>
     )
   }
 
 
-  function SettingsPanel({ DragButton }) {
+  function SettingsPanel({ DragButton, collapseParent }) {
     return (
       <>
         <DragButton
           text={'Settings'}
 
-          header={() => <h2 className="settings-header">Settings</h2>}
+          header={() => <h2 className={`settings-header ${collapseParent && 'hide'}`}>Settings</h2>}
           beforeDrag={beforeDrag}
-          afterDrag={afterDrag}
+          afterDrag={() => <AfterDrag />}
 
         >
 
 
         </DragButton>
 
-        <SettingsNav setSettingsPage={setSettingsPage} settingsPage={settingsPage} />
-        {
+        {!collapseParent && <SettingsNav setSettingsPage={setSettingsPage} settingsPage={settingsPage} />}
+        <div className={`${collapseParent && 'hide'}`}>
           {
-            'general': <General product={props.product} theme={theme} tips={tips} />,
-            'products': <Products product={props.product} theme={theme} tips={tips} />,
-            'investment': <Investment product={props.product} theme={theme} tips={tips} />,
-            'autoSetup': <AutoSetup product={props.product} theme={theme} tips={tips} priceTicker={props.priceTicker} />,
-            'bulkDelete': <BulkDelete product={props.product} theme={theme} tips={tips} />,
-            'history': <History product={props.product} theme={theme} tips={tips} />,
-            'reset': <Reset product={props.product} theme={theme} tips={tips} />,
-            'admin': <Admin product={props.product} theme={theme} tips={tips} />
-          }[settingsPage]
-        }
+            {
+              'general': <General product={props.product} theme={theme} tips={tips} />,
+              'products': <Products product={props.product} theme={theme} tips={tips} />,
+              'investment': <Investment product={props.product} theme={theme} tips={tips} />,
+              'autoSetup': <AutoSetup product={props.product} theme={theme} tips={tips} priceTicker={props.priceTicker} />,
+              'bulkDelete': <BulkDelete product={props.product} theme={theme} tips={tips} />,
+              'history': <History product={props.product} theme={theme} tips={tips} />,
+              'reset': <Reset product={props.product} theme={theme} tips={tips} />,
+              'admin': <Admin product={props.product} theme={theme} tips={tips} />
+            }[settingsPage]
+          }
+        </div>
       </>
     );
   }

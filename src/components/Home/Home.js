@@ -48,7 +48,7 @@ function Home() {
 
       {
         // on mobile?
-        width < 800
+        width <= 800
           // show mobile page
           // which mobile page?
           ? mobilePage === 'newPair'

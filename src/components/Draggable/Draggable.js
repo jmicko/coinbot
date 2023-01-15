@@ -9,7 +9,9 @@ function Draggable({ children, className }) {
   const [canReposition, setCanReposition] = useState(true);
   // offset to see where on the button the user clicked
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const { height } = useWindowDimensions();
+
+  const [collapseParent, setCollapseParent] = useState(false);
+  const { height, width } = useWindowDimensions();
   // find out if we are on a touch device
   const isTouchDevice = ('ontouchstart' in document.documentElement);
 
@@ -44,18 +46,57 @@ function Draggable({ children, className }) {
       <div>
         <div className='drag-div'>
           {props.beforeDrag()}
-          {!isTouchDevice ?
+          {!isTouchDevice ? <>
+            <div
+              className="drag-button-touch"
+              onClick={() => setCollapseParent(!collapseParent)}
+            >
+              {!collapseParent
+                ? <center className='collapse-arrows'>
+                  &#9650;
+                  &#9650;
+                  &#9650;
+                </center>
+                : <center className='collapse-arrows'>
+                  &#9660;
+                  &#9660;
+                  &#9660;
+                </center>}
+            </div>
+
             <div
               className="drag-button"
               onMouseDown={(e) => { beginMove(e); }}
               onMouseUp={() => setIsDragging(false)}
             >
+              <span className="drag-arrows-left">
+                &#10018;
+              </span>
+              <span className="drag-arrows-center">
+                {/* move */}
+              </span>
+              <span className="drag-arrows-right">
+                &#10018;
+              </span>
             </div>
+
+          </>
             :
             <div
               className="drag-button-touch"
+              onClick={() => setCollapseParent(!collapseParent)}
             >
-
+              {!collapseParent
+                ? <center className='collapse-arrows'>
+                  &#9650;
+                  &#9650;
+                  &#9650;
+                </center>
+                : <center className='collapse-arrows'>
+                  &#9660;
+                  &#9660;
+                  &#9660;
+                </center>}
             </div>
           }
           {props.afterDrag()}
@@ -68,7 +109,7 @@ function Draggable({ children, className }) {
   return (
     <div style={style} className={className} >
       {/* pass the dragButton to the children */}
-      {children({ DragButton })}
+      {children({ DragButton, collapseParent })}
     </div>
   );
 
