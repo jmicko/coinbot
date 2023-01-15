@@ -1440,6 +1440,57 @@ async function saveCandles(productID, granularity, candles) {
 }
 
 
+async function getMissingCandles({ productID, granularity }) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // get start value for all candles in the database
+      const sqlText = `SELECT "start" FROM "market_candles" WHERE "product_id" = $1 AND "granularity" = $2 ORDER BY "start" ASC;`;
+      const result = await pool.query(sqlText, [productID, granularity.name]);
+      // devLog('result.rows', result.rows);
+      const candleStarts = result.rows.map(candle => candle.start);
+
+
+
+      // if there are more than one candle, 
+      // ensure that the distance between each candle is the same as the seconds of granularity as defined in the granularitySeconds object
+      const missing = [];
+      if (candleStarts.length > 1) {
+        devLog(`checking ${candleStarts.length} candleStarts for integrity`)
+        let integrity = true;
+        for (let i = 1; i < candleStarts.length; i++) {
+          const currentStart = Number(candleStarts[i]);
+          const previousStart = Number(candleStarts[i - 1]);
+          const distance = currentStart - previousStart;
+          const distanceNeeded = granularity.value;
+          if (distance !== distanceNeeded) {
+            // devLog('distance', distance, 'distanceNeeded', distanceNeeded);
+            integrity = false;
+            // if the integrity is compromised, find the missing candleStarts
+            for (let j = previousStart + distanceNeeded; j < currentStart; j += distanceNeeded) {
+              missing.push(j);
+
+            }
+          }
+        }
+        if (integrity) {
+          devLog('candleStarts array integrity is GOOD');
+        } else {
+          devLog('candleStarts array integrity is compromised,', missing.length, 'missing candleStarts');
+        }
+      }
+
+
+      devLog('candleStarts', candleStarts.length);
+      resolve(missing);
+    } catch (err) {
+      devLog('error getting missing candles', err);
+      reject(err);
+    }
+  })
+}
+
+
+
 
 
 
@@ -1546,6 +1597,7 @@ const databaseClient = {
   getCandles: getCandles,
   getCandlesAverage: getCandlesAverage,
   getNextCandles: getNextCandles,
+  getMissingCandles: getMissingCandles,
   getProduct: getProduct,
 };
 

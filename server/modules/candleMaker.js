@@ -77,8 +77,8 @@ async function updateCandlesForProduct({ productID, userID }) {
       // get the oldest candle from the database
       const oldestCandle = await databaseClient.getOldestCandle(productID, granularity.name);
 
-      devLog('newestCandle', productID, granularity.name, 'newestCandle', newestCandle?.start ? new Date(newestCandle?.start * 1000) : 'no candle');
-      devLog('oldestCandle', productID, granularity.name, 'oldestCandle', oldestCandle?.start ? new Date(oldestCandle?.start * 1000) : 'no candle');
+      // devLog('newestCandle', productID, granularity.name, 'newestCandle', newestCandle?.start ? new Date(newestCandle?.start * 1000) : 'no candle');
+      // devLog('oldestCandle', productID, granularity.name, 'oldestCandle', oldestCandle?.start ? new Date(oldestCandle?.start * 1000) : 'no candle');
 
       // if there is no candle in the database, get the most recent candles and continue
       if (!newestCandle) {
@@ -100,7 +100,15 @@ async function updateCandlesForProduct({ productID, userID }) {
       // ...then get the next oldest candles...
       await getCandles({userID, productID, granularity, end: oldestCandle?.start });
       // then verify the integrity of the candles data in the database
-
+      // can check for missing candles by getting an array of numbers of the start value from the oldest to the newest candle based on the granularity
+      // then check if there are any missing numbers in the array for the product and granularity
+      const startValues = [];
+      for (let i = oldestCandle.start; i <= newestCandle.start; i += granularity.value) {
+        startValues.push(i);
+      }
+      devLog('startValues', startValues.length);
+      const missing = await databaseClient.getMissingCandles({ productID, granularity });
+      devLog('missing', missing.length);
 
     } catch (err) {
       console.log(err);
@@ -136,7 +144,7 @@ async function getCandles({ userID, productID, granularity, start, end }) {
 
 
 
-  devLog(productID, 'product id to get candles for')
+  // devLog(productID, 'product id to get candles for')
   // get the most recent candles for the product and granularity
   // this will get the most recent 300 candles
   const params = {
@@ -146,7 +154,7 @@ async function getCandles({ userID, productID, granularity, start, end }) {
     granularity: granularity.name
   }
 
-  devLog('params', params, userID);
+  // devLog('params', params, userID);
 
   const result = await cbClients[userID].getMarketCandles(params);
   const candles = result.candles;
