@@ -15,7 +15,7 @@ import { useUser } from '../../contexts/UserContext.js';
 
 function Home() {
 
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const { user } = useUser();
 
   const [showSettings, setShowSettings] = useState(false);
@@ -36,7 +36,12 @@ function Home() {
   }
 
   return (
-    <div className={`Home ${user.theme}`}>
+    <div
+      className={`Home ${user.theme}`}
+      style={{
+        height: height,
+        width: width
+      }}>
       {/* {JSON.stringify(socket.product)}{JSON.stringify(product)} */}
       <Menu clickSettings={clickSettings} />
 

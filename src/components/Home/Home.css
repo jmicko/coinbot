@@ -4,7 +4,7 @@
   grid-template-columns: 0fr min-content 4fr max-content 0fr;
   gap                  : .4rem;
   grid-template-rows   : 0fr auto min-content 1fr;
-  height               : 100vh;
+  /* height               : 100vh; */
   width                : 100vw;
   background-color     : #c7c7b1;
   color                : #000000;
@@ -28,7 +28,7 @@
 
 @media (max-width: 800px) {
   .Home {
-    height               : 90vh;
+    /* height               : 90vh; */
     /* this is STRICTLY A BUSINESS ROBOT, and the color should reflect that! */
     grid-template-columns: 0fr auto 0fr;
     grid-template-rows   : min-content min-content min-content min-content;
