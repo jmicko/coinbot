@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import useWindowDimensions from '../../hooks/useWindowDimensions.js';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useUser } from '../../contexts/UserContext.js';
+import { no } from '../../shared.js';
 import './Draggable.css';
 
 function Draggable({ children, className }) {
+  const { theme } = useUser();
   const [isDragging, setIsDragging] = useState(false);
   const [initialPosition, setInitialPosition] = useState({ x: 0, y: 0 });
   const [currentPosition, setCurrentPosition] = useState({ x: 0, y: 0 });
@@ -11,11 +13,11 @@ function Draggable({ children, className }) {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
   const [collapseParent, setCollapseParent] = useState(false);
-  const { height, width } = useWindowDimensions();
+
   // find out if we are on a touch device
   const isTouchDevice = ('ontouchstart' in document.documentElement);
 
-  function handleMouseMove(e) {
+  const handleMouseMove = useCallback((e) => {
     if (!isDragging) {
       return;
     }
@@ -23,7 +25,7 @@ function Draggable({ children, className }) {
       x: e.clientX - offset.x,
       y: e.clientY - offset.y
     });
-  }
+  }, [isDragging, offset]);
 
   useEffect(() => {
     // handle mouse events
@@ -33,7 +35,7 @@ function Draggable({ children, className }) {
       document.removeEventListener('mousemove', handleMouseMove)
 
     };
-  }, [isDragging]);
+  }, [isDragging, handleMouseMove]);
 
   const style = {
     position: 'relative',
@@ -44,11 +46,11 @@ function Draggable({ children, className }) {
   function DragButton(props, { children }) {
     return (
       <div>
-        <div className='drag-div'>
+        <div className={`drag-div`}>
           {props.beforeDrag()}
           {!isTouchDevice ? <>
             <div
-              className="drag-button-touch"
+              className={`drag-button-touch ${theme}`}
               onClick={() => setCollapseParent(!collapseParent)}
             >
               {!collapseParent
@@ -65,8 +67,8 @@ function Draggable({ children, className }) {
             </div>
 
             <div
-              className="drag-button"
-              onMouseDown={(e) => { beginMove(e); }}
+              className={`drag-button-touch ${theme}`}
+              onMouseDown={(e) => { no(e); beginMove(e); }}
               onMouseUp={() => setIsDragging(false)}
             >
               <span className="drag-arrows-left">

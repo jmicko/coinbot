@@ -1,6 +1,6 @@
 .drag-button {
-  display: flex;
-  justify-content: space-between;
+  display         : flex;
+  justify-content : space-between;
   background-color: #1c1c1c;
   /* color        : #eaeaea; */
   /* font-family  : inherit; */
@@ -12,38 +12,45 @@
   margin-right    : 10px;
   height          : 1.5rem;
 }
-.drag-button-touch{
-  background-color: #1c1c1c;
 
+.drag-button-touch {
+  background-color: #4b4b4b;
+  color           : white;
   flex-grow       : 100;
   margin-left     : 10px;
   margin-right    : 10px;
   height          : 1.5rem;
 }
 
-.drag-arrows-right{
-  float: right;
+.drag-button-touch.darkTheme {
+  color           : rgb(215, 215, 215);
+  background-color: #1c1c1c;
+}
+
+.drag-arrows-right {
+  float       : right;
   margin-right: .5rem;
 }
 
-.collapse-arrows{
-  margin-left: 10px;
+.collapse-arrows {
+  margin-left : 10px;
   margin-right: 10px;
 }
-.drag-arrows-center{
-  margin-left: auto;
+
+.drag-arrows-center {
+  margin-left : auto;
   margin-right: auto;
 }
 
-.drag-arrows-left{
-  float: left;
+.drag-arrows-left {
+  float      : left;
   margin-left: .5rem;
 }
 
 .drag-div {
 
-  display       : flex;
-  flex-direction: row;
+  display        : flex;
+  flex-direction : row;
   justify-content: space-evenly;
   /* overflow should not scroll */
 
