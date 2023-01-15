@@ -1,3 +1,7 @@
+.drag{
+  cursor: default;
+}
+
 .drag-button {
   display         : flex;
   justify-content : space-between;
@@ -20,6 +24,7 @@
   margin-left     : 10px;
   margin-right    : 10px;
   height          : 1.5rem;
+  display         : flex;
 }
 
 .drag-button-touch.darkTheme {
@@ -27,23 +32,25 @@
   background-color: #1c1c1c;
 }
 
+.collapse-arrows {
+  margin-left : auto;
+  margin-right: auto;
+
+}
+
 .drag-arrows-right {
   float       : right;
   margin-right: .5rem;
 }
 
-.collapse-arrows {
-  margin-left : 10px;
-  margin-right: 10px;
-}
-
 .drag-arrows-center {
   margin-left : auto;
   margin-right: auto;
+  /* flex-grow   : 100; */
 }
 
 .drag-arrows-left {
-  float      : left;
+  float         : left;
   margin-left: .5rem;
 }
 

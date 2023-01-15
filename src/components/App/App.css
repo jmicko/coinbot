@@ -58,7 +58,7 @@ body {
 
 /* === BOXES === */
 
-body,
+/* body, */
 .scrollable {
   overflow-y     : auto;
   max-height     : 100%;

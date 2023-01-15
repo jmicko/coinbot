@@ -19,7 +19,7 @@ function Settings(props) {
   const [tips, setTips] = useState(false);
   const { theme } = useUser();
 
-  function beforeDrag() {
+  function BeforeDrag() {
     return (
       <button className={`btn-logout btn-red close-settings ${theme}`} onClick={() => { props.clickSettings() }}>X</button>
     )
@@ -39,22 +39,17 @@ function Settings(props) {
     )
   }
 
-
-  function SettingsPanel({ DragButton, collapseParent }) {
+// receive props from Draggable component
+  function SettingsPanel({ Dragger, collapseParent }) {
     return (
       <>
-        <DragButton
+        <Dragger
           text={'Settings'}
 
           header={() => <h2 className={`settings-header ${collapseParent && 'hide'}`}>Settings</h2>}
-          beforeDrag={beforeDrag}
+          beforeDrag={BeforeDrag}
           afterDrag={() => <AfterDrag />}
-
-        >
-
-
-        </DragButton>
-
+        />
         {!collapseParent && <SettingsNav setSettingsPage={setSettingsPage} settingsPage={settingsPage} />}
         <div className={`${collapseParent && 'hide'}`}>
           {
@@ -81,10 +76,6 @@ function Settings(props) {
         className={`Settings ${theme}`}>
         {/* <SettingsPanel clickSettings={props.clickSettings} product={props.product} priceTicker={props.priceTicker} /> */}
       </Draggable>
-    );
-  } else {
-    return (
-      <></>
     );
   }
 }
