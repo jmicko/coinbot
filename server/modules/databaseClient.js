@@ -1302,7 +1302,7 @@ async function getProfitForDurationByProduct(userID, product, duration) {
       FROM limit_orders 
       WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "product_id" = $2 AND "filled_at" > now() - $3::interval;`;
       let result = await pool.query(sqlText, [userID, product, duration]);
-      
+
       resolve(result.rows[0].sum);
     } catch (err) {
       reject(err);
@@ -1386,7 +1386,7 @@ async function getOldestCandle(product_id, granularity) {
 }
 
 // save an array of candles to the database
-async function saveCandles(productID, granularity, candles) {
+async function saveCandlesold(productID, granularity, candles) {
   return new Promise(async (resolve, reject) => {
     try {
       // save each candle to the database unless it already exists
@@ -1395,11 +1395,6 @@ async function saveCandles(productID, granularity, candles) {
         // devLog('candle', candle, productID, granularity);
         // candleID is a concatenation of the productID, the granularity and the start time
         const candleID = productID + granularity + candle.start;
-        // check if the candle already exists
-        // const sqlText = `SELECT * FROM "market_candles" WHERE "product_id" = $1 AND "granularity" = $2 AND "start" = $3;`;
-        // let result = await pool.query(sqlText, [productID, granularity, candle.start]);
-        // if the candle doesn't exist, save it
-        // if (result.rows.length === 0) {
         const insertSqlText = `INSERT INTO market_candles (candle_id, product_id, granularity, start, low, high, high_low_ratio, open, close, volume)
           VALUES ($1, $2, $3, $4, $5, $6, ($6::numeric / $5::numeric), $7, $8, $9)
           ON CONFLICT (candle_id) DO NOTHING;`;
@@ -1413,6 +1408,42 @@ async function saveCandles(productID, granularity, candles) {
     }
   })
 }
+
+async function saveCandles(productID, granularity, candles) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // candles is an array of objects with properties that correspond to the columns in the database
+      // sql loop to insert all candles at once from the candles array without closing the connection
+      let insertSqlText = `INSERT INTO market_candles (candle_id, product_id, granularity, start, low, high, high_low_ratio, open, close, volume)
+      VALUES `;
+      let values = [];
+      for (let i = 0; i < candles.length; i++) {
+        const candle = candles[i];
+        // candleID is a concatenation of the productID, the granularity and the start time
+        const candleID = productID + granularity + candle.start;
+        values.push(candleID, productID, granularity, candle.start, candle.low, candle.high, candle.open, candle.close, candle.volume);
+        if (i < candles.length - 1) {
+          insertSqlText += `($${i * 9 + 1}, $${i * 9 + 2}, $${i * 9 + 3}, $${i * 9 + 4}, $${i * 9 + 5}, $${i * 9 + 6}, ($${i * 9 + 6}::numeric / $${i * 9 + 5}::numeric), $${i * 9 + 7}, $${i * 9 + 8}, $${i * 9 + 9}), `;
+        } else {
+          insertSqlText += `($${i * 9 + 1}, $${i * 9 + 2}, $${i * 9 + 3}, $${i * 9 + 4}, $${i * 9 + 5}, $${i * 9 + 6}, ($${i * 9 + 6}::numeric / $${i * 9 + 5}::numeric), $${i * 9 + 7}, $${i * 9 + 8}, $${i * 9 + 9})
+          ON CONFLICT (candle_id) DO NOTHING;`;
+        }
+      }
+      // devLog('insertSqlText', insertSqlText);
+      await pool.query(insertSqlText, values);
+      resolve();
+    } catch (err) {
+      devLog('error saving candles');
+      reject(err);
+    }
+  })
+}
+
+
+
+
+
+
 
 // get all candles for a product and granularity
 async function getCandles(productID, granularity, start, end) {

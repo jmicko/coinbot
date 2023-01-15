@@ -3,7 +3,7 @@ import { userStorage, cbClients } from "./cache.js";
 // import { Coinbase } from "./coinbaseClient.js";
 import { databaseClient } from "./databaseClient.js";
 
-const sleepyTime = 1000; // can adjust rate limiting here
+const sleepyTime = 300; // can adjust rate limiting here
 
 console.log('candle maker is making candles');
 
@@ -19,13 +19,7 @@ process.on('message', async (data) => {
       // need to generate user storage because it will create the coinbase client that we need
       // this has to be done here because the candle maker is a child process of the server
       await userStorage.createNewUser(data.user);
-      // get the api key and secret for the user
-      // const userAPI = await databaseClient.getUserAPI(userID);
-      // const key = userAPI.CB_ACCESS_KEY;
-      // const secret = userAPI.CB_SECRET;
-      // // create a new coinbase client for the user
-      // const cb = new Coinbase(key, secret);
-      // await cbClients.updateAPI(data.user.id);
+
       await sleep(sleepyTime);
       downloadCandles(data.user);
       break;
@@ -47,7 +41,7 @@ process.on('message', async (data) => {
 });
 
 async function downloadCandles(user) {
-  devLog('downloadCandles', user, granularities);
+  // devLog('downloadCandles', user, granularities);
   const userID = user.id;
 
   // first get the active products
@@ -76,7 +70,7 @@ async function updateCandlesForProduct({ productID, userID }) {
   for (let i = 0; i < granularities.length; i++) {
     try {
       const granularity = granularities[i];
-      devLog('granularity', granularity);
+      // devLog('granularity', granularity);
 
       // get the the candle from the database with the most recent time
       const newestCandle = await databaseClient.getNewestCandle(productID, granularity.name);
