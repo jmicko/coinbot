@@ -13,7 +13,6 @@ import SingleTrade from '../../SingleTrade/SingleTrade.js';
 import './AutoSetup.css'
 import { useData } from '../../../contexts/DataContext.js';
 import { useFetchData } from '../../../hooks/fetchData.js';
-import DebouncedInput from '../../DebouncedInput.js/DebouncedInput.js';
 
 
 function AutoSetup(props) {
@@ -245,9 +244,9 @@ function AutoSetup(props) {
           <label htmlFor='startingValue'>
             Starting Value: <span>{auto.startingValue}</span>
             <br />
-            <DebouncedInput
-              onChange={(n) => setAuto({ ...auto, startingValue: Number(n) || 133 })}
-              initValue={auto.startingValue}
+            <input
+              onChange={(event) => setAuto({ ...auto, startingValue: Number(event.target.value) })}
+              value={auto.startingValue}
               type='number'
               name='startingValue'
             />
@@ -277,9 +276,9 @@ function AutoSetup(props) {
           <label htmlFor='startingValue'>
             Ending Value: <span>{auto.endingValue}</span>
             <br />
-            <DebouncedInput
-              onChange={(n) => setAuto({ ...auto, endingValue: Number(n) || 133 })}
-              initValue={auto.endingValue}
+            <input
+              onChange={(event) => setAuto({ ...auto, endingValue: Number(event.target.value) })}
+              value={auto.endingValue}
               type='number'
               name='endingValue'
             />
@@ -330,12 +329,13 @@ function AutoSetup(props) {
           <label htmlFor='increment'>
             Increment: <span>{auto.increment}</span>
             <br />
-            <DebouncedInput
-              onChange={(n) => setAuto({ ...auto, increment: Number(n) || 133 })}
-              initValue={auto.increment}
+            <input
+              onChange={(event) => setAuto({ ...auto, increment: Number(event.target.value) })}
+              value={auto.increment}
               type='number'
               name='increment'
             />
+
           </label>
 
           {/* RATIO */}
@@ -345,9 +345,9 @@ function AutoSetup(props) {
           <label htmlFor='ratio'>
             Trade-pair percent increase: <span>{auto.trade_pair_ratio}</span>
             <br />
-            <DebouncedInput
-              onChange={(n) => setAuto({ ...auto, trade_pair_ratio: Number(n) || 133 })}
-              initValue={auto.trade_pair_ratio}
+            <input
+              onChange={(event) => setAuto({ ...auto, trade_pair_ratio: Number(event.target.value) })}
+              value={auto.trade_pair_ratio}
               type='number'
               name='ratio'
             />
@@ -421,9 +421,9 @@ function AutoSetup(props) {
                 : baseID
             }: <span>{auto.size}</span>
             <br />
-            <DebouncedInput
-              onChange={(n) => setAuto({ ...auto, size: Number(n) || 133 })}
-              initValue={auto.size}
+            <input
+              onChange={(event) => setAuto({ ...auto, size: Number(event.target.value) })}
+              value={auto.size}
               type='number'
               name='size'
             />
@@ -434,9 +434,9 @@ function AutoSetup(props) {
           {auto.sizeCurve === "curve" && <label htmlFor='size'>
             Max Size in {auto.sizeType === "quote" ? "USD" : baseID}: <span>{auto.maxSize}</span>
             <br />
-            <DebouncedInput
-              onChange={(n) => setAuto({ ...auto, maxSize: Number(n) || 133 })}
-              initValue={auto.maxSize}
+            <input
+              onChange={(event) => setAuto({ ...auto, maxSize: Number(event.target.value) })}
+              value={auto.maxSize}
               type='number'
               name='size'
             />
@@ -448,9 +448,9 @@ function AutoSetup(props) {
             auto.sizeCurve === "curve" && <label htmlFor='size'>
               Steepness: <span>{auto.steepness}</span>
               <br />
-              <DebouncedInput
-                onChange={(n) => setAuto({ ...auto, steepness: Number(n) || 133 })}
-                initValue={auto.steepness}
+              <input
+                onChange={(event) => setAuto({ ...auto, steepness: Number(event.target.value) })}
+                value={auto.steepness}
                 type='number'
                 name='size'
               />
