@@ -19,25 +19,41 @@ function Settings(props) {
   const [tips, setTips] = useState(false);
   const { theme } = useUser();
 
-
-
-  if (props.showSettings) {
+  function beforeDrag() {
     return (
-      <Draggable className={`Settings ${theme}`}>
-        {/* <div > */}
-        <button className={`btn-logout btn-red ${theme}`} onClick={() => { props.clickSettings() }}>X</button>
+      <button className={`btn-logout btn-red close-settings ${theme}`} onClick={() => { props.clickSettings() }}>X</button>
+    )
+  }
 
-        <p className="info tips">
-          <strong>Show Tips</strong>
-          {/* <br /> */}
-          <input
-            type="checkbox"
-            checked={tips}
-            onChange={() => setTips(!tips)}
-          />
-        </p>
+  function afterDrag() {
+    return (
+          <p className="info tips">
+            <strong>Show Tips</strong>
+            {/* <br /> */}
+            <input
+              type="checkbox"
+              checked={tips}
+              onChange={() => setTips(!tips)}
+            />
+          </p>
+    )
+  }
 
-        <h2 className="settings-header">Settings</h2>
+
+  function SettingsPanel({ DragButton }) {
+    return (
+      <>
+        <DragButton
+          text={'Settings'}
+
+          header={() => <h2 className="settings-header">Settings</h2>}
+          beforeDrag={beforeDrag}
+          afterDrag={afterDrag}
+
+        >
+
+
+        </DragButton>
 
         <SettingsNav setSettingsPage={setSettingsPage} settingsPage={settingsPage} />
         {
@@ -52,7 +68,16 @@ function Settings(props) {
             'admin': <Admin product={props.product} theme={theme} tips={tips} />
           }[settingsPage]
         }
-        {/* </div> */}
+      </>
+    );
+  }
+
+
+  if (props.showSettings) {
+    return (
+      <Draggable children={SettingsPanel}
+        className={`Settings ${theme}`}>
+        {/* <SettingsPanel clickSettings={props.clickSettings} product={props.product} priceTicker={props.priceTicker} /> */}
       </Draggable>
     );
   } else {

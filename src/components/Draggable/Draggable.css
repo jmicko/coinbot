@@ -1,0 +1,19 @@
+.drag-button {
+  background-color: #1c1c1c;
+  /* color        : #eaeaea; */
+  /* font-family  : inherit; */
+  /* box-shadow   : inset 2px 2px #ffffff99, inset -2px -2px #00000099; */
+  /* width should fill all remaining space  */
+  /* width        : 80%; */
+  flex-grow       : 100;
+  margin-left     : 10px;
+  margin-right    : 10px;
+  height          : 1.5rem;
+}
+
+.drag-div {
+  display       : flex;
+  flex-direction: row;
+  /* overflow should not scroll */
+  /* overflow      : hidden; */
+}

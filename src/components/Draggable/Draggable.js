@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import './Draggable.css';
 
 function Draggable({ children, className }) {
   const [isDragging, setIsDragging] = useState(false);
   const [initialPosition, setInitialPosition] = useState({ x: 0, y: 0 });
   const [currentPosition, setCurrentPosition] = useState({ x: 0, y: 0 });
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [canReposition, setCanReposition] = useState(true);
   // offset to see where on the button the user clicked
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
   function handleMouseMove(e) {
-    setMousePosition({ x: e.clientX, y: e.clientY });
     if (!isDragging) {
       return;
     }
@@ -20,26 +19,13 @@ function Draggable({ children, className }) {
     });
   }
 
-  function handleTouchMove(e) {
-    setMousePosition({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-    if (!isDragging) {
-      return;
-    }
-    setCurrentPosition({
-      x: e.touches[0].clientX - offset.x,
-      y: e.touches[0].clientY - offset.y
-    });
-  }
-
-
   useEffect(() => {
     // handle mouse events
     document.addEventListener('mousemove', handleMouseMove);
-    // handle touch events
-    document.addEventListener('touchmove', handleTouchMove);
+
     return () => {
       document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('touchmove', handleMouseMove);
+
     };
   }, [isDragging]);
 
@@ -49,36 +35,28 @@ function Draggable({ children, className }) {
     top: `${currentPosition.y - initialPosition.y}px`,
   };
 
-  function DragButton() {
+  function DragButton(props, { children }) {
     return (
-      <button
-        onMouseDown={(e) => {
-          beginMove(e);
-        }}
-        onTouchStart={(e) => {
-          beginTouchMove(e);
-        }}
-        onMouseUp={() => setIsDragging(false)}
-        onTouchEnd={() => setIsDragging(false)}
-      >
-        Drag me
-      </button>
+      <div>
+        <div className='drag-div'>
+          {props.beforeDrag()}
+          <div
+            className="drag-button"
+            onMouseDown={(e) => { beginMove(e); }}
+            onMouseUp={() => setIsDragging(false)}
+          >
+          </div>
+          {props.afterDrag()}
+        </div>
+        {props.header()}
+      </div>
     );
   }
 
-
   return (
     <div style={style} className={className} >
-      <DragButton />
-      {/* <br />
-      {initialPosition.x} - {initialPosition.y} - initial
-      <br />
-      {currentPosition.x} - {currentPosition.y} - current
-      <br />
-      {mousePosition.x} - {mousePosition.y} - mouse
-      <br />
-      {offset.x} - {offset.y} - offset */}
-      {children}
+      {/* pass the dragButton to the children */}
+      {children({ DragButton })}
     </div>
   );
 
@@ -99,25 +77,6 @@ function Draggable({ children, className }) {
       setCanReposition(false);
     }
     setIsDragging(true);
-  }
-
-  function beginTouchMove(e) {
-    // setOffset({
-    //   x: canReposition ? 0 : e.touches[0].clientX - currentPosition.x,
-    //   y: canReposition ? 0 : e.touches[0].clientY - currentPosition.y,
-    // });
-    // setCurrentPosition({
-    //   x: e.touches[0].clientX,
-    //   y: e.touches[0].clientY
-    // });
-    // if (canReposition) {
-    //   setInitialPosition({
-    //     x: e.touches[0].clientX,
-    //     y: e.touches[0].clientY
-    //   });
-    //   setCanReposition(false);
-    // }
-    // setIsDragging(true);
   }
 }
 
