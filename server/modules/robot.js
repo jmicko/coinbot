@@ -1,10 +1,11 @@
 import { databaseClient } from "./databaseClient.js";
 import { botSettings, userStorage, messenger, cbClients } from "./cache.js";
 import { startWebsocket } from "./websocket.js";
-import { sleep, addProductDecimals, devLog } from "../../src/shared.js";
+import { sleep, addProductDecimals } from "../../src/shared.js";
 import { fork } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { devLog } from "./utilities.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 

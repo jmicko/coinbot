@@ -7,7 +7,7 @@ function devLog(...args) {
   }
 
   // write to a log file withe a timestamp
-  fs.appendFile('./server/logs/log.txt', `${new Date().toISOString()} ${args.join(' ')}\n`, (err) => {
+  fs.appendFile('./server/logs/log.log', `${new Date().toISOString()} ${args.join(' ')}\n`, (err) => {
     if (err) {
       console.log('error logging to file', err);
     }
