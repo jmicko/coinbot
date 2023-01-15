@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 import './Draggable.css';
 
 function Draggable({ children, className }) {
@@ -8,6 +9,9 @@ function Draggable({ children, className }) {
   const [canReposition, setCanReposition] = useState(true);
   // offset to see where on the button the user clicked
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const { height } = useWindowDimensions();
+  // find out if we are on a touch device
+  const isTouchDevice = ('ontouchstart' in document.documentElement);
 
   function handleMouseMove(e) {
     if (!isDragging) {
@@ -40,12 +44,20 @@ function Draggable({ children, className }) {
       <div>
         <div className='drag-div'>
           {props.beforeDrag()}
-          <div
-            className="drag-button"
-            onMouseDown={(e) => { beginMove(e); }}
-            onMouseUp={() => setIsDragging(false)}
-          >
-          </div>
+          {!isTouchDevice ?
+            <div
+              className="drag-button"
+              onMouseDown={(e) => { beginMove(e); }}
+              onMouseUp={() => setIsDragging(false)}
+            >
+            </div>
+            :
+            <div
+              className="drag-button-touch"
+            >
+
+            </div>
+          }
           {props.afterDrag()}
         </div>
         {props.header()}

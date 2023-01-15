@@ -10,6 +10,12 @@
   margin-right    : 10px;
   height          : 1.5rem;
 }
+.drag-button-touch{
+  flex-grow       : 100;
+  margin-left     : 10px;
+  margin-right    : 10px;
+  height          : 1.5rem;
+}
 
 .drag-div {
   display       : flex;
