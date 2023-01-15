@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import { no, tNum } from '../../shared.js';
+import { no } from '../../shared.js';
 import './IncrementButtons.css';
-
-
 
 function IncrementButtons(props) {
   const [multiply, setMultiply] = useState(1);

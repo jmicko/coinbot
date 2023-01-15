@@ -1,24 +1,11 @@
-// const express = require('express');
 import express from 'express';
 const router = express.Router();
-// const pool = require('../modules/pool');
-import { pool } from '../modules/pool.js';
-// const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
-// const databaseClient = require('../modules/databaseClient');
 import { databaseClient } from '../modules/databaseClient.js';
-// const robot = require('../modules/robot');
 import { robot } from '../modules/robot.js';
-// const { cache, userStorage, cbClients, messenger } = require('../modules/cache');
-import { cache, userStorage, cbClients, messenger } from '../modules/cache.js';
-// const { v4: uuidv4 } = require('uuid');
-import { v4 as uuidv4 } from 'uuid';
-// const { autoSetup, sleep } = require('../../src/shared');
-import { autoSetup, devLog, sleep } from '../../src/shared.js';
-
-// const { fork } = require('child_process');
+import {  userStorage, cbClients, messenger } from '../modules/cache.js';
+import {  devLog, sleep } from '../../src/shared.js';
 import { fork } from 'child_process';
-// const { autoSetup } = require('../../src/shared');
 
 /**
  * POST route sending basic market trade

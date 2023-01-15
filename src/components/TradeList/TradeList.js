@@ -10,7 +10,7 @@ import { useData } from '../../contexts/DataContext.js';
 
 
 function TradeList(props) {
-  const { socket, currentPrice } = useSocket();
+  const { currentPrice } = useSocket();
   const { user } = useUser();
   const { orders } = useData();
   // these will store mapped arrays as html so they can be used after page loads

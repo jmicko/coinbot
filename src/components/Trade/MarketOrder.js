@@ -12,9 +12,9 @@ function LimitOrder(props) {
 
   // contexts
   const { user, theme, btnColor } = useUser();
-  const { socket, currentPrice } = useSocket();
+  const { currentPrice } = useSocket();
   const { productID, createMarketTrade, currentProduct } = useData();
-  
+
   // hooks
   const { width } = useWindowDimensions();
 
@@ -43,12 +43,12 @@ function LimitOrder(props) {
   }
 
   // change market order function that takes in a key and value and sets the limitOrder state
-  function changeMarketOrder(key, value) {
-    setMarketOrder(prevState => ({
-      ...prevState,
-      [key]: value
-    }))
-  }
+  // function changeMarketOrder(key, value) {
+  //   setMarketOrder(prevState => ({
+  //     ...prevState,
+  //     [key]: value
+  //   }))
+  // }
 
 
 

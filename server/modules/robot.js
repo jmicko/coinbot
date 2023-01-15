@@ -1,18 +1,20 @@
-// importing this way makes it easier to see when you are accessing the database or coinbase
-// const databaseClient = require("./databaseClient");
 import { databaseClient } from "./databaseClient.js";
-// const { cache, botSettings, userStorage, apiStorage, messenger, cbClients } = require("./cache");
-import { cache, botSettings, userStorage, messenger, cbClients } from "./cache.js";
-// const botSettings = botSettings;
-// const { startWebsocket } = require("./websocket");
+import { botSettings, userStorage, messenger, cbClients } from "./cache.js";
 import { startWebsocket } from "./websocket.js";
-// const { sleep, granularities, addProductDecimals } = require("../../src/shared");
-import { sleep, granularities, addProductDecimals, devLog } from "../../src/shared.js";
+import { sleep, addProductDecimals, devLog } from "../../src/shared.js";
+import { fork } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // start a sync loop for each active user
 async function startSync() {
   // const settings = botSettings
   try {
+    const path = __dirname;
+    // fork a child process to import candles
+    const candleMaker = fork('./server/modules/candleMaker.js');
     // load the bot settings
     await botSettings.refresh();
     // get all users from the db
@@ -21,6 +23,9 @@ async function startSync() {
     userList.forEach(async user => {
       await initializeUserLoops(user);
       // deSyncOrderLoop(user, 0);
+      // send the user to the child process to import candles
+      candleMaker.send({ type: 'startUser', user });
+
     });
   } catch (err) {
     console.log(err, 'error starting sync');
@@ -105,36 +110,7 @@ async function syncOrders(userID) {
     if ((((loopNumber - 1) % (botSettings.full_sync * 10)) === 0) && user?.active && user?.approved && !botSettings.maintenance) {
       // every 10 full syncs, update the products in the database
       await updateProducts(userID);
-      // update the candles in the database for each product that the user has active
-      // first get the active products
-      const activeProducts = await databaseClient.getActiveProducts(userID);
-      // then update the candles for each product
-      console.log('====================updating candles====================');
-      for (let i = 0; i < activeProducts.length; i++) {
-        const durations = ['ONE_MINUTE', 'SIX_HOUR'];
-        for (let j = 0; j < durations.length; j++) {
-          // check if the candles are currently being updated
-          if (userStorage[userID].candlesBeingUpdated[activeProducts[i].product_id]?.[durations[j]]) {
-            // if they are, skip this product
-            console.log('====================skipping candles for ', activeProducts[i].product_id, ' because they are already being updated====================');
-            continue;
-          }
-          // if they are not, set the candlesBeingUpdated to true for this product and duration and update the candles.
-          userStorage[userID].updateCandlesBeingUpdated(activeProducts[i].product_id, durations[j], true);
 
-          await updateProductCandles(userID, activeProducts[i].product_id, durations[j]);
-          await sleep(100);
-        }
-      }
-
-
-      // activeProducts.forEach(async product => {
-      //   await updateProductCandles(userID, product.product_id, 'SIX_HOUR');
-      //   await updateProductCandles(userID, product.product_id, 'ONE_MINUTE');
-      // });
-
-      // await updateProductCandles(userID, 'BTC-USD', 'SIX_HOUR');
-      // await updateProductCandles(userID, 'BTC-USD', 'ONE_MINUTE');
     }
     // check that user is active, approved, and unpaused, and that the bot is not under maintenance
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
@@ -505,7 +481,7 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
       const availableFunds = !simulation
         ? userStorage[userID].getAvailableFunds()
         : user.availableFunds;
-        const productID = dbOrder.product_id;
+      const productID = dbOrder.product_id;
 
       // get the available USD funds for the product_id
       const availableUSD = !simulation
@@ -943,7 +919,7 @@ async function updateProductCandles(userID, productID, granularity) {
         'ONE_DAY': 86400,
       }
       // get the the candle from the database with the most recent time
-      const recentCandle = await databaseClient.getMostRecentCandle(productID, granularity);
+      const recentCandle = await databaseClient.getNewestCandle(productID, granularity);
       // get the oldest candle from the database
       const oldestCandle = await databaseClient.getOldestCandle(productID, granularity);
       // if there is no recent candle, get the candles from the last month and save them to the database

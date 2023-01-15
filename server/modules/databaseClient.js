@@ -1353,7 +1353,7 @@ async function getProfitSinceDate(userID, date, product) {
   })
 }
 
-async function getMostRecentCandle(product_id, granularity) {
+async function getNewestCandle(product_id, granularity) {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `
@@ -1509,7 +1509,7 @@ const databaseClient = {
   getProfitForDurationByProduct: getProfitForDurationByProduct,
   getProfitForDurationByAllProducts: getProfitForDurationByAllProducts,
   getProfitSinceDate: getProfitSinceDate,
-  getMostRecentCandle: getMostRecentCandle,
+  getNewestCandle: getNewestCandle,
   getOldestCandle: getOldestCandle,
   saveCandles: saveCandles,
   getCandles: getCandles,

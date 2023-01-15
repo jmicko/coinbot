@@ -1,4 +1,5 @@
 // const { Coinbase } = require("./coinbaseClient");
+import { devLog } from "../../src/shared.js";
 import { Coinbase } from "./coinbaseClient.js";
 // const databaseClient = require("./databaseClient");
 import { databaseClient } from "./databaseClient.js";
@@ -271,7 +272,11 @@ const cbClients = new class {
   constructor() { }
 
   async updateAPI(userID) {
+    devLog('updating api for user: ' + userID)
     const userAPI = await databaseClient.getUserAPI(userID);
+
+    devLog('apiStorage: ', apiStorage)
+    devLog('userAPI: ', userAPI)
 
     Object.assign(apiStorage[userID], userAPI)
 
