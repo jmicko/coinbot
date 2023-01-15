@@ -1,7 +1,8 @@
-import { devLog, granularities, sleep } from "../../src/shared.js";
+import { granularities, sleep } from "../../src/shared.js";
 import { userStorage, cbClients } from "./cache.js";
 // import { Coinbase } from "./coinbaseClient.js";
 import { databaseClient } from "./databaseClient.js";
+import { devLog } from "./utilities.js";
 
 const sleepyTime = 500; // can adjust rate limiting here
 
@@ -33,14 +34,12 @@ process.on('message', async (data) => {
 
 
 
-
 async function downloadCandles(user) {
   // devLog('downloadCandles', user, granularities);
   const userID = user.id;
 
   // first get the active products
   const activeProducts = await databaseClient.getActiveProducts(userID);
-
 
   // update candles like 1000 times. Can change this number to adjust how frequently maintenance is done
   for (let j = 0; j < 1000; j++) {
@@ -60,7 +59,7 @@ async function downloadCandles(user) {
 
 
   // now do some maintenance stuff that takes a long time and should only be done once in a while
-  devLog('candle maker is done making candles for this big loop');
+  devLog('candle maker is done making candles for the big loop');
 
   // check the integrity of the candles and get missing data if available
   for (let i = 0; i < activeProducts.length; i++) {
