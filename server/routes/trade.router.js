@@ -6,6 +6,11 @@ import { robot } from '../modules/robot.js';
 import {  userStorage, cbClients, messenger } from '../modules/cache.js';
 import {  devLog, sleep } from '../../src/shared.js';
 import { fork } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * POST route sending basic market trade

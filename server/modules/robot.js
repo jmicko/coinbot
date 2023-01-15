@@ -1124,4 +1124,4 @@ const robot = {
 }
 
 
-export { robot };
+export { robot, flipTrade };

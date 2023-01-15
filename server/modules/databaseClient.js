@@ -1512,7 +1512,7 @@ async function getCandles(productID, granularity, start, end) {
 async function getNextCandles(productID, granularity, start) {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log('getting next candles FROM DB', userID, productID, granularity, start);
+      console.log('getting next candles FROM DB', productID, granularity, start);
       const sqlText = `
       SELECT * FROM "market_candles" 
       WHERE "product_id" = $1 AND "granularity" = $2 AND "start" > $3 
