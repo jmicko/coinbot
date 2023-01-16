@@ -41,6 +41,10 @@ function Messages() {
 
     const sendChatMessage = useCallback((event) => {
       event.preventDefault();
+      setTimeout(() => {
+        // stop focus from leaving input with the id 'chat-input'
+        document.querySelector('#chat-input').focus();
+      }, 500);
       console.log(newMessage, 'sending chat!!');
       sendChat({ type: 'chat', data: newMessage });
       // sendChat(newMessage);
@@ -51,6 +55,7 @@ function Messages() {
       <form className={`chat-form`} onSubmit={sendChatMessage}>
         <input
           className='chat-input'
+          id='chat-input'
           type="text"
           value={newMessage}
           placeholder='Send to everyone'
@@ -65,7 +70,7 @@ function Messages() {
 
     return (
       (
-        (header === 'Chat' && user.admin)
+        (header === 'Chat' && user.can_chat)
         || sectionNum !== 2)
       && <div className={`message-section message-window scrollable admin-${user.admin} ${sectionNum !== messageMap.length - 1 && 'not-last-message-section'}`}>
         {header === 'Chat'
@@ -83,7 +88,8 @@ function Messages() {
           return message.text && <p key={i}>
             <strong>Msg #{message.mCount} {dateBuilder(message.timeStamp)}</strong>
             <br />
-            {message.text}
+            {/* {JSON.stringify(message)} */}
+            {header === 'Chat' && `${message.from} > `}{message.text}
           </p>
           // }
         })}

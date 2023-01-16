@@ -31,7 +31,7 @@ router.get('/users', rejectUnauthenticated, async (req, res) => {
     return;
   }
   try {
-    const userList = await databaseClient.getAllUsers();
+    const userList = await databaseClient.getAllUserAndSettings();
     res.send(userList);
   } catch (err) {
     console.log('error sending list of users to admin', err);
@@ -49,8 +49,8 @@ router.get('/debug/:user_id', rejectUnauthenticated, async (req, res) => {
     try {
       const userInfo = cache.getSafeStorage(userID);
       const userErrors = cache.getErrors(userID);
-      console.log('debug - full storage', userInfo);
-      console.log('errors', userErrors);
+      // console.log('debug - full storage', userInfo);
+      // console.log('errors', userErrors);
       userInfo.userID !== null
         ? res.send(userInfo).status(200)
         : res.sendStatus(500);
@@ -334,6 +334,33 @@ router.put('/users', rejectUnauthenticated, async (req, res) => {
     res.sendStatus(500);
   }
 });
+
+/**
+ * PUT route - changes chat permissions for a single user. Only admin can do this
+ */
+router.put('/users/chat', rejectUnauthenticated, async (req, res) => {
+  try {
+    console.log('in chat permission route');
+    const isAdmin = req.user.admin;
+    if (!isAdmin) {
+      console.log('you are NOT admin');
+      res.sendStatus(403);
+      return;
+    }
+    const userToChange = req.body.id;
+    const chatPermission = req.body.chatPermission;
+    console.log('in chat permission route', userToChange, chatPermission);
+    const queryText = `UPDATE "user_settings" SET "can_chat" = $1 WHERE "userID" = $2 RETURNING *;`;
+    await pool.query(queryText, [chatPermission, userToChange]);
+    
+    userStorage[userToChange].update();
+    res.sendStatus(200);
+  } catch (err) {
+    console.log(err, 'error in chat permission put route');
+    res.sendStatus(500);
+  }
+});
+
 
 
 /**

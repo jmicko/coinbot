@@ -1081,6 +1081,24 @@ async function getAllUsers() {
 
 // get all user information and settings except for the API details. 
 // Keeping them separate helps prevent accidentally sending an API outside the server
+async function getAllUserAndSettings() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `SELECT * 
+      FROM "user" JOIN "user_settings" ON ("user"."id" = "user_settings"."userID")
+      ORDER BY "user"."id";`;
+      let result = await pool.query(sqlText);
+      const users = result.rows;
+      resolve(users);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+
+// get all user information and settings except for the API details. 
+// Keeping them separate helps prevent accidentally sending an API outside the server
 async function getUserAndSettings(userID) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -1572,6 +1590,7 @@ const databaseClient = {
   deleteMarkedOrders: deleteMarkedOrders,
   getUser: getUser,
   getAllUsers: getAllUsers,
+  getAllUserAndSettings: getAllUserAndSettings,
   getUserAndSettings: getUserAndSettings,
   checkIfCancelling: checkIfCancelling,
   getUserAPI: getUserAPI,

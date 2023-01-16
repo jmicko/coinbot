@@ -9,6 +9,8 @@ function SingleUser(props) {
   // This is the user that is logged in
   const { user } = useUser();
 
+  const approveUserChat = () => { props.approveUserChat({ id: props.user.id, chatPermission: !props.user.can_chat }) };
+
   const [deleting, setDeleting] = useState(false);
   const [approving, setApproving] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -46,13 +48,19 @@ function SingleUser(props) {
           ? <p className="deleting">Deleting...</p>
           : <button className="btn-red deleting" onClick={() => { confirmDelete() }}>Delete</button>
         }
-
+        {/* ddd{props.user.can_chat ? 'chat' : "no"}chat */}
         {/* Approve a user */}
         {!deleting && ((props.user.approved)
           ? <p className="deleting">Approved</p>
           : (approving === true)
             ? <p className="deleting">Approving...</p>
             : <button className="btn-green deleting" onClick={() => { approveUser() }}>Approve</button>)
+        }
+        {/* Enable chat for a user */}
+{/* {JSON.stringify(props.user)} */}
+        {(props.user.can_chat
+          ? <button className="btn-red deleting" onClick={() => { approveUserChat() }}>Remove Chat</button>
+          : <button className="btn-green deleting" onClick={() => { approveUserChat() }}>Approve Chat</button>)
         }
         {/* User details */}
         <p className="single-trade-text">

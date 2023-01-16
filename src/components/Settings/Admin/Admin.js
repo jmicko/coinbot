@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useUser } from '../../../contexts/UserContext.js';
 import { useFetchData } from '../../../hooks/fetchData.js';
 // import Confirm from '../../Confirm/Confirm';
@@ -8,7 +8,8 @@ import './Admin.css'
 
 function Admin(props) {
   const { user, theme } = useUser();
-  const { data: allUsers, updateRefreshData: approveUser, deleteRefreshData: deleteUser } = useFetchData('api/admin/users', { defaultState: [] });
+  const { data: allUsers, updateRefreshData: approveUser, deleteRefreshData: deleteUser, refresh:refreshUsers } = useFetchData('api/admin/users', { defaultState: [] });
+  const {  updateData: approveChat } = useFetchData('api/admin/users/chat', { defaultState: [], noLoad: true });
 
   const { data: allSettings, refresh: refreshSettings } = useFetchData('api/settings', { defaultState: [] });
   const { updateData: updateLoopSpeed } = useFetchData('api/admin/loop_speed', { defaultState: [], noLoad: true });
@@ -21,6 +22,14 @@ function Admin(props) {
   const [syncQuantity, setSyncQuantity] = useState(100);
   // const [resettingOrders, setResettingOrders] = useState(false);
   // const [factoryResetting, setFactoryResetting] = useState(false);
+
+  const approveUserChat = useCallback(
+    async (chatPermission) => {
+      await approveChat(chatPermission);
+      refreshUsers();
+    },
+    [approveChat, refreshUsers],
+  )
 
 
   async function sendLoopSpeed(speed) {
@@ -89,7 +98,7 @@ function Admin(props) {
         ? <div>
           <h4>Manage Users</h4>
           {allUsers.map((user) => {
-            return <SingleUser key={user.id} user={user} deleteUser={deleteUser} approveUser={approveUser} />
+            return <SingleUser key={user.id} user={user} deleteUser={deleteUser} approveUser={approveUser} approveUserChat={approveUserChat} />
           })}
         </div>
         : <></>

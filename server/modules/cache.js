@@ -58,6 +58,7 @@ class User {
     this.profit_accuracy = user.profit_accuracy;
     this.auto_setup_number = user.auto_setup_number;
     this.profit_reset = user.profit_reset;
+    this.can_chat = user.can_chat;
     // I think you can just preload an array like this?
     this.botStatus = new Array(['setup']);
     this.willCancel = new Set();
@@ -123,11 +124,11 @@ class User {
   }
   approve(bool) {
     this.approved = bool;
-    messenger[this.userID].userUpdate()
+    messenger[this.userID]?.userUpdate()
   }
   activate(bool) {
     this.active = bool;
-    messenger[this.userID].userUpdate()
+    messenger[this.userID]?.userUpdate()
   }
   async update() {
     const user = await databaseClient.getUserAndSettings(this.userID);
@@ -158,6 +159,8 @@ class User {
     this.profit_accuracy = user.profit_accuracy;
     this.auto_setup_number = user.auto_setup_number;
     this.profit_reset = user.profit_reset;
+    this.can_chat = user.can_chat;
+    messenger[this.userID]?.userUpdate()
   }
   setSocketStatus(socketStatus) {
     this.socketStatus = socketStatus;
@@ -165,13 +168,14 @@ class User {
 }
 
 class Message {
-  constructor(type, text, mCount, cCount, orderUpdate) {
+  constructor(type, text, mCount, cCount, orderUpdate, from) {
     this.type = type;
     this.text = String(text);
     this.mCount = Number(mCount);
     this.cCount = Number(cCount);
     this.timeStamp = new Date();
     this.orderUpdate = Boolean(orderUpdate);
+    this.from = from ? String(from): null;
   }
 }
 
@@ -212,7 +216,7 @@ class Messenger {
   }
   newMessage(message) {
     // create the message
-    const newMessage = new Message(message.type, message.text, this.messageCount, this.chatMessageCount, message.orderUpdate);
+    const newMessage = new Message(message.type, message.text, this.messageCount, this.chatMessageCount, message.orderUpdate, message.from);
     // add message to messages array if there is text to store
     if (message.text) {
       this.messages.unshift(newMessage);
@@ -223,6 +227,8 @@ class Messenger {
       // only increase chat count if it is a chat type message
       this.chatMessageCount++;
     }
+
+
     // check and limit the number of stored messages
     if (this.messages.length > 1000) {
       this.messages.length = 1000;

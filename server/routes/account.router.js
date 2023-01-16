@@ -475,19 +475,20 @@ router.post('/messages', rejectUnauthenticated, async (req, res) => {
   console.log('post messages route');
   try {
     const user = req.user;
-    if(!user.admin) {
+    if(!user.can_chat) {
       res.sendStatus(403);
       return;
     }
-    
+
     const userID = user.id;
     const message = req.body;
 
     if (message.type === 'chat') {
       const allUsers = userStorage.getAllUsers()
-      console.log(allUsers, 'ALLLLLLL OF THE user');
+      console.log(allUsers, 'ALLLLLLL OF THE user', user.username);
       allUsers.forEach(userID => {
         messenger[userID].newMessage({
+          from: user.username,
           text: message.data,
           type: 'chat'
         });
