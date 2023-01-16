@@ -31,6 +31,7 @@
 }
 
 /* ticker status dot */
+span.green,
 span.open {
     color: green;
 }
@@ -43,14 +44,17 @@ span.closed {
     color: red;
 }
 
+span.blue,
 span.reopening {
     color: blue;
 }
 
+span.darkTheme.green,
 span.darkTheme.open {
     color: rgb(109, 163, 109);
 }
 
+span.darkTheme.blue,
 span.darkTheme.reopening {
     color: rgb(14, 45, 85);
 }

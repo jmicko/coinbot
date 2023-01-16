@@ -109,13 +109,14 @@ function SingleTrade(props) {
           {!props.preview && <strong> ~Time </strong>} {!props.preview && (props.order.flipped_at
             ? new Date(props.order.flipped_at).toLocaleString('en-US')
             : new Date(props.order.created_at).toLocaleString('en-US'))}
-          &nbsp;<span className={`${theme} ${reorder ? 'reopening' : 'open'}`}>&#x2022;</span>
+            {/* use the same color scheme as the socket status indicators
+            open: green
+            timeout: yellow
+            closed: red
+            reopening: blue
+             */}
+          &nbsp;<span className={`${theme} ${reorder ? 'blue' : 'green'}`}>&#x2022;</span>
           <br />
-          {/* {reorder && <strong>Reorder: </strong>} */}
-          {/* created: {JSON.stringify(props.order.created_at)} 
-          <br />
-          flipped: {JSON.stringify(props.order.flipped_at)}
-          <br /> */}
           {
             showAll && !deleting && <><strong> Percent Increase:</strong> {Number(props.order.trade_pair_ratio)}</>
           }

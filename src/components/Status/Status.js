@@ -138,9 +138,9 @@ function Status(props) {
       <center>
         <p className={`info status-ticker ${theme} ${heartbeat.count === 0 && 'blue'}`}>
           <strong>
-            <span className={coinbotSocket}>&#x2022;</span>
+            <span className={`${coinbotSocket} ${theme}`}>&#x2022;</span>
             {heartbeat.heart}{heartbeat.beat}
-            <span className={socketStatus}>&#x2022;</span>
+            <span className={`${socketStatus} ${theme}`}>&#x2022;</span>
           </strong>
           <br />
           <button className={`${btnColor} ${theme}`} onClick={updateUser}>Refresh</button>
