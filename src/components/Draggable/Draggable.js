@@ -63,6 +63,7 @@ function Draggable({ children, className }) {
     return (
       <div
         className={`drag drag-button-touch ${theme}`}
+        onMouseDown={(e) => { no(e); if(e.stopPropagation) e.stopPropagation(); }}
         onClick={(e) => { no(e); setCollapseParent(!collapseParent) }}
       >
         {!collapseParent
