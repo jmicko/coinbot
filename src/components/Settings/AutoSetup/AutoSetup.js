@@ -19,6 +19,8 @@ function AutoSetup(props) {
 
   const { user, theme } = useUser();
   const { productID, currentProduct } = useData();
+  const [showGraph, setShowGraph] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const { createData: startAutoSetup } = useFetchData('/api/orders/autoSetup', { noLoad: true });
   const {
@@ -107,7 +109,7 @@ function AutoSetup(props) {
 
     // check if the last input change was more than 1 second ago
     // if it wasn't, don't run the autoSetup function
-    if (loadingRef.current || (Date.now() - lastInputChange < 2000)) return;
+    if (loadingRef.current || (Date.now() - lastInputChange < 1000)) return;
 
     loadingRef.current = true;
 
@@ -179,6 +181,23 @@ function AutoSetup(props) {
     })
   }
 
+  function handleAutoChange(event) {
+    // set the date of the last input change
+    setLastInputChange(Date.now());
+    
+    // check type of input and convert to number if necessary
+    // if checkbox, set the corresponding value to ! whatever it was before
+    const { name, value, type } = event.target;
+    const val = (type === 'checkbox' ? !auto[name] : (type === 'number' ? parseFloat(value) : value));
+
+
+    // set the auto object with the new value
+    setAuto({
+      ...auto,
+      [name]: val,
+    });
+  }
+
   function submitAutoSetup(event) {
     event.preventDefault();
     setAutoTradeStarted(true);
@@ -203,17 +222,17 @@ function AutoSetup(props) {
       product: currentProduct,
       simUser: { ...user, availableQuote: availableQuote, reinvest: simReinvest, reinvest_ratio: simReinvestPercent },
     })
-    
-    
+
+
   }
-  
+
   function autoTrader() {
     // console.log('here is the current available funds', availableFunds);
     startAutoSetup({
       ...auto,
       availableFunds: availableQuote,
       tradingPrice: currentPrice,
-      
+
       product: currentProduct,
     })
   }
@@ -245,7 +264,7 @@ function AutoSetup(props) {
             Starting Value: <span>{auto.startingValue}</span>
             <br />
             <input
-              onChange={(event) => setAuto({ ...auto, startingValue: Number(event.target.value) })}
+              onChange={(event) => handleAutoChange(event)}
               value={auto.startingValue}
               type='number'
               name='startingValue'
@@ -257,12 +276,12 @@ function AutoSetup(props) {
 
           {/* SKIP FIRST */}
           <input
-            name="skip_first"
+            name="skipFirst"
             type="checkbox"
             checked={auto.skipFirst}
-            onChange={(event) => setAuto({ ...auto, skipFirst: event.target.checked })}
+            onChange={(event) => handleAutoChange(event)}
           />
-          <label htmlFor="skip_first">
+          <label htmlFor="skipFirst">
             Skip first
           </label>
 
@@ -277,7 +296,7 @@ function AutoSetup(props) {
             Ending Value: <span>{auto.endingValue}</span>
             <br />
             <input
-              onChange={(event) => setAuto({ ...auto, endingValue: Number(event.target.value) })}
+              onChange={(event) => handleAutoChange(event)}
               value={auto.endingValue}
               type='number'
               name='endingValue'
@@ -287,12 +306,12 @@ function AutoSetup(props) {
           <br />
           {/* IGNORE FUNDS */}
           <input
-            name="ignore_funds"
+            name="ignoreFunds"
             type="checkbox"
             checked={auto.ignoreFunds}
-            onChange={(event) => setAuto({ ...auto, ignoreFunds: event.target.checked })}
+            onChange={(event) => handleAutoChange(event)}
           />
-          <label htmlFor="ignore_funds">
+          <label htmlFor="ignoreFunds">
             Ignore Available Funds
           </label>
 
@@ -330,7 +349,7 @@ function AutoSetup(props) {
             Increment: <span>{auto.increment}</span>
             <br />
             <input
-              onChange={(event) => setAuto({ ...auto, increment: Number(event.target.value) })}
+              onChange={(event) => handleAutoChange(event)}
               value={auto.increment}
               type='number'
               name='increment'
@@ -342,14 +361,14 @@ function AutoSetup(props) {
           {props.tips
             ? <p>What is the trade-pair percent increase (how much each BUY should increase in price before selling)?</p>
             : <p />}
-          <label htmlFor='ratio'>
+          <label htmlFor='trade_pair_ratio'>
             Trade-pair percent increase: <span>{auto.trade_pair_ratio}</span>
             <br />
             <input
-              onChange={(event) => setAuto({ ...auto, trade_pair_ratio: Number(event.target.value) })}
+              onChange={(event) => handleAutoChange(event)}
               value={auto.trade_pair_ratio}
               type='number'
-              name='ratio'
+              name='trade_pair_ratio'
             />
           </label>
 
@@ -388,24 +407,24 @@ function AutoSetup(props) {
             "Bell Curve: bigger size near current price"
           </p>}
           {/* {JSON.stringify(sizeCurve)} */}
-          <label htmlFor="size_curve">
+          <label htmlFor="sizeCurve">
             <input
               type="radio"
-              name="size_curve"
+              name="sizeCurve"
               value="linear"
               checked={auto.sizeCurve === "linear"}
-              onChange={(e) => setAuto({ ...auto, sizeCurve: e.target.value })}
+              onChange={(e) => handleAutoChange(e)}
             />
             Linear
           </label>
 
-          <label htmlFor="size_curve">
+          <label htmlFor="sizeCurve">
             <input
               type="radio"
-              name="size_curve"
+              name="sizeCurve"
               value="curve"
               checked={auto.sizeCurve === "curve"}
-              onChange={(e) => setAuto({ ...auto, sizeCurve: e.target.value })}
+              onChange={(e) => handleAutoChange(e)}
             />
             Curve
           </label>
@@ -422,7 +441,7 @@ function AutoSetup(props) {
             }: <span>{auto.size}</span>
             <br />
             <input
-              onChange={(event) => setAuto({ ...auto, size: Number(event.target.value) })}
+              onChange={(event) => handleAutoChange(event)}
               value={auto.size}
               type='number'
               name='size'
@@ -431,28 +450,30 @@ function AutoSetup(props) {
 
           {auto.sizeCurve === "curve" && <br />}
 
-          {auto.sizeCurve === "curve" && <label htmlFor='size'>
-            Max Size in {auto.sizeType === "quote" ? "USD" : baseID}: <span>{auto.maxSize}</span>
-            <br />
-            <input
-              onChange={(event) => setAuto({ ...auto, maxSize: Number(event.target.value) })}
-              value={auto.maxSize}
-              type='number'
-              name='size'
-            />
-          </label>}
+          {auto.sizeCurve === "curve"
+            && <label htmlFor='maxSize'>
+              Max Size in {auto.sizeType === "quote" ? "USD" : baseID}: <span>{auto.maxSize}</span>
+              <br />
+              <input
+                onChange={(event) => handleAutoChange(event)}
+                value={auto.maxSize}
+                type='number'
+                name='maxSize'
+              />
+            </label>}
 
           {auto.sizeCurve === "curve" && <br />}
 
           {
-            auto.sizeCurve === "curve" && <label htmlFor='size'>
+            auto.sizeCurve === "curve"
+            && <label htmlFor='steepness'>
               Steepness: <span>{auto.steepness}</span>
               <br />
               <input
-                onChange={(event) => setAuto({ ...auto, steepness: Number(event.target.value) })}
+                onChange={(event) => handleAutoChange(event)}
                 value={auto.steepness}
                 type='number'
-                name='size'
+                name='steepness'
               />
             </label>
           }
@@ -673,11 +694,27 @@ function AutoSetup(props) {
           </div>}
       </div>
 
+      <h4>Review</h4>
+      <button
+        className={`btn-black ${theme}`}
+        onClick={() => setShowPreview(!showPreview)}
+      >
+        {showPreview ? 'Hide Preview' : 'Show Preview'}
+      </button>
+      <button
+        className={`btn-black ${theme}`}
+        onClick={() => setShowGraph(!showGraph)}
+      >
+        {showGraph ? 'Hide Graph' : 'Show Graph'}
+      </button>
+
+
       {(setupResults.valid
         && setupResults.orderList.length > 0)
+        && showGraph
         && <Graph data={setupResults.orderList} product={decimals} setupResults={setupResults} />}
-      <h4>Preview</h4>
       {setupResults.valid
+        && showPreview
         && setupResults?.orderList?.length > 0
         && structuredClone(setupResults.orderList).reverse().map((order, i) => {
           return <SingleTrade key={i} order={order} preview={true} product={decimals} />
