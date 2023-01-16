@@ -227,7 +227,7 @@ async function deSync(userID) {
       let allToDeSync = [];
       // get the user's settings
       const user = userStorage[userID].getUser();
-      devLog(user.sync_quantity, 'desyncing');
+      // devLog(user.sync_quantity, 'desyncing');
       // get the buys and sells that need to desync
       const ordersToDeSync = await Promise.all([
         databaseClient.getDeSyncs(userID, user.sync_quantity, 'buys'),
@@ -259,7 +259,7 @@ async function fullSync(userID) {
   return new Promise(async (resolve, reject) => {
     try {
       const user = userStorage[userID].getUser();
-      devLog(user.sync_quantity, 'desyncing');
+      // devLog(user.sync_quantity, 'desyncing');
       // get lists of trades to compare which have been settled
       const results = await Promise.all([
         // get all open orders from db and cb
@@ -340,7 +340,7 @@ async function quickSync(userID) {
 
 
       const user = userStorage[userID].getUser();
-      devLog(user.sync_quantity, 'desyncing');
+      // devLog(user.sync_quantity, 'desyncing');
       // after checking fills, store the most recent so don't need to check it later
       // this will check the specified number of trades to sync on either side to see if any 
       // need to be reordered. It will only find them on a loop after a loop where trades have been placed

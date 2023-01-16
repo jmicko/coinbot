@@ -11,6 +11,7 @@ import { useUser } from './UserContext.js';
 const DataContext = createContext()
 
 export function DataProvider({ children }) {
+  console.log('DataProvider rendering ***************');
   // state for this context
   const [productID, setProductID] = useState('BTC-USD');
   // user
@@ -32,7 +33,7 @@ export function DataProvider({ children }) {
   const { data: profit, refresh: refreshProfit, updateData: resetProfit }
     = useFetchData(`/api/account/profit/${productID}`, { defaultState: {}, notNull: [productID] })
   // get messages sent from the bot
-  const { data: messages, refresh: refreshBotMessages }
+  const { data: messages, refresh: refreshBotMessages, createRefreshData: sendChat }
     = useFetchData(`/api/account/messages`, { defaultState: { botMessages: [], chatMessages: [] } })
   // get errors sent from the bot
   const { data: botErrors, refresh: refreshBotErrors }
@@ -106,7 +107,7 @@ export function DataProvider({ children }) {
           // products
           products, currentProduct, productID, setProductID, refreshProducts, toggleActiveProduct,
           // messages
-          messages, refreshBotMessages, botErrors, refreshBotErrors,
+          messages, refreshBotMessages, botErrors, refreshBotErrors, sendChat,
           // ORDERS
           orders, refreshOrders, createMarketTrade, createOrderPair, syncPair, syncOrders,
           deleteOrder, deleteRangeForProduct, deleteAll,

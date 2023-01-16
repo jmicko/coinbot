@@ -18,7 +18,6 @@ function App() {
     // const { data } = useData();
     // console.log(user, 'user in checkuser');
     return (
-
       <div className={`App darkTheme`}>
         {user.id
           ?

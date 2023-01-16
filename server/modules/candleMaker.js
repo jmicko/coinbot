@@ -54,12 +54,12 @@ async function downloadCandles(user) {
       // sleep in between to avoid rate limiting
       await sleep(sleepyTime);
     } // end for loop of products
-    devLog('candle maker small loop done');
+    // devLog('candle maker small loop done');
   }
 
 
   // now do some maintenance stuff that takes a long time and should only be done once in a while
-  devLog('candle maker is done making candles for the big loop');
+  // devLog('candle maker is done making candles for the big loop');
 
   // check the integrity of the candles and get missing data if available
   for (let i = 0; i < activeProducts.length; i++) {
@@ -69,7 +69,7 @@ async function downloadCandles(user) {
       const granularity = granularities[j];
 
       const missing = await databaseClient.getMissingCandles({ productID, granularity });
-      devLog('missing', missing);
+      // devLog('missing', missing);
 
       for (let i = 0; i < missing.length; i++) {
         const missingCandle = missing[i];
@@ -130,7 +130,7 @@ async function updateCandlesForProduct({ productID, userID }) {
       for (let i = oldestCandle.start; i <= newestCandle.start; i += granularity.value) {
         startValues.push(i);
       }
-      devLog('startValues', startValues.length);
+      // devLog('startValues', startValues.length);
 
 
     } catch (err) {
@@ -185,7 +185,7 @@ async function getCandles({ userID, productID, granularity, start, end }) {
 
     if (candles.length === 0) return;
     // // insert the candles into the database
-    devLog('saving candles', candles.length);
+    // devLog('saving candles', candles.length);
     await databaseClient.saveCandles(productID, granularity.name, candles);
   } catch (err) {
     devLog(err);

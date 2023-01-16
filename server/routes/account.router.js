@@ -9,7 +9,7 @@ import excel from 'exceljs';
 import { granularities } from '../../src/shared.js';
 import { fork } from 'child_process';
 import fs from 'fs';
-import path, { dirname }  from 'path';
+import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -150,7 +150,7 @@ router.put('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
   console.log('reset profit route');
   // get the object keys
 
-  console.assert(process.env.NODE_ENV === 'development', process.env , 'reset profit route should only be used in development');
+  console.assert(process.env.NODE_ENV === 'development', process.env, 'reset profit route should only be used in development');
   Object.keys(process.env).forEach(key => {
     console.log(key, 'key');
   });
@@ -463,10 +463,47 @@ router.get('/messages', rejectUnauthenticated, async (req, res) => {
     userMessages.chatMessages = cache.getChatMessages(userID);
     res.send(userMessages);
   } catch (err) {
-    console.log(err, 'problem debug route');
+    console.log(err, 'problem in get messages route');
     res.sendStatus(500)
   }
 });
+
+/**
+ * POST route to send a chat message
+ */
+router.post('/messages', rejectUnauthenticated, async (req, res) => {
+  console.log('post messages route');
+  try {
+    const user = req.user;
+    if(!user.admin) {
+      res.sendStatus(403);
+      return;
+    }
+    
+    const userID = user.id;
+    const message = req.body;
+
+    if (message.type === 'chat') {
+      const allUsers = userStorage.getAllUsers()
+      console.log(allUsers, 'ALLLLLLL OF THE user');
+      allUsers.forEach(userID => {
+        messenger[userID].newMessage({
+          text: message.data,
+          type: 'chat'
+        });
+      });
+    }
+
+    // const userMessages = cache.getChatMessages(userID);
+    // userMessages.push(message);
+    // cache.setChatMessages(userID, userMessages);
+    res.sendStatus(200);
+  } catch (err) {
+    console.log(err, 'problem in post messages route');
+    res.sendStatus(500)
+  }
+});
+
 
 /**
 * PUT route to change status of reinvestment

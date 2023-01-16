@@ -15,6 +15,8 @@ import { useUser } from '../../contexts/UserContext.js';
 
 function Home() {
 
+  console.log('rendering home');
+
   const { width, height } = useWindowDimensions();
   const { user } = useUser();
 
@@ -71,6 +73,7 @@ function Home() {
             {user.approved
               ? <TradeList isAutoScroll={isAutoScroll} />
               : <NotApproved />}
+              {console.log('rendering messages in home')}
             <Messages />
           </>
         // 

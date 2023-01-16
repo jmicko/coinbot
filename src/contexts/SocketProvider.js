@@ -1,18 +1,23 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import io from "socket.io-client";
 import { useData } from './DataContext.js';
 import { useUser } from './UserContext.js';
 
 // followed this guide for setting up the socket provider in its own component and not cluttering up App.js
 
-export const SocketContext = React.createContext();
+export const SocketContext = createContext();
 // use this in child components to get the socket
 export function useSocket() {
   return useContext(SocketContext)
 }
 
 export function SocketProvider({ children }) {
-  const [socket, setSocket] = useState();
+  console.log('rendering socket provider');
+  const [socket, setSocket] = useState({
+    sendChat: (chat) => {
+      socket.emit('message', { type: 'chat', data: chat })
+    }
+  });
   const { refreshUser } = useUser();
   const { products, productID, refreshProfit, refreshOrders, refreshProducts, refreshExportableFiles,
     socketStatus, setSocketStatus, setCoinbotSocket,
@@ -42,6 +47,7 @@ export function SocketProvider({ children }) {
 
   // // update the refs when the functions change
   useEffect(() => {
+    // console.log('updating socket provider refs=================');
     refreshOrdersRef.current = refreshOrders;
     refreshProfitRef.current = refreshProfit;
     refreshProductsRef.current = refreshProducts;
@@ -52,7 +58,7 @@ export function SocketProvider({ children }) {
     setSocketStatusRef.current = setSocketStatus;
     refreshBotMessagesRef.current = refreshBotMessages;
     refreshBotErrorsRef.current = refreshBotErrors;
-  }, [refreshOrders, refreshProfit, refreshProducts, refreshUser, products, 
+  }, [refreshOrders, refreshProfit, refreshProducts, refreshUser, products,
     refreshExportableFiles, setCoinbotSocket, setSocketStatus,
     refreshBotMessages, refreshBotErrors]);
 
@@ -60,6 +66,7 @@ export function SocketProvider({ children }) {
 
   // useEffect to prevent from multiple connections
   useEffect(() => {
+    // console.log('socket provider useEffect-----------------');
     // check if on dev server or build, and set endpoint appropriately
     let ENDPOINT = origin;
     if (origin === "http://localhost:3000") {
@@ -172,7 +179,7 @@ export function SocketProvider({ children }) {
       setCoinbotSocketRef.current('open'); // socket can pass 'closed', 'open', 'timeout', and 'reopening' 
       timer();
     });
-    
+
     newSocket.on('disconnect', () => {
       console.log('disconnected')
       setCoinbotSocketRef.current('closed'); // socket can pass 'closed', 'open', 'timeout', and 'reopening'
@@ -218,15 +225,26 @@ export function SocketProvider({ children }) {
     // setSocketStatus
   ]);
 
+  const sendChatRef = useCallback(socket.sendChat);
+  useEffect(() => {
+    sendChatRef.current = socket.sendChat;
+  }, [socket.sendChat]);
+
+
 
   return (
-    <SocketContext.Provider value={{
-      socket,
-      socketStatus,
-      tickers,
-      heartbeat,
-      currentPrice,
-    }}>
+    <SocketContext.Provider
+      value={
+        {
+          socket,
+          socketStatus,
+          tickers,
+          heartbeat,
+          currentPrice,
+          sendChat: sendChatRef,
+        }
+      }
+    >
       {children}
     </SocketContext.Provider>
   )

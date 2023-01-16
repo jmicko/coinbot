@@ -77,7 +77,7 @@ function Status(props) {
         <p className="info status-ticker">
           <strong>{productID} Price</strong>
           <br />
-          {Number(tickers[productID]?.price)
+          {Number(tickers?.[productID]?.price)
             .toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1))
             // .toFixed(2)
           }
@@ -136,10 +136,10 @@ function Status(props) {
       </center>
 
       <center>
-        <p className={`info status-ticker ${theme} ${heartbeat.count === 0 && 'blue'}`}>
+        <p className={`info status-ticker ${theme} ${heartbeat?.count === 0 && 'blue'}`}>
           <strong>
             <span className={`${coinbotSocket} ${theme}`}>&#x2022;</span>
-            {heartbeat.heart}{heartbeat.beat}
+            {heartbeat?.heart}{heartbeat?.beat}
             <span className={`${socketStatus} ${theme}`}>&#x2022;</span>
           </strong>
           <br />

@@ -64,6 +64,7 @@ export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }
       // console.log(dataToPost, 'posting data to', url, 'in usePostData hook')
       setIsLoading(true)
 
+      console.log('posting data', dataToPost, ' to', url, 'in usePostData hook')
       // make the post request
       const response = await fetch(url, {
         method: 'POST',
@@ -301,7 +302,7 @@ export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }
 
   async function createRefreshData(data) {
     try {
-      // console.log(data, 'creating data in useFetchData hook ')
+      console.log(data, 'creating data in useFetchData hook ')
       await postDataCallback(data)
       await fetchDataCallback();
     } catch (err) {
