@@ -197,8 +197,11 @@ router.put('/syncQuantity', rejectUnauthenticated, async (req, res) => {
   try {
   const user = req.user;
   let newQuantity = req.body.sync_quantity;
-  if (newQuantity > 100) {
-    newQuantity = 100;
+  // get the bot settings
+  const bot = botSettings.get();
+  devLog(bot.orders_to_sync, 'bot settings');
+  if (newQuantity > bot.orders_to_sync) {
+    newQuantity = bot.orders_to_sync;
   }
   if (newQuantity < 1) {
     newQuantity = 1;

@@ -156,11 +156,12 @@ function Admin(props) {
 
       {/* SET ORDER SYNC QUANTITY */}
 
-      <h4>Set Synced Order Quantity</h4>
+      <h4>Set Max Synced Order Quantity</h4>
       {/* {JSON.stringify(allSettings)} */}
       {props.tips && <p>
-        This adjusts how many trades per side to keep in sync with Coinbase Pro (How many buys, how many sells). There is a max of 200, which
-        keeps the total under the 500 order limit on Coinbase pro, while also allowing a margin for flipping trades. Putting a low number here
+        Users are able to adjust how many trades per side to keep in sync with Coinbase (How many buys, how many sells). 
+        Changing this number puts a limit on how high users are able to set their own sync quantities. There is a max of 200, which
+        keeps the total under the 500 order limit on Coinbase, while also allowing a margin for flipping trades. Putting a low number here
         may slightly increase the speed of the bot or lower CPU usage, but risks that all trades on one side will settle before the bot has the chance to sync more.
       </p>}
       <p>Current quantity: {allSettings.orders_to_sync}</p>
@@ -176,7 +177,7 @@ function Admin(props) {
           max={200}
           min={1}
           required
-          onChange={(event) => setSyncQuantity(Number(event.target.value))}
+          onChange={(event) => setSyncQuantity(event.target.value)}
         />
         <br />
         <br />

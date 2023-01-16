@@ -89,12 +89,12 @@ function General(props) {
       {/* SYNC TRADE QUANTITY */}
       <h4>Sync Trade Quantity</h4>
       {props.tips && <p>
-        How many buys and sells to keep in sync with Coinbase. There is a hard limit of 100
-        because Coinbase has a limit of 500, and the bot needs to allow some margin. Setting 
-        this to a higher number will make it easier to keep the price within the spread, but
-        will slightly slow down the bot.
+        How many buys and sells to keep in sync with Coinbase. There is a hard limit of {user.botSettings.orders_to_sync} set
+        by the admin. This is configurable because Coinbase has a limit of 500, and the bot needs to allow some margin. Setting 
+        this to a higher number will make it easier to keep the price within the spread, but will slightly slow down the bot.
+        The admin can set a max based on the hardware the bot is running on. You can choose your risk tolerance within that limit.
       </p>}
-      <p>Current sync quantity: {Number(user.sync_quantity)}</p>
+      <p>Current sync quantity: {Number(user.sync_quantity)} Max: {user.botSettings.orders_to_sync}</p>
       <div className='left-border'>
         <label htmlFor="sync_quantity">
           Set Sync Quantity:

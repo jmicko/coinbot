@@ -5,7 +5,7 @@ import { rejectUnauthenticated, } from '../modules/authentication-middleware.js'
 // const { userCount } = require('../modules/userCount-middleware');
 import { userCount } from '../modules/userCount-middleware.js';
 // const encryptLib = require('../modules/encryption');
-import  encryptLib  from '../modules/encryption.js';
+import encryptLib from '../modules/encryption.js';
 // const pool = require('../modules/pool');
 import { pool } from '../modules/pool.js';
 // const userStrategy = require('../strategies/user.strategy');
@@ -429,17 +429,45 @@ router.put('/order_sync_quantity', rejectUnauthenticated, async (req, res) => {
   }
 
   if (user.admin && orders_to_sync <= 200 && orders_to_sync >= 1) {
+    // get a client for the transaction
+    const client = await pool.connect();
     try {
       // save to cache
       botSettings.change({ orders_to_sync: orders_to_sync })
       // save to db
-      const queryText = `UPDATE "bot_settings" SET "orders_to_sync" = $1;`;
-      await pool.query(queryText, [orders_to_sync]);
+      const queryTextBot = `UPDATE "bot_settings" SET "orders_to_sync" = $1;`;
+      const queryTextUsers = `UPDATE "user_settings" SET "sync_quantity" = $1
+      WHERE "sync_quantity" > $1;`
+
+
+      // await pool.query(queryTextBot, [orders_to_sync]);
+
+      // start a transaction
+      await client.query('BEGIN');
+      // update bot settings
+      await client.query(queryTextBot, [orders_to_sync]);
+      // update user settings
+      await client.query(queryTextUsers, [orders_to_sync]);
+      // commit the transaction
+      await client.query('COMMIT');
 
       res.sendStatus(200);
+      // update orders on client for all users
+      userStorage.getAllUsers().forEach(userID => {
+        // update orders on client
+        messenger[userID].newMessage({
+          userUpdate: true
+        })
+      })
     } catch (err) {
-      console.log('error with loop speed route', err);
+      // rollback the transaction
+      await client.query('ROLLBACK');
+
+      console.log('error with sync quantity route', err);
       res.sendStatus(500);
+    } finally {
+      // release the client
+      client.release();
     }
   } else {
     if (!user.admin) {

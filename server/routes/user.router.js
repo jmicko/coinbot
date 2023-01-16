@@ -57,6 +57,7 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
   try {
     const botSettings = await databaseClient.getBotSettings();
     req.user.botMaintenance = botSettings.maintenance;
+    req.user.botSettings = botSettings;
 
     // const URI = cache.getAPI(req.user.id).API_URI;
     req.user.sandbox = false
