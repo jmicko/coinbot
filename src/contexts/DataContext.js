@@ -26,7 +26,7 @@ export function DataProvider({ children }) {
   /////////////////////////
 
   // ACCOUNT ROUTES
-  const { data: products, refresh: refreshProducts, updateData: toggleActiveProduct }
+  const { data: products, refresh: refreshProducts, updateRefreshData: toggleActiveProduct }
     = useFetchData('/api/account/products', { defaultState: {} })
   // get the profits for the selected product
   const { data: profit, refresh: refreshProfit, updateData: resetProfit }
@@ -103,7 +103,9 @@ export function DataProvider({ children }) {
         {
           // ACCOUNT
           profit, refreshProfit, resetProfit,
+          // products
           products, currentProduct, productID, setProductID, refreshProducts, toggleActiveProduct,
+          // messages
           messages, refreshBotMessages, botErrors, refreshBotErrors,
           // ORDERS
           orders, refreshOrders, createMarketTrade, createOrderPair, syncPair, syncOrders,

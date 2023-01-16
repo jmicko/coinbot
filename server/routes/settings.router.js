@@ -20,6 +20,11 @@ import { devLog } from '../modules/utilities.js';
  * GET route for testing functions in development
  */
 router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
+  if (process.env.NODE_ENV !== 'development') {
+    res.sendStatus(403);
+    return;
+  }
+  
   const user = req.user;
   const userID = user.id
   // only admin can do this
