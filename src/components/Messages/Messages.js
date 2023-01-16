@@ -1,7 +1,8 @@
-import React, { useCallback, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useUser } from '../../contexts/UserContext.js';
 // import { useSocket } from '../../contexts/SocketProvider.js';
 import './Messages.css'
+import Chat from './Chat.js';
 import { useData } from '../../contexts/DataContext.js';
 import { no } from '../../shared.js';
 
@@ -9,12 +10,15 @@ import { no } from '../../shared.js';
 function Messages() {
   console.log('rendering messages');
   const { user } = useUser();
-  // const { socket } = useSocket();
   const { messages: { botMessages, chatMessages }, botErrors
     // , sendChat
   } = useData()
+  const messageMap = [{ header: 'General Messages', messages: botMessages }, { header: 'Bot Errors', messages: botErrors }]
 
   const [collapsed, setCollapsed] = useState(false);
+
+
+
 
   function dateBuilder(d) {
     // new Date(message.timeStamp).toLocaleString('en-US')
@@ -33,40 +37,23 @@ function Messages() {
     }
   }
 
-  function ChatForm() {
-    // const { sendChat } = useSocket();
-    const { sendChat } = useData()
-    console.log('rendering chat form');
-    const [newMessage, setNewMessage] = useState('');
+  // const ChatRef = useRef(<Chat />);
+  //  useEffect(() => {
+  //     ChatRef.current = Chat;
+  //   }, [Chat]);
 
-    const sendChatMessage = useCallback((event) => {
-      event.preventDefault();
-      setTimeout(() => {
-        // stop focus from leaving input with the id 'chat-input'
-        document.querySelector('#chat-input').focus();
-      }, 500);
-      console.log(newMessage, 'sending chat!!');
-      sendChat({ type: 'chat', data: newMessage });
-      // sendChat(newMessage);
-      // setNewMessage('')
-    }, [newMessage]);
 
-    return (
-      <form className={`chat-form`} onSubmit={sendChatMessage}>
-        <input
-          className='chat-input'
-          id='chat-input'
-          type="text"
-          value={newMessage}
-          placeholder='Send to everyone'
-          onChange={(e) => { no(e); setNewMessage(e.target.value) }}
-        />
-      </form>
-    )
-  }
-  const messageMap = [{ header: 'General Messages', messages: botMessages }, { header: 'Bot Errors', messages: botErrors }, { header: 'Chat', messages: chatMessages }]
+  const ChatMemo = memo(() => {
+    return <Chat
+      collapsed={collapsed}
+      chatLength={chatMessages.length}
+    />
+  });
+  // const ChatMemo = useMemo(() => <Chat {...props} />, [props])
+
 
   function MessageSection({ header, messages, sectionNum }) {
+
 
     return (
       (
@@ -74,9 +61,9 @@ function Messages() {
         || sectionNum !== 2)
       && <div className={`message-section message-window scrollable admin-${user.admin} ${sectionNum !== messageMap.length - 1 && 'not-last-message-section'}`}>
         {header === 'Chat'
-          ? <h3 className={`title chat-header ${user.theme}`}>{collapsed && chatMessages.length} Chat:
-            <ChatForm />
-          </h3>
+          ? <></>
+          // {/* {ChatRef.current()} */}
+
           // non-chat headers
           : <h3 className={`title ${user.theme}`}>
             {collapsed && messages.length} {header} {sectionNum} {sectionNum}
@@ -97,7 +84,6 @@ function Messages() {
     )
   }
 
-
   return (
     // show messages on screen
     <div className={`Messages boxed ${collapsed && 'collapsed'} admin-${user.admin}`}>
@@ -105,15 +91,23 @@ function Messages() {
       <div className="message-board">
 
         {messageMap.map((section, i) => {
-          return <MessageSection
-            // return <messageRef.current
-            key={i}
-            sectionNum={i}
-            header={section.header}
-            messages={section.messages}
-            mapLength={messageMap.length}
-          />
+          return (
+            <MessageSection
+              // return <messageRef.current
+              key={i}
+              sectionNum={i}
+              header={section.header}
+              messages={section.messages}
+              mapLength={messageMap.length}
+            />
+          )
         })}
+
+        {user.can_chat && <Chat
+          collapsed={collapsed}
+          chatLength={chatMessages.length}
+          messages={chatMessages}
+        />}
 
       </div>
     </div>

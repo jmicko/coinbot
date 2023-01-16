@@ -472,7 +472,7 @@ router.get('/messages', rejectUnauthenticated, async (req, res) => {
  * POST route to send a chat message
  */
 router.post('/messages', rejectUnauthenticated, async (req, res) => {
-  console.log('post messages route');
+  console.log('post messages route', req.body);
   try {
     const user = req.user;
     if(!user.can_chat) {

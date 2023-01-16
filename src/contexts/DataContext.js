@@ -35,6 +35,8 @@ export function DataProvider({ children }) {
   // get messages sent from the bot
   const { data: messages, refresh: refreshBotMessages, createRefreshData: sendChat }
     = useFetchData(`/api/account/messages`, { defaultState: { botMessages: [], chatMessages: [] } })
+
+
   // get errors sent from the bot
   const { data: botErrors, refresh: refreshBotErrors }
     = useFetchData(`/api/account/errors`, { defaultState: [] })
