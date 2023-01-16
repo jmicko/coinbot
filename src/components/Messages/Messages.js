@@ -59,14 +59,15 @@ function Messages() {
       </form>
     )
   }
+  const messageMap = [{ header: 'General Messages', messages: botMessages }, { header: 'Bot Errors', messages: botErrors }, { header: 'Chat', messages: chatMessages }]
 
   function MessageSection({ header, messages, sectionNum }) {
 
     return (
-      (((header === 'Chat')
-        && user.admin)
+      (
+        (header === 'Chat' && user.admin)
         || sectionNum !== 2)
-      && <div className={`message-section message-window scrollable admin-${user.admin}`}>
+      && <div className={`message-section message-window scrollable admin-${user.admin} ${sectionNum !== messageMap.length - 1 && 'not-last-message-section'}`}>
         {header === 'Chat'
           ? <h3 className={`title chat-header ${user.theme}`}>{collapsed && chatMessages.length} Chat:
             <ChatForm />
@@ -79,18 +80,21 @@ function Messages() {
 
         {!collapsed && messages.map((message, i) => {
           // if (message.text) {
-          return message.text && <p key={i}><strong>Msg #{message.mCount} {dateBuilder(message.timeStamp)}</strong> <br /> {message.text}</p>
+          return message.text && <p key={i}>
+            <strong>Msg #{message.mCount} {dateBuilder(message.timeStamp)}</strong>
+            <br />
+            {message.text}
+          </p>
           // }
         })}
       </div>
     )
   }
 
-  const messageMap = [{ header: 'General Messages', messages: botMessages }, { header: 'Bot Errors', messages: botErrors }, { header: 'Chat', messages: chatMessages }]
 
   return (
     // show messages on screen
-    <div className={`Messages boxed admin-${user.admin}`}>
+    <div className={`Messages boxed ${collapsed && 'collapsed'} admin-${user.admin}`}>
       <h3 className={`title ${user.theme}`} onClick={() => { setCollapsed(!collapsed) }}>Coinbot Message Board {collapsed ? <>&#9650;</> : <>&#9660;</>}</h3>
       <div className="message-board">
 
