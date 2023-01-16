@@ -1,4 +1,4 @@
-import { memo, useCallback, useState } from "react";
+import { useState } from "react";
 import { useData } from "../../contexts/DataContext.js";
 import { useUser } from "../../contexts/UserContext.js";
 
@@ -6,14 +6,13 @@ import { useUser } from "../../contexts/UserContext.js";
 
 
 function Chat({ chatLength, collapsed, messages }) {
-  // const { sendChat } = useSocket();
   const { user } = useUser();
   const { sendChat, } = useData()
   console.log('rendering chat form');
   const [newMessage, setNewMessage] = useState('');
 
   function dateBuilder(d) {
-    // new Date(message.timeStamp).toLocaleString('en-US')
+
     const date = new Date(d);
     const month = date.getMonth() + 1;
     const day = date.getDate();
@@ -32,8 +31,7 @@ function Chat({ chatLength, collapsed, messages }) {
   const sendChatMessage = (e) => {
     e.preventDefault();
     setTimeout(() => {
-      // document.querySelector('#chat-input').focus();
-      // stop focus from leaving input with the id 'chat-input'
+
     }, 500);
     console.log(newMessage, 'sending chat!!');
     sendChat({ type: 'chat', data: newMessage });

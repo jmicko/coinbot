@@ -1,10 +1,10 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { useUser } from '../../contexts/UserContext.js';
-// import { useSocket } from '../../contexts/SocketProvider.js';
+
 import './Messages.css'
 import Chat from './Chat.js';
 import { useData } from '../../contexts/DataContext.js';
-import { no } from '../../shared.js';
+
 
 
 function Messages() {
@@ -16,9 +16,6 @@ function Messages() {
   const messageMap = [{ header: 'General Messages', messages: botMessages }, { header: 'Bot Errors', messages: botErrors }]
 
   const [collapsed, setCollapsed] = useState(false);
-
-
-
 
   function dateBuilder(d) {
     // new Date(message.timeStamp).toLocaleString('en-US')
@@ -36,21 +33,6 @@ function Messages() {
       return `${month}/${day}/${year} ${hours}:${minutes}:${seconds}${new Date().toLocaleDateString()}`
     }
   }
-
-  // const ChatRef = useRef(<Chat />);
-  //  useEffect(() => {
-  //     ChatRef.current = Chat;
-  //   }, [Chat]);
-
-
-  const ChatMemo = memo(() => {
-    return <Chat
-      collapsed={collapsed}
-      chatLength={chatMessages.length}
-    />
-  });
-  // const ChatMemo = useMemo(() => <Chat {...props} />, [props])
-
 
   function MessageSection({ header, messages, sectionNum }) {
 
@@ -93,7 +75,6 @@ function Messages() {
         {messageMap.map((section, i) => {
           return (
             <MessageSection
-              // return <messageRef.current
               key={i}
               sectionNum={i}
               header={section.header}
