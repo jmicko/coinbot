@@ -5,7 +5,7 @@ import { useProductDecimals } from '../../hooks/useProductDecimals.js';
 import './SingleTrade.css'
 
 function SingleTrade(props) {
-  const { user } = useUser();
+  const { user, theme } = useUser();
   const { productID, deleteOrder, syncPair } = useData();
 
   const [profit, setProfit] = useState(0);
@@ -13,6 +13,10 @@ function SingleTrade(props) {
   const [showAll, setShowAll] = useState(false);
   const [sellFee, setSellFee] = useState();
   const [buyFee, setBuyFee] = useState();
+
+  const { reorder } = props.order;
+
+  console.log('reorder', reorder);
 
   const decimals = useProductDecimals(productID, user.availableFunds);
 
@@ -105,7 +109,9 @@ function SingleTrade(props) {
           {!props.preview && <strong> ~Time </strong>} {!props.preview && (props.order.flipped_at
             ? new Date(props.order.flipped_at).toLocaleString('en-US')
             : new Date(props.order.created_at).toLocaleString('en-US'))}
+          &nbsp;<span className={`${theme} ${reorder ? 'reopening' : 'open'}`}>&#x2022;</span>
           <br />
+          {/* {reorder && <strong>Reorder: </strong>} */}
           {/* created: {JSON.stringify(props.order.created_at)} 
           <br />
           flipped: {JSON.stringify(props.order.flipped_at)}

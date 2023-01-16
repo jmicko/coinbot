@@ -46,3 +46,11 @@ span.closed {
 span.reopening {
     color: blue;
 }
+
+span.darkTheme.open {
+    color: rgb(109, 163, 109);
+}
+
+span.darkTheme.reopening {
+    color: rgb(14, 45, 85);
+}
