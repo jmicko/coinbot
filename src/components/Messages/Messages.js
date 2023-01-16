@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { useUser } from '../../contexts/UserContext.js';
-import { useSocket } from '../../contexts/SocketProvider.js';
+// import { useSocket } from '../../contexts/SocketProvider.js';
 import './Messages.css'
 import { useData } from '../../contexts/DataContext.js';
 import { no } from '../../shared.js';
@@ -34,15 +34,16 @@ function Messages() {
   }
 
   function ChatForm() {
-    const { sendChat } = useSocket();
+    // const { sendChat } = useSocket();
+    const { sendChat } = useData()
     console.log('rendering chat form');
     const [newMessage, setNewMessage] = useState('');
 
     const sendChatMessage = useCallback((event) => {
       event.preventDefault();
       console.log(newMessage, 'sending chat!!');
-      // sendChat({ type: 'chat', data: newMessage });
-      sendChat(newMessage);
+      sendChat({ type: 'chat', data: newMessage });
+      // sendChat(newMessage);
       // setNewMessage('')
     }, [newMessage]);
 

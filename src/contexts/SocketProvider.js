@@ -226,9 +226,9 @@ export function SocketProvider({ children }) {
   ]);
 
   const sendChatRef = useCallback(socket.sendChat);
-  useEffect(() => {
-    sendChatRef.current = socket.sendChat;
-  }, [socket.sendChat]);
+  // useEffect(() => {
+  //   sendChatRef.current = socket.sendChat;
+  // }, [socket.sendChat]);
 
 
 
@@ -241,7 +241,9 @@ export function SocketProvider({ children }) {
           tickers,
           heartbeat,
           currentPrice,
-          sendChat: sendChatRef,
+          sendChat
+          // :socket.sendChat,
+          : sendChatRef,
         }
       }
     >
