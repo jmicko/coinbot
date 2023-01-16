@@ -1,10 +1,6 @@
-// const { autoSetup, sleep } = require("../shared");
-import { autoSetup, sleep } from "../shared.js";
-// const databaseClient = require("../../server/modules/databaseClient");
+import { autoSetup } from "../shared.js";
 import { databaseClient } from "../../server/modules/databaseClient.js";
-// const { flipTrade } = require("../../server/modules/robot");
 import { flipTrade } from "../../server/modules/robot.js";
-// const { v4: uuidv4 } = require('uuid');
 import { v4 as uuidv4 } from 'uuid';
 
 // receive data from the parent process

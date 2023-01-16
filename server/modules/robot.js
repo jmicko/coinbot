@@ -225,10 +225,13 @@ async function deSync(userID) {
   return new Promise(async (resolve, reject) => {
     try {
       let allToDeSync = [];
+      // get the user's settings
+      const user = userStorage[userID].getUser();
+      devLog(user.sync_quantity, 'desyncing');
       // get the buys and sells that need to desync
       const ordersToDeSync = await Promise.all([
-        databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'buys'),
-        databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'sells')
+        databaseClient.getDeSyncs(userID, user.sync_quantity, 'buys'),
+        databaseClient.getDeSyncs(userID, user.sync_quantity, 'sells')
       ]);
       let buysToDeSync = ordersToDeSync[0];
       let sellsToDeSync = ordersToDeSync[1];
@@ -255,10 +258,12 @@ async function fullSync(userID) {
   userStorage[userID].updateStatus('begin full sync');
   return new Promise(async (resolve, reject) => {
     try {
+      const user = userStorage[userID].getUser();
+      devLog(user.sync_quantity, 'desyncing');
       // get lists of trades to compare which have been settled
       const results = await Promise.all([
         // get all open orders from db and cb
-        databaseClient.getLimitedUnsettledTrades(userID, botSettings.orders_to_sync),
+        databaseClient.getLimitedUnsettledTrades(userID, user.sync_quantity),
         // get open orders
         cbClients[userID].getOrders({ order_status: 'OPEN' }),
         // get fees
@@ -334,12 +339,13 @@ async function quickSync(userID) {
 
 
 
-
+      const user = userStorage[userID].getUser();
+      devLog(user.sync_quantity, 'desyncing');
       // after checking fills, store the most recent so don't need to check it later
       // this will check the specified number of trades to sync on either side to see if any 
       // need to be reordered. It will only find them on a loop after a loop where trades have been placed
       // todo - maybe this should go after the updateMultipleOrders function so it will fire on same loop
-      const reorders = await databaseClient.getReorders(userID, botSettings.orders_to_sync)
+      const reorders = await databaseClient.getReorders(userID, user.sync_quantity)
       // combine the arrays
       const toCheck = unsettledFills.concat(reorders);
       // set orders to check so the next process can access them without needing to pass params through

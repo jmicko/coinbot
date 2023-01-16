@@ -54,6 +54,7 @@ class User {
     this.max_trade = user.max_trade;
     this.max_trade_size = user.max_trade_size;
     this.max_trade_load = user.max_trade_load;
+    this.sync_quantity = user.sync_quantity;
     this.profit_accuracy = user.profit_accuracy;
     this.auto_setup_number = user.auto_setup_number;
     this.profit_reset = user.profit_reset;
@@ -153,6 +154,7 @@ class User {
     this.max_trade = user.max_trade;
     this.max_trade_size = user.max_trade_size;
     this.max_trade_load = user.max_trade_load;
+    this.sync_quantity = user.sync_quantity;
     this.profit_accuracy = user.profit_accuracy;
     this.auto_setup_number = user.auto_setup_number;
     this.profit_reset = user.profit_reset;

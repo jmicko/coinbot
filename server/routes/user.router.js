@@ -16,6 +16,7 @@ import { robot } from '../modules/robot.js';
 import { databaseClient } from '../modules/databaseClient.js';
 // const { cache, userStorage, messenger } = require('../modules/cache');
 import { cache, userStorage, messenger } from '../modules/cache.js';
+import { devLog } from '../modules/utilities.js';
 
 const router = express.Router();
 
@@ -81,6 +82,7 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
   } catch (err) {
     console.log(err, 'error in user route');
   }
+  // devLog('user', req.user)
   // Send back user object from the session (previously queried from the database)
   res.send(req.user);
 });

@@ -18,6 +18,7 @@ import { useFetchData } from '../../../hooks/fetchData.js';
 function AutoSetup(props) {
 
   const { user, theme } = useUser();
+  const { currentPrice } = useSocket();
   const { productID, currentProduct } = useData();
   const [showGraph, setShowGraph] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -30,7 +31,6 @@ function AutoSetup(props) {
     isLoading: simLoading
   } = useFetchData(`/api/trade/simulation`, { defaultState: null, noLoad: true });
 
-  const { currentPrice } = useSocket();
 
   const [auto, setAuto] = useState({
     // startingValue: 1000,
@@ -68,13 +68,7 @@ function AutoSetup(props) {
   // it should only be called if the last input change was more than 1 second ago
   // this will make the inputs more responsive
   const [lastInputChange, setLastInputChange] = useState(Date.now());
-  // input values are all stored in the auto object
-  // make a useEffect that will watch the auto object for changes and update the lastInputChange
 
-  useEffect(() => {
-    // console.log('auto object CHANGED!!!!!!!!!!!');
-    setLastInputChange(Date.now());
-  }, [auto]);
 
 
   // constants that change based on product
@@ -134,35 +128,6 @@ function AutoSetup(props) {
     auto,
   ])
 
-  // // can we maybe rewrite the above useEffect using useCallback and useMemo?
-  // // first create a memoized result of the autoSetup function as imported from the autoSetup.js file
-  // const memoizedAutoSetup = useCallback(autoSetup, []);
-  // // then create a memoized result of the autoSetup function with the user, availableQuote, currentPrice, currentProduct, and auto objects as dependencies
-  // const memoizedAutoSetupWithDependencies = useMemo(() => memoizedAutoSetup(user, {
-  //   ...auto,
-  //   availableQuote: availableQuote,
-  //   tradingPrice: currentPrice,
-  //   product: currentProduct,
-  //   user: user,
-  // }), [user, availableQuote, currentPrice, currentProduct, auto])
-  // // then create a useEffect that will run the memoizedAutoSetupWithDependencies function
-  // useEffect(() => {
-  //   // console.log('running autoSetup useEffect', loadingRef.current)
-  //   if (!user || !availableQuote || !currentPrice || !currentProduct) return;
-  //   // if (loadingRef.current || (Date.now() - lastInputChange < 2000)) return;
-  //   if (loadingRef.current) return;
-  //   loadingRef.current = true;
-  //   // console.log(loadingRef.current, 'running autoSetup')
-  //   const results = memoizedAutoSetupWithDependencies;
-  //   setSetupResults(results);
-  //   // console.log('setting loading to false')
-  //   loadingRef.current = false;
-  // }, [memoizedAutoSetupWithDependencies, lastInputChange])
-  // // look man, I don't know what I'm doing, but this seems to at least not work any worse before
-  // // I'll come back to it later and rewrite it since I've integrated debouncing
-
-
-
   function handleIncrementType(event) {
     // set the type of increment, dollars or percent
     setAuto({
@@ -184,7 +149,7 @@ function AutoSetup(props) {
   function handleAutoChange(event) {
     // set the date of the last input change
     setLastInputChange(Date.now());
-    
+
     // check type of input and convert to number if necessary
     // if checkbox, set the corresponding value to ! whatever it was before
     const { name, value, type } = event.target;

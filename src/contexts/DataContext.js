@@ -77,6 +77,7 @@ export function DataProvider({ children }) {
   const { updateData: updateKillLock } = useFetchData(`/api/settings/killLock`, { defaultState: null, noLoad: true })
   const { updateData: updatePause } = useFetchData(`/api/settings/pause`, { defaultState: null, noLoad: true })
   const { updateData: updateTheme } = useFetchData(`/api/settings/theme`, { defaultState: null, noLoad: true })
+  const { updateData: updateSyncQuantity } = useFetchData(`/api/settings/syncQuantity`, { defaultState: null, noLoad: true })
 
   // SETTINGS FUNCTIONS
   async function updateProfitAccuracy(profit_accuracy) { await setProfitAccuracy({ profit_accuracy }); refreshUser(); }
@@ -84,6 +85,7 @@ export function DataProvider({ children }) {
   async function killLock() { await updateKillLock(); refreshUser(); }
   async function setTheme(theme) { await updateTheme({ theme }); refreshUser(); }
   async function sendTradeLoadMax(max_trade_load) { await updateMaxTradeLoad({ max_trade_load }); refreshUser(); }
+  async function sendSyncQuantity(sync_quantity) { await updateSyncQuantity({ sync_quantity }); refreshUser(); }
 
   ///////////////////
   //// UTILITIES ////
@@ -109,7 +111,7 @@ export function DataProvider({ children }) {
           // TRADE
           exportableFiles, refreshExportableFiles,
           // SETTINGS
-          pause, killLock, setTheme, sendTradeLoadMax, updateProfitAccuracy,
+          pause, killLock, setTheme, sendTradeLoadMax, updateProfitAccuracy, sendSyncQuantity,
           // SOCKETS
           coinbotSocket, setCoinbotSocket, socketStatus, setSocketStatus, deadCon
         }

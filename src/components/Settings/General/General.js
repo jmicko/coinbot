@@ -7,10 +7,11 @@ const themes = { original: 'Original', darkTheme: 'Dark' }
 
 function General(props) {
   const { user, theme } = useUser();
-  const { pause, killLock, setTheme, sendTradeLoadMax, updateProfitAccuracy } = useData();
+  const { pause, killLock, setTheme, sendTradeLoadMax, updateProfitAccuracy, sendSyncQuantity } = useData();
 
   const [max_trade_load, setMaxTradeLoad] = useState(100);
   const [profit_accuracy, setProfit_accuracy] = useState(2);
+  const [sync_quantity, setSync_quantity] = useState(user.sync_quantity);
 
   return (
     <div className="General settings-panel scrollable">
@@ -84,6 +85,32 @@ function General(props) {
         <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { sendTradeLoadMax(max_trade_load) }}>Save Max</button>
       </div>
       <div className={`divider ${theme}`} />
+
+      {/* SYNC TRADE QUANTITY */}
+      <h4>Sync Trade Quantity</h4>
+      {props.tips && <p>
+        How many buys and sells to keep in sync with Coinbase. There is a hard limit of 100
+        because Coinbase has a limit of 500, and the bot needs to allow some margin. Setting 
+        this to a higher number will make it easier to keep the price within the spread, but
+        will slightly slow down the bot.
+      </p>}
+      <p>Current sync quantity: {Number(user.sync_quantity)}</p>
+      <div className='left-border'>
+        <label htmlFor="sync_quantity">
+          Set Sync Quantity:
+        </label>
+        <input
+          type="number"
+          name="sync_quantity"
+          value={sync_quantity}
+          required
+          onChange={(event) => setSync_quantity(event.target.value)}
+        />
+        <br />
+        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { sendSyncQuantity(sync_quantity) }}>Save</button>
+      </div>
+      <div className={`divider ${theme}`} />
+
 
       {/* PROFIT ACCURACY */}
       <h4>Profit accuracy</h4>

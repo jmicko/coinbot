@@ -358,7 +358,7 @@ router.put('/bulkPairRatio/:product_id', rejectUnauthenticated, async (req, res)
     // mark all open orders as reorder
     await databaseClient.setReorder(userID);
 
-    let openOrders = await databaseClient.getLimitedUnsettledTrades(userID, botSettings.orders_to_sync);
+    let openOrders = await databaseClient.getLimitedUnsettledTrades(userID, user.sync_quantity);
 
     if (openOrders.length > 0) {
       // build an array of just the IDs that should be set to reorder
