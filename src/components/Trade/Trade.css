@@ -11,7 +11,7 @@
     display    : block;
     grid-column: 2;
     grid-row   : 5;
-    min-height: 20vh;
+    min-height : 20vh;
   }
 }
 
@@ -22,8 +22,20 @@
   margin: .4rem;
 }
 
-.basic-trade-form{
-  width: max-content;
+.basic-trade-form {
+  margin: .4rem;
+}
+
+.Trade.SELL-color {
+  /* width: max-content; */
+  /* margin: 5px; */
+  background-color: rgba(168, 31, 31, 0.15);
+}
+
+.Trade.BUY-color {
+  /* width: max-content; */
+  /* margin: 5px; */
+  background-color: rgba(19, 133, 29, 0.15);
 }
 
 
@@ -39,22 +51,44 @@
 
 /* === BUTTONS === */
 
-.increment-buttons {
+/* .increment-buttons {
   margin: .1rem auto;
   width : max-content;
 }
 
 .increase input {
-  /* background-color: rgb(20, 238, 20); */
   width: 4rem;
 }
 
 .decrease input {
   width: 4rem;
+} */
+
+/* .collapsed{
+  height: min-content;
+} */
+
+.btn-collapse{
+  height: unset;
+  height: 100%;
+  float: left;
 }
 
 .btn-send-trade {
   height   : 3rem;
   margin   : 1rem auto;
+  width: 100%;
   font-size: larger;
+}
+
+.btn-side {
+  height      : 3rem;
+  width       : 50%;
+  min-width   : 8rem;
+  /* margin   : 1rem auto; */
+  font-size   : larger;
+}
+
+.basic-trade-buttons {
+  display: flex;
 }

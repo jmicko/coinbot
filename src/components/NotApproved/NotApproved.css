@@ -1,7 +1,7 @@
 .NotApproved {
     grid-row     : 3 / 5;
     grid-column  : 3 / 5;
-    /* overflow-y: auto; */
+
     display      : block;
 }
 @media (max-width: 800px) {
@@ -11,6 +11,12 @@
         /* overflow-y: auto; */
         display      : block;
         max-height: 80vh;
+
+        /* margin-bottom: auto; */
+
+        display    : block;
+        grid-column: 2;
+        grid-row   : 5;
     }
 
 }

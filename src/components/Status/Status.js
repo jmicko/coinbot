@@ -1,238 +1,163 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { connect, useDispatch } from 'react-redux';
-import mapStoreToProps from '../../redux/mapStoreToProps';
+import React, { useEffect, useState } from 'react';
+import { useData } from '../../contexts/DataContext.js';
+import { useSocket } from '../../contexts/SocketProvider.js';
+import { useUser } from '../../contexts/UserContext.js';
+import useLocalStorage from '../../hooks/useLocalStorage.js';
+import useWindowDimensions from '../../hooks/useWindowDimensions.js';
+import { numberWithCommas } from '../../shared.js';
 import './Status.css'
-import { useSocket } from "../../contexts/SocketProvider";
 
 
 function Status(props) {
-  const dispatch = useDispatch();
-  const [loopStatus, setLoopStatus] = useState(true);
-  const [fullSync, setFullSync] = useState("");
+  // devLog('rendering status');
+
+  const { user, refreshUser, theme, btnColor } = useUser();
+  const { tickers, heartbeat } = useSocket();
+  const {
+    socketStatus, coinbotSocket,
+    orders, refreshOrders,
+    productID, refreshProducts,
+    profit, refreshProfit,
+  } = useData();
+  const openOrdersInOrder = orders;
   const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
   const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
-  const [profitDisplay, setProfitDisplay] = useState(1);
-  const [availableFundsDisplay, setAvailableFundsDisplay] = useState(false);
-  const [feeDisplay, setFeeDisplay] = useState(true);
-  const [profitAccuracy, setProfitAccuracy] = useState(2);
+  // const [profitDisplay, setProfitDisplay] = useState(0);
+  const [profitDisplay, setProfitDisplay] = useLocalStorage('profitDisplay', 0);
+  // const [availableFundsDisplay, setAvailableFundsDisplay] = useState(false);
+  const [availableFundsDisplay, setAvailableFundsDisplay] = useLocalStorage('availableFundsDisplay', false);
+  // const [feeDisplay, setFeeDisplay] = useState(true);
+  const [feeDisplay, setFeeDisplay] = useLocalStorage('feeDisplay', true);
+  // const [profitAccuracy, setProfitAccuracy] = useState(2);
+  const profitAccuracy = user.profit_accuracy;
 
-  const [availableFundsUSD, setAvailableFundsUSD] = useState(0);
-  const [availableFundsBTC, setAvailableFundsBTC] = useState(0);
+  const { width } = useWindowDimensions();
 
-  const socket = useSocket();
 
-  const refresh = () => {
-    props.updateUser();
+  const updateUser = () => {
+    refreshProfit();
+    refreshOrders();
+    refreshProducts();
+    refreshUser();
   }
-
-  const getProfits = useCallback(
-    () => {
-      dispatch({
-        type: 'FETCH_PROFITS'
-      });
-    }, [dispatch]
-  )
-
-  const getAccounts = useCallback(
-    () => {
-      dispatch({
-        type: 'FETCH_USER'
-      });
-    }, [dispatch]
-  )
 
   // watch to see if accuracy changes
-  useEffect(() => {
-    setProfitAccuracy(Number(props.store.accountReducer.userReducer.profit_accuracy));
-  }, [props.store.accountReducer.userReducer.profit_accuracy])
+  // useEffect(() => {
+  //   setProfitAccuracy(Number(user.profit_accuracy));
+  // }, [user.profit_accuracy])
 
-  // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
-  const numberWithCommas = (x) => {
-    // this will work in safari once lookbehind is supported
-    // return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
-    // for now, use this
-    if (x !== null) {
-
-      let parts = x.toString().split(".");
-      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-      return parts.join(".");
-    } else {
-      return "null"
-    }
-  }
-
-  // update profits when a trade is made
-  useEffect(() => {
-    getProfits();
-    getAccounts();
-    // make it depend on the order reducer because that will change when orders change.
-    // profits are most likely to change when orders change, and do not change if they don't
-  }, [props.store.ordersReducer.openOrdersInOrder, getProfits, getAccounts]);
-
-  // need use effect to prevent multiplying connections every time component renders
-  useEffect(() => {
-    // socket may not exist on page load because it hasn't connected yet
-    if (socket == null) return;
-
-    socket.on('message', message => {
-      // console.log('message from socket', message);
-      if (message.heartbeat && message.userID === props.store.accountReducer.userReducer.id) {
-        if (message.count === 1) {
-          setFullSync('blue');
-        } else {
-          setFullSync('');
-        }
-        setLoopStatus(prevLoopStatus => {
-          // console.log('previous error count', prevErrorCount);
-          return !prevLoopStatus;
-        });
-      }
-    });
-
-    // this will remove the listener when component rerenders
-    return () => socket.off('message')
-    // useEffect will depend on socket because the connection will 
-    // not be there right when the page loads
-  }, [socket, props.store.accountReducer.userReducer.id]);
 
   // get the total number of open orders
   useEffect(() => {
-    if (props.store.ordersReducer.openOrdersInOrder.sells !== undefined && props.store.ordersReducer.openOrdersInOrder.buys !== undefined) {
-      setOpenOrderQuantity(props.store.ordersReducer.openOrdersInOrder.counts.totalOpenOrders.count)
-      setOpenSellsQuantity(props.store.ordersReducer.openOrdersInOrder.counts.totalOpenSells.count)
-      setOpenBuysQuantity(props.store.ordersReducer.openOrdersInOrder.counts.totalOpenBuys.count)
+    if (openOrdersInOrder.sells !== undefined && openOrdersInOrder.buys !== undefined) {
+      setOpenOrderQuantity(openOrdersInOrder.counts.totalOpenOrders.count)
+      setOpenSellsQuantity(openOrdersInOrder.counts.totalOpenSells.count)
+      setOpenBuysQuantity(openOrdersInOrder.counts.totalOpenBuys.count)
     }
-  }, [props.store.ordersReducer.openOrdersInOrder.counts]);
-
-  useEffect(() => {
-    if (props.store.accountReducer.userReducer) {
-      setAvailableFundsUSD(props.store.accountReducer.userReducer.actualavailable_usd);
-      setAvailableFundsBTC(props.store.accountReducer.userReducer.actualavailable_btc);
-    }
-  }, [props.store.accountReducer.userReducer]);
-
-  useEffect(() => {
-    if (profitDisplay > 4) {
-      setProfitDisplay(1)
-    };
-
-  }, [profitDisplay]);
-
-
+  }, [openOrdersInOrder.counts, openOrdersInOrder.sells, openOrdersInOrder.buys]);
 
   return (
 
     <div className="Status boxed fit">
-      {/* todo - maybe style in some divider lines here or something */}
-      {/* <p className="info status-ticker"><strong>~~~ user ~~~</strong><br />{JSON.stringify(props.store.accountReducer.userReducer)}</p> */}
-      {/* <p>{JSON.stringify(props.store.accountReducer.userReducer.botMaintenance)}</p> */}
-      <center onClick={() => { setProfitDisplay(profitDisplay + 1) }}>
-        {profitDisplay === 1
-          ? <p className="info status-ticker">
-            <strong>24 hour Profit</strong>
-            <br />
-            ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[0].sum).toFixed(profitAccuracy))}
-          </p>
-          : profitDisplay === 2
-            ? <p className="info status-ticker">
-              <strong>7 Day Profit</strong>
-              <br />
-              ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[1]?.sum).toFixed(profitAccuracy))}
-            </p>
-            : profitDisplay === 3
-              ? <p className="info status-ticker">
-                <strong>30 Day Profit</strong>
-                <br />
-                ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[2]?.sum).toFixed(profitAccuracy))}
-              </p>
-              : <p className="info status-ticker">
-                <strong>Profit Since Reset</strong>
-                <br />
-                ${numberWithCommas(Number(props.store.accountReducer.profitsReducer[3]?.sum).toFixed(profitAccuracy))}
-              </p>
+      <div className="info status-ticker">
+        <select
+          value={profitDisplay}
+          onChange={(e) => { setProfitDisplay(e.target.value) }}
+        >
+          {profit.map((p, i) => {
+            return (
+              <option key={i} value={i}>{p.duration} {p.duration !== 'Since Reset' && 'Profit'}</option>
+            )
+          })}
+        </select>
+        {width > 800 ? <br /> : <div className='spacer' />}
+        ${numberWithCommas(Number(profit[profitDisplay]?.productProfit).toFixed(profitAccuracy))} /
+        ${numberWithCommas(Number(profit[profitDisplay]?.allProfit).toFixed(profitAccuracy))}
+      </div>
+
+      <div className="info status-ticker">
+        <strong>{productID} Price</strong>
+        {width > 800 ? <br /> : <div className='spacer' />}
+        {Number(tickers?.[productID]?.price).toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1))}
+      </div>
+
+      <div className="info status-ticker">
+        <select
+          value={availableFundsDisplay}
+          onChange={(e) => { setAvailableFundsDisplay(e.target.value) }}
+        >
+          <option value={true}>Available {user.availableFunds?.[productID]?.base_currency}</option>
+          <option value={false}>Available {user.availableFunds?.[productID]?.quote_currency}</option>
+
+        </select>
+        {width > 800 ? <br /> : <div className='spacer' />}
+
+        {availableFundsDisplay === "true"
+          ? `${numberWithCommas(Number(user.availableFunds?.[productID]?.base_available).toFixed(Number(user.availableFunds?.[productID]?.base_increment.split('1')[0].length - 1)))}`
+          : `${user.availableFunds?.[productID]?.quote_currency === 'USD' && "$"}${numberWithCommas(Number(user.availableFunds?.[productID]?.quote_available)
+            .toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1)))}
+            ${user.availableFunds?.[productID]?.quote_currency !== 'USD' ? user.availableFunds?.[productID]?.quote_currency : ''}`
         }
-      </center>
+      </div>
 
-      <center>
-        <p className="info status-ticker">
-          <strong> BTC-USD Price</strong>
-          <br />
-          {}
-          ${numberWithCommas(Number(props.priceTicker).toFixed(2))}
-        </p>
-      </center>
+      <div className="info status-ticker">
+        <select
+          value={feeDisplay}
+          onChange={(e) => { setFeeDisplay(e.target.value) }}
+        >
+          <option value={true}>Maker Fee</option>
+          <option value={false}>Taker Fee</option>
 
-      <center onClick={() => { setAvailableFundsDisplay(!availableFundsDisplay) }}>
-        {availableFundsDisplay
-          ? <p className="info status-ticker">
-            <strong>Available Funds</strong>
-            <br />
-            {numberWithCommas(Math.floor(availableFundsBTC * 100000000) / 100000000)} BTC
-          </p>
-          : <p className="info status-ticker">
-            <strong>Available Funds</strong>
-            <br />
-            ${numberWithCommas(Math.floor(availableFundsUSD * 100) / 100)}
-          </p>
+        </select>
+        {width > 800 ? <br /> : <div className='spacer' />}
+        {feeDisplay === "true"
+          ? `${Number((user.maker_fee * 100).toFixed(2))}%`
+          : `${Number((user.taker_fee * 100).toFixed(2))}%`
         }
-      </center>
+      </div>
 
-      <center onClick={() => { setFeeDisplay(!feeDisplay) }}>
-        {feeDisplay
-          ? <p className="info status-ticker">
-            <strong>Maker Fee</strong>
-            <br />
-            {Number((props.store.accountReducer.userReducer.maker_fee * 100).toFixed(2))}%
-          </p>
-          : <p className="info status-ticker">
-            <strong>Taker Fee</strong>
-            <br />
-            {Number((props.store.accountReducer.userReducer.taker_fee * 100).toFixed(2))}%
-          </p>
-        }
-      </center>
+      <div className="info status-ticker">
+        <strong>30 Day Volume</strong>
+        {width > 800 ? <br /> : <div className='spacer' />}
+        ${numberWithCommas(Number(user.usd_volume).toFixed(2))}
+      </div>
 
-      <center>
-        <p className="info status-ticker">
-          <strong>30 Day Volume</strong>
-          <br />
-          ${numberWithCommas(Number(props.store.accountReducer.userReducer.usd_volume).toFixed(2))}
-        </p>
-      </center>
+      <div className="info status-ticker">
+        <strong>Open Order Counts</strong>
+        {width > 800 ? <br /> : <div className='spacer' />}
+        <strong>B:</strong>{numberWithCommas(openBuysQuantity)}&nbsp;<strong>S:</strong>{numberWithCommas(openSellsQuantity)}&nbsp;<strong>T:</strong>{numberWithCommas(openOrderQuantity)}
+      </div>
+      {width > 800 ? <br /> : ''}
 
+      <div className='controls'>
 
-      <center>
-        <p className="info status-ticker">
-          <strong>Total Open Orders</strong>
-          <br />
-          <strong>B:</strong>{numberWithCommas(openBuysQuantity)} <strong>S:</strong>{numberWithCommas(openSellsQuantity)} <strong>T:</strong>{numberWithCommas(openOrderQuantity)}
-        </p>
-      </center>
+        <div className={`info status-ticker heartbeat ${theme} ${heartbeat?.count === 0 && 'blue'}`}>
+          <div> {/* leave this div here or the heartbeat will turn gray */}
+            <strong>
+              <span className={`${coinbotSocket} ${theme}`}>&#x2022;</span>
+              {heartbeat?.heart}{heartbeat?.beat}
+              <span className={`${socketStatus} ${theme}`}>&#x2022;</span>
+            </strong>
+          </div> {/* leave this div here or the heartbeat will turn gray */}
+        </div>
 
-      <center>
-        <p className={`info status-ticker ${props.theme} ${fullSync}`}>{loopStatus ? <strong>HEARTBEAT</strong> : <strong>heartbeat</strong>}
-          <br />
-          <button className={`btn-blue ${props.theme}`} onClick={refresh}>Refresh</button>
-        </p>
-      </center>
+        <button className={`${btnColor} ${theme}`} onClick={updateUser}>Refresh</button>
 
-      {/* <center> */}
-      <p className="info status-ticker auto-scroll"><strong>Auto Scroll</strong>
-        {/* <br /> */}
-        <input
-          type="checkbox"
-          checked={props.isAutoScroll}
-          onChange={props.handleAutoScrollChange}
-        />
-        <br />
-        {props.store.accountReducer.userReducer.paused &&
-          <strong className='red'>~~~PAUSED~~~</strong>
-        }
-      </p>
-      {/* </center> */}
+        <div className="info status-ticker auto-scroll"><strong>Scroll</strong>
+          <input
+            type="checkbox"
+            checked={props.isAutoScroll}
+            onChange={props.handleAutoScrollChange}
+          />
+        </div>
+
+        {user.paused && <strong className='red'>~~~PAUSED~~~</strong>}
+
+      </div>
+
     </div>
   )
 }
 
-export default connect(mapStoreToProps)(Status);
+export default Status;

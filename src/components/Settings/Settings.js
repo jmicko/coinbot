@@ -1,60 +1,83 @@
 import React, { useState } from 'react';
-import { connect } from 'react-redux';
-import mapStoreToProps from '../../redux/mapStoreToProps';
-import Admin from './Admin/Admin';
-import AutoSetup from './AutoSetup/AutoSetup';
-import General from './General/General';
-import Investment from './Investment/Investment';
-import Reset from './Reset/Reset';
-import History from './History/History';
+import Admin from './Admin/Admin.js';
+import AutoSetup from './AutoSetup/AutoSetup.js';
+import General from './General/General.js';
+import Products from './Products/Products.js';
+import Investment from './Investment/Investment.js';
+import Reset from './Reset/Reset.js';
+import History from './History/History.js';
 import './Settings.css'
-import SettingsNav from './SettingsNav/SettingsNav';
-import BulkDelete from './BulkDelete/BulkDelete';
+import SettingsNav from './SettingsNav/SettingsNav.js';
+import BulkDelete from './BulkDelete/BulkDelete.js';
+import { useUser } from '../../contexts/UserContext.js';
+import Draggable from '../Draggable/Draggable.js';
 
 
 
 function Settings(props) {
   const [settingsPage, setSettingsPage] = useState('general');
   const [tips, setTips] = useState(false);
+  const { theme } = useUser();
 
+  function BeforeDrag() {
+    return (
+      <button className={`btn-logout btn-red close-settings ${theme}`} onClick={() => { props.clickSettings() }}>X</button>
+    )
+  }
+
+  function AfterDrag({ collapseParent }) {
+    return (
+      <p className="info tips">
+        {!collapseParent && <strong>Show Tips</strong>}
+        {/* <br /> */}
+        <input
+          type="checkbox"
+          checked={tips}
+          onChange={() => setTips(!tips)}
+        />
+      </p>
+    )
+  }
+
+// receive props from Draggable component
+  function SettingsPanel({ Dragger, collapseParent }) {
+    return (
+      <>
+        <Dragger
+          text={'Settings'}
+
+          header={() => <h2 className={`settings-header ${collapseParent && 'hide'}`}>Settings</h2>}
+          beforeDrag={BeforeDrag}
+          afterDrag={() => <AfterDrag />}
+        />
+        {!collapseParent && <SettingsNav setSettingsPage={setSettingsPage} settingsPage={settingsPage} />}
+        <div className={`${collapseParent && 'hide'}`}>
+          {
+            {
+              'general': <General product={props.product} theme={theme} tips={tips} />,
+              'products': <Products product={props.product} theme={theme} tips={tips} />,
+              'investment': <Investment product={props.product} theme={theme} tips={tips} />,
+              'autoSetup': <AutoSetup product={props.product} theme={theme} tips={tips} priceTicker={props.priceTicker} />,
+              'bulkDelete': <BulkDelete product={props.product} theme={theme} tips={tips} />,
+              'history': <History product={props.product} theme={theme} tips={tips} />,
+              'reset': <Reset product={props.product} theme={theme} tips={tips} />,
+              'admin': <Admin product={props.product} theme={theme} tips={tips} />
+            }[settingsPage]
+          }
+        </div>
+      </>
+    );
+  }
 
 
   if (props.showSettings) {
     return (
-      <div className={`Settings ${props.theme}`}>
-        <button className={`btn-logout btn-red ${props.store.accountReducer.userReducer.theme}`} onClick={() => { props.clickSettings() }}>X</button>
-
-        <p className="info tips">
-          <strong>Show Tips</strong>
-          {/* <br /> */}
-          <input
-            type="checkbox"
-            checked={tips}
-            onChange={() => setTips(!tips)}
-          />
-        </p>
-
-        <h2 className="settings-header">Settings</h2>
-
-        <SettingsNav setSettingsPage={setSettingsPage} settingsPage={settingsPage} />
-        {
-          {
-            'general': <General theme={props.theme} tips={tips} />,
-            'investment': <Investment theme={props.theme} tips={tips} />,
-            'autoSetup': <AutoSetup theme={props.theme} tips={tips} priceTicker={props.priceTicker} />,
-            'bulkDelete': <BulkDelete theme={props.theme} tips={tips} />,
-            'history': <History theme={props.theme} tips={tips} />,
-            'reset': <Reset theme={props.theme} tips={tips} />,
-            'admin': <Admin theme={props.theme} tips={tips} />
-          }[settingsPage]
-        }
-      </div>
-    );
-  } else {
-    return (
-      <></>
+      <Draggable children={SettingsPanel}
+        className={`Settings ${theme}`}>
+        {/* <SettingsPanel clickSettings={props.clickSettings} product={props.product} priceTicker={props.priceTicker} /> */}
+      </Draggable>
     );
   }
 }
 
-export default connect(mapStoreToProps)(Settings);
+export default Settings;

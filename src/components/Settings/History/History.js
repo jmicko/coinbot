@@ -1,104 +1,147 @@
-import React, { useEffect, useState } from 'react';
-import { connect, useDispatch } from 'react-redux';
-import mapStoreToProps from '../../../redux/mapStoreToProps';
+import React, { useState } from 'react';
 import './History.css'
-import xlsx from 'json-as-xlsx'
+// import xlsx from 'json-as-xlsx'
+import { granularities } from '../../../shared.js';
+import { useUser } from '../../../contexts/UserContext.js';
+import { useData } from '../../../contexts/DataContext.js';
+import { useFetchData } from '../../../hooks/fetchData.js';
 
-function History(props) {
-  const dispatch = useDispatch();
+function History() {
+  const { user, refreshUser, theme } = useUser();
+  const { exportableFiles, productID: product } = useData();
+  const { downloadFile } = useFetchData(`/api/account/downloadFile`, { noLoad: true, refreshUser });
+  const { updateData: generateCandleFile } = useFetchData(`/api/account/exportCandles`, { noLoad: true, refreshUser });
+  const { data: currentJSON, refresh: refreshCurrentJSON, clear: clearJSON } = useFetchData(`/api/account/exportCurrentJSON`, { noLoad: true, refreshUser });
+  // const [jsonImport, setJSONImport] = useState('');
+  // const [ignoreDuplicates, setIgnoreDuplicates] = useState(false);
+  // end should start as the current date withouth the time
+  const [end, setEnd] = useState(new Date().toISOString().slice(0, 10));
+  // start should start as 30 days ago
+  const [start, setStart] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().slice(0, 10));
+  const [granularity, setGranularity] = useState('ONE_MINUTE');
 
-  const [jsonImport, setJSONImport] = useState('');
-  const [ignoreDuplicates, setIgnoreDuplicates] = useState(false);
-
-  function handleIgnoreDuplicates() {
-    setIgnoreDuplicates(!ignoreDuplicates)
-  }
-
-  async function exportXlxs() {
-    dispatch({
-      type: 'EXPORT_XLSX'
+  async function exportCandleXlxs() {
+    await generateCandleFile({
+      product: product,
+      granularity: granularity,
+      start: start,
+      end: end
     })
+    refreshUser();
   }
 
   async function exportCurrentJSON(params) {
     if (params === 'clear') {
-      dispatch({
-        type: 'UNSET_CURRENT_JSON'
-      })
+      clearJSON();
     } else {
-      dispatch({
-        type: 'EXPORT_CURRENT_JSON'
-      })
-    }
-  }
-
-  async function importCurrentJSON() {
-    if (jsonImport) {
-
-      dispatch({
-        type: 'IMPORT_CURRENT_JSON',
-        payload: {
-          jsonImport: jsonImport,
-          ignoreDuplicates: ignoreDuplicates
-        }
-      })
+      refreshCurrentJSON()
     }
   }
 
   function copyToClipboard() {
-    navigator.clipboard.writeText(jsonImport);
+    navigator.clipboard.writeText(JSON.stringify(currentJSON));
   }
-
-  useEffect(() => {
-
-    if (props?.store?.accountReducer?.xlsxReducer?.data) {
-
-      let settings = {
-        fileName: 'Coinbot Orders Export ' + new Date().toLocaleString('en-US'), // Name of the resulting spreadsheet
-        extraLength: 3, // A bigger number means that columns will be wider
-        writeOptions: {} // Style options from https://github.com/SheetJS/sheetjs#writing-options
-      }
-
-      xlsx(props.store.accountReducer.xlsxReducer.data, settings);
-      dispatch({
-        type: 'UNSET_XLSX'
-      })
-    }
-
-  }, [props.store.accountReducer.xlsxReducer, dispatch])
 
 
   return (
     <div className="History settings-panel scrollable">
 
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
+      <h4>Candles</h4>
+      <p>
+        select a date range and granularity and a file will be generated for you to download. This may take a few minutes.
+        The file will be available for download in the "Available files to download" section below.
+      </p>
+      {/* {JSON.stringify(user)} */}
+      {/* <br /> */}
+      {/* {JSON.stringify(end)} */}
+      {/* add two date selectors. one tied to the start value, one tied to the end value */}
+      <label htmlFor="start">Start date:</label>
+      <input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+      <label htmlFor="end"> End date:</label>
+      <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+      <br />
+      <br />
+
+      {/* selector to pick the granularity */}
+      <label htmlFor="granularity">Granularity:</label>
+      <select
+        name="granularity"
+        id="granularity"
+        value={granularity}
+        onChange={(e) => setGranularity(e.target.value)}
+      >
+        {granularities.map((granularity, index) => {
+          return (
+            <option key={index} value={granularity.name}>{granularity.readable}</option>
+          )
+        })}
+      </select>
+
+      <br />
+      <br />
+      {!user.exporting
+        ? <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCandleXlxs() }}>Generate</button>
+        : <p>Generating...</p>
+      }
+
+      {/* display the list of files that are available to download from the account reducer.
+      the state is just an array of file names */}
+      <br />
+      <p>Available files to download:</p>
+      {exportableFiles?.map((file, index) => {
+        return (
+          <div key={index}>
+            {/* each file should be a link that will call the download function */}
+            <button className={`btn-yellow btn-file ${user.theme}`} onClick={() => { downloadFile(file) }}>{file}</button>
+            <br />
+            {/* <br /> */}
+          </div>
+        )
+      })}
+
+
+
+      <div className={`divider ${theme}`} />
+
+      {/*       
       <h4>Export .xlsx spreadsheet</h4>
       <p>
         Export and download your entire trade history as an xlsx spreadsheet.
       </p>
-      <button className={`btn-red medium ${props.theme}`} onClick={() => { exportXlxs() }}>Export</button>
-      <div className="divider" />
+      <button className={`btn-red medium ${user.theme}`} onClick={() => { exportXlxs() }}>Export</button>
+      <div className={`divider ${theme}`} />
+ */}
+
+
       <h4>Export current trade-pairs</h4>
       <p>
-        Export all your current trade-pairs in JSON format. You can copy this to a text document
+        Export all your current trade-pairs in JSON format.
+        {/* You can copy this to a text document
         and use it later to import the same trades. This is useful if you want to transfer your
-        trades to a different bot and can't or don't want to mess around with the database.
+      trades to a different bot and can't or don't want to mess around with the database. */}
       </p>
-      {props.store.accountReducer.currentJSONReducer
-        ? <button className={`btn-red medium ${props.theme}`} onClick={() => { exportCurrentJSON('clear') }}>Clear</button>
-        : <button className={`btn-red medium ${props.theme}`} onClick={() => { exportCurrentJSON() }}>Export</button>
+      {currentJSON
+        ? <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCurrentJSON('clear') }}>Clear</button>
+        : <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCurrentJSON() }}>Export</button>
       }
-      <br></br>
-      <br></br>
-      {props.store.accountReducer.currentJSONReducer
-        && <button className={`btn-blue medium ${props.theme}`} onClick={() => { copyToClipboard() }}>copy</button>
+      {currentJSON && <p>You should probably hit that copy all button instead of trying to copy the text from the box.</p>}
+      {/* <br></br> */}
+      {/* <br></br> */}
+      {currentJSON
+        && <textarea
+          rows="4"
+          cols="20"
+        >
+          {JSON.stringify(currentJSON)}
+        </textarea>
       }
-      <br></br>
-      {props.store.accountReducer.currentJSONReducer
-        && <code>{JSON.stringify(props.store.accountReducer.currentJSONReducer)}</code>
+      <br />
+      {currentJSON
+        && <button className={`btn-blue medium ${user.theme}`} onClick={() => { copyToClipboard() }}>Copy All</button>
       }
-      <div className="divider" />
-
+      <div className={`divider ${theme}`} />
+      {/* 
       <h4>Import current trade-pairs</h4>
       <p>
         Import a JSON string that has previously been exported. It is recommended not to import old
@@ -139,12 +182,12 @@ function History(props) {
         </label>
         <br />
 
-        <button className={`import-button btn-red medium ${props.theme}`} onClick={() => { importCurrentJSON() }}>Import</button>
+        <button className={`import-button btn-red medium ${user.theme}`} onClick={() => { importCurrentJSON() }}>Import</button>
         <br />
       </div>
-      <div className="divider" />
+      <div className={`divider ${theme}`} /> */}
     </div>
   );
 }
 
-export default connect(mapStoreToProps)(History);
+export default History;

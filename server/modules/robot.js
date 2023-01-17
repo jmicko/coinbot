@@ -1,207 +1,237 @@
-const coinbaseClient = require("./coinbaseClient");
-const databaseClient = require("./databaseClient");
-const pool = require("./pool");
-const socketClient = require("./socketClient");
-const cache = require("./cache")
-
-// const startTime = performance.now();
-// const endTime = performance.now();
-// console.log(`getFees redis took ${endTime - startTime} milliseconds`)
-
-
-// this will keep track of and update general bot settings
-async function botLoop() {
-  userID = 0
-  // console.log('botLoop');
-  try {
-    botSettings = await databaseClient.getBotSettings();
-
-    cache.setKey(userID, 'botSettings', botSettings);
-
-  } catch (err) {
-    console.log(err, 'error in botLoop');
-  }
-}
+import { databaseClient } from "./databaseClient.js";
+import { botSettings, userStorage, messenger, cbClients } from "./cache.js";
+import { startWebsocket } from "./websocket.js";
+import { sleep, addProductDecimals } from "../../src/shared.js";
+import { fork } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { devLog } from "./utilities.js";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // start a sync loop for each active user
 async function startSync() {
-  robotUser = {
-    // user table starts at 1 so bot can be user 0 since storage array starts at 0
-    id: 0
+  // const settings = botSettings
+  try {
+    const path = __dirname;
+    // fork a child process to import candles
+    const candleMaker = fork('./server/modules/candleMaker.js');
+    // load the bot settings
+    await botSettings.refresh();
+    // get all users from the db
+    const userList = await databaseClient.getAllUsers();
+    // start the loops for each user
+    userList.forEach(async user => {
+      await initializeUserLoops(user);
+      // deSyncOrderLoop(user, 0);
+      // send the user to the child process to import candles
+      candleMaker.send({ type: 'startUser', user });
+
+    });
+  } catch (err) {
+    devLog(err, 'error starting sync');
   }
-  cache.newUser(robotUser);
-  await botLoop();
-  // get all users from the db
-  const userList = await databaseClient.getAllUsers();
-  userList.forEach(async user => {
-    const userID = user.id
-    // set up cache for user
-    await cache.newUser(user);
-    // start the loop
-    syncOrders(userID, 0);
-    // deSyncOrderLoop(user, 0);
-  });
 }
 
-// REST protocol to find orders that have settled on coinbase
-async function syncOrders(userID, count) {
+// this is separated from the startSync function so it can be called separately when a new user is created
+async function initializeUserLoops(user) {
+  // if (!user.active || !user.approved) {
+  //   devLog(user, '<- the user');
+  //   return
+  // }
+  const userID = user.id;
+  try {
+    // set up cache for user
+    await userStorage.createNewUser(user);
+    // start syncing orders over the REST api
+    syncOrders(userID);
+    // start looking for orders to process
+    processingLoop(userID);
+    // start websocket connection to coinbase for rapid order updates
+    startWebsocket(userID);
+  } catch (err) {
+    devLog(err, 'error initializing loops');
+  }
+}
+
+async function processingLoop(userID) {
+  // get the user and bot settings from cache;
+  const user = userStorage.getUser(userID);
+  if (user.deleting) {
+    return
+  }
+
+  // check that user is active, approved, and unpaused, and that the bot is not under maintenance
+  if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
+    // flip orders that are settled in the db
+    try {
+
+      await processOrders(userID);
+      // will_cancel orders can now be canceled.
+      // there is no need to update client after this because it is updated when user clicks the kill button
+      await databaseClient.deleteMarkedOrders(userID);
+    } catch (err) {
+      devLog(err, 'error at the end of the processing loop');
+    }
+  } else {
+    // if the user should not be trading, slow loop
+    await sleep(1000);
+  }
+  heartBeat(userID, 'beat');
+  if (user) {
+    setTimeout(() => {
+      processingLoop(userID);
+    }, 100);
+  } else {
+    devLog(`user ${userID} is NOT THERE, stopping processing loop for user`);
+  }
+}
+
+// repeating loop to find orders that have settled on coinbase via REST API
+async function syncOrders(userID) {
+  const user = userStorage.getUser(userID)
+  if (user.deleting) {
+    return
+  }
   // increase the loop number tracker at the beginning of the loop
-  cache.increaseLoopNumber(userID);
-  cache.updateStatus(userID, 'begin main loop');
-  // keep track of how long the loop is running. Helps prevent rate limiting
-  // todo - there is a better way to do this
-  let timer = true;
-  setTimeout(() => {
-    timer = false;
-  }, 100);
+  userStorage[userID].increaseLoopNumber();
+  userStorage[userID].updateStatus('begin main loop');
 
   // get the user settings from cache;
-  const user = cache.getUser(userID);
-  // console.log('user from cache:', user);
-  // get the bot settings
-  const botSettings = cache.getKey(0, 'botSettings');
+
+  // keep track of how long the loop takes. Helps prevent rate limiting
+  const t0 = performance.now();
+
   try {
-    cache.updateStatus(userID, 'getting settings');
-    const loopNumber = cache.getLoopNumber(userID);
-
-    // cache.storeMessage(userID, {messageText: ``});
-
-    if (count > botSettings.full_sync - 1) {
-      count = 0
+    const loopNumber = userStorage[userID].getLoopNumber();
+    // send heartbeat signifying start of new loop
+    if (user) {
+      heartBeat(userID, 'heart');
     }
+    if ((((loopNumber - 1) % (botSettings.full_sync * 10)) === 0) && user?.active && user?.approved && !botSettings.maintenance) {
+      // every 10 full syncs, update the products in the database
+      await updateProducts(userID);
+
+    }
+    // check that user is active, approved, and unpaused, and that the bot is not under maintenance
     if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
 
+      // *** WHICH SYNC ***
+      if (((loopNumber - 1) % botSettings.full_sync) === 0) {
 
-      // *** GET ORDERS THAT NEED PROCESSING ***
-
-      // let ordersToCheck = [];
-
-      if (count === 0) {
         // *** FULL SYNC ***
-        const full = await Promise.all([
-          // full sync compares all trades that should be on CB with DB, and does other less frequent maintenance tasks
-          // API ENDPOINTS USED: orders, fees
-          fullSync(userID),
-          // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
-          processOrders(userID)
-        ]);
-        // const fullSyncOrders = full[0]
-        // ordersToCheck = fullSyncOrders.ordersToCheck;
-
+        // full sync compares all trades that should be on CB with DB,
+        // and does other less frequent maintenance tasks
+        await fullSync(userID);
       } else {
+
         // *** QUICK SYNC ***
-        cache.updateStatus(userID, 'start all quick sync')
+        //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
+        await quickSync(userID);
+        // desync extra orders
+        await deSync(userID)
+      } // end which sync
 
-        // can run all three of these at the same time. 
-        // Process orders looks for orders that are settled and not flipped,
-        // and quickSync check if they are settled before acting on them
-        // so processOrders will flip trades from the previous cycle while quickSync gets new ones
-        const quick = await Promise.all([
-          //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
-          // API ENDPOINTS USED: fills
-          quickSync(userID),
-          // these two can run at the same time because they are mutually exclusive based on the will_cancel column
-          // PROCESS ALL ORDERS THAT HAVE BEEN CHANGED
-          processOrders(userID),
-          // desync extra orders
-          deSync(userID)
-        ]);
-        cache.updateStatus(userID, 'end all quick sync');
-
-        // ordersToCheck = quick[0];
-
-      }
-
-      // *** SETTLE ORDERS IN DATABASE THAT ARE SETTLED ON COINBASE ***
-      // if (ordersToCheck.length) {
-      // API ENDPOINTS USED: orders
-      await settleMultipleOrders(userID);
-      await updateFunds(userID);
-
-
-      // move this back down here because orders need to stay in the db even if canceled until processOrders is done
-      // the problem being that it might replace the order based on something stored in an array
-      cache.updateStatus(userID, 'main loop - delete marked orders');
-      await deleteMarkedOrders(userID);
-      cache.updateStatus(userID, 'end delete marked orders');
+      // *** UPDATE ORDERS IN DATABASE ***
+      await updateMultipleOrders(userID);
+      // update funds after everything has been processed
+      // await updateFunds(userID);
 
     } else {
       // if the user is not active or is paused, loop every 5 seconds
       await sleep(5000);
     }
+    // update funds if the user is all of the above except for maintenance
+    if (user?.active && user?.approved && !botSettings.maintenance) {
+      await updateFunds(userID);
+    }
   } catch (err) {
-    let errorData;
-    let errorText;
-    if (err.response?.data) {
-      errorData = err.response.data
-    }
-    cache.updateStatus(userID, 'error in the main loop');
-    if (err.code === 'ECONNRESET') {
-      errorText = 'Connection reset by Coinbase server';
-      console.log('Connection reset by Coinbase server. Probably nothing to worry about unless it keeps happening quickly.');
-    } else if (err.response?.status === 500) {
-      console.log('internal server error from coinbase');
-      errorText = 'Internal server error from coinbase';
-    } else if (err.response?.status === 401) {
-      console.log('Invalid Signature');
-      errorText = 'Invalid Signature. Probably nothing to worry about unless it keeps happening quickly.';
-    } else if (err.response?.statusText === 'Bad Gateway') {
-      console.log('bad gateway');
-      errorText = 'Bad Gateway. Probably nothing to worry about unless it keeps happening quickly.';
-    } else if (err.response?.statusText === 'Gateway Timeout') {
-      console.log('Gateway Timeout');
-      errorText = 'Gateway Timeout. Nothing to worry about. Coinbase probably lost the connection';
-    } else if (err.code === 'ECONNABORTED') {
-      console.log('10 sec timeout');
-      errorText = '10 second timeout. Nothing to worry about, Coinbase was just slow to respond.';
-    } else {
-      console.log(err, 'unknown error at end of syncOrders');
-      errorText = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???';
-    }
-    cache.storeError(userID, {
-      errorData: errorData,
-      errorText: errorText
-    })
+    MainLoopErrors(userID, err);
   } finally {
-    heartBeat(userID);
-    cache.updateStatus(userID, 'end main loop finally');
-    cache.deleteKey(userID, 'ordersToCheck');
-
     // when everything is done, call the sync again if the user still exists
     if (user) {
-      while (timer) {
-        await sleep(10);
-        // console.log('not 100ms yet!');
+      const t1 = performance.now();
+      // API is limited to 10/sec, so make sure the bot waits that long between loops
+      if (100 - (t1 - t0) > 0) {
+        await sleep(100 - (t1 - t0));
       }
-      if (!timer) {
-        // console.log('100ms is up');
-      }
-      // console.log('time between full sync', time < 1000, time);
-      // console.log('cache', userID, cache.storage);
+      // wait however long the admin requires, then start new loop
       setTimeout(() => {
-        cache.clearStatus(userID);
-        syncOrders(userID, count + 1);
+        userStorage[userID].clearStatus();
+        syncOrders(userID);
       }, (botSettings.loop_speed * 10));
     } else {
-      console.log('user is NOT THERE, stopping loop for user');
+      devLog(`user ${userID} is NOT THERE, stopping main loop for user`);
     }
   }
 }
 
 
-async function deSync(userID) {
-  cache.updateStatus(userID, 'begin desync');
+async function updateProducts(userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const products = await cbClients[userID].getProducts();
+      await databaseClient.insertProducts(products.products, userID);
+      resolve();
+    } catch (err) {
+      devLog(err, 'error updating products');
+      reject(err);
+    }
+  });
+}
 
-  const userAPI = cache.getAPI(userID);
-  const botSettings = cache.getKey(0, 'botSettings');
+
+function MainLoopErrors(userID, err) {
+  let errorData;
+  let errorText;
+  if (err?.response?.data) {
+    errorData = err?.response.data;
+  }
+  if (err?.code === 'ECONNRESET') {
+    errorText = 'Connection reset by Coinbase server';
+    devLog('Connection reset by Coinbase server. Probably nothing to worry about unless it keeps happening quickly.');
+  } else if (err?.response?.status === 500) {
+    devLog('internal server error from coinbase');
+    errorText = 'Internal server error from coinbase';
+  } else if (err?.response?.status === 401) {
+    devLog(err?.response?.data, 'Invalid Signature');
+    devLog(err?.response?.data, 'Invalid Signature');
+    errorText = 'Invalid Signature. Probably nothing to worry about unless it keeps happening quickly.';
+  } else if (err?.response?.statusText === 'Bad Gateway') {
+    devLog('bad gateway');
+    errorText = 'Bad Gateway. Probably nothing to worry about unless it keeps happening quickly.';
+  } else if (err?.response?.statusText === 'Gateway Timeout') {
+    devLog('Gateway Timeout');
+    errorText = 'Gateway Timeout. Nothing to worry about. Coinbase probably lost the connection';
+  } else if (err?.code === 'ECONNABORTED') {
+    devLog('10 sec timeout');
+    errorText = '10 second timeout. Nothing to worry about, Coinbase was just slow to respond.';
+  } else if (err?.response?.status === 429) {
+    devLog('too many requests');
+    errorText = 'Too many requests. Rate limit exceeded. Nothing to worry about.';
+  } else {
+    devLog(err, 'unknown error at end of syncOrders');
+    errorText = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???';
+  }
+  messenger[userID].newError({
+    errorData: errorData,
+    errorText: errorText
+  });
+}
+
+async function deSync(userID) {
+  userStorage[userID].updateStatus('begin desync');
 
   return new Promise(async (resolve, reject) => {
     try {
       let allToDeSync = [];
+      // get the user's settings
+      const user = userStorage[userID].getUser();
+      // devLog(user.sync_quantity, 'desyncing');
       // get the buys and sells that need to desync
       const ordersToDeSync = await Promise.all([
-        databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'buys'),
-        databaseClient.getDeSyncs(userID, botSettings.orders_to_sync, 'sells')
+        databaseClient.getDeSyncs(userID, user.sync_quantity, 'buys'),
+        databaseClient.getDeSyncs(userID, user.sync_quantity, 'sells')
       ]);
       let buysToDeSync = ordersToDeSync[0];
       let sellsToDeSync = ordersToDeSync[1];
@@ -210,197 +240,132 @@ async function deSync(userID) {
       allToDeSync.push(...buysToDeSync);
       allToDeSync.push(...sellsToDeSync);
 
-      // cancel them all
-      await cancelMultipleOrders(allToDeSync, userID, true, userAPI);
 
-      cache.updateStatus(userID, 'end desync');
+      // cancel them all
+      await cancelAndReorder(allToDeSync, userID);
+
       resolve();
     } catch (err) {
-      cache.updateStatus(userID, 'error in desync');
+      devLog('desync error');
       reject(err)
     }
   });
 }
 
 
+// FULL SYNC, will compare all trades that should be on CB, and do other less frequent maintenance tasks
 async function fullSync(userID) {
-  cache.updateStatus(userID, 'begin full sync');
-
-  const userAPI = cache.getAPI(userID);
-  const botSettings = cache.getKey(0, 'botSettings');
-  // IF FULL SYNC, compare all trades that should be on CB, and do other less frequent maintenance tasks
+  userStorage[userID].updateStatus('begin full sync');
   return new Promise(async (resolve, reject) => {
     try {
-      // initiate empty object to hold arrays that will be returned to the sync loop
-      let fullSyncOrders = {
-        dbOrders: [],
-        cbOrders: [],
-        ordersToCheck: [],
-        ordersToCancel: []
-      };
+      const user = userStorage[userID].getUser();
+      // devLog(user.sync_quantity, 'desyncing');
       // get lists of trades to compare which have been settled
       const results = await Promise.all([
         // get all open orders from db and cb
-
-        // databaseClient.getLimitedTrades(userID, botSettings.orders_to_sync),
-        // not sure this should be getting trades whether or not they are settled. Made new db function where settled=false
-        databaseClient.getLimitedUnsettledTrades(userID, botSettings.orders_to_sync),
-        coinbaseClient.getOpenOrders(userID, userAPI),
+        databaseClient.getLimitedUnsettledTrades(userID, user.sync_quantity),
+        // get open orders
+        cbClients[userID].getOrders({ order_status: 'OPEN' }),
         // get fees
-        coinbaseClient.getFees(userID, userAPI)
+        cbClients[userID].getTransactionSummary({ user_native_currency: 'USD' })
       ]);
-      cache.updateStatus(userID, 'done getting trades to compare');
-      // store the lists of orders in the corresponding arrays so they can be compared
-      fullSyncOrders.dbOrders = results[0];
-      fullSyncOrders.cbOrders = results[1];
+      // store the lists of orders in the corresponding constants so they can be compared
+      const dbOrders = results[0];
+      const allCbOrders = results[1].orders;
       const fees = results[2];
 
-      await updateFunds(userID);
-      cache.updateStatus(userID, 'done updating funds full sync');
 
-      // need to get the fees for more accurate Available funds reporting
+      // need to save the fees for more accurate Available funds reporting
       // fees don't change frequently so only need to do this during full sync
       await databaseClient.saveFees(fees, userID);
 
+      // remove any orders from cbOrders that have a product id that is not active for the user
+      // first get the list of active products
+      const activeProducts = await databaseClient.getActiveProductIDs(userID);
+
+      // then filter out any orders that are not in the active products list
+      const cbOrders = allCbOrders.filter(order => activeProducts.includes(order.product_id));
       // compare the arrays and remove any where the ids match in both,
-      // leaving a list of orders that are open in the db, but not on cb. Probably settled
-      fullSyncOrders.ordersToCheck = await orderElimination(fullSyncOrders.dbOrders, fullSyncOrders.cbOrders);
+      // leaving a list of orders that are open in the db, but not on cb. Probably settled, possibly canceled
+      let toCheck = await orderElimination(dbOrders, cbOrders);
       // also get a list of orders that are open on cb, but not in the db. Need to cancel them
-      fullSyncOrders.ordersToCancel = await orderElimination(fullSyncOrders.cbOrders, fullSyncOrders.dbOrders);
-
+      let toCancel = await orderElimination(cbOrders, dbOrders);
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
-      if (fullSyncOrders.ordersToCancel.length) {
-        // the 'false' in the third param is telling the function to sleep for a little bit.
-        // this is needed during full sync because full sync deletes all orders on CB that are not in DB,
-        // but they show up on cb first and the bot may detect and accidentally cancel them if it doesn't wait for the db
-        // console.log('canceling extra orders in fullSync', fullSyncOrders.ordersToCancel);
-        // API ENDPOINTS USED: orders, accounts
-        cache.updateStatus(userID, 'will cancel multiple orders');
-        await cancelMultipleOrders(fullSyncOrders.ordersToCancel, userID, false, userAPI);
-        cache.updateStatus(userID, 'done canceling multiple orders');
-
-        // wait for a second to allow cancels to go through so bot doesn't cancel twice
-        await sleep(1000);
-      }
-      cache.updateStatus(userID, 'will resolve full sync');
-
-      cache.setKey(userID, 'ordersToCheck', fullSyncOrders.ordersToCheck);
-      resolve(fullSyncOrders);
+      await cancelAndReorder(toCancel, userID);
+      // save the orders that need to be individually checked against CB
+      userStorage[userID].addToCheck(toCheck);
+      resolve();
     } catch (err) {
-      cache.updateStatus(userID, 'error in full sync');
+      devLog('error in full sync');
       reject(err)
-    } finally {
-      cache.updateStatus(userID, 'done full sync');
     }
   });
 }
 
 async function quickSync(userID) {
-  cache.updateStatus(userID, 'begin quick sync');
-
-  const userAPI = cache.getAPI(userID);
-  const botSettings = cache.getKey(0, 'botSettings');
+  userStorage[userID].updateStatus('begin quick sync');
   // IF QUICK SYNC, only get fills
   return new Promise(async (resolve, reject) => {
     try {
-      // initiate empty array to hold orders that need to be checked for settlement
-      let toCheck = [];
-      // get the 500 most recent fills for the account
-      const fills = await coinbaseClient.getLimitedFills(userID, 500, userAPI);
-      cache.updateStatus(userID, 'done getting quick sync fills');
-      // look at each fill and find the order in the db associated with it
-      for (let i = 0; i < fills.length; i++) {
-        const fill = fills[i];
-        const recentFill = cache.getKey(userID, 'recentFill')
-        // console.log('recent fill', recentFill);
-        // get order from db
-        if (fill.settled) {
-          if (recentFill != fill.order_id) {
-            // console.log('they are NOT the same')
+      // get the 100 most recent fills for the account
+      const response = await cbClients[userID].getFills({ limit: 100 });
+      const fills = response.fills; //this is the same as allFills
+      // get an array of just the IDs
+      const fillsIds = []
+      fills.forEach(fill => fillsIds.push(fill.order_id))
+      // find unsettled orders in the db based on the IDs array
+      const unsettledFills = await databaseClient.getUnsettledTradesByIDs(userID, fillsIds);
 
-            const singleDbOrder = await databaseClient.getSingleTrade(fill.order_id);
-            // console.log('SINGLE ORDER', fill.order_id);
-            // console.log('RECENT FILL', recentFill);
 
-            // only need to check it if there is an order in the db. Otherwise it might be a basic trade
-            if (singleDbOrder) {
-              // check if the order has already been settled in the db
-              // console.log('SINGLE ORDER', fill.settled);
-              // if (!fill.settled) {
 
-              // }
-              if (singleDbOrder && !singleDbOrder?.settled) {
-                // if it has not been settled in the db, it needs to be checked with coinbase if it settled
-                // push it into the array
-                toCheck.push(singleDbOrder);
-              } else {
-                // if it has been settled, we can stop looping because we will have already check all previous fills
-                // i += fills.length;
-                break;
-              }
-            }
-          } else {
-            break;
-          }
-        } // end if (fill.settled)
-      } // end for loop
-      // console.log('HERE IS THE FILL', fills[0]);
+      // get any fills that are not filled but are settled in the db. This will likely be from the previous loop
+      const unfilled = await databaseClient.getUnfilledTradesByIDs(userID, fillsIds);
+
+      unfilled.forEach(async trade => {
+
+        const unfilledFill = fills.filter(fill => fill.order_id === trade.order_id)[0];
+
+        // make a small order to update the order with. 
+        // this will prevent accidents if coinbase adds values that match the limit_orders table in the future
+        const newFill = {
+          order_id: unfilledFill.order_id,
+          filled_at: unfilledFill.trade_time
+        }
+
+        // update the trade in the db with the new data
+        await databaseClient.updateTrade(newFill);
+
+      });
+
+
+
+      const user = userStorage[userID].getUser();
+      // devLog(user.sync_quantity, 'desyncing');
       // after checking fills, store the most recent so don't need to check it later
-      cache.setKey(userID, 'recentFill', fills[0].order_id);
-
-      cache.updateStatus(userID, 'done checking fills');
       // this will check the specified number of trades to sync on either side to see if any 
       // need to be reordered. It will only find them on a loop after a loop where trades have been placed
-      // This could be faster? But still currently faster than waiting for a full sync
-      // todo - maybe this should go after the settleMultipleOrders function so it will fire on same loop
-      const reorders = await databaseClient.getReorders(userID, botSettings.orders_to_sync)
-      if (reorders.length >= 1) {
-        reorders.forEach(order => toCheck.push(order))
-      }
-      cache.updateStatus(userID, 'will resolve quick sync');
-
-      cache.setKey(userID, 'ordersToCheck', toCheck);
+      // todo - maybe this should go after the updateMultipleOrders function so it will fire on same loop
+      const reorders = await databaseClient.getReorders(userID, user.sync_quantity)
+      // combine the arrays
+      const toCheck = unsettledFills.concat(reorders);
+      // set orders to check so the next process can access them without needing to pass params through
+      userStorage[userID].addToCheck(toCheck);
       resolve(toCheck);
     } catch (err) {
-      cache.updateStatus(userID, 'error in quick sync');
+      devLog('error in quick sync');
       reject(err)
     }
   });
 }
 
-async function deleteMarkedOrders(userID) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const queryText = `DELETE from "orders" WHERE "will_cancel"=true AND "userID"=$1;`;
-      let result = await pool.query(queryText, [userID]);
-      if (result.rowCount > 0) {
-        cache.storeMessage(userID, {
-          messageText: `Orders marked for cancel were canceled`,
-          orderUpdate: true
-        });
-      }
-      resolve(result);
-    } catch (err) {
-      reject(err)
-    }
-  });
-}
 
 // process orders that have been settled
 async function processOrders(userID) {
-  cache.updateStatus(userID, 'start process orders');
-  const userAPI = cache.getAPI(userID);
+  userStorage[userID].updateStatus('start process orders');
   return new Promise(async (resolve, reject) => {
     try {
-
-
       // check all trades in db that are both settled and NOT flipped
-      // sqlText = `SELECT * FROM "orders" WHERE "settled"=true AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
-      // store the trades in an object
-      // const result = await pool.query(sqlText, [userID]);
-      // const tradeList = result.rows;
       const tradeList = await databaseClient.getSettledTrades(userID);
-      cache.updateStatus(userID, 'got all orders to process');
       // if there is at least one trade...
       if (tradeList.length > 0) {
         // loop through all the settled orders and flip them
@@ -410,55 +375,72 @@ async function processOrders(userID) {
           // get the user of the trade
           let user = await databaseClient.getUserAndSettings(dbOrder.userID);
           // ...flip the trade details
-          let tradeDetails = flipTrade(dbOrder, user, tradeList, i);
+          let tradeDetails = flipTrade(dbOrder, user, tradeList);
           // ...send the new trade
           try {
-            const willCancel = cache.checkIfCanceling(userID, dbOrder.id);
-            // let cancelling = await databaseClient.checkIfCancelling(dbOrder.id);
+
+
+            // check if the trade should be canceled. This is the point of no return
+            const willCancel = userStorage[userID].checkCancel(dbOrder.order_id);
             if (!willCancel) {
-              let cbOrder = await coinbaseClient.placeOrder(tradeDetails, userAPI);
-              // ...store the new trade
-              // take the time the new order was created, and use it as the flipped_at value
-              await databaseClient.storeTrade(cbOrder, dbOrder, cbOrder.created_at);
-              // ...mark the old trade as flipped
-              const queryText = `UPDATE "orders" SET "flipped" = true WHERE "id"=$1;`;
-              let updatedTrade = await pool.query(queryText, [dbOrder.id]);
-              // tell the frontend that an update was made so the DOM can update
-              cache.storeMessage(Number(userID), {
-                orderUpdate: true
-              });
+              // place the new trade on coinbase
+              let cbOrder = await cbClients[userID].placeOrder(tradeDetails);
+              // let cbOrder = false
+              // if the new trade was successfully placed...
+              if (cbOrder.success) {
+                // ...get the new order from coinbase since not all details are returned when placing
+                const newOrder = await cbClients[userID].getOrder(cbOrder.order_id);
+                // ...store the new trade
+                // take the time the new order was created, and use it as the flipped_at value
+                const flipped_at = newOrder.order.created_time
+                await databaseClient.storeTrade(newOrder.order, dbOrder, flipped_at);
+                // await databaseClient.storeTrade(cbOrder, dbOrder, cbOrder.created_at);
+                // ...mark the old trade as flipped
+                await databaseClient.markAsFlipped(dbOrder.order_id);
+                // tell the frontend that an update was made so the DOM can update
+                devLog('sending order update from processOrders');
+                // userStorage[userID].orderUpdate();
+                messenger[userID].orderUpdate();
+              } else {
+                devLog('new trade failed!!!');
+                messenger[userID].newError({
+                  errorData: dbOrder,
+                  errorText: 'Something went wrong while flipping an order'
+                })
+              }
             }
+
+
+
+
           } catch (err) {
             let errorText;
-            cache.updateStatus(userID, 'error in process orders loop');
             if (err.code && err.code === 'ETIMEDOUT') {
-              console.log('Timed out!!!!! from processOrders');
+              devLog('Timed out!!!!! from processOrders');
               errorText = 'Coinbase timed out while flipping an order';
             } else if (err.response?.status === 400) {
-              console.log(err.response, 'Insufficient funds! from processOrders');
+              devLog(err.response, 'Insufficient funds! from processOrders');
               errorText = 'Insufficient funds while trying to flip a trade!';
               // todo - check funds to make sure there is enough for 
               // all of them to be replaced, and balance if needed
             } else {
-              console.log(err, 'unknown error in processOrders');
+              devLog(err, 'unknown error in processOrders');
               errorText = 'unknown error while flipping an order';
             }
-            cache.storeError(userID, {
+            messenger[userID].newError({
               errorData: dbOrder,
               errorText: errorText
             })
           }
           // avoid rate limiting and give orders time to settle before checking again
-          await sleep(150)
+          await sleep(100)
         } // end for loop
       } else {
-        cache.updateStatus(userID, 'end resolve processOrders');
         resolve();
       }
-      cache.updateStatus(userID, 'end resolve processOrders');
       resolve();
     } catch (err) {
-      console.log(err, '!!!!!!!!!!!!!!!!!error at end of processOrders');
+      devLog(err, '!!!!!!!!!!!!!!!!!error at end of processOrders');
       reject(err);
     }
   });
@@ -466,44 +448,62 @@ async function processOrders(userID) {
 
 // function for flipping sides on a trade
 // Returns the tradeDetails object needed to send trade to CB
-function flipTrade(dbOrder, user, allFlips, iteration) {
+function flipTrade(dbOrder, user, allFlips, simulation) {
   const userID = user.id
-  cache.updateStatus(userID, 'start flip trade');
+  !simulation && userStorage[userID].updateStatus('start flip trade');
   const reinvestRatio = user.reinvest_ratio / 100;
   const postMaxReinvestRatio = user.post_max_reinvest_ratio / 100;
   const maxTradeSize = user.max_trade_size;
+  // create post_only const which is only true if the product_id is USDT-USD
+  const post_only = dbOrder.product_id === 'USDT-USD' ? true : false;
   // set up the object to be sent
   const tradeDetails = {
     side: '',
-    price: '', // USD
-    // when flipping a trade, size and product will always be the same
-    size: dbOrder.size, // BTC
+    limit_price: '', // USD
+    // when flipping a trade, base_size and product will always be the same
+    base_size: dbOrder.base_size, // BTC
     trade_pair_ratio: dbOrder.trade_pair_ratio,
     product_id: dbOrder.product_id,
-    stp: 'cn',
+    client_order_id: dbOrder.next_client_order_id,
     userID: dbOrder.userID,
+    post_only: post_only,
   };
   // add buy/sell requirement and price
 
-
-  if (dbOrder.side === "buy") {
-    // if it was a buy, sell for more. multiply old price
-    tradeDetails.side = "sell"
-    tradeDetails.price = dbOrder.original_sell_price;
-    cache.storeMessage(userID, { messageText: `Selling for $${Number(tradeDetails.price)}` });
+  if (dbOrder.side === "BUY") {
+    // if it was a BUY, sell for more. multiply old price
+    tradeDetails.side = "SELL"
+    tradeDetails.limit_price = dbOrder.original_sell_price;
+    !simulation && messenger[userID].newMessage({
+      type: 'general',
+      text: `Selling for $${Number(tradeDetails.limit_price)}`
+    });
   } else {
     // if it is a sell turning into a buy, check if user wants to reinvest the funds
     if (user.reinvest) {
-      const orderSize = Number(dbOrder.size);
+      const orderSize = Number(dbOrder.base_size);
+
+
+      // get available funds from userStorage
+      const availableFunds = !simulation
+        ? userStorage[userID].getAvailableFunds()
+        : user.availableFunds;
+      const productID = dbOrder.product_id;
+
+      // get the available USD funds for the product_id
+      const availableUSD = !simulation
+        ? availableFunds[productID]?.quote_available
+        : user.availableQuote;
 
       // find out how much profit there was
       const BTCprofit = calculateProfitBTC(dbOrder);
 
       let amountToReinvest = BTCprofit * reinvestRatio;
+      devLog(amountToReinvest, 'amountToReinvest');
       if (amountToReinvest <= 0) {
-        console.log('negative profit');
         amountToReinvest = 0;
-        cache.storeError(userID, {
+        !simulation && messenger[userID].newError({
+          type: 'error',
           errorData: dbOrder,
           errorText: `Just saw a negative profit! Maybe increase your trade-pair ratio? 
           This may also be due to fees that were charged during setup or at a different fee tier.`
@@ -517,331 +517,238 @@ function flipTrade(dbOrder, user, allFlips, iteration) {
       const buyPrice = dbOrder.original_buy_price;
       const maxSizeBTC = Number((maxTradeSize / buyPrice).toFixed(8));
 
-      // now check if the new size after reinvesting is higher than the user set max
+      devLog(maxSizeBTC, 'maxSizeBTC', maxTradeSize, 'maxTradeSize');
+
+      // now check if the new base_size after reinvesting is higher than the user set max
       if ((newSize > maxSizeBTC) && (maxTradeSize > 0)) {
         // add up all values of trades that just settled and subtract that from "actualavailable_usd"
         let allFlipsValue = 0;
         allFlips.forEach(trade => {
-          if (trade.side === "sell") {
+          if (trade.side === "SELL") {
             allFlipsValue += (maxSizeBTC * trade.original_buy_price)
           }
         });
 
         // calculate what funds will be leftover after all pending flips go through
-        const leftoverFunds = (Number(user.actualavailable_usd) - (allFlipsValue * (1 + Number(user.maker_fee))));
+        const leftoverFunds = (Number(availableUSD) - (allFlipsValue * (1 + Number(user.maker_fee))));
 
-        // only set the new size if it will stay above the reserve
+        // only set the new base_size if it will stay above the reserve
         if (leftoverFunds > user.reserve) {
-          // if there is enough money left in the account to reinvest, set the size to the max size
-          tradeDetails.size = maxSizeBTC;
+          // if there is enough money left in the account to reinvest, set the base_size to the max base_size
+          tradeDetails.base_size = maxSizeBTC;
         }
 
-        // check if the new size has already surpassed the user set max. If it has, reinvest based on the user set post-max settings
+        // check if the new base_size has already surpassed the user set max. If it has, reinvest based on the user set post-max settings
         if ((orderSize >= maxSizeBTC) && (postMaxReinvestRatio > 0)) {
           // at this point, the post max ratio should be used
           const postMaxAmountToReinvest = BTCprofit * postMaxReinvestRatio;
-          // console.log('postMaxAmountToReinvest', postMaxAmountToReinvest);
           const postMaxNewSize = Math.floor((orderSize + postMaxAmountToReinvest) * 100000000) / 100000000;
-          // console.log('postMaxNewSize', postMaxNewSize);
-          tradeDetails.size = postMaxNewSize;
+          tradeDetails.base_size = postMaxNewSize;
         }
       } else if (newSize < 0.000016) {
         // todo - this should maybe not be in an else if statement.
-        // the user could potentially set a max size in USD that is smaller than 0.000016, and the bot would skip this check
+        // the user could potentially set a max base_size in USD that is smaller than 0.000016, and the bot would skip this check
         // or maybe switch the order so this comes first? or maybe put it last as a regular if statement?
-        // need to stay above minimum order size
-        tradeDetails.size = 0.000016;
+        // need to stay above minimum order base_size
+        tradeDetails.base_size = 0.000016;
       } else {
         // add up all values of trades that just settled and subtract that from "actualavailable_usd"
         let allFlipsValue = 0;
         allFlips.forEach(trade => {
-          if (trade.side === "sell") {
-            allFlipsValue += (trade.size * trade.original_buy_price)
+          if (trade.side === "SELL") {
+            allFlipsValue += (trade.base_size * trade.original_buy_price)
           }
         });
 
         // calculate what funds will be leftover after all pending flips go through
-        const leftoverFunds = (Number(user.actualavailable_usd) - (allFlipsValue * (1 + Number(user.maker_fee))));
+        const leftoverFunds = (Number(availableUSD) - (allFlipsValue * (1 + Number(user.maker_fee))));
 
-        // only set the new size if it will stay above the reserve
+        // only set the new base_size if it will stay above the reserve
         if (leftoverFunds > user.reserve) {
-          console.log('there is enough money left to reinvest');
-          tradeDetails.size = newSize.toFixed(8);
-        } else {
-          console.log('there is NOT enough money left to reinvest');
+          tradeDetails.base_size = newSize.toFixed(8);
         }
       }
 
     }
     // if it was a sell, buy for less. divide old price
-    tradeDetails.side = "buy"
-    tradeDetails.price = dbOrder.original_buy_price;
-    cache.storeMessage(userID, { messageText: `Buying for $${Number(tradeDetails.price)}` });
+    tradeDetails.side = "BUY"
+    tradeDetails.limit_price = dbOrder.original_buy_price;
+    !simulation && messenger[userID].newMessage({
+      type: 'general',
+      text: `Buying for $${Number(tradeDetails.limit_price)}`
+    });
   }
+
+  // make sure all properties of tradeDetails are strings unless they are boolean
+  for (let key in tradeDetails) {
+    if (typeof tradeDetails[key] !== 'boolean') {
+      tradeDetails[key] = String(tradeDetails[key]);
+    }
+  }
+
   // return the tradeDetails object
-  cache.updateStatus(userID, 'end flip trade');
   return tradeDetails;
 }
 
 function calculateProfitBTC(dbOrder) {
 
   let margin = (dbOrder.original_sell_price - dbOrder.original_buy_price)
-  let grossProfit = Number(margin * dbOrder.size)
-  let profit = Number(grossProfit - (Number(dbOrder.fill_fees) + Number(dbOrder.previous_fill_fees)))
-  let profitBTC = Number((Math.floor((profit / dbOrder.price) * 100000000) / 100000000))
+  let grossProfit = Number(margin * dbOrder.base_size)
+  let profit = Number(grossProfit - (Number(dbOrder.total_fees) + Number(dbOrder.previous_total_fees)))
+  let profitBTC = Number((Math.floor((profit / dbOrder.limit_price) * 100000000) / 100000000))
 
   return profitBTC;
 }
 
 
-// function to pause for x milliseconds in any async function
-function sleep(milliseconds) {
-  return new Promise(resolve => setTimeout(resolve, milliseconds))
-}
-
-async function settleMultipleOrders(userID) {
-  cache.updateStatus(userID, 'start settleMultipleOrders (SMO)');
-  const userAPI = cache.getAPI(userID);
-  const ordersArray = cache.getKey(userID, 'ordersToCheck');
-
+// this should just update the status of each trade in the ordersToCheck cached array
+async function updateMultipleOrders(userID, params) {
   return new Promise(async (resolve, reject) => {
-    if (ordersArray.length > 0) {
-      cache.storeMessage(userID, { messageText: `There are ${ordersArray.length} orders that need to be synced` });
+    userStorage[userID].updateStatus('start updateMultipleOrders (UMO)');
+    // get the orders that need processing. This will have been taken directly from the db and include all details
+    const ordersArray = params?.ordersArray
+      ? params.ordersArray
+      : userStorage[userID].getToCheck();;
 
-      // loop over the array and flip each trade
-      for (let i = 0; i < ordersArray.length; i++) {
-        const orderToCheck = ordersArray[i];
-        cache.updateStatus(userID, `SMO loop number: ${i}`);
-
-        // console.log('HERE IS THE ORDER IN SETTLE MULTIPLE ORDERS', orderToCheck);
-        // this timer will serve to prevent rate limiting
-        let reorderTimer = true;
-        setTimeout(() => {
-          reorderTimer = false;
-        }, 80);
-        // send heartbeat for each loop
-        heartBeat(userID);
-        try {
-          // if it should be canceled, delete it and skip the rest of the loop iteration
-          const willCancel = cache.checkIfCanceling(userID, orderToCheck.id);
-          if (willCancel) {
-            // delete the trade from the db
-            await databaseClient.deleteTrade(orderToCheck.id);
-            continue;
-          } else if (orderToCheck.reorder) {
-            // if we know it should be reordered, just reorder it
-            cache.updateStatus(userID, 'SMO loop reorder');
-            await reorder(orderToCheck);
-          } else {
-            // if not a reorder and not canceled, look up the full settlement details on CB
-            cache.updateStatus(userID, 'SMO loop get order');
-            // get all the order details from cb
-            let fullSettledDetails = await coinbaseClient.getOrder(orderToCheck.id, userID, userAPI);
-            // console.log('fully settled:', fullSettledDetails);
-            // update the order in the db
-            const queryText = `UPDATE "orders" SET "settled" = $1, "done_at" = $2, "fill_fees" = $3, "filled_size" = $4, "executed_value" = $5, "done_reason" = $6 WHERE "id"=$7;`;
-            await pool.query(queryText, [
-              fullSettledDetails.settled,
-              fullSettledDetails.done_at,
-              fullSettledDetails.fill_fees,
-              fullSettledDetails.filled_size,
-              fullSettledDetails.executed_value,
-              fullSettledDetails.done_reason,
-              orderToCheck.id
-            ]);
-          }
-        } catch (err) {
-          cache.updateStatus(userID, 'error in SMO loop');
-          // handle not found order
-          let errorText = `Error marking order as settled`
-          if (err.response?.status === 404) {
-            errorText = `Order not found!`
-            // reorder it
-            try {
-              await reorder(orderToCheck);
-            } catch (err) {
-              console.log(err, 'error reordering trade');
-              errorText = `Error finding order on Coinbase, could not reorder`;
-            } // end reorder
-          } // end not found
-          else {
-            console.log(err, 'error in settleMultipleOrders loop');
-          }
-          cache.storeError(userID, {
-            errorData: orderToCheck,
-            errorText: errorText
-          })
-        } // end catch
-        while (reorderTimer) {
-          await sleep(10);
-        }
-      } // end for loop
-      cache.updateStatus(userID, 'SMO all done');
-      resolve();
+    if (ordersArray?.length > 0) {
+      messenger[userID].newMessage({
+        type: 'general',
+        text: `There are ${ordersArray.length} orders that need to be synced`
+      });
     } else {
-      cache.updateStatus(userID, 'SMO all done, no orders to settle');
-      // if no orders to settle, resolve
-      resolve();
+      resolve()
+      return
     }
+    // loop over the array and update each trade
+    for (let i = 0; i < ordersArray.length; i++) {
+      // keep track of how long each loop takes. Helps prevent rate limiting
+      const t0 = performance.now();
+      messenger[userID].newMessage({
+        type: 'general',
+        text: `Syncing ${i + 1} of ${ordersArray.length} orders that need to be synced`
+      });
+      // set up loop
+      const orderToCheck = ordersArray[i];
+      // set up loop DONE
+      try {
+        if (orderToCheck.reorder && !orderToCheck.will_cancel) {
+          // if it should be reordered and is not being canceled by the user, reorder it
+          await reorder(orderToCheck);
+        } else {
+          // if not a reorder, look up the full details on CB
+          let updatedOrder = await cbClients[userID].getOrder(orderToCheck.order_id);
+          devLog(orderToCheck, 'order to check');
+          // if it was cancelled, set it for reorder
+          if (updatedOrder.order.status === 'CANCELLED') {
+            devLog('was canceled but should not have been!')
+            updatedOrder.order.reorder = true;
+          }
+          // then update db with current status
+          await databaseClient.updateTrade(updatedOrder.order);
+        }
+      } catch (err) {
+        devLog(err, 'error in updateMultipleOrders loop');
+        let errorText = `Error updating order details`
+        if (err?.error_response?.message) {
+          errorText = errorText + '. Reason: ' + err.error_response.message
+        }
+        messenger[userID].newError({
+          errorData: orderToCheck,
+          errorText: errorText
+        })
+      } // end catch
+      const t1 = performance.now();
+      // API is limited to 10/sec, so make sure the bot waits that long between loops
+      if (100 - (t1 - t0) > 0) {
+        await sleep(100 - (t1 - t0));
+      }
+    } // end for loop
+    // delete orders to check since they have now been checked
+    userStorage[userID].clearToCheck();
+    resolve();
   })
 }
 
-async function reorder(orderToReorder, retry) {
-  const userID = orderToReorder.userID;
-  cache.updateStatus(userID, 'begin reorder');
+// Reorder a trade and delete the old from the db
+async function reorder(orderToReorder) {
   return new Promise(async (resolve, reject) => {
-    let upToDateDbOrder;
-    let tradeDetails;
+    const userID = orderToReorder.userID;
+    userStorage[userID].updateStatus('begin reorder');
     try {
-      upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.id);
+      const upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.order_id);
+      // get the product from the db
+      const product = await databaseClient.getProduct(upToDateDbOrder.product_id, userID);
+      devLog(product, 'product in reorder');
+      // get the number of decimals for the base_increment of the product. This is used to round the base_size
+      const decimals = addProductDecimals(product);
 
-      tradeDetails = {
-        original_sell_price: upToDateDbOrder.original_sell_price,
-        original_buy_price: upToDateDbOrder.original_buy_price,
+      // make new tradeDetails so client id is not passed from old order
+      const tradeDetails = {
         side: upToDateDbOrder.side,
-        price: upToDateDbOrder.price, // USD
-        size: upToDateDbOrder.size, // BTC
+        limit_price: upToDateDbOrder.limit_price, // quote currency
+        base_size: Number(upToDateDbOrder.base_size).toFixed(decimals.base_increment_decimals), // base currency
         product_id: upToDateDbOrder.product_id,
-        trade_pair_ratio: upToDateDbOrder.trade_pair_ratio,
-        stp: 'cn',
-        userID: upToDateDbOrder.userID,
       };
-      // if the order is marked for reordering, it was deleted already and there is no need to wait to double check
-      // if retry is passed as true, the bot has already double check CB and not found both times so reorder
-      if (upToDateDbOrder.reorder || retry) {
-        try {
-          // send the new order with the trade details
-          let pendingTrade = await coinbaseClient.placeOrder(tradeDetails, userAPI);
-          // because the storeDetails function will see the tradeDetails as the "old order", need to store previous_fill_fees as just fill_fees
-          tradeDetails.fill_fees = upToDateDbOrder.previous_fill_fees;
-          // store the new trade in the db. the trade details are also sent to store trade position prices
-          // when reordering a trade, bring the old flipped_at value through so it doesn't change the "Time" on screen
-          let results = await databaseClient.storeTrade(pendingTrade, tradeDetails, upToDateDbOrder.flipped_at);
+      // send the new order with the trade details
+      let pendingTrade = await cbClients[userID].placeOrder(tradeDetails);
+      if (pendingTrade.success) {
+        let newTrade = await cbClients[userID].getOrder(pendingTrade.order_id)
+        // because the storeDetails function will see the upToDateDbOrder as the "old order", need to store previous_total_fees as just total_fees
+        upToDateDbOrder.total_fees = upToDateDbOrder.previous_total_fees;
+        // store the new trade in the db. the trade details are also sent to store trade position prices
+        // when reordering a trade, bring the old flipped_at value through so it doesn't change the "Time" on screen
+        let results = await databaseClient.storeTrade(newTrade.order, upToDateDbOrder, upToDateDbOrder.flipped_at);
 
-          // delete the old order from the db
-          await databaseClient.deleteTrade(orderToReorder.id);
-          // tell the DOM to update
-          cache.storeMessage(userID, {
-            messageText: `trade was reordered`,
-            orderUpdate: true,
-          });
-
-          resolve({
-            results: results,
-            reordered: true
-          })
-        } catch (err) {
-          if (err.response?.status === 400) {
-            cache.storeError(userID, {
-              errorData: orderToReorder,
-              errorText: `Insufficient funds when trying to reorder an order! Do you have a negative balance?`
-            })
-          }
-          console.log( 'error in reorder function in robot.js');
-          reject(err)
-        }
+        // delete the old order from the db
+        await databaseClient.deleteTrade(orderToReorder.order_id);
+        // tell the DOM to update
+        messenger[userID].newMessage({
+          type: 'general',
+          text: `trade was reordered`,
+          orderUpdate: true,
+        });
+        resolve({ results: results })
       } else {
-        await sleep(1000);
-        // check again. if it finds it, don't do anything. If not found, error handling will reorder in the 404
-        let fullSettledDetails = await coinbaseClient.getOrder(orderToReorder.id, orderToReorder.userID, userAPI);
+        devLog(pendingTrade, 'success false error in reorder function in robot.js');
+        reject(pendingTrade);
       }
     } catch (err) {
-      const willCancel = cache.checkIfCanceling(userID, orderToReorder.id);
-      if ((err.response?.status === 404) && (!willCancel)) {
-        // call reorder again with retry as true so it will reorder right away
-        try {
-          await reorder(orderToReorder, true);
-        } catch (err) {
-          console.log(err, "this is that error in the reorder function that you don't ever expect to see again. Hope it worked!");
-        }
-      }
+      devLog(err, 'error in reorder function in robot.js');
+      reject(err)
     }
     resolve();
   });
 }
 
-
-
-async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
+// cancels orders on coinbase. If they are in the db, it will set them as reorders.
+async function cancelAndReorder(ordersArray, userID) {
   return new Promise(async (resolve, reject) => {
-    cache.updateStatus(userID, 'begin cancelMultipleOrders (CMO)');
-    // set variable to track how many orders were actually canceled
-    let quantity = 0;
-    // console.log('ordersArray', ordersArray);
+    userStorage[userID].updateStatus('begin cancelAndReorder (CMO)');
+    // avoid making calls with empty arrays
     if (ordersArray.length > 0) {
-      if (!ignoreSleep) {
-        // console.log('need to sleep');
-        // need to wait and double check db before deleting because they take time to store and show up on cb first
-        // only need to wait once because as the loop runs nothing will be added to it. Only wait for most recent order
-        await sleep(500);
-      }
+      // build an array of just the IDs that should be set to reorder
+      const idArray = [];
       for (let i = 0; i < ordersArray.length; i++) {
-        cache.updateStatus(userID, `CMO loop number: ${i}`);
-        const orderToCancel = ordersArray[i];
-        try {
-          // check to make sure it really isn't in the db
-          let doubleCheck = await databaseClient.getSingleTrade(orderToCancel.id);
-          // console.log('double check', doubleCheck);
-          if (doubleCheck) {
-            // if it is in the db, it should cancel but set it to reorder because it is out of range
-            // that way it will reorder faster when it moves back in range
-            // console.log('canceling order', orderToCancel);
-            await Promise.all([
-              coinbaseClient.cancelOrder(orderToCancel.id, userID, userAPI),
-              databaseClient.setSingleReorder(orderToCancel.id)
-            ]);
-            // console.log('old trade was set to reorder when back in range');
-            quantity++;
-          } else {
-            // cancel the order if nothing comes back from db
-            await coinbaseClient.cancelOrder(orderToCancel.id, userID, userAPI);
-            quantity++;
-          }
-        } catch (err) {
-          // Do not resolve the error because this is in a for loop which needs to continue. If error, handle it here
-          if (err.response?.status === 404) {
-            // console.log(err.response.data, 'order not found when cancelling');
-            // if not found, cancel all orders may have been done, so get out of the loop
-            // new array will be made on next loop
-            i += ordersArray.length; // don't use break because need current loop iteration to finish
-          } else if (err.response?.status === 401 || err.response?.status === 502) {
-            cache.storeError(Number(userID), {
-              errorData: orderToCancel,
-              errorText: `Connection issue in cancel orders loop. 
-              Probably nothing to worry about unless it keeps repeating.`
-            })
-          } else {
-            console.log(err, 'unknown error in cancelMultipleOrders for loop');
-            cache.storeError(Number(userID), {
-              errorData: orderToCancel,
-              errorText: `unknown error in cancelMultipleOrders for loop`
-            })
-          }
-        }
-        await updateFunds(userID);
-        // wait to prevent rate limiting
-        await sleep(80);
+        const order = ordersArray[i];
+        idArray.push(order.order_id)
       } //end for loop
+
+      try {
+        databaseClient.setManyReorders(idArray)
+        // cancel the orders in the array
+        await cbClients[userID].cancelOrders(idArray);
+        // update funds now that everything should be up to date
+      } catch (err) {
+        devLog('error cancelling multiple orders');
+        reject(err);
+      }
+
       // if all goes well, send message to user and resolve promise with success message
-      cache.storeMessage(Number(userID), {
-        messageText: `${quantity} Extra orders were found and canceled`,
-        orderUpdate: true
-      });
-
-
-      cache.updateStatus(userID, 'done CMO');
-      resolve({
-        message: `${quantity} Extra orders were canceled`,
-        ordersCanceled: true,
-        quantity: quantity
-      })
+      devLog('sending order update from cancelAndReorder');
+      userStorage[userID].orderUpdate();
+      resolve({ success: true })
     } else {
-      cache.updateStatus(userID, 'done CMO, no orders');
-      resolve({
-        message: "No orders to cancel",
-        ordersCanceled: false,
-        quantity: quantity
-      })
+      resolve({ success: true })
     }
   });
 }
@@ -850,10 +757,10 @@ async function cancelMultipleOrders(ordersArray, userID, ignoreSleep, userAPI) {
 function orderElimination(dbOrders, cbOrders) {
   for (let i = 0; i < cbOrders.length; i++) {
     // look at each id of coinbase orders
-    const cbOrderID = cbOrders[i].id;
-    // filter out dbOrders of that id
-    dbOrders = dbOrders.filter(id => {
-      return (id.id !== cbOrderID)
+    const cbOrderID = cbOrders[i].order_id;
+    // filter out dbOrders of that order_id
+    dbOrders = dbOrders.filter(dbOrder => {
+      return (dbOrder.order_id !== cbOrderID)
     })
   }
   // return a list of orders that are settled on cb, but have not yet been handled by the bot
@@ -861,379 +768,96 @@ function orderElimination(dbOrders, cbOrders) {
 }
 
 
-async function autoSetup(user, parameters) {
-
-  // create an array to hold the new trades to put in
-  const orderList = [];
-  let count = 0;
-
-  // SHORTEN PARAMS for better readability
-  let availableFunds = parameters.availableFunds;
-  let size = parameters.size;
-  let startingValue = parameters.startingValue;
-  let buyPrice = startingValue;
-  let endingValue = parameters.endingValue;
-  let tradingPrice = parameters.tradingPrice;
-  let increment = parameters.increment;
-  let incrementType = parameters.incrementType;
-  let trade_pair_ratio = parameters.trade_pair_ratio;
-  let sizeType = parameters.sizeType;
-  let loopDirection = "up";
-  if (endingValue - startingValue < 0) {
-    loopDirection = "down";
-  }
-
-  let btcToBuy = 0;
-
-  // loop until one of the stop triggers is hit
-  let stop = false;
-  while (!stop) {
-    count++;
-
-    buyPrice = Number(buyPrice.toFixed(2));
-
-    // get the sell price with the same math as is used by the bot when flipping
-    let original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + 100))) / 100);
-
-    // figure out if it is going to be a buy or a sell. Buys will be below current trade price, sells above.
-    let side = 'buy';
-    if (buyPrice > tradingPrice) {
-      side = 'sell';
-    }
-
-    // set the current price based on if it is a buy or sell
-    let price = buyPrice;
-    if (side == 'sell') {
-      price = original_sell_price;
-    }
-
-    // if the size is in BTC, it will never change. 
-    let actualSize = size;
-    // If it is in USD, need to convert
-    if (sizeType == 'USD') {
-      // use the buy price and the size to get the real size
-      actualSize = Number(Math.floor((size / buyPrice) * 100000000)) / 100000000;
-    }
-
-    // count up how much BTC will need to be purchased to reserve for all the sell orders
-    if (side == 'sell') {
-      btcToBuy += actualSize
-    }
-
-    // calculate the previous fees on sell orders
-    let prevFees = () => {
-      if (side === 'buy') {
-        return 0
-      } else {
-        return buyPrice * actualSize * user.taker_fee
-      }
-    }
-
-
-    // CREATE ONE ORDER
-    const singleOrder = {
-      original_buy_price: buyPrice,
-      original_sell_price: original_sell_price,
-      side: side,
-      price: price,
-      size: actualSize,
-      fill_fees: prevFees(),
-      product_id: parameters.product_id,
-      stp: 'cn',
-      userID: user.id,
-      trade_pair_ratio: parameters.trade_pair_ratio,
-    }
-
-    // push that order into the order list
-    orderList.push(singleOrder);
-
-    // SETUP FOR NEXT LOOP - do some math to figure out next iteration, and if we should keep looping
-    // subtract the buy size USD from the available funds
-    // if sizeType is BTC, then we need to convert
-    if (sizeType == 'BTC') {
-      let USDSize = size * buyPrice;
-      availableFunds -= USDSize;
-    } else {
-      console.log('current funds', availableFunds);
-      availableFunds -= size;
-    }
-
-    // increment the buy price
-    // can have either percentage or dollar amount increment
-    if (incrementType == 'dollars') {
-      // if incrementing by dollar amount
-      if (loopDirection == 'up') {
-        buyPrice += increment;
-      } else {
-        buyPrice -= increment;
-      }
-    } else {
-      // if incrementing by percentage
-      if (loopDirection == 'up') {
-        buyPrice = buyPrice * (1 + (increment / 100));
-      } else {
-        buyPrice = buyPrice / (1 + (increment / 100));
-      }
-    }
-
-
-    // STOP TRADING IF...
-
-    // stop if run out of funds unless user specifies to ignore that
-    // console.log('ignore funds:', parameters.ignoreFunds);
-    if (availableFunds < 0 && !parameters.ignoreFunds) {
-      console.log('ran out of funds!', availableFunds);
-      stop = true;
-    }
-    // console.log('available funds is', availableFunds);
-
-    // stop if the buy price passes the ending value
-    if (loopDirection == 'up' && buyPrice >= endingValue) {
-      stop = true;
-    } else if (loopDirection == 'down' && buyPrice <= endingValue) {
-      stop = true;
-    }
-  }
-
-  return {
-    orderList: orderList,
-    btcToBuy: btcToBuy,
-  }
-}
-
-
-// auto setup trades until run out of money
-// this version of autoSetup will put trades directly into the db and let resync order what it needs
-// much less cb calls for orders that will just desync, also much faster
-async function autoSetupBackup(user, parameters) {
-  // console.log('in new autoSetup function', user, parameters);
-  let availableFunds = parameters.availableFunds;
-  let loopPrice = parameters.startingValue;
-  let tradingPrice = parameters.tradingPrice;
-  let btcToBuy = 0;
-  let count = 0;
-  // array to hold all the orders that will be made
-  let orderList = [];
-
-  const sizeType = parameters.sizeType;
-  const size = parameters.size;
-  const increment = parameters.increment;
-
-  if (sizeType === "USD") {
-    // logic for when size is in USD
-    // make sure there are enough funds, and don't make more than 10000 orders
-    while ((size <= availableFunds) && (count < 10000)) {
-      let actualSize = size;
-      let convertedAmount = Number(Math.floor((size / loopPrice) * 100000000)) / 100000000;
-      let original_sell_price = (Math.round((loopPrice * (Number(parameters.trade_pair_ratio) + 100))) / 100);
-      let side = 'buy';
-      // if the loop price is higher than the trading price,
-      // need to find actual cost of the trade at that volume
-      if (loopPrice >= tradingPrice) {
-        side = 'sell';
-        // if selling, need to add up the total amount of btc that needs to be bought to keep the balances above 0
-        btcToBuy += convertedAmount;
-        // find cost of BTCSize at current price. Something seems wrong here and it's repetitive but it works so I'm not touching it
-        let actualUSDSize = tradingPrice * convertedAmount;
-        // set the actual USD size to be the cost of the BTC size at the current trade price
-        actualSize = actualUSDSize;
-      }
-
-      // set the price based on if it's a buy or sell
-      let price = () => {
-        if (side === 'buy') {
-          return loopPrice
-        } else {
-          return original_sell_price
-        }
-      }
-
-      let prevFees = () => {
-        if (side === 'buy') {
-          return 0
-        } else {
-          return loopPrice * convertedAmount * user.taker_fee
-        }
-      }
-      // console.log('previous fees', prevFees(), 'loop price', loopPrice, 'convertedAmount', convertedAmount, 'taker fee', user.taker_fee);
-
-      // create a single order object
-      const singleOrder = {
-        original_sell_price: original_sell_price,//
-        original_buy_price: loopPrice,//
-        side: side,//
-        price: price(),//
-        sizeUSD: actualSize,//
-        size: convertedAmount,//
-        fill_fees: prevFees(),
-        product_id: parameters.product_id,//
-        stp: 'cn',//
-        userID: user.id,//
-        trade_pair_ratio: parameters.trade_pair_ratio//
-      }
-      orderList.push(singleOrder);
-      // each loop needs to buy BTC with the USD size
-      // this will lower the value of available funds by the size
-      availableFunds -= actualSize;
-      // then it will increase the final price by the increment value
-      loopPrice += increment;
-      count++;
-    }
-  } else {
-    // logic for when size is in btc
-    // need a variable for usd size since it will change
-    let USDSize = size * loopPrice;
-    while ((USDSize <= availableFunds) && (count < 10000)) {
-      let original_sell_price = (Math.round((loopPrice * (Number(parameters.trade_pair_ratio) + 100))) / 100);
-      let side = 'buy';
-      // if the loop price is higher than the trading price,
-      // need to find current cost of the trade at that volume
-      if (loopPrice >= tradingPrice) {
-        side = 'sell';
-        // if selling, need to add up the total amount of btc that needs to be bought to keep the balances above 0
-        btcToBuy += size;
-        // change to size at trading price. Need this number to subtract from available funds
-        USDSize = tradingPrice * size;
-      }
-
-      // set the price based on if it's a buy or sell
-      let price = () => {
-        if (side === 'buy') {
-          return loopPrice
-        } else {
-          return original_sell_price
-        }
-      }
-
-      let prevFees = () => {
-        if (side === 'buy') {
-          return 0
-        } else {
-          return loopPrice * size * user.taker_fee
-        }
-      }
-      // console.log('previous fees', prevFees());
-      // console.log('previous fees', prevFees(), 'loop price', loopPrice, 'size', size, 'taker fee', user.taker_fee);
-
-      // create a single order object
-      const singleOrder = {
-        original_sell_price: original_sell_price,
-        original_buy_price: loopPrice,
-        side: side,
-        price: price(),
-        size: size,
-        fill_fees: prevFees(),
-        product_id: parameters.product_id,
-        stp: 'cn',
-        userID: user.id,
-        trade_pair_ratio: parameters.trade_pair_ratio
-      }
-      orderList.push(singleOrder);
-      // each loop needs to buy BTC with the USD size
-      // this will lower the value of available funds by the USD size
-      availableFunds -= USDSize;
-      // then it will increase the final price by the increment value
-      loopPrice += increment;
-      USDSize = size * loopPrice;
-      count++;
-    }
-  }
-  // need unique IDs for each trade, but need to also get IDs from CB, so DB has no default.
-  // store a number that counts up every time autoSetup is used, and increase it before using it in case of error
-  // then use it here and increase it by the number of trades being put through this way
-  try {
-    const number = (Number(user.auto_setup_number) + orderList.length)
-    await databaseClient.setAutoSetupNumber(number, user.id);
-
-    // put a market order in for how much BTC need to be purchase for all the sell orders
-    if (btcToBuy >= 0.000016) {
-      const tradeDetails = {
-        side: 'buy',
-        size: btcToBuy.toFixed(8), // BTC
-        product_id: 'BTC-USD',
-        stp: 'cn',
-        userID: user.id,
-        type: 'market'
-      };
-      let bigOrder = await coinbaseClient.placeOrder(tradeDetails);
-      console.log('big order to balance btc avail', bigOrder.size, 'user', user.taker_fee);
-      await robot.updateFunds(user.id);
-    }
-    // put each trade into the db as a reorder so the sync loop can sync the right amount
-    for (let i = 0; i < orderList.length; i++) {
-      const order = orderList[i];
-      // adding a bunch of 0s allows easy sorting by id in the DB which might be useful later so better to start now
-      order.id = '0000000000' + (Number(user.auto_setup_number) + i).toString();
-      // use the current time for the created time 
-      const time = new Date();
-      order.created_at = time;
-      // console.log('order', order);
-      await databaseClient.storeReorderTrade(order, order, time);
-    }
-  } catch (err) {
-    console.log(err, 'problem in autoSetup ');
-    cache.storeError(userID, {
-      errorText: `problem in auto setup`
-    })
-  }
-}
-
-
 async function getAvailableFunds(userID, userSettings) {
-  // console.log('getting available funds');
-  cache.updateStatus(userID, 'get available funds');
+  userStorage[userID].updateStatus('get available funds');
   return new Promise(async (resolve, reject) => {
     try {
-      // console.log(userSettings.active);
-      if (!userSettings.active) {
-        console.log('not active!');
+      if (!userSettings?.active) {
+        devLog('not active!');
         reject('user is not active')
         return;
       }
-      // console.log('user is active');
       const takerFee = Number(userSettings.taker_fee) + 1;
-      // console.log('maker fee', takerFee);
 
       const results = await Promise.all([
-        coinbaseClient.getAccounts(userID),
+        cbClients[userID].getAccounts({ limit: 250 }),
         // funds are withheld in usd when a buy is placed, so the maker fee is needed to subtract fees
         databaseClient.getSpentUSD(userID, takerFee),
         // funds are taken from the sale once settled, so the maker fee is not needed on the buys
         databaseClient.getSpentBTC(userID),
+        // get a list of products that the user has active
+        databaseClient.getActiveProducts(userID),
       ]);
+      const accounts = results[0].accounts;
+      const activeProducts = results[3];
 
-      // calculate USD balances
-      const [USD] = results[0].filter(account => account.currency === 'USD')
-      const availableUSD = USD.available;
-      const balanceUSD = USD.balance;
-      const spentUSD = results[1].sum;
-      // console.log('spent usd', spentUSD);
-      // subtract the total amount spent from the total balance
-      const actualAvailableUSD = (balanceUSD - spentUSD).toFixed(16);
+      // get the amount spent for the base and quote currencies for each product
+      // and add them to an array of currency objects with the currency id and amount spent
+      // if the currency already exists in the array, add the amount spent to the amount spent for that currency
+      const currencyArray = [];
+      for (let i = 0; i < activeProducts.length; i++) {
+        const product = activeProducts[i];
+        const baseCurrency = product.base_currency_id;
+        const quoteCurrency = product.quote_currency_id;
+        const baseSpent = await databaseClient.getSpentBase(userID, product.product_id);
+        const quoteSpent = await databaseClient.getSpentQuote(userID, takerFee, product.product_id);
 
-      // calculate BTC balances
-      const [BTC] = results[0].filter(account => account.currency === 'BTC')
-      const availableBTC = BTC.available;
-      const balanceBTC = BTC.balance;
-      const spentBTC = results[2].sum;
-      // subtract the total amount spent from the total balance
-      const actualAvailableBTC = Number((balanceBTC - spentBTC).toFixed(16));
+        // if the base currency is already in the array, add the amount spent to the existing amount spent
+        if (currencyArray.some(currency => currency.currency_id === baseCurrency)) {
+          const index = currencyArray.findIndex(currency => currency.currency_id === baseCurrency);
+          currencyArray[index].amount_spent += baseSpent;
+        } else {
+          // if the base currency is not in the array, add it
+          currencyArray.push({ currency_id: baseCurrency, amount_spent: baseSpent })
+        }
 
-      const availableFunds = {
-        availableBTC: availableBTC,
-        balanceBTC: balanceBTC,
-        availableUSD: availableUSD,
-        balanceUSD: balanceUSD,
-        actualAvailableBTC: actualAvailableBTC,
-        actualAvailableUSD: actualAvailableUSD
+        // if the quote currency is already in the array, add the amount spent to the existing amount spent
+        if (currencyArray.some(currency => currency.currency_id === quoteCurrency)) {
+          const index = currencyArray.findIndex(currency => currency.currency_id === quoteCurrency);
+          currencyArray[index].amount_spent += quoteSpent;
+        } else {
+          // if the quote currency is not in the array, add it
+          currencyArray.push({ currency_id: quoteCurrency, amount_spent: quoteSpent })
+        }
+      }
+      // calculate the available funds for each currency rounded to 16 decimal places
+      const availableFundsNew = [];
+      for (let i = 0; i < currencyArray.length; i++) {
+        const currency = currencyArray[i];
+        // get the currency from the accounts
+        const [account] = accounts.filter(account => account.currency === currency.currency_id);
+        // calculate the available funds
+        const available = Number(account?.available_balance?.value || 0) + Number(account?.hold?.value || 0) - currency.amount_spent;
+        // round to 16 decimal places
+        const availableRounded = available.toFixed(16);
+        // add the currency and available funds to the array
+        availableFundsNew.push({ currency_id: currency.currency_id, available: availableRounded })
       }
 
-      cache.updateStatus(userID, 'done getting available funds');
-      resolve(availableFunds)
+      // make an object with an object for each user's product with the product id as the key for each nested object 
+      // each nested object has the available funds for the base and quote currencies, along with the name of the currency
+      const availableFundsObject = {};
+      for (let i = 0; i < activeProducts.length; i++) {
+        const product = activeProducts[i];
+        const baseCurrency = product.base_currency_id;
+        const quoteCurrency = product.quote_currency_id;
+        const baseAvailable = availableFundsNew.find(currency => currency.currency_id === baseCurrency).available;
+        const quoteAvailable = availableFundsNew.find(currency => currency.currency_id === quoteCurrency).available;
+        availableFundsObject[product.product_id] = {
+          base_currency: baseCurrency,
+          base_available: baseAvailable,
+          base_increment: product.base_increment,
+          quote_currency: quoteCurrency,
+          quote_available: quoteAvailable,
+          quote_increment: product.quote_increment,
+        }
+      }
+
+      resolve(availableFundsObject)
     } catch (err) {
-      cache.updateStatus(userID, 'error getting available funds');
-      cache.storeError(userID, {
-        errorText: 'error getting available funds'
+      messenger[userID].newError({
+        text: 'error getting available funds',
+        data: err
       })
       reject(err)
     }
@@ -1241,73 +865,269 @@ async function getAvailableFunds(userID, userSettings) {
 }
 
 async function updateFunds(userID) {
-  cache.updateStatus(userID, 'update funds');
+  userStorage[userID].updateStatus('begin update funds');
   return new Promise(async (resolve, reject) => {
     try {
       const userSettings = await databaseClient.getUserAndSettings(userID);
       const available = await getAvailableFunds(userID, userSettings);
+      const previousAvailable = userStorage[userID].getAvailableFunds();
 
-      await databaseClient.saveFunds(available, userID);
+      // update the user's available funds in the userStorage
+      userStorage[userID].updateAvailableFunds(available);
 
-      // check if the funds have changed and update the DOM if needed
-      if (Number(userSettings.actualavailable_usd) !== Number(available.actualAvailableUSD)) {
-        cache.storeMessage(Number(userID), {
-          orderUpdate: true
-        });
+      // compare the previous available funds to the new available funds
+      const availableFundsChanged = compareAvailableFunds(previousAvailable, available);
+
+      // if the available funds have changed, update the DOM
+      if (availableFundsChanged) {
+        devLog('sending order update from updateFunds after available funds changed');
+        messenger[userID].userUpdate();
       }
-
-      cache.updateStatus(userID, 'done updating funds');
       resolve()
     } catch (err) {
-      cache.updateStatus(userID, 'error updating funds');
-      cache.storeError(userID, {
-        errorText: 'error getting available funds'
+      messenger[userID].newError(userID, {
+        text: 'error getting available funds',
+        data: err
       })
       reject(err)
     }
   })
 }
 
-async function alertAllUsers(alertMessage) {
-  // console.log('alerting all users of change');
-  try {
-    const userList = await databaseClient.getAllUsers();
-    userList.forEach(user => {
-      // console.log(user);
-      cache.storeMessage(Number(user.id), {
-        messageText: alertMessage,
-        orderUpdate: true
-      });
-    });
-  } catch (err) {
-    console.log(err, 'error while alerting all users of change');
+function compareAvailableFunds(previousAvailable, availableFunds) {
+  // return true if the available funds have changed or if there are no previous available, false if they have not changed
+  for (let product in availableFunds) {
+    if (!previousAvailable[product]) {
+      return true;
+    }
+    if (previousAvailable[product].base_available !== availableFunds[product].base_available) {
+      return true;
+    }
+    if (previousAvailable[product].quote_available !== availableFunds[product].quote_available) {
+      return true;
+    }
+  }
+  return false;
+}
+
+async function updateProductCandles(userID, productID, granularity) {
+  return new Promise(async (resolve, reject) => {
+    try {
+
+      // object with the number of seconds in each granularity
+      const granularitySeconds = {
+        'ONE_MINUTE': 60,
+        'FIVE_MINUTES': 300,
+        'FIFTEEN_MINUTES': 900,
+        'THIRTY_MINUTES': 1800,
+        'ONE_HOUR': 3600,
+        'TWO_HOURS': 7200,
+        'SIX_HOURS': 21600,
+        'ONE_DAY': 86400,
+      }
+      // get the the candle from the database with the most recent time
+      const recentCandle = await databaseClient.getNewestCandle(productID, granularity);
+      // get the oldest candle from the database
+      const oldestCandle = await databaseClient.getOldestCandle(productID, granularity);
+      // if there is no recent candle, get the candles from the last month and save them to the database
+      if (!recentCandle || !oldestCandle) {
+        devLog('no candle');
+        // end date is today in unix time
+        const endDate = Math.floor(new Date().getTime() / 1000);
+        const startDate = getStartDate(endDate);
+        // start date in unix time
+        const start = Math.floor(new Date().getTime() / 1000) - (365 * 24 * 60 * 60);
+
+        const end = getEndDate(start);
+        const result = await cbClients[userID].getMarketCandles({
+          product_id: productID,
+          start: start,
+          end: end,
+          granularity: granularity
+        });
+        const candles = result.candles;
+        // save the candles to the database
+        await databaseClient.saveCandles(productID, granularity, candles);
+        doItAgain(candles);
+      } else {
+        // devLog('recent candle', recentCandle);
+        // if there is a recent candle, get the candles that are after the recent candle and save them to the database
+        // start date in unix time should be 1 second after the recent candle
+        const start = recentCandle.start + 1;
+        // if there is an oldest candle, the end date should be 1 second before the oldest candle
+        const endDate = oldestCandle.start - 1;
+        const startDate = getStartDate(endDate);
+
+        const end = getEndDate(start);
+
+        // const end = start + 6 * 200 * 3600;
+        const result = await cbClients[userID].getMarketCandles({
+          product_id: productID,
+          start: start,
+          end: end,
+          granularity: granularity
+        });
+        const candles = result.candles;
+        // recentCandle.start = recentCandle.start + 1;
+        // add the recent candle to the candles array
+        candles.unshift(recentCandle);
+        // ensure that the candles are in order by start property
+        candles.sort((a, b) => a.start - b.start);
+        // if there are more than one candle, 
+        // ensure that the distance between each candle is the same as the seconds of granularity as defined in the granularitySeconds object
+        if (candles.length > 1) {
+          let integrity = true;
+          const missing = [];
+          for (let i = 1; i < candles.length; i++) {
+            const currentStart = Number(candles[i].start);
+            const previousStart = Number(candles[i - 1].start);
+            const distance = currentStart - previousStart;
+            const distanceNeeded = granularitySeconds[granularity];
+            if (distance !== distanceNeeded) {
+              integrity = false;
+              // if the integrity is compromised, find the missing candles
+              for (let j = previousStart + distanceNeeded; j < currentStart; j += distanceNeeded) {
+                missing.push(j);
+              }
+            }
+          }
+          if (integrity) {
+            // devLog('candles array integrity is good');
+          } else {
+            // devLog('candles array integrity is compromised');
+            // devLog(missing, 'missing candles');
+          }
+        }
+
+        // save the candles to the database
+        await databaseClient.saveCandles(productID, granularity, candles);
+
+        doItAgain(candles);
+      }
+      resolve()
+    } catch (err) {
+      messenger[userID].newError({
+        text: 'error getting candles',
+        data: err
+      })
+      userStorage[userID].updateCandlesBeingUpdated(productID, granularity, false);
+      reject(err)
+    }
+  })
+
+  function doItAgain(candles) {
+    // if candles is 200+, wait 1 second and get the next 200 candles
+    if (candles.length > 200) {
+      // wait 1 second and call the function again
+      setTimeout(async () => {
+        try {
+          await updateProductCandles(userID, productID, granularity);
+        } catch (err) {
+          messenger[userID].newError({
+            text: 'error getting candles',
+            data: err
+          });
+        }
+      }, 1000);
+    } else {
+      // set the user's candlesBeingUpdated for the product and duration to false
+      userStorage[userID].updateCandlesBeingUpdated(productID, granularity, false);
+    }
+  }
+
+  function getEndDate(start) {
+    // if granularity is 1 minute, end date in unix time should be 1 minute 299 times from the start date
+    // if granularity is 5 minutes, end date in unix time should be 5 minutes 299 times from the start date
+    // if granularity is 15 minutes, end date in unix time should be 15 minutes 299 times from the start date
+    // if granularity is 30 minutes, end date in unix time should be 30 minutes 299 times from the start date
+    // if granularity is 1 hour, end date in unix time should be 1 hour 299 times from the start date
+    // if granularity is 2 hour, end date in unix time should be 2 hours 299 times from the start date
+    // if granularity is 6 hour, end date in unix time should be 6 hours 299 times from the start date
+    // if granularity is 1 day, end date in unix time should be 1 day 299 times from the start date
+    if (granularity === 'ONE_MINUTE') {
+      return start + 1 * 60 * 299;
+    } else if (granularity === 'FIVE_MINUTE') {
+      return start + 5 * 60 * 299;
+    } else if (granularity === 'FIFTEEN_MINUTE') {
+      return start + 15 * 60 * 299;
+    } else if (granularity === 'THIRTY_MINUTE') {
+      return start + 30 * 60 * 299;
+    } else if (granularity === 'ONE_HOUR') {
+      return start + 1 * 60 * 60 * 299;
+    } else if (granularity === 'TWO_HOUR') {
+      return start + 2 * 60 * 60 * 299;
+    } else if (granularity === 'SIX_HOUR') {
+      return start + 6 * 60 * 60 * 299;
+    } else if (granularity === 'ONE_DAY') {
+      return start + 1 * 60 * 60 * 24 * 299;
+    }
+  }
+
+  function getStartDate(end) {
+    // if granularity is 1 minute, start date in unix time should be 1 minute 299 times before the end date
+    // if granularity is 5 minutes, start date in unix time should be 5 minutes 299 times before the end date
+    // if granularity is 15 minutes, start date in unix time should be 15 minutes 299 times before the end date
+    // if granularity is 30 minutes, start date in unix time should be 30 minutes 299 times before the end date
+    // if granularity is 1 hour, start date in unix time should be 1 hour 299 times before the end date
+    // if granularity is 2 hour, start date in unix time should be 2 hours 299 times before the end date
+    // if granularity is 6 hour, start date in unix time should be 6 hours 299 times before the end date
+    // if granularity is 1 day, start date in unix time should be 1 day 299 times before the end date
+    if (granularity === 'ONE_MINUTE') {
+      return end - 1 * 60 * 299;
+    } else if (granularity === 'FIVE_MINUTE') {
+      return end - 5 * 60 * 299;
+    } else if (granularity === 'FIFTEEN_MINUTE') {
+      return end - 15 * 60 * 299;
+    } else if (granularity === 'THIRTY_MINUTE') {
+      return end - 30 * 60 * 299;
+    } else if (granularity === 'ONE_HOUR') {
+      return end - 1 * 60 * 60 * 299;
+    } else if (granularity === 'TWO_HOUR') {
+      return end - 2 * 60 * 60 * 299;
+    } else if (granularity === 'SIX_HOUR') {
+      return end - 6 * 60 * 60 * 299;
+    } else if (granularity === 'ONE_DAY') {
+      return end - 1 * 60 * 60 * 24 * 299;
+    }
   }
 }
 
-function heartBeat(userID) {
-  const loopNumber = cache.getLoopNumber(userID);
-  const botSettings = cache.getKey(0, 'botSettings');
 
-  socketClient.emit('message', {
-    heartbeat: true,
-    userID: Number(userID),
-    count: loopNumber % botSettings.full_sync + 1
-  });
+
+
+
+async function alertAllUsers(alertMessage) {
+  try {
+    const userList = await databaseClient.getAllUsers();
+    userList.forEach(user => {
+      messenger[user.id].newMessage({
+        type: 'general',
+        text: alertMessage,
+        userUpdate: true
+      });
+    });
+  } catch (err) {
+    devLog(err, 'error while alerting all users of change');
+  }
+}
+
+function heartBeat(userID, side) {
+  messenger[userID].heartBeat(side);
 }
 
 
 
 const robot = {
-  sleep: sleep,
   flipTrade: flipTrade,
   syncOrders: syncOrders,
   processOrders: processOrders,
+  updateMultipleOrders: updateMultipleOrders,
   startSync: startSync,
-  autoSetup: autoSetup,
+  initializeUserLoops: initializeUserLoops,
   getAvailableFunds: getAvailableFunds,
   updateFunds: updateFunds,
   alertAllUsers: alertAllUsers,
 }
 
 
-module.exports = robot;
+export { robot, flipTrade };

@@ -1,53 +1,52 @@
 import React, { useEffect, useState } from 'react';
-import { connect, useDispatch } from 'react-redux';
-import mapStoreToProps from '../../redux/mapStoreToProps';
-import './SingleTrade.css'
+import { useData } from '../../contexts/DataContext.js';
+import { useUser } from '../../contexts/UserContext.js';
+import { useProductDecimals } from '../../hooks/useProductDecimals.js';
+import './SingleTrade.css';
+import { devLog } from '../../shared.js';
 
 function SingleTrade(props) {
-  const dispatch = useDispatch();
+  const { user, theme } = useUser();
+  const { productID, deleteOrder, syncPair } = useData();
+
   const [profit, setProfit] = useState(0);
   const [deleting, setDeleting] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [sellFee, setSellFee] = useState();
   const [buyFee, setBuyFee] = useState();
 
+  const { reorder } = props.order;
+
+  devLog('reorder', reorder);
+
+  const decimals = useProductDecimals(productID, user.availableFunds);
+
+  // decimals.baseIncrement
+
   useEffect(() => {
+    // devLog('rendering single trade');
     // calculate all the numbers when the component renders
 
     // pull from props and make more manageable
     let original_sell_price = props.order.original_sell_price;
-    let size = props.order.size;
+    let base_size = props.order.base_size;
     let original_buy_price = props.order.original_buy_price;
-    let maker_fee_rate = props.store.accountReducer.userReducer.maker_fee;
+    let maker_fee_rate = user.maker_fee;
 
     // calculate fees
-    let sellFee = (maker_fee_rate * original_sell_price * size)
-    let buyFee = (maker_fee_rate * original_buy_price * size)
+    let sellFee = (maker_fee_rate * original_sell_price * base_size)
+    let buyFee = (maker_fee_rate * original_buy_price * base_size)
 
     // calculate profits
-    const profit = Math.round((((original_sell_price * size - original_buy_price * size)) - (buyFee + sellFee)) * 100000000) / 100000000;
+    const profit = Math.round((((original_sell_price * base_size - original_buy_price * base_size)) - (buyFee + sellFee)) * decimals.base_inverse_increment) / decimals.base_inverse_increment;
     setProfit(profit);
     setBuyFee(buyFee)
     setSellFee(sellFee)
-  }, [props.store.accountReducer, props.order.original_sell_price, props.order.original_buy_price, props.order.size]);
-
-  // delete the order if the abandon button is clicked.
-  // the loop already detects deleted orders, so only need to make a call to coinbase
-  // no need to bother the database if it is busy
-  function deleteOrder() {
-    setDeleting(true)
-    dispatch({
-      type: 'DELETE_TRADE', payload: {
-        id: props.order.id,
-      }
-    })
-  }
+  }, [props.order.original_sell_price, props.order.original_buy_price, props.order.base_size, user.maker_fee, decimals.base_inverse_increment]);
 
   function syncTrade() {
-    dispatch({
-      type: 'SYNC_TRADE', payload: {
-        id: props.order.id,
-      }
+    syncPair({
+      order_id: props.order.order_id,
     })
   }
 
@@ -69,42 +68,56 @@ function SingleTrade(props) {
   // postgres is much better at math using exact
 
   return (
-    <div className={`Single-trade ${props.order.side} ${props.theme}`}>
-      <button className={`btn-blue expand-single-trade ${props.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>
-      {showAll && <button className={`btn-blue expand-single-trade ${props.theme}`} onClick={syncTrade}>sync</button>}
+    <div className={`Single-trade ${props.order.side} ${user.theme}`}>
+      {/* {JSON.stringify(decimals)} */}
+      {!props.preview && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>}
+      {showAll && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={syncTrade}>sync</button>}
       <div className={"overlay"}>
         {(deleting === true)
           ? <p className="deleting">Deleting...</p>
-          : !props.store.accountReducer.userReducer.kill_locked && <button className={`btn-red kill-button ${props.theme}`} onClick={() => { deleteOrder() }}>Kill</button>
-          
+          : !props.preview && !user.kill_locked && <button
+            className={`btn-red kill-button ${user.theme}`}
+            onClick={() => {
+              deleteOrder(props.order.order_id);
+              setDeleting(true)
+            }}>
+            Kill
+          </button>
+
         }
         <p className="single-trade-text" >
-          {/* {JSON.stringify(props.theme)} */}
+          {/* {JSON.stringify(user.theme)} */}
           <strong>
             Price: </strong>
-          {(props.order.side === 'sell')
-            ? numberWithCommas(Number(props.order.original_sell_price).toFixed(2))
-            : numberWithCommas(Number(props.order.original_buy_price).toFixed(2))
+          {(props.order.side === 'SELL')
+            ? numberWithCommas(Number(props.order.original_sell_price).toFixed(decimals.quote_increment_decimals))
+            : numberWithCommas(Number(props.order.original_buy_price).toFixed(decimals.quote_increment_decimals))
           } <strong>
-            {(props.order.side === 'sell')
+            {(props.order.side === 'SELL')
               ? '~Buys:'
               : '~Sells:'
             } </strong>
-          {(props.order.side === 'sell')
-            ? numberWithCommas(Number(props.order.original_buy_price).toFixed(2))
-            : numberWithCommas(Number(props.order.original_sell_price).toFixed(2))
-          } ~<strong>Size </strong>{Number(props.order.size).toFixed(8)} ~
-          <strong>Value</strong> ${numberWithCommas((Math.round((props.order.price * props.order.size) * 100) / 100).toFixed(2))} ~
+          {(props.order.side === 'SELL')
+            ? numberWithCommas(Number(props.order.original_buy_price).toFixed(decimals.quote_increment_decimals))
+            : numberWithCommas(Number(props.order.original_sell_price).toFixed(decimals.quote_increment_decimals))
+          } ~<strong>Size </strong>{Number(props.order.base_size).toFixed(decimals.base_increment_decimals)} {!props.preview && <>~</>}
+          {!props.preview ? <strong>Value</strong > : <strong>/</strong >}
+          &nbsp;${numberWithCommas((
+            Math.round((props.order.limit_price * props.order.base_size) * decimals.quote_inverse_increment)
+            / decimals.quote_inverse_increment).toFixed(decimals.quote_increment_decimals))} ~
           <strong>Net Profit</strong> ${profit.toFixed(8)}
           {/* <strong> ~Time</strong> {new Date(props.order.created_at).toLocaleString('en-US')} */}
-          <strong> ~Time </strong> {props.order.flipped_at 
-          ? new Date(props.order.flipped_at).toLocaleString('en-US')
-          : new Date(props.order.created_at).toLocaleString('en-US')}
+          {!props.preview && <strong> ~Time </strong>} {!props.preview && (props.order.flipped_at
+            ? new Date(props.order.flipped_at).toLocaleString('en-US')
+            : new Date(props.order.created_at).toLocaleString('en-US'))}
+            {/* use the same color scheme as the socket status indicators
+            open: green
+            timeout: yellow
+            closed: red
+            reopening: blue
+             */}
+          &nbsp;<span className={`${theme} ${reorder ? 'blue' : 'green'}`}>&#x2022;</span>
           <br />
-          {/* created: {JSON.stringify(props.order.created_at)} 
-          <br />
-          flipped: {JSON.stringify(props.order.flipped_at)}
-          <br /> */}
           {
             showAll && !deleting && <><strong> Percent Increase:</strong> {Number(props.order.trade_pair_ratio)}</>
           }
@@ -118,7 +131,7 @@ function SingleTrade(props) {
             showAll && !deleting && <><strong> Total Fees:</strong> {(Number(sellFee.toFixed(8)) + Number(buyFee.toFixed(8))).toFixed(8)}</>
           }
           {
-            showAll && !deleting && <><strong> Gross Profit:</strong> {(props.order.original_sell_price * props.order.size - props.order.original_buy_price * props.order.size).toFixed(8)}</>
+            showAll && !deleting && <><strong> Gross Profit:</strong> {(props.order.original_sell_price * props.order.base_size - props.order.original_buy_price * props.order.base_size).toFixed(8)}</>
           }
         </p>
       </div>
@@ -126,4 +139,4 @@ function SingleTrade(props) {
   )
 }
 
-export default connect(mapStoreToProps)(SingleTrade);
+export default SingleTrade;

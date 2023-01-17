@@ -1,54 +1,56 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import './App.css';
-import {
-  HashRouter as Router,
-  Route,
-  Switch,
-  // Redirect,
-} from 'react-router-dom';
-import { connect, useDispatch } from 'react-redux';
-import mapStoreToProps from '../../redux/mapStoreToProps';
+// import './art.css';
 
 // Directory imports
-import Home from '../Home/Home';
-import Login from '../Login/Login';
-import { SocketProvider } from '../../contexts/SocketProvider';
-import { TickerProvider } from '../../contexts/TickerProvider';
+import Home from '../Home/Home.js';
+import Login from '../Login/Login.js';
+import { SocketProvider } from '../../contexts/SocketProvider.js';
+import { DataProvider } from '../../contexts/DataContext.js';
+import { UserProvider, useUser } from '../../contexts/UserContext.js';
 
-function App(props) {
-  const dispatch = useDispatch();
+function App() {
+  // small component to check if user is logged in
+  // if not, redirect to login page
+  function CheckUser() {
 
-
-  useEffect(() => {
-    dispatch({ type: 'FETCH_USER' });
-    return
-  }, [dispatch])
-
-
-
+    const { user } = useUser();
+    // const { data } = useData();
+    // devLog(user, 'user in checkuser');
+    return (
+      <div className={`App darkTheme`}>
+        {user.id
+          ?
+          < DataProvider >
+            < SocketProvider >
+              <Home />
+            </SocketProvider>
+          </DataProvider>
+          : <Login />
+        }
+      </div >
+    )
+  }
 
   return (
-    <div className={`App darkTheme`}>
-      <Router>
-        <Switch>
-          <SocketProvider>
-            <TickerProvider>
+    <UserProvider >
+      <CheckUser />
+    </UserProvider>
 
-              <Route
-                exact path="/"
-                component={props.store.accountReducer.userReducer.id
-                  ? Home
-                  : Login}
-              />
-            </TickerProvider>
-          </SocketProvider>
-          <Route
-            exact path="/login"
-            component={Login} />
-        </Switch>
-      </Router>
-    </div>
+
+    // <div className={`App darkTheme`}>
+    //   < UserProvider >
+    //     {user.id
+    //       ? < DataProvider >
+    //         < SocketProvider >
+    //           <Home />
+    //         </SocketProvider>
+    //       </DataProvider>
+    //       : <Login />
+    //     }
+    //   </UserProvider>
+    // </div >
   );
 }
 
-export default connect(mapStoreToProps)(App);
+export default App;

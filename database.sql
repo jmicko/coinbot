@@ -1,9 +1,11 @@
-DROP TABLE IF EXISTS "orders";
+DROP TABLE IF EXISTS "limit_orders";
 DROP TABLE IF EXISTS "user";
+DROP TABLE IF EXISTS "products";
 DROP TABLE IF EXISTS "session";
 DROP TABLE IF EXISTS "user_api";
 DROP TABLE IF EXISTS "user_settings";
 DROP TABLE IF EXISTS "bot_settings";
+DROP TABLE IF EXISTS "market_candles";
 
 CREATE TABLE IF NOT EXISTS "user_api"
 (
@@ -35,11 +37,63 @@ CREATE TABLE IF NOT EXISTS "user_settings"
   "actualavailable_usd" numeric(32,16) DEFAULT 0,
   "max_trade" boolean DEFAULT false,
   "max_trade_size" numeric(32,8) DEFAULT 0,
-  "max_trade_load" integer DEFAULT 1000,
+  "max_trade_load" integer DEFAULT 100,
+  "sync_quantity" integer DEFAULT 100;
   "profit_accuracy" integer DEFAULT 16,
+  "can_chat" boolean DEFAULT false,
   "auto_setup_number" integer DEFAULT 1,
   "profit_reset" timestamp
 );
+
+CREATE TABLE IF NOT EXISTS "products"
+(
+  "product_id" character varying COLLATE pg_catalog."default" NOT NULL,
+  "user_id" character varying COLLATE pg_catalog."default" NOT NULL,
+  "active_for_user" boolean DEFAULT false,
+  "activated_at" timestamptz,
+  "quote_currency_id" character varying COLLATE pg_catalog."default",
+  "base_currency_id" character varying COLLATE pg_catalog."default",
+  "price" numeric(32,16),
+  "price_percentage_change_24h" numeric(32,16),
+  "volume_24h" numeric(32,16),
+  "volume_percentage_change_24h" numeric(32,16),
+  "base_increment" numeric(32,16),
+  "quote_increment" numeric(32,16),
+  "quote_min_size" numeric(32,16),
+  "quote_max_size" numeric(32,16),
+  "base_min_size" numeric(32,16),
+  "base_max_size" numeric(32,16),
+  "base_name" character varying COLLATE pg_catalog."default",
+  "quote_name" character varying COLLATE pg_catalog."default",
+  "watched" boolean DEFAULT false,
+  "is_disabled" boolean DEFAULT false,
+  "new" boolean DEFAULT false,
+  "status" character varying COLLATE pg_catalog."default",
+  "cancel_only" boolean DEFAULT false,
+  "limit_only" boolean DEFAULT false,
+  "post_only" boolean DEFAULT false,
+  "trading_disabled" boolean DEFAULT false,
+  "auction_mode" boolean DEFAULT false,
+  "product_type" character varying COLLATE pg_catalog."default",
+  "fcm_trading_session_details" character varying COLLATE pg_catalog."default",
+  "mid_market_price" numeric(32,16)
+);
+
+CREATE TABLE IF NOT EXISTS "market_candles"
+(
+  "candle_id" character varying PRIMARY KEY COLLATE pg_catalog."default" NOT NULL,
+  "product_id" character varying COLLATE pg_catalog."default" NOT NULL,
+  "granularity" character varying COLLATE pg_catalog."default" NOT NULL,
+  "start" integer NOT NULL,
+  "low" numeric(32,16) NOT NULL,
+  "high" numeric(32,16) NOT NULL,
+  -- column that is the high column divided by the low column that will be calculated on insert
+  "high_low_ratio" numeric(32,16) NOT NULL,
+  "open" numeric(32,16) NOT NULL,
+  "close" numeric(32,16) NOT NULL,
+  "volume" numeric(32,16) NOT NULL
+);
+
 
 CREATE TABLE IF NOT EXISTS "bot_settings"
 (
@@ -52,34 +106,63 @@ INSERT INTO "bot_settings"
   ("loop_speed")
   VALUES (1);
 
-CREATE TABLE IF NOT EXISTS "orders"
+CREATE TABLE IF NOT EXISTS "limit_orders"
 (
-  id character varying COLLATE pg_catalog."default" NOT NULL,
+  order_id character varying COLLATE pg_catalog."default" NOT NULL,
+  
   "userID" integer,
-  "API_ID" character varying,
-  price numeric(32,8),
-  size numeric(32,8),
-  trade_pair_ratio numeric(32,8),
-  side character varying COLLATE pg_catalog."default",
-  pending boolean DEFAULT true,
-  settled boolean DEFAULT false,
-  flipped boolean DEFAULT false,
-  will_cancel boolean DEFAULT false,
-  reorder boolean DEFAULT false,
-  include_in_profit boolean DEFAULT true,
-  product_id character varying COLLATE pg_catalog."default",
-  time_in_force character varying COLLATE pg_catalog."default",
-  created_at timestamptz,
-  flipped_at timestamptz,
-  done_at timestamptz,
-  done_reason character varying COLLATE pg_catalog."default",
-  fill_fees numeric(32,16),
-  previous_fill_fees numeric(32,16),
-  filled_size numeric(32,8),
-  executed_value numeric(32,16),
   original_buy_price numeric(32,16),
   original_sell_price numeric(32,16),
-  CONSTRAINT orders_pkey PRIMARY KEY (id)
+  trade_pair_ratio numeric(32,8),
+  flipped boolean DEFAULT false,
+  flipped_at timestamptz,
+  filled_at timestamptz,
+  reorder boolean DEFAULT false,
+  include_in_profit boolean DEFAULT true,
+  will_cancel boolean DEFAULT false,
+
+  product_id character varying COLLATE pg_catalog."default",
+  coinbase_user_id character varying COLLATE pg_catalog."default",
+  base_size numeric(32,8),
+  limit_price numeric(32,8),
+  post_only boolean,
+  side character varying COLLATE pg_catalog."default",
+  client_order_id character varying COLLATE pg_catalog."default",
+  next_client_order_id character varying COLLATE pg_catalog."default",
+  "status" character varying COLLATE pg_catalog."default",
+  time_in_force character varying COLLATE pg_catalog."default",
+  created_time timestamptz,
+  completion_percentage numeric(32,8),
+  filled_size numeric(32,8),
+  average_filled_price numeric(32,8),
+  fee numeric(32,8),
+  number_of_fills numeric(32,8),
+  filled_value numeric(32,8),
+  pending_cancel boolean,
+  size_in_quote boolean,
+  total_fees numeric(32,16),
+  previous_total_fees numeric(32,16),
+  size_inclusive_of_fees boolean,
+  total_value_after_fees numeric(32,16),
+  trigger_status character varying COLLATE pg_catalog."default",
+  order_type character varying COLLATE pg_catalog."default",
+  reject_reason character varying COLLATE pg_catalog."default",
+  settled boolean DEFAULT false,
+  product_type character varying COLLATE pg_catalog."default",
+  reject_message character varying COLLATE pg_catalog."default",
+  cancel_message character varying COLLATE pg_catalog."default",
+
+  -- price numeric(32,8),
+  -- size numeric(32,8),
+  -- pending boolean DEFAULT true,
+  -- created_at timestamptz,
+  -- done_at timestamptz,
+  -- done_reason character varying COLLATE pg_catalog."default",
+  -- fill_fees numeric(32,16),
+  -- previous_fill_fees numeric(32,16),
+  -- executed_value numeric(32,16),
+  -- "API_ID" character varying,
+  CONSTRAINT orders_pkey PRIMARY KEY (order_id)
 );
 
 CREATE TABLE IF NOT EXISTS "user" (
@@ -105,4 +188,12 @@ CREATE INDEX "IDX_session_expire" ON "session" ("expire");
 
 -- this will index the orders table so it is much faster to look for reorders and unsettled trades
 CREATE INDEX reorders
-ON "orders" ("side", "flipped", "will_cancel", "userID", "settled");
+ON "limit_orders" ("side", "flipped", "will_cancel", "userID", "settled");
+
+-- this will index the products table so that looking up active products is faster
+CREATE INDEX user_active
+ON "products" ("user_id","quote_currency_id","active_for_user");
+
+-- this will index the market_candles table so that looking up candles is faster
+CREATE INDEX candles
+ON "market_candles" ("product_id","granularity","start");

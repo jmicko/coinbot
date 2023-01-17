@@ -1,59 +1,93 @@
-import React, { useEffect, useState } from 'react';
-import { connect, useDispatch } from 'react-redux';
-import mapStoreToProps from '../../redux/mapStoreToProps';
-import { useSocket } from "../../contexts/SocketProvider";
+import React, { useState } from 'react';
+import { useUser } from '../../contexts/UserContext.js';
+
 import './Messages.css'
+import Chat from './Chat.js';
+import { useData } from '../../contexts/DataContext.js';
+import { devLog } from '../../shared.js';
 
 
-function Messages(props) {
-  const dispatch = useDispatch();
+function Messages() {
+  devLog('rendering messages');
+  const { user } = useUser();
+  const { messages: { botMessages, chatMessages }, botErrors
+    // , sendChat
+  } = useData()
+  const messageMap = [{ header: 'General Messages', messages: botMessages }, { header: 'Bot Errors', messages: botErrors }]
+
   const [collapsed, setCollapsed] = useState(false);
 
-  function toggleCollapse() {
-    setCollapsed(!collapsed);
+  function dateBuilder(d) {
+    // new Date(message.timeStamp).toLocaleString('en-US')
+    const date = new Date(d);
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const year = date.getFullYear();
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
+    // if message was sent today, don't show date. only show time
+    if (new Date().toLocaleDateString() === new Date(d).toLocaleDateString()) {
+      return `${hours}:${minutes}:${seconds}`
+    } else {
+      return `${month}/${day}/${year} ${hours}:${minutes}:${seconds}${new Date().toLocaleDateString()}`
+    }
   }
 
-  useEffect(() => {
-    dispatch({ type: 'FETCH_BOT_ERRORS' });
-    dispatch({ type: 'FETCH_BOT_MESSAGES' });
-  }, [])
+  function MessageSection({ header, messages, sectionNum }) {
 
+
+    return (
+      (
+        (header === 'Chat' && user.can_chat)
+        || sectionNum !== 2)
+      && <div className={`message-section message-window scrollable admin-${user.admin} ${sectionNum !== messageMap.length - 1 && 'not-last-message-section'}`}>
+        <h3 className={`title ${user.theme}`}>
+          {collapsed && messages.length} {header} {sectionNum} {sectionNum}
+          {/* <button className='btn-red'><span className='gg-trash'></span></button> */}
+        </h3>
+
+        {!collapsed && messages.map((message, i) => {
+          // if (message.text) {
+          return message.text && <div key={i} className={`message-list`}>
+            <strong>{dateBuilder(message.timeStamp)}</strong>
+            <br />
+            {/* {JSON.stringify(message)} */}
+            {header === 'Chat' && `${message.from} > `}{message.text}
+          </div>
+          // }
+        })}
+      </div>
+    )
+  }
 
   return (
     // show messages on screen
-    <div className="Messages boxed">
-      <h3 className={`title ${props.theme}`} onClick={toggleCollapse}>Coinbot Message Board {collapsed ? <>&#9650;</> : <>&#9660;</>}</h3>
+    <div className={`Messages boxed ${collapsed && 'collapsed'} admin-${user.admin}`}>
+      <h3 className={`title ${user.theme}`} onClick={() => { setCollapsed(!collapsed) }}>Coinbot Message Board {collapsed ? <>&#9650;</> : <>&#9660;</>}</h3>
       <div className="message-board">
-        {/* MESSAGES */}
-        <div className="message-section scrollable">
-          <h3 className={`title ${props.theme}`}>
-            {collapsed && props.messagesCount} General Messages 
-            {/* <button className='btn-red'><span className='gg-trash'></span></button> */}
-          </h3>
 
-          {/* {!collapsed && props.messages.map((message, i) => {
-            return <p key={i}><strong>Msg #{props.messagesCount - i} {message.date}</strong> <br /> {message.message}</p>
-          })} */}
-          {!collapsed && props.store.accountReducer.botMessages.map((message, i) => {
-            if (message.messageText) {
-              return <p key={i}><strong>Msg #{message.count} {new Date(message.timeStamp).toLocaleString('en-US')}</strong> <br /> {message.messageText}</p>
-            }
-          })}
-        </div>
-        {/* ERRORS */}
-        <div className="errors-section scrollable">
-          <h3 className={`title ${props.theme}`}>{collapsed && props.errorCount} Errors</h3>
-          {/* {!collapsed && props.errors.map((error, i) => {
-            return <p key={i}><strong>Err #{props.errorCount - i} {error.date}</strong> <br /> {error.error}</p>
-          })} */}
-          {/* <p>{JSON.stringify(props.store.errorsReducer.botErrors)}</p> */}
-          {!collapsed && props.store.errorsReducer.botErrors.map((error, i) => {
-            return <p key={i}><strong>Err #{error.count} {new Date(error.timeStamp).toLocaleString('en-US')}</strong> <br /> {error.errorText}</p>
-          })}
-        </div>
+        {messageMap.map((section, i) => {
+          return (
+            <MessageSection
+              key={i}
+              sectionNum={i}
+              header={section.header}
+              messages={section.messages}
+              mapLength={messageMap.length}
+            />
+          )
+        })}
+
+        {user.can_chat && <Chat
+          collapsed={collapsed}
+          chatLength={chatMessages.length}
+          messages={chatMessages}
+        />}
+
       </div>
     </div>
   );
 }
 
-export default connect(mapStoreToProps)(Messages);
+export default Messages;

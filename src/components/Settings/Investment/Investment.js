@@ -1,122 +1,109 @@
 import React, { useState, useEffect } from 'react';
-import { connect, useDispatch } from 'react-redux';
-import mapStoreToProps from '../../../redux/mapStoreToProps';
+import { useData } from '../../../contexts/DataContext.js';
+import { useUser } from '../../../contexts/UserContext.js';
+import { useFetchData } from '../../../hooks/fetchData.js';
 import './Investment.css'
 
 
 function Investment(props) {
-  const dispatch = useDispatch();
+  const { user, refreshUser, theme } = useUser();
+  const { productID, refreshOrders, deadCon } = useData();
 
+  // ROUTES
+  const { updateData: updateBulkPairRatio } = useFetchData(`/api/orders/bulkPairRatio/${productID}`, { defaultState: null, noLoad: true });
+  const { updateData: updateReinvest } = useFetchData(`/api/account/reinvest`, { defaultState: null, noLoad: true })
+  const { updateData: updateReinvestRatio } = useFetchData(`/api/account/reinvestRatio`, { defaultState: null, noLoad: true })
+  const { updateData: updateReserve } = useFetchData(`/api/account/reserve`, { defaultState: null, noLoad: true })
+  const { updateData: updatePostMaxReinvest } = useFetchData(`/api/account/postMaxReinvestRatio`, { defaultState: null, noLoad: true })
+  const { updateData: updateMaxTradeSize } = useFetchData(`/api/account/maxTradeSize`, { defaultState: null, noLoad: true })
+  const { updateData: updateTradeMax } = useFetchData(`/api/account/tradeMax`, { defaultState: null, noLoad: true })
+
+  // STATE
   const [reinvest_ratio, setReinvest_ratio] = useState(0);
   const [reserve, setReserve] = useState(0);
   const [bulk_pair_ratio, setBulk_pair_ratio] = useState(1.1);
   const [max_trade_size, setMaxTradeSize] = useState(30);
   const [postMaxReinvestRatio, setPostMaxReinvestRatio] = useState(0);
 
+
+  // FUNCTIONS
+
+  async function storeMaxTradeSize() {
+    await updateMaxTradeSize({ max_trade_size });
+    deadCon && refreshUser();
+  }
+
+  async function savePostMaxReinvestRatio() {
+    await updatePostMaxReinvest({ postMaxReinvestRatio });
+    deadCon && refreshUser();
+  }
+
+  async function setBulkPairRatio() {
+    await updateBulkPairRatio({ bulk_pair_ratio })
+    deadCon && refreshOrders();
+  }
+
+  // this will toggle user reinvestment, and does not send any data
+  async function reinvest() {
+    await updateReinvest()
+    deadCon && refreshUser();
+  }
+
+  async function reinvestRatio() {
+    await updateReinvestRatio({ reinvest_ratio });
+    deadCon && refreshUser();
+  }
+
+  async function saveReserve() {
+    await updateReserve({ reserve });
+    deadCon && refreshUser();
+  }
+
+  async function tradeMax() {
+    await updateTradeMax();
+    deadCon && refreshUser();
+  }
+
+  // EFFECTS
+
   // make sure ratio is within percentage range
+  // hey this is probably not a good way to do this
   useEffect(() => {
-    // if (reinvest_ratio > 500) {
-    //   setReinvest_ratio(500)
-    // }
     if (reinvest_ratio < 0) {
       setReinvest_ratio(0)
     }
   }, [reinvest_ratio]);
 
   useEffect(() => {
-    setReinvest_ratio(props.store.accountReducer.userReducer.reinvest_ratio)
-  }, [props.store.accountReducer.userReducer.reinvest_ratio])
+    setReinvest_ratio(user.reinvest_ratio)
+  }, [user.reinvest_ratio])
 
   useEffect(() => {
-    setMaxTradeSize(Number(props.store.accountReducer.userReducer.max_trade_size))
-  }, [props.store.accountReducer.userReducer.max_trade_size])
-
-  function reinvest(event) {
-    // event.preventDefault();
-    dispatch({
-      type: 'REINVEST',
-    });
-  }
-
-  function reinvestRatio(event) {
-    event.preventDefault();
-    dispatch({
-      type: 'REINVEST_RATIO',
-      payload: {
-        reinvest_ratio: reinvest_ratio
-      }
-    });
-  }
-
-  function saveReserve(event) {
-    event.preventDefault();
-    dispatch({
-      type: 'SAVE_RESERVE',
-      payload: {
-        reserve: reserve
-      }
-    });
-  }
-
-  function savePostMaxReinvestRatio(event) {
-    event.preventDefault();
-    dispatch({
-      type: 'POST_MAX_REINVEST_RATIO',
-      payload: {
-        postMaxReinvestRatio: postMaxReinvestRatio
-      }
-    });
-  }
-
-  function tradeMax(event) {
-    // event.preventDefault();
-    dispatch({
-      type: 'TOGGLE_TRADE_MAX',
-    });
-  }
-
-  function storeMaxTradeSize(event) {
-    event.preventDefault();
-    dispatch({
-      type: 'STORE_MAX_TRADE_SIZE',
-      payload: {
-        max_trade_size: max_trade_size
-      }
-    });
-  }
-
-  function bulkPairRatio(event) {
-    event.preventDefault();
-    dispatch({
-      type: 'SET_BULK_PAIR_RATIO',
-      payload: {
-        bulk_pair_ratio: bulk_pair_ratio
-      }
-    });
-  }
+    setMaxTradeSize(Number(user.max_trade_size))
+  }, [user.max_trade_size])
 
 
   return (
     <div className="Investment settings-panel scrollable">
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
 
       {/* REINVEST */}
       <h4>Reinvestment</h4>
       {props.tips && <p>Coinbot can try to reinvest your profits for you. Be aware that this may not
         work if the profit is too small.
       </p>}
-      {(props.store.accountReducer.userReducer.reinvest)
-        ? <button className={`btn-blue medium ${props.theme}`} onClick={() => { reinvest() }}>Turn off</button>
-        : <button className={`btn-blue medium ${props.theme}`} onClick={() => { reinvest() }}>Turn on</button>
+      {(user.reinvest)
+        ? <button className={`btn-blue medium ${user.theme}`} onClick={reinvest}>Turn off</button>
+        : <button className={`btn-blue medium ${user.theme}`} onClick={reinvest}>Turn on</button>
       }
-      {props.store.accountReducer.userReducer.reinvest &&
+      {user.reinvest &&
         <>
-          {((reinvest_ratio > 100) || (props.store.accountReducer.userReducer.reinvest_ratio > 100)) &&
+          {((reinvest_ratio > 100) || (user.reinvest_ratio > 100)) &&
             <><p>** WARNING! ** </p>
               {props.tips && <p> Setting the reinvestment ratio higher than 100% will take money from your available funds!
                 You will need to keep an eye on the bot and make sure you don't run out!</p>}</>
           }
-          <p>Current reinvestment ratio: {props.store.accountReducer.userReducer.reinvest_ratio}%</p>
+          <p>Current reinvestment ratio: {user.reinvest_ratio}%</p>
           <label htmlFor="reinvest_ratio">
             Set Ratio:
           </label>
@@ -130,8 +117,8 @@ function Investment(props) {
             onChange={(event) => setReinvest_ratio(event.target.value)}
           />
           <br />
-          <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { reinvestRatio(event) }}>Save reinvestment ratio</button>
-          <div className="divider" />
+          <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={(event) => { reinvestRatio(event) }}>Save reinvestment ratio</button>
+          <div className={`divider ${theme}`} />
         </>
       }
 
@@ -143,7 +130,7 @@ function Investment(props) {
         This will not be automatically turned back on for you.
       </p>}
       <div className='left-border'>
-        <p>Current reserve: {props.store.accountReducer.userReducer.reserve}</p>
+        <p>Current reserve: {user.reserve}</p>
         <label htmlFor="reserve">
           Set Reserve:
         </label>
@@ -157,16 +144,16 @@ function Investment(props) {
           onChange={(event) => setReserve(event.target.value)}
         />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { saveReserve(event) }}>Save reserve</button>
+        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={(event) => { saveReserve(event) }}>Save reserve</button>
       </div>
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
 
 
 
       {/* MAX TRADE SIZE USD */}
       {/* only show if reinvest is also turned on */}
       {
-        props.store.accountReducer.userReducer.reinvest &&
+        user.reinvest &&
         <>
           <h4>Max Trade Size</h4>
           {props.tips && <p>
@@ -174,13 +161,13 @@ function Investment(props) {
             stop reinvesting after a certain point, but keep reinvestment turned on for all other trades.
             Size cap is in USD. If set to 0, the bot will ignore it and default to the reinvestment ratio.
           </p>}
-          {(props.store.accountReducer.userReducer.max_trade)
-            ? <button className={`btn-blue medium ${props.theme}`} onClick={() => { tradeMax() }}>Turn off</button>
-            : <button className={`btn-blue medium ${props.theme}`} onClick={() => { tradeMax() }}>Turn on</button>
+          {(user.max_trade)
+            ? <button className={`btn-blue medium ${user.theme}`} onClick={() => { tradeMax() }}>Turn off</button>
+            : <button className={`btn-blue medium ${user.theme}`} onClick={() => { tradeMax() }}>Turn on</button>
           }
-          {props.store.accountReducer.userReducer.max_trade &&
+          {user.max_trade &&
             <>
-              <p>Current max trade size: ${Number(props.store.accountReducer.userReducer.max_trade_size)}</p>
+              <p>Current max trade size: ${Number(user.max_trade_size)}</p>
               <label htmlFor="reinvest_ratio">
                 Set Max:
               </label>
@@ -194,15 +181,15 @@ function Investment(props) {
                 onChange={(event) => setMaxTradeSize(Number(event.target.value))}
               />
               <br />
-              <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { storeMaxTradeSize(event) }}>Save Max</button>
+              <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={(event) => { storeMaxTradeSize(event) }}>Save Max</button>
               <>
                 {props.tips && <p>How much of the profits should the bot reinvest after the max is hit?
                   Leave this at 0 to stop reinvestment after the max. If set above 0, there is no limit to how large the
                   size will get. Probably a good idea to stay under 100%</p>}
-                {((postMaxReinvestRatio > 100) || (props.store.accountReducer.userReducer.post_max_reinvest_ratio > 100)) &&
+                {((postMaxReinvestRatio > 100) || (user.post_max_reinvest_ratio > 100)) &&
                   <p>** WARNING! ** <br /> Setting the reinvestment ratio higher than 100% will take money from your available funds!</p>
                 }
-                <p>Current post-max reinvestment ratio: {props.store.accountReducer.userReducer.post_max_reinvest_ratio}%</p>
+                <p>Current post-max reinvestment ratio: {user.post_max_reinvest_ratio}%</p>
                 <label htmlFor="postMaxReinvestRatio">
                   Set Ratio:
                 </label>
@@ -216,12 +203,12 @@ function Investment(props) {
                   onChange={(event) => setPostMaxReinvestRatio(event.target.value)}
                 />
                 <br />
-                <button className={`btn-blue btn-reinvest medium ${props.theme}`} onClick={(event) => { savePostMaxReinvestRatio(event) }}>Save post-max ratio</button>
-                {/* <div className="divider" /> */}
+                <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={(event) => { savePostMaxReinvestRatio(event) }}>Save post-max ratio</button>
+                {/* <div className={`divider ${theme}`} /> */}
               </>
             </>
           }
-          <div className="divider" />
+          <div className={`divider ${theme}`} />
         </>
       }
 
@@ -245,12 +232,12 @@ function Investment(props) {
           onChange={(event) => setBulk_pair_ratio(Number(event.target.value))}
         />
         <br />
-        <button className={`btn-blue btn-bulk-pair-ratio medium ${props.theme}`} onClick={(event) => { bulkPairRatio(event) }}>Set all trades to new ratio</button>
+        <button className={`btn-blue btn-bulk-pair-ratio medium ${user.theme}`} onClick={() => { setBulkPairRatio({ bulk_pair_ratio }) }}>Set all trades to new ratio</button>
       </div>
-      <div className="divider" />
+      <div className={`divider ${theme}`} />
 
     </div>
   );
 }
 
-export default connect(mapStoreToProps)(Investment);
+export default Investment;

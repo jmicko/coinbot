@@ -1,87 +1,22 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const pool = require('../modules/pool');
-const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
-const databaseClient = require('../modules/databaseClient');
-const socketClient = require('../modules/socketClient');
-const robot = require('../modules/robot');
-const coinbaseClient = require('../modules/coinbaseClient');
-const cache = require('../modules/cache');
+import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
+import { databaseClient } from '../modules/databaseClient.js';
+import { robot } from '../modules/robot.js';
+import {  userStorage, cbClients, messenger } from '../modules/cache.js';
+import {  devLog, sleep } from '../../src/shared.js';
+import { fork } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-
-/**
- * POST route sending trade
- */
-router.post('/', rejectUnauthenticated, async (req, res) => {
-  // POST route code here
-  const user = req.user;
-  const userID = req.user.id;
-  const order = req.body;
-  if (user.active && user.approved) {
-    // tradeDetails const should take in values sent from trade component form
-    const tradeDetails = {
-      original_sell_price: order.original_sell_price,
-      original_buy_price: order.price,
-      side: order.side,
-      price: order.price, // USD
-      size: order.size, // BTC
-      product_id: order.product_id,
-      stp: 'cn',
-      userID: userID,
-      trade_pair_ratio: order.trade_pair_ratio
-    };
-    if (order.type) {
-      tradeDetails.type = 'market';
-      delete tradeDetails.price;
-    }
-    try {
-      // send the new order with the trade details
-      let pendingTrade = await coinbaseClient.placeOrder(tradeDetails);
-      // wait a second before storing the trade. Sometimes it takes a second for coinbase to register the trade,
-      // even after returning the details. robot.syncOrders will think it settled if it sees it in the db first
-      await robot.sleep(100);
-      // store the new trade in the db. the trade details are also sent to store trade position prices
-      // storing the created_at value in the flipped_at field will fix issues where the time would change when resyncing
-      await databaseClient.storeTrade(pendingTrade, tradeDetails, pendingTrade.created_at);
-
-      await robot.updateFunds(userID);
-
-      // send OK status
-      res.sendStatus(200);
-
-    } catch (err) {
-      if (err.response?.status === 400) {
-        console.log('Insufficient funds!');
-        socketClient.emit('message', {
-          error: `Insufficient funds!`,
-          orderUpdate: true,
-          userID: Number(userID)
-        });
-      } else if (err.code && err.code === 'ETIMEDOUT') {
-        console.log('Timed out!!!!! Synching orders just in case');
-        socketClient.emit('message', {
-          error: `Connection timed out, consider synching all orders to prevent duplicates. This will not be done for you.`,
-          orderUpdate: true,
-          userID: Number(userID)
-        });
-      } else {
-        console.log(err, 'problem in sending trade post route');
-      }
-      // send internal error status
-      res.sendStatus(500);
-    }
-  } else {
-    console.log('user is not active and cannot trade!');
-    res.sendStatus(404)
-  }
-});
-
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
- * POST route sending basic trade
+ * POST route sending basic market trade
  */
-router.post('/basic', rejectUnauthenticated, async (req, res) => {
-  console.log('basic trade post route hit', req.body);
+router.post('/market', rejectUnauthenticated, async (req, res) => {
+  devLog('basic trade post route hit', req.body);
   // POST route code here
   const user = req.user;
   const userID = req.user.id;
@@ -90,15 +25,25 @@ router.post('/basic', rejectUnauthenticated, async (req, res) => {
     // tradeDetails const should take in values sent from trade component form
     const tradeDetails = {
       side: order.side,
-      size: order.size, // BTC
+      base_size: order.base_size.toFixed(8), // BTC
       product_id: order.product_id,
-      stp: 'cn',
       userID: userID,
-      type: order.type
+      market_multiplier: 1.1
     };
+    devLog('BIG order', tradeDetails);
+
     try {
       // send the new order with the trade details
-      await coinbaseClient.placeOrder(tradeDetails);
+      let basic = await cbClients[userID].placeOrder(tradeDetails);
+      devLog('basic trade results', basic,);
+
+      if (!basic.success) {
+        messenger[userID].newError({
+          errorData: basic,
+          errorText: `Could not place trade. ${basic?.error_response?.message}`
+        });
+
+      }
 
       await robot.updateFunds(userID);
 
@@ -107,103 +52,21 @@ router.post('/basic', rejectUnauthenticated, async (req, res) => {
 
     } catch (err) {
       if (err.response?.status === 400) {
-        console.log('Insufficient funds!');
-        socketClient.emit('message', {
-          error: `Insufficient funds!`,
-          orderUpdate: true,
-          userID: Number(userID)
-        });
+        devLog('Insufficient funds!');
       } else if (err.code && err.code === 'ETIMEDOUT') {
-        console.log('Timed out');
-        socketClient.emit('message', {
-          error: `Connection timed out`,
-          userID: Number(userID)
-          // orderUpdate: true
-        });
+        devLog('Timed out');
       } else {
-        console.log(err, 'problem in sending trade post route');
+        devLog(err, 'problem in sending trade post route');
       }
       // send internal error status
       res.sendStatus(500);
     }
   } else {
-    console.log('user is not active and cannot trade!');
+    devLog('user is not active and cannot trade!');
     res.sendStatus(404)
   }
 });
 
-/**
- * POST route for auto setup
- */
-router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
-  console.log('in auto setup route!');
-  // POST route code here
-  const user = req.user;
-  if (user.active && user.approved) {
-    let setupParams = req.body;
-    let setup = await robot.autoSetup(user, setupParams)
-    console.log('setup is:', setup);
-
-    try {
-      // need unique IDs for each trade, but need to also get IDs from CB, so DB has no default.
-      // store a number that counts up every time autoSetup is used, and increase it before using it in case of error
-      // then use it here and increase it by the number of trades being put through this way
-      const number = (Number(user.auto_setup_number) + setup.orderList.length)
-      await databaseClient.setAutoSetupNumber(number, user.id);
-
-
-      console.log('setup params:', setupParams);
-      // put a market order in for how much BTC need to be purchase for all the sell orders
-      // if (false) {
-      if (setup.btcToBuy >= 0.000016) {
-        const tradeDetails = {
-          side: 'buy',
-          size: setup.btcToBuy.toFixed(8), // BTC
-          product_id: 'BTC-USD',
-          stp: 'cn',
-          userID: user.id,
-          type: 'market'
-        };
-        console.log('BIG order', tradeDetails);
-        if (!setupParams.ignoreFunds) {
-          let bigOrder = await coinbaseClient.placeOrder(tradeDetails);
-          // console.log('big order to balance btc avail', bigOrder.size, 'user', user.taker_fee);
-        }
-        await robot.updateFunds(user.id);
-      }
-
-      // put each trade into the db as a reorder so the sync loop can sync the right amount
-      for (let i = 0; i < setup.orderList.length; i++) {
-        if (i == 0 && req.body.skipFirst) {
-          console.log('Skip one!');
-          continue;
-        }
-        const order = setup.orderList[i];
-        // adding a bunch of 0s allows easy sorting by id in the DB which might be useful later so better to start now
-        order.id = '0000000000' + (Number(user.auto_setup_number) + i).toString();
-        // use the current time for the created time 
-        const time = new Date();
-        order.created_at = time;
-        console.log('order to store', order);
-        await databaseClient.storeReorderTrade(order, order, time);
-      }
-
-
-
-    } catch (err) {
-      console.log(err, 'problem in autoSetup ');
-      cache.storeError(userID, {
-        errorText: `problem in auto setup`
-      })
-    }
-
-
-    res.sendStatus(200);
-  } else {
-    console.log('user is not active and cannot trade!');
-    res.sendStatus(404)
-  }
-});
 
 
 /**
@@ -213,109 +76,153 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
 router.put('/', rejectUnauthenticated, async (req, res) => {
   // sync route code here
   const userID = req.user.id;
-  const orderId = req.body.id;
+  const orderId = req.body.order_id;
 
   try {
-    await coinbaseClient.cancelOrder(orderId, userID)
-    await databaseClient.setSingleReorder(orderId);
+    await cbClients[userID].cancelOrders([orderId]);
+    await databaseClient.updateTrade({ reorder: true, order_id: orderId })
     res.sendStatus(200);
 
-    socketClient.emit('message', {
-      message: `Order will sync in a moment`,
-      userID: Number(userID)
-    });
   } catch (error) {
     if (error.data?.message) {
-      console.log('error message, trade router sync:', error.data.message);
+      devLog('error message, trade router sync:', error.data.message);
       // orders that have been canceled are deleted from coinbase and return a 404.
       if (error.data.message === 'order not found') {
         await databaseClient.setSingleReorder(orderId);
-        socketClient.emit('message', {
-          error: `Order was not found when sync was requested`,
-          orderUpdate: true,
-          userID: Number(userID)
-        });
-        console.log('order not found in account', orderId);
+        devLog('order not found in account', orderId);
         res.sendStatus(400)
       }
     }
     if (error.response?.status === 404) {
-      socketClient.emit('message', {
-        error: `Order was not found when delete was requested`,
-        orderUpdate: true,
-        userID: Number(userID),
-      });
-      console.log('order not found in account', orderId);
+      devLog('order not found in account', orderId);
       res.sendStatus(400)
     } else {
-      console.log('something failed in the sync trade route', error);
+      devLog('something failed in the sync trade route', error);
       res.sendStatus(500)
     }
   };
 });
-
 
 /**
-* DELETE route
-*/
-router.delete('/', rejectUnauthenticated, async (req, res) => {
-  // DELETE route code here
-  const userID = req.user.id;
-  const orderId = req.body.id;
-  console.log('in the server trade DELETE route', orderId);
-
-  cache.setCancel(userID, orderId);
-
-  // console.log(cache.storage[userID].willCancel);
-
-  // const willCancel = cache.checkIfCanceling(userID, orderId);
-  // console.log('will it cancel?', willCancel);
-
-  // mark as canceled in db
+ * POST route to run a simulation of a setup
+ * this will not save the trades to the database
+ * this will not place any orders
+ * this will not update the funds
+ * this will not update the orders
+ * this will not do anything but return the results of a simulation
+ */
+router.post('/simulation', rejectUnauthenticated, async (req, res) => {
   try {
-    const queryText = `UPDATE "orders" SET "will_cancel" = true WHERE "id"=$1 RETURNING *;`;
-    // const queryText = `UPDATE "orders" SET "will_cancel" = false WHERE "id"=$1 RETURNING *;`;
-    const result = await pool.query(queryText, [orderId]);
-    const order = result.rows[0];
-    // if it is a reorder, there is no reason to cancel on CB
-    if (!order.reorder) {
-      // send cancelOrder to cb
-      await coinbaseClient.cancelOrder(orderId, userID);
+    devLog('simulation route hit', req.body);
+    // check if user is already running a simulation
+    if (userStorage[req.user.id].simulating) {
+      devLog('user is already simulating');
+      res.sendStatus(400);
+      return;
     }
-    res.sendStatus(200)
-  } catch (err) {
-    if (err.data?.message) {
-      console.log(err.data.message, 'error message, trade router DELETE');
-      // orders that have been canceled are deleted from coinbase and return a 404.
-      // error handling should delete them from db and not worry about coinbase since there is no other way to delete
-      // but also send one last delete message to Coinbase just in case it finds it again, but with no error checking
-      if (err.data.message === 'order not found') {
-        socketClient.emit('message', {
-          error: `Order was not found when delete was requested`,
-          orderUpdate: true
-        });
-        console.log('order not found in account', orderId);
-        res.sendStatus(400)
+    // set user to simulating
+    userStorage[req.user.id].simulating = true;
+
+    // clear out any previous simulation results
+    userStorage[req.user.id].simulationResults = null;
+
+    // tell client to update user
+    messenger[req.user.id].userUpdate();
+
+    const user = req.user;
+
+    const funds = userStorage[user.id].getAvailableFunds();
+    user.availableFunds = funds;
+
+    // devLog('simulation route hit', userStorage[req.user.id]);
+
+    const workerData = {
+      user: user,
+      options: req.body
+    }
+
+    // res.sendStatus(200);
+
+    // start a child process to run the simulation
+    // get the path
+    const path = __dirname;
+    devLog('path', path);
+
+    const simulationWorker = fork(path + '../../../src/workers/simulationWorker.js');
+    simulationWorker.send(workerData);
+    // when the worker sends a message back, send it to the client
+    simulationWorker.on('message', (message) => {
+      devLog('message from simulationWorker', message);
+
+      if (!message.valid) {
+        devLog('simulation was not valid');
+        res.sendStatus(400);
+        // set user to not simulating
+        userStorage[req.user.id].simulating = false;
+        // tell client to update user
+        messenger[req.user.id].userUpdate();
+        // kill the worker after it sends the message
+        simulationWorker.kill();
+        return;
+      }
+
+      messenger[req.user.id].newMessage({
+        type: 'simulationResults',
+        data: message
+      });
+
+      userStorage[req.user.id].simulationResults = message;
+
+      res.send(message).status(200);
+      // kill the worker after it sends the message
+      simulationWorker.kill();
+    });
+    simulationWorker.on('exit', (code) => {
+      devLog('simulationWorker exited');
+      if (code !== 0) {
+        devLog(`simulationWorker stopped with exit code ${code}`);
+      }
+      // set user to not simulating
+      userStorage[req.user.id].simulating = false;
+      // tell client to update user
+      messenger[req.user.id].userUpdate();
+    });
+  } catch (error) {
+    devLog('error in simulation route', error);
+    res.sendStatus(500);
+    // set user to not simulating
+    userStorage[req.user.id].simulating = false;
+    // tell client to update user
+    messenger[req.user.id].userUpdate();
+  }
+});
+
+/**
+ * GET route to get the results of a simulation
+ */
+router.get('/simulation', rejectUnauthenticated, async (req, res) => {
+  try {
+    const userID = req.user.id;
+
+    for (let i = 0; i < 20; i++) {
+      const simulationResults = await userStorage[userID].simulationResults;
+      if (simulationResults?.simResults) {
+        devLog('simulation results', simulationResults);
+        res.send(simulationResults).status(200);
+        return;
+      } else {
+        devLog('simulation results', i);
+        await sleep(1000);
       }
     }
-    if (err.response?.status === 404) {
-      databaseClient.deleteTrade(orderId);
-      socketClient.emit('message', {
-        error: `Order was not found when delete was requested`,
-        orderUpdate: true,
-        userID: Number(userID)
-      });
-      console.log('order not found in account', orderId);
-      res.sendStatus(400)
-    } else if (err.response?.status === 400) {
-      console.log('bad request', err.response?.data);
-    } else {
-      console.log(err, 'something failed in the delete trade route');
-      res.sendStatus(500)
-    }
-  };
+
+    res.sendStatus(404);
+  } catch (error) {
+    devLog('error in simulation route', error);
+    res.sendStatus(500);
+  }
 });
 
 
 
-module.exports = router;
+export default router;

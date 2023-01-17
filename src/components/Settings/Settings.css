@@ -2,7 +2,7 @@
 
 .Settings {
   display         : block;
-  grid-column     : 3;
+  grid-column     : 1/5;
   grid-row        : 3/5;
   background-color: #acacaf;
   z-index         : 1;
@@ -15,7 +15,8 @@
 }
 
 .Settings.darkTheme {
-  color: black;
+  color: rgb(215, 215, 215);
+  background-color: rgb(41, 41, 41);
 }
 
 @media (max-width: 800px) {
@@ -25,6 +26,7 @@
     grid-row   : 2/6;
     width: fit-content;
     /* height  : unset; */
+
   }
 
   .settings-panel {
@@ -42,4 +44,12 @@
 
 .tips {
 float: right;
+/* width should maximize content */
+width: max-content;
+}
+
+.close-settings {
+  /* height should match the width */
+  height: 1.5rem;
+  width: 1.5rem;
 }

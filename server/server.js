@@ -1,106 +1,72 @@
-const express = require('express');
-require('dotenv').config();
+// Express
+import express from 'express';
+import http from 'http';
+// Socket.io
+import { setupSocketIO } from './modules/websocket.js';
+import { Server as socketIO } from 'socket.io';
+// Middleware
+import { sessionMiddleware, wrap } from './modules/session-middleware.js';
+import passport from './strategies/user.strategy.js';
+// Route includes
+import userRouter from './routes/user.router.js';
+import tradeRouter from './routes/trade.router.js';
+import accountRouter from './routes/account.router.js';
+import ordersRouter from './routes/orders.router.js';
+import settingsRouter from './routes/settings.router.js';
+import adminRouter from './routes/admin.router.js';
+// bot process
+import { robot } from './modules/robot.js';
+import { devLog } from '../src/shared.js';
+devLog('!!!!!!!! you are running in DEVELOPMENT mode !!!!!!!!');
+// create the express app
 const app = express();
-const server = require("http").createServer(app);
+const server = http.createServer(app);
 const options = {
   cors: {
     origin: ["http://localhost:3000"]
   }
 };
-const io = require("socket.io")(server, options);
-const sessionMiddleware = require('./modules/session-middleware');
-const passport = require('./strategies/user.strategy');
-
-// Route includes
-const userRouter = require('./routes/user.router');
-const tradeRouter = require('./routes/trade.router');
-const accountRouter = require('./routes/account.router');
-const ordersRouter = require('./routes/orders.router');
-const settingsRouter = require('./routes/settings.router');
-
-const robot = require('./modules/robot');
-const coinbaseClient = require('./modules/coinbaseClient');
-
-// Start the syncOrders loop
-robot.startSync();
-
-// Body parser middleware
+// Body parsing middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Passport Session Configuration //
+// Configure session middleware
 app.use(sessionMiddleware);
 
-// start up passport sessions
+// Start up passport sessions
 app.use(passport.initialize());
 app.use(passport.session());
 
-/* REST Routes */
+// Attach the socket.io server to the express server
+const io = new socketIO(server, options);
+// Wrap the express middlewares so they can be used with socket.io
+io.use(wrap(sessionMiddleware));
+io.use(wrap(passport.initialize()));
+io.use(wrap(passport.session()));
+
+// REST API Routes
 app.use('/api/user', userRouter);
 app.use('/api/trade', tradeRouter);
 app.use('/api/account', accountRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/admin', adminRouter);
 
-/* socket.io */
-// this triggers on a new client connection
-/* websocket is being used to alert when something has happened, but currently does not 
-    authenticate, and should not be used to send sensitive data */
-io.on('connection', (socket) => {
-  let id = socket.id;
-  console.log(`client with id: ${id} connected!`);
-  // console.log('the socket is', socket.handshake);
-  // message to client confirming connection
-  socket.emit('message', { message: 'welcome!' });
-  socket.emit('message', { message: 'trade a coin or two!' });
-  socket.emit('message', {
-    connection: {
-      localWebsocket: true
-    }
-  });
-
-  // relay updates from the loop about trades that are being checked
-  socket.on('message', (message) => {
-    // socket.broadcast.emit('message', { message: 'welcome!' });
-    // console.log(message.message);
-    socket.broadcast.emit('message', message);
-  })
-
-  // relay updates from the loop about trades that are being checked
-  socket.on('update', (message) => {
-    // socket.broadcast.emit('message', { message: 'welcome!' });
-    // console.log(message);
-    socket.broadcast.emit('update', message);
-  })
-
-  socket.on('exchangeUpdate', (trade) => {
-    // socket.broadcast.emit('message', { message: 'welcome!' });
-    socket.broadcast.emit('exchangeUpdate', trade);
-    // console.log('server got a trade exchange update!', trade);
-  })
-
-  socket.on("disconnect", (reason) => {
-    console.log(`client with id: ${id} disconnected, reason:`, reason);
-  });
-
-});
-
-// handle abnormal disconnects
-io.engine.on("connection_error", (err) => {
-  console.log(err.req);	     // the request object
-  console.log(err.code);     // the error code, for example 1
-  console.log(err.message);  // the error message, for example "Session ID unknown"
-  console.log(err.context);  // some additional error context
-});
-/* end socket.io */
-
-// Serve static files
+// Serve static files from the React app build folder
 app.use(express.static('build'));
 
-// App Set //
+// Start the robot
+robot.startSync();
+
+// Initialize the socket.io server
+setupSocketIO(io);
+
+// Configure the port
 const PORT = process.env.PORT || 5000;
 
-/** Listen * */
+// Start the server listening on the port
 server.listen(PORT, () => {
   console.log(`Listening on port: ${PORT}`);
 });
+
+export default server;

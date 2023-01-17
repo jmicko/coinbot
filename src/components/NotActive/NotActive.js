@@ -1,102 +1,106 @@
 import React, { useState } from 'react';
-import { connect, useDispatch } from 'react-redux';
-import mapStoreToProps from '../../redux/mapStoreToProps';
+import permissions from "../../../src/permissions.png";
+import { useUser } from '../../contexts/UserContext.js';
+import { useFetchData } from '../../hooks/fetchData.js';
 import './NotActive.css';
 
 
-function NotActive(props) {
-  const dispatch = useDispatch();
+function NotActive() {
+
+  const { user } = useUser();
+  const { createData: saveApi, error: apiError, isLoading: saving } = useFetchData(`/api/account/storeApi`, { noLoad: true })
 
   const [key, setKey] = useState('');
-  const [passphrase, setPassphrase] = useState('');
   const [secret, setSecret] = useState('');
-  const [URI, setURI] = useState('real');
+  // const [URI, setURI] = useState('real');
+  // const [saving, setSaving] = useState(false);
+  const [showPermissions, setShowPermissions] = useState(false);
 
   function submitApi(event) {
     event.preventDefault();
-    dispatch({
-      type: 'STORE_API',
-      payload: {
-        key: key,
-        passphrase: passphrase,
-        secret: secret,
-        URI: URI
-      }
+    // setSaving(true)
+    saveApi({
+      key: key,
+      secret: secret,
+      URI: 'real'
     });
-
     // clear the form
-    setKey('');
-    setPassphrase('');
-    setSecret('');
+    // setKey('');
+    // setSecret('');
   }
 
+
   return (
-    <div className="NotActive" >
-      <div className="scrollable boxed">
-        <h3 className={`title ${props.theme}`}>You are not active!</h3>
-        <p>
-          You must store your API details from Coinbase Pro before you can trade. <br/>
-          - You can create an API key by clicking your name on Coinbase Pro, and clicking <strong>API</strong>. <br/>
-          - Then click <strong>+ New API Key</strong>, and go through the process. <br/>
-          - Enter the details below.
-          </p>
+    <div className="NotActive scrollable boxed">
+      {/* <div className="API"> */}
+      <h3 className={`title not-active ${user.theme}`}>You are not active!</h3>
+      <p>
+        You must store your API details from Coinbase Advanced Trading before you can trade. </p><p>
+        - You can create an API key <a href='https://www.coinbase.com/settings/api' target="_blank">here</a> <br />
+        - Click <strong>New API Key</strong>, and follow the prompts. <br />
+        - For accounts, select "all"<br />
+        -For permissions, select as shown <br />
+        <button className={`btn-blue btn-sandbox-api medium ${user.theme}`} onClick={(event) => { event.preventDefault(); setShowPermissions(!showPermissions) }}>here</button>or select "all"<br />
+        - You will be given a Key and Secret. Enter them below.
+      </p>
+      {showPermissions && <img className="required-permissions-image" src={permissions} alt="required-permissions-image" />}
 
+      <div className="divider short" />
+      {JSON.stringify(apiError)} error
 
-
-        <div className="API">
-          <div className="divider" />
-          <h4>API</h4>
-          <p>Paste your API key, passphrase, and secret from Coinbase here</p>
-          {/* form for entering api details */}
-          <form className="api-form" onSubmit={submitApi} >
-            <label htmlFor="key">
-              API Key:
-            </label><br/>
-            <input
-              type="text"
-              name="key"
-              value={key}
-              required
-              onChange={(event) => setKey(event.target.value)}
-            /><br/>
-            <label htmlFor="passphrase">
-              API Passphrase:
-            </label><br/>
-            <input
-              type="password"
-              name="passphrase"
-              value={passphrase}
-              required
-              onChange={(event) => setPassphrase(event.target.value)}
-            /><br/>
-            <label htmlFor="secret">
-              API Secret:
-            </label><br/>
-            <input
-              type="password"
-              name="secret"
-              value={secret}
-              required
-              onChange={(event) => setSecret(event.target.value)}
-            /><br/>
-            <label htmlFor="URI">
+      {/* form for entering api details */}
+      <form className="api-form" onSubmit={submitApi} >
+        <h4>API</h4>
+        <p>Paste your API key and secret from <a href='https://www.coinbase.com/settings/api' target="_blank">Coinbase</a> here</p>
+        <label htmlFor="key">
+          API Key:
+        </label><br />
+        <input
+          type="text"
+          name="key"
+          value={key}
+          required
+          onChange={(event) => setKey(event.target.value)}
+        /><br />
+        <label htmlFor="secret">
+          API Secret:
+        </label><br />
+        <input
+          type="password"
+          name="secret"
+          value={secret}
+          required
+          onChange={(event) => setSecret(event.target.value)}
+        /><br />
+        {/* <label htmlFor="URI">
               Real money or sandbox?
-            </label><br/>
+            </label><br />
             {(URI === "real")
-              ? <button className={`btn-green btn-sandbox-api medium ${props.theme}`} onClick={(event) => { event.preventDefault(); setURI("sandbox") }}>Real Money API</button>
-              : <button className={`btn-green btn-sandbox-api medium ${props.theme}`} onClick={(event) => { event.preventDefault(); setURI("real") }}>Sandbox API</button>
+              ? <button className={`btn-green btn-sandbox-api medium ${user.theme}`} onClick={(event) => { event.preventDefault(); setURI("sandbox") }}>Real Money API</button>
+              : <button className={`btn-green btn-sandbox-api medium ${user.theme}`} onClick={(event) => { event.preventDefault(); setURI("real") }}>Sandbox API</button>
             }
-            (click to change)
-            <br />
-            <br />
-            <input className={`btn-store-api btn-blue medium ${props.theme}`} type="submit" name="submit" value="Store API details" />
-          </form>
-        </div>
-      </div>
-      {/* <div className="spacer" > jgdsf</div> */}
+            (click to change) */}
+        {/* <br /> */}
+        <br />
+        {apiError &&
+          <div className='api error-box notched'>
+            <p>{apiError === 401 ? "Invalid API Details!" : "Unkown Error"}</p>
+          </div>
+        }
+        {saving
+          ? <p>Saving...</p>
+          : <input className={`btn-store-api btn-blue medium ${user.theme}`} type="submit" name="submit" value="Store API details" />
+        }
+      </form>
+
+
+      {/* </div> */}
+
+      {/* </div> */}
     </div>
+    // </div>
   );
 }
 
 
-export default connect(mapStoreToProps)(NotActive);
+export default NotActive;

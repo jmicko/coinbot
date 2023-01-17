@@ -1,40 +1,40 @@
-import React, { useState } from 'react';
-import { connect, useDispatch } from 'react-redux';
-import mapStoreToProps from '../../redux/mapStoreToProps';
+import React, { useEffect, useState } from 'react';
+import { useUser } from '../../contexts/UserContext.js';
+import { devLog } from '../../shared.js';
 import './Login.css'
-// import mapStoreToProps from '../../redux/mapStoreToProps';
 
 
 
-function Login(props) {
+function Login() {
+  const { login, registerNew, refreshUser } = useUser();
+
+  const [errors, setErrors] = useState({ loginMessage: '', registrationMessage: '' });
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [register, setRegister] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
-  const dispatch = useDispatch();
+  // const errors = useSelector((store) => store.errorsReducer);
+
+  useEffect(() => {
+    // set interval to refresh user every 5 seconds, then clear interval on unmount
+    const interval = setInterval(() => {
+      devLog('checking if user looged in')
+      refreshUser();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   function loginAccount(event) {
     event.preventDefault();
     // send login credentials
     // console.log('logging in user');
     if (username && password) {
-      dispatch({
-        type: 'LOGIN',
-        payload: {
-          username: username,
-          password: password,
-        },
-      });
+      login({ username, password });
     } else {
       // this.props.dispatch({ type: 'LOGIN_INPUT_ERROR' });
       console.log('problem: put in your cred');
     }
-  }
-
-  function clearErrors() {
-    dispatch({ type: 'CLEAR_REGISTRATION_ERROR', });
-    dispatch({ type: 'CLEAR_LOGIN_ERROR', });
   }
 
   function registerAccount(event) {
@@ -42,18 +42,24 @@ function Login(props) {
     // console.log('registering new user');
     // send registration stuff
     if (username && password && confirmPassword && (password === confirmPassword)) {
-      dispatch({
-        type: 'REGISTER',
-        payload: {
-          username: username,
-          password: password,
-        },
-      });
+      registerNew({ username, password });
     } else {
-      dispatch({ type: 'REGISTRATION_INPUT_ERROR' });
-      console.log('problem: put in your cred');
+      if (password !== confirmPassword) {
+        setErrors({ ...errors, registrationMessage: 'Passwords do not match' });
+      } else if (!username || !password || !confirmPassword) {
+        setErrors({ ...errors, registrationMessage: 'Please fill out all fields' });
+      } else {
+        setErrors({ ...errors, registrationMessage: 'Something went wrong' });
+      }
     }
   }
+
+  function clearErrors() {
+    setUsername("");
+    setPassword("");
+    setConfirmPassword("");
+  }
+
 
   return (
     <div className="Login">
@@ -73,7 +79,6 @@ function Login(props) {
         <input
           type="text"
           name="username"
-          // value={Number(price)}
           required
           onChange={(event) => setUsername(event.target.value)}
         />
@@ -114,16 +119,14 @@ function Login(props) {
           </>
         }
       </form>
-      {/* </center> */}
-      {/* {JSON.stringify(props.store.errorsReducer)} */}
-      {(props.store.errorsReducer.loginMessage || props.store.errorsReducer.registrationMessage) &&
+      {(errors.loginMessage || errors.registrationMessage) &&
         <div className='error-box notched'>
-          {props.store.errorsReducer.loginMessage && <p>{props.store.errorsReducer.loginMessage}</p>}
-          {props.store.errorsReducer.registrationMessage && <p>{props.store.errorsReducer.registrationMessage}</p>}
+          {errors.loginMessage && <p>{errors.loginMessage}</p>}
+          {errors.registrationMessage && <p>{errors.registrationMessage}</p>}
         </div>
       }
     </div>
   );
 }
 
-export default connect(mapStoreToProps)(Login);
+export default Login;

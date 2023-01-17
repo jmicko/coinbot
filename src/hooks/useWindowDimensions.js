@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import ReactDOM from "react-dom";
+import { useEffect, useState } from "react";
 
 // https://stackoverflow.com/questions/36862334/get-viewport-window-height-in-reactjs
 

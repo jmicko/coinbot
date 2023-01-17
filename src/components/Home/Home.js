@@ -1,38 +1,29 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { connect, useDispatch } from 'react-redux';
+import React, { useState } from 'react';
+import './Home.css';
+
 import Trade from '../Trade/Trade.js';
 import Messages from '../Messages/Messages.js';
-import Menu from '../Menu/Menu'
-import TradeList from '../TradeList/TradeList'
-import Status from '../Status/Status'
-import Settings from '../Settings/Settings'
-import mapStoreToProps from '../../redux/mapStoreToProps';
-import './Home.css'
+import Menu from '../Menu/Menu.js';
+import TradeList from '../TradeList/TradeList.js';
+import Status from '../Status/Status.js';
+import Settings from '../Settings/Settings.js';
 import NotApproved from '../NotApproved/NotApproved.js';
 import NotActive from '../NotActive/NotActive.js';
-import { SocketProvider } from '../../contexts/SocketProvider.js';
-import axios from 'axios';
 import MobileNav from '../MobileNav/MobileNav.js';
-import { useSocket } from "../../contexts/SocketProvider";
-import { useTickerSocket } from "../../contexts/TickerProvider";
 import useWindowDimensions from '../../hooks/useWindowDimensions.js';
+import { useUser } from '../../contexts/UserContext.js';
+import { devLog } from '../../shared.js';
 
-function Home(props) {
-  const dispatch = useDispatch();
-  const { height, width } = useWindowDimensions();
+function Home() {
 
-  const socket = useSocket();
-  const ticker = useTickerSocket();
-  const [messages, setMessages] = useState([]);
-  const [messagesCount, setMessagesCount] = useState(0);
-  const [errors, setErrors] = useState([]);
-  const [errorCount, setErrorCount] = useState(0);
+  devLog('rendering home');
+
+  const { width, height } = useWindowDimensions();
+  const { user } = useUser();
 
   const [showSettings, setShowSettings] = useState(false);
-  const [theme, setTheme] = useState('original');
   const [mobilePage, setMobilePage] = useState('tradeList');
   const [tradeType, setTradeType] = useState('pair');
-  const [priceTicker, setPriceTicker] = useState(0);
 
   // for checkbox to auto scroll
   const [isAutoScroll, setIsAutoScroll] = useState(true);
@@ -41,198 +32,66 @@ function Home(props) {
     setIsAutoScroll(!isAutoScroll);
   };
 
-  const getOpenOrders = useCallback(
-    () => {
-      dispatch({ type: 'FETCH_ORDERS' });
-    }, [dispatch]
-  )
 
-  useEffect(() => {
-    getOpenOrders();
-  }, [getOpenOrders]);
-
-  const updateUser = () => {
-    dispatch({ type: 'FETCH_PROFITS' });
-    dispatch({ type: 'FETCH_ACCOUNT' });
-    dispatch({ type: 'FETCH_ORDERS' });
-    // todo - looks like this is happening twice, but might only happen once if there are no orders in the account?
-    // any way to only make it happen once?
-    dispatch({ type: 'FETCH_USER' });
-  }
-
-  // choose between real or sandbox websocket price ticker
-  useEffect(() => {
-    if (props.store.accountReducer.userReducer.sandbox) {
-      setPriceTicker(ticker.sandboxTicker)
-    } else {
-      setPriceTicker(ticker.ticker)
-    }
-  }, [ticker])
-
-
-  // need use effect to prevent multiplying connections every time component renders
-  useEffect(() => {
-    // socket may not exist on page load because it hasn't connected yet
-    if (socket == null) return;
-    socket.on('message', update => {
-      // check if the update is an order update, meaning there is something to change on dom
-      if ((update.orderUpdate != null) && (update.userID === props.store.accountReducer.userReducer.id)) {
-        // do api call for all open orders
-        getOpenOrders()
-      }
-      if ((update.userUpdate != null) && (update.userID === props.store.accountReducer.userReducer.id)) {
-        // do api call for all open orders
-        updateUser()
-      }
-    });
-    // this will remove the listener when component rerenders
-    return () => socket.off('message')
-    // useEffect will depend on socket because the connection will 
-    // not be there right when the page loads
-  }, [socket, getOpenOrders])
-
-  // need use effect to prevent multiplying connections every time component renders
-  useEffect(() => {
-    // socket may not exist on page load because it hasn't connected yet
-    if (socket == null) return;
-    socket.on('message', message => {
-      if (message.userID === props.store.accountReducer.userReducer.id) {
-        if (message.message) {
-          setMessagesCount(prevMessagesCount => {
-            return prevMessagesCount + 1;
-          });
-          setMessages(prevMessages => {
-            // keep max messages down to 3 by checking if more than 2 before adding new message
-            if (prevMessages.length > 999) {
-              prevMessages.pop();
-            }
-            let datedMessage = {
-              date: `${new Date().toLocaleString('en-US')}`,
-              message: `${message.message}`
-            }
-            return [datedMessage, ...prevMessages]
-          });
-        }
-        if (message.error) {
-          setErrorCount(prevErrorCount => {
-            return prevErrorCount + 1;
-          });
-          setErrors(prevErrors => {
-            // keep max messages down to 3 by checking if more than 2 before adding new message
-            if (prevErrors.length > 999) {
-              prevErrors.pop();
-            }
-            let datedError = {
-              date: `${new Date().toLocaleString('en-US')}`,
-              error: `${message.error}`
-            }
-            return [datedError, ...prevErrors]
-          });
-        }
-        if (message.errorUpdate) {
-          dispatch({ type: 'FETCH_BOT_ERRORS' });
-        }
-        if (message.messageUpdate) {
-          dispatch({ type: 'FETCH_BOT_MESSAGES' });
-        }
-      }
-    });
-    // this will remove the listener when component rerenders
-    return () => socket.off('message')
-    // useEffect will depend on socket because the connection will 
-    // not be there right when the page loads
-  }, [socket, props.store.accountReducer.userReducer.id]);
 
   const clickSettings = () => {
     setShowSettings(!showSettings);
-    if (props.store.accountReducer.userReducer.admin) {
-      dispatch({ type: 'FETCH_USERS' });
-    }
   }
-
-  useEffect(() => {
-    if (props.store.accountReducer.userReducer.theme) {
-      setTheme(props.store.accountReducer.userReducer.theme);
-    }
-  }, [props.store.accountReducer.userReducer.theme])
-
-
-  // todo - get rid of this when more confident in websocket ticker.
-  // might be nice to find a way to use this if the websocket ever fails
-  // to get price of bitcoin updated on dom
-  function timedTicker(data) {
-
-    let URI = 'https://api.exchange.coinbase.com/products/BTC-USD/ticker';
-    if (props.store.accountReducer.userReducer.sandbox) {
-      URI = 'https://api-public.sandbox.exchange.coinbase.com/products/BTC-USD/ticker';
-    }
-
-    const options = {
-      method: 'GET',
-      url: URI,
-      headers: { Accept: 'application/json' }
-    };
-
-    axios.request(options).then(function (response) {
-      setPriceTicker(response.data.price)
-    }).catch(function (error) {
-      console.error(error);
-    });
-  }
-
-  // calls the ticker at regular intervals
-  useEffect(() => {
-    const interval = setInterval(() => {
-      timedTicker();
-    }, 2000);
-    // need to clear on return or it will make dozens of calls per second
-    return () => clearInterval(interval);
-  }, []);
-
 
   return (
-    <div className={`Home ${theme}`}>
-      <Menu clickSettings={clickSettings} theme={theme} />
-      {
-        props.store.accountReducer.userReducer.active
-          ? width < 800 && mobilePage === 'newPair'
-            ? <Trade theme={theme} priceTicker={priceTicker} setTradeType={setTradeType} tradeType={tradeType} />
-            : width > 800 && <Trade theme={theme} priceTicker={priceTicker} setTradeType={setTradeType} tradeType={tradeType} />
-          : width < 800 && mobilePage === 'newPair'
-            ? <NotActive theme={theme} />
-            : width > 800 && <NotActive theme={theme} />
-      }
+    <div
+      className={`Home ${user.theme}`}
+      style={{
+        height: height,
+        width: width
+      }}>
+      {/* {JSON.stringify(socket.product)}{JSON.stringify(product)} */}
+      <Menu clickSettings={clickSettings} />
+
 
       {
-        props.store.accountReducer.userReducer.approved
-          ? width < 800 && mobilePage === 'tradeList'
-            ? <TradeList isAutoScroll={isAutoScroll} priceTicker={priceTicker} theme={theme} />
-            : width > 800 && <TradeList isAutoScroll={isAutoScroll} priceTicker={priceTicker} theme={theme} />
-          : width < 800 && mobilePage === 'tradeList'
-            ? <NotApproved theme={theme} />
-            : width > 800 && <NotApproved theme={theme} />
-      }
+        // on mobile?
+        width <= 800
+          // show mobile page
+          // which mobile page?
+          ? mobilePage === 'newPair'
+            // is the user active
+            ? user.active
+              ? <Trade setTradeType={setTradeType} tradeType={tradeType} />
+              : <NotActive />
+            : mobilePage === 'tradeList'
+              // is the user approved
+              ? user.approved
+                ? <TradeList isAutoScroll={isAutoScroll} />
+                : <NotApproved />
+              : mobilePage === 'messages' && <Messages />
 
-      {width < 800 && mobilePage === 'messages'
-        ? <Messages theme={theme} messages={messages} messagesCount={messagesCount} errors={errors} errorCount={errorCount} />
-        : width > 800 && <Messages theme={theme} messages={messages} messagesCount={messagesCount} errors={errors} errorCount={errorCount} />}
+          // show all pages
+          : <>
+            {user.active
+              ? <Trade setTradeType={setTradeType} tradeType={tradeType} />
+              : <NotActive />}
+            {user.approved
+              ? <TradeList isAutoScroll={isAutoScroll} />
+              : <NotApproved />}
+              {devLog('rendering messages in home')}
+            <Messages />
+          </>
+        // 
+
+      }
 
       <Status
-        theme={theme}
-        priceTicker={priceTicker}
         isAutoScroll={isAutoScroll}
         handleAutoScrollChange={handleAutoScrollChange}
-        updateUser={updateUser}
       />
       <Settings
         showSettings={showSettings}
         clickSettings={clickSettings}
-        theme={theme}
-        priceTicker={priceTicker}
       />
-      {width < 800 && <MobileNav theme={theme} setMobilePage={setMobilePage} />}
+      {width < 800 && <MobileNav setMobilePage={setMobilePage} />}
     </div>
   );
 }
 
-export default connect(mapStoreToProps)(Home);
+export default Home;

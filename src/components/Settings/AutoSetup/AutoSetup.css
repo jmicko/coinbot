@@ -1,14 +1,22 @@
 .auto-setup-results {
-  /* float: right; */
-  /* width: 50%; */
+  max-width: 40%;
+  margin-left: auto;
 }
 
 .auto-setup-form {
-  /* float: left; */
-  /* width: 50%; */
   padding-right: 1rem;
 }
 
 .auto-setup-form-and-results{
   display: flex;
+}
+
+@media (max-width: 800px) {
+  .auto-setup-form-and-results{
+    flex-direction: column;
+  }
+  .auto-setup-results {
+    margin-left: auto;
+    max-width: unset;
+  }
 }

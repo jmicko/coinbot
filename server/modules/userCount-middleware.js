@@ -1,4 +1,5 @@
-const pool = require('../modules/pool');
+// const pool = require('../modules/pool');
+import { pool } from '../modules/pool.js';
 
 const userCount = (req, res, next) => {
   // check if there is already a user in the db
@@ -15,4 +16,4 @@ const userCount = (req, res, next) => {
     })
 };
 
-module.exports = { userCount };
+export { userCount };
