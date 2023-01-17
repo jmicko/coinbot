@@ -11,7 +11,7 @@ import { useData } from '../../contexts/DataContext.js';
 
 function TradeList(props) {
   const { currentPrice } = useSocket();
-  const { user } = useUser();
+  const { user, theme } = useUser();
   const { orders } = useData();
   // these will store mapped arrays as html so they can be used after page loads
   const [buys, setBuys] = useState(<></>);
@@ -73,6 +73,10 @@ function TradeList(props) {
 
             {lowestSell !== 0 && highestBuy >= 0
               ? <p className='price'>&#9650; ${(lowestSell - currentPrice).toFixed(2)}
+                <br />
+                <span className={`green ${theme}`} >
+                  {`>`} ${Number(currentPrice).toFixed(2)} {`<`}
+                </span>
                 <br />
                 &#9660; ${(currentPrice - highestBuy).toFixed(2)}
               </p>
