@@ -39,9 +39,11 @@ function Chat({ chatLength, collapsed, messages }) {
   }
 
   return (
-    <div className={`message-section 
-    message-window 
-    scrollable 
+    <div className={`
+    message-section 
+
+
+     
     admin-${user.admin}`}>
 
       <h3 className={`title chat-header ${user.theme}`}>
@@ -55,21 +57,30 @@ function Chat({ chatLength, collapsed, messages }) {
             value={newMessage}
             placeholder='Send to everyone'
             onChange={(e) => { e.preventDefault(); setNewMessage(e.target.value) }}
+            // prevent autofill from showing
+            autoComplete="off"
           />
         </form>
       </h3>
-      {
-        !collapsed && messages.map((message, i) => {
-          // if (message.text) {
-          return message.text && <p key={i}>
-            <strong>Msg #{message.mCount} {dateBuilder(message.timeStamp)}</strong>
-            <br />
-            {/* {JSON.stringify(message)} */}
-            {`${message.from} > `}{message.text}
-          </p>
-          // }
-        })
-      }
+      <div
+        className="message-window scrollable chat-section"
+      >
+        {
+          !collapsed && messages.map((message, i) => {
+            // if (message.text) {
+            return message.text && <div key={i} className={`message-list`}>
+              <strong>{dateBuilder(message.timeStamp)}</strong>&nbsp;
+              {/* <br /> */}
+              {/* {JSON.stringify(message)} */}
+              {/* <p> */}
+              <strong className="red-text">{`${message.from} > `}</strong>{message.text}
+              {/* </p> */}
+            </div>
+            // }
+          })
+        }
+
+      </div>
     </div>
   )
 }

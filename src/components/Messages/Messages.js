@@ -42,24 +42,19 @@ function Messages() {
         (header === 'Chat' && user.can_chat)
         || sectionNum !== 2)
       && <div className={`message-section message-window scrollable admin-${user.admin} ${sectionNum !== messageMap.length - 1 && 'not-last-message-section'}`}>
-        {header === 'Chat'
-          ? <></>
-          // {/* {ChatRef.current()} */}
-
-          // non-chat headers
-          : <h3 className={`title ${user.theme}`}>
-            {collapsed && messages.length} {header} {sectionNum} {sectionNum}
-            {/* <button className='btn-red'><span className='gg-trash'></span></button> */}
-          </h3>}
+        <h3 className={`title ${user.theme}`}>
+          {collapsed && messages.length} {header} {sectionNum} {sectionNum}
+          {/* <button className='btn-red'><span className='gg-trash'></span></button> */}
+        </h3>
 
         {!collapsed && messages.map((message, i) => {
           // if (message.text) {
-          return message.text && <p key={i}>
-            <strong>Msg #{message.mCount} {dateBuilder(message.timeStamp)}</strong>
+          return message.text && <div key={i} className={`message-list`}>
+            <strong>{dateBuilder(message.timeStamp)}</strong>
             <br />
             {/* {JSON.stringify(message)} */}
             {header === 'Chat' && `${message.from} > `}{message.text}
-          </p>
+          </div>
           // }
         })}
       </div>
