@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useUser } from '../../contexts/UserContext.js';
+import { devLog } from '../../shared.js';
 import './Login.css'
 
 
 
 function Login() {
-  const { login, registerNew } = useUser();
+  const { login, registerNew, refreshUser } = useUser();
 
   const [errors, setErrors] = useState({ loginMessage: '', registrationMessage: '' });
 
@@ -15,6 +16,14 @@ function Login() {
   const [confirmPassword, setConfirmPassword] = useState("");
   // const errors = useSelector((store) => store.errorsReducer);
 
+  useEffect(() => {
+    // set interval to refresh user every 5 seconds, then clear interval on unmount
+    const interval = setInterval(() => {
+      devLog('checking if user looged in')
+      refreshUser();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   function loginAccount(event) {
     event.preventDefault();
