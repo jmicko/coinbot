@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useData } from '../../contexts/DataContext.js';
 import { useSocket } from '../../contexts/SocketProvider.js';
 import { useUser } from '../../contexts/UserContext.js';
+import useLocalStorage from '../../hooks/useLocalStorage.js';
 import { numberWithCommas } from '../../shared.js';
 import './Status.css'
 
@@ -21,7 +22,8 @@ function Status(props) {
   const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
   const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
-  const [profitDisplay, setProfitDisplay] = useState(0);
+  // const [profitDisplay, setProfitDisplay] = useState(0);
+  const [profitDisplay, setProfitDisplay] = useLocalStorage('profitDisplay', 0);
   const [availableFundsDisplay, setAvailableFundsDisplay] = useState(false);
   const [feeDisplay, setFeeDisplay] = useState(true);
   const [profitAccuracy, setProfitAccuracy] = useState(2);
