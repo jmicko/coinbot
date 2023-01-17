@@ -283,9 +283,6 @@ const cbClients = new class {
     devLog('updating api for user: ' + userID)
     const userAPI = await databaseClient.getUserAPI(userID);
 
-    devLog('apiStorage: ', apiStorage)
-    devLog('userAPI: ', userAPI)
-
     Object.assign(apiStorage[userID], userAPI)
 
     if (userAPI.CB_ACCESS_KEY?.length) {

@@ -49,7 +49,7 @@ async function downloadCandles(user) {
     for (let i = 0; i < activeProducts.length; i++) {
       const productID = activeProducts[i].product_id;
 
-      devLog('product', productID);
+      // devLog('product', productID);
       await updateCandlesForProduct({ productID, userID });
       // sleep in between to avoid rate limiting
       await sleep(sleepyTime);
