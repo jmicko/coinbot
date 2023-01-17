@@ -60,18 +60,6 @@ function Status(props) {
   return (
 
     <div className="Status boxed fit">
-
-
-      {/* <div onClick={() => { setProfitDisplay(profitDisplay >= (profit.length - 1) ? 0 : profitDisplay + 1) }}>
-        {<div className="info status-ticker">
-          <strong>{profit[profitDisplay]?.duration} Profit</strong>
-          {width > 800 ? <br /> : <div className='spacer' />}
-          ${numberWithCommas(Number(profit[profitDisplay]?.productProfit).toFixed(profitAccuracy))} /
-          ${numberWithCommas(Number(profit[profitDisplay]?.allProfit).toFixed(profitAccuracy))}
-        </div>
-        }
-      </div> */}
-      {/* let's use a select dropdown instead of a strong, and get rid of the onClick behavior */}
       <div className="info status-ticker">
         <select
           value={profitDisplay}
@@ -91,27 +79,9 @@ function Status(props) {
       <div className="info status-ticker">
         <strong>{productID} Price</strong>
         {width > 800 ? <br /> : <div className='spacer' />}
-        {Number(tickers?.[productID]?.price)
-          .toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1))
-          // .toFixed(2)
-        }
+        {Number(tickers?.[productID]?.price).toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1))}
       </div>
 
-
-      {/* <div onClick={() => { setAvailableFundsDisplay(!availableFundsDisplay) }}>
-        <div className="info status-ticker">
-          <strong>Available Funds</strong>
-          {width > 800 ? <br /> : <div className='spacer' />}
-          {availableFundsDisplay
-            ? `${numberWithCommas(Number(user.availableFunds?.[productID]?.base_available).toFixed(Number(user.availableFunds?.[productID]?.base_increment.split('1')[0].length - 1)))} ${user.availableFunds?.[productID]?.base_currency}`
-            :
-            `${user.availableFunds?.[productID]?.quote_currency === 'USD' && "$"}${numberWithCommas(Number(user.availableFunds?.[productID]?.quote_available)
-              .toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1)))} 
-              ${user.availableFunds?.[productID]?.quote_currency !== 'USD' ? user.availableFunds?.[productID]?.quote_currency : ''}`
-          }
-        </div>
-      </div> */}
-      {/* let's use a select dropdown instead of a strong, and get rid of the onClick behavior */}
       <div className="info status-ticker">
         <select
           value={availableFundsDisplay}
@@ -131,21 +101,6 @@ function Status(props) {
         }
       </div>
 
-      {/* <center onClick={() => { setFeeDisplay(!feeDisplay) }}>
-        {feeDisplay
-          ? <p className="info status-ticker">
-            <strong>Maker Fee</strong>
-            {width > 800 ? <br /> : <div className='spacer' />}
-            {Number((user.maker_fee * 100).toFixed(2))}%
-          </p>
-          : <p className="info status-ticker">
-            <strong>Taker Fee</strong>
-            {width > 800 ? <br /> : <div className='spacer' />}
-            {Number((user.taker_fee * 100).toFixed(2))}%
-          </p>
-        }
-      </center> */}
-      {/* let's use a select dropdown instead of a strong, and get rid of the onClick behavior */}
       <div className="info status-ticker">
         <select
           value={feeDisplay}
@@ -162,43 +117,29 @@ function Status(props) {
         }
       </div>
 
-
-      {/* <center> */}
       <div className="info status-ticker">
         <strong>30 Day Volume</strong>
         {width > 800 ? <br /> : <div className='spacer' />}
         ${numberWithCommas(Number(user.usd_volume).toFixed(2))}
       </div>
-      {/* </center> */}
 
-
-      <div>
-        <div className="info status-ticker">
-          <strong>Open Order Counts</strong>
-          {width > 800 ? <br /> : <div className='spacer' />}
-          <div>
-            <strong>B:</strong>{numberWithCommas(openBuysQuantity)} <strong>S:</strong>{numberWithCommas(openSellsQuantity)} <strong>T:</strong>{numberWithCommas(openOrderQuantity)}
-          </div>
-        </div>
+      <div className="info status-ticker">
+        <strong>Open Order Counts</strong>
+        {width > 800 ? <br /> : <div className='spacer' />}
+        <strong>B:</strong>{numberWithCommas(openBuysQuantity)}&nbsp;<strong>S:</strong>{numberWithCommas(openSellsQuantity)}&nbsp;<strong>T:</strong>{numberWithCommas(openOrderQuantity)}
       </div>
       {width > 800 ? <br /> : ''}
-      {/* <br /> */}
-
-
 
       <div className='controls'>
 
         <div className={`info status-ticker heartbeat ${theme} ${heartbeat?.count === 0 && 'blue'}`}>
-          <div>
+          <div> {/* leave this div here or the heartbeat will turn gray */}
             <strong>
               <span className={`${coinbotSocket} ${theme}`}>&#x2022;</span>
-              {/* <strong> */}
               {heartbeat?.heart}{heartbeat?.beat}
-              {/* </strong> */}
               <span className={`${socketStatus} ${theme}`}>&#x2022;</span>
             </strong>
-          </div>
-          {/* {width > 800 ? <br /> : ''} */}
+          </div> {/* leave this div here or the heartbeat will turn gray */}
         </div>
 
         <button className={`${btnColor} ${theme}`} onClick={updateUser}>Refresh</button>
