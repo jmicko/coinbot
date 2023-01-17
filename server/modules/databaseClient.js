@@ -7,7 +7,7 @@ import { devLog } from '../../src/shared.js';
 // stores the details of a trade-pair. The originalDetails are details that stay with a trade-pair when it is flipped
 // flipped_at is the "Time" shown on the interface. It has no other function
 const storeTrade = (newOrder, originalDetails, flipped_at) => {
-  console.log('NEW ORDER IN STORETRADE', newOrder, 'originalDetails', originalDetails, 'flipped_at', flipped_at);
+  devLog('NEW ORDER IN STORETRADE', newOrder, 'originalDetails', originalDetails, 'flipped_at', flipped_at);
   return new Promise(async (resolve, reject) => {
     // add new order to the database
     const sqlText = `INSERT INTO "limit_orders" 
@@ -302,7 +302,7 @@ const updateTrade = (order) => {
 // IT MUST USE THE USER ID FROM PASSPORT AUTHENTICATION!!!
 // otherwise you could import false trades for someone else!
 const importTrade = (details, userID) => {
-  console.log(details.id, 'details.id in importTrade');
+  devLog(details.id, 'details.id in importTrade');
   return new Promise((resolve, reject) => {
     // add new order to the database
     const sqlText = `INSERT INTO "orders"
@@ -485,7 +485,7 @@ const insertProducts = (products, userID) => {
       }
       resolve();
     } catch (error) {
-      console.log('Error in updateProducts', error);
+      devLog('Error in updateProducts', error);
       reject(error);
     }
   });
@@ -499,7 +499,7 @@ const getProduct = (productID, userID) => {
       const result = await pool.query(sqlText, [productID, userID]);
       resolve(result.rows[0]);
     } catch (error) {
-      console.log('Error in getProduct', error);
+      devLog('Error in getProduct', error);
       reject(error);
     }
   });
@@ -513,7 +513,7 @@ const getActiveProducts = (userID) => {
       const result = await pool.query(sqlText, [userID]);
       resolve(result.rows);
     } catch (error) {
-      console.log('Error in getActiveProducts', error);
+      devLog('Error in getActiveProducts', error);
       reject(error);
     }
   });
@@ -532,7 +532,7 @@ const getActiveProductIDs = (userID) => {
       }
       resolve(productIDs);
     } catch (error) {
-      console.log('Error in getActiveProductIDs', error);
+      devLog('Error in getActiveProductIDs', error);
       reject(error);
     }
   });
@@ -546,7 +546,7 @@ const updateProductActiveStatus = (userID, productID, active) => {
       await pool.query(sqlText, [active, userID, productID]);
       resolve();
     } catch (error) {
-      console.log('Error in updateProductActiveStatus', error);
+      devLog('Error in updateProductActiveStatus', error);
       reject(error);
     }
   });
@@ -580,7 +580,7 @@ const getLimitedUnsettledTrades = (userID, limit) => {
     try {
       // first get which products are in the portfolio
       const products = await getActiveProductIDs(userID);
-      // console.log('products', products);
+      // devLog('products', products);
       let sqlText = `
       (SELECT * FROM "limit_orders" WHERE "side" = 'SELL' AND "flipped" = false AND "settled" = false AND "will_cancel" = false AND "userID" = $1 AND "product_id" = $2 ORDER BY "limit_price" ASC LIMIT $3)
       UNION
@@ -1215,7 +1215,7 @@ async function setSingleReorder(order_id) {
 // setting this to true for trades that are desynced from CB will save time later
 async function setManyReorders(idArray) {
   return new Promise(async (resolve, reject) => {
-    console.log(idArray, 'setting many reorders');
+    devLog(idArray, 'setting many reorders');
     try {
       const sqlText = `UPDATE limit_orders
       SET "reorder" = true 
@@ -1224,7 +1224,7 @@ async function setManyReorders(idArray) {
       await pool.query(sqlText, [idArray]);
       resolve();
     } catch (err) {
-      console.log('failed to set many reorders');
+      devLog('failed to set many reorders');
       reject(err);
     }
   })
@@ -1516,7 +1516,7 @@ async function getMissingCandles({ productID, granularity }) {
 async function getCandles(productID, granularity, start, end) {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log('getting candles FROM DB', userID, productID, granularity, start, end);
+      devLog('getting candles FROM DB', userID, productID, granularity, start, end);
       const sqlText = `SELECT * FROM "market_candles" WHERE "product_id" = $1 AND "granularity" = $2 AND "start" BETWEEN $3 AND $4;`;
       let result = await pool.query(sqlText, [productID, granularity, start, end]);
       resolve(result.rows);
@@ -1530,7 +1530,7 @@ async function getCandles(productID, granularity, start, end) {
 async function getNextCandles(productID, granularity, start) {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log('getting next candles FROM DB', productID, granularity, start);
+      devLog('getting next candles FROM DB', productID, granularity, start);
       const sqlText = `
       SELECT * FROM "market_candles" 
       WHERE "product_id" = $1 AND "granularity" = $2 AND "start" > $3 

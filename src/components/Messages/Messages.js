@@ -4,11 +4,11 @@ import { useUser } from '../../contexts/UserContext.js';
 import './Messages.css'
 import Chat from './Chat.js';
 import { useData } from '../../contexts/DataContext.js';
-
+import { devLog } from '../../shared.js';
 
 
 function Messages() {
-  console.log('rendering messages');
+  devLog('rendering messages');
   const { user } = useUser();
   const { messages: { botMessages, chatMessages }, botErrors
     // , sendChat

@@ -193,7 +193,7 @@ class Messenger {
     // handle disconnection when socket closes
     socket.on("disconnect", (reason) => {
       const userID = socket.request.session.passport?.user;
-      console.log(`client with id: ${socket.id} disconnected, reason:`, reason);
+      devLog(`client with id: ${socket.id} disconnected, reason:`, reason);
       this.deleteSocket(socket);
     });
     this.sockets.add(socket)
@@ -258,7 +258,7 @@ class Messenger {
   }
   // todo - should probably use type: 'error' and get rid of this
   newError(err) {
-    console.log(err.errorText);
+    devLog(err.errorText);
     const error = new Message('error', err.errorText, this.errorCount);
     this.errors.unshift(error);
     this.errorCount++;
@@ -329,7 +329,7 @@ const userStorage = new class {
 
       // the user will only be active if they have an api
       // if (!user.active) {
-      //   console.log(user, '<- the user in userStorage');
+      //   devLog(user, '<- the user in userStorage');
       //   // do not start the Coinbase client if they are not active
       //   return
       // }
@@ -338,7 +338,7 @@ const userStorage = new class {
       // cbClients[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET, ['BTC-USD', 'ETH-USD']);
 
     } catch (err) {
-      console.log(err, `\nERROR creating new user`);
+      devLog(err, `\nERROR creating new user`);
     }
   }
   // get a deep copy of a user's object
@@ -356,13 +356,13 @@ const userStorage = new class {
   // delete the user if there is one
   deleteUser(userID) {
     try {
-      console.log(this.idList.indexOf(Number(userID)), userID, '<-index to delete', this.idList);
+      devLog(this.idList.indexOf(Number(userID)), userID, '<-index to delete', this.idList);
       this.idList.splice(this.idList.indexOf(Number(userID)), 1);
       this[userID].deleting = true;
       // send an orderUpdate which will log out the user
       messenger[userID].orderUpdate();
     } catch (err) {
-      console.log(err, 'error deleting user');
+      devLog(err, 'error deleting user');
     }
   }
 
@@ -418,7 +418,7 @@ const cache = {
 
       // the user will only be active if they have an api
       if (!user.active) {
-        console.log(user, '<- the user in cache.createNewUser');
+        devLog(user, '<- the user in cache.createNewUser');
         // do not start the Coinbase client if they are not active
         return
       }
@@ -426,7 +426,7 @@ const cache = {
       cbClients[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET, ['BTC-USD', 'ETH-USD']);
 
     } catch (err) {
-      console.log(err, `\nERROR creating new user`);
+      devLog(err, `\nERROR creating new user`);
     }
   },
 

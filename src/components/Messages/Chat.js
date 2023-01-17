@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useData } from "../../contexts/DataContext.js";
 import { useUser } from "../../contexts/UserContext.js";
-
+import { devLog } from "../../shared.js";
 
 
 
 function Chat({ chatLength, collapsed, messages }) {
   const { user } = useUser();
   const { sendChat, } = useData()
-  console.log('rendering chat form');
+  devLog('rendering chat form');
   const [newMessage, setNewMessage] = useState('');
 
   function dateBuilder(d) {
@@ -33,7 +33,7 @@ function Chat({ chatLength, collapsed, messages }) {
     setTimeout(() => {
 
     }, 500);
-    console.log(newMessage, 'sending chat!!');
+    devLog(newMessage, 'sending chat!!');
     sendChat({ type: 'chat', data: newMessage });
     setNewMessage('');
   }

@@ -7,6 +7,7 @@ import  axios  from 'axios';
 // const { cache } = require("./cache");
 // const { v4: uuidv4 } = require('uuid');
 import { v4 as uuidv4 } from 'uuid';
+import { devLog } from './utilities.js';
 
 class Coinbase {
   constructor(key, secret) {
@@ -85,7 +86,7 @@ class Coinbase {
     function timer() {
       clearTimeout(this.pingTimeout);
       this.pingTimeout = setTimeout(() => {
-        console.log('ending socket after timeout');
+        devLog('ending socket after timeout');
         // Use `WebSocket#terminate()`, which immediately destroys the connection,
         // instead of `WebSocket#close()`, which waits for the close timer.
         // Delay should be equal to the interval at which your server
@@ -98,7 +99,7 @@ class Coinbase {
     }
 
     ws.on('close', function () {
-      console.log('Socket to Coinbase was closed');
+      devLog('Socket to Coinbase was closed');
       if (setup.statusHandler) {
         setup.statusHandler('closed')
       }
@@ -121,7 +122,7 @@ class Coinbase {
     });
 
     ws.on('open', function () {
-      console.log('Socket to coinbase open!');
+      devLog('Socket to coinbase open!');
       if (setup.statusHandler) {
         setup.statusHandler('open')
       }
@@ -133,7 +134,7 @@ class Coinbase {
     });
 
     ws.on('error', (error) => {
-      console.log(error, 'error on ws connection');
+      devLog(error, 'error on ws connection');
     });
     ws.on('open', timer);
     ws.on('message', timer);
@@ -405,7 +406,7 @@ class Coinbase {
           path: "/api/v3/brokerage/orders",
           method: 'POST',
         }
-        console.log(order, 'incoming order');
+        devLog(order, 'incoming order');
         // build out the order config
         const orderConfig =
           order.order_configuration
@@ -477,7 +478,7 @@ class Coinbase {
         if (data.order_configuration?.market_market_ioc?.base_size) {
           // this will be a market order and we need to fake it by making limit orders with extreme prices
           // because market order with base size is not supported right now
-          console.log(data, 'making market order instead');
+          devLog(data, 'making market order instead');
 
           const product = await this.getProduct(order.product_id);
 
@@ -504,7 +505,7 @@ class Coinbase {
         resolve(response.data);
       } catch (err) {
         reject(err);
-        console.log('ERROR in place order function');
+        devLog('ERROR in place order function');
       }
     });
   }
@@ -549,7 +550,7 @@ class Coinbase {
           product_id: order.product_id,
           client_order_id: order.client_order_id || uuidv4()
         }
-        console.log(data, 'fake market order setup');
+        devLog(data, 'fake market order setup');
         // sign the request
         const options = this.signRequest(data, API);
         // make the call
@@ -557,7 +558,7 @@ class Coinbase {
         resolve(response.data);
       } catch (err) {
         reject(err);
-        console.log('ERROR in place order function');
+        devLog('ERROR in place order function');
       }
     });
   }

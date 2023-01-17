@@ -16,7 +16,7 @@ const __dirname = path.dirname(__filename);
  * POST route sending basic market trade
  */
 router.post('/market', rejectUnauthenticated, async (req, res) => {
-  console.log('basic trade post route hit', req.body);
+  devLog('basic trade post route hit', req.body);
   // POST route code here
   const user = req.user;
   const userID = req.user.id;
@@ -30,12 +30,12 @@ router.post('/market', rejectUnauthenticated, async (req, res) => {
       userID: userID,
       market_multiplier: 1.1
     };
-    console.log('BIG order', tradeDetails);
+    devLog('BIG order', tradeDetails);
 
     try {
       // send the new order with the trade details
       let basic = await cbClients[userID].placeOrder(tradeDetails);
-      console.log('basic trade results', basic,);
+      devLog('basic trade results', basic,);
 
       if (!basic.success) {
         messenger[userID].newError({
@@ -52,17 +52,17 @@ router.post('/market', rejectUnauthenticated, async (req, res) => {
 
     } catch (err) {
       if (err.response?.status === 400) {
-        console.log('Insufficient funds!');
+        devLog('Insufficient funds!');
       } else if (err.code && err.code === 'ETIMEDOUT') {
-        console.log('Timed out');
+        devLog('Timed out');
       } else {
-        console.log(err, 'problem in sending trade post route');
+        devLog(err, 'problem in sending trade post route');
       }
       // send internal error status
       res.sendStatus(500);
     }
   } else {
-    console.log('user is not active and cannot trade!');
+    devLog('user is not active and cannot trade!');
     res.sendStatus(404)
   }
 });
@@ -85,19 +85,19 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
 
   } catch (error) {
     if (error.data?.message) {
-      console.log('error message, trade router sync:', error.data.message);
+      devLog('error message, trade router sync:', error.data.message);
       // orders that have been canceled are deleted from coinbase and return a 404.
       if (error.data.message === 'order not found') {
         await databaseClient.setSingleReorder(orderId);
-        console.log('order not found in account', orderId);
+        devLog('order not found in account', orderId);
         res.sendStatus(400)
       }
     }
     if (error.response?.status === 404) {
-      console.log('order not found in account', orderId);
+      devLog('order not found in account', orderId);
       res.sendStatus(400)
     } else {
-      console.log('something failed in the sync trade route', error);
+      devLog('something failed in the sync trade route', error);
       res.sendStatus(500)
     }
   };
@@ -116,7 +116,7 @@ router.post('/simulation', rejectUnauthenticated, async (req, res) => {
     devLog('simulation route hit', req.body);
     // check if user is already running a simulation
     if (userStorage[req.user.id].simulating) {
-      console.log('user is already simulating');
+      devLog('user is already simulating');
       res.sendStatus(400);
       return;
     }
@@ -134,7 +134,7 @@ router.post('/simulation', rejectUnauthenticated, async (req, res) => {
     const funds = userStorage[user.id].getAvailableFunds();
     user.availableFunds = funds;
 
-    // console.log('simulation route hit', userStorage[req.user.id]);
+    // devLog('simulation route hit', userStorage[req.user.id]);
 
     const workerData = {
       user: user,
@@ -146,16 +146,16 @@ router.post('/simulation', rejectUnauthenticated, async (req, res) => {
     // start a child process to run the simulation
     // get the path
     const path = __dirname;
-    console.log('path', path);
+    devLog('path', path);
 
     const simulationWorker = fork(path + '../../../src/workers/simulationWorker.js');
     simulationWorker.send(workerData);
     // when the worker sends a message back, send it to the client
     simulationWorker.on('message', (message) => {
-      console.log('message from simulationWorker', message);
+      devLog('message from simulationWorker', message);
 
       if (!message.valid) {
-        console.log('simulation was not valid');
+        devLog('simulation was not valid');
         res.sendStatus(400);
         // set user to not simulating
         userStorage[req.user.id].simulating = false;
@@ -178,9 +178,9 @@ router.post('/simulation', rejectUnauthenticated, async (req, res) => {
       simulationWorker.kill();
     });
     simulationWorker.on('exit', (code) => {
-      console.log('simulationWorker exited');
+      devLog('simulationWorker exited');
       if (code !== 0) {
-        console.log(`simulationWorker stopped with exit code ${code}`);
+        devLog(`simulationWorker stopped with exit code ${code}`);
       }
       // set user to not simulating
       userStorage[req.user.id].simulating = false;
@@ -188,7 +188,7 @@ router.post('/simulation', rejectUnauthenticated, async (req, res) => {
       messenger[req.user.id].userUpdate();
     });
   } catch (error) {
-    console.log('error in simulation route', error);
+    devLog('error in simulation route', error);
     res.sendStatus(500);
     // set user to not simulating
     userStorage[req.user.id].simulating = false;
@@ -207,18 +207,18 @@ router.get('/simulation', rejectUnauthenticated, async (req, res) => {
     for (let i = 0; i < 20; i++) {
       const simulationResults = await userStorage[userID].simulationResults;
       if (simulationResults?.simResults) {
-        console.log('simulation results', simulationResults);
+        devLog('simulation results', simulationResults);
         res.send(simulationResults).status(200);
         return;
       } else {
-        console.log('simulation results', i);
+        devLog('simulation results', i);
         await sleep(1000);
       }
     }
 
     res.sendStatus(404);
   } catch (error) {
-    console.log('error in simulation route', error);
+    devLog('error in simulation route', error);
     res.sendStatus(500);
   }
 });

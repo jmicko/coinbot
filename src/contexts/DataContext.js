@@ -7,11 +7,11 @@ import {
 import { useFetchData } from '../hooks/fetchData.js'
 import { addProductDecimals } from '../shared.js';
 import { useUser } from './UserContext.js';
-
+import { devLog } from '../shared.js';
 const DataContext = createContext()
 
 export function DataProvider({ children }) {
-  console.log('DataProvider rendering ***************');
+  devLog('DataProvider rendering ***************');
   // state for this context
   const [productID, setProductID] = useState('BTC-USD');
   // user

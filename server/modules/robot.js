@@ -29,14 +29,14 @@ async function startSync() {
 
     });
   } catch (err) {
-    console.log(err, 'error starting sync');
+    devLog(err, 'error starting sync');
   }
 }
 
 // this is separated from the startSync function so it can be called separately when a new user is created
 async function initializeUserLoops(user) {
   // if (!user.active || !user.approved) {
-  //   console.log(user, '<- the user');
+  //   devLog(user, '<- the user');
   //   return
   // }
   const userID = user.id;
@@ -50,7 +50,7 @@ async function initializeUserLoops(user) {
     // start websocket connection to coinbase for rapid order updates
     startWebsocket(userID);
   } catch (err) {
-    console.log(err, 'error initializing loops');
+    devLog(err, 'error initializing loops');
   }
 }
 
@@ -71,7 +71,7 @@ async function processingLoop(userID) {
       // there is no need to update client after this because it is updated when user clicks the kill button
       await databaseClient.deleteMarkedOrders(userID);
     } catch (err) {
-      console.log(err, 'error at the end of the processing loop');
+      devLog(err, 'error at the end of the processing loop');
     }
   } else {
     // if the user should not be trading, slow loop
@@ -83,7 +83,7 @@ async function processingLoop(userID) {
       processingLoop(userID);
     }, 100);
   } else {
-    console.log(`user ${userID} is NOT THERE, stopping processing loop for user`);
+    devLog(`user ${userID} is NOT THERE, stopping processing loop for user`);
   }
 }
 
@@ -161,7 +161,7 @@ async function syncOrders(userID) {
         syncOrders(userID);
       }, (botSettings.loop_speed * 10));
     } else {
-      console.log(`user ${userID} is NOT THERE, stopping main loop for user`);
+      devLog(`user ${userID} is NOT THERE, stopping main loop for user`);
     }
   }
 }
@@ -174,7 +174,7 @@ async function updateProducts(userID) {
       await databaseClient.insertProducts(products.products, userID);
       resolve();
     } catch (err) {
-      console.log(err, 'error updating products');
+      devLog(err, 'error updating products');
       reject(err);
     }
   });
@@ -189,28 +189,28 @@ function MainLoopErrors(userID, err) {
   }
   if (err?.code === 'ECONNRESET') {
     errorText = 'Connection reset by Coinbase server';
-    console.log('Connection reset by Coinbase server. Probably nothing to worry about unless it keeps happening quickly.');
+    devLog('Connection reset by Coinbase server. Probably nothing to worry about unless it keeps happening quickly.');
   } else if (err?.response?.status === 500) {
-    console.log('internal server error from coinbase');
+    devLog('internal server error from coinbase');
     errorText = 'Internal server error from coinbase';
   } else if (err?.response?.status === 401) {
-    console.log(err?.response?.data, 'Invalid Signature');
-    console.log(err?.response?.data, 'Invalid Signature');
+    devLog(err?.response?.data, 'Invalid Signature');
+    devLog(err?.response?.data, 'Invalid Signature');
     errorText = 'Invalid Signature. Probably nothing to worry about unless it keeps happening quickly.';
   } else if (err?.response?.statusText === 'Bad Gateway') {
-    console.log('bad gateway');
+    devLog('bad gateway');
     errorText = 'Bad Gateway. Probably nothing to worry about unless it keeps happening quickly.';
   } else if (err?.response?.statusText === 'Gateway Timeout') {
-    console.log('Gateway Timeout');
+    devLog('Gateway Timeout');
     errorText = 'Gateway Timeout. Nothing to worry about. Coinbase probably lost the connection';
   } else if (err?.code === 'ECONNABORTED') {
-    console.log('10 sec timeout');
+    devLog('10 sec timeout');
     errorText = '10 second timeout. Nothing to worry about, Coinbase was just slow to respond.';
   } else if (err?.response?.status === 429) {
-    console.log('too many requests');
+    devLog('too many requests');
     errorText = 'Too many requests. Rate limit exceeded. Nothing to worry about.';
   } else {
-    console.log(err, 'unknown error at end of syncOrders');
+    devLog(err, 'unknown error at end of syncOrders');
     errorText = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???';
   }
   messenger[userID].newError({
@@ -246,7 +246,7 @@ async function deSync(userID) {
 
       resolve();
     } catch (err) {
-      console.log('desync error');
+      devLog('desync error');
       reject(err)
     }
   });
@@ -296,7 +296,7 @@ async function fullSync(userID) {
       userStorage[userID].addToCheck(toCheck);
       resolve();
     } catch (err) {
-      console.log('error in full sync');
+      devLog('error in full sync');
       reject(err)
     }
   });
@@ -352,7 +352,7 @@ async function quickSync(userID) {
       userStorage[userID].addToCheck(toCheck);
       resolve(toCheck);
     } catch (err) {
-      console.log('error in quick sync');
+      devLog('error in quick sync');
       reject(err)
     }
   });
@@ -398,11 +398,11 @@ async function processOrders(userID) {
                 // ...mark the old trade as flipped
                 await databaseClient.markAsFlipped(dbOrder.order_id);
                 // tell the frontend that an update was made so the DOM can update
-                console.log('sending order update from processOrders');
+                devLog('sending order update from processOrders');
                 // userStorage[userID].orderUpdate();
                 messenger[userID].orderUpdate();
               } else {
-                console.log('new trade failed!!!');
+                devLog('new trade failed!!!');
                 messenger[userID].newError({
                   errorData: dbOrder,
                   errorText: 'Something went wrong while flipping an order'
@@ -416,15 +416,15 @@ async function processOrders(userID) {
           } catch (err) {
             let errorText;
             if (err.code && err.code === 'ETIMEDOUT') {
-              console.log('Timed out!!!!! from processOrders');
+              devLog('Timed out!!!!! from processOrders');
               errorText = 'Coinbase timed out while flipping an order';
             } else if (err.response?.status === 400) {
-              console.log(err.response, 'Insufficient funds! from processOrders');
+              devLog(err.response, 'Insufficient funds! from processOrders');
               errorText = 'Insufficient funds while trying to flip a trade!';
               // todo - check funds to make sure there is enough for 
               // all of them to be replaced, and balance if needed
             } else {
-              console.log(err, 'unknown error in processOrders');
+              devLog(err, 'unknown error in processOrders');
               errorText = 'unknown error while flipping an order';
             }
             messenger[userID].newError({
@@ -440,7 +440,7 @@ async function processOrders(userID) {
       }
       resolve();
     } catch (err) {
-      console.log(err, '!!!!!!!!!!!!!!!!!error at end of processOrders');
+      devLog(err, '!!!!!!!!!!!!!!!!!error at end of processOrders');
       reject(err);
     }
   });
@@ -499,7 +499,7 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
       const BTCprofit = calculateProfitBTC(dbOrder);
 
       let amountToReinvest = BTCprofit * reinvestRatio;
-      console.log(amountToReinvest, 'amountToReinvest');
+      devLog(amountToReinvest, 'amountToReinvest');
       if (amountToReinvest <= 0) {
         amountToReinvest = 0;
         !simulation && messenger[userID].newError({
@@ -517,7 +517,7 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
       const buyPrice = dbOrder.original_buy_price;
       const maxSizeBTC = Number((maxTradeSize / buyPrice).toFixed(8));
 
-      console.log(maxSizeBTC, 'maxSizeBTC', maxTradeSize, 'maxTradeSize');
+      devLog(maxSizeBTC, 'maxSizeBTC', maxTradeSize, 'maxTradeSize');
 
       // now check if the new base_size after reinvesting is higher than the user set max
       if ((newSize > maxSizeBTC) && (maxTradeSize > 0)) {
@@ -637,17 +637,17 @@ async function updateMultipleOrders(userID, params) {
         } else {
           // if not a reorder, look up the full details on CB
           let updatedOrder = await cbClients[userID].getOrder(orderToCheck.order_id);
-          console.log(orderToCheck, 'order to check');
+          devLog(orderToCheck, 'order to check');
           // if it was cancelled, set it for reorder
           if (updatedOrder.order.status === 'CANCELLED') {
-            console.log('was canceled but should not have been!')
+            devLog('was canceled but should not have been!')
             updatedOrder.order.reorder = true;
           }
           // then update db with current status
           await databaseClient.updateTrade(updatedOrder.order);
         }
       } catch (err) {
-        console.log(err, 'error in updateMultipleOrders loop');
+        devLog(err, 'error in updateMultipleOrders loop');
         let errorText = `Error updating order details`
         if (err?.error_response?.message) {
           errorText = errorText + '. Reason: ' + err.error_response.message
@@ -709,11 +709,11 @@ async function reorder(orderToReorder) {
         });
         resolve({ results: results })
       } else {
-        console.log(pendingTrade, 'success false error in reorder function in robot.js');
+        devLog(pendingTrade, 'success false error in reorder function in robot.js');
         reject(pendingTrade);
       }
     } catch (err) {
-      console.log(err, 'error in reorder function in robot.js');
+      devLog(err, 'error in reorder function in robot.js');
       reject(err)
     }
     resolve();
@@ -739,12 +739,12 @@ async function cancelAndReorder(ordersArray, userID) {
         await cbClients[userID].cancelOrders(idArray);
         // update funds now that everything should be up to date
       } catch (err) {
-        console.log('error cancelling multiple orders');
+        devLog('error cancelling multiple orders');
         reject(err);
       }
 
       // if all goes well, send message to user and resolve promise with success message
-      console.log('sending order update from cancelAndReorder');
+      devLog('sending order update from cancelAndReorder');
       userStorage[userID].orderUpdate();
       resolve({ success: true })
     } else {
@@ -773,7 +773,7 @@ async function getAvailableFunds(userID, userSettings) {
   return new Promise(async (resolve, reject) => {
     try {
       if (!userSettings?.active) {
-        console.log('not active!');
+        devLog('not active!');
         reject('user is not active')
         return;
       }
@@ -880,7 +880,7 @@ async function updateFunds(userID) {
 
       // if the available funds have changed, update the DOM
       if (availableFundsChanged) {
-        console.log('sending order update from updateFunds after available funds changed');
+        devLog('sending order update from updateFunds after available funds changed');
         messenger[userID].userUpdate();
       }
       resolve()
@@ -931,7 +931,7 @@ async function updateProductCandles(userID, productID, granularity) {
       const oldestCandle = await databaseClient.getOldestCandle(productID, granularity);
       // if there is no recent candle, get the candles from the last month and save them to the database
       if (!recentCandle || !oldestCandle) {
-        console.log('no candle');
+        devLog('no candle');
         // end date is today in unix time
         const endDate = Math.floor(new Date().getTime() / 1000);
         const startDate = getStartDate(endDate);
@@ -992,10 +992,10 @@ async function updateProductCandles(userID, productID, granularity) {
             }
           }
           if (integrity) {
-            // console.log('candles array integrity is good');
+            // devLog('candles array integrity is good');
           } else {
-            // console.log('candles array integrity is compromised');
-            // console.log(missing, 'missing candles');
+            // devLog('candles array integrity is compromised');
+            // devLog(missing, 'missing candles');
           }
         }
 
@@ -1107,7 +1107,7 @@ async function alertAllUsers(alertMessage) {
       });
     });
   } catch (err) {
-    console.log(err, 'error while alerting all users of change');
+    devLog(err, 'error while alerting all users of change');
   }
 }
 

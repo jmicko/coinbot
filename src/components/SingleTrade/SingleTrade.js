@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useData } from '../../contexts/DataContext.js';
 import { useUser } from '../../contexts/UserContext.js';
 import { useProductDecimals } from '../../hooks/useProductDecimals.js';
-import './SingleTrade.css'
+import './SingleTrade.css';
+import { devLog } from '../../shared.js';
 
 function SingleTrade(props) {
   const { user, theme } = useUser();
@@ -16,14 +17,14 @@ function SingleTrade(props) {
 
   const { reorder } = props.order;
 
-  console.log('reorder', reorder);
+  devLog('reorder', reorder);
 
   const decimals = useProductDecimals(productID, user.availableFunds);
 
   // decimals.baseIncrement
 
   useEffect(() => {
-    // console.log('rendering single trade');
+    // devLog('rendering single trade');
     // calculate all the numbers when the component renders
 
     // pull from props and make more manageable

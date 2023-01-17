@@ -13,7 +13,7 @@ console.log('candle maker is making candles');
 
 // receive data from the parent process
 process.on('message', async (data) => {
-  devLog('candle maker received data', data);
+  // devLog('candle maker received data', data);
 
   switch (data.type) {
     case 'startUser':

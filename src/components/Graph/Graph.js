@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+// import { devLog } from '../../shared.js';
 
 function Graph(props) {
   const canvasRef = useRef(null);
@@ -10,7 +11,7 @@ function Graph(props) {
 
   const setupOptions = props.setupResults.options;
 
-  // console.log(setupOptions, 'props.setupResults in Graph.js');
+  // devLog(setupOptions, 'props.setupResults in Graph.js');
 
   const setupMinSize = setupOptions.size;
   const maxSize = setupOptions.sizeCurve === 'curve'
@@ -51,7 +52,7 @@ function Graph(props) {
     }
   }, []);
 
-  // console.log(props.data, 'props.data in Graph.js')
+  // devLog(props.data, 'props.data in Graph.js')
 
   // get the data
   // const data = [].concat.apply([], props.data.map(d => d));
@@ -374,7 +375,7 @@ function Graph(props) {
         const currX = paddingX + (curr.original_buy_price - minPrice) / (maxPrice - minPrice) * graphWidth;
         return Math.abs(prevX - oldTooltip.x) < Math.abs(currX - oldTooltip.x) ? prev : curr;
       });
-      // console.log(closestPoint, 'closestPoint');
+      // devLog(closestPoint, 'closestPoint');
       // draw the vertical line
       ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
       ctx.beginPath();

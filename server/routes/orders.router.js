@@ -31,7 +31,7 @@ import { robot } from '../modules/robot.js';
 * GET route - get all orders for a product
 */
 router.get('/:product', rejectUnauthenticated, (req, res) => {
-  console.log('in get all orders for a product route');
+  devLog('in get all orders for a product route');
   const userID = req.user.id;
   const product = req.params.product;
   // ask db for an array of buys and an array of sells
@@ -51,7 +51,7 @@ router.get('/:product', rejectUnauthenticated, (req, res) => {
       res.send(openOrdersInOrder)
     })
     .catch((err) => {
-      console.log(err, 'error in get orders route');
+      devLog(err, 'error in get orders route');
       res.sendStatus(500)
     })
 });
@@ -65,7 +65,7 @@ router.get('/:product', rejectUnauthenticated, (req, res) => {
  * POST route for auto setup
  */
 router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
-  console.log('in auto setup route!');
+  devLog('in auto setup route!');
   // POST route code here
   const user = req.user;
   if (user.active && user.approved) {
@@ -73,10 +73,10 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
     const funds = userStorage[user.id].getAvailableFunds();
     user.availableFunds = funds;
     let options = req.body;
-    console.log('options in auto setup route', options.product);
+    devLog('options in auto setup route', options.product);
     let setup = autoSetup(user, options)
     try {
-      console.log('setup options:', options);
+      devLog('setup options:', options);
       // put a market order in for how much BTC need to be purchase for all the sell orders
       // if (false) {
       if (setup.btcToBuy >= 0.000016) {
@@ -87,10 +87,10 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
           type: 'market',
           // tradingPrice: options.tradingPrice
         };
-        console.log('BIG order', tradeDetails);
+        devLog('BIG order', tradeDetails);
         if (!options.ignoreFunds) {
           let bigOrder = await cbClients[user.id].placeOrder(tradeDetails);
-          console.log('big order to balance btc avail', bigOrder,);
+          devLog('big order to balance btc avail', bigOrder,);
         }
         await robot.updateFunds(user.id);
       }
@@ -159,7 +159,7 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
         orderUpdate: true
       });
     } catch (err) {
-      console.log(err, 'problem in autoSetup ');
+      devLog(err, 'problem in autoSetup ');
       messenger[user.id].newError({
         errorData: err,
         errorText: `problem in auto setup`
@@ -167,7 +167,7 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
     }
     res.sendStatus(200);
   } else {
-    console.log('user is not active and cannot trade!');
+    devLog('user is not active and cannot trade!');
     res.sendStatus(404)
   }
 });
@@ -196,7 +196,7 @@ router.post('/:product_id', rejectUnauthenticated, async (req, res) => {
       trade_pair_ratio: Number(order.trade_pair_ratio),
       client_order_id: uuidv4()
     };
-    console.log('trade details', tradeDetails);
+    devLog('trade details', tradeDetails);
     try {
       // create a fake order, but set it to reorder
       let fakeOrder = {
@@ -235,7 +235,7 @@ router.post('/:product_id', rejectUnauthenticated, async (req, res) => {
         cancel_message: '',
         reorder: true
       }
-      console.log('order to store', fakeOrder);
+      devLog('order to store', fakeOrder);
       // store the fake order in the db. It will be ordered later in the reorder function
       await databaseClient.storeTrade(fakeOrder, tradeDetails, fakeOrder.created_time);
       await robot.updateFunds(userID);
@@ -247,7 +247,7 @@ router.post('/:product_id', rejectUnauthenticated, async (req, res) => {
       // send OK status
       res.sendStatus(200);
     } catch (err) {
-      console.log(err, "FAILURE creating new trade-pair");
+      devLog(err, "FAILURE creating new trade-pair");
       const errorText = 'FAILURE creating new trade-pair!';
       const errorData = err;
       messenger[userID].newError({
@@ -259,7 +259,7 @@ router.post('/:product_id', rejectUnauthenticated, async (req, res) => {
       res.sendStatus(500);
     }
   } else {
-    console.log('user is not active and cannot trade!');
+    devLog('user is not active and cannot trade!');
     res.sendStatus(404)
   }
 });
@@ -276,7 +276,7 @@ router.post('/:product_id', rejectUnauthenticated, async (req, res) => {
 --- this could be better used to update the size of a trade pair
 */
 router.put('/', rejectUnauthenticated, async (req, res) => {
-  console.log('in synch orders PUT route');
+  devLog('in synch orders PUT route');
   const userID = req.user.id;
   const previousPauseStatus = req.user.paused;
   try {
@@ -297,7 +297,7 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
     await databaseClient.setPause(previousPauseStatus, userID)
     res.sendStatus(200)
   } catch (err) {
-    console.log('problem in synch orders PUT route');
+    devLog('problem in synch orders PUT route');
   }
 });
 
@@ -311,7 +311,7 @@ router.put('/bulkPairRatio/:product_id', rejectUnauthenticated, async (req, res)
   const previousPauseStatus = req.user.paused;
   const bulk_pair_ratio = req.body.bulk_pair_ratio;
   const product_id = req.params.product_id;
-  console.log('in bulkPairRatio PUT route', bulk_pair_ratio, '<-bulk_pair_ratio', product_id, '<-product_id', userID, '<-userID');
+  devLog('in bulkPairRatio PUT route', bulk_pair_ratio, '<-bulk_pair_ratio', product_id, '<-product_id', userID, '<-userID');
   try {
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID);
@@ -320,7 +320,7 @@ router.put('/bulkPairRatio/:product_id', rejectUnauthenticated, async (req, res)
     // wait 5 seconds to give the sync loop more time to finish
     await sleep(5000);
 
-    console.log('updating trade pair ratio for all trades for that user')
+    devLog('updating trade pair ratio for all trades for that user')
     // update the trade-pair ratio for all trades for that user
     const updateTradesQueryText = `UPDATE limit_orders
     SET "trade_pair_ratio" = $1
@@ -332,7 +332,7 @@ router.put('/bulkPairRatio/:product_id', rejectUnauthenticated, async (req, res)
       userID
     ]);
 
-    console.log('updating original sell price for all trades for that user')
+    devLog('updating original sell price for all trades for that user')
     // update original sell price after ratio is set
     const updateOGSellPriceQueryText = `UPDATE limit_orders
     SET "original_sell_price" = ROUND(((original_buy_price * ("trade_pair_ratio" + 100)) / 100), 2)
@@ -343,7 +343,7 @@ router.put('/bulkPairRatio/:product_id', rejectUnauthenticated, async (req, res)
       userID
     ]);
 
-    console.log('updating limit price for all trades for that user')
+    devLog('updating limit price for all trades for that user')
     // need to update the current price on all sells after changing numbers on all trades
     const updateSellsPriceQueryText = `UPDATE limit_orders
     SET "limit_price" = "original_sell_price"
@@ -384,7 +384,7 @@ router.put('/bulkPairRatio/:product_id', rejectUnauthenticated, async (req, res)
 
     res.sendStatus(200);
   } catch (err) {
-    console.log(err, 'error with bulk updating trade pair ratio route');
+    devLog(err, 'error with bulk updating trade pair ratio route');
     res.sendStatus(500);
   }
 });
@@ -397,10 +397,10 @@ router.put('/bulkPairRatio/:product_id', rejectUnauthenticated, async (req, res)
 * DELETE route - delete all orders from DB, then cancel on CB
 */
 router.delete('/', rejectUnauthenticated, async (req, res) => {
-  console.log('in delete all orders route');
+  devLog('in delete all orders route');
   const userID = req.user.id;
   const previousPauseStatus = req.user.paused;
-  console.log('in delete all orders route', userID);
+  devLog('in delete all orders route', userID);
   try {
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID)
@@ -422,9 +422,9 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       orderUpdate: true
     })
 
-    console.log('+++++++ EVERYTHING WAS DELETED +++++++ for user:', userID);
+    devLog('+++++++ EVERYTHING WAS DELETED +++++++ for user:', userID);
   } catch (err) {
-    console.log(err, 'error in delete all orders route');
+    devLog(err, 'error in delete all orders route');
   } finally {
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID)
@@ -436,7 +436,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
 * DELETE route - delete a single order from DB, then cancel on CB
 */
 router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
-  console.log('in delete single order route');
+  devLog('in delete single order route');
   // DELETE route code here
   const userID = req.user.id;
   const orderId = req.params.order_id;
@@ -463,19 +463,19 @@ router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
     let errorText = 'FAILURE deleting trade-pair!';
     let errorData = err?.data;
     if (err?.data?.message) {
-      console.log(err.data.message, 'error message, trade router DELETE');
+      devLog(err.data.message, 'error message, trade router DELETE');
     }
     if (err.response?.status === 404) {
       databaseClient.deleteTrade(orderId);
-      console.log('order not found in account', orderId);
+      devLog('order not found in account', orderId);
       errorText = 'Order not found on coinbase, deleting from Coinbot.';
       res.sendStatus(404)
     } else if (err.response?.status === 400) {
-      console.log('bad request', err.response?.data);
+      devLog('bad request', err.response?.data);
       errorText = 'Bad request. Please try again.';
       res.sendStatus(400)
     } else {
-      console.log(err, 'something failed in the delete trade route');
+      devLog(err, 'something failed in the delete trade route');
       res.sendStatus(500)
     }
     messenger[userID].newError({
@@ -489,11 +489,11 @@ router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
 * DELETE route - delete all orders for a product from DB, then cancel on CB
 */
 router.delete('/product/:product_id', rejectUnauthenticated, async (req, res) => {
-  console.log('in delete all orders for product_id route');
+  devLog('in delete all orders for product_id route');
   const userID = req.user.id;
   const previousPauseStatus = req.user.paused;
   const product_id = req.params.product_id;
-  console.log('in delete all orders route', userID);
+  devLog('in delete all orders route', userID);
   try {
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID)
@@ -515,9 +515,9 @@ router.delete('/product/:product_id', rejectUnauthenticated, async (req, res) =>
       orderUpdate: true
     })
 
-    console.log(`+++++++ EVERYTHING FOR PRODUCT: ${product_id} WAS DELETED +++++++ for user:`, userID);
+    devLog(`+++++++ EVERYTHING FOR PRODUCT: ${product_id} WAS DELETED +++++++ for user:`, userID);
   } catch (err) {
-    console.log(err, 'error in delete all orders route');
+    devLog(err, 'error in delete all orders route');
   } finally {
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID)
@@ -530,10 +530,10 @@ router.delete('/product/:product_id', rejectUnauthenticated, async (req, res) =>
 * DELETE RANGE route - Delete orders within a range
 */
 router.delete('/:product_id/:start/:end', rejectUnauthenticated, async (req, res) => {
-  console.log('in delete range route');
+  devLog('in delete range route');
   const userID = req.user.id;
   const previousPauseStatus = req.user.paused;
-  console.log('in delete range route', userID, req.body);
+  devLog('in delete range route', userID, req.body);
   try {
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID)
@@ -557,12 +557,12 @@ router.delete('/:product_id/:start/:end', rejectUnauthenticated, async (req, res
       text: `Deleted orders between ${req.body.lowerLimit} and ${req.body.upperLimit} for ${req.body.product_id}`,
       orderUpdate: true
     })
-    console.log('+++++++ RANGE WAS DELETED +++++++ for user:', userID);
+    devLog('+++++++ RANGE WAS DELETED +++++++ for user:', userID);
   } catch (err) {
-    console.log(err, 'error in delete all orders route');
+    devLog(err, 'error in delete all orders route');
   } finally {
     // set pause status to what it was before route was hit
-    console.log('setting pause status to what it was before route was hit');
+    devLog('setting pause status to what it was before route was hit');
     await databaseClient.setPause(previousPauseStatus, userID)
   }
   res.sendStatus(200)

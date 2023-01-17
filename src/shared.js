@@ -13,7 +13,7 @@ const numberWithCommas = (x) => {
   // this will work in safari once lookbehind is supported
   // return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
   // for now, use this
-  // console.log('x', x)
+  // devLog('x', x)
   if (x !== null && x !== undefined) {
     let parts = x.toString().split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -52,10 +52,10 @@ function bellCurve(options) {
 }
 
 function autoSetup(user, options) {
-  // console.log('running autoSetup')
+  // devLog('running autoSetup')
   const product = options.product;
-  // console.log(product_id, 'product_id')
-  // console.log(options.user, options.availableFunds, 'user')
+  // devLog(product_id, 'product_id')
+  // devLog(options.user, options.availableFunds, 'user')
   // const available = options.availableQuote;
   // a false return object to use when the function fails
   const falseReturn = {
@@ -65,20 +65,20 @@ function autoSetup(user, options) {
   // if any key in the options object is null or undefined, return falseReturn
   for (let key in options) {
     if (options[key] === null || options[key] === undefined) {
-      console.log('bad options')
+      devLog('bad options')
       return falseReturn;
     }
     // else {
-    //   console.log(options[key], 'options[key]')
+    //   devLog(options[key], 'options[key]')
     // }
   }
 
 
   // if (!available) {
-  //   console.log('no available funds for this product')
+  //   devLog('no available funds for this product')
   //   return falseReturn;
   // }
-  // console.log(options, 'options')
+  // devLog(options, 'options')
 
   // create an array to hold the new trades to put in
   const orderList = [];
@@ -126,7 +126,7 @@ function autoSetup(user, options) {
     steepness <= 0 ||
     maxSize <= 0 ||
     tradingPrice <= 0) {
-    console.log('bad options')
+    devLog('bad options')
     return falseReturn;
   }
   // loop until one of the stop triggers is hit
@@ -138,19 +138,19 @@ function autoSetup(user, options) {
 
   for (let i = 0; (!stop && i < 1000); i++) {
     if (i === 0 && skipFirst) {
-      // console.log('need to skip first one!');
+      // devLog('need to skip first one!');
       // increment buy price, but don't remove cost from funds
       incrementBuyPrice();
       // check if need to stop
       stopChecker();
       if (stop) {
-        console.log('stop triggered on first iteration')
+        devLog('stop triggered on first iteration')
         return falseReturn;
       }
       // skip the rest of the iteration and continue the loop
       continue;
     }
-    // console.log(product.quote_increment_decimals, 'product.quote_increment_decimals')
+    // devLog(product.quote_increment_decimals, 'product.quote_increment_decimals')
 
     // get buy price rounded to cents the precision of the quote currency
     buyPrice = Number(buyPrice.toFixed(product.quote_increment_decimals));
@@ -165,7 +165,7 @@ function autoSetup(user, options) {
 
 
 
-    // console.log(tradingPrice, '<-tradingPrice', buyPrice > tradingPrice, '<-true if SELL', buyPrice, '<-buyPrice', original_sell_price, 'original_sell_price', trade_pair_ratio, 'trade_pair_ratio')
+    // devLog(tradingPrice, '<-tradingPrice', buyPrice > tradingPrice, '<-true if SELL', buyPrice, '<-buyPrice', original_sell_price, 'original_sell_price', trade_pair_ratio, 'trade_pair_ratio')
     // figure out if it is going to be a BUY or a sell. Buys will be below current trade price, sells above.
     let side = (buyPrice > tradingPrice)
       ? 'SELL'
@@ -176,13 +176,13 @@ function autoSetup(user, options) {
       ? original_sell_price
       : buyPrice
 
-    // console.log(product.base_inverse_increment, 'product.base_inverse_increment')
+    // devLog(product.base_inverse_increment, 'product.base_inverse_increment')
     const actualSize = (getActualSize() * product.base_inverse_increment) / product.base_inverse_increment;
 
 
     // count up how much base currency will need to be purchased to reserve for all the sell orders
     if (side === 'SELL') {
-      // console.log(actualSize, 'actualSize', (actualSize * product.base_inverse_increment));
+      // devLog(actualSize, 'actualSize', (actualSize * product.base_inverse_increment));
       // okay why does this multiply by product.base_inverse_increment??
       // because later on, the actualSize is divided by product.base_inverse_increment before returning it
       btcToBuy += (actualSize * product.base_inverse_increment)
@@ -193,7 +193,7 @@ function autoSetup(user, options) {
       ? null
       : buyPrice * actualSize * user.taker_fee;
 
-    // console.log(previous_total_fees);
+    // devLog(previous_total_fees);
 
     // CREATE ONE ORDER
     const singleOrder = {
@@ -211,7 +211,7 @@ function autoSetup(user, options) {
       userID: user.id,
       trade_pair_ratio: options.trade_pair_ratio,
     }
-    // console.log(singleOrder, 'singleOrder')
+    // devLog(singleOrder, 'singleOrder')
 
     // break out of the loop if the order is invalid
     if (singleOrder.base_size <= 0) {
@@ -231,7 +231,7 @@ function autoSetup(user, options) {
       continue;
     }
 
-    // console.log(singleOrder, 'singleOrder');
+    // devLog(singleOrder, 'singleOrder');
     // push that order into the order list
     orderList.push(singleOrder);
 
@@ -261,21 +261,21 @@ function autoSetup(user, options) {
     } else {
       let quoteSize = size;
 
-      // console.log('current funds', availableFunds);
+      // devLog('current funds', availableFunds);
       // if it is a sell, need to convert from quote to base size based on the buy price
       // then get the cost of the base size at the trading price,
       // then get the cost of the quote at the current price
       if (side === 'SELL') {
-        // console.log(quoteSize, 'quote size SELLING');
-        // console.log('need to convert to base size');
+        // devLog(quoteSize, 'quote size SELLING');
+        // devLog('need to convert to base size');
         // convert to base size
         const baseSize = quoteSize / buyPrice;
-        // console.log('base size', baseSize);
+        // devLog('base size', baseSize);
         // convert to USD
         const USDSize = baseSize * tradingPrice;
-        // console.log('USD size', USDSize);
+        // devLog('USD size', USDSize);
         quoteSize = USDSize;
-        // console.log(quoteSize, 'quote size actual cost SELLING');
+        // devLog(quoteSize, 'quote size actual cost SELLING');
       } else {
         // buy orders need to add quote value to quoteToReserve
         quoteToReserve += quoteSize;
@@ -298,7 +298,7 @@ function autoSetup(user, options) {
   ////////////////////
   ////// RESULT ////// 
   ////////////////////
-  // console.log('valid result')
+  // devLog('valid result')
   return {
     valid: true,
     cost: cost,
@@ -317,7 +317,7 @@ function autoSetup(user, options) {
 
   // get the actual size in base currency of the trade
   function getActualSize() {
-    // console.log(size, 'size');
+    // devLog(size, 'size');
     // if sizeCurve is curve, use the bellCurve
     const newSize = (sizeCurve === 'curve')
       // adjust the size based on the curve
@@ -325,7 +325,7 @@ function autoSetup(user, options) {
       // else leave the size alone
       : size;
 
-    // console.log(newSize, 'newSize');
+    // devLog(newSize, 'newSize');
     function curvedSize() {
       // if the increment type is percentage, convert it to a number
       // this is the same as the increment in the bellCurve, which is a dollar amount
@@ -347,7 +347,7 @@ function autoSetup(user, options) {
     if (sizeType === 'quote') {
       // if the size is in quote, convert it to base
       const convertedToBase = Number(Math.floor((newSize / buyPrice) * product.base_inverse_increment)) / product.base_inverse_increment
-      // console.log(convertedToBase, 'convertedToBase', buyPrice, 'buyPrice', product.base_inverse_increment, 'product.base_inverse_increment');
+      // devLog(convertedToBase, 'convertedToBase', buyPrice, 'buyPrice', product.base_inverse_increment, 'product.base_inverse_increment');
       return convertedToBase
     } else {
       // if the size is in base, it will not change. 
@@ -355,8 +355,8 @@ function autoSetup(user, options) {
     }
   }
 
-  // console.log(quoteToReserve, 'quoteToReserve');
-  // console.log(buyCount, 'buyCount');
+  // devLog(quoteToReserve, 'quoteToReserve');
+  // devLog(buyCount, 'buyCount');
 
   function stopChecker() {
     let USDSize = size * buyPrice;
@@ -364,12 +364,12 @@ function autoSetup(user, options) {
     let nextFunds = (sizeType === 'base')
       ? availableFunds - USDSize
       : availableFunds - size
-    // console.log(((availableFunds - nextFunds) < 0) && !options.ignoreFunds, nextFunds, 'next funds', availableFunds, !options.ignoreFunds);
+    // devLog(((availableFunds - nextFunds) < 0) && !options.ignoreFunds, nextFunds, 'next funds', availableFunds, !options.ignoreFunds);
     if (((nextFunds) < 0) && !options.ignoreFunds) {
-      // console.log('ran out of funds!', availableFunds);
+      // devLog('ran out of funds!', availableFunds);
       stop = true;
     }
-    // console.log('available funds is', availableFunds);
+    // devLog('available funds is', availableFunds);
     // stop if the buy price passes the ending value
     if (loopDirection === 'up' && buyPrice > endingValue) {
       stop = true;
@@ -399,10 +399,10 @@ function autoSetup(user, options) {
 
 function addProductDecimals(product) {
 
-  // console.log(product, '=====================product=====================');
+  // devLog(product, '=====================product=====================');
   const baseIncrementDecimals = findDecimals(product?.base_increment);
   const base_increment_decimals = findDecimals(product?.base_increment);
-  // console.log(baseIncrement, 'baseIncrement');
+  // devLog(baseIncrement, 'baseIncrement');
   // const quoteIncrement = findDecimals(product?.quote_increment);
   const quoteIncrementDecimals = findDecimals(product?.quote_increment);
   const quote_increment_decimals = findDecimals(product?.quote_increment);
@@ -413,7 +413,7 @@ function addProductDecimals(product) {
   // inverse of the base increment. This is used to round the size in base to the nearest base increment
   const baseInverseIncrement = Math.pow(10, baseIncrementDecimals);
   const base_inverse_increment = Math.pow(10, base_increment_decimals);
-  // console.log(baseInverseIncrement, 'baseInverseIncrement', base_inverse_increment === baseInverseIncrement, 'base_inverse_increment');
+  // devLog(baseInverseIncrement, 'baseInverseIncrement', base_inverse_increment === baseInverseIncrement, 'base_inverse_increment');
   // create a rounding decimal place for the price. This is just nice to have and is not required
   const price_rounding = Math.pow(10, quoteIncrementDecimals - 2);
 
@@ -450,7 +450,7 @@ const granularities = [
   { name: 'ONE_DAY', readable: 'One Day', value: 86400 },
 ]
 
-// dev version of console.log that only logs when in dev mode
+// dev version of devLog that only logs when in dev mode
 function devLog(...args) {
   if (process.env.NODE_ENV === 'development') {
     console.log(...args);

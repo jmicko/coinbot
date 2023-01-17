@@ -24,7 +24,7 @@ const router = express.Router();
 * GET all user information if user is authenticated and admin
 */
 router.get('/users', rejectUnauthenticated, async (req, res) => {
-  console.log('get all users route');
+  devLog('get all users route');
   const isAdmin = req.user.admin;
   if (!isAdmin) {
     res.sendStatus(403);
@@ -34,7 +34,7 @@ router.get('/users', rejectUnauthenticated, async (req, res) => {
     const userList = await databaseClient.getAllUserAndSettings();
     res.send(userList);
   } catch (err) {
-    console.log('error sending list of users to admin', err);
+    devLog('error sending list of users to admin', err);
     res.sendStatus(500)
   }
 });
@@ -49,17 +49,17 @@ router.get('/debug/:user_id', rejectUnauthenticated, async (req, res) => {
     try {
       const userInfo = cache.getSafeStorage(userID);
       const userErrors = cache.getErrors(userID);
-      // console.log('debug - full storage', userInfo);
-      // console.log('errors', userErrors);
+      // devLog('debug - full storage', userInfo);
+      // devLog('errors', userErrors);
       userInfo.userID !== null
         ? res.send(userInfo).status(200)
         : res.sendStatus(500);
     } catch (err) {
-      console.log(err, 'problem debug route');
+      devLog(err, 'problem debug route');
       res.sendStatus(500)
     }
   } else {
-    console.log('error debug user route - not admin');
+    devLog('error debug user route - not admin');
     res.sendStatus(403);
   }
 });
@@ -140,7 +140,7 @@ router.post('/ordersReset', rejectUnauthenticated, async (req, res) => {
       })
     } catch (err) {
       res.sendStatus(500);
-      console.log(err, 'error resetting orders table');
+      devLog(err, 'error resetting orders table');
     }
   } else {
     res.sendStatus(403)
@@ -296,7 +296,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       await pool.query(queryText);
 
       // cache.storage.forEach(async user => {
-      //   console.log('refreshing user', user);
+      //   devLog('refreshing user', user);
       //   if (user.user && user.user?.id !== 0) {
       //     await userStorage[user.id].update();
       //   }
@@ -304,7 +304,7 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       res.sendStatus(200);
     } catch (err) {
       res.sendStatus(500);
-      console.log(err, 'error factory resetting');
+      devLog(err, 'error factory resetting');
     }
   } else {
     res.sendStatus(403)
@@ -318,19 +318,19 @@ router.put('/users', rejectUnauthenticated, async (req, res) => {
   try {
     const isAdmin = req.user.admin;
     if (isAdmin) {
-      console.log('you are admin');
+      devLog('you are admin');
       const userToApprove = req.body.id;
-      console.log('in approve user route', userToApprove);
+      devLog('in approve user route', userToApprove);
       const queryText = `UPDATE "user" SET "approved" = true WHERE "id" = $1 RETURNING *;`;
       const user = await pool.query(queryText, [userToApprove]);
       userStorage[userToApprove].approve(true);
       res.sendStatus(200);
     } else {
-      console.log('you are NOT admin');
+      devLog('you are NOT admin');
       res.sendStatus(403);
     }
   } catch (err) {
-    console.log(err, 'error in approve put route');
+    devLog(err, 'error in approve put route');
     res.sendStatus(500);
   }
 });
@@ -340,23 +340,23 @@ router.put('/users', rejectUnauthenticated, async (req, res) => {
  */
 router.put('/users/chat', rejectUnauthenticated, async (req, res) => {
   try {
-    console.log('in chat permission route');
+    devLog('in chat permission route');
     const isAdmin = req.user.admin;
     if (!isAdmin) {
-      console.log('you are NOT admin');
+      devLog('you are NOT admin');
       res.sendStatus(403);
       return;
     }
     const userToChange = req.body.id;
     const chatPermission = req.body.chatPermission;
-    console.log('in chat permission route', userToChange, chatPermission);
+    devLog('in chat permission route', userToChange, chatPermission);
     const queryText = `UPDATE "user_settings" SET "can_chat" = $1 WHERE "userID" = $2 RETURNING *;`;
     await pool.query(queryText, [chatPermission, userToChange]);
     
     userStorage[userToChange].update();
     res.sendStatus(200);
   } catch (err) {
-    console.log(err, 'error in chat permission put route');
+    devLog(err, 'error in chat permission put route');
     res.sendStatus(500);
   }
 });
@@ -370,7 +370,7 @@ router.put('/loop_speed', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   let loopSpeed = req.body.loopSpeed;
   if (!user.admin) {
-    console.log('user is not admin!');
+    devLog('user is not admin!');
     res.sendStatus(403)
     return;
   }
@@ -383,12 +383,12 @@ router.put('/loop_speed', rejectUnauthenticated, async (req, res) => {
 
   // if (loopSpeed <= 1000 && loopSpeed >= 1) {
   if (!(loopSpeed <= 1000) || !(loopSpeed >= 1)) {
-    console.log(loopSpeed, 'invalid parameters');
+    devLog(loopSpeed, 'invalid parameters');
     res.status(500).send('invalid parameters!')
     return;
   }
   try {
-    console.log('loop speed route hit', loopSpeed);
+    devLog('loop speed route hit', loopSpeed);
     const queryText = `UPDATE "bot_settings" SET "loop_speed" = $1;`;
     await pool.query(queryText, [loopSpeed]);
 
@@ -399,7 +399,7 @@ router.put('/loop_speed', rejectUnauthenticated, async (req, res) => {
 
     res.sendStatus(200);
   } catch (err) {
-    console.log('error with loop speed route', err);
+    devLog('error with loop speed route', err);
     res.sendStatus(500);
   }
 });
@@ -418,11 +418,11 @@ router.put('/full_sync', rejectUnauthenticated, async (req, res) => {
     fullSync = 100;
   }
 
-  console.log('FULL SYNC', fullSync);
+  devLog('FULL SYNC', fullSync);
 
   if (user.admin && fullSync <= 100 && fullSync >= 1) {
     try {
-      console.log('full_sync route hit', fullSync);
+      devLog('full_sync route hit', fullSync);
       // set the settings in the cache first
       botSettings.change({ full_sync: fullSync })
       // then save to db
@@ -432,11 +432,11 @@ router.put('/full_sync', rejectUnauthenticated, async (req, res) => {
 
       res.sendStatus(200);
     } catch (err) {
-      console.log('error with loop speed route', err);
+      devLog('error with loop speed route', err);
       res.sendStatus(500);
     }
   } else {
-    console.log('user is not admin!');
+    devLog('user is not admin!');
     res.sendStatus(403)
   }
 });
@@ -490,7 +490,7 @@ router.put('/order_sync_quantity', rejectUnauthenticated, async (req, res) => {
       // rollback the transaction
       await client.query('ROLLBACK');
 
-      console.log('error with sync quantity route', err);
+      devLog('error with sync quantity route', err);
       res.sendStatus(500);
     } finally {
       // release the client
@@ -498,7 +498,7 @@ router.put('/order_sync_quantity', rejectUnauthenticated, async (req, res) => {
     }
   } else {
     if (!user.admin) {
-      console.log('user is not admin!');
+      devLog('user is not admin!');
       res.sendStatus(403)
     } else {
       res.sendStatus(500)
@@ -522,11 +522,11 @@ router.put('/maintenance', rejectUnauthenticated, async (req, res) => {
 
       res.sendStatus(200);
     } catch (err) {
-      console.log(err, 'error with toggleMaintenance route');
+      devLog(err, 'error with toggleMaintenance route');
       res.sendStatus(500);
     }
   } else {
-    console.log('user is not admin!');
+    devLog('user is not admin!');
     res.sendStatus(403)
   }
 });
@@ -538,10 +538,10 @@ router.delete('/users/:user_id', rejectUnauthenticated, async (req, res) => {
   const userToDelete = req.params.user_id;
   const userID = req.user.id;
   try {
-    console.log('in delete user route');
+    devLog('in delete user route');
     const isAdmin = req.user.admin;
     if (isAdmin) {
-      console.log('you are admin');
+      devLog('you are admin');
       // delete from user table first
       const userQueryText = `DELETE from "user" WHERE "id" = $1;`;
       await pool.query(userQueryText, [userToDelete]);
@@ -561,13 +561,13 @@ router.delete('/users/:user_id', rejectUnauthenticated, async (req, res) => {
       res.sendStatus(200);
     } else {
       // const userToDelete = req.body.id;
-      console.log('you are NOT admin');
+      devLog('you are NOT admin');
       // check to make sure the user ID that was sent is the same as the user requesting the delete
 
       res.sendStatus(403); // forbidden
     }
   } catch (err) {
-    console.log(err, 'error in delete user route');
+    devLog(err, 'error in delete user route');
     res.sendStatus(500);
   } finally {
     userStorage.deleteUser(userToDelete);

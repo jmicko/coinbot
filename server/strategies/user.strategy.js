@@ -6,6 +6,7 @@ import { Strategy as LocalStrategy } from 'passport-local';
 import encryptLib from '../modules/encryption.js';
 // const pool = require('../modules/pool');
 import { pool } from '../modules/pool.js';
+import { devLog } from '../modules/utilities.js';
 
 // explanation of serialization: https://stackoverflow.com/questions/27637609/understanding-passport-serialize-deserialize
 passport.serializeUser((user, done) => {
@@ -37,7 +38,7 @@ passport.deserializeUser((id, done) => {
       }
     })
     .catch((error) => {
-      console.log('Error with query during deserializing user ', error);
+      devLog('Error with query during deserializing user ', error);
       // done takes an error (we have one) and a user (null in this case)
       // this will result in the server returning a 500 status code
       done(error, null);
@@ -64,7 +65,7 @@ passport.use(
           }
         })
         .catch((error) => {
-          console.log('Error with query for user ', error);
+          devLog('Error with query for user ', error);
           // done takes an error (we have one) and a user (null in this case)
           // this will result in the server returning a 500 status code
           done(error, null);

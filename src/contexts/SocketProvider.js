@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import io from "socket.io-client";
 import { useData } from './DataContext.js';
 import { useUser } from './UserContext.js';
+import { devLog } from '../shared.js';
 
 // followed this guide for setting up the socket provider in its own component and not cluttering up App.js
 
@@ -12,7 +13,7 @@ export function useSocket() {
 }
 
 export function SocketProvider({ children }) {
-  console.log('rendering socket provider');
+  devLog('rendering socket provider');
   const [socket, setSocket] = useState({
     sendChat: (chat) => {
       socket.emit('message', { type: 'chat', data: chat })
@@ -47,7 +48,7 @@ export function SocketProvider({ children }) {
 
   // // update the refs when the functions change
   useEffect(() => {
-    // console.log('updating socket provider refs=================');
+    // devLog('updating socket provider refs=================');
     refreshOrdersRef.current = refreshOrders;
     refreshProfitRef.current = refreshProfit;
     refreshProductsRef.current = refreshProducts;
@@ -66,7 +67,7 @@ export function SocketProvider({ children }) {
 
   // useEffect to prevent from multiple connections
   useEffect(() => {
-    // console.log('socket provider useEffect-----------------');
+    // devLog('socket provider useEffect-----------------');
     // check if on dev server or build, and set endpoint appropriately
     let ENDPOINT = origin;
     if (origin === "http://localhost:3000") {
@@ -80,7 +81,7 @@ export function SocketProvider({ children }) {
       if (message.type === 'ticker') {
         const ticker = message.ticker
         // set the ticker based on the product id
-        // console.log('ticker', ticker);
+        // devLog('ticker', ticker);
         setTickers(prevTickers => ({ ...prevTickers, [ticker.product_id]: ticker }));
       }
       // handle heartbeat
@@ -128,11 +129,11 @@ export function SocketProvider({ children }) {
         refreshUserRef.current();
       }
       if (message.fileUpdate) {
-        console.log('file update in socket provider')
+        devLog('file update in socket provider')
         refreshExportableFilesRef.current();
       }
       if (message.type === 'simulationResults') {
-        console.log(message.data, 'simulation results in socket provider')
+        devLog(message.data, 'simulation results in socket provider')
         // dispatch({
         //   type: 'SET_SIMULATION_RESULT',
         //   payload: message.data
@@ -148,17 +149,17 @@ export function SocketProvider({ children }) {
     // should receive a ping from the server every 5 seconds
     // if not, then reconnect
     function timer() {
-      // console.log('clearing timeout')
+      // devLog('clearing timeout')
 
       clearTimeout(newSocket.timeout);
 
       newSocket.timeout = setTimeout(() => {
-        console.log('disconnecting after timeout')
+        devLog('disconnecting after timeout')
         setCoinbotSocketRef.current('timeout');// socket can pass 'closed', 'open', 'timeout', and 'reopening' 
         newSocket.disconnect();
 
         setTimeout(() => {
-          console.log('reconnecting after timeout');
+          devLog('reconnecting after timeout');
           setCoinbotSocketRef.current('reopening');// socket can pass 'closed', 'open', 'timeout', and 'reopening'
           newSocket.connect();
         }, 5000);
@@ -169,19 +170,19 @@ export function SocketProvider({ children }) {
 
     newSocket.on('ping', () => {
       timer();
-      // console.log('ping')
+      // devLog('ping')
     })
 
 
     // newSocket.on('ping', timer);
     newSocket.on('connect', () => {
-      console.log('connected')
+      devLog('connected')
       setCoinbotSocketRef.current('open'); // socket can pass 'closed', 'open', 'timeout', and 'reopening' 
       timer();
     });
 
     newSocket.on('disconnect', () => {
-      console.log('disconnected')
+      devLog('disconnected')
       setCoinbotSocketRef.current('closed'); // socket can pass 'closed', 'open', 'timeout', and 'reopening'
     });
 
@@ -198,15 +199,15 @@ export function SocketProvider({ children }) {
       setTimeout(() => {
         newSocket.connect()
       }, 5000);
-      console.log(err instanceof Error); // true
-      console.log(err.message); // not authorized
-      console.log(err.data); // { content: "Please retry later" }
+      devLog(err instanceof Error); // true
+      devLog(err.message); // not authorized
+      devLog(err.data); // { content: "Please retry later" }
     });
 
     // save the new socket and close the old one
     setSocket(newSocket);
     return () => {
-      console.log('closing socket')
+      devLog('closing socket')
       clearInterval(ping);
       clearTimeout(newSocket.timeout);
       newSocket.off('message')

@@ -10,6 +10,23 @@ const rejectUnauthenticated = (req, res, next) => {
   }
 };
 
+
+const adminOnly = (req, res, next) => {
+  // check if logged in
+  if (req.isAuthenticated()) {
+    // They were authenticated! User may do the next thing
+    // Note! They may not be Authorized to do all things
+    if (req.user.admin === true) {
+      next();
+    } else {
+      res.status(403).send(JSON.stringify(`You never should have come here! >:|`));
+    }
+  } else {
+    // failure sends a forbidden status code
+    res.status(403).send(JSON.stringify(`You never should have come here! >:|`));
+  }
+};
+
 // sockets authenticate once on connection, and maintain that auth until disconnected
 // this authentication comes from wrapping the passport middleware around the socket
 const rejectUnauthenticatedSocket = (socket, next) => {
@@ -26,4 +43,5 @@ const rejectUnauthenticatedSocket = (socket, next) => {
   }
 };
 
-export { rejectUnauthenticated, rejectUnauthenticatedSocket };
+
+export { rejectUnauthenticated, rejectUnauthenticatedSocket, adminOnly };

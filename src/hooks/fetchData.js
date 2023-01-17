@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { devLog } from '../shared.js';
 
 // noLoad is true if the get route should not be called right away, probably because it does not exist
 export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }) {
@@ -25,30 +26,30 @@ export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }
       // check if any of the notNull values are null or undefined
       if (checkFailureCallback()) return;
 
-      // console.log('fetching data from', url, 'in useFetchData hook')
+      // devLog('fetching data from', url, 'in useFetchData hook')
       setIsLoading(true)
       // call with the config object if there is one
       const response = await fetch(url)
       // check if the response is ok
       if (!response.ok) {
-        console.log(response, 'response not ok in useFetchData hook')
+        devLog(response, 'response not ok in useFetchData hook')
         setIsLoading(false)
         setError(response)
 
         if (response.status === 403) {
-          console.log('403 error in useFetchData hook')
+          devLog('403 error in useFetchData hook')
           setData(defaultState)
           refreshUser && refreshUser();
         }
         return
       }
       const data = await response.json()
-      // console.log(data, 'fetched data from', url, 'in useFetchData hook')
+      // devLog(data, 'fetched data from', url, 'in useFetchData hook')
       setData(data)
       setIsLoading(false)
       setError(null)
     } catch (error) {
-      console.log(error, 'error in useFetchData hook4385672390498570239487502394875029394876657023945876094328570239487')
+      devLog(error, 'error in useFetchData hook4385672390498570239487502394875029394876657023945876094328570239487')
       setError(error)
       setIsLoading(false)
     }
@@ -61,10 +62,10 @@ export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }
       // check if any of the notNull values are null or undefined
       if (checkFailureCallback()) return;
 
-      // console.log(dataToPost, 'posting data to', url, 'in usePostData hook')
+      // devLog(dataToPost, 'posting data to', url, 'in usePostData hook')
       setIsLoading(true)
 
-      console.log('posting data', dataToPost, ' to', url, 'in usePostData hook')
+      devLog('posting data', dataToPost, ' to', url, 'in usePostData hook')
       // make the post request
       const response = await fetch(url, {
         method: 'POST',
@@ -74,37 +75,37 @@ export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }
 
       // check if the response is ok
       if (!response.ok) {
-        console.log(response, 'response not ok in usePostData hook')
+        devLog(response, 'response not ok in usePostData hook')
         setIsLoading(false)
-        // console.log('=============================================================')
-        // console.log('=============================================================')
-        // console.log('=============================================================')
-        // console.log('=============================================================')
+        // devLog('=============================================================')
+        // devLog('=============================================================')
+        // devLog('=============================================================')
+        // devLog('=============================================================')
         setError(response?.status)
-        // console.log('=============================================================', response)
+        // devLog('=============================================================', response)
         return
       }
       if (response.status === 204) { // no content
-        console.log('response status 204 in usePostData hook')
+        devLog('response status 204 in usePostData hook')
         setIsLoading(false)
         setError(null)
         return
       } else if (response.status === 201) { // created. this should return data if relevant
-        console.log('response status 201 in usePostData hook')
+        devLog('response status 201 in usePostData hook')
         const data = await response.json()
-        console.log(data, 'received data after posting to', url, 'in usePostData hook')
+        devLog(data, 'received data after posting to', url, 'in usePostData hook')
         setData(data)
         setIsLoading(false)
         setError(null)
         return
       }
       // const data = await response.json()
-      // console.log('posted data to', url, 'in usePostData hook')
+      // devLog('posted data to', url, 'in usePostData hook')
       // setResponse(data)
       setIsLoading(false)
       setError(null)
     } catch (error) {
-      console.log(error, 'error in usePostData hook')
+      devLog(error, 'error in usePostData hook')
       setError(error)
       setIsLoading(false)
     }
@@ -114,7 +115,7 @@ export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }
   async function putData(dataToPut) {
     try {
       // check if any of the notNull values are null or undefined
-      // console.log(dataToPut, 'putting dataToPut to', url, 'in usePutdataToPut hook')
+      // devLog(dataToPut, 'putting dataToPut to', url, 'in usePutdataToPut hook')
       if (checkFailureCallback()) return;
 
       setIsLoading(true)
@@ -124,25 +125,25 @@ export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dataToPut)
       })
-      // console.log(response, 'response in usePutdataToPut hook')
+      // devLog(response, 'response in usePutdataToPut hook')
       // check if the response is ok
       if (!response.ok) {
-        console.log(response, 'response not ok in usePutdataToPut hook')
+        devLog(response, 'response not ok in usePutdataToPut hook')
         setIsLoading(false)
         setError(response)
         return
       }
       if (response.status === 201) { // created. this should return data if relevant
-        console.log('response status 201 in usePostData hook')
+        devLog('response status 201 in usePostData hook')
         const data = await response.json()
-        console.log(data, 'received data after posting to', url, 'in usePutData hook')
+        devLog(data, 'received data after posting to', url, 'in usePutData hook')
         setData(data)
         setIsLoading(false)
         setError(null)
         return
       }
       if (response.status === 403) {
-        console.log('403 error in useFetchData hook')
+        devLog('403 error in useFetchData hook')
         setData(defaultState)
         setIsLoading(false)
         setError(response)
@@ -152,7 +153,7 @@ export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }
       setIsLoading(false)
       setError(null)
     } catch (error) {
-      console.log(error, 'error in usePutData hook')
+      devLog(error, 'error in usePutData hook')
       setError(error)
       setIsLoading(false)
     }
@@ -175,29 +176,29 @@ export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }
         : urlArray === null || urlArray === undefined
           ? url
           : `${url}/${urlArray}`
-      // console.log(deleteUrl, 'url in useDeleteData hook', urlArray, 'urlArray in useDeleteData hook')
+      // devLog(deleteUrl, 'url in useDeleteData hook', urlArray, 'urlArray in useDeleteData hook')
 
 
       // check if the url is a string
       if (typeof deleteUrl !== 'string') {
-        console.log(deleteUrl, 'deleteUrl is not a string in useDeleteData hook')
+        devLog(deleteUrl, 'deleteUrl is not a string in useDeleteData hook')
         setIsLoading(false)
         setError({ message: 'deleteUrl is not a string' })
         return
       }
 
-      // console.log(url, 'url in useDeleteData hook')
+      // devLog(url, 'url in useDeleteData hook')
 
 
-      console.log('deleting data from', deleteUrl, 'in useDeleteData hook')
+      devLog('deleting data from', deleteUrl, 'in useDeleteData hook')
       const response = await fetch(deleteUrl, { method: method })
       // check if the response is ok
       if (!response.ok) {
-        console.log(response, 'response not ok in useDeleteData hook')
+        devLog(response, 'response not ok in useDeleteData hook')
         setIsLoading(false)
         setError(response)
         if (response.status === 403) {
-          console.log('403 error in useFetchData hook')
+          devLog('403 error in useFetchData hook')
           setData(defaultState)
           refreshUser && refreshUser()
         }
@@ -205,12 +206,12 @@ export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }
       }
 
       const data = await response.json() ? await response.json() : null
-      console.log(data, 'deleted data from', url, 'in useDeleteData hook')
+      devLog(data, 'deleted data from', url, 'in useDeleteData hook')
       // setResponse(data)
       setIsLoading(false)
       setError(null)
     } catch (error) {
-      console.log(error, `error in fetchData hook with method ${method}`)
+      devLog(error, `error in fetchData hook with method ${method}`)
       setError(error)
       setIsLoading(false)
     }
@@ -219,7 +220,7 @@ export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }
   // // download an excel file
   // async function downloadFile(fileName) {
   //   try {
-  //     console.log('downloading file from', url, 'in useDownloadFile hook')
+  //     devLog('downloading file from', url, 'in useDownloadFile hook')
   //     // get the file array buffer
   //     const response = await fetch(`${url}${fileName ? `/${fileName}` : ''}`, {
   //       method: 'GET',
@@ -236,20 +237,20 @@ export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }
   //       link.click();
   //     }
   //   } catch (error) {
-  //     console.log(error, 'error in useDownloadFile hook')
+  //     devLog(error, 'error in useDownloadFile hook')
   //     setError(error)
   //     setIsLoading(false)
   //   }
   // }
   async function downloadFile(fileName) {
     try {
-      // console.log('download file route has started', fileName);
+      // devLog('download file route has started', fileName);
       const response = await fetch(`${url}${fileName ? `/${fileName}` : ''}`);
       if (!response.ok) {
-        // console.log('200 error in useFetchData hook')
+        // devLog('200 error in useFetchData hook')
 
         if (response.status === 403) {
-          // console.log('403 error in useFetchData hook')
+          // devLog('403 error in useFetchData hook')
           setData(defaultState)
           refreshUser && refreshUser()
         }
@@ -258,14 +259,14 @@ export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }
         return
       }
       const blob = await response.blob();
-      // console.log('download file route has succeeded', blob);
+      // devLog('download file route has succeeded', blob);
       // save the file to the client
       const link = document.createElement('a');
       link.href = window.URL.createObjectURL(blob);
       link.download = `${fileName}.xlsx`;
       link.click();
     } catch (error) {
-      // console.log('download file route has failed', error);
+      // devLog('download file route has failed', error);
     }
   }
 
@@ -278,7 +279,7 @@ export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }
     if (notNullRef.current && notNullRef.current.length > 0 && Array.isArray(notNullRef.current) && notNullRef.current.some(value => value === null || value === undefined)) {
       for (let i = 0; i < notNullRef.current.length; i++) {
         if (notNullRef.current[i] === null || notNullRef.current[i] === undefined) {
-          // console.log('notNullRef.current value is null or undefined, not fetching data from', url, 'in useFetchData hook');
+          // devLog('notNullRef.current value is null or undefined, not fetching data from', url, 'in useFetchData hook');
           setIsLoading(false);
           setError({ message: 'null or undefined value in notNullRef.current array' });
           return true;
@@ -290,7 +291,7 @@ export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }
 
   useEffect(() => {
     if (noLoad) return;
-    // console.log('useEffect in useFetchData hook -------- getting data on load from', url, '--------')
+    // devLog('useEffect in useFetchData hook -------- getting data on load from', url, '--------')
     fetchDataCallback();
   }, [fetchDataCallback, url, noLoad])
 
@@ -302,11 +303,11 @@ export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }
 
   async function createRefreshData(data) {
     try {
-      console.log(data, 'creating data in useFetchData hook ')
+      devLog(data, 'creating data in useFetchData hook ')
       await postDataCallback(data)
       await fetchDataCallback();
     } catch (err) {
-      console.log(err, 'error in updateData function in useFetchData hook')
+      devLog(err, 'error in updateData function in useFetchData hook')
     }
   }
 
@@ -314,21 +315,21 @@ export function useFetchData(url, { defaultState, notNull, noLoad, refreshUser }
 
   async function updateRefreshData(data) {
     try {
-      // console.log(data, 'updating data in useFetchData hook  %%%%%%%%%%%%%%')
+      // devLog(data, 'updating data in useFetchData hook  %%%%%%%%%%%%%%')
       await putDataCallback(data);
       await fetchDataCallback();
     } catch (err) {
-      console.log(err, 'error in updateData function in useFetchData hook')
+      devLog(err, 'error in updateData function in useFetchData hook')
     }
   }
 
   async function deleteRefreshData(data) {
     try {
-      // console.log('deleting data in useFetchData hook  %%%%%%%%%%%%%%')
+      // devLog('deleting data in useFetchData hook  %%%%%%%%%%%%%%')
       await deleteDataCallback(data);
       await fetchDataCallback();
     } catch (err) {
-      console.log(err, 'error in deleteData function in useFetchData hook')
+      devLog(err, 'error in deleteData function in useFetchData hook')
     }
   }
 

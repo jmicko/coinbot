@@ -28,21 +28,21 @@ async function anyAdmins() {
       let result = await pool.query(queryText);
       resolve(result.rows[0].count)
     } catch (err) {
-      console.log('problem getting number of admins', err);
+      devLog('problem getting number of admins', err);
     }
   })
 }
 
 // Handles request for all user information if user is authenticated and admin
 router.get('/all', rejectUnauthenticated, async (req, res) => {
-  console.log('get all users route');
+  devLog('get all users route');
   const isAdmin = req.user.admin;
   if (isAdmin) {
     try {
       const userList = await databaseClient.getAllUsers();
       res.send(userList);
     } catch (err) {
-      console.log('error sending list of users to admin', err);
+      devLog('error sending list of users to admin', err);
       res.sendStatus(500)
     }
 
@@ -53,7 +53,7 @@ router.get('/all', rejectUnauthenticated, async (req, res) => {
 
 // Handles request for user information if user is authenticated
 router.get('/', rejectUnauthenticated, async (req, res) => {
-  console.log('get user route');
+  devLog('get user route');
   try {
     const botSettings = await databaseClient.getBotSettings();
     req.user.botMaintenance = botSettings.maintenance;
@@ -67,7 +67,7 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
 
     // get available funds from userStorage
     const availableFunds = userStorage[req.user.id].getAvailableFunds();
-    // console.log('availableFunds', availableFunds);
+    // devLog('availableFunds', availableFunds);
     req.user.availableFunds = availableFunds;
 
     // get exporting value from userStorage
@@ -78,10 +78,10 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
     const simulating = userStorage[req.user.id].simulating;
     req.user.simulating = simulating;
 
-    // console.log('simulating', req.user);
+    // devLog('simulating', req.user);
 
   } catch (err) {
-    console.log(err, 'error in user route');
+    devLog(err, 'error in user route');
   }
   // devLog('user', req.user)
   // Send back user object from the session (previously queried from the database)
@@ -95,7 +95,7 @@ router.post('/register', userCount, async (req, res, next) => {
   try {
     const username = req.body.username;
     const pass = req.body.password;
-    console.log('registering user', username, pass);
+    devLog('registering user', username, pass);
     if (
       !username ||
       !pass ||
@@ -120,7 +120,7 @@ router.post('/register', userCount, async (req, res, next) => {
     let adminCount = await anyAdmins();
     let user;
     const joined_at = new Date();
-    console.log('THERE ARE THIS MANY ADMINS!!!!!', adminCount);
+    devLog('THERE ARE THIS MANY ADMINS!!!!!', adminCount);
 
     if (adminCount > 0) {
       // create the user
@@ -161,7 +161,7 @@ router.post('/register', userCount, async (req, res, next) => {
 
     res.sendStatus(201);
   } catch (err) {
-    console.log('User registration failed: ', err);
+    devLog('User registration failed: ', err);
     res.sendStatus(500);
   };
 });
@@ -171,13 +171,13 @@ router.post('/register', userCount, async (req, res, next) => {
 // this middleware will run our POST if successful
 // this middleware will send a 401 if not successful
 router.post('/login', userStrategy.authenticate('local'), (req, res) => {
-  console.log('in login route');
+  devLog('in login route');
   res.sendStatus(200);
 });
 
 // clear all server session information about this user
 router.post('/logout', (req, res) => {
-  console.log('LOGGING OUT USER');
+  devLog('LOGGING OUT USER');
   // Use passport's built-in method to log out the user
   req.logout();
   res.sendStatus(200);
@@ -190,19 +190,19 @@ router.put('/approve', rejectUnauthenticated, async (req, res) => {
   try {
     const isAdmin = req.user.admin;
     if (isAdmin) {
-      console.log('you are admin');
+      devLog('you are admin');
       const userToApprove = req.body.data.id;
-      console.log('in approve user route', userToApprove);
+      devLog('in approve user route', userToApprove);
       const queryText = `UPDATE "user" SET "approved" = true WHERE "id" = $1 RETURNING *;`;
       const user = await pool.query(queryText, [userToApprove]);
       userStorage[userToApprove].approve(true);
       res.sendStatus(200);
     } else {
-      console.log('you are NOT admin');
+      devLog('you are NOT admin');
       res.sendStatus(403);
     }
   } catch (err) {
-    console.log(err, 'error in approve put route');
+    devLog(err, 'error in approve put route');
     res.sendStatus(500);
   }
 });
@@ -214,10 +214,10 @@ router.delete('/:user_id', rejectUnauthenticated, async (req, res) => {
   const userToDelete = Number(req.params.user_id);
   const userID = req.user.id;
   try {
-    console.log('in delete user route');
+    devLog('in delete user route');
     const isAdmin = req.user.admin;
     if (isAdmin) {
-      console.log('you are admin');
+      devLog('you are admin');
       // delete from user table first
       const userQueryText = `DELETE from "user" WHERE "id" = $1;`;
       await pool.query(userQueryText, [userToDelete]);
@@ -237,11 +237,11 @@ router.delete('/:user_id', rejectUnauthenticated, async (req, res) => {
       res.sendStatus(200);
     } else {
       // const userToDelete = req.body.id;
-      console.log('you are NOT admin');
+      devLog('you are NOT admin');
       // check to make sure the user ID that was sent is the same as the user requesting the delete
       // if (userID === userToDelete) {
       if (userID === userToDelete) {
-        console.log('you are deleting yourself');
+        devLog('you are deleting yourself');
 
         // delete from user table
         const userQueryText = `DELETE from "user" WHERE "id" = $1;`;
@@ -263,7 +263,7 @@ router.delete('/:user_id', rejectUnauthenticated, async (req, res) => {
       res.sendStatus(200);
     }
   } catch (err) {
-    console.log(err, 'error in delete user route');
+    devLog(err, 'error in delete user route');
     res.sendStatus(500);
   } finally {
     userStorage.deleteUser(userToDelete);

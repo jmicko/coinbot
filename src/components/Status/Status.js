@@ -7,7 +7,7 @@ import './Status.css'
 
 
 function Status(props) {
-  // console.log('rendering status');
+  // devLog('rendering status');
 
   const { user, refreshUser, theme, btnColor } = useUser();
   const { tickers, heartbeat } = useSocket();

@@ -7,7 +7,7 @@ import React, {
 import { useUser } from '../../../contexts/UserContext.js';
 import { useSocket } from '../../../contexts/SocketProvider.js';
 import { useProductDecimals } from '../../../hooks/useProductDecimals.js';
-import { autoSetup, numberWithCommas } from '../../../shared.js';
+import { autoSetup, devLog, numberWithCommas } from '../../../shared.js';
 import Graph from '../../Graph/Graph.js';
 import SingleTrade from '../../SingleTrade/SingleTrade.js';
 import './AutoSetup.css'
@@ -97,7 +97,7 @@ function AutoSetup(props) {
 
 
   useEffect(() => {
-    // console.log('running autoSetup useEffect', loadingRef.current)
+    // devLog('running autoSetup useEffect', loadingRef.current)
     // if any of the dependencies are undefined, don't run the autoSetup function
     if (!user || !availableQuote || !currentPrice || !currentProduct) return;
 
@@ -107,7 +107,7 @@ function AutoSetup(props) {
 
     loadingRef.current = true;
 
-    // console.log(loadingRef.current, 'running autoSetup')
+    // devLog(loadingRef.current, 'running autoSetup')
     const results = autoSetup(user, {
       ...auto,
       availableQuote: availableQuote,
@@ -116,7 +116,7 @@ function AutoSetup(props) {
       user: user,
     });
     setSetupResults(results);
-    // console.log('setting loading to false')
+    // devLog('setting loading to false')
     loadingRef.current = false;
 
   }, [
@@ -166,7 +166,7 @@ function AutoSetup(props) {
   function submitAutoSetup(event) {
     event.preventDefault();
     setAutoTradeStarted(true);
-    console.log('automatically setting up bot');
+    devLog('automatically setting up bot');
     autoTrader();
     setTimeout(() => {
       setAutoTradeStarted(false);
@@ -175,7 +175,7 @@ function AutoSetup(props) {
 
   function handleSimulation(event) {
     event.preventDefault();
-    console.log('simulating trades', availableQuote);
+    devLog('simulating trades', availableQuote);
 
 
     startSimulation({
@@ -192,7 +192,7 @@ function AutoSetup(props) {
   }
 
   function autoTrader() {
-    // console.log('here is the current available funds', availableFunds);
+    // devLog('here is the current available funds', availableFunds);
     startAutoSetup({
       ...auto,
       availableFunds: availableQuote,
