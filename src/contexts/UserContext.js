@@ -36,7 +36,7 @@ export function UserProvider({ children }) {
   }
 
   async function login(payload) {
-    console.log(payload, 'payload in login')
+    // console.log(payload, 'payload in login')
     // hit the login POST route
     await fetch('/api/user/login', {
       method: 'POST',
