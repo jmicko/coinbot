@@ -36,7 +36,7 @@ function Reset() {
       <h4>Reset Profit</h4>
       <p>This will start the profit calculation back at $0</p>
       <p>Last reset at: {new Date(user.profit_reset).toLocaleString('en-US')}</p>
-      <button className={`btn-blue medium ${user.theme}`} onClick={() => { resetProfit('data') }}>Reset Profit</button>
+      <button className={`btn-blue medium ${user.theme}`} onClick={() => { resetProfit() }}>Reset Profit</button>
 
       {/* DELETE OWN ACCOUNT */}
       <div className={`divider ${theme}`} />

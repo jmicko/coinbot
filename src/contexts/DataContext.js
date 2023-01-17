@@ -31,7 +31,7 @@ export function DataProvider({ children }) {
     = useFetchData('/api/account/products', { defaultState: {} })
   // get the profits for the selected product
   const { data: profit, refresh: refreshProfit, updateData: resetProfit }
-    = useFetchData(`/api/account/profit/${productID}`, { defaultState: {}, notNull: [productID] })
+    = useFetchData(`/api/account/profit/${productID}`, { defaultState: [], notNull: [productID] })
   // get messages sent from the bot
   const { data: messages, refresh: refreshBotMessages, createRefreshData: sendChat }
     = useFetchData(`/api/account/messages`, { defaultState: { botMessages: [], chatMessages: [] } })

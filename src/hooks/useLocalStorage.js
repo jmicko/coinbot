@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
+import { useUser } from '../contexts/UserContext.js'
 
 // this helps differentiate apps that are all running on localhost because local storage will conflict
 const PREFIX = process.env.NODE_ENV === 'development' ? 'coinbot-dev-' : 'coinbot-pqw9743yg5r8-'
 
 // this function works like a normal useState, but persists everything into local storage
 export default function useLocalStorage(key, initialValue) {
-  const prefixedKey = PREFIX + key
+  const { user } = useUser()
+  const prefixedKey = user.username ? PREFIX + user.username + '-' + key : PREFIX + key
   const [value, setValue] = useState(() => {
     // get the item that was stored
     const jsonValue = localStorage.getItem(prefixedKey)

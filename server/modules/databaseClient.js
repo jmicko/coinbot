@@ -1359,7 +1359,7 @@ async function getProfitSinceDate(userID, date, product) {
 
       // add both results to an object and resolve
       const profit = {
-        duration: 'Since reset',
+        duration: 'Since Reset',
         allProfit: result.rows[0].sum || 0,
         productProfit: productResult.rows[0].sum || 0
       }

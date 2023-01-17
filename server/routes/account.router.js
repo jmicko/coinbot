@@ -118,7 +118,7 @@ router.get('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   const product_id = req.params.product_id;
 
-  const durations = ['24 hour', '1 week', '30 day', '1 year'];
+  const durations = ['24 Hour', '7 Day', '30 Day', '1 Year'];
   const profits = [];
   try {
     for (let i = 0; i < durations.length; i++) {
@@ -150,11 +150,6 @@ router.get('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
 router.put('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
   devLog('reset profit route');
   // get the object keys
-
-  console.assert(process.env.NODE_ENV === 'development', process.env, 'reset profit route should only be used in development');
-  Object.keys(process.env).forEach(key => {
-    devLog(key, 'key');
-  });
 
   const profit_reset = new Date();
   const userID = req.user.id;
