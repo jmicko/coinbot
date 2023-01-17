@@ -200,8 +200,9 @@ export function SocketProvider({ children }) {
         newSocket.connect()
       }, 5000);
       devLog(err instanceof Error); // true
-      devLog(err.message); // not authorized
+      devLog(err, 'THE SOCKET ERROR'); // not authorized
       devLog(err.data); // { content: "Please retry later" }
+      refreshUserRef.current();
     });
 
     // save the new socket and close the old one
