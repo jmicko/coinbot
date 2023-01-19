@@ -65,7 +65,7 @@ router.get('/:product', rejectUnauthenticated, (req, res) => {
  * POST route for auto setup
  */
 router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
-  devLog('in auto setup route!');
+  devLog('in auto setup route! SHOULD NOT HAPPEN DURING SIMULATION======================');
   // POST route code here
   const user = req.user;
   if (user.active && user.approved) {

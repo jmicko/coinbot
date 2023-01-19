@@ -48,7 +48,7 @@ async function optimize(data) {
     /////////////////////
     // run the simulation
     const simResult = await runSimulation(options);
-    devLog(simResult, 'simResult');
+    // devLog(simResult, 'simResult');
 
     if (!simResult.valid) {
       devLog(simResult, 'invalid sim result');
@@ -65,7 +65,7 @@ async function optimize(data) {
 
     // find the pair ratio that produced the highest profit
     const bestPairRatio = simResults.reduce((prev, current) => (prev.profit > current.profit) ? prev : current);
-    devLog('bestPairRatio:', Number(bestPairRatio.pairRatio), 'current ratio:', options.trade_pair_ratio);
+    // devLog('bestPairRatio:', Number(bestPairRatio.pairRatio), 'current ratio:', options.trade_pair_ratio);
 
     // check if the current pair ratio is 5 greater than the best pair ratio
     if (options.trade_pair_ratio >= Number(bestPairRatio.pairRatio) + 5) {
@@ -164,7 +164,7 @@ async function runSimulation(data) {
   // hold data that will be returned to the client
   let profit = 0;
 
-  devLog('starting simulation');
+  // devLog('starting simulation');
   // iterate through the candles and run the simulation
   for (let i = 0; i < candles.length; i++) {
     // for (let i = 0; i < 100; i++) {
@@ -203,7 +203,7 @@ async function runSimulation(data) {
     });
   }
 
-  devLog('simulation complete', profit);
+  // devLog('simulation complete', profit);
   // return the data to the parent process
   return { valid: true, profit };
 

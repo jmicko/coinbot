@@ -7,12 +7,13 @@ import React, {
 import { useUser } from '../../../contexts/UserContext.js';
 import { useSocket } from '../../../contexts/SocketProvider.js';
 import { useProductDecimals } from '../../../hooks/useProductDecimals.js';
-import { autoSetup, devLog, numberWithCommas } from '../../../shared.js';
+import { autoSetup, devLog, no, numberWithCommas } from '../../../shared.js';
 import Graph from '../../Graph/Graph.js';
 import SingleTrade from '../../SingleTrade/SingleTrade.js';
 import './AutoSetup.css'
 import { useData } from '../../../contexts/DataContext.js';
 import { useFetchData } from '../../../hooks/fetchData.js';
+import Confirm from '../../Confirm/Confirm.js';
 
 
 function AutoSetup(props) {
@@ -62,7 +63,7 @@ function AutoSetup(props) {
   });
 
   const [autoTradeStarted, setAutoTradeStarted] = useState(false);
-  // const [sizeCurve, setSizeCurve] = useState("linear");
+  const [confirmingAuto, setConfirmingAuto] = useState(false);
   // store a time stamp of when the last input was changed
   // this will be used to determine if the autoSetup function should be called
   // it should only be called if the last input change was more than 1 second ago
@@ -128,17 +129,19 @@ function AutoSetup(props) {
     auto,
   ])
 
-  function handleIncrementType(event) {
+  function handleIncrementType(e) {
+    no(e);
     // set the type of increment, dollars or percent
     setAuto({
       ...auto,
-      incrementType: event.target.value,
-      increment: (event.target.value === "dollars" ? 10 : 0.5)
+      incrementType: e.target.value,
+      increment: (e.target.value === "dollars" ? 10 : 0.5)
     });
   }
 
-  function handleSizeType(event) {
-    const sizeType = event.target.value;
+  function handleSizeType(e) {
+    no(e);
+    const sizeType = e.target.value;
     setAuto({
       ...auto,
       sizeType: sizeType,
@@ -146,13 +149,14 @@ function AutoSetup(props) {
     })
   }
 
-  function handleAutoChange(event) {
+  function handleAutoChange(e) {
+    no(e);
     // set the date of the last input change
     setLastInputChange(Date.now());
 
     // check type of input and convert to number if necessary
     // if checkbox, set the corresponding value to ! whatever it was before
-    const { name, value, type } = event.target;
+    const { name, value, type } = e.target;
     const val = (type === 'checkbox' ? !auto[name] : (type === 'number' ? parseFloat(value) : value));
 
 
@@ -163,18 +167,19 @@ function AutoSetup(props) {
     });
   }
 
-  function submitAutoSetup(event) {
-    event.preventDefault();
+  function submitAutoSetup(e) {
+    e && e.preventDefault();
     setAutoTradeStarted(true);
     devLog('automatically setting up bot');
     autoTrader();
     setTimeout(() => {
       setAutoTradeStarted(false);
+
     }, 5000);
   }
 
-  function handleSimulation(event) {
-    event.preventDefault();
+  function handleSimulation(e) {
+    e.preventDefault();
     devLog('simulating trades', availableQuote);
 
 
@@ -187,8 +192,6 @@ function AutoSetup(props) {
       product: currentProduct,
       simUser: { ...user, availableQuote: availableQuote, reinvest: simReinvest, reinvest_ratio: simReinvestPercent },
     })
-
-
   }
 
   function autoTrader() {
@@ -204,6 +207,16 @@ function AutoSetup(props) {
 
   return (
     <div className="AutoSetup settings-panel scrollable">
+      {confirmingAuto && <Confirm
+      text={`Are you sure you want to automatically set up the bot with these parameters? This will place ${setupResults?.orderList?.length} trades, and they will be placed immediately!`}
+        execute={() => {
+          setConfirmingAuto(false);
+          submitAutoSetup();
+        }}
+        ignore={() => {
+          setConfirmingAuto(false);
+          //  setAutoTradeStarted(false)
+        }} />}
       <div className={`divider ${theme}`} />
       <h4>Auto Setup</h4>
       {/* {JSON.stringify(user.availableFunds?.[productID]?.quote_available)} */}
@@ -219,7 +232,7 @@ function AutoSetup(props) {
       </>}
 
       <div className='auto-setup-form-and-results'>
-        <form className='auto-setup-form left-border' onSubmit={submitAutoSetup}>
+        <form className='auto-setup-form left-border' >
           <p>Current price: {currentPrice}</p>
           {/* STARTING VALUE */}
           {props.tips
@@ -229,7 +242,7 @@ function AutoSetup(props) {
             Starting Value: <span>{auto.startingValue}</span>
             <br />
             <input
-              onChange={(event) => handleAutoChange(event)}
+              onChange={(e) => handleAutoChange(e)}
               value={auto.startingValue}
               type='number'
               name='startingValue'
@@ -244,7 +257,7 @@ function AutoSetup(props) {
             name="skipFirst"
             type="checkbox"
             checked={auto.skipFirst}
-            onChange={(event) => handleAutoChange(event)}
+            onChange={(e) => handleAutoChange(e)}
           />
           <label htmlFor="skipFirst">
             Skip first
@@ -261,7 +274,7 @@ function AutoSetup(props) {
             Ending Value: <span>{auto.endingValue}</span>
             <br />
             <input
-              onChange={(event) => handleAutoChange(event)}
+              onChange={(e) => handleAutoChange(e)}
               value={auto.endingValue}
               type='number'
               name='endingValue'
@@ -274,7 +287,7 @@ function AutoSetup(props) {
             name="ignoreFunds"
             type="checkbox"
             checked={auto.ignoreFunds}
-            onChange={(event) => handleAutoChange(event)}
+            onChange={(e) => handleAutoChange(e)}
           />
           <label htmlFor="ignoreFunds">
             Ignore Available Funds
@@ -289,7 +302,7 @@ function AutoSetup(props) {
               name="increment_type"
               value="dollars"
               checked={auto.incrementType === "dollars"}
-              onChange={handleIncrementType}
+              onChange={(e) => handleIncrementType(e)}
             />
             Dollars
           </label>
@@ -300,7 +313,7 @@ function AutoSetup(props) {
               name="increment_type"
               value="percentage"
               checked={auto.incrementType === "percentage"}
-              onChange={handleIncrementType}
+              onChange={(e) => handleIncrementType(e)}
             />
             Percentage
           </label>
@@ -314,7 +327,7 @@ function AutoSetup(props) {
             Increment: <span>{auto.increment}</span>
             <br />
             <input
-              onChange={(event) => handleAutoChange(event)}
+              onChange={(e) => handleAutoChange(e)}
               value={auto.increment}
               type='number'
               name='increment'
@@ -330,7 +343,7 @@ function AutoSetup(props) {
             Trade-pair percent increase: <span>{auto.trade_pair_ratio}</span>
             <br />
             <input
-              onChange={(event) => handleAutoChange(event)}
+              onChange={(e) => handleAutoChange(e)}
               value={auto.trade_pair_ratio}
               type='number'
               name='trade_pair_ratio'
@@ -348,7 +361,7 @@ function AutoSetup(props) {
               name="size_type"
               value="quote"
               checked={auto.sizeType === "quote"}
-              onChange={handleSizeType}
+              onChange={(e) => handleSizeType(e)}
             />
             USD
           </label>
@@ -358,7 +371,7 @@ function AutoSetup(props) {
             name="size_type"
             value="base"
             checked={auto.sizeType === "base"}
-            onChange={handleSizeType}
+            onChange={(e) => handleSizeType(e)}
           />
           <label htmlFor='base'>
             {baseID}
@@ -406,7 +419,7 @@ function AutoSetup(props) {
             }: <span>{auto.size}</span>
             <br />
             <input
-              onChange={(event) => handleAutoChange(event)}
+              onChange={(e) => handleAutoChange(e)}
               value={auto.size}
               type='number'
               name='size'
@@ -420,7 +433,7 @@ function AutoSetup(props) {
               Max Size in {auto.sizeType === "quote" ? "USD" : baseID}: <span>{auto.maxSize}</span>
               <br />
               <input
-                onChange={(event) => handleAutoChange(event)}
+                onChange={(e) => handleAutoChange(e)}
                 value={auto.maxSize}
                 type='number'
                 name='maxSize'
@@ -435,7 +448,7 @@ function AutoSetup(props) {
               Steepness: <span>{auto.steepness}</span>
               <br />
               <input
-                onChange={(event) => handleAutoChange(event)}
+                onChange={(e) => handleAutoChange(e)}
                 value={auto.steepness}
                 type='number'
                 name='steepness'
@@ -455,7 +468,7 @@ function AutoSetup(props) {
                 id="live"
                 value="live"
                 checked={simulation === false}
-                onChange={() => setSimulation(false)}
+                onChange={(e) => { no(e); setSimulation(false) }}
               />
               Live
             </label>
@@ -466,7 +479,7 @@ function AutoSetup(props) {
                 id="simulation"
                 value="simulation"
                 checked={simulation === true}
-                onChange={() => setSimulation(true)}
+                onChange={(e) => { no(e); setSimulation(true) }}
               />
               Simulation
             </label>
@@ -525,11 +538,16 @@ function AutoSetup(props) {
           }
 
           <br />
-
+          {/* {autoTradeStarted && <Confirm execute={submitAutoSetup} ignore={() => setAutoTradeStarted(false)} />} */}
           {!simulation
-            ? !autoTradeStarted
-              ? <input className={`btn-store-api btn-blue medium ${user.theme}`} type="submit" name="submit" value="Start Setup" />
-              : <p>Auto setup started!</p>
+            ? !confirmingAuto && !autoTradeStarted
+              // ? <input className={`btn-store-api btn-blue medium ${user.theme}`} type="submit" name="submit" value="Start Setup" />
+              // ? <button className={`btn-store-api btn-blue medium ${user.theme}`} onClick={submitAutoSetup}>Start Setup</button>
+              ? <button className={`btn-store-api btn-blue medium ${user.theme}`} onClick={(e) => { no(e); setConfirmingAuto(true) }}>Start Setup</button>
+              : autoTradeStarted
+                ? <p>Auto setup started...</p>
+                : <p>Awaiting confirmation...</p>
+            // : <Confirm execute={submitAutoSetup} ignore={() => setAutoTradeStarted(false)} />
             /* button to run a simulation */
             // : (!simLoading || simulationReducer.status === 'complete') && !user.simulating && <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={handleSimulation}>Run Simulation</button>
             : !simLoading && !user.simulating && <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={handleSimulation}>Run Simulation</button>
@@ -559,8 +577,8 @@ function AutoSetup(props) {
               <p>Optimum pair percent increase: {simulationResults.bestPairRatio.pairRatio}
                 {/* button to set the trade pair ratio to the optimum pair ratio */}
                 &nbsp;<button className={`btn-store-api btn-green medium ${user.theme}`} onClick={
-                  (event) => {
-                    event.preventDefault();
+                  (e) => {
+                    no(e);
                     setAuto({ ...auto, trade_pair_ratio: simulationResults.bestPairRatio?.pairRatio });
                   }
                 }>Use It!</button>

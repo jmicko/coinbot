@@ -113,7 +113,7 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
  */
 router.post('/simulation', rejectUnauthenticated, async (req, res) => {
   try {
-    devLog('simulation route hit', req.body);
+    devLog('simulation route hit');
     // check if user is already running a simulation
     if (userStorage[req.user.id].simulating) {
       devLog('user is already simulating');
@@ -146,13 +146,13 @@ router.post('/simulation', rejectUnauthenticated, async (req, res) => {
     // start a child process to run the simulation
     // get the path
     const path = __dirname;
-    devLog('path', path);
+    // devLog('path', path);
 
     const simulationWorker = fork(path + '../../../src/workers/simulationWorker.js');
     simulationWorker.send(workerData);
     // when the worker sends a message back, send it to the client
     simulationWorker.on('message', (message) => {
-      devLog('message from simulationWorker', message);
+      // devLog('message from simulationWorker', message);
 
       if (!message.valid) {
         devLog('simulation was not valid');
@@ -207,7 +207,7 @@ router.get('/simulation', rejectUnauthenticated, async (req, res) => {
     for (let i = 0; i < 20; i++) {
       const simulationResults = await userStorage[userID].simulationResults;
       if (simulationResults?.simResults) {
-        devLog('simulation results', simulationResults);
+        // devLog('simulation results', simulationResults);
         res.send(simulationResults).status(200);
         return;
       } else {

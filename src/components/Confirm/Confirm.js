@@ -8,7 +8,7 @@ function Confirm(props) {
   return (
     <div className={`Confirm`}>
       <center>
-        <p>Are you sure?</p>
+        {props.text ? <p>{props.text}</p> : <p>Are you sure?</p>}
         <button className={`btn-green medium ${user.theme}`} onClick={props.execute}>Confirm</button>
         <button className={`btn-red medium ${user.theme}`} onClick={props.ignore}>Cancel</button>
       </center>
