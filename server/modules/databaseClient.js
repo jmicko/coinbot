@@ -1371,6 +1371,33 @@ async function getProfitSinceDate(userID, date, product) {
   })
 }
 
+// get the weekly average profit for a product for the last 4 weeks
+async function getWeeklyAverageProfit(userID, product) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) / 4 AS "average_profit"
+      FROM limit_orders
+      WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "filled_at" > now() - '4 weeks'::interval;`;
+      const result = await pool.query(sqlText, [userID]);
+
+      const productSqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) / 4 AS "average_profit"
+      FROM limit_orders
+      WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "product_id" = $2 AND "filled_at" > now() - '4 weeks'::interval;`;
+      const productResult = await pool.query(productSqlText, [userID, product]);
+      const profit = {
+        duration: '4 Week Avg',
+        allProfit: result.rows[0].average_profit || 0,
+        productProfit: productResult.rows[0].average_profit || 0
+      }
+      resolve(profit);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+
+
 async function getNewestCandle(product_id, granularity) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -1608,6 +1635,7 @@ const databaseClient = {
   getProfitForDurationByProduct: getProfitForDurationByProduct,
   getProfitForDurationByAllProducts: getProfitForDurationByAllProducts,
   getProfitSinceDate: getProfitSinceDate,
+  getWeeklyAverageProfit: getWeeklyAverageProfit,
   getNewestCandle: getNewestCandle,
   getOldestCandle: getOldestCandle,
   saveCandles: saveCandles,

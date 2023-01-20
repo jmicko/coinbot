@@ -131,6 +131,9 @@ router.get('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
       profits.push({ duration, productProfit, allProfit });
     }
 
+    const weeklyAverage = await databaseClient.getWeeklyAverageProfit(userID, product_id);
+    profits.push(weeklyAverage);
+
     const sinceDate = await databaseClient.getProfitSinceDate(userID, req.user.profit_reset, product_id)
     // add since reset to profits array
     profits.push(sinceDate);
@@ -471,7 +474,7 @@ router.post('/messages', rejectUnauthenticated, async (req, res) => {
   devLog('post messages route');
   try {
     const user = req.user;
-    if(!user.can_chat) {
+    if (!user.can_chat) {
       res.sendStatus(403);
       return;
     }
