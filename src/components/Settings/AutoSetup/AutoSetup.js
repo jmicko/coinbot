@@ -208,7 +208,7 @@ function AutoSetup(props) {
   return (
     <div className="AutoSetup settings-panel scrollable">
       {confirmingAuto && <Confirm
-      text={`Are you sure you want to automatically set up the bot with these parameters? This will place ${setupResults?.orderList?.length} trades, and they will be placed immediately!`}
+        text={`Are you sure you want to automatically set up the bot with these parameters? This will place ${setupResults?.orderList?.length} trades, and they will be placed immediately!`}
         execute={() => {
           setConfirmingAuto(false);
           submitAutoSetup();
@@ -498,7 +498,7 @@ function AutoSetup(props) {
                 type='date'
                 value={simStartDate}
                 required
-                onChange={(event) => setSimStartDate(event.target.value)}
+                onChange={(e) => { no(e); setSimStartDate(e.target.value) }}
               />
             </label>
             <br />
@@ -512,7 +512,7 @@ function AutoSetup(props) {
                 name="simReinvest"
                 type="checkbox"
                 checked={simReinvest}
-                onChange={() => setSimReinvest(!simReinvest)}
+                onChange={(e) => { no(e); setSimReinvest(!simReinvest) }}
               />
               Reinvest
             </label>
@@ -531,7 +531,7 @@ function AutoSetup(props) {
                 max={100}
                 min={1}
                 required
-                onChange={(event) => setSimReinvestPercent(Number(event.target.value))}
+                onChange={(e) => setSimReinvestPercent(Number(e.target.value))}
               /> (1-100)
             </label>
           </div>
@@ -590,7 +590,7 @@ function AutoSetup(props) {
               <h4>Simulation Results</h4>
               <p>Best pair ratio: {simulationResults.bestPairRatio?.pairRatio}</p>
               {/* button to to detailed results */}
-              <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={() => setDetailedResults(!detailedResults)}>Detailed Results</button>
+              <button className={`btn-store-api btn-green medium ${user.theme}`} onClick={(e) => { no(e); setDetailedResults(!detailedResults) }}>Detailed Results</button>
               {detailedResults && <div>
                 {/* list of simResults array from the reducer */}
                 <ul>
