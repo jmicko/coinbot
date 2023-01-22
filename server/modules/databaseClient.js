@@ -1543,7 +1543,7 @@ async function getMissingCandles({ productID, granularity }) {
 async function getCandles(productID, granularity, start, end) {
   return new Promise(async (resolve, reject) => {
     try {
-      devLog('getting candles FROM DB', userID, productID, granularity, start, end);
+      devLog('getting candles FROM DB', productID, granularity, start, end);
       const sqlText = `SELECT * FROM "market_candles" WHERE "product_id" = $1 AND "granularity" = $2 AND "start" BETWEEN $3 AND $4;`;
       let result = await pool.query(sqlText, [productID, granularity, start, end]);
       resolve(result.rows);

@@ -1,6 +1,9 @@
-const databaseClient = require("./databaseClient");
-const excel = require('exceljs');
-const fs = require('fs');
+// const databaseClient = require("./databaseClient");
+import { databaseClient } from "./databaseClient.js";
+// const excel = require('exceljs');
+import excel from "exceljs";
+// const fs = require('fs');
+import fs from "fs";
 
 console.log('worker file loaded');
 if (process.isMainThread) {
@@ -101,51 +104,51 @@ async function processCandleData(data) {
   // create a worksheet for each month
   // for (let key in candleDataByMonth) {
   // for (let key in candleData) {
-    const candleWorksheet = workbook.addWorksheet('Candles');
-    // const candleWorksheet = workbook.addWorksheet(key);
-    // add column headers. the object will look like this:
-    // {
-    //   id: 134246,
-    //   user_id: '1',
-    //   product_id: 'ETH-USD',
-    //   granularity: 'SIX_HOUR',
-    //   start: 1645596000,
-    //   low: '2656.9700000000000000',
-    //   high: '2740.0000000000000000',
-    //   high_low_ratio: '1.0312498823848218',
-    //   open: '2659.4800000000000000',
-    //   close: '2721.5100000000000000',
-    //   volume: '33135.9741297300000000'
-    // }
-    candleWorksheet.columns = [
-      // { header: 'id', key: 'id', width: 10 },
-      { header: 'user_id', key: 'user_id', width: 10 },
-      { header: 'product_id', key: 'product_id', width: 10 },
-      { header: 'granularity', key: 'granularity', width: 12 },
-      { header: 'start', key: 'start', width: 15 },
-      { header: 'date', key: 'date', width: 15 },
-      { header: 'time', key: 'time', width: 10 },
-      { header: 'low', key: 'low', width: 22 },
-      { header: 'high', key: 'high', width: 22 },
-      { header: 'high_low_ratio', key: 'high_low_ratio', width: 22 },
-      { header: 'open', key: 'open', width: 22 },
-      { header: 'close', key: 'close', width: 22 },
-      { header: 'volume', key: 'volume', width: 20 }
-    ];
+  const candleWorksheet = workbook.addWorksheet('Candles');
+  // const candleWorksheet = workbook.addWorksheet(key);
+  // add column headers. the object will look like this:
+  // {
+  //   id: 134246,
+  //   user_id: '1',
+  //   product_id: 'ETH-USD',
+  //   granularity: 'SIX_HOUR',
+  //   start: 1645596000,
+  //   low: '2656.9700000000000000',
+  //   high: '2740.0000000000000000',
+  //   high_low_ratio: '1.0312498823848218',
+  //   open: '2659.4800000000000000',
+  //   close: '2721.5100000000000000',
+  //   volume: '33135.9741297300000000'
+  // }
+  candleWorksheet.columns = [
+    // { header: 'id', key: 'id', width: 10 },
+    { header: 'user_id', key: 'user_id', width: 10 },
+    { header: 'product_id', key: 'product_id', width: 10 },
+    { header: 'granularity', key: 'granularity', width: 12 },
+    { header: 'start', key: 'start', width: 15 },
+    { header: 'date', key: 'date', width: 15 },
+    { header: 'time', key: 'time', width: 10 },
+    { header: 'low', key: 'low', width: 22 },
+    { header: 'high', key: 'high', width: 22 },
+    { header: 'high_low_ratio', key: 'high_low_ratio', width: 22 },
+    { header: 'open', key: 'open', width: 22 },
+    { header: 'close', key: 'close', width: 22 },
+    { header: 'volume', key: 'volume', width: 20 }
+  ];
 
-    // add rows for each candle in the month
-    // for (let i = 0; i < candleDataByMonth[key].length; i++) {
-    //   candleWorksheet.addRow(candleDataByMonth[key][i]);
-    // }
-    // add rows for each candle
-    for (let i = 0; i < candleData.length; i++) {
-      candleWorksheet.addRow(candleData[i]);
-    }
-    
-    console.log('all rows added');
+  // add rows for each candle in the month
+  // for (let i = 0; i < candleDataByMonth[key].length; i++) {
+  //   candleWorksheet.addRow(candleDataByMonth[key][i]);
+  // }
+  // add rows for each candle
+  for (let i = 0; i < candleData.length; i++) {
+    candleWorksheet.addRow(candleData[i]);
+  }
 
-    // set the style for the header row
-    candleWorksheet.getRow(1).font = { bold: true };
+  console.log('all rows added');
+
+  // set the style for the header row
+  candleWorksheet.getRow(1).font = { bold: true };
   // }
 
   // set the style for the header row
@@ -157,7 +160,7 @@ async function processCandleData(data) {
   const endDate = new Date(data.end * 1000).toISOString().split('T')[0];
 
   // create and name the file
-  await workbook.xlsx.writeFile(`server/exports/${data.userID}-${data.username}-${data.product}-${data.granularity}-${startDate}-${endDate}.xlsx`);
+  await workbook.xlsx.writeFile(`server/exports/${data.userID}-${data.username}-${data.product}-${data.granularity}-${startDate}_thru_${endDate}.xlsx`);
 
   console.log('file created');
   // if there are more than 5 files in the exports folder with the userID and username of the user as the start of the file name,
