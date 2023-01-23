@@ -181,7 +181,7 @@ async function updateMultipleOrders(userID, params) {
         let errorText = `Error updating order details`
         console.log(err, 'error in updateMultipleOrders loop');
         messenger[userID].newError({
-          errorData: errorData,
+          errorData: orderToCheck,
           errorText: errorText
         });
 

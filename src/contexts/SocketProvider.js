@@ -13,7 +13,7 @@ export function useSocket() {
 }
 
 export function SocketProvider({ children }) {
-  devLog('rendering socket provider');
+  // devLog('rendering socket provider');
   const [socket, setSocket] = useState({
     sendChat: (chat) => {
       socket.emit('message', { type: 'chat', data: chat })
@@ -70,9 +70,15 @@ export function SocketProvider({ children }) {
     // devLog('socket provider useEffect-----------------');
     // check if on dev server or build, and set endpoint appropriately
     let ENDPOINT = origin;
-    if (origin === "http://localhost:3000") {
-      ENDPOINT = "http://localhost:5000";
+    devLog('endpoint', ENDPOINT);
+
+    // react dev server needs to be proxied to the express server, even on other devices
+    if (process.env.NODE_ENV === 'development') {
+      // remove port 3000 from the endpoint and add port 5000
+      ENDPOINT = ENDPOINT.replace(':3000', ':5000');
     }
+
+
     const newSocket = io(
       ENDPOINT,
       { transports: ['websocket'] }

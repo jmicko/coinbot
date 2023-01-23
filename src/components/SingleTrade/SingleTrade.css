@@ -1,3 +1,33 @@
+.Single-trade {
+  display       : flex;
+  flex-direction: row;
+}
+
+.Single-trade button {
+  height: 1.7rem;
+}
+
+.overlay {
+  display        : flex;
+  flex-direction : row;
+  justify-content: space-between;
+  margin         : auto;
+  flex-grow      : 1;
+  flex-wrap      : wrap;
+  width          : 100%;
+  max-width: fit-content;
+}
+
+.overlay div {
+  margin    : auto 0.5rem;
+  /* background-color: aquamarine; */
+  /* color: rgb(190, 52, 52); */
+  /* word-wrap    : none; */
+  width        : fit-content;
+  /* padding   : .25rem; */
+  /* text-align: center; */
+}
+
 .BUY {
   border-top: solid 1px black;
 
@@ -58,11 +88,6 @@
   /* border-radius      : 30px; */
 }
 
-.single-trade-text {
-  margin    : auto;
-  padding   : .25rem;
-  text-align: center;
-}
 
 .deleting,
 .BUY .kill-button,

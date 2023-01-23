@@ -211,6 +211,7 @@ function MainLoopErrors(userID, err) {
     errorText = 'Too many requests. Rate limit exceeded. Nothing to worry about.';
   } else {
     devLog(err, 'unknown error at end of syncOrders');
+    errorData = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???'
     errorText = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???';
   }
   messenger[userID].newError({
