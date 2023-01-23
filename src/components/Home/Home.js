@@ -43,12 +43,12 @@ function Home() {
       className={`Home ${user.theme}`}
       style={{
         height: height,
-        width: width
+        // width: width
       }}>
       {/* {JSON.stringify(socket.product)}{JSON.stringify(product)} */}
       <Menu clickSettings={clickSettings} />
 
-
+      {/* {width}w {height}h */}
       {
         // on mobile?
         width <= 800
