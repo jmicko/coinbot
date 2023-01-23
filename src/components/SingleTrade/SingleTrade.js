@@ -133,21 +133,19 @@ function SingleTrade(props) {
         </div>
 
 
-        <br />
-        {/* {
-          showAll && !deleting && <><strong> Percent Increase:</strong> {Number(props.order.trade_pair_ratio)}</>
-        } */}
+
+
         {
-          showAll && !deleting && <div><strong> Buy Fees:</strong> {buyFee.toFixed(8)}</div>
+          showAll && !deleting && <div><strong>Buy Fees:</strong> {buyFee.toFixed(8)}</div>
         }
         {
-          showAll && !deleting && <div><strong> Sell Fees:</strong> {sellFee.toFixed(8)}</div>
+          showAll && !deleting && <div><strong>Sell Fees:</strong> {sellFee.toFixed(8)}</div>
         }
         {
-          showAll && !deleting && <div><strong> Total Fees:</strong> {(Number(sellFee.toFixed(8)) + Number(buyFee.toFixed(8))).toFixed(8)}</div>
+          showAll && !deleting && <div><strong>Total Fees:</strong> {(Number(sellFee.toFixed(8)) + Number(buyFee.toFixed(8))).toFixed(8)}</div>
         }
         {
-          showAll && !deleting && <div><strong> Gross Profit:</strong> {(props.order.original_sell_price * props.order.base_size - props.order.original_buy_price * props.order.base_size).toFixed(8)}</div>
+          showAll && !deleting && <div><strong>Gross Profit:</strong> {(props.order.original_sell_price * props.order.base_size - props.order.original_buy_price * props.order.base_size).toFixed(8)}</div>
         }
         {/* </p> */}
       </div>
