@@ -46,7 +46,7 @@ function Settings(props) {
         <Dragger
           text={'Settings'}
 
-          header={() => <h2 className={`settings-header ${collapseParent && 'hide'}`}>Settings</h2>}
+          // header={() => <h2 className={`settings-header ${collapseParent && 'hide'}`}>Settings</h2>}
           beforeDrag={BeforeDrag}
           afterDrag={() => <AfterDrag />}
         />
