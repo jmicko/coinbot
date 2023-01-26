@@ -10,22 +10,63 @@
 .overlay {
   display        : flex;
   flex-direction : row;
-  justify-content: space-between;
-  margin         : auto;
-  flex-grow      : 1;
+  justify-content: space-around;
+  /* margin         : auto; */
+  /* flex-grow      : 1; */
   flex-wrap      : wrap;
   width          : 100%;
-  max-width: fit-content;
+  /* max-width      : fit-content; */
+  /* background-color: aquamarine; */
 }
 
 .overlay div {
-  margin    : auto 0.5rem;
+  margin: auto 0.5rem;
   /* background-color: aquamarine; */
   /* color: rgb(190, 52, 52); */
   /* word-wrap    : none; */
   width        : fit-content;
   /* padding   : .25rem; */
   /* text-align: center; */
+}
+
+@media screen and (max-width: 1230px) {
+  .overlay div {
+    flex-basis: 30%;
+    flex-grow : 1;
+    justify-content: space-evenly;
+    
+    /* background-color: aquamarine; */
+    /* flex-basis: 100%; */
+  }
+  /* any .overlay div on the right side should be right-justified */
+  .overlay div:nth-child(3n) {
+    text-align: right;
+  }
+  .overlay div:nth-child(3n-1) {
+    text-align: center;
+  }
+}
+
+
+@media screen and (max-width: 800px) {
+  .overlay div {
+    flex-basis: 45%;
+    flex-grow : 1;
+    justify-content: space-evenly;
+    
+    /* background-color: aquamarine; */
+    /* flex-basis: 100%; */
+  }
+  .overlay div:nth-child(3n) {
+    text-align: unset;
+  }
+  .overlay div:nth-child(3n-1) {
+    text-align: unset;
+  }
+  /* any .overlay div on the right side should be right-justified */
+  .overlay div:nth-child(2n) {
+    text-align: right;
+  }
 }
 
 .BUY {
