@@ -50,10 +50,11 @@
 
 @media screen and (max-width: 800px) {
   .overlay div {
-    flex-basis: 45%;
+    flex-basis: 33%;
+    /* flex-basis: 45%; */
     flex-grow : 1;
     justify-content: space-evenly;
-    
+    min-width: fit-content;
     /* background-color: aquamarine; */
     /* flex-basis: 100%; */
   }
