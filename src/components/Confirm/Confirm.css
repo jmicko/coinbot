@@ -8,10 +8,11 @@
   /* top: 20%; */
   /* margin: 0 auto; */
   /* right: 40%; */
+  z-index: 9;
   margin-left: -9rem;
   padding-bottom: 2rem;
   left: 50%;
   top: 20%;
   color: #ffffff;
-  background-color: #722315d5;
+  background-color: #722315;
 }
