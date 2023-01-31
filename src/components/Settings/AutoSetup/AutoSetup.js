@@ -199,6 +199,7 @@ function AutoSetup(props) {
     startAutoSetup({
       ...auto,
       availableFunds: availableQuote,
+      availableQuote: availableQuote,
       tradingPrice: currentPrice,
 
       product: currentProduct,

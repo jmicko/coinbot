@@ -69,7 +69,7 @@ function autoSetup(user, options) {
       return falseReturn;
     }
     // else {
-    //   devLog(options[key], 'options[key]')
+    //   devLog(options[key], 'options[key]', key)
     // }
   }
 
@@ -84,7 +84,10 @@ function autoSetup(user, options) {
   const orderList = [];
 
   // SHORTEN PARAMS for better readability
-  let availableFunds = options.availableFunds;
+  // let availableFunds = options.availableFunds;
+  let availableFunds = options.availableQuote;
+
+  // devLog(availableFunds, 'availableFunds')
 
   const {
     size,
