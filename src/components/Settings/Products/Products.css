@@ -1,0 +1,15 @@
+.product-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* number columns should align right */
+.product-table td.number {
+  text-align: right;
+  padding-right: 1rem;
+}
+
+/* all other columns should center */
+.product-table td:not(.number) {
+  text-align: center;
+}
