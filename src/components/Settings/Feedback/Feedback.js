@@ -22,6 +22,11 @@ function Feedback() {
     e.preventDefault();
     console.log('feedback', feedback);
     submitFeedback(feedback);
+    // clear inputs
+    setFeedback({
+      subject: '',
+      description: ''
+    });
   }
 
 
@@ -35,14 +40,24 @@ function Feedback() {
       <p>
         Have a suggestion or found a bug? Let us know!
       </p>
-
       {/* form with inputs to submit feedback */}
       <form onSubmit={handleSubmit} className="feedback-form">
         <label>
-          <input type="text" name="Subject" placeholder="Subject" required onChange={(e) => setFeedback({ ...feedback, subject: e.target.value })} />
+          <input
+            type="text"
+            name="Subject"
+            placeholder="Subject"
+            required
+            value={feedback.subject}
+            onChange={(e) => setFeedback({ ...feedback, subject: e.target.value })} />
         </label>
         <label>
-          <textarea name="Description" placeholder="Description" required onChange={(e) => setFeedback({ ...feedback, description: e.target.value })} />
+          <textarea
+            name="Description"
+            placeholder="Description"
+            required
+            value={feedback.description}
+            onChange={(e) => setFeedback({ ...feedback, description: e.target.value })} />
         </label>
         <input type="submit" value="Submit" className={`btn-green ${theme}`} />
       </form>
