@@ -231,6 +231,12 @@ router.post('/feedback', rejectUnauthenticated, async (req, res) => {
   const description = req.body.description;
   devLog('feedback route', user.id, subject, description);
 
+  // ensure that there is a subject and description, and that they are strings
+  if (!subject || !description || typeof subject !== 'string' || typeof description !== 'string') {
+    res.sendStatus(400);
+    return;
+  }
+
   try {
     // check if the user already has 5 feedbacks
     const queryTextCount = `SELECT COUNT(*) FROM "feedback" WHERE "user_id" = $1;`;
