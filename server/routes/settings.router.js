@@ -227,10 +227,10 @@ router.put('/syncQuantity', rejectUnauthenticated, async (req, res) => {
  */
 router.post('/feedback', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
-  const feedback = req.body.feedback;
-  const type = req.body.type;
+  const subject = req.body.subject;
+  const description = req.body.description;
   // for now just log it and send a 200
-  devLog('feedback route', feedback, type);
+  devLog('feedback route', user.username, subject, description);
   res.sendStatus(200);
 });
 
