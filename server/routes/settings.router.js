@@ -222,4 +222,17 @@ router.put('/syncQuantity', rejectUnauthenticated, async (req, res) => {
   }
 });
 
+/**
+ * POST route to leave feedback or feature request
+ */
+router.post('/feedback', rejectUnauthenticated, async (req, res) => {
+  const user = req.user;
+  const feedback = req.body.feedback;
+  const type = req.body.type;
+  // for now just log it and send a 200
+  devLog('feedback route', feedback, type);
+  res.sendStatus(200);
+});
+
+
 export default router;
