@@ -5,7 +5,7 @@ import './Feedback.css'
 
 
 function Feedback() {
-  const { theme } = useUser();
+  const { user, theme } = useUser();
 
   const {
     data: oldFeedback,
@@ -67,6 +67,8 @@ function Feedback() {
 
               <div className="feedback-submission-footer">
                 <p>Submitted on: {feedback.created_at.slice(0, 10)}</p>
+                {/* if user is admin, show who submitted the feedback */}
+                {user.admin && <p>Submitted by: {feedback.username}</p>}
                 {/* delete button */}
                 <button className={`btn-red ${theme}`} onClick={() => deleteFeedback(feedback.id)}>Delete</button>
               </div>

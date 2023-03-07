@@ -274,8 +274,9 @@ router.get('/feedback', rejectUnauthenticated, async (req, res) => {
   try {
     // check if the user is an admin
     if (admin) {
-      // get all feedback
-      const queryText = `SELECT * FROM "feedback" ORDER BY "id" DESC;`;
+      // get all feedback, join with user table to get username
+      // const queryText = `SELECT * FROM "feedback" ORDER BY "id" DESC;`;
+      const queryText = `SELECT "feedback".*, "user"."username" FROM "feedback" JOIN "user" ON "feedback"."user_id" = "user"."id" ORDER BY "id" DESC;`;
       const results = await pool.query(queryText);
       res.send(results.rows);
     } else {
