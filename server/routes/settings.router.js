@@ -24,7 +24,7 @@ router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
     res.sendStatus(403);
     return;
   }
-  
+
   const user = req.user;
   const userID = user.id
   // only admin can do this
@@ -200,18 +200,18 @@ router.put('/killLock', rejectUnauthenticated, async (req, res) => {
  */
 router.put('/syncQuantity', rejectUnauthenticated, async (req, res) => {
   try {
-  const user = req.user;
-  let newQuantity = req.body.sync_quantity;
-  // get the bot settings
-  const bot = botSettings.get();
-  devLog(bot.orders_to_sync, 'bot settings');
-  if (newQuantity > bot.orders_to_sync) {
-    newQuantity = bot.orders_to_sync;
-  }
-  if (newQuantity < 1) {
-    newQuantity = 1;
-  }
-  devLog('syncQuantity route', user.username);
+    const user = req.user;
+    let newQuantity = req.body.sync_quantity;
+    // get the bot settings
+    const bot = botSettings.get();
+    devLog(bot.orders_to_sync, 'bot settings');
+    if (newQuantity > bot.orders_to_sync) {
+      newQuantity = bot.orders_to_sync;
+    }
+    if (newQuantity < 1) {
+      newQuantity = 1;
+    }
+    devLog('syncQuantity route', user.username);
     const queryText = `UPDATE "user_settings" SET "sync_quantity" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [newQuantity, user.id]);
     await userStorage[user.id].update();
@@ -229,10 +229,91 @@ router.post('/feedback', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   const subject = req.body.subject;
   const description = req.body.description;
-  // for now just log it and send a 200
-  devLog('feedback route', user.username, subject, description);
-  res.sendStatus(200);
+  devLog('feedback route', user.id, subject, description);
+
+  try {
+    // check if the user already has 5 feedbacks
+    const queryTextCount = `SELECT COUNT(*) FROM "feedback" WHERE "user_id" = $1;`;
+    const countResults = await pool.query(queryTextCount, [user.id]);
+    devLog(countResults.rows[0].count, 'count of feedbacks');
+    
+    // if they do, send back a 403, else continue
+    if (countResults.rows[0].count >= 5) {
+      res.sendStatus(403);
+      return;
+    }
+    
+    
+    // store the feedback in the database
+    const queryText = `INSERT INTO "feedback" ("user_id", "subject", "description") VALUES ($1, $2, $3);`;
+
+    await pool.query(queryText, [user.id, subject, description]);
+    res.sendStatus(200);
+  } catch (err) {
+    devLog(err, 'error with feedback route');
+    res.sendStatus(500);
+  }
+
 });
+
+/**
+ * GET route to get old feedback
+ * If user is admin, get feedback for all users. Otherwise, get feedback for the user
+ */
+router.get('/feedback', rejectUnauthenticated, async (req, res) => {
+  const user = req.user;
+  const admin = req.user.admin;
+  devLog('feedback route', user.id, admin);
+
+  try {
+    // check if the user is an admin
+    if (admin) {
+      // get all feedback
+      const queryText = `SELECT * FROM "feedback" ORDER BY "id" DESC;`;
+      const results = await pool.query(queryText);
+      res.send(results.rows);
+    } else {
+      // get feedback for the user
+      const queryText = `SELECT * FROM "feedback" WHERE "user_id" = $1 ORDER BY "id" DESC;`;
+      const results = await pool.query(queryText, [user.id]);
+      res.send(results.rows);
+    }
+  } catch (err) {
+    devLog(err, 'error with feedback route');
+    res.sendStatus(500);
+  }
+});
+
+/**
+ * Delete route to delete feedback
+ * If user is admin, can delete any feedback. Otherwise, can only delete their own feedback
+ */
+router.delete('/feedback/:id', rejectUnauthenticated, async (req, res) => {
+  const user = req.user;
+  const admin = req.user.admin;
+  const id = req.params.id;
+  devLog('feedback route', user.id, admin, id);
+
+  try {
+    // check if the user is an admin
+    if (admin) {
+      // delete the feedback
+      const queryText = `DELETE FROM "feedback" WHERE "id" = $1;`;
+
+      const results = await pool.query(queryText, [id]);
+      res.sendStatus(200);
+    } else {
+      // delete feedback for the user
+      const queryText = `DELETE FROM "feedback" WHERE "id" = $1 AND "user_id" = $2;`;
+      const results = await pool.query(queryText, [id, user.id]);
+      res.sendStatus(200);
+    }
+  } catch (err) {
+    devLog(err, 'error with feedback route');
+    res.sendStatus(500);
+  }
+});
+
 
 
 export default router;

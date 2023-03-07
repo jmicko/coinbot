@@ -176,6 +176,15 @@ CREATE TABLE IF NOT EXISTS "user" (
   "joined_at" timestamp
 );
 
+-- create a feedback table with user id, subject, description, and timestamp
+CREATE TABLE IF NOT EXISTS "feedback" (
+  "id" SERIAL PRIMARY KEY,
+  "user_id" integer,
+  "subject" character varying COLLATE pg_catalog."default",
+  "description" character varying COLLATE pg_catalog."default",
+  "created_at" timestamp default now()
+);
+
 -- this will create the required table for connect-pg to store session data
 CREATE TABLE IF NOT EXISTS "session" (
   "sid" varchar NOT NULL COLLATE "default",

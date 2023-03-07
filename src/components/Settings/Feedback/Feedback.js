@@ -7,7 +7,11 @@ import './Feedback.css'
 function Feedback() {
   const { theme } = useUser();
 
-  const { createData: submitFeedback } = useFetchData(`/api/settings/feedback`, { noLoad: true });
+  const {
+    data: oldFeedback,
+    createRefreshData: submitFeedback,
+    deleteRefreshData: deleteFeedback
+  } = useFetchData(`/api/settings/feedback`, { noLoad: false });
 
   const [feedback, setFeedback] = useState({
     subject: '',
@@ -45,8 +49,35 @@ function Feedback() {
 
 
       <div className={`divider ${theme}`} />
+      <h4>Previous Feedback</h4>
+      <p>
+        Here are your previous feedback submissions:
+      </p>
+
+      {/* display previous feedback submissions */}
+      <div className="feedback-submissions">
+        {oldFeedback && oldFeedback.map((feedback, i) => {
+          return (
+            <div className="feedback-submission" key={i}>
+              <h5 className="feedback-submission-header">{feedback.subject}</h5>
+
+              <p className="feedback-submission-body">
+                {feedback.description}
+              </p>
+
+              <div className="feedback-submission-footer">
+                <p>Submitted on: {feedback.created_at.slice(0, 10)}</p>
+                {/* delete button */}
+                <button className={`btn-red ${theme}`} onClick={() => deleteFeedback(feedback.id)}>Delete</button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
     </div>
-  );
+  )
 }
+
 
 export default Feedback;
