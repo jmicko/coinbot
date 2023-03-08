@@ -228,6 +228,7 @@ router.put('/syncQuantity', rejectUnauthenticated, async (req, res) => {
 router.post('/feedback', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   const subject = req.body.subject;
+  // const description = JSON.stringify(req.body.description);
   const description = req.body.description;
   devLog('feedback route', user.id, subject, description);
 
@@ -278,6 +279,11 @@ router.get('/feedback', rejectUnauthenticated, async (req, res) => {
       // const queryText = `SELECT * FROM "feedback" ORDER BY "id" DESC;`;
       const queryText = `SELECT "feedback".*, "user"."username" FROM "feedback" JOIN "user" ON "feedback"."user_id" = "user"."id" ORDER BY "id" DESC;`;
       const results = await pool.query(queryText);
+      // log each feedback description
+      results.rows.forEach((feedback) => {
+        devLog(feedback.description, 'feedback description');
+      });
+      
       res.send(results.rows);
     } else {
       // get feedback for the user

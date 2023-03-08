@@ -64,7 +64,7 @@ function Feedback() {
 
 
       <div className={`divider ${theme}`} />
-      <h4>Previous Feedback</h4>
+      <h4>History</h4>
       <p>
         Here are your previous feedback submissions:
       </p>
@@ -72,13 +72,28 @@ function Feedback() {
       {/* display previous feedback submissions */}
       <div className="feedback-submissions">
         {oldFeedback && oldFeedback.map((feedback, i) => {
+
+          const description = feedback.description
+
           return (
             <div className="feedback-submission" key={i}>
               <h5 className="feedback-submission-header">{feedback.subject}</h5>
 
-              <p className="feedback-submission-body">
-                {feedback.description}
+              {/* display description as paragraph, adding a line break where needed */}
+              {/* <p className="feedback-submission-description">
+                {description}
+              </p> */}
+              <p className="feedback-submission-description">
+                {description.split('\n').map((line, i) => {
+                  return (
+                    <span key={i}>
+                      {line}
+                      <br />
+                    </span>
+                  )
+                })}
               </p>
+
 
               <div className="feedback-submission-footer">
                 <p>Submitted on: {feedback.created_at.slice(0, 10)}</p>
