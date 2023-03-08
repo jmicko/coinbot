@@ -12,7 +12,7 @@
 .feedback-form textarea {
   background-color      : #919191;
   width                 : 100%;
-  /* height             : 10rem; */
+  height                : 10rem;
   resize                : none;
   /* border             : 1px solid #ccc; */
   padding               : 12px 20px;
@@ -24,7 +24,7 @@
 
 .feedback-form textarea:focus {
   background-color: #b1b1b1;
-  height: 10rem;
+  /* height       : 10rem; */
 }
 
 /* form submit input */
