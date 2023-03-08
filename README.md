@@ -51,6 +51,10 @@ New trade-pair values can be individually created from the main interface. There
 
 There is a function in the settings menu that will allow you to input the desired parameters, and automatically place up to 10,000 trades (the maximum allowed) for you. This is much easier than manually entering them when they will all have similar values.
 
+### Simulator
+
+Before starting the auto setup, you can use the simulator to see how the bot would have performed with the parameters you have set, using historical data. This is a great way to test out different strategies before committing to them. Note that the historical data does lack some of the volatility that is present in the real market, so the results will not be 100% accurate.
+
 ### Auto Fee Detection
 
 Coinbot will check the current fees for the connected account and adjust the numbers in the calculator to match. This makes it easier to calculate profits before starting a trade-pair. When calculating profits, Coinbot will use the exact fees reported by coinbase, which accounts for moving into different fee tiers, or instances where a taker fee was charged.
