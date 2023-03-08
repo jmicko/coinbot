@@ -230,13 +230,21 @@ router.post('/feedback', rejectUnauthenticated, async (req, res) => {
   const subject = req.body.subject;
   // const description = JSON.stringify(req.body.description);
   const description = req.body.description;
+  
   devLog('feedback route', user.id, subject, description);
-
+  
   // ensure that there is a subject and description, and that they are strings
   if (!subject || !description || typeof subject !== 'string' || typeof description !== 'string') {
     res.sendStatus(400);
     return;
   }
+  
+    // verify that the subject and description are less than 5000 characters
+  if (subject.length > 5000 || description.length > 5000) {
+    res.sendStatus(400);
+    return;
+  }
+  
 
   try {
     // check if the user already has 5 feedbacks

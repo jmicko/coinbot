@@ -29,7 +29,15 @@ function Feedback() {
     });
   }
 
-
+  function handleFeedbackChange(e) {
+    e.preventDefault();
+    // check to make sure the input is under 5000 characters
+    if (e.target.value.length > 5000) return;
+    setFeedback({
+      ...feedback,
+      [e.target.name]: e.target.value
+    });
+  }
 
   return (
     <div className="Feedback settings-panel scrollable">
@@ -40,27 +48,36 @@ function Feedback() {
       <p>
         Have a suggestion or found a bug? Let us know!
       </p>
+      <p>
+        You can leave up to 5 feedback submissions at a time, and there is a limit of 5000 characters. Feetback will be sent to the site admin, and will include your username.
+        No other information will be automatically sent, so if you have an issue specific to a device or browser etc, please include that in the description.
+      </p>
       {/* form with inputs to submit feedback */}
-      <form onSubmit={handleSubmit} className="feedback-form">
-        <label>
-          <input
-            type="text"
-            name="Subject"
-            placeholder="Subject"
-            required
-            value={feedback.subject}
-            onChange={(e) => setFeedback({ ...feedback, subject: e.target.value })} />
-        </label>
-        <label>
-          <textarea
-            name="Description"
-            placeholder="Description"
-            required
-            value={feedback.description}
-            onChange={(e) => setFeedback({ ...feedback, description: e.target.value })} />
-        </label>
-        <input type="submit" value="Submit" className={`btn-green ${theme}`} />
-      </form>
+      {oldFeedback && oldFeedback.length < 5 ?
+        <form onSubmit={handleSubmit} className="feedback-form">
+          <label>
+            <input
+              type="text"
+              name="subject"
+              placeholder="Subject"
+              required
+              value={feedback.subject}
+              onChange={handleFeedbackChange} />
+          </label>
+          <label>
+            <textarea
+              name="description"
+              placeholder="Description"
+              required
+              value={feedback.description}
+              onChange={handleFeedbackChange} />
+          </label>
+          <input type="submit" value="Submit" className={`btn-green ${theme}`} />
+        </form>
+        :
+
+        <p><i>You have reached the maximum number of feedback submissions. Please delete some before submitting more.</i></p>
+      }
 
 
       <div className={`divider ${theme}`} />
