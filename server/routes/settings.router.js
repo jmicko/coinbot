@@ -279,10 +279,6 @@ router.get('/feedback', rejectUnauthenticated, async (req, res) => {
       // const queryText = `SELECT * FROM "feedback" ORDER BY "id" DESC;`;
       const queryText = `SELECT "feedback".*, "user"."username" FROM "feedback" JOIN "user" ON "feedback"."user_id" = "user"."id" ORDER BY "id" DESC;`;
       const results = await pool.query(queryText);
-      // log each feedback description
-      results.rows.forEach((feedback) => {
-        devLog(feedback.description, 'feedback description');
-      });
       
       res.send(results.rows);
     } else {
