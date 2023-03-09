@@ -1,11 +1,14 @@
 // SERVICE WORKER
 
-const CACHE_NAME = 'v1.1';
+const CACHE_NAME = 'coinbot-cache-v1.2';
 
 const urlsToCache = [
   '/',
   '/index.html',
-  // '/index.js',
+  '/favicon.ico',
+  '/manifest.json',
+  '/sw.js',
+  '/static/js/bundle.js',
 ];
 
 self.addEventListener('install', (event) => {
@@ -18,53 +21,98 @@ self.addEventListener('install', (event) => {
   );
 });
 
-self.addEventListener('fetch', (event) => {
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});
 
+
+self.addEventListener("fetch", (event) => {
+  // Let the browser do its default thing
+  // for non-GET requests.
+  if (event.request.method !== "GET") return;
   // Skip caching for /api requests
   if (event.request.url.includes('/api')) {
     return;
   }
-  
 
-    event.respondWith(
-      caches.match(event.request)
-        .then((response) => {
-          // Cache hit - return response
-          if (response) {
-            return response;
-          }
+  // Prevent the default, and handle the request ourselves.
+  event.respondWith(
+    (async () => {
+      // Try to get the response from a cache.
+      const cache = await caches.open(CACHE_NAME);
+      const cachedResponse = await cache.match(event.request);
 
-          // Clone the request
-          const fetchRequest = event.request.clone();
+      if (cachedResponse) {
+        // If we found a match in the cache, return it, but also
+        // update the entry in the cache in the background.
+        event.waitUntil(cache.add(event.request));
+        return cachedResponse;
+      }
 
-          return fetch(fetchRequest)
-            .then((response) => {
-              // Check if we received a valid response
-              if (!response || response.status !== 200 || response.type !== 'basic') {
-                return response;
-              }
-
-              // Clone the response
-              const responseToCache = response.clone();
-
-              caches.open(CACHE_NAME)
-                .then((cache) => {
-                  cache.put(event.request, responseToCache);
-                });
-
-              return response;
-            });
-        })
-    );
+      // If we didn't find a match in the cache, use the network.
+      return fetch(event.request);
+    })()
+  );
 });
+
+// self.addEventListener('fetch', (event) => {
+
+//   if (event.request.method !== "GET") return;
+//   // Skip caching for /api requests
+//   if (event.request.url.includes('/api')) {
+//     return;
+//   }
+
+//   event.respondWith(
+//     caches.match(event.request)
+//       .then((response) => {
+//         // Cache hit - return response
+//         if (response) {
+//           return response;
+//         }
+
+//         // Clone the request
+//         const fetchRequest = event.request.clone();
+
+//         return fetch(fetchRequest)
+//           .then((response) => {
+//             // Check if we received a valid response
+//             if (!response || response.status !== 200 || response.type !== 'basic') {
+//               return response;
+//             }
+
+//             // Clone the response
+//             const responseToCache = response.clone();
+
+//             caches.open(CACHE_NAME)
+//               .then((cache) => {
+//                 cache.put(event.request, responseToCache);
+//               });
+
+//             return response;
+//           });
+//       })
+//   );
+// });
 
 // handle notification click event
 self.addEventListener('notificationclick', function (event) {
   console.log('notification received: ', event);
 });
 
-// In your service worker file:
-self.addEventListener('message', function(event) {
+// listen for notification events
+self.addEventListener('message', function (event) {
   if (event.data) {
     const message = JSON.parse(event.data);
     console.log('message received: ', message);

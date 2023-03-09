@@ -14,17 +14,7 @@ function General(props) {
   const [sync_quantity, setSync_quantity] = useState(user.sync_quantity);
 
   function randomNotification() {
-    // const notifTitle = 'Hello';
-    // const notifBody = 'Lorem ipsum dolor sit down in the handmade chair amet consectetur adipisicing elit. Minima, ex.';
-    // use the coinbot logo as the notification icon
-    // const notifImg = coinbotFilled;
-    // const notifImg = 'https://i.imgur.com/IDRZpQV.png';
-    // const options = {
-    //   body: notifBody,
-    //   icon: notifImg,
-    // }
-    // console.log('randomNotification');
-    // new Notification(notifTitle, options);
+
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then(registration => {

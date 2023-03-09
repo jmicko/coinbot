@@ -8,6 +8,12 @@ import App from './components/App/App.js';
 // SERVICE WORKER
 const registerServiceWorker = async () => {
   if ("serviceWorker" in navigator) {
+    // unregister previous service worker
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    for (const registration of registrations) {
+      registration.unregister();
+    }
+     
     try {
       const registration = await navigator.serviceWorker.register("/sw.js", {
         scope: "/",
@@ -24,15 +30,6 @@ const registerServiceWorker = async () => {
     }
   }
 };
-
-// …
-
-
-
-
-// ReactDOM.render(
-//   <App />, document.getElementById('root')
-// );
 
 const container = document.getElementById('root');
 const root = createRoot(container);
