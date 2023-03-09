@@ -16,7 +16,7 @@ import { devLog } from '../../shared.js';
 
 function Home() {
 
-  devLog('rendering home');
+  // devLog('rendering home');
 
   const { width, height } = useWindowDimensions();
   const { user } = useUser();
@@ -74,7 +74,7 @@ function Home() {
             {user.approved
               ? <TradeList isAutoScroll={isAutoScroll} />
               : <NotApproved />}
-              {devLog('rendering messages in home')}
+              {/* {devLog('rendering messages in home')} */}
             <Messages />
           </>
         // 

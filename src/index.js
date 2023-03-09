@@ -5,6 +5,31 @@ import './index.css';
 import App from './components/App/App.js';
 // import reportWebVitals from './reportWebVitals.js';
 
+// SERVICE WORKER
+const registerServiceWorker = async () => {
+  if ("serviceWorker" in navigator) {
+    try {
+      const registration = await navigator.serviceWorker.register("/sw.js", {
+        scope: "/",
+      });
+      if (registration.installing) {
+        console.log("Service worker installing");
+      } else if (registration.waiting) {
+        console.log("Service worker installed");
+      } else if (registration.active) {
+        console.log("Service worker active");
+      }
+    } catch (error) {
+      console.error(`Registration failed with ${error}`);
+    }
+  }
+};
+
+// …
+
+
+
+
 // ReactDOM.render(
 //   <App />, document.getElementById('root')
 // );
@@ -17,3 +42,4 @@ root.render(<App />);
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 // reportWebVitals();
+registerServiceWorker();
