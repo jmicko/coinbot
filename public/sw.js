@@ -1,6 +1,6 @@
 // SERVICE WORKER
 
-const CACHE_NAME = 'v4';
+const CACHE_NAME = 'v1.1';
 
 const urlsToCache = [
   '/',
@@ -19,36 +19,43 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  //   event.respondWith(
-  //     caches.match(event.request)
-  //       .then((response) => {
-  //         // Cache hit - return response
-  //         if (response) {
-  //           return response;
-  //         }
 
-  //         // Clone the request
-  //         const fetchRequest = event.request.clone();
+  // Skip caching for /api requests
+  if (event.request.url.includes('/api')) {
+    return;
+  }
+  
 
-  //         return fetch(fetchRequest)
-  //           .then((response) => {
-  //             // Check if we received a valid response
-  //             if (!response || response.status !== 200 || response.type !== 'basic') {
-  //               return response;
-  //             }
+    event.respondWith(
+      caches.match(event.request)
+        .then((response) => {
+          // Cache hit - return response
+          if (response) {
+            return response;
+          }
 
-  //             // Clone the response
-  //             const responseToCache = response.clone();
+          // Clone the request
+          const fetchRequest = event.request.clone();
 
-  //             caches.open(CACHE_NAME)
-  //               .then((cache) => {
-  //                 cache.put(event.request, responseToCache);
-  //               });
+          return fetch(fetchRequest)
+            .then((response) => {
+              // Check if we received a valid response
+              if (!response || response.status !== 200 || response.type !== 'basic') {
+                return response;
+              }
 
-  //             return response;
-  //           });
-  //       })
-  //   );
+              // Clone the response
+              const responseToCache = response.clone();
+
+              caches.open(CACHE_NAME)
+                .then((cache) => {
+                  cache.put(event.request, responseToCache);
+                });
+
+              return response;
+            });
+        })
+    );
 });
 
 // handle notification click event
