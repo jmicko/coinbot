@@ -781,7 +781,7 @@ async function getAvailableFunds(userID, userSettings) {
       const takerFee = Number(userSettings.taker_fee) + 1;
 
       const results = await Promise.all([
-        cbClients[userID].getAccounts({ limit: 250 }),
+        cbClients[userID].getAllAccounts(),
         // funds are withheld in usd when a buy is placed, so the maker fee is needed to subtract fees
         databaseClient.getSpentUSD(userID, takerFee),
         // funds are taken from the sale once settled, so the maker fee is not needed on the buys
@@ -790,6 +790,9 @@ async function getAvailableFunds(userID, userSettings) {
         databaseClient.getActiveProducts(userID),
       ]);
       const accounts = results[0].accounts;
+
+      // devLog(accounts.length, 'accounts in getAvailableFunds');
+
       const activeProducts = results[3];
 
       // get the amount spent for the base and quote currencies for each product
@@ -827,6 +830,8 @@ async function getAvailableFunds(userID, userSettings) {
         const currency = currencyArray[i];
         // get the currency from the accounts
         const [account] = accounts.filter(account => account.currency === currency.currency_id);
+
+        // devLog(account, 'account in getAvailableFunds');
         // calculate the available funds
         const available = Number(account?.available_balance?.value || 0) + Number(account?.hold?.value || 0) - currency.amount_spent;
         // round to 16 decimal places
