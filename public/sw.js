@@ -1,6 +1,6 @@
 // SERVICE WORKER
 
-const CACHE_NAME = 'coinbot-cache-v1.2';
+const CACHE_NAME = 'coinbot-cache-v1.2.1';
 
 const urlsToCache = [
   '/',
