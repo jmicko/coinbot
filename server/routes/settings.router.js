@@ -15,6 +15,19 @@ import { cache, botSettings, cbClients, userStorage, messenger } from '../module
 import { sleep } from '../../src/shared.js';
 import { devLog } from '../modules/utilities.js';
 
+/**
+ * GET route for testing connection to server. No auth required
+ */
+router.get('/connection', async (req, res) => {
+  try {
+    devLog('connection route hit');
+    res.status(200).send({ connection: true });
+  } catch (err) {
+    devLog(err, 'connection route failed');
+    res.sendStatus(500);
+  }
+});
+
 
 /**
  * GET route for testing functions in development
@@ -230,35 +243,35 @@ router.post('/feedback', rejectUnauthenticated, async (req, res) => {
   const subject = req.body.subject;
   // const description = JSON.stringify(req.body.description);
   const description = req.body.description;
-  
+
   devLog('feedback route', user.id, subject, description);
-  
+
   // ensure that there is a subject and description, and that they are strings
   if (!subject || !description || typeof subject !== 'string' || typeof description !== 'string') {
     res.sendStatus(400);
     return;
   }
-  
-    // verify that the subject and description are less than 5000 characters
+
+  // verify that the subject and description are less than 5000 characters
   if (subject.length > 5000 || description.length > 5000) {
     res.sendStatus(400);
     return;
   }
-  
+
 
   try {
     // check if the user already has 5 feedbacks
     const queryTextCount = `SELECT COUNT(*) FROM "feedback" WHERE "user_id" = $1;`;
     const countResults = await pool.query(queryTextCount, [user.id]);
     devLog(countResults.rows[0].count, 'count of feedbacks');
-    
+
     // if they do, send back a 403, else continue
     if (countResults.rows[0].count >= 5) {
       res.sendStatus(403);
       return;
     }
-    
-    
+
+
     // store the feedback in the database
     const queryText = `INSERT INTO "feedback" ("user_id", "subject", "description") VALUES ($1, $2, $3);`;
 
@@ -287,7 +300,7 @@ router.get('/feedback', rejectUnauthenticated, async (req, res) => {
       // const queryText = `SELECT * FROM "feedback" ORDER BY "id" DESC;`;
       const queryText = `SELECT "feedback".*, "user"."username" FROM "feedback" JOIN "user" ON "feedback"."user_id" = "user"."id" ORDER BY "id" DESC;`;
       const results = await pool.query(queryText);
-      
+
       res.send(results.rows);
     } else {
       // get feedback for the user

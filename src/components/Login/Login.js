@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useUser } from '../../contexts/UserContext.js';
+import { useFetchData } from '../../hooks/fetchData.js';
 import { devLog } from '../../shared.js';
 import './Login.css'
 
@@ -16,6 +17,22 @@ function Login() {
   const [confirmPassword, setConfirmPassword] = useState("");
   // const errors = useSelector((store) => store.errorsReducer);
 
+  // verify that the internet connection is working and that the server is running 
+  // by calling /api/settings/connection, which returns a 200 status code
+  // if the connection is not working, show an error message on the login page
+  const { data: connection, isLoading: connectionLoading, error: connectionError, refresh: refreshConnection } = useFetchData('/api/settings/connection', { defaultState: { connection: false } });
+
+  // if the connection is not working, refresh every 5 seconds
+  useEffect(() => {
+    // set interval to refresh connection every 5 seconds, then clear interval on unmount
+    const interval = setInterval(() => {
+      devLog('checking if connection is working')
+      refreshConnection();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+
   useEffect(() => {
     // set interval to refresh user every 5 seconds, then clear interval on unmount
     const interval = setInterval(() => {
@@ -24,6 +41,7 @@ function Login() {
     }, 10000);
     return () => clearInterval(interval);
   }, []);
+
 
   function loginAccount(event) {
     event.preventDefault();
@@ -119,6 +137,10 @@ function Login() {
           </>
         }
       </form>
+      {/* {JSON.stringify(connectionError)} con error */}
+      {connectionError && <div className='error-box notched'>
+        <p>Connection Error</p>
+      </div>}
       {(errors.loginMessage || errors.registrationMessage) &&
         <div className='error-box notched'>
           {errors.loginMessage && <p>{errors.loginMessage}</p>}
