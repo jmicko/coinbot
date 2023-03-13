@@ -53,7 +53,7 @@ function Feedback() {
         No other information will be automatically sent, so if you have an issue specific to a device or browser etc, please include that in the description.
       </p>
       {/* form with inputs to submit feedback */}
-      {oldFeedback && oldFeedback.length < 5 ?
+      {oldFeedback && oldFeedback.length < 5 || user.admin ?
         <form onSubmit={handleSubmit} className="feedback-form">
           <label>
             <input
@@ -75,7 +75,6 @@ function Feedback() {
           <input type="submit" value="Submit" className={`btn-green ${theme}`} />
         </form>
         :
-
         <p><i>You have reached the maximum number of feedback submissions. Please delete some before submitting more.</i></p>
       }
 

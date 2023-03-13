@@ -240,6 +240,7 @@ router.put('/syncQuantity', rejectUnauthenticated, async (req, res) => {
  */
 router.post('/feedback', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
+  const admin = req.user.admin;
   const subject = req.body.subject;
   // const description = JSON.stringify(req.body.description);
   const description = req.body.description;
@@ -266,7 +267,8 @@ router.post('/feedback', rejectUnauthenticated, async (req, res) => {
     devLog(countResults.rows[0].count, 'count of feedbacks');
 
     // if they do, send back a 403, else continue
-    if (countResults.rows[0].count >= 5) {
+    // admin can make unlimited feedbacks
+    if (countResults.rows[0].count >= 5 && !admin) {
       res.sendStatus(403);
       return;
     }
