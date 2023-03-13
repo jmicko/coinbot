@@ -49,11 +49,13 @@ function Feedback() {
         Have a suggestion or found a bug? Let us know!
       </p>
       <p>
-        You can leave up to 5 feedback submissions at a time, and there is a limit of 5000 characters. Feedback will be sent to the site admin, and will include your username.
-        No other information will be automatically sent, so if you have an issue specific to a device or browser etc, please include that in the description.
+        You can leave up to 5 feedback submissions at a time, and there is a limit of 5000 characters.
+        Feedback will be sent to the site admin, and will include your username.
+        No other information will be automatically sent,
+        so if you have an issue specific to a device or browser etc, please include that in the description.
       </p>
       {/* form with inputs to submit feedback */}
-      {oldFeedback && oldFeedback.length < 5 || user.admin ?
+      {(oldFeedback && oldFeedback.length < 5) || user.admin ?
         <form onSubmit={handleSubmit} className="feedback-form">
           <label>
             <input
@@ -75,7 +77,10 @@ function Feedback() {
           <input type="submit" value="Submit" className={`btn-green ${theme}`} />
         </form>
         :
-        <p><i>You have reached the maximum number of feedback submissions. Please delete some before submitting more.</i></p>
+        <p>
+          <i>You have reached the maximum number of feedback submissions.
+            Please delete some before submitting more.</i>
+        </p>
       }
 
 
