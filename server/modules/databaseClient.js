@@ -1587,6 +1587,44 @@ async function getCandlesAverage(productID, granularity) {
 }
 
 
+async function addSubscription(subscription, userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `INSERT INTO "subscriptions" ("user_id", "endpoint", "expiration_time", "keys") VALUES ($1, $2, $3, $4);`;
+      const values = [userID, subscription.endpoint, subscription.expirationTime, JSON.stringify(subscription.keys)];
+      const result = await pool.query(sqlText, values);
+      resolve(result);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+async function getSubscriptionsForUser(userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `SELECT * FROM "subscriptions" WHERE "user_id" = $1;`;
+      const result = await pool.query(sqlText, [userID]);
+      resolve(result.rows);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+async function getAllSubscriptions() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `SELECT * FROM "subscriptions";`;
+      const result = await pool.query(sqlText);
+      resolve(result.rows);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+
 
 const databaseClient = {
   storeTrade: storeTrade,
@@ -1644,6 +1682,9 @@ const databaseClient = {
   getNextCandles: getNextCandles,
   getMissingCandles: getMissingCandles,
   getProduct: getProduct,
+  addSubscription: addSubscription,
+  getSubscriptionsForUser: getSubscriptionsForUser,
+  getAllSubscriptions: getAllSubscriptions,
 };
 
 export { databaseClient };

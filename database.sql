@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS "user_api";
 DROP TABLE IF EXISTS "user_settings";
 DROP TABLE IF EXISTS "bot_settings";
 DROP TABLE IF EXISTS "market_candles";
+DROP TABLE IF EXISTS "subscriptions";
 
 CREATE TABLE IF NOT EXISTS "user_api"
 (
@@ -182,6 +183,16 @@ CREATE TABLE IF NOT EXISTS "feedback" (
   "user_id" integer,
   "subject" character varying COLLATE pg_catalog."default",
   "description" character varying COLLATE pg_catalog."default",
+  "created_at" timestamp default now()
+);
+
+-- create a table to store push notification subscriptions
+CREATE TABLE IF NOT EXISTS "subscriptions" (
+  "id" SERIAL PRIMARY KEY,
+  "user_id" integer,
+  "endpoint" character varying COLLATE pg_catalog."default",
+  "keys" json,
+  "expiration_time" timestamp,
   "created_at" timestamp default now()
 );
 

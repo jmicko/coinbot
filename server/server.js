@@ -18,6 +18,7 @@ import notificationsRouter from './routes/notifications.router.js';
 // bot process
 import { robot } from './modules/robot.js';
 import { devLog } from '../src/shared.js';
+import './modules/push.js';
 devLog('!!!!!!!! you are running in DEVELOPMENT mode !!!!!!!!');
 // create the express app
 const app = express();

@@ -51,15 +51,15 @@ router.post('/subscribe', async (req, res) => {
   const user_id = req.user.id;
   devLog('subscription', subscription);
   devLog('user_id', user_id);
-  // try {
-  //   const result = await databaseClient.addSubscription(subscription, user_id);
-  //   devLog('result', result);
-  //   res.sendStatus(200);
-  // } catch (err) {
-  //   devLog('error adding subscription', err);
-  //   res.sendStatus(500);
-  // }
-  res.sendStatus(200);
+  try {
+    const result = await databaseClient.addSubscription(subscription, user_id);
+    devLog('result', result);
+    res.sendStatus(200);
+  } catch (err) {
+    devLog('error adding subscription', err);
+    res.sendStatus(500);
+  }
+  // res.sendStatus(200);
 
   // // after 5 seconds, send a test notification to the user
   // setInterval(async () => {
