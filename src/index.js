@@ -30,23 +30,28 @@ const registerServiceWorker = async () => {
   if ("serviceWorker" in navigator) {
     // unregister previous service worker
     const registrations = await navigator.serviceWorker.getRegistrations();
-    for (const registration of registrations) {
-      registration.unregister();
-    }
+    // for (const registration of registrations) {
+    //   registration.unregister();
+    // }
+
 
     try {
       const registration = await navigator.serviceWorker.register("/sw.js", {
         scope: "/",
       });
+
       if (registration.installing) {
         console.log("Service worker installing");
       } else if (registration.waiting) {
         console.log("Service worker installed");
       } else if (registration.active) {
         console.log("Service worker active");
-        // // subscribe to push notifications
-        // const subscription = await getSubscription();
       }
+
+
+      // // subscribe to push notifications
+      await getSubscription();
+      
     } catch (error) {
       console.error(`Registration failed with ${error}`);
     }
@@ -57,7 +62,9 @@ const registerServiceWorker = async () => {
 const getSubscription = async () => {
   console.log("getting subscription");
   const registration = await navigator.serviceWorker.ready;
+  console.log(registration.pushManager, "registration ready")
   const sub = await registration.pushManager.getSubscription();
+  console.log(sub, "sub");
   if (sub) {
     console.log(sub, "sub");
     return sub;
@@ -112,4 +119,4 @@ root.render(<App />);
 // reportWebVitals();
 registerServiceWorker();
 // subscribe to push notifications
-getSubscription();
+// getSubscription();

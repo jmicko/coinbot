@@ -1,6 +1,6 @@
 // SERVICE WORKER
 
-const CACHE_NAME = 'coinbot-cache-v1.2.6';
+const CACHE_NAME = 'coinbot-cache-v1.2.11';
 
 const urlsToCache = [
   '/',
@@ -12,6 +12,7 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
