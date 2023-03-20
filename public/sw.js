@@ -1,6 +1,6 @@
 // SERVICE WORKER
 
-const CACHE_NAME = 'coinbot-cache-v1.2.2';
+const CACHE_NAME = 'coinbot-cache-v1.2.6';
 
 const urlsToCache = [
   '/',
@@ -32,10 +32,9 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
+    }),
   );
 });
-
 
 self.addEventListener("fetch", (event) => {
   // Let the browser do its default thing
@@ -87,21 +86,13 @@ self.addEventListener('message', function (event) {
     }
   }
 });
+let count = 0;
 
-// create a notification to the user every day that will remind them to check the site
-// do not use a push event listener because it is not supported on all browsers
-// use a setInterval to call the endpoint every day
-setInterval(() => {
-  // only send the notification if the user has that setting enabled
-  // just gonna make it work for admins for now in testing, build out the settings later
-  if (!user.admin) return;
- const notification = {
-    title: 'Coinbot',
-    body: 'Don\'t forget to check the site!',
-    icon: '/favicon.ico',
-  };
-  self.registration.showNotification(notification.title, {
-    body: notification.body,
-    icon: notification.icon,
+// listen for push events
+self.addEventListener('push', function (event) {
+  console.log('push received: ', event);
+  count++;
+  self.registration.showNotification('Push Notification', {
+    body: 'Push Notification Received: ' + count,
   });
-}, 1000 * 60 * 60 * 24);
+});

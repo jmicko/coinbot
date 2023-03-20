@@ -10,7 +10,8 @@ const userConfig = {
 };
 
 export function UserProvider({ children }) {
-  const { data: user, isLoading: userLoading, error: userError, refresh: refreshUser, clear: clearUser, deleteData: deleteYourself } = useFetchData('/api/user', { defaultState: {}, config: userConfig })
+  const { data: user, isLoading: userLoading, error: userError, refresh: refreshUser, clear: clearUser, deleteData: deleteYourself } 
+  = useFetchData('/api/user', { defaultState: {}, config: userConfig })
 
   // infer theme from user object
   const theme = user.theme;

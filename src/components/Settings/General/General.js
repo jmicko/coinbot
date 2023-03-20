@@ -26,8 +26,6 @@ function General(props) {
         }));
       });
     }
-    
-
   }
 
 
