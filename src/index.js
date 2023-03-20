@@ -64,7 +64,7 @@ const getSubscription = async () => {
   const registration = await navigator.serviceWorker.ready;
   console.log(registration.pushManager, "registration ready")
   const sub = await registration.pushManager.getSubscription();
-  console.log(sub, "sub");
+  // console.log(sub, "sub");
   if (sub) {
     console.log(sub, "sub");
     return sub;

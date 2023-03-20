@@ -61,13 +61,16 @@ router.post('/subscribe', async (req, res) => {
   // }
   res.sendStatus(200);
 
-  // after 5 seconds, send a test notification to the user
-  setTimeout(() => {
-    devLog('sending test notification');
-    webPush.sendNotification(subscription, 'test notification')
-      .then(result => devLog('test notification result', result))
-      .catch(err => devLog('test notification error', err));
-  }, 5000);
+  // // after 5 seconds, send a test notification to the user
+  // setInterval(async () => {
+  //   devLog('sending test notification');
+  //   await webPush.sendNotification(subscription, JSON.stringify({
+  //     title: 'Test Notification',
+  //     body: 'This is a test notification and should not show',
+  //   }));
+
+
+  // }, 5000);
 
 });
 

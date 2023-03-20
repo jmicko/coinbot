@@ -73,27 +73,71 @@ self.addEventListener('notificationclick', function (event) {
 });
 
 // listen for notification events
-self.addEventListener('message', function (event) {
+self.addEventListener('message', async function (event) {
   if (event.data) {
     const message = JSON.parse(event.data);
     console.log('message received: ', message);
     if (message.type === 'show-notification') {
       const { title, body, icon } = message;
       console.log('showing notification: ', title, body);
-      self.registration.showNotification(title, {
-        body: body,
-        icon: icon,
-      });
+      // self.registration.showNotification(title, {
+      //   body: body,
+      //   icon: icon,
+      // });
+
     }
   }
 });
 let count = 0;
 
 // listen for push events
-self.addEventListener('push', function (event) {
+self.addEventListener('push', async function (event) {
   console.log('push received: ', event);
   count++;
-  self.registration.showNotification('Push Notification', {
-    body: 'Push Notification Received: ' + count,
+  // display whatever notification was received
+  const { title, body, icon } = event.data.json();
+  // event.waitUntil(
+  //   self.registration.showNotification(title, {
+  //     body: body,
+  //     icon: icon,
+  //   })
+  // );
+
+
+  // if the window is open and active, show a notification that says the user is online
+  // if it is closed, show a notification that says the user is offline
+  const allClients = await clients.matchAll({
+    includeUncontrolled: true,
+    type: 'window',
   });
+
+  // check if the tab is the active tab
+  const activeClient = allClients.find((client) => client.focused);
+
+
+  if (activeClient) {
+    // any notification that is received while the user is online will be displayed in this block
+
+    // show notification that user is online
+    // self.registration.showNotification('User is online', {
+    //   body: 'User is online',
+    //   icon: icon,
+    // });
+
+
+  } else {
+    // this block will be executed if the window is closed or the user is not active on the tab
+
+    // show notification that user is offline
+    // self.registration.showNotification('User is offline', {
+    //   body: 'User is offline',
+    //   icon: icon,
+    // });
+
+    self.registration.showNotification(title, {
+      body: body,
+      icon: icon,
+    })
+
+  }
 });
