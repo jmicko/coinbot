@@ -190,10 +190,12 @@ CREATE TABLE IF NOT EXISTS "feedback" (
 CREATE TABLE IF NOT EXISTS "subscriptions" (
   "id" SERIAL PRIMARY KEY,
   "user_id" integer,
-  "endpoint" character varying COLLATE pg_catalog."default",
+  "endpoint" character varying COLLATE pg_catalog."default" UNIQUE NOT NULL,
   "keys" json,
   "expiration_time" timestamp,
-  "created_at" timestamp default now()
+  "created_at" timestamp default now(),
+  "daily_notifications" boolean DEFAULT false,
+  "notification_time" time
 );
 
 -- this will create the required table for connect-pg to store session data

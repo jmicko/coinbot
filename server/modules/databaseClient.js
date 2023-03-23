@@ -1587,11 +1587,14 @@ async function getCandlesAverage(productID, granularity) {
 }
 
 
-async function addSubscription(subscription, userID) {
+async function addSubscription({ subscription, notificationSettings, userID }) {
   return new Promise(async (resolve, reject) => {
     try {
-      const sqlText = `INSERT INTO "subscriptions" ("user_id", "endpoint", "expiration_time", "keys") VALUES ($1, $2, $3, $4);`;
-      const values = [userID, subscription.endpoint, subscription.expirationTime, JSON.stringify(subscription.keys)];
+      // insert the subscription into the database, or update it if it already exists
+      const sqlText = `INSERT INTO "subscriptions" ("user_id", "endpoint", "expiration_time", "keys", "daily_notifications", "notification_time")
+      VALUES ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT ("endpoint") DO UPDATE SET "expiration_time" = $3, "keys" = $4, "daily_notifications" = $5, "notification_time" = $6;`;
+      const values = [userID, subscription.endpoint, subscription.expirationTime, JSON.stringify(subscription.keys), notificationSettings.dailyNotifications, notificationSettings.dailyNotificationsTime];
       const result = await pool.query(sqlText, values);
       resolve(result);
     } catch (err) {

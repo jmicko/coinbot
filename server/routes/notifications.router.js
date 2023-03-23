@@ -47,12 +47,13 @@ router.get('/public-key', async (req, res) => {
 // route to store the subscription on the server
 router.post('/subscribe', async (req, res) => {
   devLog('POST SUBSCRIBE ROUTE====================');
-  const subscription = req.body;
+  const subscription = req.body.subscription;
+  const notificationSettings = req.body.notificationSettings;
   const user_id = req.user.id;
   devLog('subscription', subscription);
   devLog('user_id', user_id);
   try {
-    const result = await databaseClient.addSubscription(subscription, user_id);
+    const result = await databaseClient.addSubscription({subscription, notificationSettings, user_id});
     devLog('result', result);
     res.sendStatus(200);
   } catch (err) {

@@ -3,6 +3,7 @@ import { useData } from '../../../contexts/DataContext.js';
 import { useUser } from '../../../contexts/UserContext.js';
 import './General.css'
 import coinbotFilled from '../../../coinbotFilled.png';
+import { no } from '../../../shared.js';
 const themes = { original: 'Original', darkTheme: 'Dark' }
 
 function General(props) {
@@ -12,6 +13,17 @@ function General(props) {
   const [max_trade_load, setMaxTradeLoad] = useState(100);
   const [profit_accuracy, setProfit_accuracy] = useState(2);
   const [sync_quantity, setSync_quantity] = useState(user.sync_quantity);
+  const [notificationSettings, setNotificationSettings] = useState({
+    dailyNotifications: true,
+    dailyNotificationsTime: '12:00',
+  });
+
+  function handleNotificationSettingsChange(event) {
+    event.preventDefault();
+    const { name, value } = event.target;
+    setNotificationSettings({ ...notificationSettings, [name]: value });
+  }
+
 
   function randomNotification() {
 
@@ -29,24 +41,94 @@ function General(props) {
   }
 
 
-  function notificationHandler() {
+  function notificationHandler(e) {
+    no(e);
     if (!("Notification" in window)) {
       console.log("This browser does not support desktop notification");
     } else if (Notification.permission === "granted") {
       console.log('Notification permission already granted');
       randomNotification();
+      getSubscription();
 
     } else if (Notification.permission !== "denied") {
       Notification.requestPermission().then(function (permission) {
         console.log('Notification permission:', permission);
         if (permission === "granted") {
           console.log('Notification permission granted!');
-          randomNotification();
+          // randomNotification();
+
 
         }
       });
     }
   }
+
+  function urlBase64ToUint8Array(base64String) {
+    var padding = '='.repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding)
+      .replace(/\-/g, '+')
+      .replace(/_/g, '/');
+
+    var rawData = window.atob(base64);
+    var outputArray = new Uint8Array(rawData.length);
+
+    for (var i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
+
+  // get the subscription object
+  const getSubscription = async () => {
+    console.log("getting subscription");
+    const registration = await navigator.serviceWorker.ready;
+    console.log(registration.pushManager, "registration ready")
+    const sub = await registration.pushManager.getSubscription();
+    // console.log(sub, "sub");
+    if (sub) {
+      console.log(sub, "sub");
+      await subscribe();
+      return sub;
+    } else {
+      console.log("no subscription");
+      return await subscribe();
+    }
+  };
+
+  // subscribe to push notifications
+  const subscribe = async () => {
+    console.log("subscribing");
+    const sw = await navigator.serviceWorker.ready;
+    console.log(sw, "registration");
+    // get the public key from the server
+    const response = await fetch("/api/notifications/public-key");
+    const publicKey = await response.text();
+    const convertedVapidKey = urlBase64ToUint8Array(publicKey);
+    // const convertedVapidKey = publicKey;
+    console.log("public key converted>>>>>>>>");
+
+
+    const subscription = await sw.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: convertedVapidKey
+    });
+    console.log(subscription, "subscription");
+
+    // send the subscription object to the server
+    console.log("sending subscription to server");
+    await fetch("/api/notifications/subscribe", {
+      method: "POST",
+      body: JSON.stringify({
+        subscription: subscription,
+        notificationSettings: notificationSettings,
+      }),
+      headers: {
+        "content-type": "application/json",
+      },
+    });
+  };
+
 
 
   return (
@@ -86,8 +168,37 @@ function General(props) {
         <span className='red'>!</span> <i>Note that if you click this button and then block notifications, you will NOT be able to enable notifications in the future
           without manually changing your browser settings.</i>
       </p>
+
       {/* button to request notification permission */}
-      <button className={`btn-blue medium ${user.theme}`} onClick={notificationHandler}>Enable Notifications</button>
+      {/* <button className={`btn-blue medium ${user.theme}`} onClick={notificationHandler}>Enable Notifications</button> */}
+      {/* form to handle notification settings */}
+      {JSON.stringify(notificationSettings)}
+      {/* should have checkbox for daily notifications, and clock to set time of daily notifications. Values should match notificationSettings state */}
+      <form className="notification-settings" onSubmit={notificationHandler}>
+        <div className="notification-setting">
+          <input
+            type="checkbox"
+            name="dailyNotifications"
+            id="dailyNotifications"
+            checked={notificationSettings.dailyNotifications}
+            onChange={() => setNotificationSettings({ ...notificationSettings, dailyNotifications: !notificationSettings.dailyNotifications })}
+          />
+          <label htmlFor="dailyNotifications"> Daily Notifications</label>
+        </div>
+        <div className="notification-setting">
+          <label htmlFor="dailyNotificationsTime">Daily Notifications Time</label>
+          <input
+            type="time"
+            name="dailyNotificationsTime"
+            id="dailyNotificationsTime"
+            value={notificationSettings.dailyNotificationsTime}
+            onChange={handleNotificationSettingsChange}
+          />
+        </div>
+        {/* submit */}
+        <button className={`btn-blue medium ${user.theme}`} type="submit">Save</button>
+      </form>
+
       <div className={`divider ${theme}`} />
 
       {/* KILL PREVENTION */}
