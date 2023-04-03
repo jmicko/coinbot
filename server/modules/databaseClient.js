@@ -1330,6 +1330,7 @@ async function getProfitForDurationByProduct(userID, product, duration) {
 
 // get profit for a product and for all products for a duration of time
 async function getProfitForDurationByAllProducts(userID, duration) {
+  devLog('getting profit for duration by all products', userID, duration);
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
@@ -1587,14 +1588,14 @@ async function getCandlesAverage(productID, granularity) {
 }
 
 
-async function addSubscription({ subscription, notificationSettings, userID }) {
+async function addSubscription({ subscription, notificationSettings, user_id }) {
   return new Promise(async (resolve, reject) => {
     try {
       // insert the subscription into the database, or update it if it already exists
       const sqlText = `INSERT INTO "subscriptions" ("user_id", "endpoint", "expiration_time", "keys", "daily_notifications", "notification_time")
       VALUES ($1, $2, $3, $4, $5, $6)
-      ON CONFLICT ("endpoint") DO UPDATE SET "expiration_time" = $3, "keys" = $4, "daily_notifications" = $5, "notification_time" = $6;`;
-      const values = [userID, subscription.endpoint, subscription.expirationTime, JSON.stringify(subscription.keys), notificationSettings.dailyNotifications, notificationSettings.dailyNotificationsTime];
+      ON CONFLICT ("endpoint") DO UPDATE SET "user_id" = $1, "expiration_time" = $3, "keys" = $4, "daily_notifications" = $5, "notification_time" = $6;`;
+      const values = [user_id, subscription.endpoint, subscription.expirationTime, JSON.stringify(subscription.keys), notificationSettings.dailyNotifications, notificationSettings.dailyNotificationsTime];
       const result = await pool.query(sqlText, values);
       resolve(result);
     } catch (err) {

@@ -165,14 +165,15 @@ function General(props) {
         Enable browser notifications.
       </p>
       <p>
-        <span className='red'>!</span> <i>Note that if you click this button and then block notifications, you will NOT be able to enable notifications in the future
+        <span className='red'>!</span> <i>Note that if you enable notifications and then block notifications in your browser,
+          you will NOT be able to enable notifications in the future
           without manually changing your browser settings.</i>
       </p>
 
       {/* button to request notification permission */}
       {/* <button className={`btn-blue medium ${user.theme}`} onClick={notificationHandler}>Enable Notifications</button> */}
       {/* form to handle notification settings */}
-      {JSON.stringify(notificationSettings)}
+      {/* {JSON.stringify(notificationSettings)} */}
       {/* should have checkbox for daily notifications, and clock to set time of daily notifications. Values should match notificationSettings state */}
       <form className="notification-settings" onSubmit={notificationHandler}>
         <div className="notification-setting">
@@ -186,7 +187,7 @@ function General(props) {
           <label htmlFor="dailyNotifications"> Daily Notifications</label>
         </div>
         <div className="notification-setting">
-          <label htmlFor="dailyNotificationsTime">Daily Notifications Time</label>
+          <label htmlFor="dailyNotificationsTime">Daily Notifications Time </label>
           <input
             type="time"
             name="dailyNotificationsTime"
@@ -195,8 +196,14 @@ function General(props) {
             onChange={handleNotificationSettingsChange}
           />
         </div>
-        {/* submit */}
-        <button className={`btn-blue medium ${user.theme}`} type="submit">Save</button>
+        <br />
+        <div className="notification-setting">
+          {/* submit */}
+          <input className={`btn-blue medium ${user.theme}`} type="submit" value={"Save"} />
+          {/* <p> */}
+          <span className='red'> !</span> <i>It may take up to 24 hours for changes to take effect.</i>
+          {/* </p> */}
+        </div>
       </form>
 
       <div className={`divider ${theme}`} />

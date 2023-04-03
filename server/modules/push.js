@@ -4,11 +4,11 @@ import { devLog } from './utilities.js';
 
 // every hour on the hour, send push notifications to all users
 
-resetAtMidnight();
+resetAtMidnight({ notMidnight: true });
 
 // https://stackoverflow.com/questions/26306090/running-a-function-everyday-midnight
 // using this bit of code instead of cron job package
-function resetAtMidnight() {
+function resetAtMidnight({ notMidnight }) {
   const now = new Date();
   const night = new Date(
     now.getFullYear(),
@@ -18,23 +18,106 @@ function resetAtMidnight() {
   );
   const msToMidnight = night.getTime() - now.getTime();
 
-  devLog('msToMidnight', msToMidnight);
+  devLog('msToMidnight', msToMidnight, 'notMidnight', notMidnight);
+
+  runScheduled({ notMidnight }); // <-- This is the function being called at midnight.
+
 
   setTimeout(function () {
-    runScheduled(); // <-- This is the function being called at midnight.
-    resetAtMidnight(); // Then, reset again next midnight.
-    }, msToMidnight);
+    resetAtMidnight({ notMidnight: false }); // Then, reset again next midnight.
+  }, msToMidnight);
   // }, 5000);
 }
 
-async function runScheduled() {
+// this function is called when the server starts and at midnight every day
+// it should check for any notifications that still need to be sent for the day,
+// and send them at their scheduled time
+async function runScheduled({ notMidnight }) {
   devLog('running scheduled push notifications');
   // get all subscriptions
   const subscriptions = await databaseClient.getAllSubscriptions();
-  // send push notifications to each subscription
+  // send push notifications to each subscription at the scheduled time
   for (let i = 0; i < subscriptions.length; i++) {
     const subscription = subscriptions[i];
-    await webPush.sendNotification(subscription, JSON.stringify({ type: 'test', title: 'Hello', body: 'This is a test' }));
+    devLog('subscription', subscription, 'notMidnight', notMidnight);
+
+    // if subscription.daily_notifications is false, skip this subscription
+    if (!subscription.daily_notifications) {
+      devLog('daily notifications is false');
+      continue;
+    }
+
+    if (notMidnight) {
+      // if it is not midnight, that means the server just started, and we should check if we are past the scheduled time
+      // if we are not, then we should still schedule it for the day
+      // subscription.notification_time is in the format of 00:00:00
+      const now = new Date();
+      const scheduledTime = getDateFromTime(now, subscription);
+      devLog('now', now, 'scheduledTime', scheduledTime);
+      if (now > scheduledTime) {
+        // if it is past the scheduled time, do nothing.
+        devLog('past scheduled time');
+        continue;
+
+      } else {
+        // if it is not past the scheduled time, schedule it for the day
+        devLog('not past scheduled time');
+        setTimeout(async () => {
+          devLog('sending test notification');
+          await sendPushNotification(subscription);
+        }, scheduledTime - now);
+      }
+    } else {
+      // if it is midnight, that means we should schedule it for the day
+      // subscription.notification_time is in the format of 00:00:00
+      const now = new Date();
+      const midnightNow = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        0, 0, 0
+      );
+      const scheduledTime = getDateFromTime(midnightNow, subscription);
+      const msToSend = scheduledTime.getTime() - midnightNow.getTime();
+      devLog('msToSend', msToSend);
+
+      devLog('midnightNow', midnightNow, 'scheduledTime', scheduledTime);
+      setTimeout(async () => {
+        devLog('sending test notification');
+        await sendPushNotification(subscription);
+      }, msToSend);
+
+    }
+
   }
+}
+
+async function sendPushNotification(subscription) {
+  try{
+    devLog(subscription.user_id, 'subscription');
+    const userID = subscription.user_id;
+    // get 24 Hour profits for user
+    const profits = await databaseClient.getProfitForDurationByAllProducts(userID, '24 Hour');
+    devLog('profits', profits);
+  // include current time in the notification
+  await webPush.sendNotification(subscription, JSON.stringify({
+    type: 'test',
+    title: 'Hello',
+    body: `Daily update ${new Date().toLocaleTimeString()}: \n24 Hour Profit: ${Number(profits)?.toFixed(2) || 0}`,
+  }));
+  } catch (err) {
+    devLog('error sending notification', err);
+  }
+}
+
+function getDateFromTime(now, subscription) {
+  return new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    subscription.notification_time.split(':')[0],
+    subscription.notification_time.split(':')[1],
+    subscription.notification_time.split(':')[2]
+  );
 }
 
