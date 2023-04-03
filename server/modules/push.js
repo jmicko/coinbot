@@ -102,7 +102,7 @@ async function sendPushNotification(subscription) {
   // include current time in the notification
   await webPush.sendNotification(subscription, JSON.stringify({
     type: 'test',
-    title: 'Hello',
+    title: 'Coinbot Daily Update',
     body: `Daily update ${new Date().toLocaleTimeString()}: \n24 Hour Profit: ${Number(profits)?.toFixed(2) || 0}`,
   }));
   } catch (err) {
