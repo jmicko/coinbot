@@ -45,7 +45,7 @@ router.get('/public-key', async (req, res) => {
 });
 
 // route to store the subscription on the server
-router.post('/subscribe', async (req, res) => {
+router.post('/subscribe', rejectUnauthenticated, async (req, res) => {
   devLog('POST SUBSCRIBE ROUTE====================');
   const subscription = req.body.subscription;
   const notificationSettings = req.body.notificationSettings;
