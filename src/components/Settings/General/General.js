@@ -162,7 +162,9 @@ function General(props) {
       {/* NOTIFICATIONS */}
       <h4>Notifications</h4>
       <p>
-        Enable browser notifications.
+        Enable browser notifications. 
+        This is on a per browser/device basis, so you will need to enable notifications in each browser on each device that you want to receive notifications on.
+        Best not to do this on a shared or public device.
       </p>
       <p>
         <span className='red'>!</span> <i>Note that if you enable notifications and then block notifications in your browser,
