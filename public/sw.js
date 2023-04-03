@@ -95,7 +95,7 @@ self.addEventListener('push', async function (event) {
   console.log('push received: ', event);
   count++;
   // display whatever notification was received
-  const { title, body, icon } = event.data.json();
+  const { title, body, icon, type } = event.data.json();
   // event.waitUntil(
   //   self.registration.showNotification(title, {
   //     body: body,
@@ -114,8 +114,14 @@ self.addEventListener('push', async function (event) {
   // check if the tab is the active tab
   const activeClient = allClients.find((client) => client.focused);
 
+  if (type === 'update') {
+    // always show update notification
+    self.registration.showNotification(title, {
+      body: body,
+      icon: icon,
+    })
 
-  if (activeClient) {
+  } else if (activeClient) {
     // any notification that is received while the user is online will be displayed in this block
 
     // show notification that user is online
@@ -134,10 +140,7 @@ self.addEventListener('push', async function (event) {
     //   icon: icon,
     // });
 
-    self.registration.showNotification(title, {
-      body: body,
-      icon: icon,
-    })
+
 
   }
 });

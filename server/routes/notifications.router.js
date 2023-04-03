@@ -17,6 +17,7 @@ import { databaseClient } from '../modules/databaseClient.js';
 // const { cache, userStorage, messenger } = require('../modules/cache');
 import { cache, userStorage, messenger } from '../modules/cache.js';
 import { devLog } from '../modules/utilities.js';
+import { instantSchedule } from '../modules/push.js';
 // import the web-push library
 import webPush from 'web-push';
 
@@ -53,25 +54,49 @@ router.post('/subscribe', rejectUnauthenticated, async (req, res) => {
   devLog('subscription', subscription);
   devLog('user_id', user_id);
   try {
-    const result = await databaseClient.addSubscription({subscription, notificationSettings, user_id});
-    devLog('result', result);
+    const result = await databaseClient.addSubscription({ subscription, notificationSettings, user_id });
+    devLog(result.rows, 'result');
+    const newSub = result.rows[0];
+
+
+    // get timeouts from userStorage for this subscription and clear them
+    const timeouts = userStorage[user_id].getTimeoutForSub(subscription);
+    console.log('timeouts', timeouts);
+    timeouts?.forEach(timeout => {
+      console.log('clearing timeout', timeout);
+      clearTimeout(timeout.timeout);
+    });
+
+    instantSchedule(newSub, user_id)
+
+
     res.sendStatus(200);
   } catch (err) {
     devLog('error adding subscription', err);
     res.sendStatus(500);
   }
   // res.sendStatus(200);
+  devLog(notificationSettings, 'notificationSettings');
 
-  // // after 5 seconds, send a test notification to the user
-  // setInterval(async () => {
-  //   devLog('sending test notification');
-  //   await webPush.sendNotification(subscription, JSON.stringify({
-  //     title: 'Test Notification',
-  //     body: 'This is a test notification and should not show',
-  //   }));
+  if (notificationSettings.dailyNotifications) {
+    // convert notificationSettings.dailyNotificationsTime to am/pm format
+    const time = notificationSettings.dailyNotificationsTime.split(':');
+    const hours = time[0];
+    const minutes = time[1];
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    const hours12 = hours % 12 || 12;
+    const time12 = `${hours12}:${minutes} ${ampm}`;
 
-
-  // }, 5000);
+    // send a test notification to the user
+    setTimeout(async () => {
+      devLog('sending test notification');
+      await webPush.sendNotification(subscription, JSON.stringify({
+        type: 'update',
+        title: 'Confirmation',
+        body: `Daily notifications will be sent at ${time12}`,
+      }));
+    }, 1000);
+  }
 
 });
 

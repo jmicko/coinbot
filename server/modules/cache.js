@@ -70,6 +70,13 @@ class User {
     this.exporting = false;
     this.simulating = false;
     this.simulationResults = null;
+    this.timeouts = new Array();
+  }
+  getTimeoutForSub(sub) {
+    // console.log(this.timeouts, 'TIMEOUTS', sub, 'SUB')
+    // return this.timeouts.find(timeout => timeout.subscription.endpoint === sub.endpoint);
+    // just like above, but return all timeouts for a given subscription
+    return this.timeouts.filter(timeout => timeout.subscription.endpoint === sub.endpoint);
   }
   updateCandlesBeingUpdated(product_id, granularity, boolean) {
     if (!this.candlesBeingUpdated[product_id]) {
@@ -78,7 +85,11 @@ class User {
     this.candlesBeingUpdated[product_id][granularity] = boolean;
   }
   getUser() {
-    return structuredClone(this);
+    // return structuredClone(this);
+    // return a structured clone of the user object except for the timeouts array, which can't be cloned
+    const user = Object.assign({}, this);
+    delete user.timeouts;
+    return structuredClone(user);
   }
   // update available funds
   updateAvailableFunds(funds) {
@@ -344,7 +355,7 @@ const userStorage = new class {
   // get a deep copy of a user's object
   getUser(userID) {
     if (this[userID]) {
-      return structuredClone(this[userID])
+      return this[userID].getUser();
     }
     // else {
     //   return { deleting: true }

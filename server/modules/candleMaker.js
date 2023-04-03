@@ -4,7 +4,7 @@ import { userStorage, cbClients } from "./cache.js";
 import { databaseClient } from "./databaseClient.js";
 import { devLog } from "./utilities.js";
 
-const sleepyTime = 1000; // can adjust rate limiting here
+const sleepyTime = 1500; // can adjust rate limiting here
 
 console.log('candle maker is making candles');
 
@@ -188,6 +188,10 @@ async function getCandles({ userID, productID, granularity, start, end }) {
     // devLog('saving candles', candles.length);
     await databaseClient.saveCandles(productID, granularity.name, candles);
   } catch (err) {
-    devLog(err);
+    if (err?.data?.message) {
+      devLog('error getting candles');
+    } else {
+      devLog( 'unknown error getting candles');
+    }
   }
 }
