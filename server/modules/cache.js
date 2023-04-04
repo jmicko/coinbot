@@ -464,25 +464,6 @@ const cache = {
     return userStore.willCancel.has(orderID)
   },
 
-  getUser: (userID) => {
-    // make a deep copy so you don't accidentally change the user
-    const user = structuredClone(userStorage[userID])
-    return user
-  },
-
-  getAllUsers: () => {
-    let allUsers = []
-    userStorage.forEach(user => {
-      if (user && user.id !== 0) {
-        // get a deep copy of the user
-        const userCopy = cache.getUser(user.id)
-        // push the user copy into the array
-        allUsers.push(userCopy);
-      }
-    })
-    return allUsers;
-  },
-
   // LOOP STATUS UPDATES
   updateStatus: (userID, update) => {
     userStorage[userID].botStatus.unshift(update);

@@ -12,7 +12,7 @@ import { devLog } from '../../src/shared.js';
 
 async function startWebsocket(userID) {
 
-  const user = cache?.getUser(userID);
+  const user = userStorage.getUser(userID);
   // don't start ws if user is not approved and active
   if (!user?.active || !user?.approved) {
     if (user) {
