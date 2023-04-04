@@ -173,7 +173,7 @@ function General(props) {
 
       {/* NOTIFICATIONS */}
       <h4>Notifications</h4>
-      {JSON.stringify(notificationSettings)}
+      {/* {JSON.stringify(notificationSettings)} */}
       <p>
         Enable browser notifications. 
         This is on a per browser/device basis, so you will need to enable notifications in each browser on each device that you want to receive notifications on.
@@ -215,9 +215,6 @@ function General(props) {
         <div className="notification-setting">
           {/* submit */}
           <input className={`btn-blue medium ${user.theme}`} type="submit" value={"Save"} />
-          {/* <p> */}
-          <span className='red'> !</span> <i>It may take up to 24 hours for changes to take effect.</i>
-          {/* </p> */}
         </div>
       </form>
 
