@@ -46,10 +46,6 @@ class User {
     this.maker_fee = user.maker_fee;
     this.taker_fee = user.taker_fee;
     this.usd_volume = user.usd_volume;
-    this.available_btc = user.available_btc;
-    this.available_usd = user.available_usd;
-    this.actualavailable_btc = user.actualavailable_btc;
-    this.actualavailable_usd = user.actualavailable_usd;
     this.availableFunds = new Object();
     this.max_trade = user.max_trade;
     this.max_trade_size = user.max_trade_size;
@@ -159,10 +155,6 @@ class User {
     this.maker_fee = user.maker_fee;
     this.taker_fee = user.taker_fee;
     this.usd_volume = user.usd_volume;
-    this.available_btc = user.available_btc;
-    this.available_usd = user.available_usd;
-    this.actualavailable_btc = user.actualavailable_btc;
-    this.actualavailable_usd = user.actualavailable_usd;
     this.max_trade = user.max_trade;
     this.max_trade_size = user.max_trade_size;
     this.max_trade_load = user.max_trade_load;
@@ -551,7 +543,7 @@ const cache = {
   getSafeStorage: (userID) => {
     // create a deep copy of the user's storage object so that it can be changed
     const safeStorage = userStorage[userID]
-      ? structuredClone(userStorage[userID])
+      ? userStorage[userID].getUser()
       : { user: null, api: null };
     return safeStorage;
   },
