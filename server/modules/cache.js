@@ -380,19 +380,6 @@ const userStorage = new class {
 };
 
 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-
 
 const cache = {
 
@@ -404,10 +391,6 @@ const cache = {
 
   // set up a storage cache for a new user
   createNewUser: async (user) => {
-
-
-
-
     // get the user id
     const userID = user.id;
     // create user object at index of user id for user storage

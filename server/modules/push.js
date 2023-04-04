@@ -130,7 +130,7 @@ async function sendPushNotification(subscription) {
     await webPush.sendNotification(subscription, JSON.stringify({
       type: 'update',
       title: 'Coinbot Daily Update',
-      body: `Daily update ${new Date().toLocaleTimeString()}: \n24 Hour Profit: ${Number(profits)?.toFixed(2) || 0}`,
+      body: `24 Hour Profit: ${Number(profits)?.toFixed(2) || 0}`,
     }));
   } catch (err) {
     devLog('error sending notification', err);
@@ -142,9 +142,9 @@ function getDateFromTime(now, subscription) {
     now.getFullYear(),
     now.getMonth(),
     now.getDate(),
-    subscription.notification_time.split(':')[0],
-    subscription.notification_time.split(':')[1],
-    subscription.notification_time.split(':')[2]
+    subscription.notification_time.getHours(),
+    subscription.notification_time.getMinutes(),
+    subscription.notification_time.getSeconds()
   );
 }
 

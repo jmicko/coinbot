@@ -16,6 +16,8 @@ function General(props) {
   const [notificationSettings, setNotificationSettings] = useState({
     dailyNotifications: true,
     dailyNotificationsTime: '12:00',
+    // get current timezone of user
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   });
 
   function handleNotificationSettingsChange(event) {
@@ -115,13 +117,23 @@ function General(props) {
     });
     console.log(subscription, "subscription");
 
+    // create a date from the time string
+    const date = new Date();
+    const time = notificationSettings.dailyNotificationsTime.split(':');
+    date.setHours(time[0]);
+    date.setMinutes(time[1]);
+    date.setSeconds(0);
+    date.setMilliseconds(0);
+    
+    
+
     // send the subscription object to the server
     console.log("sending subscription to server");
     await fetch("/api/notifications/subscribe", {
       method: "POST",
       body: JSON.stringify({
         subscription: subscription,
-        notificationSettings: notificationSettings,
+        notificationSettings: {...notificationSettings, dailyNotificationsTime: date},
       }),
       headers: {
         "content-type": "application/json",
@@ -161,6 +173,7 @@ function General(props) {
 
       {/* NOTIFICATIONS */}
       <h4>Notifications</h4>
+      {JSON.stringify(notificationSettings)}
       <p>
         Enable browser notifications. 
         This is on a per browser/device basis, so you will need to enable notifications in each browser on each device that you want to receive notifications on.

@@ -195,7 +195,7 @@ CREATE TABLE IF NOT EXISTS "subscriptions" (
   "expiration_time" timestamp,
   "created_at" timestamp default now(),
   "daily_notifications" boolean DEFAULT false,
-  "notification_time" time
+  "notification_time" time with time zone DEFAULT '00:00:00+00'
 );
 
 -- this will create the required table for connect-pg to store session data

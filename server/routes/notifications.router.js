@@ -50,6 +50,10 @@ router.post('/subscribe', rejectUnauthenticated, async (req, res) => {
   devLog('POST SUBSCRIBE ROUTE====================');
   const subscription = req.body.subscription;
   const notificationSettings = req.body.notificationSettings;
+
+
+
+
   const user_id = req.user.id;
   devLog('subscription', subscription);
   devLog('user_id', user_id);
@@ -79,13 +83,18 @@ router.post('/subscribe', rejectUnauthenticated, async (req, res) => {
   devLog(notificationSettings, 'notificationSettings');
 
   if (notificationSettings.dailyNotifications) {
-    // convert notificationSettings.dailyNotificationsTime to am/pm format
-    const time = notificationSettings.dailyNotificationsTime.split(':');
-    const hours = time[0];
-    const minutes = time[1];
-    const ampm = hours >= 12 ? 'pm' : 'am';
-    const hours12 = hours % 12 || 12;
-    const time12 = `${hours12}:${minutes} ${ampm}`;
+    // convert notificationSettings.dailyNotificationsTime to am/pm format in users timezone
+    // dailyNotificationsTime is a utc date string
+    // notificationSettings.timezone is the users timezone
+    const time = new Date(notificationSettings.dailyNotificationsTime);
+    const userTime = time.toLocaleTimeString('en-US', {
+      timeZone: notificationSettings.timezone,
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true,
+    });
+    devLog(userTime, 'userTime');
+    
 
     // send a test notification to the user
     setTimeout(async () => {
@@ -93,7 +102,7 @@ router.post('/subscribe', rejectUnauthenticated, async (req, res) => {
       await webPush.sendNotification(subscription, JSON.stringify({
         type: 'update',
         title: 'Confirmation',
-        body: `Daily notifications will be sent at ${time12}`,
+        body: `Daily notifications will be sent at ${userTime}`,
       }));
     }, 1000);
   }
