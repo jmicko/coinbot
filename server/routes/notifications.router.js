@@ -12,10 +12,8 @@ import { pool } from '../modules/pool.js';
 import userStrategy from '../strategies/user.strategy.js';
 // const robot = require('../modules/robot');
 import { robot } from '../modules/robot.js';
-// const databaseClient = require('../modules/databaseClient');
 import { databaseClient } from '../modules/databaseClient.js';
-// const { cache, userStorage, messenger } = require('../modules/cache');
-import { cache, userStorage, messenger } from '../modules/cache.js';
+import { userStorage, messenger } from '../modules/cache.js';
 import { devLog } from '../modules/utilities.js';
 import { instantSchedule } from '../modules/push.js';
 // import the web-push library
@@ -94,7 +92,7 @@ router.post('/subscribe', rejectUnauthenticated, async (req, res) => {
       hour12: true,
     });
     devLog(userTime, 'userTime');
-    
+
 
     // send a test notification to the user
     setTimeout(async () => {

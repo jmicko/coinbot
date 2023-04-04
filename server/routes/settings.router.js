@@ -9,8 +9,7 @@ import { rejectUnauthenticated, } from '../modules/authentication-middleware.js'
 import { databaseClient } from '../modules/databaseClient.js';
 // const robot = require('../modules/robot');
 import { robot } from '../modules/robot.js';
-// const { cache, botSettings, cbClients, userStorage, messenger } = require('../modules/cache');
-import { cache, botSettings, cbClients, userStorage, messenger } from '../modules/cache.js';
+import { botSettings, cbClients, userStorage, messenger } from '../modules/cache.js';
 // const { sleep } = require('../../src/shared');
 import { sleep } from '../../src/shared.js';
 import { devLog } from '../modules/utilities.js';

@@ -3,7 +3,7 @@ const router = express.Router();
 import { pool } from '../modules/pool.js';
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
 import { databaseClient } from '../modules/databaseClient.js';
-import { cache, cbClients, userStorage, messenger } from '../modules/cache.js';
+import { cbClients, userStorage, messenger } from '../modules/cache.js';
 import { Coinbase } from '../modules/coinbaseClient.js';
 import excel from 'exceljs';
 import { granularities } from '../../src/shared.js';

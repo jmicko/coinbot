@@ -1,7 +1,7 @@
 import { databaseClient } from '../modules/databaseClient.js';
 import webPush from 'web-push';
 import { devLog } from './utilities.js';
-import { cache, cbClients, userStorage, messenger } from '../modules/cache.js';
+import { cbClients, userStorage, messenger } from '../modules/cache.js';
 
 // every hour on the hour, send push notifications to all users
 

@@ -14,8 +14,7 @@ import userStrategy from '../strategies/user.strategy.js';
 import { robot } from '../modules/robot.js';
 // const databaseClient = require('../modules/databaseClient');
 import { databaseClient } from '../modules/databaseClient.js';
-// const { cache, userStorage, messenger } = require('../modules/cache');
-import { cache, userStorage, messenger } from '../modules/cache.js';
+import { userStorage, messenger } from '../modules/cache.js';
 import { devLog } from '../modules/utilities.js';
 
 const router = express.Router();

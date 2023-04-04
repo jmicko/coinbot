@@ -1,7 +1,4 @@
-// const CryptoJS = require('crypto-js');
-// const fs = require('fs');
-// const { cache, messenger, userStorage, botSettings, cbClients } = require('./cache');
-import { cache, messenger, userStorage, botSettings, cbClients } from './cache.js';
+import { messenger, userStorage, botSettings, cbClients } from './cache.js';
 // const databaseClient = require('./databaseClient');
 import { databaseClient } from './databaseClient.js';
 // const { rejectUnauthenticatedSocket } = require('./authentication-middleware');
@@ -150,8 +147,6 @@ async function updateMultipleOrders(userID, params) {
     userStorage[userID].updateStatus('start updateMultipleOrders (UMO)');
     // get the orders that need processing. This will have been taken directly from the db and include all details
     const ordersArray = params?.ordersArray
-      ? params.ordersArray
-      : cache.getKey(userID, 'ordersToCheck');
     if (ordersArray.length > 0) {
       messenger[userID].newMessage({
         type: 'general',
@@ -232,7 +227,7 @@ function setupSocketIO(io) {
     socket.on('pong', (data) => {
       // console.log(data, 'pong from client');
     });
-    
+
 
     // handle disconnect
     socket.on("disconnect", (reason) => {
