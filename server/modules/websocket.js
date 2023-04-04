@@ -22,9 +22,11 @@ async function startWebsocket(userID) {
     }
     return { success: false }
   }
-  const userAPI = cache.getAPI(userID)
-  const secret = userAPI.CB_SECRET;
-  const key = userAPI.CB_ACCESS_KEY;
+  // const userAPI = cache.getAPI(userID)
+  // const secret = userAPI.CB_SECRET;
+  // const key = userAPI.CB_ACCESS_KEY;
+  const secret = cbClients[userID].secret;
+  const key = cbClients[userID].key;
 
   if (!secret?.length || !key?.length) {
     throw new Error('websocket connection to coinbase is missing mandatory environment variable(s)');
@@ -145,7 +147,7 @@ async function getActiveProducts() {
 // this should just update the status of each trade in the 'ordersToCheck' cached array
 async function updateMultipleOrders(userID, params) {
   return new Promise(async (resolve, reject) => {
-    cache.updateStatus(userID, 'start updateMultipleOrders (UMO)');
+    userStorage[userID].updateStatus('start updateMultipleOrders (UMO)');
     // get the orders that need processing. This will have been taken directly from the db and include all details
     const ordersArray = params?.ordersArray
       ? params.ordersArray
@@ -165,7 +167,7 @@ async function updateMultipleOrders(userID, params) {
       });
       const orderToCheck = ordersArray[i];
       try {
-        cache.updateStatus(userID, 'UMO loop get order');
+        userStorage[userID].updateStatus('UMO loop get order');
         // if not a reorder, look up the full details on CB
         let updatedOrder = await cbClients[userID].getOrder(orderToCheck.order_id);
         // if it was cancelled, set it for reorder
@@ -176,7 +178,7 @@ async function updateMultipleOrders(userID, params) {
         // then update db with current status
         await databaseClient.updateTrade(updatedOrder.order);
       } catch (err) {
-        cache.updateStatus(userID, 'error in UMO loop');
+        userStorage[userID].updateStatus('error in UMO loop');
         // handle not found order
         let errorText = `Error updating order details`
         console.log(err, 'error in updateMultipleOrders loop');
@@ -187,7 +189,7 @@ async function updateMultipleOrders(userID, params) {
 
       } // end catch
     } // end for loop
-    cache.updateStatus(userID, 'UMO all done');
+    userStorage[userID].updateStatus('UMO all done');
     resolve();
   })
 }

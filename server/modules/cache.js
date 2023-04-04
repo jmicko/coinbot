@@ -178,7 +178,7 @@ class Message {
     this.cCount = Number(cCount);
     this.timeStamp = new Date();
     this.orderUpdate = Boolean(orderUpdate);
-    this.from = from ? String(from): null;
+    this.from = from ? String(from) : null;
   }
 }
 
@@ -241,6 +241,22 @@ class Messenger {
       socket.emit('message', message);
     })
   }
+  getMessages() {
+    return this.messages;
+  }
+  getChatMessages() {
+    const chats = [];
+    // get the messages
+    // const messages = structuredClone(this.messages);
+    // extract the chats
+
+    this.messages.forEach(message => {
+      if (message.type === 'chat') {
+        chats.push(message);
+      }
+    });
+    return chats;
+  }
   // pretty much just used for tickers
   instantMessage(message) {
     this.sockets.forEach(socket => {
@@ -272,21 +288,33 @@ class Messenger {
       socket.emit('message', error);
     })
   }
+  getErrors() {
+    return this.errors;
+  }
+  clearErrors() {
+    this.errors.length = 0;
+  }
 }
 
 // store an object with each user api. keep it separate from user storage to prevent accident
-const apiStorage = new class {
+// const apiStorage = new class {
 
-};
+// };
 // store a client to connect to coinbase
 const cbClients = new class {
-  constructor() { }
+  constructor() {
+    this.apiStorage = new Object();
+   }
 
   async updateAPI(userID) {
     devLog('updating api for user: ' + userID)
     const userAPI = await databaseClient.getUserAPI(userID);
 
-    Object.assign(apiStorage[userID], userAPI)
+    // Object.assign(apiStorage[userID], userAPI)
+
+    
+    this.apiStorage[userID] = Object();
+    Object.assign(this.apiStorage[userID], userAPI)
 
     if (userAPI.CB_ACCESS_KEY?.length) {
       this[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET, ['BTC-USD', 'ETH-USD']);
@@ -324,12 +352,12 @@ const userStorage = new class {
     // create an object to store messages and errors and sockets to send them with
     messenger.newMessenger(userID);
     try {
-      const userAPI = await databaseClient.getUserAPI(userID);
+      // const userAPI = await databaseClient.getUserAPI(userID);
       // create api object at index of user id
-      apiStorage[userID] = Object();
+      // apiStorage[userID] = Object();
       // add the user api to the apiStorage array
-      cache.storeAPI(userID, userAPI);
-
+      // cache.storeAPI(userID, userAPI);
+      // Object.assign(apiStorage[userID], userAPI)
       // the user will only be active if they have an api
       // if (!user.active) {
       //   devLog(user, '<- the user in userStorage');
@@ -375,182 +403,182 @@ const userStorage = new class {
 
 const cache = {
 
-  getBotSettings: () => {
-    // if (botSettings) {
-    return structuredClone(botSettings)
-    // }
-  },
+  // getBotSettings: () => {
+  //   // if (botSettings) {
+  //   return structuredClone(botSettings)
+  //   // }
+  // },
 
-  // set up a storage cache for a new user
-  createNewUser: async (user) => {
-    // get the user id
-    const userID = user.id;
-    // create user object at index of user id for user storage
-    // need to create user first because other things depend on it
-    userStorage[userID] = new User(user)
-    // create an object to store messages and errors and sockets to send them with
-    messenger[userID] = new Messenger(userID);
-    // create object for api at index of user id
-    // apiStorage[userID] = new Api(userID);
+  // // set up a storage cache for a new user
+  // createNewUser: async (user) => {
+  //   // get the user id
+  //   const userID = user.id;
+  //   // create user object at index of user id for user storage
+  //   // need to create user first because other things depend on it
+  //   userStorage[userID] = new User(user)
+  //   // create an object to store messages and errors and sockets to send them with
+  //   messenger[userID] = new Messenger(userID);
+  //   // create object for api at index of user id
+  //   // apiStorage[userID] = new Api(userID);
 
-    // cache the API from the db
-    try {
+  //   // cache the API from the db
+  //   try {
 
-      const userAPI = await databaseClient.getUserAPI(userID);
-      // create api object at index of user id
-      apiStorage[userID] = Object();
-      // add the user api to the apiStorage array
-      cache.storeAPI(userID, userAPI);
+  //     const userAPI = await databaseClient.getUserAPI(userID);
+  //     // create api object at index of user id
+  //     apiStorage[userID] = Object();
+  //     // add the user api to the apiStorage array
+  //     cache.storeAPI(userID, userAPI);
 
-      // the user will only be active if they have an api
-      if (!user.active) {
-        devLog(user, '<- the user in cache.createNewUser');
-        // do not start the Coinbase client if they are not active
-        return
-      }
-      // store a coinbase client for the user
-      cbClients[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET, ['BTC-USD', 'ETH-USD']);
+  //     // the user will only be active if they have an api
+  //     if (!user.active) {
+  //       devLog(user, '<- the user in cache.createNewUser');
+  //       // do not start the Coinbase client if they are not active
+  //       return
+  //     }
+  //     // store a coinbase client for the user
+  //     cbClients[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET, ['BTC-USD', 'ETH-USD']);
 
-    } catch (err) {
-      devLog(err, `\nERROR creating new user`);
-    }
-  },
+  //   } catch (err) {
+  //     devLog(err, `\nERROR creating new user`);
+  //   }
+  // },
 
-  // USER SETTINGS STORAGE
-  refreshUser: async (userID) => {
-    await userStorage[userID].update();
-  },
+  // // USER SETTINGS STORAGE
+  // refreshUser: async (userID) => {
+  //   await userStorage[userID].update();
+  // },
 
-  // KEEP TRACK OF ORDERS TO CANCEL
-  setCancel: (userID, orderID) => {
-    const userStore = userStorage[userID]
-    // add the id to the willCancel set
-    userStore.willCancel.add(orderID);
-    // delete the id from the set after 30 seconds. Bot would have seen it by then
-    setTimeout(() => {
-      userStore.willCancel.delete(orderID)
-    }, 30 * 1000);
+  // // KEEP TRACK OF ORDERS TO CANCEL
+  // setCancel: (userID, orderID) => {
+  //   const userStore = userStorage[userID]
+  //   // add the id to the willCancel set
+  //   userStore.willCancel.add(orderID);
+  //   // delete the id from the set after 30 seconds. Bot would have seen it by then
+  //   setTimeout(() => {
+  //     userStore.willCancel.delete(orderID)
+  //   }, 30 * 1000);
 
-  },
+  // },
 
-  checkIfCanceling: (userID, orderID) => {
-    const userStore = userStorage[userID]
-    // find if id is in the willCancel set
-    return userStore.willCancel.has(orderID)
-  },
+  // checkIfCanceling: (userID, orderID) => {
+  //   const userStore = userStorage[userID]
+  //   // find if id is in the willCancel set
+  //   return userStore.willCancel.has(orderID)
+  // },
 
   // LOOP STATUS UPDATES
-  updateStatus: (userID, update) => {
-    userStorage[userID].botStatus.unshift(update);
-    if (userStorage[userID].botStatus.length > 100) {
-      userStorage[userID].botStatus.length = 100;
-    }
-  },
-  getStatus: (userID) => {
-    return structuredClone(userStorage[userID].botStatus);
-  },
-  clearStatus: (userID) => {
-    userStorage[userID].botStatus.length = 0;
-  },
+  // updateStatus: (userID, update) => {
+  //   userStorage[userID].botStatus.unshift(update);
+  //   if (userStorage[userID].botStatus.length > 100) {
+  //     userStorage[userID].botStatus.length = 100;
+  //   }
+  // },
+  // getStatus: (userID) => {
+  //   return structuredClone(userStorage[userID].botStatus);
+  // },
+  // clearStatus: (userID) => {
+  //   userStorage[userID].botStatus.length = 0;
+  // },
 
-  // ERROR STORAGE - store 1000 most recent errors
-  storeError: (userID, error) => {
-    const errorData = {
-      // error text is to store a custom error message to show the user
-      errorText: error.errorText,
-      // error data is intended to store actual chunks of data from the error response.
-      // keep in mind that the response includes headers that hold the API details, 
-      // so don't store the whole thing because it gets sent outside the server
-      errorData: error.errorData,
-      // automatically store the timestamp
-      timeStamp: new Date(),
-      count: messenger[userID].errorCount
-    }
-    messenger[userID].errorCount++;
+  // // ERROR STORAGE - store 1000 most recent errors
+  // storeError: (userID, error) => {
+  //   const errorData = {
+  //     // error text is to store a custom error message to show the user
+  //     errorText: error.errorText,
+  //     // error data is intended to store actual chunks of data from the error response.
+  //     // keep in mind that the response includes headers that hold the API details, 
+  //     // so don't store the whole thing because it gets sent outside the server
+  //     errorData: error.errorData,
+  //     // automatically store the timestamp
+  //     timeStamp: new Date(),
+  //     count: messenger[userID].errorCount
+  //   }
+  //   messenger[userID].errorCount++;
 
-    messenger[userID].errors.unshift(errorData);
-    if (messenger[userID].errors.length > 1000) {
-      messenger[userID].errors.length = 1000;
-    }
-    // tell Dom to update errors
-    messenger[userID].sockets.forEach(socket => {
-      // find all open sockets for the user
-      if (socket.userID === userID) {
-        const msg = {
-          type: 'errorUpdate',
-        }
-        socket.emit('message', msg);
-      }
-    })
-  },
-  getErrors: (userID) => {
-    return messenger[userID].errors;
-  },
-  clearErrors: (userID) => {
-    messenger[userID].errors.length = 0;
-  },
+  //   messenger[userID].errors.unshift(errorData);
+  //   if (messenger[userID].errors.length > 1000) {
+  //     messenger[userID].errors.length = 1000;
+  //   }
+  //   // tell Dom to update errors
+  //   messenger[userID].sockets.forEach(socket => {
+  //     // find all open sockets for the user
+  //     if (socket.userID === userID) {
+  //       const msg = {
+  //         type: 'errorUpdate',
+  //       }
+  //       socket.emit('message', msg);
+  //     }
+  //   })
+  // },
+  // getErrors: (userID) => {
+  //   return messenger[userID].errors;
+  // },
+  // clearErrors: (userID) => {
+  //   messenger[userID].errors.length = 0;
+  // },
 
-  // MESSAGE STORAGE - store 1000 most recent messages
-  storeMessage: (userID, message) => {
-    // todo - chats are also being sent here so need to change this to differentiate type
-    messenger[userID].newMessage(message);
+  // // MESSAGE STORAGE - store 1000 most recent messages
+  // storeMessage: (userID, message) => {
+  //   // todo - chats are also being sent here so need to change this to differentiate type
+  //   messenger[userID].newMessage(message);
 
-  },
+  // },
 
 
-  getMessages: (userID) => {
-    return messenger[userID].messages;
-  },
+  // getMessages: (userID) => {
+  //   return messenger[userID].messages;
+  // },
 
-  getChatMessages: (userID) => {
-    const chats = [];
-    // get the messages
-    const messages = structuredClone(messenger[userID].messages);
-    // extract the chats
+  // getChatMessages: (userID) => {
+  //   const chats = [];
+  //   // get the messages
+  //   const messages = structuredClone(messenger[userID].messages);
+  //   // extract the chats
 
-    messages.forEach(message => {
-      if (message.type === 'chat') {
-        chats.push(message);
-      }
-    });
-    return chats;
-  },
+  //   messages.forEach(message => {
+  //     if (message.type === 'chat') {
+  //       chats.push(message);
+  //     }
+  //   });
+  //   return chats;
+  // },
 
-  clearMessages: (userID) => {
-    messenger[userID].length = 0;
-  },
+  // clearMessages: (userID) => {
+  //   messenger[userID].length = 0;
+  // },
 
-  // LOOP COUNTER
-  increaseLoopNumber: (userID) => {
-    // throwing an error here on 1st user creation
-    userStorage[userID].loopNumber++;
-  },
+  // // LOOP COUNTER
+  // increaseLoopNumber: (userID) => {
+  //   // throwing an error here on 1st user creation
+  //   userStorage[userID].loopNumber++;
+  // },
 
-  getLoopNumber: (userID) => {
-    return userStorage[userID].loopNumber;
-  },
+  // getLoopNumber: (userID) => {
+  //   return userStorage[userID].loopNumber;
+  // },
 
   // API STORAGE
-  storeAPI: (userID, api) => {
-    Object.assign(apiStorage[userID], api)
-  },
+  // storeAPI: (userID, api) => {
+  //   Object.assign(apiStorage[userID], api)
+  // },
 
-  getAPI: (userID) => {
-    return structuredClone(apiStorage[userID]);
-  },
+  // getAPI: (userID) => {
+  //   return structuredClone(apiStorage[userID]);
+  // },
 
-  // get all cache storage for a user but remove API before returning
-  getSafeStorage: (userID) => {
-    // create a deep copy of the user's storage object so that it can be changed
-    const safeStorage = userStorage[userID]
-      ? userStorage[userID].getUser()
-      : { user: null, api: null };
-    return safeStorage;
-  },
+  // // get all cache storage for a user but remove API before returning
+  // getSafeStorage: (userID) => {
+  //   // create a deep copy of the user's storage object so that it can be changed
+  //   const safeStorage = userStorage[userID]
+  //     ? userStorage[userID].getUser()
+  //     : { user: null, api: null };
+  //   return safeStorage;
+  // },
 
-  heartbeat: (userID, message) => {
-    messenger[userID].heartbeat(userID, side)
-  }
+  // heartbeat: (userID, message) => {
+  //   messenger[userID].heartbeat(userID, side)
+  // }
 }
 
 export { cache, messenger, botSettings, userStorage, cbClients };

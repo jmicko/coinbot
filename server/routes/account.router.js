@@ -442,7 +442,7 @@ router.get('/errors', rejectUnauthenticated, async (req, res) => {
   devLog('get errors route');
   const userID = req.user.id;
   try {
-    const userErrors = cache.getErrors(userID);
+    const userErrors = messenger[userID].getErrors();
     res.send(userErrors);
   } catch (err) {
     devLog(err, 'problem debug route');
@@ -458,8 +458,8 @@ router.get('/messages', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   try {
     const userMessages = {}
-    userMessages.botMessages = cache.getMessages(userID);
-    userMessages.chatMessages = cache.getChatMessages(userID);
+    userMessages.botMessages = messenger[userID].getMessages();
+    userMessages.chatMessages = messenger[userID].getChatMessages();
     res.send(userMessages);
   } catch (err) {
     devLog(err, 'problem in get messages route');

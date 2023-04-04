@@ -47,8 +47,8 @@ router.get('/debug/:user_id', rejectUnauthenticated, async (req, res) => {
   const userID = req.params.user_id;
   if (req.user.admin) {
     try {
-      const userInfo = cache.getSafeStorage(userID);
-      const userErrors = cache.getErrors(userID);
+      const userInfo = userStorage[userID].getUser()
+      const userErrors = messenger[userID].getErrors();
       // devLog('debug - full storage', userInfo);
       // devLog('errors', userErrors);
       userInfo.userID !== null
