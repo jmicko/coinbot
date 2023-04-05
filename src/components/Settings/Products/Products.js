@@ -24,7 +24,7 @@ function Products(props) {
         These are all the trades you have currently set to trade.
         Deleting them will delete all active trades and stop the bot from trading them.
       </p>}
-      <table>
+      <table className='product-table'>
         <thead>
           <tr>
             <th>Active</th>
@@ -92,13 +92,13 @@ function Products(props) {
         and will allow the bot to trade them.
       </p>}
       {/* table to display all products */}
-      <table>
+      <table className='product-table'>
         <thead>
           <tr>
             <th>Active</th>
             <th>Product ID</th>
             <th>Price</th>
-            <th>Volume 24h</th>
+            {/* <th>Volume 24h</th> */}
             <th>Volume 24h In Quote</th>
             <th>Price % Change 24h</th>
           </tr>
@@ -109,38 +109,39 @@ function Products(props) {
               return (
                 <tr key={i}>
                   <td>
-                    <center>
+                    {/* <center> */}
                       <input
                         type="checkbox"
                         checked={product.active_for_user}
                         onChange={() => toggleActive(product)}
                       />
-                    </center>
+                    {/* </center> */}
                   </td>
                   <td>
-                    <center>
+                    {/* <center> */}
                       {product.product_id}
-                    </center>
+                    {/* </center> */}
                   </td>
-                  <td>
-                    <center>
+                  <td className='number'>
+                    {/* <center> */}
                       {numberWithCommas(Number(product.price))}
-                    </center>
+                    {/* </center> */}
                   </td>
-                  <td>
-                    <center>
+                  {/* <td>
+                    // <center>
                       {numberWithCommas(Number(product.volume_24h).toFixed(Number(product.quote_increment).toString().length - 2))}
-                    </center>
+                      {numberWithCommas(Number(product.volume_24h).toFixed(2))}
+                    // </center>
+                  </td> */}
+                  <td className='number'>
+                    {/* <center> */}
+                      {numberWithCommas(Number(product.volume_24h * product.price).toFixed(2))} {product.quote_currency_id}
+                    {/* </center> */}
                   </td>
-                  <td>
-                    <center>
-                      {numberWithCommas(Number(product.volume_24h * product.price).toFixed(Number(product.quote_increment).toString().length - 2))} {product.quote_currency_id}
-                    </center>
-                  </td>
-                  <td>
-                    <center>
+                  <td className='number'>
+                    {/* <center> */}
                       {product.price_percentage_change_24h}
-                    </center>
+                    {/* </center> */}
                   </td>
                 </tr>
               )

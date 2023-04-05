@@ -72,70 +72,97 @@ function SingleTrade(props) {
       {/* {JSON.stringify(decimals)} */}
       {!props.preview && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>}
       {showAll && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={syncTrade}>sync</button>}
-      <div className={"overlay"}>
-        {(deleting === true)
-          ? <p className="deleting">Deleting...</p>
-          : !props.preview && !user.kill_locked && <button
-            className={`btn-red kill-button ${user.theme}`}
-            onClick={() => {
-              deleteOrder(props.order.order_id);
-              setDeleting(true)
-            }}>
-            Kill
-          </button>
 
-        }
-        <p className="single-trade-text" >
+      <div className={"overlay"}>
+
+
+        {/* <p className="single-trade-text" > */}
+        <div>
           {/* {JSON.stringify(user.theme)} */}
           <strong>
-            Price: </strong>
+            {/* Price: */}
+            {(props.order.side === 'BUY')
+              ? 'Buy: '
+              : 'Sell: '
+            }
+          </strong>
           {(props.order.side === 'SELL')
             ? numberWithCommas(Number(props.order.original_sell_price).toFixed(decimals.quote_increment_decimals))
             : numberWithCommas(Number(props.order.original_buy_price).toFixed(decimals.quote_increment_decimals))
-          } <strong>
+          }
+        </div>
+
+        <div>
+          <strong>
             {(props.order.side === 'SELL')
-              ? '~Buys:'
-              : '~Sells:'
-            } </strong>
+              ? 'Buy: '
+              : 'Sell: '
+            }
+          </strong>
           {(props.order.side === 'SELL')
             ? numberWithCommas(Number(props.order.original_buy_price).toFixed(decimals.quote_increment_decimals))
             : numberWithCommas(Number(props.order.original_sell_price).toFixed(decimals.quote_increment_decimals))
-          } ~<strong>Size </strong>{Number(props.order.base_size).toFixed(decimals.base_increment_decimals)} {!props.preview && <>~</>}
-          {!props.preview ? <strong>Value</strong > : <strong>/</strong >}
-          &nbsp;${numberWithCommas((
+          }
+        </div>
+
+        <div>
+          <strong>Size: </strong>{Number(props.order.base_size).toFixed(decimals.base_increment_decimals)}{!props.preview && <></>}
+        </div>
+
+        {/* {!props.preview ? <strong> /</strong > : <strong> /</strong >} */}
+        <div>
+          <strong>Value: </strong>
+          ${numberWithCommas((
             Math.round((props.order.limit_price * props.order.base_size) * decimals.quote_inverse_increment)
-            / decimals.quote_inverse_increment).toFixed(decimals.quote_increment_decimals))} ~
-          <strong>Net Profit</strong> ${profit.toFixed(8)}
-          {/* <strong> ~Time</strong> {new Date(props.order.created_at).toLocaleString('en-US')} */}
-          {!props.preview && <strong> ~Time </strong>} {!props.preview && (props.order.flipped_at
+            / decimals.quote_inverse_increment).toFixed(decimals.quote_increment_decimals))}
+        </div>
+
+
+        <div>
+          <strong>Profit</strong> ${profit.toFixed(3)}
+        </div>
+
+        <div><strong> Pair Increase:</strong> {Number(props.order.trade_pair_ratio)}%</div>
+
+        <div>
+          <strong>Time: </strong>
+          {!props.preview && <strong></strong>}{!props.preview && (props.order.flipped_at
             ? new Date(props.order.flipped_at).toLocaleString('en-US')
             : new Date(props.order.created_at).toLocaleString('en-US'))}
-            {/* use the same color scheme as the socket status indicators
-            open: green
-            timeout: yellow
-            closed: red
-            reopening: blue
-             */}
-          &nbsp;<span className={`${theme} ${reorder ? 'blue' : 'green'}`}>&#x2022;</span>
-          <br />
-          {
-            showAll && !deleting && <><strong> Percent Increase:</strong> {Number(props.order.trade_pair_ratio)}</>
-          }
-          {
-            showAll && !deleting && <><strong> Buy Fees:</strong> {buyFee.toFixed(8)}</>
-          }
-          {
-            showAll && !deleting && <><strong> Sell Fees:</strong> {sellFee.toFixed(8)}</>
-          }
-          {
-            showAll && !deleting && <><strong> Total Fees:</strong> {(Number(sellFee.toFixed(8)) + Number(buyFee.toFixed(8))).toFixed(8)}</>
-          }
-          {
-            showAll && !deleting && <><strong> Gross Profit:</strong> {(props.order.original_sell_price * props.order.base_size - props.order.original_buy_price * props.order.base_size).toFixed(8)}</>
-          }
-        </p>
+          <span className={`${theme} ${reorder ? 'blue' : 'green'}`}> &#x2022;</span>
+        </div>
+
+
+
+
+        {
+          showAll && !deleting && <div><strong>Buy Fees:</strong> {buyFee.toFixed(8)}</div>
+        }
+        {
+          showAll && !deleting && <div><strong>Sell Fees:</strong> {sellFee.toFixed(8)}</div>
+        }
+        {
+          showAll && !deleting && <div><strong>Total Fees:</strong> {(Number(sellFee.toFixed(8)) + Number(buyFee.toFixed(8))).toFixed(8)}</div>
+        }
+        {
+          showAll && !deleting && <div><strong>Gross Profit:</strong> {(props.order.original_sell_price * props.order.base_size - props.order.original_buy_price * props.order.base_size).toFixed(8)}</div>
+        }
+        {/* </p> */}
       </div>
-    </div>
+
+      {(deleting === true)
+        ? <p className="deleting">Deleting...</p>
+        : !props.preview && !user.kill_locked && <button
+          className={`btn-red kill-button ${user.theme}`}
+          onClick={() => {
+            deleteOrder(props.order.order_id);
+            setDeleting(true)
+          }}>
+          Kill
+        </button>
+
+      }
+    </div >
   )
 }
 

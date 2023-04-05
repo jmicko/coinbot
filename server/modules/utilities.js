@@ -11,7 +11,11 @@ function devLog(...args) {
   // if any of the args are objects, stringify them
   args = args.map((arg) => {
     if (typeof arg === 'object') {
-      return JSON.stringify(arg);
+      try{
+        return JSON.stringify(arg);
+      } catch (err) {
+        console.log('error stringifying object', err);
+      }
     }
     return arg;
   });

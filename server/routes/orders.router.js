@@ -65,7 +65,7 @@ router.get('/:product', rejectUnauthenticated, (req, res) => {
  * POST route for auto setup
  */
 router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
-  devLog('in auto setup route!');
+  devLog('in auto setup route! SHOULD NOT HAPPEN DURING SIMULATION======================');
   // POST route code here
   const user = req.user;
   if (user.active && user.approved) {
@@ -530,10 +530,12 @@ router.delete('/product/:product_id', rejectUnauthenticated, async (req, res) =>
 * DELETE RANGE route - Delete orders within a range
 */
 router.delete('/:product_id/:start/:end', rejectUnauthenticated, async (req, res) => {
-  devLog('in delete range route');
+  // devLog('in delete range route');
   const userID = req.user.id;
   const previousPauseStatus = req.user.paused;
-  devLog('in delete range route', userID, req.body);
+  const start = req.params.start < req.params.end ? req.params.start : req.params.end;
+  const end = req.params.end > req.params.start ? req.params.end : req.params.start;
+  devLog('in delete range route', userID, start, end);
   try {
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID)
@@ -543,7 +545,7 @@ router.delete('/:product_id/:start/:end', rejectUnauthenticated, async (req, res
 
     // delete from db
     const queryText = `DELETE from "limit_orders" WHERE "userID"=$1 AND settled=false AND "product_id"=$2 AND limit_price BETWEEN $3 AND $4;`;
-    await pool.query(queryText, [userID, req.params.product_id, req.params.start, req.params.end]);
+    await pool.query(queryText, [userID, req.params.product_id, start, end]);
 
     // mark all open orders as reorder
     // await databaseClient.setReorder();

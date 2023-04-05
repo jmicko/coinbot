@@ -14,8 +14,7 @@ import userStrategy from '../strategies/user.strategy.js';
 import { robot } from '../modules/robot.js';
 // const databaseClient = require('../modules/databaseClient');
 import { databaseClient } from '../modules/databaseClient.js';
-// const { cache, userStorage, messenger, botSettings } = require('../modules/cache');
-import { cache, userStorage, messenger, botSettings } from '../modules/cache.js';
+import { userStorage, messenger, botSettings } from '../modules/cache.js';
 import { devLog } from '../../src/shared.js';
 
 const router = express.Router();
@@ -47,8 +46,8 @@ router.get('/debug/:user_id', rejectUnauthenticated, async (req, res) => {
   const userID = req.params.user_id;
   if (req.user.admin) {
     try {
-      const userInfo = cache.getSafeStorage(userID);
-      const userErrors = cache.getErrors(userID);
+      const userInfo = userStorage[userID].getUser()
+      const userErrors = messenger[userID].getErrors();
       // devLog('debug - full storage', userInfo);
       // devLog('errors', userErrors);
       userInfo.userID !== null
@@ -188,10 +187,6 @@ router.post('/factoryReset', rejectUnauthenticated, async (req, res) => {
       "maker_fee" numeric(32,8) DEFAULT 0,
       "taker_fee" numeric(32,8) DEFAULT 0,
       "usd_volume" numeric(32,8) DEFAULT 0,
-      "available_btc" numeric(32,16) DEFAULT 0,
-      "available_usd" numeric(32,16) DEFAULT 0,
-      "actualavailable_btc" numeric(32,16) DEFAULT 0,
-      "actualavailable_usd" numeric(32,16) DEFAULT 0,
       "max_trade" boolean DEFAULT false,
       "max_trade_size" numeric(32,8) DEFAULT 0,
       "max_trade_load" integer DEFAULT 1000,

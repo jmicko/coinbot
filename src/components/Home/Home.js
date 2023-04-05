@@ -16,7 +16,7 @@ import { devLog } from '../../shared.js';
 
 function Home() {
 
-  devLog('rendering home');
+  // devLog('rendering home');
 
   const { width, height } = useWindowDimensions();
   const { user } = useUser();
@@ -43,12 +43,12 @@ function Home() {
       className={`Home ${user.theme}`}
       style={{
         height: height,
-        width: width
+        // width: width
       }}>
       {/* {JSON.stringify(socket.product)}{JSON.stringify(product)} */}
       <Menu clickSettings={clickSettings} />
 
-
+      {/* {width}w {height}h */}
       {
         // on mobile?
         width <= 800
@@ -74,7 +74,7 @@ function Home() {
             {user.approved
               ? <TradeList isAutoScroll={isAutoScroll} />
               : <NotApproved />}
-              {devLog('rendering messages in home')}
+              {/* {devLog('rendering messages in home')} */}
             <Messages />
           </>
         // 

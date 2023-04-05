@@ -8,7 +8,7 @@ import './BulkDelete.css'
 function BulkDelete(props) {
   const { user, theme } = useUser();
   const { syncOrders, deleteRangeForProduct, deleteAll, productID } = useData();
-  const { deleteData:deleteAllForProduct } = useFetchData(`/api/orders/product/${productID}`, { defaultState: {}, notNull: [productID], noLoad: true })
+  const { deleteData: deleteAllForProduct } = useFetchData(`/api/orders/product/${productID}`, { defaultState: {}, notNull: [productID], noLoad: true })
 
   const [lowerLimit, setLowerLimit] = useState(0);
   const [upperLimit, setUpperLimit] = useState(0);
@@ -20,14 +20,14 @@ function BulkDelete(props) {
     // call the orders delete route
     deleteAll();
   }
-  
+
   // delete all orders for a given product
   function deleteAllOrdersForProduct() {
     deleteAllForProduct();
   }
 
   function deleteRange() {
-    deleteRangeForProduct([productID, lowerLimit, upperLimit])
+    deleteRangeForProduct([lowerLimit, upperLimit])
   }
 
 

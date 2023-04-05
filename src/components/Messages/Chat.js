@@ -8,7 +8,7 @@ import { devLog } from "../../shared.js";
 function Chat({ chatLength, collapsed, messages }) {
   const { user } = useUser();
   const { sendChat, } = useData()
-  devLog('rendering chat form');
+  // devLog('rendering chat form');
   const [newMessage, setNewMessage] = useState('');
 
   function dateBuilder(d) {

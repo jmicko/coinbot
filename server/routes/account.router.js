@@ -3,7 +3,7 @@ const router = express.Router();
 import { pool } from '../modules/pool.js';
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
 import { databaseClient } from '../modules/databaseClient.js';
-import { cache, cbClients, userStorage, messenger } from '../modules/cache.js';
+import { cbClients, userStorage, messenger } from '../modules/cache.js';
 import { Coinbase } from '../modules/coinbaseClient.js';
 import excel from 'exceljs';
 import { granularities } from '../../src/shared.js';
@@ -130,6 +130,9 @@ router.get('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
       // add profit to profits array along with duration
       profits.push({ duration, productProfit, allProfit });
     }
+
+    const weeklyAverage = await databaseClient.getWeeklyAverageProfit(userID, product_id);
+    profits.push(weeklyAverage);
 
     const sinceDate = await databaseClient.getProfitSinceDate(userID, req.user.profit_reset, product_id)
     // add since reset to profits array
@@ -439,7 +442,7 @@ router.get('/errors', rejectUnauthenticated, async (req, res) => {
   devLog('get errors route');
   const userID = req.user.id;
   try {
-    const userErrors = cache.getErrors(userID);
+    const userErrors = messenger[userID].getErrors();
     res.send(userErrors);
   } catch (err) {
     devLog(err, 'problem debug route');
@@ -455,8 +458,8 @@ router.get('/messages', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   try {
     const userMessages = {}
-    userMessages.botMessages = cache.getMessages(userID);
-    userMessages.chatMessages = cache.getChatMessages(userID);
+    userMessages.botMessages = messenger[userID].getMessages();
+    userMessages.chatMessages = messenger[userID].getChatMessages();
     res.send(userMessages);
   } catch (err) {
     devLog(err, 'problem in get messages route');
@@ -471,7 +474,7 @@ router.post('/messages', rejectUnauthenticated, async (req, res) => {
   devLog('post messages route');
   try {
     const user = req.user;
-    if(!user.can_chat) {
+    if (!user.can_chat) {
       res.sendStatus(403);
       return;
     }

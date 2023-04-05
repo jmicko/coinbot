@@ -1330,6 +1330,7 @@ async function getProfitForDurationByProduct(userID, product, duration) {
 
 // get profit for a product and for all products for a duration of time
 async function getProfitForDurationByAllProducts(userID, duration) {
+  devLog('getting profit for duration by all products', userID, duration);
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
@@ -1370,6 +1371,33 @@ async function getProfitSinceDate(userID, date, product) {
     }
   })
 }
+
+// get the weekly average profit for a product for the last 4 weeks
+async function getWeeklyAverageProfit(userID, product) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) / 4 AS "average_profit"
+      FROM limit_orders
+      WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "filled_at" > now() - '4 weeks'::interval;`;
+      const result = await pool.query(sqlText, [userID]);
+
+      const productSqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) / 4 AS "average_profit"
+      FROM limit_orders
+      WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "product_id" = $2 AND "filled_at" > now() - '4 weeks'::interval;`;
+      const productResult = await pool.query(productSqlText, [userID, product]);
+      const profit = {
+        duration: '4 Week Avg',
+        allProfit: result.rows[0].average_profit || 0,
+        productProfit: productResult.rows[0].average_profit || 0
+      }
+      resolve(profit);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+
 
 async function getNewestCandle(product_id, granularity) {
   return new Promise(async (resolve, reject) => {
@@ -1516,7 +1544,7 @@ async function getMissingCandles({ productID, granularity }) {
 async function getCandles(productID, granularity, start, end) {
   return new Promise(async (resolve, reject) => {
     try {
-      devLog('getting candles FROM DB', userID, productID, granularity, start, end);
+      devLog('getting candles FROM DB', productID, granularity, start, end);
       const sqlText = `SELECT * FROM "market_candles" WHERE "product_id" = $1 AND "granularity" = $2 AND "start" BETWEEN $3 AND $4;`;
       let result = await pool.query(sqlText, [productID, granularity, start, end]);
       resolve(result.rows);
@@ -1553,6 +1581,48 @@ async function getCandlesAverage(productID, granularity) {
       const sqlText = `SELECT AVG("high_low_ratio") AS "average" FROM "market_candles" WHERE "product_id" = $1 AND "granularity" = $2 AND "start" > $3;`;
       let result = await pool.query(sqlText, [productID, granularity, thirtyDaysAgo]);
       resolve(result.rows[0]);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+
+async function addSubscription({ subscription, notificationSettings, user_id }) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // insert the subscription into the database, or update it if it already exists, then return the result
+      const sqlText = `INSERT INTO "subscriptions" ("user_id", "endpoint", "expiration_time", "keys", "daily_notifications", "notification_time")
+      VALUES ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT ("endpoint") DO UPDATE SET "user_id" = $1, "expiration_time" = $3, "keys" = $4, "daily_notifications" = $5, "notification_time" = $6
+      RETURNING *;`;
+      const values = [user_id, subscription.endpoint, subscription.expirationTime, JSON.stringify(subscription.keys), notificationSettings.dailyNotifications, notificationSettings.dailyNotificationsTime];
+      const result = await pool.query(sqlText, values);
+      resolve(result);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+async function getSubscriptionsForUser(userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `SELECT * FROM "subscriptions" WHERE "user_id" = $1;`;
+      const result = await pool.query(sqlText, [userID]);
+      resolve(result.rows);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+async function getAllSubscriptions() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `SELECT * FROM "subscriptions";`;
+      const result = await pool.query(sqlText);
+      resolve(result.rows);
     } catch (err) {
       reject(err);
     }
@@ -1608,6 +1678,7 @@ const databaseClient = {
   getProfitForDurationByProduct: getProfitForDurationByProduct,
   getProfitForDurationByAllProducts: getProfitForDurationByAllProducts,
   getProfitSinceDate: getProfitSinceDate,
+  getWeeklyAverageProfit: getWeeklyAverageProfit,
   getNewestCandle: getNewestCandle,
   getOldestCandle: getOldestCandle,
   saveCandles: saveCandles,
@@ -1616,6 +1687,9 @@ const databaseClient = {
   getNextCandles: getNextCandles,
   getMissingCandles: getMissingCandles,
   getProduct: getProduct,
+  addSubscription: addSubscription,
+  getSubscriptionsForUser: getSubscriptionsForUser,
+  getAllSubscriptions: getAllSubscriptions,
 };
 
 export { databaseClient };

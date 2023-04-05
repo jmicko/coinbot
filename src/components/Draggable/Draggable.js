@@ -110,7 +110,7 @@ function Draggable({ children, className }) {
           {!isTouchDevice && <DragButton />}
           {props.afterDrag()}
         </div>
-        {props.header()}
+        {props.header ? props.header() : null}
       </div>
     );
   }

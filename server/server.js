@@ -14,9 +14,11 @@ import accountRouter from './routes/account.router.js';
 import ordersRouter from './routes/orders.router.js';
 import settingsRouter from './routes/settings.router.js';
 import adminRouter from './routes/admin.router.js';
+import notificationsRouter from './routes/notifications.router.js';
 // bot process
 import { robot } from './modules/robot.js';
 import { devLog } from '../src/shared.js';
+
 devLog('!!!!!!!! you are running in DEVELOPMENT mode !!!!!!!!');
 // create the express app
 const app = express();
@@ -51,6 +53,7 @@ app.use('/api/account', accountRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/notifications', notificationsRouter);
 
 // Serve static files from the React app build folder
 app.use(express.static('build'));

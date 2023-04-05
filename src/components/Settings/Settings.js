@@ -5,6 +5,7 @@ import General from './General/General.js';
 import Products from './Products/Products.js';
 import Investment from './Investment/Investment.js';
 import Reset from './Reset/Reset.js';
+import Feedback from './Feedback/Feedback.js';
 import History from './History/History.js';
 import './Settings.css'
 import SettingsNav from './SettingsNav/SettingsNav.js';
@@ -46,7 +47,7 @@ function Settings(props) {
         <Dragger
           text={'Settings'}
 
-          header={() => <h2 className={`settings-header ${collapseParent && 'hide'}`}>Settings</h2>}
+          // header={() => <h2 className={`settings-header ${collapseParent && 'hide'}`}>Settings</h2>}
           beforeDrag={BeforeDrag}
           afterDrag={() => <AfterDrag />}
         />
@@ -61,6 +62,7 @@ function Settings(props) {
               'bulkDelete': <BulkDelete product={props.product} theme={theme} tips={tips} />,
               'history': <History product={props.product} theme={theme} tips={tips} />,
               'reset': <Reset product={props.product} theme={theme} tips={tips} />,
+              'feedback': <Feedback product={props.product} theme={theme} tips={tips} />,
               'admin': <Admin product={props.product} theme={theme} tips={tips} />
             }[settingsPage]
           }

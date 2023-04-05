@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS "user_api";
 DROP TABLE IF EXISTS "user_settings";
 DROP TABLE IF EXISTS "bot_settings";
 DROP TABLE IF EXISTS "market_candles";
+DROP TABLE IF EXISTS "subscriptions";
 
 CREATE TABLE IF NOT EXISTS "user_api"
 (
@@ -31,10 +32,6 @@ CREATE TABLE IF NOT EXISTS "user_settings"
   "maker_fee" numeric(32,8) DEFAULT 0,
   "taker_fee" numeric(32,8) DEFAULT 0,
   "usd_volume" numeric(32,8) DEFAULT 0,
-  "available_btc" numeric(32,16) DEFAULT 0,
-  "available_usd" numeric(32,16) DEFAULT 0,
-  "actualavailable_btc" numeric(32,16) DEFAULT 0,
-  "actualavailable_usd" numeric(32,16) DEFAULT 0,
   "max_trade" boolean DEFAULT false,
   "max_trade_size" numeric(32,8) DEFAULT 0,
   "max_trade_load" integer DEFAULT 100,
@@ -174,6 +171,27 @@ CREATE TABLE IF NOT EXISTS "user" (
   "approved" boolean DEFAULT false,
   "will_delete" boolean DEFAULT false,
   "joined_at" timestamp
+);
+
+-- create a feedback table with user id, subject, description, and timestamp
+CREATE TABLE IF NOT EXISTS "feedback" (
+  "id" SERIAL PRIMARY KEY,
+  "user_id" integer,
+  "subject" character varying COLLATE pg_catalog."default",
+  "description" character varying COLLATE pg_catalog."default",
+  "created_at" timestamp default now()
+);
+
+-- create a table to store push notification subscriptions
+CREATE TABLE IF NOT EXISTS "subscriptions" (
+  "id" SERIAL PRIMARY KEY,
+  "user_id" integer,
+  "endpoint" character varying COLLATE pg_catalog."default" UNIQUE NOT NULL,
+  "keys" json,
+  "expiration_time" timestamp,
+  "created_at" timestamp default now(),
+  "daily_notifications" boolean DEFAULT false,
+  "notification_time" time with time zone DEFAULT '00:00:00+00'
 );
 
 -- this will create the required table for connect-pg to store session data

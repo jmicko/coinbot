@@ -370,9 +370,9 @@ button:active {
 /* === INPUTS === */
 
 input {
-  background      : rgb(209, 202, 192);
+  background      : #d1cac0;
   /* color        : rgb(209, 202, 192); */
-  background-color: rgb(209, 202, 192);
+  background-color: #d1cac0;
   font-family     : inherit;
   /* width        : 100%; */
   /* margin       : 0% .2%; */
@@ -380,11 +380,11 @@ input {
 
 label span {
   color: #ab1f1f;
-  color              : rgb(199, 144, 112);
+  color              : #c79070;
 }
 
 input.darkTheme {
-  background-color: rgb(145, 145, 145);
+  background-color: #919191;
   font-family     : inherit;
 }
 

@@ -5,13 +5,13 @@ Coinbot is a Bitcoin trading bot project built for the Coinbase Pro cryptocurren
 
 ![Coinbot web interface](./coinbot.png)
 
-The strategy is based on the creation of trade-pair values, and is very similar to a grid bot with a little more control. A trade-pair is the combination of two precalculated order price positions, a "buy" price and a "sell" price, that are stored in the coinbot's local database. The buy price should always be lower than the sell price, and the difference between the two should cover the cost of exchange fees. The bot keeps track of which "side" (buy or sell) is currently on order on Coinbase. each order is stored locally with the original buy and sell values. When the coinbot detects a trade has settled on the exchange, it flips sides on the trade by creating a new trade on the other side.
+The strategy is based on the creation of trade-pair values, and is very similar to a grid bot with a little more fine control. A trade-pair is the combination of two precalculated order price positions, a "buy" price and a "sell" price, that are stored in the coinbot's local database. The buy price should always be lower than the sell price, and the difference between the two should at least cover the cost of exchange fees. The bot keeps track of which "side" (buy or sell) is currently on order on Coinbase. each order is stored locally with the original buy and sell values. When the coinbot detects a trade has settled on the exchange, it flips sides on the trade by creating a new trade on the other side.
 
 When a "buy" is settled, another order will immediately be placed as a "sell" at a higher price and vice versa. The prices of each of these orders are stored as the values of the trade-pair. When a buy order and a sell order each go through from the same trade-pair values, a profit is made. The two transactions that contributed to the profit are the trade-pair.
 
-The volume of the trade-pair does not matter so much, as fees are calculated by percentage. A smaller volume allows for greater distribution of trade-pair positions across a wider price range, and will better cover the high price volatility of Bitcoin. A higher volume will produce greater profits, assuming the price of Bitcoin stays withing the range of the bot.
+The volume of the trade-pair does not matter so much, as fees are calculated by percentage. A smaller volume allows for greater distribution of trade-pair positions across a wider price range with a given amount of capital, and will better cover the high price volatility of a crypto currency. A higher volume will produce greater profits per trade, assuming the price of Bitcoin stays withing the range of the bot.
 
-Placing dozens of trade-pairs at many different price points allows the bot to capture smaller but more frequent profits. The huge price swings that occasionally make someone rich are notable in their own light, but do not happen frequently at all when compared to the smaller $400 - $3,000 swings that happen on a daily basis. The coinbot does not care, and allows for both of these strategies to work.
+Placing dozens of lower volume trade-pairs at many different price points allows the bot to capture smaller but more frequent profits. The huge price swings that occasionally make someone rich are notable in their own light, but do not happen frequently at all when compared to the smaller 1% - 5% swings that happen on a daily basis. The coinbot does not care, and allows for both of these strategies to work.
 
 For example: A trade-pair could be set up between the prices of $10,000 and $100,000, and return a huge profit if the price of Bitcoin hits both sides. Or it could be set up between $30,000 and $31,000 for much smaller, but more frequent profits as the price staggers past them. In testing, the latter strategy has shown to be effective.
 
@@ -21,7 +21,7 @@ However, a higher amount of open trades does increase the amount of processing d
 
 ## `DISCLAIMER`
 
-This is an experimental bot. It requires a connection to a Coinbase Pro account, and has the ability to handle real money. Coinbase provides a sandbox API for testing purposes. It is recommended only to use the sandbox API with this bot as a demonstration of what is possible with the Coinbase API. Any use of the software provided in this repository is the responsibility of the user, and the developers of the software cannot be held responsible for any financial operations made with the software, or harm done to your computer as a result of using the software. Use of this software does not come with any guarantee of profits, losses, fees, taxes, or other financial consequences. Bitcoin and other cryptocurrencies may be taxed. Trading cryptocurrency is a risk taken by those making the trades. No financial advice is given in regards to the use of this software. Your portfolio can always go to zero.
+This is an experimental bot. It requires a connection to a Coinbase account, and has the ability to handle real money. Coinbase does not currently provide a sandbox API for testing purposes, but they plan to in the future. It is recommended only to use the upcoming sandbox API with this bot as a demonstration of what is possible with the Coinbase API, or use a small amount of money that you are willing to part with. Any use of the software provided in this repository is the responsibility of the user, and the developers of the software cannot be held responsible for any financial operations made with the software, or harm done to your computer as a result of using the software. Use of this software does not come with any guarantee of profits, losses, fees, taxes, or other financial consequences. Bitcoin and other cryptocurrencies may be taxed. Trading cryptocurrency is a risk taken by those making the trades. No financial advice is given in regards to the use of this software. Your portfolio can always go to zero, and Coinbase can always go bankrupt.
 
 You trade at your own risk.
 
@@ -49,7 +49,11 @@ New trade-pair values can be individually created from the main interface. There
 
 ### Auto Setup
 
-There is a function in the settings that will allow you to input the desired parameters, and automatically place up to 10,000 trades (the maximum allowed) for you. This is much easier than manually entering them when they will all have similar values.
+There is a function in the settings menu that will allow you to input the desired parameters, and automatically place up to 10,000 trades (the maximum allowed) for you. This is much easier than manually entering them when they will all have similar values.
+
+### Simulator
+
+Before starting the auto setup, you can use the simulator to see how the bot would have performed with the parameters you have set, using historical data. This is a great way to test out different strategies before committing to them. Note that the historical data does lack some of the volatility that is present in the real market, so the results will not be 100% accurate.
 
 ### Auto Fee Detection
 
@@ -57,17 +61,17 @@ Coinbot will check the current fees for the connected account and adjust the num
 
 ### Total Profit Estimation
 
-There is an estimation of how much "profit" the bot has generated since it was first run (assuming you don't drop the tables). This is a total of the difference between the buy and sell values minus the fees for all trade-pairs that have completed a full buy/sell cycle. It is not reflective of how much money is in your account, nor is it reflective of capital gains in the eyes of the IRS. Do not use this info when reporting taxes. Coinbot is unable to assist you with your taxes in any way.
+There is an estimation of how much "profit" the bot has generated for different durations of time. This is a total of the difference between the buy and sell values minus the fees for all trade-pairs that have completed a full buy/sell cycle. It is not reflective of how much money is in your account, nor is it reflective of capital gains in the eyes of the IRS. Do not use this info when reporting taxes. Coinbot is unable to assist you with your taxes in any way.
 
 ### Open Order Book
 
-A list of all open orders is shown as the main content of the page. This list will update live as the bot makes trades. Coinbase only allows a certain number of orders to be placed at any time, so the bot handles synchronization automatically and shows you your full order book. This will look different from what is reported by Coinbase, which is why trading on the Coinbase platform directly should be avoided in your Coinbot portfolio.
+A list of all open orders is shown as the main content of the page. This list will update live as the bot makes trades. Coinbase only allows a certain number of orders to be placed at any time, so the bot handles synchronization automatically and shows you your full order book. This will look different from what is reported by Coinbase, which is why trading on the Coinbase platform directly should be avoided when using the coinbot. Trades that are currently synched with Coinbase will be marked with a green dot on the right side of the row. Trades that are not synched will show a blue dot.
 
 ### Profit Reinvestment
 
 Users can set a percentage of profits from each trade-pair that will be automatically reinvested back into the pair.
 
-This makes for an interesting strategy because the bot will reinvest profits right around the price that Bitcoin is actively trading at, potentially increasing returns faster than if the profit was spread out evenly among all active trade pairs.
+This makes for an interesting strategy because the bot will reinvest profits right around the price that the coin is actively trading at, potentially increasing returns faster than if the profit was spread out evenly among all active trade pairs.
 
 This can be above 100%, which can help distribute a new deposit amongst many trades that have already been placed. Setting a 'reserve' amount in the Investment tab in the settings will attempt to stop reinvestment if the available balance goes below the reserve amount. There are unavoidable situations where the available balance may go below the reserve, so it is best to set this value above 0 if reinvestment is set above 100%.
 
@@ -75,7 +79,7 @@ A maximum trade size can also be set, and the bot will adjust the reinvestment b
 
 ### Multi-user Authentication
 
-The bot can handle multiple users at once. The first user created will be the admin and can approve and manage the other users.
+The bot can handle multiple users at once. The first user created will be the admin and can approve and manage the other users. Users will not be allowed to trade until they are approved by the admin.
 
 ### Admin Controls
 
@@ -102,7 +106,7 @@ Postgresql should be setup and a new database should be created with the name "c
 
 ### Environment Variables
 
-- Environment variables will need to be set. There is an example .env file in the root folder named 'env'. Change the name to '.env', and change the values appropriately, or you can set the variables in your OS if you prefer. Server session secret should be a long string that is not easily guessed, as it is used to identify sessions. If you do not change it, anyone with this repo will be able to guess it. Setting the NODE_ENV variable to 'production' will generate a cryptographically sound string for you. This will log out any users, but is more secure.
+- Environment variables will need to be set. There is an example .env file in the root folder named 'env'. Change the name to '.env', and change the values appropriately, or you can set the variables in your OS if you prefer. Server session secret should be a long string that is not easily guessed, as it is used to identify sessions. If you do not change it, anyone with this repo will be able to guess it. Setting the NODE_ENV variable to 'production' will generate a cryptographically sound string for you. This will log out any users every time the bot is restarted, but is more secure.
 
 ## Available Scripts
 

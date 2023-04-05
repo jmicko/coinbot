@@ -11,7 +11,7 @@ import { devLog } from '../shared.js';
 const DataContext = createContext()
 
 export function DataProvider({ children }) {
-  devLog('DataProvider rendering ***************');
+  // devLog('DataProvider rendering ***************');
   // state for this context
   const [productID, setProductID] = useState('BTC-USD');
   // user

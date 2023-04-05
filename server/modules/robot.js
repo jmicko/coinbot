@@ -1,6 +1,7 @@
 import { databaseClient } from "./databaseClient.js";
 import { botSettings, userStorage, messenger, cbClients } from "./cache.js";
 import { startWebsocket } from "./websocket.js";
+import { resetAtMidnight } from './push.js';
 import { sleep, addProductDecimals } from "../../src/shared.js";
 import { fork } from 'child_process';
 import path from 'path';
@@ -21,13 +22,14 @@ async function startSync() {
     // get all users from the db
     const userList = await databaseClient.getAllUsers();
     // start the loops for each user
-    userList.forEach(async user => {
+    await userList.forEach(async user => {
       await initializeUserLoops(user);
       // deSyncOrderLoop(user, 0);
       // send the user to the child process to import candles
       candleMaker.send({ type: 'startUser', user });
 
     });
+    resetAtMidnight({ notMidnight: true });
   } catch (err) {
     devLog(err, 'error starting sync');
   }
@@ -56,7 +58,7 @@ async function initializeUserLoops(user) {
 
 async function processingLoop(userID) {
   // get the user and bot settings from cache;
-  const user = userStorage.getUser(userID);
+  const user = userStorage[userID].getUser();
   if (user.deleting) {
     return
   }
@@ -211,6 +213,7 @@ function MainLoopErrors(userID, err) {
     errorText = 'Too many requests. Rate limit exceeded. Nothing to worry about.';
   } else {
     devLog(err, 'unknown error at end of syncOrders');
+    errorData = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???'
     errorText = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???';
   }
   messenger[userID].newError({
@@ -608,7 +611,7 @@ async function updateMultipleOrders(userID, params) {
     // get the orders that need processing. This will have been taken directly from the db and include all details
     const ordersArray = params?.ordersArray
       ? params.ordersArray
-      : userStorage[userID].getToCheck();;
+      : userStorage[userID].getToCheck();
 
     if (ordersArray?.length > 0) {
       messenger[userID].newMessage({
@@ -780,7 +783,7 @@ async function getAvailableFunds(userID, userSettings) {
       const takerFee = Number(userSettings.taker_fee) + 1;
 
       const results = await Promise.all([
-        cbClients[userID].getAccounts({ limit: 250 }),
+        cbClients[userID].getAllAccounts(),
         // funds are withheld in usd when a buy is placed, so the maker fee is needed to subtract fees
         databaseClient.getSpentUSD(userID, takerFee),
         // funds are taken from the sale once settled, so the maker fee is not needed on the buys
@@ -789,6 +792,9 @@ async function getAvailableFunds(userID, userSettings) {
         databaseClient.getActiveProducts(userID),
       ]);
       const accounts = results[0].accounts;
+
+      // devLog(accounts.length, 'accounts in getAvailableFunds');
+
       const activeProducts = results[3];
 
       // get the amount spent for the base and quote currencies for each product
@@ -826,6 +832,8 @@ async function getAvailableFunds(userID, userSettings) {
         const currency = currencyArray[i];
         // get the currency from the accounts
         const [account] = accounts.filter(account => account.currency === currency.currency_id);
+
+        // devLog(account, 'account in getAvailableFunds');
         // calculate the available funds
         const available = Number(account?.available_balance?.value || 0) + Number(account?.hold?.value || 0) - currency.amount_spent;
         // round to 16 decimal places
@@ -910,192 +918,6 @@ function compareAvailableFunds(previousAvailable, availableFunds) {
   return false;
 }
 
-async function updateProductCandles(userID, productID, granularity) {
-  return new Promise(async (resolve, reject) => {
-    try {
-
-      // object with the number of seconds in each granularity
-      const granularitySeconds = {
-        'ONE_MINUTE': 60,
-        'FIVE_MINUTES': 300,
-        'FIFTEEN_MINUTES': 900,
-        'THIRTY_MINUTES': 1800,
-        'ONE_HOUR': 3600,
-        'TWO_HOURS': 7200,
-        'SIX_HOURS': 21600,
-        'ONE_DAY': 86400,
-      }
-      // get the the candle from the database with the most recent time
-      const recentCandle = await databaseClient.getNewestCandle(productID, granularity);
-      // get the oldest candle from the database
-      const oldestCandle = await databaseClient.getOldestCandle(productID, granularity);
-      // if there is no recent candle, get the candles from the last month and save them to the database
-      if (!recentCandle || !oldestCandle) {
-        devLog('no candle');
-        // end date is today in unix time
-        const endDate = Math.floor(new Date().getTime() / 1000);
-        const startDate = getStartDate(endDate);
-        // start date in unix time
-        const start = Math.floor(new Date().getTime() / 1000) - (365 * 24 * 60 * 60);
-
-        const end = getEndDate(start);
-        const result = await cbClients[userID].getMarketCandles({
-          product_id: productID,
-          start: start,
-          end: end,
-          granularity: granularity
-        });
-        const candles = result.candles;
-        // save the candles to the database
-        await databaseClient.saveCandles(productID, granularity, candles);
-        doItAgain(candles);
-      } else {
-        // devLog('recent candle', recentCandle);
-        // if there is a recent candle, get the candles that are after the recent candle and save them to the database
-        // start date in unix time should be 1 second after the recent candle
-        const start = recentCandle.start + 1;
-        // if there is an oldest candle, the end date should be 1 second before the oldest candle
-        const endDate = oldestCandle.start - 1;
-        const startDate = getStartDate(endDate);
-
-        const end = getEndDate(start);
-
-        // const end = start + 6 * 200 * 3600;
-        const result = await cbClients[userID].getMarketCandles({
-          product_id: productID,
-          start: start,
-          end: end,
-          granularity: granularity
-        });
-        const candles = result.candles;
-        // recentCandle.start = recentCandle.start + 1;
-        // add the recent candle to the candles array
-        candles.unshift(recentCandle);
-        // ensure that the candles are in order by start property
-        candles.sort((a, b) => a.start - b.start);
-        // if there are more than one candle, 
-        // ensure that the distance between each candle is the same as the seconds of granularity as defined in the granularitySeconds object
-        if (candles.length > 1) {
-          let integrity = true;
-          const missing = [];
-          for (let i = 1; i < candles.length; i++) {
-            const currentStart = Number(candles[i].start);
-            const previousStart = Number(candles[i - 1].start);
-            const distance = currentStart - previousStart;
-            const distanceNeeded = granularitySeconds[granularity];
-            if (distance !== distanceNeeded) {
-              integrity = false;
-              // if the integrity is compromised, find the missing candles
-              for (let j = previousStart + distanceNeeded; j < currentStart; j += distanceNeeded) {
-                missing.push(j);
-              }
-            }
-          }
-          if (integrity) {
-            // devLog('candles array integrity is good');
-          } else {
-            // devLog('candles array integrity is compromised');
-            // devLog(missing, 'missing candles');
-          }
-        }
-
-        // save the candles to the database
-        await databaseClient.saveCandles(productID, granularity, candles);
-
-        doItAgain(candles);
-      }
-      resolve()
-    } catch (err) {
-      messenger[userID].newError({
-        text: 'error getting candles',
-        data: err
-      })
-      userStorage[userID].updateCandlesBeingUpdated(productID, granularity, false);
-      reject(err)
-    }
-  })
-
-  function doItAgain(candles) {
-    // if candles is 200+, wait 1 second and get the next 200 candles
-    if (candles.length > 200) {
-      // wait 1 second and call the function again
-      setTimeout(async () => {
-        try {
-          await updateProductCandles(userID, productID, granularity);
-        } catch (err) {
-          messenger[userID].newError({
-            text: 'error getting candles',
-            data: err
-          });
-        }
-      }, 1000);
-    } else {
-      // set the user's candlesBeingUpdated for the product and duration to false
-      userStorage[userID].updateCandlesBeingUpdated(productID, granularity, false);
-    }
-  }
-
-  function getEndDate(start) {
-    // if granularity is 1 minute, end date in unix time should be 1 minute 299 times from the start date
-    // if granularity is 5 minutes, end date in unix time should be 5 minutes 299 times from the start date
-    // if granularity is 15 minutes, end date in unix time should be 15 minutes 299 times from the start date
-    // if granularity is 30 minutes, end date in unix time should be 30 minutes 299 times from the start date
-    // if granularity is 1 hour, end date in unix time should be 1 hour 299 times from the start date
-    // if granularity is 2 hour, end date in unix time should be 2 hours 299 times from the start date
-    // if granularity is 6 hour, end date in unix time should be 6 hours 299 times from the start date
-    // if granularity is 1 day, end date in unix time should be 1 day 299 times from the start date
-    if (granularity === 'ONE_MINUTE') {
-      return start + 1 * 60 * 299;
-    } else if (granularity === 'FIVE_MINUTE') {
-      return start + 5 * 60 * 299;
-    } else if (granularity === 'FIFTEEN_MINUTE') {
-      return start + 15 * 60 * 299;
-    } else if (granularity === 'THIRTY_MINUTE') {
-      return start + 30 * 60 * 299;
-    } else if (granularity === 'ONE_HOUR') {
-      return start + 1 * 60 * 60 * 299;
-    } else if (granularity === 'TWO_HOUR') {
-      return start + 2 * 60 * 60 * 299;
-    } else if (granularity === 'SIX_HOUR') {
-      return start + 6 * 60 * 60 * 299;
-    } else if (granularity === 'ONE_DAY') {
-      return start + 1 * 60 * 60 * 24 * 299;
-    }
-  }
-
-  function getStartDate(end) {
-    // if granularity is 1 minute, start date in unix time should be 1 minute 299 times before the end date
-    // if granularity is 5 minutes, start date in unix time should be 5 minutes 299 times before the end date
-    // if granularity is 15 minutes, start date in unix time should be 15 minutes 299 times before the end date
-    // if granularity is 30 minutes, start date in unix time should be 30 minutes 299 times before the end date
-    // if granularity is 1 hour, start date in unix time should be 1 hour 299 times before the end date
-    // if granularity is 2 hour, start date in unix time should be 2 hours 299 times before the end date
-    // if granularity is 6 hour, start date in unix time should be 6 hours 299 times before the end date
-    // if granularity is 1 day, start date in unix time should be 1 day 299 times before the end date
-    if (granularity === 'ONE_MINUTE') {
-      return end - 1 * 60 * 299;
-    } else if (granularity === 'FIVE_MINUTE') {
-      return end - 5 * 60 * 299;
-    } else if (granularity === 'FIFTEEN_MINUTE') {
-      return end - 15 * 60 * 299;
-    } else if (granularity === 'THIRTY_MINUTE') {
-      return end - 30 * 60 * 299;
-    } else if (granularity === 'ONE_HOUR') {
-      return end - 1 * 60 * 60 * 299;
-    } else if (granularity === 'TWO_HOUR') {
-      return end - 2 * 60 * 60 * 299;
-    } else if (granularity === 'SIX_HOUR') {
-      return end - 6 * 60 * 60 * 299;
-    } else if (granularity === 'ONE_DAY') {
-      return end - 1 * 60 * 60 * 24 * 299;
-    }
-  }
-}
-
-
-
-
-
 async function alertAllUsers(alertMessage) {
   try {
     const userList = await databaseClient.getAllUsers();
@@ -1114,7 +936,6 @@ async function alertAllUsers(alertMessage) {
 function heartBeat(userID, side) {
   messenger[userID].heartBeat(side);
 }
-
 
 
 const robot = {

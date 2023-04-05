@@ -67,7 +67,7 @@ function Status(props) {
         >
           {profit.map((p, i) => {
             return (
-              <option key={i} value={i}>{p.duration} {p.duration !== 'Since Reset' && 'Profit'}</option>
+              <option key={i} value={i}>{p.duration} {p.duration !== 'Since Reset' && p.duration !== '4 Week Avg' && 'Profit'}</option>
             )
           })}
         </select>

@@ -8,6 +8,7 @@ import  axios  from 'axios';
 // const { v4: uuidv4 } = require('uuid');
 import { v4 as uuidv4 } from 'uuid';
 import { devLog } from './utilities.js';
+import { sleep } from '../../src/shared.js';
 
 class Coinbase {
   constructor(key, secret) {
@@ -198,12 +199,38 @@ class Coinbase {
         if (params) { this.addParams(options, params) };
         // make the call
         let response = await axios.request(options);
+        // devLog(response.data, 'response from getAccounts');
         resolve(response.data);
       } catch (err) {
         reject(err);
       }
     })
   }
+
+  // Get all accounts. Call the above, and if it has_next, call this recursively with the cursor we get back until it doesn't have_next
+  // this will return an array of all accounts
+  async getAllAccounts(prevCursor) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // if there is a prevCursor, add it to the params, always limit to 250
+        const params = { limit: 250 };
+        if (prevCursor) { params.cursor = prevCursor }; 
+        // get the accounts
+        const result = await this.getAccounts(params);
+        // if there is a next cursor, call this function again with the cursor
+        if (result.has_next) {
+          await sleep(200);
+          const nextAccounts = await this.getAllAccounts(result.cursor);
+          // combine the two arrays
+          result.accounts = result.accounts.concat(nextAccounts.accounts);
+        }
+        resolve(result);
+      } catch (err) {
+        reject(err);
+      }
+    })
+  }
+
 
   async getFills(params) {
     return new Promise(async (resolve, reject) => {

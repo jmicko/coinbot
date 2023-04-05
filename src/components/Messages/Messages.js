@@ -8,7 +8,7 @@ import { devLog } from '../../shared.js';
 
 
 function Messages() {
-  devLog('rendering messages');
+  // devLog('rendering messages');
   const { user } = useUser();
   const { messages: { botMessages, chatMessages }, botErrors
     // , sendChat
