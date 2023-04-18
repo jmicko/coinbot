@@ -1,13 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../../contexts/DataContext.js';
 import { useUser } from '../../../contexts/UserContext.js';
+import { useSocket } from '../../../contexts/SocketProvider.js';
 import { useFetchData } from '../../../hooks/fetchData.js';
 import './Investment.css'
 
 
 function Investment(props) {
   const { user, refreshUser, theme } = useUser();
-  const { productID, refreshOrders, deadCon } = useData();
+  const { productID, refreshOrders, deadCon, profit } = useData();
+  const { tickers } = useSocket();
+
+  const availableUSD = user.availableFunds?.[productID]?.quote_currency;
+  const productPrice = Number(tickers?.[productID]?.price).toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1));
+  const availableBase = user.availableFunds?.[productID]?.base_available;
+  const spentBase = user.availableFunds?.[productID]?.base_spent;
+  const availableBaseValue = availableBase * productPrice;
+  const spentBaseValue = spentBase * productPrice;
+  const availableQuote = user.availableFunds?.[productID]?.quote_available;
+  const spentQuote = user.availableFunds?.[productID]?.quote_spent;
+  const portfolioValueLiquidized = spentBaseValue + spentQuote;
+
+  // month profit is the object in the profit array that has the "duration":"30 Day" property
+  const monthProfitCurrentProduct = profit.find((item) => item.duration === '30 Day').productProfit || 0;
+  const monthProfitAllProducts = profit.find((item) => item.duration === '30 Day').allProfit || 0;
+  const currentProduct30DayAvg = monthProfitCurrentProduct / 30;
+
+  // Feedback from user:
+  // Would be nice to know projected annual profits by percent. 
+  // Take the 1 month profit and multiply by 12 and divide by your Coinbase liquidized current cash.
+  const projectedProfit = portfolioValueLiquidized > 0 ? ((currentProduct30DayAvg * 365) / portfolioValueLiquidized) : 0;
 
   // ROUTES
   const { updateData: updateBulkPairRatio } = useFetchData(`/api/orders/bulkPairRatio/${productID}`, { defaultState: null, noLoad: true });
@@ -27,6 +49,10 @@ function Investment(props) {
 
 
   // FUNCTIONS
+
+  function getTotalAccountValue() {
+    // look at every 
+  }
 
   async function storeMaxTradeSize() {
     await updateMaxTradeSize({ max_trade_size });
@@ -82,10 +108,36 @@ function Investment(props) {
     setMaxTradeSize(Number(user.max_trade_size))
   }, [user.max_trade_size])
 
+  console.log(user.availableFunds, 'user.availableFunds')
 
   return (
     <div className="Investment settings-panel scrollable">
       <div className={`divider ${theme}`} />
+
+      {/* STATISTICS */}
+      {/* This section will show more detail about the portfolio */}
+      {/* 
+      Feedback from user:
+      Would be nice to know projected annual profits by percent. 
+      Take the 1 month profit and multiply by 12 and divide by your Coinbase liquidized current cash.
+       */}
+      <h4>Statistics</h4>
+      {/* <p>Current portfolio value: {user.portfolio_value}</p> */}
+      {/* <p>Current available funds: {user.available_funds}</p> */}
+      {/* <p>All time profit: {user.profit}</p> */}
+      <p>monthProfitCurrentProduct: {JSON.stringify(monthProfitCurrentProduct)}</p>
+      <p>monthProfitAllProducts: {JSON.stringify(monthProfitAllProducts)}</p>
+      <p>availableUSD: {JSON.stringify(availableUSD)}</p>
+      <p>productPrice: {JSON.stringify(productPrice)}</p>
+      <p>availableBase: {JSON.stringify(availableBase)}</p>
+      {/* <p>availableBaseValue: {JSON.stringify(availableBaseValue)}</p> */}
+      <p>spentBase: {JSON.stringify(spentBase)}</p>
+      <p>spentBaseValue: {JSON.stringify(spentBaseValue)}</p>
+      <p>spentQuote: {JSON.stringify(spentQuote)}</p>
+      <p>portfolioValueLiquidized: {JSON.stringify(portfolioValueLiquidized)}</p>
+      <p>Projected annual profit: {projectedProfit || 0}</p>
+
+      <div className="divider" />
 
       {/* REINVEST */}
       <h4>Reinvestment</h4>

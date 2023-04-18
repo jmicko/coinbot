@@ -15,7 +15,7 @@ export function DataProvider({ children }) {
   // state for this context
   const [productID, setProductID] = useState('BTC-USD');
   // user
-  const { refreshUser } = useUser();
+  const { user, refreshUser } = useUser();
   // sockets
   const [coinbotSocket, setCoinbotSocket] = useState('closed');
   const deadCon = (coinbotSocket !== 'open') ? true : false;
@@ -36,6 +36,9 @@ export function DataProvider({ children }) {
   const { data: messages, refresh: refreshBotMessages, createRefreshData: sendChat }
     = useFetchData(`/api/account/messages`, { defaultState: { botMessages: [], chatMessages: [] } })
 
+  // AVAILABLE FUNDS
+  const availableBase = user.availableFunds?.[productID]?.base_available;
+  const availableQuote = user.availableFunds?.[productID]?.quote_available;
 
   // get errors sent from the bot
   const { data: botErrors, refresh: refreshBotErrors }
@@ -105,7 +108,7 @@ export function DataProvider({ children }) {
       value={
         {
           // ACCOUNT
-          profit, refreshProfit, resetProfit,
+          profit, refreshProfit, resetProfit, availableBase, availableQuote,
           // products
           products, currentProduct, productID, setProductID, refreshProducts, toggleActiveProduct,
           // messages

@@ -785,9 +785,9 @@ async function getAvailableFunds(userID, userSettings) {
       const results = await Promise.all([
         cbClients[userID].getAllAccounts(),
         // funds are withheld in usd when a buy is placed, so the maker fee is needed to subtract fees
-        databaseClient.getSpentUSD(userID, takerFee),
+        // databaseClient.getSpentUSD(userID, takerFee),
         // funds are taken from the sale once settled, so the maker fee is not needed on the buys
-        databaseClient.getSpentBTC(userID),
+        // databaseClient.getSpentBTC(userID),
         // get a list of products that the user has active
         databaseClient.getActiveProducts(userID),
       ]);
@@ -795,7 +795,7 @@ async function getAvailableFunds(userID, userSettings) {
 
       // devLog(accounts.length, 'accounts in getAvailableFunds');
 
-      const activeProducts = results[3];
+      const activeProducts = results[1];
 
       // get the amount spent for the base and quote currencies for each product
       // and add them to an array of currency objects with the currency id and amount spent
@@ -839,7 +839,7 @@ async function getAvailableFunds(userID, userSettings) {
         // round to 16 decimal places
         const availableRounded = available.toFixed(16);
         // add the currency and available funds to the array
-        availableFundsNew.push({ currency_id: currency.currency_id, available: availableRounded })
+        availableFundsNew.push({ currency_id: currency.currency_id, available: availableRounded, spent: currency.amount_spent })
       }
 
       // make an object with an object for each user's product with the product id as the key for each nested object 
@@ -851,6 +851,9 @@ async function getAvailableFunds(userID, userSettings) {
         const quoteCurrency = product.quote_currency_id;
         const baseAvailable = availableFundsNew.find(currency => currency.currency_id === baseCurrency).available;
         const quoteAvailable = availableFundsNew.find(currency => currency.currency_id === quoteCurrency).available;
+        const baseSpent = availableFundsNew.find(currency => currency.currency_id === baseCurrency).spent;
+        const quoteSpent = availableFundsNew.find(currency => currency.currency_id === quoteCurrency).spent;
+
         availableFundsObject[product.product_id] = {
           base_currency: baseCurrency,
           base_available: baseAvailable,
@@ -858,6 +861,8 @@ async function getAvailableFunds(userID, userSettings) {
           quote_currency: quoteCurrency,
           quote_available: quoteAvailable,
           quote_increment: product.quote_increment,
+          base_spent: baseSpent,
+          quote_spent: quoteSpent,
         }
       }
 

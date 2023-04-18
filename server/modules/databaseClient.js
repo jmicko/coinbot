@@ -1600,6 +1600,7 @@ async function addSubscription({ subscription, notificationSettings, user_id }) 
       const result = await pool.query(sqlText, values);
       resolve(result);
     } catch (err) {
+      devLog('error adding or updating subscription in db', err);
       reject(err);
     }
   })
