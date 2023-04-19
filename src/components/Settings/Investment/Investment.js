@@ -11,7 +11,8 @@ function Investment(props) {
   const { productID, refreshOrders, deadCon, profit } = useData();
   const { tickers } = useSocket();
 
-  const availableUSD = user.availableFunds?.[productID]?.quote_currency;
+  const quoteID = user.availableFunds?.[productID]?.quote_currency;
+  const baseID = user.availableFunds?.[productID]?.base_currency;
   const productPrice = Number(tickers?.[productID]?.price).toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1));
   const availableBase = user.availableFunds?.[productID]?.base_available;
   const spentBase = user.availableFunds?.[productID]?.base_spent;
@@ -19,7 +20,9 @@ function Investment(props) {
   const spentBaseValue = spentBase * productPrice;
   const availableQuote = user.availableFunds?.[productID]?.quote_available;
   const spentQuote = user.availableFunds?.[productID]?.quote_spent;
-  const portfolioValueLiquidized = spentBaseValue + spentQuote;
+
+  const spentBaseAllProducts = getSpentBaseAllProducts();
+  const portfolioValueLiquidized = spentBaseAllProducts + spentQuote;
 
   // month profit is the object in the profit array that has the "duration":"30 Day" property
   const monthProfitCurrentProduct = profit.find((item) => item.duration === '30 Day').productProfit || 0;
@@ -29,7 +32,7 @@ function Investment(props) {
   // Feedback from user:
   // Would be nice to know projected annual profits by percent. 
   // Take the 1 month profit and multiply by 12 and divide by your Coinbase liquidized current cash.
-  const projectedProfit = portfolioValueLiquidized > 0 ? ((currentProduct30DayAvg * 365) / portfolioValueLiquidized) : 0;
+  const projectedProfit = portfolioValueLiquidized > 0 ? (((currentProduct30DayAvg * 365) / portfolioValueLiquidized)*100) : 0;
 
   // ROUTES
   const { updateData: updateBulkPairRatio } = useFetchData(`/api/orders/bulkPairRatio/${productID}`, { defaultState: null, noLoad: true });
@@ -50,8 +53,15 @@ function Investment(props) {
 
   // FUNCTIONS
 
-  function getTotalAccountValue() {
-    // look at every 
+  function getSpentBaseAllProducts() {
+    let total = 0;
+    // look at every product in the user.availableFunds object
+    for (let product in user.availableFunds) {
+      const spentBase = user.availableFunds?.[product]?.base_spent;
+      // console.log(user.availableFunds?.[product].base_spent, 'product')
+      total += spentBase * tickers?.[product]?.price;
+    }
+    return total;
   }
 
   async function storeMaxTradeSize() {
@@ -127,7 +137,7 @@ function Investment(props) {
       {/* <p>All time profit: {user.profit}</p> */}
       <p>monthProfitCurrentProduct: {JSON.stringify(monthProfitCurrentProduct)}</p>
       <p>monthProfitAllProducts: {JSON.stringify(monthProfitAllProducts)}</p>
-      <p>availableUSD: {JSON.stringify(availableUSD)}</p>
+      <p>availableQuote: {JSON.stringify(availableQuote)}</p>
       <p>productPrice: {JSON.stringify(productPrice)}</p>
       <p>availableBase: {JSON.stringify(availableBase)}</p>
       {/* <p>availableBaseValue: {JSON.stringify(availableBaseValue)}</p> */}
@@ -135,7 +145,8 @@ function Investment(props) {
       <p>spentBaseValue: {JSON.stringify(spentBaseValue)}</p>
       <p>spentQuote: {JSON.stringify(spentQuote)}</p>
       <p>portfolioValueLiquidized: {JSON.stringify(portfolioValueLiquidized)}</p>
-      <p>Projected annual profit: {projectedProfit || 0}</p>
+      <p>spentBaseAllProducts: {JSON.stringify(spentBaseAllProducts)}</p>
+      <p>Projected annual profit for {baseID}: {projectedProfit.toFixed(1)}%</p>
 
       <div className="divider" />
 
