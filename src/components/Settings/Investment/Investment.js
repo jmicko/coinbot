@@ -28,11 +28,12 @@ function Investment(props) {
   const monthProfitCurrentProduct = profit.find((item) => item.duration === '30 Day').productProfit || 0;
   const monthProfitAllProducts = profit.find((item) => item.duration === '30 Day').allProfit || 0;
   const currentProduct30DayAvg = monthProfitCurrentProduct / 30;
+  const allProducts30DayAvg = monthProfitAllProducts / 30;
 
   // Feedback from user:
   // Would be nice to know projected annual profits by percent. 
   // Take the 1 month profit and multiply by 12 and divide by your Coinbase liquidized current cash.
-  const projectedProfit = portfolioValueLiquidized > 0 ? (((currentProduct30DayAvg * 365) / portfolioValueLiquidized)*100) : 0;
+  const projectedProfit = portfolioValueLiquidized > 0 ? (((allProducts30DayAvg * 365) / portfolioValueLiquidized)*100) : 0;
 
   // ROUTES
   const { updateData: updateBulkPairRatio } = useFetchData(`/api/orders/bulkPairRatio/${productID}`, { defaultState: null, noLoad: true });
