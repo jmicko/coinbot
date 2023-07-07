@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS "user_settings"
   "max_trade" boolean DEFAULT false,
   "max_trade_size" numeric(32,8) DEFAULT 0,
   "max_trade_load" integer DEFAULT 100,
-  "sync_quantity" integer DEFAULT 100;
+  "sync_quantity" integer DEFAULT 100,
   "profit_accuracy" integer DEFAULT 16,
   "can_chat" boolean DEFAULT false,
   "auto_setup_number" integer DEFAULT 1,
