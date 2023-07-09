@@ -22,18 +22,19 @@ function Investment(props) {
   const spentQuote = user.availableFunds?.[productID]?.quote_spent;
 
   const spentBaseAllProducts = getSpentBaseAllProducts();
-  const portfolioValueLiquidized = spentBaseAllProducts + spentQuote;
+  // const portfolioValueLiquidized = spentBaseAllProducts + spentQuote;
+  const portfolioValueLiquidized = spentBaseValue + spentQuote;
 
-  // month profit is the object in the profit array that has the "duration":"30 Day" property
-  const monthProfitCurrentProduct = profit.find((item) => item.duration === '30 Day').productProfit || 0;
-  const monthProfitAllProducts = profit.find((item) => item.duration === '30 Day').allProfit || 0;
-  const currentProduct30DayAvg = monthProfitCurrentProduct / 30;
-  const allProducts30DayAvg = monthProfitAllProducts / 30;
+  // 3 month profit is the object in the profit array that has the "duration":"90 Day" property
+  const monthProfitCurrentProduct = profit.find((item) => item.duration === '90 Day').productProfit || 0;
+  const monthProfitAllProducts = profit.find((item) => item.duration === '90 Day').allProfit || 0;
+  const currentProduct90DayAvg = monthProfitCurrentProduct / 90;
+  const allProducts90DayAvg = monthProfitAllProducts / 90;
 
   // Feedback from user:
   // Would be nice to know projected annual profits by percent. 
-  // Take the 1 month profit and multiply by 12 and divide by your Coinbase liquidized current cash.
-  const projectedProfit = portfolioValueLiquidized > 0 ? (((allProducts30DayAvg * 365) / portfolioValueLiquidized) * 100) : 0;
+  // Take the 90 day avg profit and multiply by 365 (days in a year) and divide by your Coinbase liquidized current cash.
+  const projectedProfit = portfolioValueLiquidized > 0 ? (((allProducts90DayAvg * 365) / portfolioValueLiquidized) * 100) : 0;
 
   // ROUTES
   const { updateData: updateBulkPairRatio } = useFetchData(`/api/orders/bulkPairRatio/${productID}`, { defaultState: null, noLoad: true });
@@ -143,10 +144,10 @@ function Investment(props) {
       {/* <p>availableBase: {JSON.stringify(availableBase)}</p> */}
       {/* <p>availableBaseValue: {JSON.stringify(availableBaseValue)}</p> */}
       {/* <p>spentBase: {JSON.stringify(spentBase)}</p> */}
-      {/* <p>spentBaseValue: {JSON.stringify(spentBaseValue)}</p> */}
-      {/* <p>spentQuote: {JSON.stringify(spentQuote)}</p> */}
-      {/* <p>portfolioValueLiquidized: {JSON.stringify(portfolioValueLiquidized)}</p> */}
-      {/* <p>spentBaseAllProducts: {JSON.stringify(spentBaseAllProducts)}</p> */}
+      <p>spentBaseValue: {JSON.stringify(spentBaseValue)}</p>
+      <p>spentBaseAllProducts: {JSON.stringify(spentBaseAllProducts)}</p>
+      <p>spentQuote: {JSON.stringify(spentQuote)}</p>
+      <p>portfolioValueLiquidized: {JSON.stringify(portfolioValueLiquidized)}</p>
       <p>Projected annual profit for {baseID}: {projectedProfit.toFixed(1)}%</p>
       {props.tips && <p>This is based on the current total value of your account in USD, along with the last 4 weeks of profit data.</p>}
 
