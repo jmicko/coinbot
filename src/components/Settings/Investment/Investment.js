@@ -33,7 +33,7 @@ function Investment(props) {
   // Feedback from user:
   // Would be nice to know projected annual profits by percent. 
   // Take the 1 month profit and multiply by 12 and divide by your Coinbase liquidized current cash.
-  const projectedProfit = portfolioValueLiquidized > 0 ? (((allProducts30DayAvg * 365) / portfolioValueLiquidized)*100) : 0;
+  const projectedProfit = portfolioValueLiquidized > 0 ? (((allProducts30DayAvg * 365) / portfolioValueLiquidized) * 100) : 0;
 
   // ROUTES
   const { updateData: updateBulkPairRatio } = useFetchData(`/api/orders/bulkPairRatio/${productID}`, { defaultState: null, noLoad: true });
@@ -136,18 +136,19 @@ function Investment(props) {
       {/* <p>Current portfolio value: {user.portfolio_value}</p> */}
       {/* <p>Current available funds: {user.available_funds}</p> */}
       {/* <p>All time profit: {user.profit}</p> */}
-      <p>monthProfitCurrentProduct: {JSON.stringify(monthProfitCurrentProduct)}</p>
-      <p>monthProfitAllProducts: {JSON.stringify(monthProfitAllProducts)}</p>
-      <p>availableQuote: {JSON.stringify(availableQuote)}</p>
-      <p>productPrice: {JSON.stringify(productPrice)}</p>
-      <p>availableBase: {JSON.stringify(availableBase)}</p>
+      {/* <p>monthProfitCurrentProduct: {JSON.stringify(monthProfitCurrentProduct)}</p> */}
+      {/* <p>monthProfitAllProducts: {JSON.stringify(monthProfitAllProducts)}</p> */}
+      {/* <p>availableQuote: {JSON.stringify(availableQuote)}</p> */}
+      {/* <p>productPrice: {JSON.stringify(productPrice)}</p> */}
+      {/* <p>availableBase: {JSON.stringify(availableBase)}</p> */}
       {/* <p>availableBaseValue: {JSON.stringify(availableBaseValue)}</p> */}
-      <p>spentBase: {JSON.stringify(spentBase)}</p>
-      <p>spentBaseValue: {JSON.stringify(spentBaseValue)}</p>
-      <p>spentQuote: {JSON.stringify(spentQuote)}</p>
-      <p>portfolioValueLiquidized: {JSON.stringify(portfolioValueLiquidized)}</p>
-      <p>spentBaseAllProducts: {JSON.stringify(spentBaseAllProducts)}</p>
+      {/* <p>spentBase: {JSON.stringify(spentBase)}</p> */}
+      {/* <p>spentBaseValue: {JSON.stringify(spentBaseValue)}</p> */}
+      {/* <p>spentQuote: {JSON.stringify(spentQuote)}</p> */}
+      {/* <p>portfolioValueLiquidized: {JSON.stringify(portfolioValueLiquidized)}</p> */}
+      {/* <p>spentBaseAllProducts: {JSON.stringify(spentBaseAllProducts)}</p> */}
       <p>Projected annual profit for {baseID}: {projectedProfit.toFixed(1)}%</p>
+      {props.tips && <p>This is based on the current total value of your account in USD, along with the last 4 weeks of profit data.</p>}
 
       <div className="divider" />
 
