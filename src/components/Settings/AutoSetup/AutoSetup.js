@@ -32,12 +32,13 @@ function AutoSetup(props) {
     isLoading: simLoading
   } = useFetchData(`/api/trade/simulation`, { defaultState: null, noLoad: true });
 
+  console.log(currentProduct, 'currentProduct')
 
   const [auto, setAuto] = useState({
     // startingValue: 1000,
-    startingValue: Number(((currentPrice || 1000) / 2).toFixed(currentProduct.price_rounding - 2 > 0 ? currentProduct.price_rounding - 2 : 0)),
+    startingValue: Number(((currentPrice || 1000) / 2).toFixed(currentProduct.quote_increment_decimals - 2 > 0 ? currentProduct.quote_increment_decimals - 2 : 0)),
     skipFirst: false,
-    endingValue: Number(((currentPrice || 1000) * 1.5).toFixed(currentProduct.price_rounding - 2 > 0 ? currentProduct.price_rounding - 2 : 0)),
+    endingValue: Number(((currentPrice || 1000) * 1.5).toFixed(currentProduct.quote_increment_decimals - 2 > 0 ? currentProduct.quote_increment_decimals - 2 : 0)),
     ignoreFunds: false,
     increment: 0.5,
     incrementType: 'percentage',
