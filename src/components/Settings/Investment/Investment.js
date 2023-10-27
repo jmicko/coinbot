@@ -49,7 +49,7 @@ function Investment(props) {
   // Would be nice to know projected annual profits by percent. 
   // Take the 90 day avg profit and multiply by 365 (days in a year) and divide by your Coinbase liquidized current cash.
   const projectedProfitAllProducts = portfolioValueLiquidized > 0 ? (((allProducts90DayAvg * 365) / portfolioValueLiquidized) * 100) : 0;
-  const projectedProfit = portfolioValueLiquidized > 0 ? (((currentProduct90DayAvg * 365) / currentProductValueLiquidized) * 100) : 0;
+  const projectedProfitCurrentProduct = currentProductValueLiquidized > 0 ? (((currentProduct90DayAvg * 365) / currentProductValueLiquidized) * 100) : 0;
 
   // ROUTES
   const { updateData: updateBulkPairRatio } = useFetchData(`/api/orders/bulkPairRatio/${productID}`, { defaultState: null, noLoad: true });
@@ -191,8 +191,11 @@ function Investment(props) {
         <p>spentQuote: {JSON.stringify(spentQuote)}</p>
         <p>spentQuoteAllProducts: {JSON.stringify(spentQuoteAllProducts)}</p>
         <p>portfolioValueLiquidized: {JSON.stringify(portfolioValueLiquidized)}</p>
+        <p>currentProductValueLiquidized: {JSON.stringify(currentProductValueLiquidized)}</p>
+        <p>currentProduct90DayAvg: {JSON.stringify(currentProduct90DayAvg)}</p>
+        <p>allProducts90DayAvg: {JSON.stringify(allProducts90DayAvg)}</p>
       </Collapser>
-      <p>Projected annual profit for {baseID}: {projectedProfit.toFixed(1)}%</p>
+      <p>Projected annual profit for {baseID}: {projectedProfitCurrentProduct.toFixed(1)}%</p>
       {props.tips && <p>&#9653; This is based on the current total value of all your trades for {baseID} in USD, along with the last 3 months of profit data.</p>}
       <p>Projected annual profit for all products: {projectedProfitAllProducts.toFixed(1)}%</p>
       {props.tips && <p>&#9653; This is based on the current total value of all your entire portfolio in USD, along with the last 3 months of profit data.</p>}
