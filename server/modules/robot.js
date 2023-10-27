@@ -775,6 +775,7 @@ async function getAvailableFunds(userID, userSettings) {
   userStorage[userID].updateStatus('get available funds');
   return new Promise(async (resolve, reject) => {
     try {
+      devLog('get available funds');
       if (!userSettings?.active) {
         devLog('not active!');
         reject('user is not active')
@@ -814,7 +815,7 @@ async function getAvailableFunds(userID, userSettings) {
           currencyArray[index].amount_spent += baseSpent;
         } else {
           // if the base currency is not in the array, add it
-          currencyArray.push({ currency_id: baseCurrency, amount_spent: baseSpent })
+          currencyArray.push({ currency_id: baseCurrency, amount_spent: baseSpent, quoteSpentOnProduct: quoteSpent })
         }
 
         // if the quote currency is already in the array, add the amount spent to the existing amount spent
@@ -839,11 +840,15 @@ async function getAvailableFunds(userID, userSettings) {
         // round to 16 decimal places
         const availableRounded = available.toFixed(16);
         // add the currency and available funds to the array
-        availableFundsNew.push({ currency_id: currency.currency_id, available: availableRounded, spent: currency.amount_spent })
+        availableFundsNew.push({ currency_id: currency.currency_id, available: availableRounded, spent: currency.amount_spent, quote_spent_on_product: currency.quoteSpentOnProduct })
       }
 
       // make an object with an object for each user's product with the product id as the key for each nested object 
       // each nested object has the available funds for the base and quote currencies, along with the name of the currency
+      // oh no
+      // this is bad
+      // what was I thinking
+      // there are so many objects being turned into other objects and arrays and back again and beyond
       const availableFundsObject = {};
       for (let i = 0; i < activeProducts.length; i++) {
         const product = activeProducts[i];
@@ -853,6 +858,7 @@ async function getAvailableFunds(userID, userSettings) {
         const quoteAvailable = availableFundsNew.find(currency => currency.currency_id === quoteCurrency).available;
         const baseSpent = availableFundsNew.find(currency => currency.currency_id === baseCurrency).spent;
         const quoteSpent = availableFundsNew.find(currency => currency.currency_id === quoteCurrency).spent;
+        const quoteSpentOnProduct = availableFundsNew.find(currency => currency.currency_id === baseCurrency).quote_spent_on_product;
 
         availableFundsObject[product.product_id] = {
           base_currency: baseCurrency,
@@ -863,6 +869,7 @@ async function getAvailableFunds(userID, userSettings) {
           quote_increment: product.quote_increment,
           base_spent: baseSpent,
           quote_spent: quoteSpent,
+          quote_spent_on_product: quoteSpentOnProduct,
         }
       }
 

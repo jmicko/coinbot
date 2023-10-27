@@ -10,6 +10,8 @@ function IncrementButtons(props) {
   const firstButton = props.firstButton;
   const roundTo = props.roundTo;
 
+  
+
   const toFloor = (value) => {
     return Math.floor(value * 10_000_000) / 10_000_000;
   }
@@ -31,7 +33,7 @@ function IncrementButtons(props) {
   // create an array of 4 decrement buttons. each button has a negative value of the corresponding value in buttonValues. each button has an onClick function that calls changeValue with the corresponding value in buttonValues.
   const decrementButtons = buttonValues.map((value, i) => {
     return (
-      <input key={i + 'decrement'} type="button" className={`btn-red ${theme}`} onClick={(e) => { no(e); changeValue((Number(currentValue) - value).toFixed(roundTo)) }} value={`-${value}`}></input>
+      <input key={i + 'decrement'} type="button" className={`btn-red ${theme}`} onClick={(e) => { no(e); console.log(roundTo, 'roundTo'); changeValue((Number(currentValue) - value).toFixed(roundTo)) }} value={`-${value}`}></input>
     )
   });
   // return the increment buttons and decrement buttons in a div.

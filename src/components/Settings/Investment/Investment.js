@@ -22,7 +22,7 @@ function Investment(props) {
   // const availableBaseValue = availableBase * productPrice;
   const spentBaseValue = spentBase * productPrice;
   // const availableQuote = user.availableFunds?.[productID]?.quote_available;
-  const spentQuote = user.availableFunds?.[productID]?.quote_spent;
+  const spentQuote = user.availableFunds?.[productID]?.quote_spent_on_product;
   // something is wrong here. We're combining numbers from individual products along with numbers from the entire portfolio
 
   // here was the problem. spentBaseValue is for all products, but spentQuote is only for the current product
@@ -86,7 +86,7 @@ function Investment(props) {
     let total = 0;
     // look at every product in the user.availableFunds object
     for (let product in user.availableFunds) {
-      const spentQuote = user.availableFunds?.[product]?.quote_spent;
+      const spentQuote = user.availableFunds?.[product]?.quote_spent_on_product;
       // console.log(user.availableFunds?.[product].base_spent, 'product')
       total += spentQuote;
     }
