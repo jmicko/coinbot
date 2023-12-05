@@ -32,7 +32,7 @@ function AutoSetup(props) {
     isLoading: simLoading
   } = useFetchData(`/api/trade/simulation`, { defaultState: null, noLoad: true });
 
-  console.log(currentProduct, 'currentProduct')
+  // console.log(currentProduct, 'currentProduct')
 
   const [auto, setAuto] = useState({
     // startingValue: 1000,

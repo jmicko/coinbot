@@ -405,7 +405,7 @@ async function processOrders(userID) {
                 // userStorage[userID].orderUpdate();
                 messenger[userID].orderUpdate();
               } else {
-                devLog('new trade failed!!!');
+                devLog(dbOrder, userID, 'new trade failed!!!');
                 messenger[userID].newError({
                   errorData: dbOrder,
                   errorText: 'Something went wrong while flipping an order'
@@ -471,12 +471,21 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
     userID: dbOrder.userID,
     post_only: post_only,
   };
-  // add buy/sell requirement and price
 
+  const avail = userStorage[userID].getAvailableFunds();
+  const prodFunds = avail[tradeDetails.product_id]
+  // devLog(dbOrder, 'dbOrder... needs to flip. Price is too many decimals?', prodFunds)
+
+  // get decimals after .
+  const base_increment_decimals = prodFunds.base_increment.split('.')[1]?.split('').findIndex((char) => char !== '0') + 1;
+  // devLog(base_increment_decimals, 'base inc decccccccccccc')
+  const quote_increment_decimals = prodFunds.quote_increment.split('.')[1]?.split('').findIndex((char) => char !== '0') + 1;
+
+  // add buy/sell requirement and price
   if (dbOrder.side === "BUY") {
     // if it was a BUY, sell for more. multiply old price
     tradeDetails.side = "SELL"
-    tradeDetails.limit_price = dbOrder.original_sell_price;
+    tradeDetails.limit_price = Number(dbOrder.original_sell_price).toFixed(quote_increment_decimals || 16);
     !simulation && messenger[userID].newMessage({
       type: 'general',
       text: `Selling for $${Number(tradeDetails.limit_price)}`
@@ -575,12 +584,14 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
     }
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "BUY"
-    tradeDetails.limit_price = dbOrder.original_buy_price;
+    tradeDetails.limit_price = Number(dbOrder.original_buy_price).toFixed(quote_increment_decimals || 16);
     !simulation && messenger[userID].newMessage({
       type: 'general',
       text: `Buying for $${Number(tradeDetails.limit_price)}`
     });
   }
+
+  tradeDetails.base_size = Number(tradeDetails.base_size).toFixed(base_increment_decimals || 16);
 
   // make sure all properties of tradeDetails are strings unless they are boolean
   for (let key in tradeDetails) {

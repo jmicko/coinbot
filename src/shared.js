@@ -51,7 +51,12 @@ function bellCurve(options) {
   return maxSize / (1 + (1 / (steepness * increment)) * (buyPrice - tradingPrice) ** 2) + minSize
 }
 
+// options object should have the following keys
+// size: the size of the trade in either base or quote currency
+// startingValue: the price to start the loop at
+
 function autoSetup(user, options) {
+  devLog('user', user, 'options', options);
   // devLog('running autoSetup')
   const product = options.product;
   // devLog(product_id, 'product_id')
