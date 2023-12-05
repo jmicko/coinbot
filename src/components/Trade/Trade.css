@@ -6,7 +6,7 @@
   grid-row   : 3/5;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 1100px) {
   .Trade {
     display    : block;
     grid-column: 2;

@@ -123,7 +123,7 @@ function LimitOrder(props) {
   return (
     <div className="Trade scrollable boxed" >
       <h3 className={`title ${theme}`}>
-        {width > 800
+        {width > 1100
           && <button
             className={`${btnColor} ${theme}`}
             onClick={toggleCollapse} >&#9664;</button>

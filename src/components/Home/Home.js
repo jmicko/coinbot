@@ -51,7 +51,7 @@ function Home() {
       {/* {width}w {height}h */}
       {
         // on mobile?
-        width <= 800
+        width <= 1100
           // show mobile page
           // which mobile page?
           ? mobilePage === 'newPair'
@@ -89,7 +89,7 @@ function Home() {
         showSettings={showSettings}
         clickSettings={clickSettings}
       />
-      {width <= 800 && <MobileNav setMobilePage={setMobilePage} />}
+      {width <= 1100 && <MobileNav setMobilePage={setMobilePage} />}
     </div>
   );
 }

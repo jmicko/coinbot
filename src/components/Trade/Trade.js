@@ -33,7 +33,7 @@ function Trade() {
   }
 
   return (
-    !collapse || width < 800
+    !collapse || width < 1100
       ? tradeType
         ?
         <LimitOrder

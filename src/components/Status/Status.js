@@ -72,14 +72,14 @@ function Status(props) {
             )
           })}
         </select>
-        {width > 800 ? <br /> : <div className='spacer' />}
+        {width > 1100 ? <br /> : <div className='spacer' />}
         ${numberWithCommas(Number(profit[profitDisplay]?.productProfit).toFixed(profitAccuracy))} /
         ${numberWithCommas(Number(profit[profitDisplay]?.allProfit).toFixed(profitAccuracy))}
       </div>
 
       <div className="info status-ticker">
         <strong>{productID} Price</strong>
-        {width > 800 ? <br /> : <div className='spacer' />}
+        {width > 1100 ? <br /> : <div className='spacer' />}
         {/* jesus christ why would you build something so convoluted yet functional */}
         {productPrice}
       </div>
@@ -93,7 +93,7 @@ function Status(props) {
           <option value={false}>Available {user.availableFunds?.[productID]?.quote_currency}</option>
 
         </select>
-        {width > 800 ? <br /> : <div className='spacer' />}
+        {width > 1100 ? <br /> : <div className='spacer' />}
 
         {availableFundsDisplay === "true"
           ? `${numberWithCommas(Number(availableBase).toFixed(Number(user.availableFunds?.[productID]?.base_increment.split('1')[0].length - 1)))}`
@@ -112,7 +112,7 @@ function Status(props) {
           <option value={false}>Taker Fee</option>
 
         </select>
-        {width > 800 ? <br /> : <div className='spacer' />}
+        {width > 1100 ? <br /> : <div className='spacer' />}
         {feeDisplay === "true"
           ? `${Number((user.maker_fee * 100).toFixed(2))}%`
           : `${Number((user.taker_fee * 100).toFixed(2))}%`
@@ -121,16 +121,16 @@ function Status(props) {
 
       <div className="info status-ticker">
         <strong>30 Day Volume</strong>
-        {width > 800 ? <br /> : <div className='spacer' />}
+        {width > 1100 ? <br /> : <div className='spacer' />}
         ${numberWithCommas(Number(user.usd_volume).toFixed(2))}
       </div>
 
       <div className="info status-ticker">
         <strong>Open Order Counts</strong>
-        {width > 800 ? <br /> : <div className='spacer' />}
+        {width > 1100 ? <br /> : <div className='spacer' />}
         <strong>B:</strong>{numberWithCommas(openBuysQuantity)}&nbsp;<strong>S:</strong>{numberWithCommas(openSellsQuantity)}&nbsp;<strong>T:</strong>{numberWithCommas(openOrderQuantity)}
       </div>
-      {width > 800 ? <br /> : ''}
+      {width > 1100 ? <br /> : ''}
 
       <div className='controls'>
 

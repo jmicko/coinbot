@@ -86,7 +86,7 @@
   color: rgb(187, 74, 74);
 }
 
-@media (max-width: 800px) {
+@media (max-width: 1100px) {
 
   .message-section {
     /* max-height: unset; */

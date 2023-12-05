@@ -46,7 +46,7 @@ of these strong items should not take that property */
     /* height: 1.5rem; */
 }
 
-@media (max-width: 800px) {
+@media (max-width: 1100px) {
     .Status {
         grid-column: 2/3;
         grid-row   : 3;

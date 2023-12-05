@@ -19,7 +19,7 @@
   background-color: rgb(41, 41, 41);
 }
 
-@media (max-width: 800px) {
+@media (max-width: 1100px) {
   .Settings {
     display    : block;
     grid-column: 2;
