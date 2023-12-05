@@ -89,7 +89,7 @@ function Home() {
         showSettings={showSettings}
         clickSettings={clickSettings}
       />
-      {width < 800 && <MobileNav setMobilePage={setMobilePage} />}
+      {width <= 800 && <MobileNav setMobilePage={setMobilePage} />}
     </div>
   );
 }
