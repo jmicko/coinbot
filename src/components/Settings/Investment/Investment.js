@@ -1,13 +1,55 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../../contexts/DataContext.js';
 import { useUser } from '../../../contexts/UserContext.js';
+import { useSocket } from '../../../contexts/SocketProvider.js';
 import { useFetchData } from '../../../hooks/fetchData.js';
+import Collapser from '../../Collapser/Collapser.js';
 import './Investment.css'
 
 
 function Investment(props) {
   const { user, refreshUser, theme } = useUser();
-  const { productID, refreshOrders, deadCon } = useData();
+  const { productID, refreshOrders, deadCon, profit } = useData();
+  const { tickers } = useSocket();
+
+  // the base currency will be the crypto, like BTC or FTX hahaha jk
+  // the quote currency will be USD
+  // const quoteID = user.availableFunds?.[productID]?.quote_currency;
+  const baseID = user.availableFunds?.[productID]?.base_currency;
+  const productPrice = Number(tickers?.[productID]?.price).toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1));
+  // const availableBase = user.availableFunds?.[productID]?.base_available;
+  const spentBase = user.availableFunds?.[productID]?.base_spent;
+  // const availableBaseValue = availableBase * productPrice;
+  const spentBaseValue = spentBase * productPrice;
+  // const availableQuote = user.availableFunds?.[productID]?.quote_available;
+  const spentQuote = user.availableFunds?.[productID]?.quote_spent_on_product;
+  // something is wrong here. We're combining numbers from individual products along with numbers from the entire portfolio
+
+  // here was the problem. spentBaseValue is for all products, but spentQuote is only for the current product
+
+  // this will return the total value of all base currency currently locked in orders
+  const spentBaseAllProductsValue = getSpentBaseAllProductsValue();
+  // next we need to get the spent quote for all products
+
+  // changing this to spentQuoteAllProducts should fix it
+  const spentQuoteAllProducts = getSpentQuoteAllProducts();
+  // if you liquidated all your crypto products and cancelled all trades, this is how much USD you would have.
+  // it does not account for fees, or any funds not held up in trades pairs.
+  const portfolioValueLiquidized = spentBaseAllProductsValue + spentQuoteAllProducts;
+
+  const currentProductValueLiquidized = spentBaseValue + spentQuote;
+
+  // 3 month profit is the object in the profit array that has the "duration":"90 Day" property
+  const ProfitCurrentProduct90Day = profit.find((item) => item.duration === '90 Day').productProfit || 0;
+  const ProfitAllProducts90Day = profit.find((item) => item.duration === '90 Day').allProfit || 0;
+  const currentProduct90DayAvg = ProfitCurrentProduct90Day / 90;
+  const allProducts90DayAvg = ProfitAllProducts90Day / 90;
+
+  // Feedback from user:
+  // Would be nice to know projected annual profits by percent. 
+  // Take the 90 day avg profit and multiply by 365 (days in a year) and divide by your Coinbase liquidized current cash.
+  const projectedProfitAllProducts = portfolioValueLiquidized > 0 ? (((allProducts90DayAvg * 365) / portfolioValueLiquidized) * 100) : 0;
+  const projectedProfitCurrentProduct = currentProductValueLiquidized > 0 ? (((currentProduct90DayAvg * 365) / currentProductValueLiquidized) * 100) : 0;
 
   // ROUTES
   const { updateData: updateBulkPairRatio } = useFetchData(`/api/orders/bulkPairRatio/${productID}`, { defaultState: null, noLoad: true });
@@ -27,6 +69,29 @@ function Investment(props) {
 
 
   // FUNCTIONS
+
+  function getSpentBaseAllProductsValue() {
+    // hold up, this isn't getting the spent base, it's getting the value of the spent base in the quote currency
+    let total = 0;
+    // look at every product in the user.availableFunds object
+    for (let product in user.availableFunds) {
+      const spentBase = user.availableFunds?.[product]?.base_spent;
+      // console.log(user.availableFunds?.[product].base_spent, 'product')
+      total += spentBase * tickers?.[product]?.price;
+    }
+    return total;
+  }
+
+  function getSpentQuoteAllProducts() {
+    let total = 0;
+    // look at every product in the user.availableFunds object
+    for (let product in user.availableFunds) {
+      const spentQuote = user.availableFunds?.[product]?.quote_spent_on_product;
+      // console.log(user.availableFunds?.[product].base_spent, 'product')
+      total += spentQuote;
+    }
+    return total;
+  }
 
   async function storeMaxTradeSize() {
     await updateMaxTradeSize({ max_trade_size });
@@ -82,10 +147,60 @@ function Investment(props) {
     setMaxTradeSize(Number(user.max_trade_size))
   }, [user.max_trade_size])
 
+  console.log(user.availableFunds, 'user.availableFunds')
 
   return (
     <div className="Investment settings-panel scrollable">
       <div className={`divider ${theme}`} />
+
+      {/* STATISTICS */}
+      {/* This section will show more detail about the portfolio */}
+      {/* 
+      Feedback from user:
+      Would be nice to know projected annual profits by percent. 
+      Take the 1 month profit and multiply by 12 and divide by your Coinbase liquidized current cash.
+       */}
+      {/* <h4>Statistics</h4> */}
+      {/* <p>Current portfolio value: {user.portfolio_value}</p> */}
+      {/* <p>Current available funds: {user.available_funds}</p> */}
+      {/* {() => {
+        const [collapse, setCollapse] = useState(true);
+        return (
+          <button>hello</button>
+        )
+      }} */}
+
+      <Collapser title='Statistics (*EXPERIMENTAL*)'>
+
+        <p>
+          This feature is a work in progress. Here are some of the variables used in the
+          calculation. The whole thing could be entirely wrong or inaccurate.
+        </p>
+        <p>Base ID: {baseID}</p>
+        <p>All time profit: {user.profit}</p>
+        {/* <p>All time profit: {JSON.stringify(profit)}</p> */}
+        <p>ProfitCurrentProduct90Day: {JSON.stringify(ProfitCurrentProduct90Day)}</p>
+        <p>ProfitAllProducts90Day: {JSON.stringify(ProfitAllProducts90Day)}</p>
+        {/* <p>availableQuote: {JSON.stringify(availableQuote)}</p> */}
+        <p>productPrice: {JSON.stringify(productPrice)}</p>
+        {/* <p>availableBase: {JSON.stringify(availableBase)}</p> */}
+        {/* <p>availableBaseValue: {JSON.stringify(availableBaseValue)}</p> */}
+        <p>spentBase: {JSON.stringify(spentBase)}</p>
+        <p>spentBaseValue: {JSON.stringify(spentBaseValue)}</p>
+        <p>spentBaseAllProductsValue: {JSON.stringify(spentBaseAllProductsValue)}</p>
+        <p>spentQuote: {JSON.stringify(spentQuote)}</p>
+        <p>spentQuoteAllProducts: {JSON.stringify(spentQuoteAllProducts)}</p>
+        <p>portfolioValueLiquidized: {JSON.stringify(portfolioValueLiquidized)}</p>
+        <p>currentProductValueLiquidized: {JSON.stringify(currentProductValueLiquidized)}</p>
+        <p>currentProduct90DayAvg: {JSON.stringify(currentProduct90DayAvg)}</p>
+        <p>allProducts90DayAvg: {JSON.stringify(allProducts90DayAvg)}</p>
+      </Collapser>
+      <p>Projected annual profit for {baseID}: {projectedProfitCurrentProduct.toFixed(1)}%</p>
+      {props.tips && <p>&#9653; This is based on the current total value of all your trades for {baseID} in USD, along with the last 3 months of profit data.</p>}
+      <p>Projected annual profit for all products: {projectedProfitAllProducts.toFixed(1)}%</p>
+      {props.tips && <p>&#9653; This is based on the current total value of all your entire portfolio in USD, along with the last 3 months of profit data.</p>}
+
+      <div className="divider" />
 
       {/* REINVEST */}
       <h4>Reinvestment</h4>

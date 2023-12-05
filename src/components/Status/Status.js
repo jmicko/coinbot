@@ -18,22 +18,23 @@ function Status(props) {
     orders, refreshOrders,
     productID, refreshProducts,
     profit, refreshProfit,
+    availableBase, availableQuote,
   } = useData();
+
+  const productPrice = Number(tickers?.[productID]?.price).toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1));
+
   const openOrdersInOrder = orders;
   const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
   const [openBuysQuantity, setOpenBuysQuantity] = useState(0);
   const [openOrderQuantity, setOpenOrderQuantity] = useState(0);
-  // const [profitDisplay, setProfitDisplay] = useState(0);
+
   const [profitDisplay, setProfitDisplay] = useLocalStorage('profitDisplay', 0);
-  // const [availableFundsDisplay, setAvailableFundsDisplay] = useState(false);
   const [availableFundsDisplay, setAvailableFundsDisplay] = useLocalStorage('availableFundsDisplay', false);
-  // const [feeDisplay, setFeeDisplay] = useState(true);
   const [feeDisplay, setFeeDisplay] = useLocalStorage('feeDisplay', true);
-  // const [profitAccuracy, setProfitAccuracy] = useState(2);
+
   const profitAccuracy = user.profit_accuracy;
 
   const { width } = useWindowDimensions();
-
 
   const updateUser = () => {
     refreshProfit();
@@ -79,7 +80,8 @@ function Status(props) {
       <div className="info status-ticker">
         <strong>{productID} Price</strong>
         {width > 800 ? <br /> : <div className='spacer' />}
-        {Number(tickers?.[productID]?.price).toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1))}
+        {/* jesus christ why would you build something so convoluted yet functional */}
+        {productPrice}
       </div>
 
       <div className="info status-ticker">
@@ -94,8 +96,8 @@ function Status(props) {
         {width > 800 ? <br /> : <div className='spacer' />}
 
         {availableFundsDisplay === "true"
-          ? `${numberWithCommas(Number(user.availableFunds?.[productID]?.base_available).toFixed(Number(user.availableFunds?.[productID]?.base_increment.split('1')[0].length - 1)))}`
-          : `${user.availableFunds?.[productID]?.quote_currency === 'USD' && "$"}${numberWithCommas(Number(user.availableFunds?.[productID]?.quote_available)
+          ? `${numberWithCommas(Number(availableBase).toFixed(Number(user.availableFunds?.[productID]?.base_increment.split('1')[0].length - 1)))}`
+          : `${user.availableFunds?.[productID]?.quote_currency === 'USD' && "$"}${numberWithCommas(Number(availableQuote)
             .toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1)))}
             ${user.availableFunds?.[productID]?.quote_currency !== 'USD' ? user.availableFunds?.[productID]?.quote_currency : ''}`
         }

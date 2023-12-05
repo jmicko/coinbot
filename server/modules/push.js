@@ -18,16 +18,19 @@ function resetAtMidnight({ notMidnight }) {
     0, 0, 0 // ...at 00:00:00 hours
   );
   const msToMidnight = night.getTime() - now.getTime();
+  try {
 
-  devLog('msToMidnight', msToMidnight, 'notMidnight', notMidnight);
+    devLog('msToMidnight', msToMidnight, 'notMidnight', notMidnight);
 
-  runScheduled({ notMidnight }); // <-- This is the function being called at midnight.
-
-
-  setTimeout(function () {
-    resetAtMidnight({ notMidnight: false }); // Then, reset again next midnight.
-  }, msToMidnight);
-  // }, 5000);
+    runScheduled({ notMidnight }); // <-- This is the function being called at midnight.
+  } catch (err) {
+    devLog('error in resetAtMidnight', err);
+  } finally {
+    setTimeout(function () {
+      resetAtMidnight({ notMidnight: false }); // Then, reset again next midnight.
+    }, msToMidnight);
+    // }, 5000);
+  }
 }
 
 // this function is called when the server starts and at midnight every day

@@ -405,7 +405,7 @@ async function processOrders(userID) {
                 // userStorage[userID].orderUpdate();
                 messenger[userID].orderUpdate();
               } else {
-                devLog('new trade failed!!!');
+                devLog(dbOrder, userID, 'new trade failed!!!');
                 messenger[userID].newError({
                   errorData: dbOrder,
                   errorText: 'Something went wrong while flipping an order'
@@ -471,12 +471,21 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
     userID: dbOrder.userID,
     post_only: post_only,
   };
-  // add buy/sell requirement and price
 
+  const avail = userStorage[userID].getAvailableFunds();
+  const prodFunds = avail[tradeDetails.product_id]
+  // devLog(dbOrder, 'dbOrder... needs to flip. Price is too many decimals?', prodFunds)
+
+  // get decimals after .
+  const base_increment_decimals = prodFunds.base_increment.split('.')[1]?.split('').findIndex((char) => char !== '0') + 1;
+  // devLog(base_increment_decimals, 'base inc decccccccccccc')
+  const quote_increment_decimals = prodFunds.quote_increment.split('.')[1]?.split('').findIndex((char) => char !== '0') + 1;
+
+  // add buy/sell requirement and price
   if (dbOrder.side === "BUY") {
     // if it was a BUY, sell for more. multiply old price
     tradeDetails.side = "SELL"
-    tradeDetails.limit_price = dbOrder.original_sell_price;
+    tradeDetails.limit_price = Number(dbOrder.original_sell_price).toFixed(quote_increment_decimals || 16);
     !simulation && messenger[userID].newMessage({
       type: 'general',
       text: `Selling for $${Number(tradeDetails.limit_price)}`
@@ -575,12 +584,14 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
     }
     // if it was a sell, buy for less. divide old price
     tradeDetails.side = "BUY"
-    tradeDetails.limit_price = dbOrder.original_buy_price;
+    tradeDetails.limit_price = Number(dbOrder.original_buy_price).toFixed(quote_increment_decimals || 16);
     !simulation && messenger[userID].newMessage({
       type: 'general',
       text: `Buying for $${Number(tradeDetails.limit_price)}`
     });
   }
+
+  tradeDetails.base_size = Number(tradeDetails.base_size).toFixed(base_increment_decimals || 16);
 
   // make sure all properties of tradeDetails are strings unless they are boolean
   for (let key in tradeDetails) {
@@ -775,6 +786,7 @@ async function getAvailableFunds(userID, userSettings) {
   userStorage[userID].updateStatus('get available funds');
   return new Promise(async (resolve, reject) => {
     try {
+      devLog('get available funds');
       if (!userSettings?.active) {
         devLog('not active!');
         reject('user is not active')
@@ -785,9 +797,9 @@ async function getAvailableFunds(userID, userSettings) {
       const results = await Promise.all([
         cbClients[userID].getAllAccounts(),
         // funds are withheld in usd when a buy is placed, so the maker fee is needed to subtract fees
-        databaseClient.getSpentUSD(userID, takerFee),
+        // databaseClient.getSpentUSD(userID, takerFee),
         // funds are taken from the sale once settled, so the maker fee is not needed on the buys
-        databaseClient.getSpentBTC(userID),
+        // databaseClient.getSpentBTC(userID),
         // get a list of products that the user has active
         databaseClient.getActiveProducts(userID),
       ]);
@@ -795,7 +807,7 @@ async function getAvailableFunds(userID, userSettings) {
 
       // devLog(accounts.length, 'accounts in getAvailableFunds');
 
-      const activeProducts = results[3];
+      const activeProducts = results[1];
 
       // get the amount spent for the base and quote currencies for each product
       // and add them to an array of currency objects with the currency id and amount spent
@@ -814,7 +826,7 @@ async function getAvailableFunds(userID, userSettings) {
           currencyArray[index].amount_spent += baseSpent;
         } else {
           // if the base currency is not in the array, add it
-          currencyArray.push({ currency_id: baseCurrency, amount_spent: baseSpent })
+          currencyArray.push({ currency_id: baseCurrency, amount_spent: baseSpent, quoteSpentOnProduct: quoteSpent })
         }
 
         // if the quote currency is already in the array, add the amount spent to the existing amount spent
@@ -839,11 +851,15 @@ async function getAvailableFunds(userID, userSettings) {
         // round to 16 decimal places
         const availableRounded = available.toFixed(16);
         // add the currency and available funds to the array
-        availableFundsNew.push({ currency_id: currency.currency_id, available: availableRounded })
+        availableFundsNew.push({ currency_id: currency.currency_id, available: availableRounded, spent: currency.amount_spent, quote_spent_on_product: currency.quoteSpentOnProduct })
       }
 
       // make an object with an object for each user's product with the product id as the key for each nested object 
       // each nested object has the available funds for the base and quote currencies, along with the name of the currency
+      // oh no
+      // this is bad
+      // what was I thinking
+      // there are so many objects being turned into other objects and arrays and back again and beyond
       const availableFundsObject = {};
       for (let i = 0; i < activeProducts.length; i++) {
         const product = activeProducts[i];
@@ -851,6 +867,10 @@ async function getAvailableFunds(userID, userSettings) {
         const quoteCurrency = product.quote_currency_id;
         const baseAvailable = availableFundsNew.find(currency => currency.currency_id === baseCurrency).available;
         const quoteAvailable = availableFundsNew.find(currency => currency.currency_id === quoteCurrency).available;
+        const baseSpent = availableFundsNew.find(currency => currency.currency_id === baseCurrency).spent;
+        const quoteSpent = availableFundsNew.find(currency => currency.currency_id === quoteCurrency).spent;
+        const quoteSpentOnProduct = availableFundsNew.find(currency => currency.currency_id === baseCurrency).quote_spent_on_product;
+
         availableFundsObject[product.product_id] = {
           base_currency: baseCurrency,
           base_available: baseAvailable,
@@ -858,6 +878,9 @@ async function getAvailableFunds(userID, userSettings) {
           quote_currency: quoteCurrency,
           quote_available: quoteAvailable,
           quote_increment: product.quote_increment,
+          base_spent: baseSpent,
+          quote_spent: quoteSpent,
+          quote_spent_on_product: quoteSpentOnProduct,
         }
       }
 

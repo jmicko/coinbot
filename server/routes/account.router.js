@@ -118,7 +118,7 @@ router.get('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   const product_id = req.params.product_id;
 
-  const durations = ['24 Hour', '7 Day', '30 Day', '1 Year'];
+  const durations = ['24 Hour', '7 Day', '30 Day', '90 Day', '1 Year'];
   const profits = [];
   try {
     for (let i = 0; i < durations.length; i++) {

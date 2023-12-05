@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS "user_settings";
 DROP TABLE IF EXISTS "bot_settings";
 DROP TABLE IF EXISTS "market_candles";
 DROP TABLE IF EXISTS "subscriptions";
+DROP TABLE IF EXISTS "feedback";
 
 CREATE TABLE IF NOT EXISTS "user_api"
 (
@@ -35,7 +36,7 @@ CREATE TABLE IF NOT EXISTS "user_settings"
   "max_trade" boolean DEFAULT false,
   "max_trade_size" numeric(32,8) DEFAULT 0,
   "max_trade_load" integer DEFAULT 100,
-  "sync_quantity" integer DEFAULT 100;
+  "sync_quantity" integer DEFAULT 100,
   "profit_accuracy" integer DEFAULT 16,
   "can_chat" boolean DEFAULT false,
   "auto_setup_number" integer DEFAULT 1,
@@ -191,7 +192,7 @@ CREATE TABLE IF NOT EXISTS "subscriptions" (
   "expiration_time" timestamp,
   "created_at" timestamp default now(),
   "daily_notifications" boolean DEFAULT false,
-  "notification_time" time with time zone DEFAULT '00:00:00+00'
+  "notification_time" timestamp with time zone DEFAULT '1970-01-01 00:00:00+00'
 );
 
 -- this will create the required table for connect-pg to store session data

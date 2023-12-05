@@ -155,7 +155,7 @@ function LimitOrder(props) {
 
           <IncrementButtons
             firstButton={quote_increment * 10}
-            roundTo={quote_inverse_increment}
+            roundTo={quote_increment_decimals}
             currentValue={price}
             changeValue={(value) => { changeLimitOrder('price', Number(value)) }}
             theme={theme}

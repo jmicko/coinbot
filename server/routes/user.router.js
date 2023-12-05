@@ -66,7 +66,7 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
 
     // get available funds from userStorage
     const availableFunds = userStorage[req.user.id].getAvailableFunds();
-    // devLog('availableFunds', availableFunds);
+    devLog('availableFunds', availableFunds);
     req.user.availableFunds = availableFunds;
 
     // get exporting value from userStorage
