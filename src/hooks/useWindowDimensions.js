@@ -4,9 +4,13 @@ import { useEffect, useState } from "react";
 
 function getWindowDimensions() {
   const { innerWidth: width, innerHeight: height } = window;
+  // const { width: width, height: height } = screen;
+  // console.log(screenY, screenX);
   return {
+    // width: width / devicePixelRatio,
+    // height: height / devicePixelRatio,
     width,
-    height
+    height,
   };
 }
 

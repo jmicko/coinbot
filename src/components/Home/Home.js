@@ -48,7 +48,7 @@ function Home() {
       {/* {JSON.stringify(socket.product)}{JSON.stringify(product)} */}
       <Menu clickSettings={clickSettings} />
 
-      {/* {width}w {height}h */}
+      {/* {width}_w {height}_h {devicePixelRatio}_dpr {document.body.clientWidth} */}
       {
         // on mobile?
         width <= 1100
@@ -74,7 +74,7 @@ function Home() {
             {user.approved
               ? <TradeList isAutoScroll={isAutoScroll} />
               : <NotApproved />}
-              {/* {devLog('rendering messages in home')} */}
+            {/* {devLog('rendering messages in home')} */}
             <Messages />
           </>
         // 

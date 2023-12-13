@@ -34,7 +34,7 @@ function Status(props) {
 
   const profitAccuracy = user.profit_accuracy;
 
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
 
   const updateUser = () => {
     refreshProfit();
@@ -158,6 +158,7 @@ function Status(props) {
 
       </div>
 
+      {/* {width}_w {height}_h {devicePixelRatio}_dpr {document.body.clientWidth}_dbc {document.body.clientHeight}_dbh */}
     </div>
   )
 }
