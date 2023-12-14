@@ -1,0 +1,414 @@
+#root {
+  max-width : 1280px;
+  margin    : 0 auto;
+  padding   : 2rem;
+  text-align: center;
+}
+
+
+
+@import url('https://fonts.googleapis.com/css2?family=Syne+Mono&display=swap');
+@import "darkTheme.css";
+
+/* === MAIN === */
+
+html {
+  --scrollbarBG: #50575a;
+  --thumbBG    : #41bcc060;
+}
+
+body {
+  background-color: #c7c7b1;
+  overflow        : hidden;
+  background-color: #313131;
+}
+
+.App {
+  background-color: #c7c7b1;
+  font-family     : 'Syne Mono', monospace;
+}
+
+.App.darkTheme {
+  background-color: #313131;
+  color           : white;
+  font-family     : 'Syne Mono', monospace;
+}
+
+.title {
+  background-color: rgb(98, 127, 128);
+  margin          : 0;
+  text-align      : center;
+  border-bottom   : 1px solid black;
+}
+
+.title.darkTheme {
+  /* background-color: rgb(51, 59, 59); */
+  background-color: rgb(33, 36, 36);
+  margin          : 0;
+  text-align      : center;
+  border-bottom   : 1px solid black;
+}
+
+.info {
+  margin: .4rem;
+}
+
+.small {
+  font-size: small;
+}
+
+.right {
+  float: right;
+}
+
+/* === BOXES === */
+
+body,
+.scrollable {
+  overflow-y     : auto;
+  max-height     : 100%;
+  scrollbar-color: var(--thumbBG) var(--scrollbarBG);
+}
+
+body::-webkit-scrollbar,
+.scrollable::-webkit-scrollbar {
+  width: 18px;
+}
+
+body::-webkit-scrollbar-track,
+.scrollable::-webkit-scrollbar-track {
+  background: var(--scrollbarBG);
+}
+
+body::-webkit-scrollbar-thumb,
+.scrollable::-webkit-scrollbar-thumb {
+  background-color: var(--thumbBG);
+  /* border-radius: 6px; */
+  border          : 3px solid var(--scrollbarBG);
+}
+
+@media (max-width: 800px) {
+
+  body,
+  .scrollable {
+    overflow-y     : auto;
+    /* max-height  : unset; */
+    scrollbar-color: var(--thumbBG) var(--scrollbarBG);
+  }
+
+  body::-webkit-scrollbar,
+  .scrollable::-webkit-scrollbar {
+    width: 18px;
+  }
+
+  body::-webkit-scrollbar-track,
+  .scrollable::-webkit-scrollbar-track {
+    background: var(--scrollbarBG);
+  }
+
+  body::-webkit-scrollbar-thumb,
+  .scrollable::-webkit-scrollbar-thumb {
+    background-color: var(--thumbBG);
+    /* border-radius: 6px; */
+    border          : 3px solid var(--scrollbarBG);
+  }
+}
+
+.boxed {
+  border: 1px solid black;
+}
+
+.left-border {
+  /* border-left: #7b7b7b 2px solid; */
+  /* border-top: black 1px solid; */
+  padding-left: .8rem;
+  position    : relative;
+}
+
+.left-border::before,
+.left-border::after {
+  position: absolute;
+  width   : .3rem;
+  height  : 100%;
+  content : "";
+
+  left         : 0;
+  top          : 0;
+  border-left  : 3px solid #7b7b7b;
+  border-top   : 3px solid #7b7b7b;
+  border-bottom: 3px solid #7b7b7b;
+}
+
+.notched {
+  /* css for notched corners taken from https://css-tricks.com/notched-boxes/ */
+  /* this variable is the size of the notch */
+  --notchSize: 1rem;
+  /* clip-path shows whatever is inside the specified region. Everything else is hidden */
+  clip-path  :
+    /* the region is a polygon. 8 points are defined, one for each corner */
+    polygon(0% var(--notchSize), var(--notchSize) 0%,
+      /* to keep corner sizes the same, the position is calculated as the 
+      difference between the notch size (1rem), and the total length of the 
+      side our point is on */
+      calc(100% - var(--notchSize)) 0%, 100% var(--notchSize), 100% calc(100% - var(--notchSize)), calc(100% - var(--notchSize)) 100%, var(--notchSize) 100%, 0% calc(100% - var(--notchSize)));
+  /* 1rem of padding to more than account for the size of the notch */
+  padding: 1rem;
+}
+
+.fit {
+  height: fit-content;
+}
+
+.divider {
+  background-color: black;
+  height          : 1px;
+  width           : 100%;
+  margin-top      : 1rem;
+}
+
+.divider.darkTheme {
+  background-color: rgb(153, 153, 153);
+}
+
+.dark {
+  background-color: darkgrey;
+  border          : none;
+}
+
+.dark.darkTheme {
+  background-color: rgb(70, 70, 70);
+  border          : none;
+}
+
+/* === BUTTONS === */
+
+button.medium {
+  font-size: medium;
+}
+
+.btn-nav {
+  color           : white;
+  font-size       : larger;
+  background-color: #363535;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-nav.selected {
+  color           : black;
+  background-color: #ffffff;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-nav:hover {
+  background-color: #615d5d;
+}
+
+.btn-nav.selected:hover {
+  background-color: #ffffff;
+}
+
+.btn-nav:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: #7e6f67d3;
+}
+
+.btn-nav.selected:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: #ffffff;
+}
+
+.btn-red {
+  background-color: #ec4141;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-red.darkTheme {
+  background-color: #7c3434;
+  color           : #ffffff;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-red:hover {
+  background-color: lightcoral;
+}
+
+.btn-red.darkTheme:hover {
+  background-color: rgb(151, 80, 80);
+}
+
+.btn-red:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: #b8718c81;
+}
+
+.btn-green {
+  background-color: rgb(109, 145, 108);
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-green.darkTheme {
+  color           : #ffffff;
+  background-color: rgb(84, 109, 83);
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-green:hover {
+  background-color: rgb(156, 180, 155);
+}
+
+.btn-green:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: rgba(128, 177, 159, 0.596);
+}
+
+.btn-blue {
+  background-color: rgb(108, 123, 145);
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-blue.darkTheme {
+  color           : #ffffff;
+  background-color: rgb(48, 55, 66);
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-blue:hover {
+  background-color: rgb(155, 160, 180);
+}
+
+.btn-blue:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: #7773b398;
+}
+
+.btn-black {
+  color           : #ffffff;
+  background-color: #4b4b4b;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-black.darkTheme {
+  color           : #ffffff;
+  background-color: #171718;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #65656599, inset -2px -2px #00000099;
+}
+
+.btn-black:hover {
+  background-color: rgb(39, 39, 41);
+}
+
+.btn-black:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: rgba(54, 54, 57, 0.596);
+}
+
+.btn-yellow {
+  background-color: #fff7a0;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-yellow.darkTheme {
+  color           : #d7d7d7;
+  background-color: #360937;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-yellow:hover {
+  background-color: #a0956c;
+}
+
+.btn-yellow.darkTheme:hover {
+  background-color: #5a165b;
+}
+
+.btn-yellow.darkTheme:focus {
+  outline            : none;
+  background-color   : #632364;
+  /* box-shadow      : inset 2px 2px #00000099, inset -2px -2px #ffffff99; */
+}
+
+button:focus:active {
+  /* outline         : none;
+  background-color: #632364; */
+  box-shadow: inset 2px 2px #00000099, inset -2px -2px #ffffff99;
+}
+
+.btn-yellow:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: #afb37398;
+}
+
+.btn-file {
+  margin-bottom: .2rem;
+}
+
+button:active {
+  box-shadow   : inset 2px 2px #00000099, inset -2px -2px #ffffff99;
+  /* box-shadow: inset -2px -2px #ffffff99, inset 2px 2px #00000099; */
+}
+
+/* === INPUTS === */
+
+input {
+  background      : #d1cac0;
+  /* color        : rgb(209, 202, 192); */
+  background-color: #d1cac0;
+  font-family     : inherit;
+  /* width        : 100%; */
+  /* margin       : 0% .2%; */
+}
+
+label span {
+  color: #ab1f1f;
+  color: #c79070;
+}
+
+input.darkTheme {
+  background-color: #919191;
+  font-family     : inherit;
+}
+
+select {
+  color           : #ffffff;
+  background-color: #4b4b4b;
+  font-family     : inherit;
+}
+
+select.darkTheme {
+  color           : #ffffff;
+  background-color: #2b2b2b;
+  font-family     : inherit;
+}
+
+select:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: #6d6d6dd3;
+}
