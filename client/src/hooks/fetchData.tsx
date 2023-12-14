@@ -126,7 +126,7 @@ export function useFetchData(url: string, { defaultState, notNull, noLoad }: Fet
   async function putData(dataToPut: any) {
     try {
       // check if any of the notNull values are null or undefined
-      // console.log(dataToPut, 'putting dataToPut to', url, 'in usePutdataToPut hook')
+      // console.log(dataToPut, 'putting dataToPut to', url, 'in usePutDataToPut hook')
       if (checkFailureCallback()) return;
 
       setIsLoading(true)
@@ -136,10 +136,10 @@ export function useFetchData(url: string, { defaultState, notNull, noLoad }: Fet
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dataToPut)
       })
-      // console.log(response, 'response in usePutdataToPut hook')
+      // console.log(response, 'response in usePutDataToPut hook')
       // check if the response is ok
       if (!response.ok) {
-        console.log(response, 'response not ok in usePutdataToPut hook')
+        console.log(response, 'response not ok in usePutDataToPut hook')
         setIsLoading(false)
         setError(response)
         return
