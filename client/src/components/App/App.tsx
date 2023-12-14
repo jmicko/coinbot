@@ -12,7 +12,7 @@ function App() {
     const { user } = useUser();
     return (
       <div className={`App darkTheme`}>
-        {user.id
+        {user
           ?
           // < DataProvider >
           // < SocketProvider >
@@ -20,7 +20,6 @@ function App() {
           //   </SocketProvider>
           // </DataProvider>
           : <Login />
-          // : <></>
         }
       </div >
     )

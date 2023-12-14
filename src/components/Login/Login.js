@@ -36,7 +36,7 @@ function Login() {
   useEffect(() => {
     // set interval to refresh user every 5 seconds, then clear interval on unmount
     const interval = setInterval(() => {
-      devLog('checking if user looged in')
+      devLog('checking if user logged in')
       refreshUser();
     }, 10000);
     return () => clearInterval(interval);

@@ -1,6 +1,13 @@
 // UserContext.js
 import { createContext, useContext, useEffect, ReactNode } from 'react'
-import { useFetchData } from '../hooks/fetchData.js'
+// import { useFetchData } from '../hooks/fetchData.js'
+import useGetFetch from '../hooks/useGetFetch.js';
+import useDeleteFetch from '../hooks/useDeleteFetch.js';
+
+type User = {
+  theme: string;
+  // other properties...
+};
 
 const UserContext = createContext<any | null>(null)
 
@@ -11,34 +18,45 @@ const userConfig = {
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const {
+    // isLoading: deleteLoading,
+    // error: deleteError,
+    deleteData: deleteYourself
+  } = useDeleteFetch('/api/user');
+
+  const {
     data: user,
     isLoading: userLoading,
     error: userError,
     refresh: refreshUser,
     clear: clearUser,
-    deleteData: deleteYourself
-  } = useFetchData('/api/user', { defaultState: {}, notNull: [], noLoad: false })
+  } = useGetFetch<User | null>(
+    '/api/user',
+    { defaultState: null }
+  );
 
   // infer theme from user object
-  const theme = user.theme;
-  const btnColor = user.theme === 'darkTheme' ? 'btn-black' : 'btn-blue';
+  const theme = user ? user.theme : 'darkTheme';
+  const btnColor = theme === 'darkTheme' ? 'btn-black' : 'btn-blue';
 
-  useEffect(() => {
-    // check if user is an empty object
-    if (user && Object.keys(user).length === 0 && !userLoading && !userError) {
-      refreshUser()
-    }
-  }, [refreshUser, user, userError, userLoading])
+  // useEffect(() => {
+  //     refreshUser()
+  // }, [])
+
+  // useEffect(() => {
+  //   // check if user is an empty object
+  //   if (user && Object.keys(user).length === 0 && !userLoading && !userError) {
+  //     refreshUser()
+  //     console.log('ALERT ALERT ALERT ALERT ALERT EMPTY USER OBJECT ALERT ALERT ALERT ALERT ALERT');
+      
+  //   }
+  // }, [refreshUser, user, userError, userLoading])
 
   async function logout() {
-    // hit the logout POST route
     await fetch('/api/user/logout', { ...userConfig, method: 'POST' })
     clearUser()
   }
 
   async function login(payload: any) {
-    // console.log(payload, 'payload in login')
-    // hit the login POST route
     await fetch('/api/user/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -49,7 +67,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   async function registerNew(payload: any) {
     console.log(payload, 'payload in register')
-    // hit the register POST route
     await fetch('/api/user/register', { headers: { 'Content-Type': 'application/json' }, method: 'POST', body: JSON.stringify(payload) })
     login(payload);
   }
@@ -59,7 +76,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
     <UserContext.Provider
       value={
         {
-          user, takerFee: user.taker_fee, makerFee: user.maker_fee, userLoading, userError,
+          user,
+          // takerFee: user.taker_fee, makerFee: user.maker_fee,
+          userLoading, userError,
           refreshUser, logout, login, registerNew, deleteYourself,
           theme, btnColor
         }

@@ -1,31 +1,31 @@
 import React, { useEffect, useState, FormEvent, ChangeEvent } from 'react';
 import { useUser } from '../../contexts/UserContext.js';
-import { useFetchData } from '../../hooks/fetchData.js';
+// import { useFetchData } from '../../hooks/fetchData.js';
 import './Login.css'
-import useWindowDimensions from '../../hooks/useWindowDimensions.js';
+import useGetFetch from '../../hooks/useGetFetch.js';
+// import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 
 const Login: React.FC = () => {
   const { login, registerNew, refreshUser } = useUser();
 
-  const {width, height} = useWindowDimensions();
+  // const { width, height } = useWindowDimensions();
 
   const [errors, setErrors] = useState({ loginMessage: '', registrationMessage: '' });
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [register, setRegister] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
-  // const errors = useSelector((store) => store.errorsReducer);
+  const [register, setRegister] = useState<boolean>(false);
+  const {
+    refresh: refreshConnection,
+    error: connectionError
+  } = useGetFetch<{ connection: boolean }>(
+    '/api/settings/connection',
+    { defaultState: { connection: false } }
+  );
 
-  // verify that the internet connection is working and that the server is running 
-  // by calling /api/settings/connection, which returns a 200 status code
-  // if the connection is not working, show an error message on the login page
-  const { data: connection, isLoading: connectionLoading, error: connectionError, refresh: refreshConnection }
-    = useFetchData('/api/settings/connection', { defaultState: { connection: false } });
-
-  // if the connection is not working, refresh every 5 seconds
+  // check the connection every 5 seconds
   useEffect(() => {
-    // set interval to refresh connection every 5 seconds, then clear interval on unmount
     const interval = setInterval(() => {
       console.log('checking if connection is working')
       refreshConnection();
@@ -33,16 +33,14 @@ const Login: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-
   useEffect(() => {
-    // set interval to refresh user every 5 seconds, then clear interval on unmount
+    // set interval to refresh user every 10 seconds, then clear interval on unmount
     const interval = setInterval(() => {
-      console.log('checking if user looged in')
+      console.log('checking if user logged in')
       refreshUser();
     }, 10000);
     return () => clearInterval(interval);
   }, []);
-
 
   const loginAccount = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -58,11 +56,11 @@ const Login: React.FC = () => {
 
   const registerAccount = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // console.log('registering new user');
     // send registration stuff
     if (username && password && confirmPassword && (password === confirmPassword)) {
       registerNew({ username, password });
     } else {
+      console.log('registering new user');
       if (password !== confirmPassword) {
         setErrors({ ...errors, registrationMessage: 'Passwords do not match' });
       } else if (!username || !password || !confirmPassword) {
@@ -81,41 +79,74 @@ const Login: React.FC = () => {
   }
 
   const clearErrors = () => {
-    setUsername("");
+    // setUsername("");
     setPassword("");
     setConfirmPassword("");
   }
 
-
   return (
     <div className="Login">
       {register ? <h2>Create New</h2> : <h2>Log In</h2>}
-      <h3>{width} x {height}</h3>
+      {/* <h3>{width} x {height}</h3> */}
       <form className="login-form" onSubmit={register ? registerAccount : loginAccount}>
         <label htmlFor="username">Username:</label>
-        <input type="text" name="username" required onChange={handleInputChange} />
+        <input
+          type="text"
+          name="username"
+          required
+          onChange={handleInputChange}
+          value={username}
+        />
 
-        <label htmlFor="password">Password:</label>
-        <input type="password" name="password" required onChange={handleInputChange} />
+        <label htmlFor="password">
+          Password:
+        </label>
+        <input
+          type="password"
+          name="password"
+          required
+          onChange={handleInputChange}
+          value={password}
+        />
 
-        {register ? (
-        <>
-          <label htmlFor="confirmPassword">Confirm Password:</label>
-          <input type="password" name="confirmPassword" required onChange={handleInputChange} />
-          <input className="btn-blue" type="submit" name="submit" value="Register" />
-          <button className="btn-blue" onClick={() => { setRegister(false); clearErrors(); }}>
-            Back to login
-          </button>
-        </>
-      ) : (
-        <>
-          <input className="btn-blue login-button" type="submit" name="submit" value="Log in" />
-          <button className="btn-blue" onClick={() => { setRegister(true); clearErrors(); }}>
-            Register New
-          </button>
-        </>
-      )}
+        {register ?
+          <>
+            <label htmlFor="confirmPassword">
+              Confirm Password:
+            </label>
+            <input
+              type="password"
+              name="confirmPassword"
+              required
+              onChange={handleInputChange}
+              value={confirmPassword}
+            />
+            <input
+              type="submit"
+              className="btn-blue"
+              name="submit"
+              value="Register >"
+            />
+          </>
+          : (<input
+            className="btn-blue login-button"
+            type="submit"
+            name="submit"
+            value="Log In >" />)}
+        <button className="btn-blue" onClick={(e) => { e.preventDefault(); setRegister(!register); clearErrors(); }}>
+          {register ? '< Back to Log In' : 'Register New'}
+        </button>
       </form>
+
+      {connectionError && <div className='error-box notched'>
+        <p>Connection Error</p>
+      </div>}
+      {(errors.loginMessage || errors.registrationMessage) &&
+        <div className='error-box notched'>
+          {errors.loginMessage && <p>{errors.loginMessage}</p>}
+          {errors.registrationMessage && <p>{errors.registrationMessage}</p>}
+        </div>
+      }
     </div>
   );
 }
