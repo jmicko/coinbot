@@ -1,0 +1,45 @@
+.Menu {
+    grid-column      : 4/5;
+    grid-row         : 2;
+    /* display       : block; */
+    /* display       : flex; */
+    /* flex-direction: row; */
+    width            : max-content;
+}
+
+.greeting {
+    margin: auto 1rem;
+}
+
+.menu-buttons {
+    margin: auto 1rem;
+}
+
+.toggle {
+    background-color: #b34053;
+    width           : 10rem;
+    height          : 10rem;
+    font-size       : xx-large;
+}
+
+@media (max-width: 800px) {
+    .Menu {
+        grid-column   : 2;
+        grid-row      : 2;
+        /* display    : block; */
+        display       : flex;
+        flex-direction: row;
+        /* margin     : auto auto auto 0; */
+        width         : 100%;
+    }
+
+    .greeting {
+        margin      : auto 1rem;
+        margin-right: auto;
+    }
+
+    .menu-buttons {
+        margin-left : auto;
+        margin-right: 0;
+    }
+}

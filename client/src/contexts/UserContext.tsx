@@ -25,6 +25,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const {
     data: user,
+    setData: setUser,
     isLoading: userLoading,
     error: userError,
     refresh: refreshUser,
@@ -47,7 +48,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   //   if (user && Object.keys(user).length === 0 && !userLoading && !userError) {
   //     refreshUser()
   //     console.log('ALERT ALERT ALERT ALERT ALERT EMPTY USER OBJECT ALERT ALERT ALERT ALERT ALERT');
-      
+
   //   }
   // }, [refreshUser, user, userError, userLoading])
 
@@ -57,12 +58,25 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }
 
   async function login(payload: any) {
-    await fetch('/api/user/login', {
+    console.log(userLoading, 'userLoading before login', userError, 'userError before ...');
+    const response = await fetch('/api/user/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
-    refreshUser()
+    if (response.ok) {
+      const userData = await response.json();
+      // Save userData somewhere (e.g., in state or context)
+      setUser(userData);
+    } else {
+      console.log('Login failed');
+    }
+    console.log(user, response, 'logged in user, refreshing user');
+    console.log(userLoading, 'userLoading', userError, 'userError');
+    // clearUser();
+    // setTimeout(() => {
+      // refreshUser();
+    // }, 1000);
   }
 
   async function registerNew(payload: any) {

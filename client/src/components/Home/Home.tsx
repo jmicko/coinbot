@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 
 // import Trade from '../Trade/Trade.js';
 // import Messages from '../Messages/Messages.js';
-// import Menu from '../Menu/Menu.js';
+import Menu from '../Menu/Menu.js';
 // import TradeList from '../TradeList/TradeList.js';
 // import Status from '../Status/Status.js';
 // import Settings from '../Settings/Settings.js';
@@ -44,7 +44,7 @@ function Home() {
         // width: width
       }}>
       {/* {JSON.stringify(socket.product)}{JSON.stringify(product)} */}
-      {/* <Menu clickSettings={clickSettings} /> */}
+      <Menu clickSettings={clickSettings} />
 
       {/* {width}w {height}h */}
       {

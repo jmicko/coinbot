@@ -25,7 +25,7 @@ const app = express();
 const server = http.createServer(app);
 const options = {
   cors: {
-    origin: ["http://localhost:3000"]
+    origin: ["http://localhost:3000","http://localhost:5173" ]
   }
 };
 // Body parsing middlewares

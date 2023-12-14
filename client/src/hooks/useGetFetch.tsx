@@ -14,7 +14,9 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
 
     setIsLoading(true);
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        credentials: 'include', // Include credentials here
+      });
 
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
@@ -46,6 +48,7 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
 
   return {
     data,
+    setData,
     isLoading,
     error,
     refresh: fetchData,

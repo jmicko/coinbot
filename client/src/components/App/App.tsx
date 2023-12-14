@@ -12,6 +12,7 @@ function App() {
     const { user } = useUser();
     return (
       <div className={`App darkTheme`}>
+        {/* the user: {JSON.stringify(user)} */}
         {user
           ?
           // < DataProvider >

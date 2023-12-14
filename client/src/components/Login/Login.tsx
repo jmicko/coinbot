@@ -27,25 +27,25 @@ const Login: React.FC = () => {
   // check the connection every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      console.log('checking if connection is working')
-      refreshConnection();
+      // console.log('checking if connection is working')
+      // refreshConnection();
     }, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    // set interval to refresh user every 10 seconds, then clear interval on unmount
-    const interval = setInterval(() => {
-      console.log('checking if user logged in')
-      refreshUser();
-    }, 10000);
-    return () => clearInterval(interval);
-  }, []);
+  // useEffect(() => {
+  //   // set interval to refresh user every 10 seconds, then clear interval on unmount
+  //   const interval = setInterval(() => {
+  //     console.log('checking if user logged in')
+  //     refreshUser();
+  //   }, 10000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   const loginAccount = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // send login credentials
-    // console.log('logging in user');
+    console.log(username, password, 'logging in user');
     if (username && password) {
       login({ username, password });
     } else {

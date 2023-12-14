@@ -1,18 +1,10 @@
-// const express = require('express');
 import express from 'express';
-// const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
-// const { userCount } = require('../modules/userCount-middleware');
 import { userCount } from '../modules/userCount-middleware.js';
-// const encryptLib = require('../modules/encryption');
 import encryptLib from '../modules/encryption.js';
-// const pool = require('../modules/pool');
 import { pool } from '../modules/pool.js';
-// const userStrategy = require('../strategies/user.strategy');
 import userStrategy from '../strategies/user.strategy.js';
-// const robot = require('../modules/robot');
 import { robot } from '../modules/robot.js';
-// const databaseClient = require('../modules/databaseClient');
 import { databaseClient } from '../modules/databaseClient.js';
 import { userStorage, messenger } from '../modules/cache.js';
 import { devLog } from '../modules/utilities.js';
@@ -169,9 +161,41 @@ router.post('/register', userCount, async (req, res, next) => {
 // userStrategy.authenticate('local') is middleware that we run on this route
 // this middleware will run our POST if successful
 // this middleware will send a 401 if not successful
-router.post('/login', userStrategy.authenticate('local'), (req, res) => {
-  devLog('in login route');
-  res.sendStatus(200);
+router.post('/login', userStrategy.authenticate('local'), async (req, res) => {
+  devLog(req.user, 'in login route');
+  // res.sendStatus(200);
+  try {
+    const botSettings = await databaseClient.getBotSettings();
+    req.user.botMaintenance = botSettings.maintenance;
+    req.user.botSettings = botSettings;
+
+    // const URI = cache.getAPI(req.user.id).API_URI;
+    req.user.sandbox = false
+    //  (URI === 'https://api-public.sandbox.exchange.coinbase.com')
+    // ? true
+    // : false
+
+    // get available funds from userStorage
+    const availableFunds = userStorage[req.user.id].getAvailableFunds();
+    devLog('availableFunds', availableFunds);
+    req.user.availableFunds = availableFunds;
+
+    // get exporting value from userStorage
+    const exporting = userStorage[req.user.id].exporting;
+    req.user.exporting = exporting;
+
+    // get simulating value from userStorage
+    const simulating = userStorage[req.user.id].simulating;
+    req.user.simulating = simulating;
+
+    // devLog('simulating', req.user);
+
+  } catch (err) {
+    devLog(err, 'error in user route');
+  }
+  // devLog('user', req.user)
+  // Send back user object from the session (previously queried from the database)
+  res.status(200).send(req.user);
 });
 
 // clear all server session information about this user
