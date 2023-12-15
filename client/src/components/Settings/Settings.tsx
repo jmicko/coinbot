@@ -16,7 +16,7 @@ import Draggable from '../Draggable/Draggable';
 import './Settings.css'
 
 
-function Settings(props) {
+function Settings() {
   const [settingsPage, setSettingsPage] = useState('general');
   const [tips, setTips] = useState(false);
   const { theme } = useUser();
@@ -51,6 +51,7 @@ function Settings(props) {
   function SettingsPanel({ Dragger, collapseParent }: { Dragger: React.ComponentType<any>, collapseParent: boolean }) {
     return (
       <>
+      h
         <Dragger
           text={'Settings'}
 

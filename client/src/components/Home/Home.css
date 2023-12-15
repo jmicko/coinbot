@@ -1,0 +1,42 @@
+.Home {
+  display              : grid;
+  /* this is STRICTLY A BUSINESS ROBOT, and the color should reflect that! */
+  grid-template-columns: 0fr min-content 4fr max-content 0fr;
+  gap                  : .4rem;
+  grid-template-rows   : 0fr auto min-content 1fr;
+  /* height               : 100vh; */
+  width                : 100vw;
+  background-color     : #c7c7b1;
+  color                : #000000;
+}
+
+.Home.darkTheme {
+  background-color: #313131;
+  color           : #ffffff;
+}
+
+.header {
+  display         : none;
+  grid-column     : 1/6;
+  grid-row        : 1;
+  background-color: #000000;
+  text-align      : center;
+  align-items     : center;
+  font-size       : calc(9px + 2vmin);
+  color           : white;
+}
+
+@media (max-width: 800px) {
+  .Home {
+    /* height               : 90vh; */
+    /* this is STRICTLY A BUSINESS ROBOT, and the color should reflect that! */
+    grid-template-columns: 0fr auto 0fr;
+    grid-template-rows   : min-content min-content min-content min-content;
+  }
+}
+
+@media (max-width: 800px) and (display-mode: standalone) {
+  .Home {
+    height: 100vh;
+  }
+}

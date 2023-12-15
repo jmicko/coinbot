@@ -1,0 +1,32 @@
+.TradeList {
+    grid-row     : 3 / 5;
+    grid-column  : 3 / 5;
+    display      : block;
+}
+
+@media (max-width: 800px) {
+    .TradeList {
+        grid-row        : 5;
+        grid-column     : 2;
+        margin-bottom   : .4rem;
+    }
+
+}
+
+.live-price{
+    display: flex;
+    align-items: center;
+}
+
+.coinbot-image {
+    height          : 5rem;
+    background-color: transparent;
+}
+
+.robot {
+    display        : flex;
+    justify-content: space-evenly;
+    align-items    : center;
+    max-width      : 40rem;
+    margin         : auto;
+}

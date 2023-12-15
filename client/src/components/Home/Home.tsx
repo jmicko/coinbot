@@ -4,15 +4,15 @@ import { useState } from 'react';
 // import Trade from '../Trade/Trade.js';
 // import Messages from '../Messages/Messages.js';
 import Menu from '../Menu/Menu.js';
-// import TradeList from '../TradeList/TradeList.js';
+import TradeList from '../TradeList/TradeList';
 // import Status from '../Status/Status.js';
 import Settings from '../Settings/Settings';
 // import NotApproved from '../NotApproved/NotApproved.js';
 // import NotActive from '../NotActive/NotActive.js';
 // import MobileNav from '../MobileNav/MobileNav.js';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
-import { useUser } from '../../contexts/UserContext.js';
-import { useData } from '../../contexts/DataContext.js';
+import { useUser } from '../../contexts/UserContext';
+import { useData } from '../../contexts/DataContext';
 // import { devLog } from '../../shared.js';
 
 function Home() {
@@ -31,10 +31,6 @@ function Home() {
     setIsAutoScroll(!isAutoScroll);
   };
 
-  // const clickSettings = () => {
-  //   setShowSettings(!showSettings);
-  // }
-
   return (
     <div
       className={`Home ${user.theme}`}
@@ -42,6 +38,7 @@ function Home() {
         height: height,
         // width: width
       }}>
+        {JSON.stringify(user)}
       {/* {JSON.stringify(socket.product)}{JSON.stringify(product)} */}
       <Menu />
 
@@ -61,8 +58,8 @@ function Home() {
             : mobilePage === 'tradeList'
               // is the user approved
               ? user.approved
-                // ? <TradeList isAutoScroll={isAutoScroll} />
-                ? <></>
+                ? <TradeList isAutoScroll={isAutoScroll} />
+                // ? <></>
                 // : <NotApproved />
                 : <></>
               // : mobilePage === 'messages' && <Messages />
@@ -77,8 +74,8 @@ function Home() {
               : <></>
             }
             {user.approved
-              // ? <TradeList isAutoScroll={isAutoScroll} />
-              ? <></>
+              ? <TradeList isAutoScroll={isAutoScroll} />
+              // ? <></>
               // : <NotApproved />
               : <></>
             }
@@ -93,10 +90,7 @@ function Home() {
         isAutoScroll={isAutoScroll}
         handleAutoScrollChange={handleAutoScrollChange}
       /> */}
-      <Settings
-        // showSettings={showSettings}
-        // clickSettings={clickSettings}
-      />
+      <Settings />
       {/* {width < 800 && <MobileNav setMobilePage={setMobilePage} />} */}
     </div>
   );
