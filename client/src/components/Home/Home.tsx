@@ -6,7 +6,7 @@ import { useState } from 'react';
 import Menu from '../Menu/Menu.js';
 // import TradeList from '../TradeList/TradeList.js';
 // import Status from '../Status/Status.js';
-// import Settings from '../Settings/Settings.js';
+import Settings from '../Settings/Settings';
 // import NotApproved from '../NotApproved/NotApproved.js';
 // import NotActive from '../NotActive/NotActive.js';
 // import MobileNav from '../MobileNav/MobileNav.js';
@@ -92,11 +92,11 @@ function Home() {
       {/* <Status
         isAutoScroll={isAutoScroll}
         handleAutoScrollChange={handleAutoScrollChange}
-      />
-      <Settings
-        showSettings={showSettings}
-        clickSettings={clickSettings}
       /> */}
+      <Settings
+        // showSettings={showSettings}
+        // clickSettings={clickSettings}
+      />
       {/* {width < 800 && <MobileNav setMobilePage={setMobilePage} />} */}
     </div>
   );

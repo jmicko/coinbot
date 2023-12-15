@@ -1,0 +1,55 @@
+/* === MAIN === */
+
+.Settings {
+  display         : block;
+  grid-column     : 1/5;
+  grid-row        : 3/5;
+  background-color: #acacaf;
+  z-index         : 1;
+  height          : fit-content;
+  width           : 100%;
+  max-width       : 50rem;
+  margin          : 0 auto;
+  padding         : 1rem;
+  border-radius   : .25rem;
+}
+
+.Settings.darkTheme {
+  color: rgb(215, 215, 215);
+  background-color: rgb(41, 41, 41);
+}
+
+@media (max-width: 800px) {
+  .Settings {
+    display    : block;
+    grid-column: 2;
+    grid-row   : 2/6;
+    width: fit-content;
+    /* height  : unset; */
+
+  }
+
+  .settings-panel {
+    max-height: 60vh;
+  }
+}
+
+.settings-header {
+  text-align: center;
+}
+
+.settings-panel {
+  max-height: 65vh;
+}
+
+.tips {
+float: right;
+/* width should maximize content */
+width: max-content;
+}
+
+.close-settings {
+  /* height should match the width */
+  height: 1.5rem;
+  width: 1.5rem;
+}
