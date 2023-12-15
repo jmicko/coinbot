@@ -6,20 +6,17 @@ import useDeleteFetch from '../hooks/useDeleteFetch.js';
 
 type User = {
   theme: string;
+  taker_fee: number;
+  maker_fee: number;
   // other properties...
 };
 
 const UserContext = createContext<any | null>(null)
 
-const userConfig = {
-  headers: { 'Content-Type': 'application/json' },
-  withCredentials: true,
-};
-
 export function UserProvider({ children }: { children: ReactNode }) {
   const {
-    // isLoading: deleteLoading,
-    // error: deleteError,
+    isLoading: deleteLoading,
+    error: deleteError,
     deleteData: deleteYourself
   } = useDeleteFetch('/api/user');
 
@@ -53,7 +50,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
   // }, [refreshUser, user, userError, userLoading])
 
   async function logout() {
-    await fetch('/api/user/logout', { ...userConfig, method: 'POST' })
+    await fetch('/api/user/logout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    })
     clearUser()
   }
 
@@ -66,17 +67,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
     })
     if (response.ok) {
       const userData = await response.json();
-      // Save userData somewhere (e.g., in state or context)
       setUser(userData);
     } else {
       console.log('Login failed');
     }
     console.log(user, response, 'logged in user, refreshing user');
     console.log(userLoading, 'userLoading', userError, 'userError');
-    // clearUser();
-    // setTimeout(() => {
-      // refreshUser();
-    // }, 1000);
   }
 
   async function registerNew(payload: any) {
@@ -91,8 +87,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       value={
         {
           user,
-          // takerFee: user.taker_fee, makerFee: user.maker_fee,
-          userLoading, userError,
+          takerFee: user?.taker_fee, makerFee: user?.maker_fee,
+          userLoading, userError, deleteLoading, deleteError,
           refreshUser, logout, login, registerNew, deleteYourself,
           theme, btnColor
         }

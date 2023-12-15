@@ -6,7 +6,7 @@ type FetchDataOptions<T> = {
 
 const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
   const [data, setData] = useState<T>(options.defaultState);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchData = async () => {
@@ -22,7 +22,6 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
         throw new Error(`Error: ${response.status}`);
       }
       const data: T = await response.json();
-      console.log(data, 'response after fetching data');
       setData(data);
       setError(null);
     } catch (exception) {

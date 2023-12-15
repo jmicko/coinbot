@@ -8,43 +8,33 @@ import Login from '../Login/Login';
 function App() {
 
   function CheckUser() {
+    const { user, userLoading } = useUser();
 
-    const { user } = useUser();
-    return (
-      <div className={`App darkTheme`}>
-        {/* the user: {JSON.stringify(user)} */}
-        {user
-          ?
-          // < DataProvider >
-          // < SocketProvider >
-          <Home />
-          //   </SocketProvider>
-          // </DataProvider>
-          : <Login />
-        }
-      </div >
-    )
+    if (userLoading) {
+      return <center>Loading...</center>;
+    }
+    if (user) {
+      return (
+        // < DataProvider >
+        // < SocketProvider >
+        <Home />
+        //   </SocketProvider>
+        // </DataProvider>
+      )
+    } else {
+      return (
+        <Login />
+      )
+    }
   }
 
   return (
-    <UserProvider >
-      <CheckUser />
-    </UserProvider>
-
-
-    // <div className={`App darkTheme`}>
-    //   < UserProvider >
-    //     {user.id
-    //       ? < DataProvider >
-    //         < SocketProvider >
-    //           <Home />
-    //         </SocketProvider>
-    //       </DataProvider>
-    //       : <Login />
-    //     }
-    //   </UserProvider>
-    // </div >
+    <div className={`App darkTheme`}>
+      <UserProvider >
+        <CheckUser />
+      </UserProvider>
+    </div >
   );
 }
 
-export default App
+export default App;
