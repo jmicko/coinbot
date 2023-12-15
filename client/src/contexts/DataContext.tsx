@@ -14,6 +14,7 @@ const DataContext = createContext<any | null>(null)
 export function DataProvider({ children }: { children: ReactNode }) {
   // devLog('DataProvider rendering ***************');
   // state for this context
+  const [showSettings, setShowSettings] = useState(false);
   const [productID, setProductID] = useState('BTC-USD');
   // user
   const { user, refreshUser } = useUser();
@@ -28,20 +29,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
   /////////////////////////
 
   // ACCOUNT ROUTES
-  const { data: products, refresh: refreshProducts,
-    // updateRefreshData: toggleActiveProduct
-  }
-    = useGetFetch('/api/account/products', { defaultState: {} })
+  const {
+    data: products,
+    refresh: refreshProducts,
+    // updateRefreshData: toggleActiveProduct,
+  } = useGetFetch('/api/account/products', { defaultState: {} })
   // get the profits for the selected product
-  const { data: profit, refresh: refreshProfit,
-    // updateData: resetProfit
-  }
-    = useGetFetch(`/api/account/profit/${productID}`, { defaultState: [] })
+  const { data: profit,
+    refresh: refreshProfit,
+    // updateData: resetProfit,
+  } = useGetFetch(`/api/account/profit/${productID}`, { defaultState: [] })
   // get messages sent from the bot
-  const { data: messages, refresh: refreshBotMessages,
-    // createRefreshData: sendChat
-  }
-    = useGetFetch(`/api/account/messages`, { defaultState: { botMessages: [], chatMessages: [] } })
+  const {
+    data: messages,
+    refresh: refreshBotMessages,
+    // createRefreshData: sendChat,
+  } = useGetFetch(`/api/account/messages`, { defaultState: { botMessages: [], chatMessages: [] } })
 
   // // AVAILABLE FUNDS
   const availableBase = user.availableFunds?.[productID]?.base_available;
@@ -114,6 +117,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     <DataContext.Provider
       value={
         {
+          // SETTINGS
+          showSettings, setShowSettings,
           // // ACCOUNT
           profit, refreshProfit,
           // resetProfit, 

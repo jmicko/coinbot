@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 // import './Home.css';
 
 // import Trade from '../Trade/Trade.js';
@@ -12,6 +12,7 @@ import Menu from '../Menu/Menu.js';
 // import MobileNav from '../MobileNav/MobileNav.js';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
 import { useUser } from '../../contexts/UserContext.js';
+import { useData } from '../../contexts/DataContext.js';
 // import { devLog } from '../../shared.js';
 
 function Home() {
@@ -19,7 +20,7 @@ function Home() {
   const { width, height } = useWindowDimensions();
   const { user } = useUser();
 
-  const [showSettings, setShowSettings] = useState(false);
+  const { showSettings } = useData();
   const [mobilePage, setMobilePage] = useState('tradeList');
   const [tradeType, setTradeType] = useState('pair');
 
@@ -30,11 +31,9 @@ function Home() {
     setIsAutoScroll(!isAutoScroll);
   };
 
-
-
-  const clickSettings = () => {
-    setShowSettings(!showSettings);
-  }
+  // const clickSettings = () => {
+  //   setShowSettings(!showSettings);
+  // }
 
   return (
     <div
@@ -44,7 +43,7 @@ function Home() {
         // width: width
       }}>
       {/* {JSON.stringify(socket.product)}{JSON.stringify(product)} */}
-      <Menu clickSettings={clickSettings} />
+      <Menu />
 
       {/* {width}w {height}h */}
       {
