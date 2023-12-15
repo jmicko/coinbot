@@ -1,9 +1,9 @@
-import { useState } from 'react'
 import './App.css'
 // Directory imports
 import { UserProvider, useUser } from '../../contexts/UserContext';
 import Home from '../Home/Home';
 import Login from '../Login/Login';
+import { DataProvider } from '../../contexts/DataContext';
 
 function App() {
 
@@ -15,11 +15,11 @@ function App() {
     }
     if (user) {
       return (
-        // < DataProvider >
-        // < SocketProvider >
-        <Home />
-        //   </SocketProvider>
-        // </DataProvider>
+        < DataProvider >
+          {/* < SocketProvider > */}
+            <Home />
+          {/* </SocketProvider> */}
+        </DataProvider>
       )
     } else {
       return (
