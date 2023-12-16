@@ -64,9 +64,9 @@ router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
         granularity: 'ONE_MINUTE'
       });
 
-      devLog(startDate, endDate)
+      // devLog(startDate, endDate)
 
-      devLog(marketCandles);
+      // devLog(marketCandles);
 
 
 

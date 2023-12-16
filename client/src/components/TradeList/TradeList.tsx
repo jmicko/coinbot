@@ -24,21 +24,21 @@ function TradeList(props: { isAutoScroll: boolean }) {
   const [lowestSell, setLowestSell] = useState(0);
 
 
-  // // this watches the store and maps arrays to html when it changes because can't map nothing
-  // useEffect(() => {
-  //   if (orders.sells !== undefined) {
-  //     setLowestSell(Number(orders.sells[0]?.limit_price || 0))
-  //     setSells(orders.sells.slice(0).reverse().map((sell: Order) => {
-  //       return <SingleTrade key={sell.order_id} order={sell} preview={false} />
-  //     }))
-  //   }
-  //   if (orders.buys !== undefined) {
-  //     setHighestBuy(Number(orders.buys[0]?.limit_price || 0))
-  //     setBuys(orders.buys.map((buy: Order) => {
-  //       return <SingleTrade key={buy.order_id} order={buy} preview={false} />
-  //     }))
-  //   }
-  // }, [orders, orders.sells, orders.buys]);
+  // this watches the store and maps arrays to html when it changes because can't map nothing
+  useEffect(() => {
+    if (orders.sells !== undefined) {
+      setLowestSell(Number(orders.sells[0]?.limit_price || 0))
+      setSells(orders.sells.slice(0).reverse().map((sell: Order) => {
+        return <SingleTrade key={sell.order_id} order={sell} preview={false} />
+      }))
+    }
+    if (orders.buys !== undefined) {
+      setHighestBuy(Number(orders.buys[0]?.limit_price || 0))
+      setBuys(orders.buys.map((buy: Order) => {
+        return <SingleTrade key={buy.order_id} order={buy} preview={false} />
+      }))
+    }
+  }, [orders, orders.sells, orders.buys]);
 
   // set the canScrollRef to the value of props.isAutoScroll
   useEffect(() => {
@@ -59,7 +59,7 @@ function TradeList(props: { isAutoScroll: boolean }) {
   return (
     <div className="TradeList scrollable boxed">
       {/* map the sell array on top and buy array on bottom */}
-      {/* {sells} */}
+      {sells}
       <div className='robot' ref={robotRef}>
 
         <div className='live-price'>
@@ -96,7 +96,7 @@ function TradeList(props: { isAutoScroll: boolean }) {
         }
       </div>
       {/* {JSON.stringify(orders)} */}
-      {/* {buys} */}
+      {buys}
     </div>
   )
 }

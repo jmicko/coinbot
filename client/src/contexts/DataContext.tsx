@@ -15,7 +15,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // devLog('DataProvider rendering ***************');
   // state for this context
   const [showSettings, setShowSettings] = useState(false);
-  const [productID, setProductID] = useState('BTC-USD');
+  const [productID, setProductID] = useState('DOGE-USD');
   // user
   const { user, refreshUser } = useUser();
   // sockets
@@ -58,15 +58,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // //////// ORDERS ////////
   // ////////////////////////
 
-  // // ORDERS ROUTES - for management of orders that are stored in the database
-  // // delete range will take an array with the start and end values. deleteAllForProduct will take nothing?
-  // const { data: orders, refresh: refreshOrders, createRefreshData: createOrderPair, deleteRefreshData: deleteRangeForProduct }
-  //   = useFetchData(`/api/orders/${productID}`, { defaultState: {}, notNull: [productID] })
-  // const { updateData: syncOrders, deleteData: deleteOrderNoRefresh, deleteData: deleteAllNoRefresh }
-  //   = useFetchData(`/api/orders`, { defaultState: {}, noLoad: true })
+  // ORDERS ROUTES - for management of orders that are stored in the database
+  // delete range will take an array with the start and end values. deleteAllForProduct will take nothing?
+  const {
+    data: orders,
+    refresh: refreshOrders,
+    // createRefreshData: createOrderPair,
+    // deleteRefreshData: deleteRangeForProduct
+  }
+    = useGetFetch(`/api/orders/${productID}`, { defaultState: {}, })
+  const {
+    // updateData: syncOrders,
+    // deleteData: deleteOrderNoRefresh,
+    // deleteData: deleteAllNoRefresh
+  }
+    = useGetFetch(`/api/orders`, { defaultState: {}, })
 
-  // // ORDERS FUNCTIONS
-  // // combine delete and refresh into one function because they hit different routes
+  // ORDERS FUNCTIONS
+  // combine delete and refresh into one function because they hit different routes
   // const deleteOrder = async (orderID) => { await deleteOrderNoRefresh(orderID); refreshOrders() }
   // const deleteAll = async () => { await deleteAllNoRefresh(); refreshOrders() }
 
@@ -119,24 +128,32 @@ export function DataProvider({ children }: { children: ReactNode }) {
         {
           // SETTINGS
           showSettings, setShowSettings,
+
           // // ACCOUNT
           profit, refreshProfit,
           // resetProfit, 
           availableBase, availableQuote,
+
           // // products
           products,// currentProduct, 
           productID, setProductID, refreshProducts,
           // toggleActiveProduct,
+
           // // messages
           messages, refreshBotMessages,
           // botErrors, refreshBotErrors, sendChat,
+
           // // ORDERS
-          // orders, refreshOrders, createMarketTrade, createOrderPair, syncPair, syncOrders,
+          orders, refreshOrders, 
+          // createMarketTrade, createOrderPair, syncPair, syncOrders,
           // deleteOrder, deleteRangeForProduct, deleteAll,
+
           // // TRADE
           // exportableFiles, refreshExportableFiles,
+
           // // SETTINGS
           // pause, killLock, setTheme, sendTradeLoadMax, updateProfitAccuracy, sendSyncQuantity,
+          
           // SOCKETS
           coinbotSocket, setCoinbotSocket, socketStatus, setSocketStatus, deadCon
         }

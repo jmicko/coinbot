@@ -38,7 +38,7 @@ function Home() {
         height: height,
         // width: width
       }}>
-        {JSON.stringify(user)}
+        {/* {JSON.stringify(user)} */}
       {/* {JSON.stringify(socket.product)}{JSON.stringify(product)} */}
       <Menu />
 
