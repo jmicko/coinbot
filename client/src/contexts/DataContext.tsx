@@ -1,4 +1,4 @@
-// DataContext.js
+// DataContext.ts
 import {
   createContext,
   // useCallback,
@@ -8,6 +8,7 @@ import useGetFetch from '../hooks/useGetFetch.js';
 import useDeleteFetch from '../hooks/useDeleteFetch.js';
 // import { addProductDecimals } from '../shared.js';
 import { useUser } from './UserContext.js';
+import usePutFetch from '../hooks/usePutFetch.js';
 // import { devLog } from '../shared.js';
 const DataContext = createContext<any | null>(null)
 
@@ -33,18 +34,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
     data: products,
     refresh: refreshProducts,
     // updateRefreshData: toggleActiveProduct,
-  } = useGetFetch('/api/account/products', { defaultState: {} })
+  } = useGetFetch('/api/account/products', { defaultState: {}, preload: true })
   // get the profits for the selected product
   const { data: profit,
     refresh: refreshProfit,
     // updateData: resetProfit,
-  } = useGetFetch(`/api/account/profit/${productID}`, { defaultState: [] })
+  } = useGetFetch(`/api/account/profit/${productID}`, { defaultState: [], preload: true })
   // get messages sent from the bot
   const {
     data: messages,
     refresh: refreshBotMessages,
     // createRefreshData: sendChat,
-  } = useGetFetch(`/api/account/messages`, { defaultState: { botMessages: [], chatMessages: [] } })
+  } = useGetFetch(`/api/account/messages`, {
+    defaultState: { botMessages: [], chatMessages: [] },
+    preload: true
+  })
 
   // // AVAILABLE FUNDS
   const availableBase = user.availableFunds?.[productID]?.base_available;
@@ -63,17 +67,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const {
     data: orders,
     refresh: refreshOrders,
+    setData: setOrders,
     // createRefreshData: createOrderPair,
     // deleteRefreshData: deleteRangeForProduct
-  }
-    = useGetFetch(`/api/orders/${productID}`, { defaultState: {}, })
+  } = useGetFetch(`/api/orders/${productID}`, { defaultState: {}, preload: true })
   const {
-    // updateData: syncOrders,
+    putData: syncOrders,
     // deleteData: deleteOrderNoRefresh,
     // deleteData: deleteAllNoRefresh
-  }
-    = useGetFetch(`/api/orders`, { defaultState: {}, })
+  } = usePutFetch({ url: `/api/orders`, })
 
+  const deleteOrder = async (orderID: string) => {
+    const { deleteData } = useDeleteFetch({ url: `/api/orders/${orderID}`, })
+    await deleteData();
+    refreshOrders();
+  }
   // ORDERS FUNCTIONS
   // combine delete and refresh into one function because they hit different routes
   // const deleteOrder = async (orderID) => { await deleteOrderNoRefresh(orderID); refreshOrders() }
@@ -144,16 +152,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
           // botErrors, refreshBotErrors, sendChat,
 
           // // ORDERS
-          orders, refreshOrders, 
-          // createMarketTrade, createOrderPair, syncPair, syncOrders,
-          // deleteOrder, deleteRangeForProduct, deleteAll,
+          orders, refreshOrders,
+          // createMarketTrade, createOrderPair, syncPair, 
+          syncOrders, // does this still realistically get used?
+          deleteOrder, 
+          // deleteRangeForProduct,
+          // deleteAll,
 
           // // TRADE
           // exportableFiles, refreshExportableFiles,
 
           // // SETTINGS
           // pause, killLock, setTheme, sendTradeLoadMax, updateProfitAccuracy, sendSyncQuantity,
-          
+
           // SOCKETS
           coinbotSocket, setCoinbotSocket, socketStatus, setSocketStatus, deadCon
         }

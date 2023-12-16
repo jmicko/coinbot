@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 
 type FetchDataOptions<T> = {
   defaultState: T;
+  preload: boolean;
 };
 
 const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
@@ -42,8 +43,8 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
   }
 
   useEffect(() => {
-    fetchData();
-  }, [url]);
+    options.preload && fetchData();
+  }, []);
 
   return {
     data,

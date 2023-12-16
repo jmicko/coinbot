@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, } from 'react';
+import { useEffect, useState, useRef, } from 'react';
 // import { useSocket } from '../../contexts/SocketProvider';
 import SingleTrade from '../SingleTrade/SingleTrade'
 import coinbotFilled from "../../../src/coinbotFilled.png";
@@ -71,17 +71,23 @@ function TradeList(props: { isAutoScroll: boolean }) {
           /> */}
           <div>
 
-            {/* {lowestSell !== 0 && highestBuy >= 0
-              ? <p className='price'>&#9650; ${(lowestSell - currentPrice).toFixed(2)}
+            {lowestSell !== 0 && highestBuy >= 0
+              ? <p className='price'>&#9650; ${
+                // (lowestSell - currentPrice).toFixed(2)
+              }
                 <br />
                 <span className={`green ${theme}`} >
-                  {`>`} ${Number(currentPrice).toFixed(2)} {`<`}
+                  {`>`} ${
+                    // Number(currentPrice).toFixed(2)
+                  } {`<`}
                 </span>
                 <br />
-                &#9660; ${(currentPrice - highestBuy).toFixed(2)}
+                &#9660; ${
+                  // (currentPrice - highestBuy).toFixed(2)
+                }
               </p>
               : <p>No Sells!</p>
-            } */}
+            }
           </div>
         </div>
 

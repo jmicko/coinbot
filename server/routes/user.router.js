@@ -74,7 +74,7 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
   } catch (err) {
     devLog(err, 'error in user route');
   }
-  // devLog('user', req.user)
+  devLog('user', req.user, 'user in get user route')
   // Send back user object from the session (previously queried from the database)
   res.send(req.user);
 });
@@ -168,12 +168,7 @@ router.post('/login', userStrategy.authenticate('local'), async (req, res) => {
     const botSettings = await databaseClient.getBotSettings();
     req.user.botMaintenance = botSettings.maintenance;
     req.user.botSettings = botSettings;
-
-    // const URI = cache.getAPI(req.user.id).API_URI;
     req.user.sandbox = false
-    //  (URI === 'https://api-public.sandbox.exchange.coinbase.com')
-    // ? true
-    // : false
 
     // get available funds from userStorage
     const availableFunds = userStorage[req.user.id].getAvailableFunds();
@@ -193,7 +188,7 @@ router.post('/login', userStrategy.authenticate('local'), async (req, res) => {
   } catch (err) {
     devLog(err, 'error in user route');
   }
-  // devLog('user', req.user)
+  devLog('user', req.user, 'user in LOGIN ROUTE')
   // Send back user object from the session (previously queried from the database)
   res.status(200).send(req.user);
 });

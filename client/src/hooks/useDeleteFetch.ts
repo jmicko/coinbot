@@ -1,6 +1,12 @@
 import { useState, useCallback } from 'react';
 
-const useDeleteFetch = (url: string, options?: RequestInit) => {
+interface UseDeleteFetchProps {
+  url: string;
+  options?: RequestInit;
+  setData?: React.Dispatch<React.SetStateAction<any>>;
+}
+
+const useDeleteFetch = ({ url, options, setData }: UseDeleteFetchProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -12,6 +18,9 @@ const useDeleteFetch = (url: string, options?: RequestInit) => {
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
+
+      const data = await response.json();
+      setData && data && setData(data);
 
       setError(null);
     } catch (exception) {

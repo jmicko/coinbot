@@ -1,6 +1,6 @@
 import { useData } from '../../contexts/DataContext.js';
 import { useUser } from '../../contexts/UserContext.js';
-import { useFetchData } from '../../hooks/fetchData.js';
+import useGetFetch from '../../hooks/useGetFetch.js';
 import './Menu.css'
 
 interface Product {
@@ -11,7 +11,7 @@ function Menu() {
   const { logout, user, theme, btnColor } = useUser();
   const { productID, setProductID, products, showSettings, setShowSettings } = useData();
   const { refresh: refreshTestData }
-    = useFetchData('/api/settings/test/cheese', { defaultState: {} })
+    = useGetFetch('/api/settings/test/cheese', { defaultState: {}, preload: false })
 
   return (
     <div className={`Menu dark ${theme}`}>

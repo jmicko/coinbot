@@ -1,6 +1,5 @@
-// UserContext.js
+// UserContext.tsx
 import { createContext, useContext, useEffect, ReactNode } from 'react'
-// import { useFetchData } from '../hooks/fetchData.js'
 import useGetFetch from '../hooks/useGetFetch.js';
 import useDeleteFetch from '../hooks/useDeleteFetch.js';
 
@@ -29,7 +28,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
     clear: clearUser,
   } = useGetFetch<User | null>(
     '/api/user',
-    { defaultState: null }
+    {
+      defaultState: null,
+      preload: true
+    }
   );
 
   // infer theme from user object
@@ -39,15 +41,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
   // useEffect(() => {
   //     refreshUser()
   // }, [])
-
-  // useEffect(() => {
-  //   // check if user is an empty object
-  //   if (user && Object.keys(user).length === 0 && !userLoading && !userError) {
-  //     refreshUser()
-  //     console.log('ALERT ALERT ALERT ALERT ALERT EMPTY USER OBJECT ALERT ALERT ALERT ALERT ALERT');
-
-  //   }
-  // }, [refreshUser, user, userError, userLoading])
 
   async function logout() {
     await fetch('/api/user/logout', {
@@ -67,6 +60,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     })
     if (response.ok) {
       const userData = await response.json();
+      console.log(userData, 'userData');
       setUser(userData);
     } else {
       console.log('Login failed');

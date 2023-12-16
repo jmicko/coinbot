@@ -20,7 +20,7 @@ function Home() {
   const { width, height } = useWindowDimensions();
   const { user } = useUser();
 
-  const { showSettings } = useData();
+  // const { showSettings } = useData();
   const [mobilePage, setMobilePage] = useState('tradeList');
   const [tradeType, setTradeType] = useState('pair');
 
