@@ -13,8 +13,7 @@ function App() {
 
     if (userLoading) {
       return <center>Loading...</center>;
-    }
-    if (user) {
+    } else if (user) {
       return (
         < DataProvider >
           < WebSocketProvider >

@@ -21,7 +21,11 @@ const Login: React.FC = () => {
     error: connectionError
   } = useGetFetch<{ connection: boolean }>(
     '/api/settings/connection',
-    { defaultState: { connection: false } }
+    {
+      defaultState: { connection: false },
+      preload: false,
+      from: 'connection in Login'
+    }
   );
 
   // check the connection every 5 seconds

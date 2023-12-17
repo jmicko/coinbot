@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useEffect, useRef, FC } from 'react';
+import React, { createContext, useContext, useEffect, useRef, FC, useMemo } from 'react';
+// import { useUser } from './UserContext';
 
 interface WebSocketContextProps {
-  current: WebSocket | null;
+  socket: WebSocket | null;
 }
 
 const WebSocketContext = createContext<WebSocketContextProps | null>(null);
@@ -16,6 +17,7 @@ interface WebSocketProviderProps {
 
 export const WebSocketProvider: FC<WebSocketProviderProps> = ({ children }) => {
   const socketRef = useRef<WebSocket | null>(null);
+  // const { user } = useUser();
 
   useEffect(() => {
     let ENDPOINT = origin;
@@ -23,10 +25,8 @@ export const WebSocketProvider: FC<WebSocketProviderProps> = ({ children }) => {
     ENDPOINT = ENDPOINT.replace('http', 'ws');
     console.log('ENDPOINT: ', ENDPOINT);
 
-    // if (ENDPOINT.includes('localhost')) {
-    //   ENDPOINT = 'ws://localhost:5000';
-    // }
-    
+    // console.log(user, 'user in WebSocketProvider');
+
     socketRef.current = new WebSocket(ENDPOINT + '/api');
     // socketRef.current = new WebSocket(ENDPOINT);
 
@@ -50,8 +50,11 @@ export const WebSocketProvider: FC<WebSocketProviderProps> = ({ children }) => {
     };
   }, []);
 
+  const value = useMemo(() => ({ socket: socketRef.current }), []);
+
   return (
-    <WebSocketContext.Provider value={socketRef}>
+    <WebSocketContext.Provider
+      value={value}>
       {children}
     </WebSocketContext.Provider>
   );

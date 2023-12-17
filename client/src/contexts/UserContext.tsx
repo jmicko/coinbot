@@ -1,5 +1,5 @@
 // UserContext.tsx
-import { createContext, useContext, useEffect, ReactNode } from 'react'
+import { createContext, useContext, ReactNode, useEffect } from 'react'
 import useGetFetch from '../hooks/useGetFetch.js';
 import useDeleteFetch from '../hooks/useDeleteFetch.js';
 
@@ -13,11 +13,13 @@ type User = {
 const UserContext = createContext<any | null>(null)
 
 export function UserProvider({ children }: { children: ReactNode }) {
+  console.log('UserProvider rendering ***************');
+  
   const {
     isLoading: deleteLoading,
     error: deleteError,
     deleteData: deleteYourself
-  } = useDeleteFetch('/api/user');
+  } = useDeleteFetch({ url: '/api/user' });
 
   const {
     data: user,
@@ -30,7 +32,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
     '/api/user',
     {
       defaultState: null,
-      preload: true
+      preload: true,
+      from: 'user in UserContext',
     }
   );
 
@@ -39,6 +42,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const btnColor = theme === 'darkTheme' ? 'btn-black' : 'btn-blue';
 
   // useEffect(() => {
+  //   console.log(user, 'user in UserProvider, refreshing');
+    
   //     refreshUser()
   // }, [])
 
@@ -81,7 +86,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       value={
         {
           user,
-          takerFee: user?.taker_fee, makerFee: user?.maker_fee,
+          // takerFee: user?.taker_fee, 
+          // makerFee: user?.maker_fee,
           userLoading, userError, deleteLoading, deleteError,
           refreshUser, logout, login, registerNew, deleteYourself,
           theme, btnColor

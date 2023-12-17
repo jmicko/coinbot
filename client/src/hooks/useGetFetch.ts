@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 type FetchDataOptions<T> = {
   defaultState: T;
   preload: boolean;
+  from: string;
 };
 
 const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
   const [data, setData] = useState<T>(options.defaultState);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
+  const hasFetched = useRef<boolean>(false);
 
   const fetchData = async () => {
-    console.log('fetching data');
+    console.log(options.from, '<== fetching data from');
 
     setIsLoading(true);
     try {
@@ -43,8 +45,15 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
   }
 
   useEffect(() => {
-    options.preload && fetchData();
-  }, []);
+    // options.preload && !hasFetched.current && fetchData();
+    if (options.preload && !hasFetched.current) {
+      fetchData();
+      // hasFetched.current = true;
+    }
+    return () => {
+      hasFetched.current = true;
+    }
+  }, [url]);
 
   return {
     data,

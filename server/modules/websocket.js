@@ -63,7 +63,7 @@ async function startWebsocket(userID) {
     // can add custom event handlers
     // if (socketStatus === 'open') {
     //   cbClients[userID].ws.on('message', function () {
-    //     console.log('message recieved on new socket');
+    //     console.log('message received on new socket');
     //   });
     // }
   }
@@ -245,7 +245,7 @@ function setupSocketIO(io) {
       }
       if (message.type === 'chat') {
         const allUsers = userStorage.getAllUsers()
-        console.log(allUsers, 'ALLLLLLL OF THE user');
+        console.log(allUsers, 'ALL OF THE user');
         allUsers.forEach(userID => {
           messenger[userID].newMessage({
             text: message.data,
@@ -287,8 +287,8 @@ function setUpWebsocket(wss) {
 
           
           // Now you can access req.session and req.user
-          console.log(req.session, 'req.session in new websocket server');
-          console.log(req.user, 'req.user in new websocket server');
+          // console.log(req.session, 'req.session in new websocket server');
+          // console.log(req.user, 'req.user in new websocket server');
           
           ws.on('message', (message) => {
             console.log('received: %s', message);

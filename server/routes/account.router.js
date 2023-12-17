@@ -220,7 +220,7 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
-* PUT route to export xlxs of candle data
+* PUT route to export xlsx of candle data
 */
 
 
@@ -484,7 +484,7 @@ router.post('/messages', rejectUnauthenticated, async (req, res) => {
 
     if (message.type === 'chat') {
       const allUsers = userStorage.getAllUsers()
-      devLog(allUsers, 'ALLLLLLL OF THE user', user.username);
+      devLog(allUsers, 'ALL OF THE user', user.username);
       allUsers.forEach(userID => {
         messenger[userID].newMessage({
           from: user.username,

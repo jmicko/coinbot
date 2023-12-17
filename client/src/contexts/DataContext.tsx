@@ -2,7 +2,7 @@
 import {
   createContext,
   // useCallback,
-  useContext, useEffect, useState, ReactNode
+  useContext, useState, ReactNode
 } from 'react'
 import useGetFetch from '../hooks/useGetFetch.js';
 import useDeleteFetch from '../hooks/useDeleteFetch.js';
@@ -13,12 +13,12 @@ import usePutFetch from '../hooks/usePutFetch.js';
 const DataContext = createContext<any | null>(null)
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  // devLog('DataProvider rendering ***************');
+  // console.log('DataProvider rendering ***************');
   // state for this context
   const [showSettings, setShowSettings] = useState(false);
   const [productID, setProductID] = useState('DOGE-USD');
   // user
-  const { user, refreshUser } = useUser();
+  const { user } = useUser();
   // sockets
   const [coinbotSocket, setCoinbotSocket] = useState('closed');
   const deadCon = (coinbotSocket !== 'open') ? true : false;
@@ -34,12 +34,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
     data: products,
     refresh: refreshProducts,
     // updateRefreshData: toggleActiveProduct,
-  } = useGetFetch('/api/account/products', { defaultState: {}, preload: true })
+  } = useGetFetch('/api/account/products', {
+    defaultState: {},
+    preload: true,
+    from: 'products in data context'
+  })
   // get the profits for the selected product
   const { data: profit,
     refresh: refreshProfit,
     // updateData: resetProfit,
-  } = useGetFetch(`/api/account/profit/${productID}`, { defaultState: [], preload: true })
+  } = useGetFetch(`/api/account/profit/${productID}`, {
+    defaultState: [],
+    preload: true,
+    from: 'profit/{productID} in data context'
+  })
   // get messages sent from the bot
   const {
     data: messages,
@@ -47,7 +55,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // createRefreshData: sendChat,
   } = useGetFetch(`/api/account/messages`, {
     defaultState: { botMessages: [], chatMessages: [] },
-    preload: true
+    preload: true,
+    from: 'messages in data context',
   })
 
   // // AVAILABLE FUNDS
@@ -67,10 +76,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const {
     data: orders,
     refresh: refreshOrders,
-    setData: setOrders,
+    // setData: setOrders,
     // createRefreshData: createOrderPair,
     // deleteRefreshData: deleteRangeForProduct
-  } = useGetFetch(`/api/orders/${productID}`, { defaultState: {}, preload: true })
+  } = useGetFetch(`/api/orders/${productID}`, {
+    defaultState: {},
+    preload: true,
+    from: 'orders/{productID} in data context'
+  })
   const {
     putData: syncOrders,
     // deleteData: deleteOrderNoRefresh,

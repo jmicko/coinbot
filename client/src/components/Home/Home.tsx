@@ -1,5 +1,5 @@
 import { useState } from 'react';
-// import './Home.css';
+import './Home.css';
 
 // import Trade from '../Trade/Trade.js';
 // import Messages from '../Messages/Messages.js';
@@ -12,7 +12,7 @@ import Settings from '../Settings/Settings';
 // import MobileNav from '../MobileNav/MobileNav.js';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
 import { useUser } from '../../contexts/UserContext';
-import { useData } from '../../contexts/DataContext';
+// import { useData } from '../../contexts/DataContext';
 // import { devLog } from '../../shared.js';
 
 function Home() {
@@ -22,7 +22,7 @@ function Home() {
 
   // const { showSettings } = useData();
   const [mobilePage, setMobilePage] = useState('tradeList');
-  const [tradeType, setTradeType] = useState('pair');
+  // const [tradeType, setTradeType] = useState('pair');
 
   // for checkbox to auto scroll
   const [isAutoScroll, setIsAutoScroll] = useState(true);
@@ -38,7 +38,7 @@ function Home() {
         height: height,
         // width: width
       }}>
-        {/* {JSON.stringify(user)} */}
+      {/* {JSON.stringify(user)} */}
       {/* {JSON.stringify(socket.product)}{JSON.stringify(product)} */}
       <Menu />
 
