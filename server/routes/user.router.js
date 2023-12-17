@@ -58,7 +58,7 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
 
     // get available funds from userStorage
     const availableFunds = userStorage[req.user.id].getAvailableFunds();
-    devLog('availableFunds', availableFunds);
+    // devLog('availableFunds', availableFunds);
     req.user.availableFunds = availableFunds;
 
     // get exporting value from userStorage
@@ -74,7 +74,7 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
   } catch (err) {
     devLog(err, 'error in user route');
   }
-  devLog('user', req.user, 'user in get user route')
+  // devLog('user', req.user, 'user in get user route')
   // Send back user object from the session (previously queried from the database)
   res.send(req.user);
 });
@@ -188,7 +188,7 @@ router.post('/login', userStrategy.authenticate('local'), async (req, res) => {
   } catch (err) {
     devLog(err, 'error in user route');
   }
-  devLog('user', req.user, 'user in LOGIN ROUTE')
+  // devLog('user', req.user, 'user in LOGIN ROUTE')
   // Send back user object from the session (previously queried from the database)
   res.status(200).send(req.user);
 });

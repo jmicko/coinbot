@@ -4,6 +4,8 @@ import { databaseClient } from './databaseClient.js';
 // const { rejectUnauthenticatedSocket } = require('./authentication-middleware');
 import { rejectUnauthenticatedSocket } from './authentication-middleware.js';
 import { devLog } from '../../src/shared.js';
+import { sessionMiddleware } from './session-middleware.js';
+import passport from 'passport';
 // const { sleep } = require('../../src/shared');
 // import { sleep } from '../../src/shared';
 
@@ -272,4 +274,34 @@ function setupSocketIO(io) {
   console.log('socket setup done');
 }
 
-export { startWebsocket, setupSocketIO };
+function setUpWebsocket(wss) {
+
+  wss.on('connection', (ws, req) => {
+    console.log('================NEW WEBSOCKET CONNECTION================');
+    // Use the req object to access session and passport data
+    sessionMiddleware(req, {}, () => { 
+
+      passport.initialize()(req, {}, () => { 
+
+        passport.session()(req, {}, () => {
+
+          
+          // Now you can access req.session and req.user
+          console.log(req.session, 'req.session in new websocket server');
+          console.log(req.user, 'req.user in new websocket server');
+          
+          ws.on('message', (message) => {
+            console.log('received: %s', message);
+          });
+          
+          ws.send('Hello! Message from server!!');
+        });
+      });
+    });
+  });
+
+
+  console.log('websocket setup done');
+}
+
+export { startWebsocket, setupSocketIO, setUpWebsocket };

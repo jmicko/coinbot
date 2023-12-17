@@ -57,7 +57,7 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
 
 /** GET route to get user products from db **/
 router.get('/products', rejectUnauthenticated, async (req, res) => {
-  devLog(req.user.username, 'get products route hit+++++++++++++++++++++++++++++');
+  // devLog(req.user.username, 'get products route hit+++++++++++++++++++++++++++++');
   const userID = req.user.id;
   try {
     // get active products from db
