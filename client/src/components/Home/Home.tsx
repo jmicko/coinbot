@@ -5,7 +5,7 @@ import './Home.css';
 // import Messages from '../Messages/Messages.js';
 import Menu from '../Menu/Menu.js';
 import TradeList from '../TradeList/TradeList';
-// import Status from '../Status/Status.js';
+import Status from '../Status/Status';
 import Settings from '../Settings/Settings';
 // import NotApproved from '../NotApproved/NotApproved.js';
 // import NotActive from '../NotActive/NotActive.js';
@@ -25,11 +25,11 @@ function Home() {
   // const [tradeType, setTradeType] = useState('pair');
 
   // for checkbox to auto scroll
-  const [isAutoScroll, setIsAutoScroll] = useState(true);
+  // const [isAutoScroll, setIsAutoScroll] = useState(true);
 
-  const handleAutoScrollChange = () => {
-    setIsAutoScroll(!isAutoScroll);
-  };
+  // const handleAutoScrollChange = () => {
+  //   setIsAutoScroll(!isAutoScroll);
+  // };
 
   return (
     <div
@@ -58,7 +58,9 @@ function Home() {
             : mobilePage === 'tradeList'
               // is the user approved
               ? user.approved
-                ? <TradeList isAutoScroll={isAutoScroll} />
+                ? <TradeList 
+                // isAutoScroll={isAutoScroll} 
+                />
                 // ? <></>
                 // : <NotApproved />
                 : <></>
@@ -74,7 +76,9 @@ function Home() {
               : <></>
             }
             {user.approved
-              ? <TradeList isAutoScroll={isAutoScroll} />
+              ? <TradeList 
+              // isAutoScroll={isAutoScroll}
+               />
               // ? <></>
               // : <NotApproved />
               : <></>
@@ -86,10 +90,7 @@ function Home() {
 
       }
 
-      {/* <Status
-        isAutoScroll={isAutoScroll}
-        handleAutoScrollChange={handleAutoScrollChange}
-      /> */}
+      <Status />
       <Settings />
       {/* {width < 800 && <MobileNav setMobilePage={setMobilePage} />} */}
     </div>

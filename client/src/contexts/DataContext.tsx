@@ -2,7 +2,7 @@
 import {
   createContext,
   // useCallback,
-  useContext, useState, ReactNode
+  useContext, useState, ReactNode, useRef, useEffect
 } from 'react'
 import useGetFetch from '../hooks/useGetFetch.js';
 import useDeleteFetch from '../hooks/useDeleteFetch.js';
@@ -17,6 +17,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // state for this context
   const [showSettings, setShowSettings] = useState(false);
   const [productID, setProductID] = useState('DOGE-USD');
+  const [isAutoScroll, setIsAutoScroll] = useState(true);
+  const canScroll = useRef(true);
   // user
   const { user } = useUser();
   // sockets
@@ -116,7 +118,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // //////// SETTINGS ////////
   // ////////////////////////// 
 
-
   // // SETTINGS ROUTES - for management of per user settings
   // const { updateData: setProfitAccuracy } = useFetchData(`/api/settings/profitAccuracy`, { defaultState: null, noLoad: true })
   // const { updateData: updateMaxTradeLoad } = useFetchData(`/api/settings/tradeLoadMax`, { defaultState: null, noLoad: true })
@@ -132,6 +133,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // async function setTheme(theme) { await updateTheme({ theme }); refreshUser(); }
   // async function sendTradeLoadMax(max_trade_load) { await updateMaxTradeLoad({ max_trade_load }); refreshUser(); }
   // async function sendSyncQuantity(sync_quantity) { await updateSyncQuantity({ sync_quantity }); refreshUser(); }
+
 
   // ///////////////////
   // //// UTILITIES ////
@@ -149,6 +151,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         {
           // SETTINGS
           showSettings, setShowSettings,
+          isAutoScroll, setIsAutoScroll, canScroll,
 
           // // ACCOUNT
           profit, refreshProfit,
@@ -168,7 +171,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           orders, refreshOrders,
           // createMarketTrade, createOrderPair, syncPair, 
           syncOrders, // does this still realistically get used?
-          deleteOrder, 
+          deleteOrder,
           // deleteRangeForProduct,
           // deleteAll,
 

@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef, } from 'react';
-// import { useSocket } from '../../contexts/SocketProvider';
 import SingleTrade from '../SingleTrade/SingleTrade'
 import coinbotFilled from "../../../src/coinbotFilled.png";
 // import coinbotFilledGif from "../../../src/coinbotFilled.gif";
@@ -8,14 +7,14 @@ import './TradeList.css'
 import { useUser } from '../../contexts/UserContext.js';
 import { useData } from '../../contexts/DataContext.js';
 import { Order } from '../../types/index.js';
+// import { useWebSocket } from '../../contexts/WebSocketContext.js';
 
-
-function TradeList(props: { isAutoScroll: boolean }) {
+// props: { isAutoScroll: boolean }
+function TradeList() {
   const robotRef = useRef<HTMLDivElement | null>(null)
-  const canScrollRef = useRef(true);
-  // const { currentPrice } = useSocket();
-  const { user, theme } = useUser();
-  const { orders } = useData();
+  // const { currentPrice } = useWebSocket();
+  const { user, theme, } = useUser();
+  const { orders, isAutoScroll, canScroll } = useData();
   // these will store mapped arrays as html so they can be used after page loads
   const [buys, setBuys] = useState(<></>);
   const [sells, setSells] = useState(<></>);
@@ -40,14 +39,14 @@ function TradeList(props: { isAutoScroll: boolean }) {
     }
   }, [orders, orders.sells, orders.buys]);
 
-  // set the canScrollRef to the value of props.isAutoScroll
+  // set the canScroll to the value of isAutoScroll
   useEffect(() => {
-    canScrollRef.current = props.isAutoScroll;
-  }, [props.isAutoScroll]);
+    canScroll.current = isAutoScroll;
+  }, [isAutoScroll]);
 
-  // scroll to the robot when the canScrollRef is true
+  // scroll to the robot when the canScroll is true
   useEffect(() => {
-    if (canScrollRef.current) {
+    if (canScroll.current) {
       robotRef.current?.scrollIntoView({
         behavior: "smooth",
         block: "center",

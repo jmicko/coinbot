@@ -11,7 +11,7 @@ function App() {
   function CheckUser() {
     const { user, userLoading } = useUser();
 
-    if (userLoading) {
+    if (!user) {
       return <center>Loading...</center>;
     } else if (user) {
       return (

@@ -76,3 +76,9 @@ export interface User {
   exporting: boolean;
   simulating: boolean;
 }
+
+export interface ProfitForDuration {
+  duration: string;
+  productProfit: number;
+  allProfit: number;
+}
