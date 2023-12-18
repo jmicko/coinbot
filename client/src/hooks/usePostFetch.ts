@@ -2,34 +2,45 @@ import { useState, useCallback } from 'react';
 
 interface usePostFetchProps<T> {
   url: string;
-  body: T;
   options?: RequestInit;
-  setData: React.Dispatch<React.SetStateAction<T>>;
-} 
+  setData?: React.Dispatch<React.SetStateAction<T>>;
+  refreshCallback?: () => void;
+  from: string;
+}
 
-const usePostFetch = <T>({ url, body, options, setData }: usePostFetchProps<T>) => {
+const usePostFetch = <T>({ url, options, setData, refreshCallback, from }: usePostFetchProps<T>) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const postData = useCallback(async () => {
+  const postData = useCallback(async (body?: any) => {
     setIsLoading(true);
     try {
-      const response = await fetch(url, { 
-        method: 'POST', 
+      console.log('calling postData from', from);
+
+      const response = await fetch(url, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(body),
-        ...options 
+        ...options
       });
 
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
 
-      const data: T = await response.json();
-      setData(data);
+      let data: T | null = null;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+        console.log('data from put fetch from', from, data);
+      }
 
+      setData && data && setData(data);
+
+      console.log('calling refreshCallback in post hook from:', from);
+      refreshCallback && refreshCallback();
       setError(null);
     } catch (exception) {
       if (exception instanceof Error) {
@@ -40,13 +51,9 @@ const usePostFetch = <T>({ url, body, options, setData }: usePostFetchProps<T>) 
     } finally {
       setIsLoading(false);
     }
-  }, [url, body, options]);
+  }, [url, options, setData]);
 
-  return {
-    isLoading,
-    error,
-    postData,
-  };
+  return { isLoading, error, postData, };
 };
 
 export default usePostFetch;

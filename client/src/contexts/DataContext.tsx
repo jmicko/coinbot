@@ -6,6 +6,7 @@ import { addProductDecimals } from '../shared';
 import { useUser } from './UserContext.js';
 import usePutFetch from '../hooks/usePutFetch.js';
 import { Product, ProductWithDecimals, marketOrderState } from '../types/index.js';
+import usePostFetch from '../hooks/usePostFetch.js';
 // import { devLog } from '../shared.js';
 const DataContext = createContext<any | null>(null)
 
@@ -42,7 +43,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     preload: true,
     from: 'products in data context'
   })
-  console.log(products, 'products object in data context');
+  // console.log(products, 'products object in data context');
 
   // get the profits for the selected product
   const { data: profit,
@@ -63,6 +64,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     preload: true,
     from: 'messages in data context',
   })
+  const {
+    postData: sendChat,
+    // deleteData: deleteChat,
+  } = usePostFetch({
+    url: `/api/account/messages`,
+    from: 'sendChat in data context',
+    refreshCallback: refreshBotMessages,
+  })
 
   // // AVAILABLE FUNDS
   const availableBase = user.availableFunds?.[productID]?.base_available;
@@ -71,6 +80,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // // get errors sent from the bot
   // const { data: botErrors, refresh: refreshBotErrors }
   //   = useFetchData(`/api/account/errors`, { defaultState: [] })
+  const {
+    data: botErrors,
+    refresh: refreshBotErrors,
+  } = useGetFetch(`/api/account/errors`, {
+    defaultState: [],
+    preload: true,
+    from: 'botErrors in data context',
+  })
 
   // ////////////////////////
   // //////// ORDERS ////////
@@ -115,7 +132,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // const { data: exportableFiles, refresh: refreshExportableFiles } = useFetchData(`/api/account/exportableFiles`, { defaultState: [] })
   // TRADE FUNCTIONS
   const currentProductNoDecimals: Product | null = products.allProducts.find((product) => product.product_id === productID) || null;
-  
+
   const currentProduct: ProductWithDecimals | null = currentProductNoDecimals ? addProductDecimals(currentProductNoDecimals) : null;
 
   // TRADE STATE
@@ -177,7 +194,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
           // // messages
           messages, refreshBotMessages,
-          // botErrors, refreshBotErrors, sendChat,
+          botErrors, refreshBotErrors, sendChat,
 
           // // ORDERS
           orders, refreshOrders,

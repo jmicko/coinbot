@@ -136,3 +136,14 @@ export interface marketOrderState {
 }
 
 export type EventType = MouseEvent | ChangeEvent | FormEvent;
+
+export interface Message {
+  cCount: null | number;
+  from: null | string;
+  mCount: number;
+  orderUpdate: boolean;
+  text: string;
+  timeStamp: string;
+  type: string;
+}
+

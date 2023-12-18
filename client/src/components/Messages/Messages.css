@@ -1,0 +1,168 @@
+.Messages {
+  grid-row        : 5;
+  grid-column     : 2 / 5;
+  margin-bottom   : .4rem;
+  /* border-bottom: none; */
+}
+
+.Messages.collapsed {
+  border-bottom: none;
+}
+
+.chat-section{
+  border-left: black 1px solid;
+}
+
+.message-board {
+  display              : grid;
+  grid-template-rows   : minmax(0px, auto);
+  /* grid-template-rows   : minmax(0px, 10rem); */
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap                  : 1px solid black;
+  /* flex-flow         : column; */
+  /* width             : 100%; */
+}
+
+.message-list{
+  padding-left: 5px;
+  position    : relative;
+  word-wrap: break-word;
+}
+
+.message-list strong{
+  color: rgb(73, 137, 137);
+}
+
+.message-list::before,
+.message-list::after {
+  position: absolute;
+  width   : .3rem;
+  height  : 100%;
+  content : "";
+
+  left         : 0;
+  top          : 0;
+  border-left  : 2px solid #7b7b7b;
+  /* border-top   : 2px solid #7b7b7b; */
+  border-bottom: 2px solid #7b7b7b;
+}
+
+.message-window .title {
+  height: 1.5rem;
+}
+
+.message-section {
+  max-height: 10rem;
+}
+
+.chat-section{
+  max-height: 8.5rem;
+}
+
+.not-last-message-section{
+  border-right: black 1px solid;
+}
+
+.chat-form,
+.chat-header {
+  display: flex;
+  flex-flow: row nowrap;
+}
+
+.chat-form {
+  flex-grow: 1;
+}
+
+.chat-input{
+  width: 100%;
+}
+
+.chat-input:focus{
+  outline: rgb(144, 58, 58) solid 1px;
+
+}
+
+.message-list strong.red-text{
+  color: rgb(187, 74, 74);
+}
+
+@media (max-width: 800px) {
+
+  .message-section {
+    /* max-height: unset; */
+    /* height: 8rem; */
+    /* height should be exactly 1/3 the height of parent element */
+    height: 1fr;
+    
+  }
+
+  .not-last-message-section{
+    border-right: none;
+  }
+
+  .errors-section,
+  .chat-log,
+  .chat-header {
+    border-left: none;
+  }
+
+  .Messages {
+    grid-row   : 5;
+    grid-column: 2 / 3;
+
+  }
+
+  .message-board {
+    /* grid-template-columns: unset; */
+    grid-template-columns: repeat(1, minmax(1rem, 1fr));
+    grid-template-rows: repeat(3, minmax(1rem, 8rem));
+    width                : auto;
+  }
+
+}
+
+/* from https://css.gg/trash */
+.gg-trash {
+  box-sizing: border-box;
+  position  : relative;
+  display   : block;
+  transform : scale(var(--ggs, 1));
+  width     : 10px;
+  height    : 12px;
+  border    : 2px solid transparent;
+  box-shadow:
+    0 0 0 2px,
+    inset -2px 0 0,
+    inset 2px 0 0;
+  border-bottom-left-radius : 1px;
+  border-bottom-right-radius: 1px;
+  margin-top                : 4px
+}
+
+.gg-trash::after,
+.gg-trash::before {
+  content   : "";
+  display   : block;
+  box-sizing: border-box;
+  position  : absolute
+}
+
+.gg-trash::after {
+  background   : currentColor;
+  border-radius: 3px;
+  width        : 16px;
+  height       : 2px;
+  top          : -4px;
+  left         : -5px
+}
+
+.gg-trash::before {
+  width                  : 10px;
+  height                 : 4px;
+  border                 : 2px solid;
+  border-bottom          : transparent;
+  border-top-left-radius : 2px;
+  border-top-right-radius: 2px;
+  top                    : -7px;
+  left                   : -2px
+}

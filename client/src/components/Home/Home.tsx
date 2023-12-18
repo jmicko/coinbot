@@ -2,7 +2,7 @@ import { useState } from 'react';
 import './Home.css';
 
 import Trade from '../Trade/Trade';
-// import Messages from '../Messages/Messages.js';
+import Messages from '../Messages/Messages';
 import Menu from '../Menu/Menu.js';
 import TradeList from '../TradeList/TradeList';
 import Status from '../Status/Status';
@@ -64,8 +64,8 @@ function Home() {
                 // ? <></>
                 // : <NotApproved />
                 : <></>
-              // : mobilePage === 'messages' && <Messages />
-              : mobilePage === 'messages' && <></>
+              : mobilePage === 'messages' && <Messages />
+              // : mobilePage === 'messages' && <></>
 
           // show all pages
           : <>

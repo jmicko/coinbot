@@ -112,7 +112,7 @@ function LimitOrder(props: LimitOrderProps) {
     if (sizeType === 'quote') {
       const newBaseSize: number = Number((quote_size / price).toFixed(base_increment_decimals));
       if (newBaseSize === base_size) return;
-      console.log('newBaseSize', newBaseSize, quote_size, 'quote_size', price, 'price', base_increment_decimals, 'base_increment_decimals')
+      // console.log('newBaseSize', newBaseSize, quote_size, 'quote_size', price, 'price', base_increment_decimals, 'base_increment_decimals')
       changeLimitOrder('base_size', newBaseSize);
     } else {
       const newQuoteSize = (base_size * price).toFixed(quote_increment_decimals);

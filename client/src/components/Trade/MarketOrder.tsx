@@ -34,7 +34,7 @@ function LimitOrder(props: limitOrderProps) {
   // the side is the value of the button so it should be on the event
   function handleSideChange(e: FormEvent<HTMLInputElement>) {
     no(e);
-    console.log(e.currentTarget.value, 'side');
+    // console.log(e.currentTarget.value, 'side');
     const side = e.currentTarget.value;
     setMarketOrder((prevMarketOrder: marketOrderState) => {
       return { ...prevMarketOrder, side: side }
