@@ -64,9 +64,10 @@ export interface User {
   id: number;
   username: string;
   password: string;
-  active: boolean;
   admin: boolean;
+  active: boolean;
   approved: boolean;
+  can_chat: boolean;
   will_delete: boolean;
   joined_at: string;
   botMaintenance: boolean;
@@ -81,4 +82,11 @@ export interface ProfitForDuration {
   duration: string;
   productProfit: number;
   allProfit: number;
+}
+
+export interface BotSettings {
+  loop_speed: number;
+  orders_to_sync: number;
+  full_sync: number;
+  maintenance: boolean;
 }

@@ -1,21 +1,67 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useUser } from '../../../contexts/UserContext.js';
-import { useFetchData } from '../../../hooks/fetchData.js';
+// import { useFetchData } from '../../../hooks/fetchData.js';
 // import Confirm from '../../Confirm/Confirm';
-import SingleUser from '../../SingleUser/SingleUser.js';
+import SingleUser from '../../SingleUser/SingleUser';
 import './Admin.css'
+import useGetFetch from '../../../hooks/useGetFetch';
+import { BotSettings, User } from '../../../types/index.js';
+import usePutFetch from '../../../hooks/usePutFetch';
 
 
-function Admin(props) {
+function Admin(props: { tips: boolean }) {
   const { user, theme } = useUser();
-  const { data: allUsers, updateRefreshData: approveUser, deleteRefreshData: deleteUser, refresh:refreshUsers } = useFetchData('api/admin/users', { defaultState: [] });
-  const {  updateData: approveChat } = useFetchData('api/admin/users/chat', { defaultState: [], noLoad: true });
+  const {
+    data: allUsers,
+    // updateRefreshData: approveUser,
+    // deleteRefreshData: deleteUser,
+    refresh: refreshUsers
+  } = useGetFetch<User[]>('api/admin/users', {
+    defaultState: [],
+    preload: true,
+    from: 'allUsers in Admin'
+  });
 
-  const { data: allSettings, refresh: refreshSettings } = useFetchData('api/settings', { defaultState: [] });
-  const { updateData: updateLoopSpeed } = useFetchData('api/admin/loop_speed', { defaultState: [], noLoad: true });
-  const { updateData: updateFullSync } = useFetchData('api/admin/full_sync', { defaultState: [], noLoad: true });
-  const { updateData: updateSyncQuantity } = useFetchData('api/admin/order_sync_quantity', { defaultState: [], noLoad: true });
-  const { updateData: toggleMaintenanceMode } = useFetchData('api/admin/maintenance', { defaultState: [], noLoad: true });
+  // const { putData: approveChat }
+  //   = usePutFetch('api/admin/users/chat', { defaultState: [], preload: false, from: 'approveChat in Admin' });
+
+  const {
+    data: allSettings,
+    refresh: refreshSettings
+  } = useGetFetch<BotSettings>('api/settings', {
+    defaultState: {
+      loop_speed: 1,
+      orders_to_sync: 1,
+      full_sync: 1,
+      maintenance: false,
+    },
+    preload: true,
+    from: 'allSettings in Admin'
+  });
+  const { putData: updateLoopSpeed }
+    = usePutFetch({
+      url: 'api/admin/loop_speed',
+      from: 'updateLoopSpeed in Admin',
+      refreshCallback: refreshSettings,
+    });
+  const { putData: updateFullSync }
+    = usePutFetch({
+      url: 'api/admin/full_sync',
+      from: 'updateFullSync in Admin',
+      refreshCallback: refreshSettings,
+    });
+  const { putData: updateSyncQuantity }
+    = usePutFetch({
+      url: 'api/admin/order_sync_quantity',
+      from: 'updateSyncQuantity in Admin',
+      refreshCallback: refreshSettings,
+    });
+  const { putData: toggleMaintenanceMode }
+    = usePutFetch({
+      url: 'api/admin/maintenance',
+      from: 'toggleMaintenanceMode in Admin',
+      refreshCallback: refreshSettings,
+    });
 
   const [loopSpeed, setLoopSpeed] = useState(1);
   const [fullSync, setFullSync] = useState(10);
@@ -23,34 +69,34 @@ function Admin(props) {
   // const [resettingOrders, setResettingOrders] = useState(false);
   // const [factoryResetting, setFactoryResetting] = useState(false);
 
-  const approveUserChat = useCallback(
-    async (chatPermission) => {
-      await approveChat(chatPermission);
-      refreshUsers();
-    },
-    [approveChat, refreshUsers],
-  )
+  // const approveUserChat = useCallback(
+  //   async (chatPermission) => {
+  //     await approveChat(chatPermission);
+  //     refreshUsers();
+  //   },
+  //   [approveChat, refreshUsers],
+  // )
 
 
-  async function sendLoopSpeed(speed) {
-    setLoopSpeed(speed);
-    await updateLoopSpeed({ loopSpeed: speed });
-    refreshSettings();
+  async function sendLoopSpeed() {
+    // setLoopSpeed(speed);
+    await updateLoopSpeed({ loopSpeed: loopSpeed });
+    // refreshSettings();
   }
 
   async function sendFullSync() {
     await updateFullSync({ fullSync: fullSync });
-    refreshSettings();
+    // refreshSettings();
   }
 
   async function sendSyncQuantity() {
     await updateSyncQuantity({ syncQuantity: syncQuantity });
-    refreshSettings();
+    // refreshSettings();
   }
 
   async function toggleMaintenance() {
     await toggleMaintenanceMode();
-    refreshSettings();
+    // refreshSettings();
   }
 
   useEffect(() => {
@@ -74,7 +120,7 @@ function Admin(props) {
       {/* TOGGLE MAINTENANCE */}
 
       <h4>Toggle Maintenance Mode</h4>
-      {/* {JSON.stringify(allSettings.maintenance)} */}
+      {/* {JSON.stringify(allSettings)} */}
       {props.tips && <p>
         This essentially pauses all user loops. Can be useful when migrating the bot to another server for example.
       </p>}
@@ -86,9 +132,19 @@ function Admin(props) {
       }
       {allSettings.maintenance
         ?
-        <button className={`btn-green btn-reinvest medium ${theme}`} onClick={() => { toggleMaintenance() }}>Turn off</button>
+        <button
+          className={`btn-green btn-reinvest medium ${theme}`}
+          onClick={() => { toggleMaintenance() }}
+        >
+          Turn off
+        </button>
         :
-        <button className={`btn-red btn-reinvest medium ${theme}`} onClick={() => { toggleMaintenance() }}>Turn on</button>
+        <button
+          className={`btn-red btn-reinvest medium ${theme}`}
+          onClick={() => { toggleMaintenance() }}
+        >
+          Turn on
+        </button>
       }
 
       <div className={`divider ${theme}`} />
@@ -97,8 +153,15 @@ function Admin(props) {
       {(user.admin)
         ? <div>
           <h4>Manage Users</h4>
-          {allUsers.map((user) => {
-            return <SingleUser key={user.id} user={user} deleteUser={deleteUser} approveUser={approveUser} approveUserChat={approveUserChat} />
+          {allUsers.map((regUser: User) => {
+            return <SingleUser
+              key={regUser.id}
+              user={regUser}
+              refreshUsers={refreshUsers}
+            // deleteUser={deleteUser}
+            // approveUser={approveUser}
+            // approveUserChat={approveUserChat}
+            />
           })}
         </div>
         : <></>
@@ -125,11 +188,16 @@ function Admin(props) {
           max={100}
           min={1}
           required
-          onChange={(event) => sendLoopSpeed(Number(event.target.value))}
+          onChange={(event) => setLoopSpeed(Number(event.target.value))}
         />
         <br />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${theme}`} onClick={() => { sendLoopSpeed() }}>Save speed</button>
+        <button
+          className={`btn-blue btn-reinvest medium ${theme}`}
+          onClick={() => { sendLoopSpeed() }}
+        >
+          Save speed
+        </button>
       </div>
 
       <div className={`divider ${theme}`} />
@@ -158,7 +226,12 @@ function Admin(props) {
         />
         <br />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${theme}`} onClick={() => { sendFullSync() }}>Save Frequency</button>
+        <button
+          className={`btn-blue btn-reinvest medium ${theme}`}
+          onClick={() => { sendFullSync() }}
+        >
+          Save Frequency
+        </button>
       </div>
 
       <div className={`divider ${theme}`} />
@@ -168,7 +241,7 @@ function Admin(props) {
       <h4>Set Max Synced Order Quantity</h4>
       {/* {JSON.stringify(allSettings)} */}
       {props.tips && <p>
-        Users are able to adjust how many trades per side to keep in sync with Coinbase (How many buys, how many sells). 
+        Users are able to adjust how many trades per side to keep in sync with Coinbase (How many buys, how many sells).
         Changing this number puts a limit on how high users are able to set their own sync quantities. There is a max of 200, which
         keeps the total under the 500 order limit on Coinbase, while also allowing a margin for flipping trades. Putting a low number here
         may slightly increase the speed of the bot or lower CPU usage, but risks that all trades on one side will settle before the bot has the chance to sync more.
@@ -186,7 +259,7 @@ function Admin(props) {
           max={200}
           min={1}
           required
-          onChange={(event) => setSyncQuantity(event.target.value)}
+          onChange={(event) => setSyncQuantity(Number(event.target.value))}
         />
         <br />
         <br />

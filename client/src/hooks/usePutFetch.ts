@@ -2,44 +2,56 @@ import { useCallback, useState } from 'react';
 
 interface UsePutFetchProps<T> {
   url: string;
-  body?: any;
   options?: RequestInit;
   setData?: React.Dispatch<React.SetStateAction<T>>;
+  refreshCallback?: () => void;
+  from: string;
 }
 
-const usePutFetch = <T>({ url, body, options, setData }: UsePutFetchProps<T>) => {
+const usePutFetch = <T>({ url, options, setData, refreshCallback, from }: UsePutFetchProps<T>) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const putData = useCallback(async () => {
+  const putData = useCallback(async (body?: any) => {
     setIsLoading(true);
     try {
-      const response = await fetch(url, { 
-        method: 'PUT', 
+      console.log('calling putData from', from);
+
+      const response = await fetch(url, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(body),
-        ...options 
+        ...options
       });
 
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
 
-      const data: T = await response.json();
+      let data: T | null = null;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+        console.log('data from put fetch from', from, data);
+      }
+
       setData && data && setData(data);
+
+      console.log('calling refreshCallback in put hook from:', from);
+      refreshCallback && refreshCallback();
       setError(null);
-    } catch (exception) {
-      if (exception instanceof Error) {
-        setError(exception);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error);
       } else {
         setError(new Error('An unknown error occurred.'));
       }
     } finally {
       setIsLoading(false);
     }
-  }, [url, body, options, setData]);
+  }, [url, options, setData]);
 
   return { isLoading, error, putData };
 };

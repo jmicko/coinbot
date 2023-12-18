@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-// import Admin from './Admin/Admin.js';
+import Admin from './Admin/Admin';
 // import AutoSetup from './AutoSetup/AutoSetup.js';
 // import General from './General/General.js';
 // import Products from './Products/Products.js';
@@ -51,7 +51,6 @@ function Settings() {
   function SettingsPanel({ Dragger, collapseParent }: { Dragger: React.ComponentType<any>, collapseParent: boolean }) {
     return (
       <>
-      h
         <Dragger
           text={'Settings'}
 
@@ -71,7 +70,7 @@ function Settings() {
               // 'history': <History product={props.product} theme={theme} tips={tips} />,
               // 'reset': <Reset product={props.product} theme={theme} tips={tips} />,
               // 'feedback': <Feedback product={props.product} theme={theme} tips={tips} />,
-              // 'admin': <Admin product={props.product} theme={theme} tips={tips} />
+              'admin': <Admin tips={tips} />
             }[settingsPage]
           }
         </div>

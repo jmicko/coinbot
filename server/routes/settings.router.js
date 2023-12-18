@@ -93,7 +93,7 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
       const results = await pool.query(queryText);
       res.send(results.rows[0]);
     } catch (err) {
-      devLog('error with loop speed route', err);
+      devLog('error with get all settings route', err);
       res.sendStatus(500);
     }
   } else {
