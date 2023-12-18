@@ -19,7 +19,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     isLoading: deleteLoading,
     error: deleteError,
     deleteData: deleteYourself
-  } = useDeleteFetch({ url: '/api/user' });
+  } = useDeleteFetch({ url: '/api/user', from: 'deleteYourself in UserContext' });
 
   const {
     data: user,
