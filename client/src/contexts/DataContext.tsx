@@ -1,14 +1,11 @@
 // DataContext.ts
-import {
-  createContext,
-  // useCallback,
-  useContext, useState, ReactNode, useRef, useEffect
-} from 'react'
+import { createContext, useContext, useState, ReactNode, useRef } from 'react'
 import useGetFetch from '../hooks/useGetFetch.js';
 import useDeleteFetch from '../hooks/useDeleteFetch.js';
-// import { addProductDecimals } from '../shared.js';
+import { addProductDecimals } from '../shared';
 import { useUser } from './UserContext.js';
 import usePutFetch from '../hooks/usePutFetch.js';
+import { Product, ProductWithDecimals } from '../types/index.js';
 // import { devLog } from '../shared.js';
 const DataContext = createContext<any | null>(null)
 
@@ -26,21 +23,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const deadCon = (coinbotSocket !== 'open') ? true : false;
   const [socketStatus, setSocketStatus] = useState('closed');
 
-
   /////////////////////////
   //////// ACCOUNT ////////
   /////////////////////////
+
+  interface Products {
+    allProducts: Product[];
+    activeProducts: Product[];
+  }
 
   // ACCOUNT ROUTES
   const {
     data: products,
     refresh: refreshProducts,
     // updateRefreshData: toggleActiveProduct,
-  } = useGetFetch('/api/account/products', {
-    defaultState: {},
+  } = useGetFetch<Products>('/api/account/products', {
+    defaultState: { allProducts: [], activeProducts: [] },
     preload: true,
     from: 'products in data context'
   })
+  console.log(products, 'products object in data context');
+  
   // get the profits for the selected product
   const { data: profit,
     refresh: refreshProfit,
@@ -90,10 +93,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     putData: syncOrders,
     // deleteData: deleteOrderNoRefresh,
     // deleteData: deleteAllNoRefresh
-  } = usePutFetch({ url: `/api/orders`, })
+  } = usePutFetch({ url: `/api/orders`, from: 'syncOrders in data context' })
 
   const deleteOrder = async (orderID: string) => {
-    const { deleteData } = useDeleteFetch({ url: `/api/orders/${orderID}`, })
+    const { deleteData } = useDeleteFetch({ url: `/api/orders/${orderID}`, from: 'deleteOrder in data context' });
     await deleteData();
     refreshOrders();
   }
@@ -111,8 +114,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // const { createData: createMarketTrade } = useFetchData(`/api/trade/market`, { defaultState: {}, noLoad: true });
   // const { data: exportableFiles, refresh: refreshExportableFiles } = useFetchData(`/api/account/exportableFiles`, { defaultState: [] })
   // // TRADE FUNCTIONS
-  // const currentProductNoDecimals = products?.allProducts?.find((product) => product.product_id === productID);
-  // const currentProduct = addProductDecimals(currentProductNoDecimals);
+  const currentProductNoDecimals:Product | null = products.allProducts.find((product) => product.product_id === productID) || null;
+  const currentProduct:ProductWithDecimals | null = currentProductNoDecimals ? addProductDecimals(currentProductNoDecimals) : null;
 
   // //////////////////////////
   // //////// SETTINGS ////////
@@ -159,7 +162,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           availableBase, availableQuote,
 
           // // products
-          products,// currentProduct, 
+          products, currentProduct, 
           productID, setProductID, refreshProducts,
           // toggleActiveProduct,
 

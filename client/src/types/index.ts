@@ -1,18 +1,3 @@
-export interface Decimals {
-  baseIncrement: number;
-  baseMultiplier: number;
-  quoteIncrement: number;
-  quoteMultiplier: number;
-
-  base_increment: string,
-  quote_increment: string,
-  base_increment_decimals: number,
-  quote_increment_decimals: number,
-  base_inverse_increment: number,
-  quote_inverse_increment: number,
-  price_rounding: number,
-}
-
 export interface Order {
   order_id: string;
   side: string;
@@ -90,3 +75,54 @@ export interface BotSettings {
   full_sync: number;
   maintenance: boolean;
 }
+
+export interface Product {
+  activated_at: string;
+  active_for_user: boolean;
+  auction_mode: boolean;
+  average: string;
+  base_currency_id: string;
+  base_increment: string;
+  base_max_size: string;
+  base_min_size: string;
+  base_name: string;
+  cancel_only: boolean;
+  fcm_trading_session_details: null;
+  is_disabled: boolean;
+  limit_only: boolean;
+  mid_market_price: null;
+  new: boolean;
+  post_only: boolean;
+  price: string;
+  price_percentage_change_24h: string;
+  product_id: string;
+  product_type: string;
+  quote_currency_id: string;
+  quote_increment: string;
+  quote_max_size: string;
+  quote_min_size: string;
+  quote_name: string;
+  status: string;
+  trading_disabled: boolean;
+  user_id: string;
+  volume_24h: string;
+  volume_percentage_change_24h: string;
+  watched: boolean;
+}
+
+export interface Decimals {
+  // baseIncrement: number;
+  // baseMultiplier: number;
+  // quoteIncrement: number;
+  // quoteMultiplier: number;
+  
+  base_increment: string,
+  quote_increment: string,
+  base_increment_decimals: number,
+  quote_increment_decimals: number,
+  base_inverse_increment: number,
+  quote_inverse_increment: number,
+  price_rounding: number,
+}
+
+export interface ProductWithDecimals extends Product, Decimals {}

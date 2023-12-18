@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '../../../contexts/UserContext.js';
 // import { useFetchData } from '../../../hooks/fetchData.js';
 // import Confirm from '../../Confirm/Confirm';
@@ -68,14 +68,6 @@ function Admin(props: { tips: boolean }) {
   const [syncQuantity, setSyncQuantity] = useState(100);
   // const [resettingOrders, setResettingOrders] = useState(false);
   // const [factoryResetting, setFactoryResetting] = useState(false);
-
-  // const approveUserChat = useCallback(
-  //   async (chatPermission) => {
-  //     await approveChat(chatPermission);
-  //     refreshUsers();
-  //   },
-  //   [approveChat, refreshUsers],
-  // )
 
 
   async function sendLoopSpeed() {

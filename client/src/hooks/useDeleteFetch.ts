@@ -12,21 +12,18 @@ const useDeleteFetch = <T>({ url, options, setData, refreshCallback, from }: Use
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const deleteData = useCallback(async (body?: any) => {
+  const deleteData = useCallback(async () => {
     setIsLoading(true);
     try {
       console.log('calling deleteData from:', from, 'to url:', url);
 
       const response = await fetch(url, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        // body: body ? JSON.stringify(body) : undefined,
+        headers: { 'Content-Type': 'application/json' },
         ...options
       });
       console.log('done calling deleteData from:', from, 'to url:', url);
-      
+
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }

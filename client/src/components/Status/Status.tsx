@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useData } from '../../contexts/DataContext.js';
 // import { useSocket } from '../../contexts/SocketProvider.js';
 import { useUser } from '../../contexts/UserContext.js';
@@ -6,7 +6,7 @@ import useLocalStorage from '../../hooks/useLocalStorage.js';
 import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 import { numberWithCommas } from '../../shared.js';
 import './Status.css'
-import { useWebSocket } from '../../contexts/WebSocketContext.js';
+// import { useWebSocket } from '../../contexts/WebSocketContext.js';
 import { ProfitForDuration } from '../../types/index.js';
 
 
@@ -16,7 +16,7 @@ function Status() {
   const { user, refreshUser, theme, btnColor } = useUser();
   // const { tickers, heartbeat } = useWebSocket();
   const {
-    socketStatus, coinbotSocket,
+    // socketStatus, coinbotSocket,
     orders, refreshOrders,
     productID, refreshProducts,
     profit, refreshProfit,

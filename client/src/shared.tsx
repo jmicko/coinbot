@@ -2,6 +2,9 @@
 // or for when circular imports would be a problem
 // DO NOT put anything in here that should never be seen by the client
 
+import { ChangeEvent, FormEvent, MouseEvent } from "react";
+import { Product, ProductWithDecimals } from "./types";
+
 
 // function to pause for x milliseconds in any async function
 function sleep(milliseconds: number) {
@@ -62,6 +65,7 @@ function bellCurve(options: bellCurveOptions) {
 // size: the size of the trade in either base or quote currency
 // startingValue: the price to start the loop at
 interface AutoSetupOptions {
+  [key: string]: any,
   product: any,
   size: number,
   startingValue: number,
@@ -84,7 +88,7 @@ interface User {
   taker_fee: number,
 }
 
-function autoSetup(user:User, options: AutoSetupOptions) {
+function autoSetup(user: User, options: AutoSetupOptions) {
   devLog('user', user, 'options', options);
   // devLog('running autoSetup')
   const product = options.product;
@@ -191,7 +195,7 @@ function autoSetup(user:User, options: AutoSetupOptions) {
 
     // get buy price rounded to cents the precision of the quote currency
     buyPrice = Number(buyPrice.toFixed(product.quote_increment_decimals));
-    // get the sell price by mulltiplying the buy price by the trade pair ratio
+    // get the sell price by multiplying the buy price by the trade pair ratio
 
 
 
@@ -239,8 +243,8 @@ function autoSetup(user:User, options: AutoSetupOptions) {
       side: side,
       limit_price: limit_price,
       base_size: actualSize,
-      buy_quote_size: (actualSize * buyPrice).toFixed(product.quote_increment_decimals),
-      sell_quote_size: (actualSize * original_sell_price).toFixed(product.quote_increment_decimals),
+      buy_quote_size: Number((actualSize * buyPrice).toFixed(product.quote_increment_decimals)),
+      sell_quote_size: Number((actualSize * original_sell_price).toFixed(product.quote_increment_decimals)),
       previous_total_fees: previous_total_fees,
       total_fees: 0,
       product_id: product.product_id,
@@ -434,35 +438,37 @@ function autoSetup(user:User, options: AutoSetupOptions) {
   }
 }
 
-type Product = {
-  base_increment: string,
-  quote_increment: string,
-  base_increment_decimals: number,
-  quote_increment_decimals: number,
-  base_inverse_increment: number,
-  quote_inverse_increment: number,
-  baseMultiplier: number,
-  quoteMultiplier: number,
-  price_rounding: number,
-  baseIncrement: number,
-  quoteIncrement: number,
-}
+// type Product = {
+//   base_increment: string,
+//   quote_increment: string,
+//   base_increment_decimals: number,
+//   quote_increment_decimals: number,
+//   base_inverse_increment: number,
+//   quote_inverse_increment: number,
+//   baseMultiplier: number,
+//   quoteMultiplier: number,
+//   price_rounding: number,
+//   baseIncrement: number,
+//   quoteIncrement: number,
+// }
 
 function addProductDecimals(product: Product) {
-
+  // if (!product) {
+  //   return null;
+  // }
   // devLog(product, '=====================product=====================');
-  const baseIncrementDecimals = findDecimals(product?.base_increment);
-  const base_increment_decimals = findDecimals(product?.base_increment);
+  // const baseIncrementDecimals = findDecimals(product.base_increment);
+  const base_increment_decimals = findDecimals(product.base_increment);
   // devLog(baseIncrement, 'baseIncrement');
-  // const quoteIncrement = findDecimals(product?.quote_increment);
-  const quoteIncrementDecimals = findDecimals(product?.quote_increment);
-  const quote_increment_decimals = findDecimals(product?.quote_increment);
+  // const quoteIncrement = findDecimals(product.quote_increment);
+  const quoteIncrementDecimals = findDecimals(product.quote_increment);
+  const quote_increment_decimals = findDecimals(product.quote_increment);
   // change that to this_style_of_variable which is called snake_case
   // inverse of the quote increment. This is used to round the size in quote to the nearest quote increment
-  const quoteInverseIncrement = Math.pow(10, quoteIncrementDecimals);
+  // const quoteInverseIncrement = Math.pow(10, quoteIncrementDecimals);
   const quote_inverse_increment = Math.pow(10, quote_increment_decimals);
   // inverse of the base increment. This is used to round the size in base to the nearest base increment
-  const baseInverseIncrement = Math.pow(10, baseIncrementDecimals);
+  // const baseInverseIncrement = Math.pow(10, baseIncrementDecimals);
   const base_inverse_increment = Math.pow(10, base_increment_decimals);
   // devLog(baseInverseIncrement, 'baseInverseIncrement', base_inverse_increment === baseInverseIncrement, 'base_inverse_increment');
   // create a rounding decimal place for the price. This is just nice to have and is not required
@@ -472,20 +478,29 @@ function addProductDecimals(product: Product) {
 
 
 
-  return {
+  // return {
+  //   ...product,
+  //   baseIncrementDecimals,
+  //   quoteIncrementDecimals,
+  //   price_rounding,
+  //   baseInverseIncrement,
+  //   quoteInverseIncrement,
+  //   base_increment_decimals,
+  //   quote_increment_decimals,
+  //   base_inverse_increment,
+  //   quote_inverse_increment,
+  // };
+  const productWithDecimals: ProductWithDecimals = {
     ...product,
-    baseIncrementDecimals,
-    quoteIncrementDecimals,
-    price_rounding,
-    baseInverseIncrement,
-    quoteInverseIncrement,
     base_increment_decimals,
     quote_increment_decimals,
     base_inverse_increment,
     quote_inverse_increment,
-  };
+    price_rounding,
+  }
+  return productWithDecimals;
 
-  function findDecimals(number) {
+  function findDecimals(number: string) {
     return number?.split('.')[1]?.split('').findIndex((char) => char !== '0') + 1;
   }
 }
@@ -502,26 +517,28 @@ const granularities = [
 ]
 
 // dev version of devLog that only logs when in dev mode
-function devLog(...args) {
+function devLog(...args: any[]) {
   if (process.env.NODE_ENV === 'development') {
     console.log(...args);
   }
 }
 
-const no = (e) => { e.preventDefault(); }
-const tNum = (e) => { no(e); return Number(e.target.value); }
+type EventType = MouseEvent | ChangeEvent | FormEvent;
 
-const toFloor = (value, rounding) => {
+const no = (e: EventType) => { e.preventDefault(); }
+const tNum = (e: EventType) => { no(e); return Number((e.target as HTMLInputElement).value) }
+
+const toFloor = (value: number, rounding: number) => {
 
   return Math.floor(value * rounding) / rounding;
 }
-const fixedFloor = (value, rounding) => {
+const fixedFloor = (value: number, rounding: number) => {
   // find number of times rounding can be divided by 10
   const logRound = Math.floor(Math.log10(rounding));
   devLog(logRound, 'logRound');
   return (Math.floor(value * rounding) / rounding).toFixed(Number(logRound));
 }
-const fixedRound = (value, rounding) => {
+const fixedRound = (value: number, rounding: number) => {
   const logRound = Math.floor(Math.log10(rounding));
   devLog(logRound, 'logRound');
   return (Math.round(value * rounding) / rounding).toFixed(Number(logRound));

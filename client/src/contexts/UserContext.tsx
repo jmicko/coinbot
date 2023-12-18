@@ -1,5 +1,5 @@
 // UserContext.tsx
-import { createContext, useContext, ReactNode, useEffect } from 'react'
+import { createContext, useContext, ReactNode } from 'react'
 import useGetFetch from '../hooks/useGetFetch.js';
 import useDeleteFetch from '../hooks/useDeleteFetch.js';
 

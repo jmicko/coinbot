@@ -22,7 +22,7 @@ function Home() {
 
   // const { showSettings } = useData();
   const [mobilePage, setMobilePage] = useState('tradeList');
-  const [tradeType, setTradeType] = useState('pair');
+  // const [tradeType, setTradeType] = useState('pair');
 
   // for checkbox to auto scroll
   // const [isAutoScroll, setIsAutoScroll] = useState(true);
