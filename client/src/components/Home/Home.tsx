@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './Home.css';
 
-// import Trade from '../Trade/Trade.js';
+import Trade from '../Trade/Trade';
 // import Messages from '../Messages/Messages.js';
 import Menu from '../Menu/Menu.js';
 import TradeList from '../TradeList/TradeList';
@@ -9,7 +9,7 @@ import Status from '../Status/Status';
 import Settings from '../Settings/Settings';
 // import NotApproved from '../NotApproved/NotApproved.js';
 // import NotActive from '../NotActive/NotActive.js';
-// import MobileNav from '../MobileNav/MobileNav.js';
+import MobileNav from '../MobileNav/MobileNav';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
 import { useUser } from '../../contexts/UserContext';
 // import { useData } from '../../contexts/DataContext';
@@ -18,11 +18,11 @@ import { useUser } from '../../contexts/UserContext';
 function Home() {
 
   const { width, height } = useWindowDimensions();
-  const { user } = useUser();
+  const { user } = useUser(); MobileNav
 
   // const { showSettings } = useData();
   const [mobilePage, setMobilePage] = useState('tradeList');
-  // const [tradeType, setTradeType] = useState('pair');
+  const [tradeType, setTradeType] = useState('pair');
 
   // for checkbox to auto scroll
   // const [isAutoScroll, setIsAutoScroll] = useState(true);
@@ -51,14 +51,14 @@ function Home() {
           ? mobilePage === 'newPair'
             // is the user active
             ? user.active
-              ? <></>
-              // ? <Trade setTradeType={setTradeType} tradeType={tradeType} />
+              // ? <></>
+              ? <Trade />
               // : <NotActive />
               : <></>
             : mobilePage === 'tradeList'
               // is the user approved
               ? user.approved
-                ? <TradeList 
+                ? <TradeList
                 // isAutoScroll={isAutoScroll} 
                 />
                 // ? <></>
@@ -76,9 +76,9 @@ function Home() {
               : <></>
             }
             {user.approved
-              ? <TradeList 
+              ? <TradeList
               // isAutoScroll={isAutoScroll}
-               />
+              />
               // ? <></>
               // : <NotApproved />
               : <></>
@@ -92,7 +92,7 @@ function Home() {
 
       <Status />
       <Settings />
-      {/* {width < 800 && <MobileNav setMobilePage={setMobilePage} />} */}
+      {width < 800 && <MobileNav setMobilePage={setMobilePage} />}
     </div>
   );
 }
