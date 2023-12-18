@@ -1,9 +1,12 @@
-import { useState } from 'react';
 import './Trade.css';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
 import { useUser } from '../../contexts/UserContext';
 import LimitOrder from './LimitOrder';
-// import MarketOrder from './MarketOrder';
+import MarketOrder from './MarketOrder';
+import useLocalStorage from '../../hooks/useLocalStorage';
+import { useData } from '../../contexts/DataContext';
+import { no } from '../../shared';
+import { EventType } from '../../types';
 
 
 function Trade() {
@@ -11,17 +14,22 @@ function Trade() {
   const { user } = useUser();
 
   // state
-  const [tradeType, setTradeType] = useState(true);
-  const [collapse, setCollapse] = useState(true);
+  // const [tradeType, setTradeType] = useLocalStorage<boolean>('tradeType', true);
+  const [collapse, setCollapse] = useLocalStorage<boolean>('collapse', true);
+  const { tradeType, setTradeType } = useData();
 
   // hooks
   const { width } = useWindowDimensions();
 
   // functions
-  function toggleTradeType() {
-    setTradeType(!tradeType);
+  function toggleTradeType(e: EventType) {
+    no(e);
+    if (e.currentTarget) {
+      const newTradeType = (e.currentTarget as HTMLInputElement).value || 'limit'
+      setTradeType(newTradeType);
+    }
   }
-  
+
   function toggleCollapse() {
     setCollapse((prevCollapse) => {
       if (prevCollapse) {
@@ -34,21 +42,30 @@ function Trade() {
 
   return (
     !collapse || width < 800
-      ? tradeType
+      ? tradeType === 'limit'
         ?
-        // <></>
         <LimitOrder
           toggleCollapse={toggleCollapse}
           toggleTradeType={toggleTradeType}
         />
-        : <></>
-        // <MarketOrder
-        //   toggleCollapse={toggleCollapse}
-        //   toggleTradeType={toggleTradeType}
-        // />
+        :
+        <MarketOrder
+          toggleCollapse={toggleCollapse}
+          toggleTradeType={toggleTradeType}
+        />
       : <div className={`Trade scrollable boxed collapsed`} >
-        <button className={`btn-black btn-collapse ${user.theme}`} onClick={toggleCollapse} >&#9654;<br />&#9654;<br />&#9654;</button>
-        {/* <button className={`btn-blue btn-collapse ${user.theme}`} onClick={toggleCollapse} >&#9654;<br/><br/>&#9654;<br/><br/>&#9654;</button> */}
+        <button
+          className={`btn-black btn-collapse ${user.theme}`}
+          onClick={toggleCollapse}
+        >
+          &#9654;<br />&#9654;<br />&#9654;
+        </button>
+        {/* <button
+          className={`btn-black btn-collapse ${user.theme}`}
+          onClick={toggleCollapse}
+        >
+          &#9654;<br /><br />&#9654;<br /><br />&#9654;
+        </button> */}
       </div>
   );
 }

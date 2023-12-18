@@ -2,8 +2,7 @@
 // or for when circular imports would be a problem
 // DO NOT put anything in here that should never be seen by the client
 
-import { ChangeEvent, FormEvent, MouseEvent } from "react";
-import { Product, ProductWithDecimals } from "./types";
+import { EventType, Product, ProductWithDecimals } from "./types";
 
 
 // function to pause for x milliseconds in any async function
@@ -523,7 +522,6 @@ function devLog(...args: any[]) {
   }
 }
 
-type EventType = MouseEvent | ChangeEvent | FormEvent;
 
 const no = (e: EventType) => { e.preventDefault(); }
 const tNum = (e: EventType) => { no(e); return Number((e.target as HTMLInputElement).value) }

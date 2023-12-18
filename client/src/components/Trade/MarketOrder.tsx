@@ -1,15 +1,16 @@
 import './IncrementButtons.css';
-import { FormEvent, useState } from 'react';
+import { FormEvent } from 'react';
 // import { useSocket } from '../../contexts/SocketProvider';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
 // import IncrementButtons from './IncrementButtons';
 import { numberWithCommas, tNum, no, fixedFloor, devLog } from '../../shared';
 import { useUser } from '../../contexts/UserContext';
 import { useData } from '../../contexts/DataContext';
+import { EventType, marketOrderState } from '../../types';
 
 interface limitOrderProps {
   toggleCollapse: () => void;
-  toggleTradeType: () => void;
+  toggleTradeType: (e: EventType) => void;
 }
 
 function LimitOrder(props: limitOrderProps) {
@@ -18,22 +19,32 @@ function LimitOrder(props: limitOrderProps) {
   const { user, theme, btnColor } = useUser();
   // const { currentPrice } = useSocket();
   const currentPrice = 20;
-  const { productID, createMarketTrade, currentProduct } = useData();
+  const {
+    productID,
+    createMarketTrade,
+    currentProduct,
+    marketOrder,
+    setMarketOrder,
+    // setTradeType,
+  } = useData();
 
   // hooks
   const { width } = useWindowDimensions();
 
-  // state
-  const [marketOrder, setMarketOrder] = useState({
-    base_size: 0,
-    quote_size: 0,
-    side: 'BUY',
-  });
+  // the side is the value of the button so it should be on the event
+  function handleSideChange(e: FormEvent<HTMLInputElement>) {
+    no(e);
+    console.log(e.currentTarget.value, 'side');
+    const side = e.currentTarget.value;
+    setMarketOrder((prevMarketOrder: marketOrderState) => {
+      return { ...prevMarketOrder, side: side }
+    })
+  }
 
   // destructuring
   const { base_size, side } = marketOrder;
   const toggleCollapse = props.toggleCollapse;
-  const toggleTradeType = props.toggleTradeType;
+  // const toggleTradeType = props.toggleTradeType;
 
   // functions
   function submitTransaction(e: FormEvent<HTMLFormElement>) {
@@ -47,46 +58,45 @@ function LimitOrder(props: limitOrderProps) {
     })
   }
 
-  // change market order function that takes in a key and value and sets the limitOrder state
-  // function changeMarketOrder(key, value) {
-  //   setMarketOrder(prevState => ({
-  //     ...prevState,
-  //     [key]: value
-  //   }))
-  // }
-
-
-
   return (
-    <div className={`Trade scrollable boxed`} >
+    <div className={`Trade scrollable boxed ${side}-color`} >
 
-      <h3 className={`title market-order ${theme}`}>{width > 800
-        && <button
-          className={`${btnColor} ${theme}`}
-          onClick={toggleCollapse}
-        >&#9664;</button>
-      } Market Order <button
-        className={`${btnColor} ${theme}`}
-        onClick={toggleTradeType} >Switch</button></h3>
+      <h3 className={`title market-order ${theme}`}>
+        {width > 800 &&
+          <button
+            className={`${btnColor} ${theme}`}
+            onClick={toggleCollapse}
+          >
+            &#9664;
+          </button>} Market Order <button
+            className={`${btnColor} ${theme}`}
+            value={'limit'}
+            onClick={props.toggleTradeType}
+          >Switch</button>
+      </h3>
       {/* form with a single input. Input takes a price point at which to make a trade */}
-      <div className={`Trade ${side}-color`}>
-        <form className={`basic-trade-form`} onSubmit={submitTransaction} >
-
+      <div className={`Trade`}>
+        <form
+          className={`basic-trade-form`}
+          onSubmit={submitTransaction}
+        >
           {/* SIDE BUTTONS */}
           <div className={`basic-trade-buttons`}>
-            <input className={`btn-green btn-side ${theme}`} onClick={(e) => {
-              no(e);
-              setMarketOrder((prevMarketOrder) => { return { ...prevMarketOrder, side: 'BUY' } })
-            }
-            } type="button" name="submit" value="BUY" />
-            <input className={`btn-red btn-side ${theme}`} onClick={(e) => {
-              no(e);
-              setMarketOrder((prevMarketOrder) => { return { ...prevMarketOrder, side: 'SELL' } })
-            }
-            } type="button" name="submit" value="SELL" />
+            <input
+              className={`btn-green btn-side ${theme}`}
+              onClick={handleSideChange}
+              type="button"
+              name="buy"
+              value="BUY" />
+            <input
+              className={`btn-red btn-side ${theme}`}
+              onClick={handleSideChange}
+              type="button"
+              name="sell"
+              value="SELL" />
           </div>
 
-          <p>
+          <h4>
             <strong>
               {
                 side === 'BUY'
@@ -94,7 +104,7 @@ function LimitOrder(props: limitOrderProps) {
                   : 'Selling'
               }
             </strong>
-          </p>
+          </h4>
 
           {/* SIZE INPUT */}
           <label htmlFor="trade-amount">
@@ -109,7 +119,7 @@ function LimitOrder(props: limitOrderProps) {
             required
             onChange={(e) => {
               // no(e);
-              setMarketOrder((prevMarketOrder) => { return { ...prevMarketOrder, base_size: tNum(e) } })
+              setMarketOrder((prevMarketOrder: marketOrderState) => { return { ...prevMarketOrder, base_size: tNum(e) } })
             }
             }
           />
@@ -117,7 +127,7 @@ function LimitOrder(props: limitOrderProps) {
           {(side === 'SELL') && <input
             className={`${btnColor} ${theme}`}
             // onClick={() => setBasicAmount(Number(user.availableFunds?.[productID].base_available))}
-            onClick={() => setMarketOrder((prevMarketOrder) => { return { ...prevMarketOrder, base_size: Number(fixedFloor(user.availableFunds?.[productID].base_available, currentProduct.base_increment_decimals)) } })}
+            onClick={() => setMarketOrder((prevMarketOrder: marketOrderState) => { return { ...prevMarketOrder, base_size: Number(fixedFloor(user.availableFunds?.[productID].base_available, currentProduct.base_increment_decimals)) } })}
             type="button"
             name="submit"
             value="Max" />}

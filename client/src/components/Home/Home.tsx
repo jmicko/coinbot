@@ -70,8 +70,8 @@ function Home() {
           // show all pages
           : <>
             {user.active
-              // ? <Trade setTradeType={setTradeType} tradeType={tradeType} />
-              ? <></>
+              ? <Trade />
+              // ? <></>
               // : <NotActive />
               : <></>
             }
@@ -92,7 +92,10 @@ function Home() {
 
       <Status />
       <Settings />
-      {width < 800 && <MobileNav setMobilePage={setMobilePage} />}
+      {width < 800 && <MobileNav
+        setMobilePage={setMobilePage}
+        mobilePage={mobilePage}
+      />}
     </div>
   );
 }

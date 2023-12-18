@@ -5,7 +5,7 @@ import useDeleteFetch from '../hooks/useDeleteFetch.js';
 import { addProductDecimals } from '../shared';
 import { useUser } from './UserContext.js';
 import usePutFetch from '../hooks/usePutFetch.js';
-import { Product, ProductWithDecimals } from '../types/index.js';
+import { Product, ProductWithDecimals, marketOrderState } from '../types/index.js';
 // import { devLog } from '../shared.js';
 const DataContext = createContext<any | null>(null)
 
@@ -43,7 +43,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     from: 'products in data context'
   })
   console.log(products, 'products object in data context');
-  
+
   // get the profits for the selected product
   const { data: profit,
     refresh: refreshProfit,
@@ -113,9 +113,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // const { updateData: syncPair } = useFetchData(`/api/trade/`, { defaultState: {}, noLoad: true });
   // const { createData: createMarketTrade } = useFetchData(`/api/trade/market`, { defaultState: {}, noLoad: true });
   // const { data: exportableFiles, refresh: refreshExportableFiles } = useFetchData(`/api/account/exportableFiles`, { defaultState: [] })
-  // // TRADE FUNCTIONS
-  const currentProductNoDecimals:Product | null = products.allProducts.find((product) => product.product_id === productID) || null;
-  const currentProduct:ProductWithDecimals | null = currentProductNoDecimals ? addProductDecimals(currentProductNoDecimals) : null;
+  // TRADE FUNCTIONS
+  const currentProductNoDecimals: Product | null = products.allProducts.find((product) => product.product_id === productID) || null;
+  
+  const currentProduct: ProductWithDecimals | null = currentProductNoDecimals ? addProductDecimals(currentProductNoDecimals) : null;
+
+  // TRADE STATE
+  const [marketOrder, setMarketOrder] = useState<marketOrderState>({
+    base_size: 0,
+    quote_size: 0,
+    side: 'BUY',
+  });
+  const [tradeType, setTradeType] = useState('market');
 
   // //////////////////////////
   // //////// SETTINGS ////////
@@ -162,7 +171,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           availableBase, availableQuote,
 
           // // products
-          products, currentProduct, 
+          products, currentProduct,
           productID, setProductID, refreshProducts,
           // toggleActiveProduct,
 
@@ -180,12 +189,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
           // // TRADE
           // exportableFiles, refreshExportableFiles,
+          marketOrder, setMarketOrder, tradeType, setTradeType,
 
           // // SETTINGS
           // pause, killLock, setTheme, sendTradeLoadMax, updateProfitAccuracy, sendSyncQuantity,
 
           // SOCKETS
-          coinbotSocket, setCoinbotSocket, socketStatus, setSocketStatus, deadCon
+          coinbotSocket, setCoinbotSocket, socketStatus, setSocketStatus, deadCon,
         }
       }>
       {children}

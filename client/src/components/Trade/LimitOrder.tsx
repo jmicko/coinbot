@@ -5,10 +5,11 @@ import useWindowDimensions from '../../hooks/useWindowDimensions';
 import { numberWithCommas, tNum, no, fixedRound } from '../../shared';
 import { useUser } from '../../contexts/UserContext';
 import { useData } from '../../contexts/DataContext';
+import { EventType } from '../../types';
 
 interface LimitOrderProps {
   toggleCollapse: () => void;
-  toggleTradeType: () => void;
+  toggleTradeType: (e: EventType) => void;
 }
 
 function LimitOrder(props: LimitOrderProps) {
@@ -50,11 +51,11 @@ function LimitOrder(props: LimitOrderProps) {
     base_increment_decimals,
     quote_increment_decimals,
     price_rounding
-  } = currentProduct;
+  } = currentProduct || {};
 
   // props
   const toggleCollapse = props.toggleCollapse;
-  const toggleTradeType = props.toggleTradeType;
+  // const toggleTradeType = props.toggleTradeType;
 
   // functions
   // change limitOrder function that takes in a key and value and sets the limitOrder state
@@ -149,7 +150,8 @@ function LimitOrder(props: LimitOrderProps) {
             onClick={toggleCollapse} >&#9664;</button>
         } New Trade-Pair <button
           className={`${btnColor} ${theme}`}
-          onClick={toggleTradeType}
+          value={'market'}
+          onClick={props.toggleTradeType}
         >Switch</button>
       </h3>
       {/* form for setting up individual trade-pairs */}

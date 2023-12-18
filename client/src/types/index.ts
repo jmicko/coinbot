@@ -1,3 +1,5 @@
+import { ChangeEvent, FormEvent } from "react";
+
 export interface Order {
   order_id: string;
   side: string;
@@ -126,3 +128,11 @@ export interface Decimals {
 }
 
 export interface ProductWithDecimals extends Product, Decimals {}
+
+export interface marketOrderState {
+  base_size: number;
+  quote_size: number;
+  side: string;
+}
+
+export type EventType = MouseEvent | ChangeEvent | FormEvent;
