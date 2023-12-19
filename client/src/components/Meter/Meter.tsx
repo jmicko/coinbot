@@ -47,26 +47,39 @@ function Meter(props: MeterProps) {
     }
   }, [props, currentPrice, difference])
 
-  const MeterElement = () => {
-    return (
-      <canvas className="Meter" ref={canvasRef} />
-    )
-  }
+  // const MeterElement = () => {
+  //   return (
+  //     <canvas className="Meter" ref={canvasRef} />
+  //   )
+  // }
 
-  const BrokenMeter = () => {
-    return (
-      <p>
+  // const BrokenMeter = () => {
+  //   console.log('cannot draw');
+
+  //   return (
+  //     <p>
+  //       Somethin'<br />
+  //       ain't<br />
+  //       right<br />
+  //       here,<br />
+  //       boss
+  //     </p>
+  //   )
+  // }
+  return (
+    <>
+      <canvas className={`Meter ${!canDraw && 'hidden'}`} ref={canvasRef} />
+      <p className={`${canDraw && 'hidden'}`}>
         Somethin'<br />
         ain't<br />
         right<br />
         here,<br />
         boss
       </p>
-    )
-  }
-
-  if (canDraw) return <MeterElement />
-  else return <BrokenMeter />
+    </>
+  )
+  // if (canDraw) return <MeterElement />
+  // else return <BrokenMeter />
 }
 
 export default Meter;
