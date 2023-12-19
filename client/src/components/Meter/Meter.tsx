@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import { useWebSocket } from '../../contexts/WebSocketContext';
+import { useEffect, useRef } from 'react';
 import './Meter.css'
 import { useData } from '../../contexts/DataContext';
+import { useWebSocket } from '../../contexts/useWebsocket';
 
 interface MeterProps {
   min: number;

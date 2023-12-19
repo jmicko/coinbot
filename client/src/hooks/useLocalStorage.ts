@@ -4,8 +4,10 @@ import { useUser } from '../contexts/UserContext.js'
 // this helps differentiate apps that are all running on localhost because local storage will conflict
 const PREFIX:string = process.env.NODE_ENV === 'development' ? 'coinbot-dev-' : 'coinbot-pqw9743yg5r8-'
 
+type InitialValue<T> = T | (() => T);
+
 // this function works like a normal useState, but persists everything into local storage
-export default function useLocalStorage<T>(key:string, initialValue:T): [T, Dispatch<SetStateAction<T>>]  {
+export default function useLocalStorage<T>(key:string, initialValue: InitialValue<T>): [T, Dispatch<SetStateAction<T>>]  {
   const { user } = useUser()
   const prefixedKey:string = user.username ? PREFIX + user.username + '-' + key : PREFIX + key
   const [value, setValue] = useState<T>(() => {
@@ -15,7 +17,8 @@ export default function useLocalStorage<T>(key:string, initialValue:T): [T, Disp
     if (jsonValue != null) return JSON.parse(jsonValue)
     // if the initial value is a function, call the function
     if (typeof initialValue === 'function') {
-      return (initialValue as Function)()
+      const initialValueFunction = initialValue as () => T;
+      return initialValueFunction()
     } else {
       // if it's not a function, just return the value
       return initialValue

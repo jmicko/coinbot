@@ -7,14 +7,14 @@ import Meter from '../Meter/Meter';
 import { useUser } from '../../contexts/UserContext';
 import { useData } from '../../contexts/DataContext';
 import { Order } from '../../types/index';
-import { useWebSocket } from '../../contexts/WebSocketContext';
+import { useWebSocket } from '../../contexts/useWebsocket';
 
 // props: { isAutoScroll: boolean }
 function TradeList() {
   const robotRef = useRef<HTMLDivElement | null>(null)
   const { tickers } = useWebSocket();
   const { user, theme, } = useUser();
-  const { orders, isAutoScroll, canScroll, productID, currentProduct, pd } = useData();
+  const { orders, isAutoScroll, canScroll, productID, pd } = useData();
   // these will store mapped arrays as html so they can be used after page loads
   const [buys, setBuys] = useState(<></>);
   const [sells, setSells] = useState(<></>);

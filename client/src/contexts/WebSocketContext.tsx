@@ -1,36 +1,33 @@
-import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
-// import { useUser } from './UserContext';
+import { useEffect, useRef, useState, ReactNode } from 'react';
+import { useData } from './DataContext';
+import { Tickers } from '../types';
+import { WebSocketContext } from './useWebsocket';
 
-interface Tickers {
-  [key: string]: {
-    price: number;
-  }
-}
 
-interface WebSocketContextProps {
-  socket: WebSocket | null;
-  heartbeat: { heart: string, beat: string, count: number };
-  tickers: Tickers;
-}
 
-const defaultContext: WebSocketContextProps = {
-  socket: null,
-  heartbeat: { heart: '', beat: '', count: 0 },
-  tickers: {},
-};
+// interface WebSocketContextProps {
+//   socket: WebSocket | null;
+//   heartbeat: { heart: string, beat: string, count: number };
+//   tickers: Tickers;
+// }
 
-const WebSocketContext = createContext<WebSocketContextProps >(defaultContext);
+// const defaultContext: WebSocketContextProps = {
+//   socket: null,
+//   heartbeat: { heart: '', beat: '', count: 0 },
+//   tickers: {},
+// };
 
-export function useWebSocket(): WebSocketContextProps  {
-  return useContext(WebSocketContext);
-}
+// const WebSocketContext = createContext<WebSocketContextProps>(defaultContext);
 
-export const WebSocketProvider = ({ children }: {children: ReactNode }) => {
+// export function useWebSocket(): WebSocketContextProps {
+//   return useContext(WebSocketContext);
+// }
+
+export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   const socketRef = useRef<WebSocket | null>(null);
   const [tickers, setTickers] = useState<Tickers>({ "BTC-USD": { price: 0 }, "ETH-USD": { price: 0 } });
   const [heartbeat, setHeartbeat] = useState({ heart: 'heart', beat: 'beat', count: 0 });
-
-  // const { user } = useUser();
+  const setSocketStatus = useData().setSocketStatus;
 
   useEffect(() => {
     let ENDPOINT = origin;
@@ -39,8 +36,6 @@ export const WebSocketProvider = ({ children }: {children: ReactNode }) => {
     ENDPOINT = ENDPOINT.replace('http', 'ws');
     console.log('ENDPOINT: ', ENDPOINT);
     let backoff = 1000;
-
-    // console.log(user, 'user in WebSocketProvider');
 
     // socketRef.current = new WebSocket(ENDPOINT + '/api');
 
@@ -56,7 +51,7 @@ export const WebSocketProvider = ({ children }: {children: ReactNode }) => {
         socket.onopen = () => {
           backoff = 1000;
           console.log('WebSocket open');
-          timer();
+          timer(socket);
         };
 
         socket.onmessage = (event) => {
@@ -65,7 +60,7 @@ export const WebSocketProvider = ({ children }: {children: ReactNode }) => {
 
           if (data.type === 'ping') {
             socket.send(JSON.stringify({ type: 'pong' }));
-            
+
           } else if (data.type === 'heartbeat') {
             // console.log('heartbeat data: ', data);
             setHeartbeat(prevHeartbeat => {
@@ -89,11 +84,11 @@ export const WebSocketProvider = ({ children }: {children: ReactNode }) => {
             }));
           } else if (data.type === 'socketStatus') {
             // console.log('socketStatus data: ', data);
-            // setSocketStatus(data.status);
+            setSocketStatus(data.status);
           } else {
             console.log('WebSocket message: ', data);
           }
-          timer();
+          timer(socket);
         };
 
         // handle errors
@@ -115,15 +110,6 @@ export const WebSocketProvider = ({ children }: {children: ReactNode }) => {
           if (backoff > 30000) backoff = 30000;
         };
 
-        function timer() {
-          clearTimeout(timeOut);
-          timeOut = setTimeout(() => {
-            console.log('ending socket after timeout');
-            socket.close();
-          }, 10000);
-        }
-
-
       } catch (error) {
         console.log('error reconnecting: ', error);
         shouldClose = true;
@@ -138,6 +124,17 @@ export const WebSocketProvider = ({ children }: {children: ReactNode }) => {
         backoff *= 2;
         if (backoff > 30000) backoff = 30000;
       }
+
+      function timer(socket: WebSocket) {
+        clearTimeout(timeOut);
+        timeOut = setTimeout(() => {
+          console.log('ending socket after timeout');
+          socket.close();
+        }, 10000);
+      }
+
+
+
     }
 
     reconnect();
@@ -147,7 +144,7 @@ export const WebSocketProvider = ({ children }: {children: ReactNode }) => {
       shouldClose = true;
       socketRef.current?.close();
     };
-  }, []);
+  }, [setSocketStatus]);
 
   // const value = useMemo(() => ({ socket: socketRef.current }), []);
 
@@ -155,11 +152,11 @@ export const WebSocketProvider = ({ children }: {children: ReactNode }) => {
   return (
     <WebSocketContext.Provider
       // value={value}>
-      value={{ 
+      value={{
         socket: socketRef.current,
         heartbeat,
         tickers,
-         }}>
+      }}>
       {children}
     </WebSocketContext.Provider>
   );

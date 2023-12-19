@@ -12,7 +12,7 @@ const usePostFetch = <T>({ url, options, setData, refreshCallback, from }: usePo
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const postData = useCallback(async (body?: any) => {
+  const postData = useCallback(async (body?: unknown) => {
     setIsLoading(true);
     try {
       console.log('calling postData from', from);
@@ -51,7 +51,7 @@ const usePostFetch = <T>({ url, options, setData, refreshCallback, from }: usePo
     } finally {
       setIsLoading(false);
     }
-  }, [url, options, setData]);
+  }, [url, options, setData, from, refreshCallback]);
 
   return { isLoading, error, postData, };
 };

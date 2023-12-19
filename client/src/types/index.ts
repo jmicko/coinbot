@@ -147,3 +147,8 @@ export interface Message {
   type: string;
 }
 
+export interface Tickers {
+  [key: string]: {
+    price: number;
+  }
+}

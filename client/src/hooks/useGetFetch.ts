@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 type FetchDataOptions<T> = {
   defaultState: T;
@@ -12,7 +12,7 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
   const [error, setError] = useState<Error | null>(null);
   const hasFetched = useRef<boolean>(false);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     console.log(options.from, '<== fetching data from');
 
     setIsLoading(true);
@@ -36,7 +36,7 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [url, options.from]);
 
   const clear = () => {
     setData(options.defaultState)
@@ -53,7 +53,7 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
     return () => {
       hasFetched.current = true;
     }
-  }, [url]);
+  }, [url, options.preload, fetchData]);
 
   return {
     data,

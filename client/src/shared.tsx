@@ -17,7 +17,7 @@ const numberWithCommas = (x: number | string) => {
   // for now, use this
   // devLog('x', x)
   if (x !== null && x !== undefined) {
-    let parts = x.toString().split(".");
+    const parts = x.toString().split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     return parts.join(".");
   } else {
@@ -64,8 +64,8 @@ function bellCurve(options: bellCurveOptions) {
 // size: the size of the trade in either base or quote currency
 // startingValue: the price to start the loop at
 interface AutoSetupOptions {
-  [key: string]: any,
-  product: any,
+  [key: string]: string | number | boolean | ProductWithDecimals,
+  product: ProductWithDecimals,
   size: number,
   startingValue: number,
   endingValue: number,
@@ -100,7 +100,7 @@ function autoSetup(user: User, options: AutoSetupOptions) {
   }
 
   // if any key in the options object is null or undefined, return falseReturn
-  for (let key in options) {
+  for (const key in options) {
     if (options[key] === null || options[key] === undefined) {
       devLog('bad options')
       return falseReturn;
@@ -145,7 +145,7 @@ function autoSetup(user: User, options: AutoSetupOptions) {
   // initialize values for the loop
   let buyPrice = startingValue;
   let cost = 0;
-  let loopDirection = (endingValue - startingValue < 0) ? "down" : "up";
+  const loopDirection = (endingValue - startingValue < 0) ? "down" : "up";
 
   let btcToBuy = 0;
   let quoteToReserve = 0;
@@ -200,19 +200,19 @@ function autoSetup(user: User, options: AutoSetupOptions) {
 
     // let original_sell_price = (buyPrice * Number(trade_pair_ratio)).toFixed(product.quote_increment_decimals);
     // THIS IS NOT OLD CODE FROM WHEN BTC-USD WAS THE ONLY PRODUCT. Using 100 here because the trade_pair_ratio is a percentage. 
-    let original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + 100))) / 100);
+    const original_sell_price = (Math.round((buyPrice * (Number(trade_pair_ratio) + 100))) / 100);
 
 
 
 
     // devLog(tradingPrice, '<-tradingPrice', buyPrice > tradingPrice, '<-true if SELL', buyPrice, '<-buyPrice', original_sell_price, 'original_sell_price', trade_pair_ratio, 'trade_pair_ratio')
     // figure out if it is going to be a BUY or a sell. Buys will be below current trade price, sells above.
-    let side = (buyPrice > tradingPrice)
+    const side = (buyPrice > tradingPrice)
       ? 'SELL'
       : 'BUY'
 
     // set the current price based on if it is a BUY or sell
-    let limit_price = (side === 'SELL')
+    const limit_price = (side === 'SELL')
       ? original_sell_price
       : buyPrice
 
@@ -293,7 +293,7 @@ function autoSetup(user: User, options: AutoSetupOptions) {
         ? buyPrice
         : tradingPrice
 
-      let USDSize = size * conversionPrice;
+      const USDSize = size * conversionPrice;
       availableFunds -= USDSize;
       cost += USDSize;
       // buy orders need to add quote value to quoteToReserve
@@ -399,9 +399,9 @@ function autoSetup(user: User, options: AutoSetupOptions) {
   // devLog(buyCount, 'buyCount');
 
   function stopChecker() {
-    let USDSize = size * buyPrice;
+    const USDSize = size * buyPrice;
     // calc next round funds
-    let nextFunds = (sizeType === 'base')
+    const nextFunds = (sizeType === 'base')
       ? availableFunds - USDSize
       : availableFunds - size
     // devLog(((availableFunds - nextFunds) < 0) && !options.ignoreFunds, nextFunds, 'next funds', availableFunds, !options.ignoreFunds);
@@ -516,7 +516,7 @@ const granularities = [
 ]
 
 // dev version of devLog that only logs when in dev mode
-function devLog(...args: any[]) {
+function devLog(...args: unknown[]) {
   if (process.env.NODE_ENV === 'development') {
     console.log(...args);
   }

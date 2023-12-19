@@ -7,7 +7,8 @@ import useWindowDimensions from '../../hooks/useWindowDimensions';
 import { numberWithCommas } from '../../shared';
 import './Status.css'
 import { ProfitForDuration } from '../../types/index';
-import { useWebSocket } from '../../contexts/WebSocketContext';
+import { useWebSocket } from '../../contexts/useWebsocket';
+// import { useWebSocket } from '../../contexts/WebSocketContext';
 
 
 function Status() {

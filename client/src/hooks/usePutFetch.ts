@@ -12,7 +12,7 @@ const usePutFetch = <T>({ url, options, setData, refreshCallback, from }: UsePut
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const putData = useCallback(async (body?: any) => {
+  const putData = useCallback(async (body?: unknown) => {
     setIsLoading(true);
     try {
       console.log('calling putData from', from);
@@ -51,7 +51,7 @@ const usePutFetch = <T>({ url, options, setData, refreshCallback, from }: UsePut
     } finally {
       setIsLoading(false);
     }
-  }, [url, options, setData]);
+  }, [url, options, setData, from, refreshCallback]);
 
   return { isLoading, error, putData };
 };

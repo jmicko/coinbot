@@ -1,14 +1,14 @@
 import { useState, useCallback } from 'react';
 
-interface UseDeleteFetchProps {
+interface UseDeleteFetchProps<T> {
   url: string;
   options?: RequestInit;
-  setData?: React.Dispatch<React.SetStateAction<any>>;
+  setData?: React.Dispatch<React.SetStateAction<T>>;
   refreshCallback?: () => void;
   from: string;
 }
 
-const useDeleteFetch = <T>({ url, options, setData, refreshCallback, from }: UseDeleteFetchProps) => {
+const useDeleteFetch = <T>({ url, options, setData, refreshCallback, from }: UseDeleteFetchProps<T>) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -49,7 +49,7 @@ const useDeleteFetch = <T>({ url, options, setData, refreshCallback, from }: Use
     } finally {
       setIsLoading(false);
     }
-  }, [url, options]);
+  }, [url, options, setData, from, refreshCallback]);
 
   return { isLoading, error, deleteData, };
 };
