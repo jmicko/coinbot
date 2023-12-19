@@ -197,7 +197,7 @@ router.put('/profitAccuracy', rejectUnauthenticated, async (req, res) => {
 router.put('/killLock', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   try {
-    databaseClient.setKillLock(!user.kill_locked, user.id);
+    await databaseClient.setKillLock(!user.kill_locked, user.id);
     await userStorage[user.id].update();
     devLog('kill lock route hit', user);
     res.sendStatus(200);

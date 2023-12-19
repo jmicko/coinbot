@@ -15,7 +15,7 @@ const usePutFetch = <T>({ url, options, setData, refreshCallback, from }: UsePut
   const putData = useCallback(async (body?: unknown) => {
     setIsLoading(true);
     try {
-      console.log('calling putData from', from);
+      console.log('calling putData from', from, 'with body:', body);
 
       const response = await fetch(url, {
         method: 'PUT',

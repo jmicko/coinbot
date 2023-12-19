@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Admin from './Admin/Admin';
 // import AutoSetup from './AutoSetup/AutoSetup.js';
-// import General from './General/General.js';
+import General from './General/General';
 // import Products from './Products/Products.js';
 // import Investment from './Investment/Investment.js';
 // import Reset from './Reset/Reset.js';
@@ -62,7 +62,7 @@ function Settings() {
         <div className={`${collapseParent && 'hide'}`}>
           {
             {
-              // 'general': <General product={props.product} theme={theme} tips={tips} />,
+              'general': <General tips={tips} />,
               // 'products': <Products product={props.product} theme={theme} tips={tips} />,
               // 'investment': <Investment product={props.product} theme={theme} tips={tips} />,
               // 'autoSetup': <AutoSetup product={props.product} theme={theme} tips={tips} priceTicker={props.priceTicker} />,

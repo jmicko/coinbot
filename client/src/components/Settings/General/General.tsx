@@ -1,17 +1,64 @@
-import React, { useState } from 'react';
-import { useData } from '../../../contexts/DataContext.js';
-import { useUser } from '../../../contexts/UserContext.js';
+import { useState } from 'react';
 import './General.css'
 import coinbotFilled from '../../../coinbotFilled.png';
 import { no } from '../../../shared.js';
-const themes = { original: 'Original', darkTheme: 'Dark' }
+import { useUser } from '../../../contexts/useUser.js';
+import { useData } from '../../../contexts/useData.js';
+// import usePostFetch from '../../../hooks/usePostFetch.js';
+import { EventType } from '../../../types/index.js';
+import usePutFetch from '../../../hooks/usePutFetch.js';
+const themes: { [key: string]: string } = { original: 'Original', darkTheme: 'Dark' };
 
-function General(props) {
-  const { user, theme } = useUser();
-  const { pause, killLock, setTheme, sendTradeLoadMax, updateProfitAccuracy, sendSyncQuantity } = useData();
+function General(props: { tips: boolean }) {
+  const { user, theme, refreshUser } = useUser();
+  const {
+    // pause,
+    // killLock,
+    // setTheme,
+    // sendTradeLoadMax,
+    // updateProfitAccuracy,
+    // sendSyncQuantity
+  } = useData();
 
-  const [max_trade_load, setMaxTradeLoad] = useState(100);
-  const [profit_accuracy, setProfit_accuracy] = useState(2);
+  const { putData: pause } = usePutFetch({
+    url: '/api/settings/pause',
+    from: 'pause in General.tsx',
+    refreshCallback: refreshUser
+  });
+
+  const { putData: killLock } = usePutFetch({
+    url: '/api/settings/killLock',
+    from: 'killLock in General.tsx',
+    refreshCallback: refreshUser
+  });
+
+  const { putData: setTheme } = usePutFetch({
+    url: '/api/settings/theme',
+    from: 'setTheme in General.tsx',
+    refreshCallback: refreshUser
+  });
+
+  const { putData: sendTradeLoadMax } = usePutFetch({
+    url: '/api/settings/tradeLoadMax',
+    from: 'sendTradeLoadMax in General.tsx',
+    refreshCallback: refreshUser
+  });
+
+  const { putData: updateProfitAccuracy } = usePutFetch({
+    url: '/api/settings/profitAccuracy',
+    from: 'updateProfitAccuracy in General.tsx',
+    refreshCallback: refreshUser
+  });
+
+  const { putData: sendSyncQuantity } = usePutFetch({
+    url: '/api/settings/syncQuantity',
+    from: 'sendSyncQuantity in General.tsx',
+    refreshCallback: refreshUser
+  });
+
+
+  const [max_trade_load, setMaxTradeLoad] = useState(user.max_trade_load);
+  const [profit_accuracy, setProfit_accuracy] = useState(user.profit_accuracy);
   const [sync_quantity, setSync_quantity] = useState(user.sync_quantity);
   const [notificationSettings, setNotificationSettings] = useState({
     dailyNotifications: true,
@@ -20,7 +67,7 @@ function General(props) {
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   });
 
-  function handleNotificationSettingsChange(event) {
+  function handleNotificationSettingsChange(event: React.ChangeEvent<HTMLInputElement>) {
     event.preventDefault();
     const { name, value } = event.target;
     setNotificationSettings({ ...notificationSettings, [name]: value });
@@ -29,10 +76,10 @@ function General(props) {
 
   function randomNotification() {
 
-
+    console.log('displaying random notification');
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then(registration => {
-        registration.active.postMessage(JSON.stringify({
+        registration.active?.postMessage(JSON.stringify({
           type: 'show-notification',
           title: 'Notifications are working!',
           body: 'You can disable these at any time in your browser settings, or by clicking the lock icon in the address bar.',
@@ -43,8 +90,9 @@ function General(props) {
   }
 
 
-  function notificationHandler(e) {
+  function notificationHandler(e: EventType) {
     no(e);
+    console.log('notification handler');
     if (!("Notification" in window)) {
       console.log("This browser does not support desktop notification");
     } else if (Notification.permission === "granted") {
@@ -53,6 +101,7 @@ function General(props) {
       getSubscription();
 
     } else if (Notification.permission !== "denied") {
+      console.log('Notification permission not granted, requesting permission');
       Notification.requestPermission().then(function (permission) {
         console.log('Notification permission:', permission);
         if (permission === "granted") {
@@ -62,10 +111,12 @@ function General(props) {
 
         }
       });
+    } else {
+      console.log('Notification permission denied');
     }
   }
 
-  function urlBase64ToUint8Array(base64String) {
+  function urlBase64ToUint8Array(base64String: string) {
     var padding = '='.repeat((4 - base64String.length % 4) % 4);
     var base64 = (base64String + padding)
       .replace(/\-/g, '+')
@@ -120,12 +171,12 @@ function General(props) {
     // create a date from the time string
     const date = new Date();
     const time = notificationSettings.dailyNotificationsTime.split(':');
-    date.setHours(time[0]);
-    date.setMinutes(time[1]);
+    date.setHours(Number(time[0]));
+    date.setMinutes(Number(time[1]));
     date.setSeconds(0);
     date.setMilliseconds(0);
-    
-    
+
+
 
     // send the subscription object to the server
     console.log("sending subscription to server");
@@ -133,7 +184,7 @@ function General(props) {
       method: "POST",
       body: JSON.stringify({
         subscription: subscription,
-        notificationSettings: {...notificationSettings, dailyNotificationsTime: date},
+        notificationSettings: { ...notificationSettings, dailyNotificationsTime: date },
       }),
       headers: {
         "content-type": "application/json",
@@ -151,7 +202,7 @@ function General(props) {
       <h4>Theme</h4>
       {Object.keys(themes).map((theme) => {
         return (
-          <button key={theme} className={`btn-blue medium ${theme}`} onClick={() => { setTheme(theme) }}>
+          <button key={theme} className={`btn-blue medium ${theme}`} onClick={() => { setTheme({ theme: theme }) }}>
             {themes[theme]}
           </button>
         )
@@ -168,14 +219,18 @@ function General(props) {
         ? <button className={`btn-blue medium ${user.theme}`} onClick={pause}>Unpause</button>
         : <button className={`btn-blue medium ${user.theme}`} onClick={pause}>Pause</button>
       } */}
-      <button className={`btn-blue medium ${user.theme}`} onClick={pause}>{user.paused ? 'Unpause' : 'Pause'}</button>
+      <button
+        className={`btn-blue medium ${user.theme}`}
+        onClick={() => { pause() }}>
+        {user.paused ? 'Unpause' : 'Pause'}
+      </button>
       <div className={`divider ${theme}`} />
 
       {/* NOTIFICATIONS */}
       <h4>Notifications</h4>
       {/* {JSON.stringify(notificationSettings)} */}
       <p>
-        Enable browser notifications. 
+        Enable browser notifications.
         This is on a per browser/device basis, so you will need to enable notifications in each browser on each device that you want to receive notifications on.
         Best not to do this on a shared or public device.
       </p>
@@ -227,7 +282,7 @@ function General(props) {
         This helps prevent accidental deletion of trades.
         Highly recommended to leave this on.
       </p>}
-      <button className={`btn-blue medium ${user.theme}`} onClick={killLock}>{user.kill_locked ? 'Unlock' : 'Lock'}</button>
+      <button className={`btn-blue medium ${user.theme}`} onClick={() => { killLock() }}>{user.kill_locked ? 'Unlock' : 'Lock'}</button>
       {/* <button className={`btn-blue medium ${user.theme}`} onClick={killLock}>Lock</button> */}
       <div className={`divider ${theme}`} />
 
@@ -261,7 +316,12 @@ function General(props) {
           onChange={(event) => setMaxTradeLoad(Number(event.target.value))}
         />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { sendTradeLoadMax(max_trade_load) }}>Save Max</button>
+        <button
+          className={`btn-blue btn-reinvest medium ${user.theme}`}
+          onClick={() => { sendTradeLoadMax({max_trade_load}) }}
+        >
+          Save Max
+        </button>
       </div>
       <div className={`divider ${theme}`} />
 
@@ -283,10 +343,10 @@ function General(props) {
           name="sync_quantity"
           value={sync_quantity}
           required
-          onChange={(event) => setSync_quantity(event.target.value)}
+          onChange={(event) => setSync_quantity(Number(event.target.value))}
         />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { sendSyncQuantity(sync_quantity) }}>Save</button>
+        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { sendSyncQuantity({sync_quantity}) }}>Save</button>
       </div>
       <div className={`divider ${theme}`} />
 
@@ -309,7 +369,7 @@ function General(props) {
           onChange={(event) => setProfit_accuracy(Number(event.target.value))}
         />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={(event) => { updateProfitAccuracy(profit_accuracy) }}>Save</button>
+        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { updateProfitAccuracy({profit_accuracy}) }}>Save</button>
       </div>
       <div className={`divider ${theme}`} />
     </div>

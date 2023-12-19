@@ -100,6 +100,8 @@ export interface User {
   usd_volume: number;
   paused: boolean;
   kill_locked: boolean;
+  sync_quantity: number;
+  max_trade_load: number;
 }
 
 export interface ProfitForDuration {
