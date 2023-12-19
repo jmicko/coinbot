@@ -1,12 +1,12 @@
 import './Trade.css';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
-import { useUser } from '../../contexts/UserContext';
 import LimitOrder from './LimitOrder';
 import MarketOrder from './MarketOrder';
 import useLocalStorage from '../../hooks/useLocalStorage';
-import { useData } from '../../contexts/DataContext';
 import { no } from '../../shared';
 import { EventType } from '../../types';
+import { useUser } from '../../contexts/useUser';
+import { useData } from '../../contexts/useData';
 
 
 function Trade() {

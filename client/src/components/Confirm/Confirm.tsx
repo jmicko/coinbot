@@ -1,4 +1,4 @@
-import { useUser } from '../../contexts/UserContext.js';
+import { useUser } from '../../contexts/useUser';
 import './Confirm.css';
 
 interface Props {
@@ -9,7 +9,6 @@ interface Props {
 
 function Confirm(props: Props) {
   const { user } = useUser();
-
   return (
     <div className={`Confirm`}>
       <center>

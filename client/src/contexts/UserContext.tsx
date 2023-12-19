@@ -29,10 +29,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
     error: userError,
     refresh: refreshUser,
     clear: clearUser,
-  } = useGetFetch<User | null>(
+  } = useGetFetch<User>(
     '/api/user',
     {
-      defaultState: null,
+      defaultState: {} as User,
       preload: true,
       from: 'user in UserContext',
     }
@@ -88,7 +88,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         {
           user,
           // takerFee: user?.taker_fee, 
-          // makerFee: user?.maker_fee,
+          maker_fee: user?.maker_fee || 1,
           userLoading, userError, deleteLoading, deleteError,
           refreshUser, logout, login, registerNew, deleteYourself,
           theme, btnColor

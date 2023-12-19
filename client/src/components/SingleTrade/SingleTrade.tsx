@@ -1,21 +1,32 @@
 import { useEffect, useState } from 'react';
-import { useData } from '../../contexts/DataContext';
-import { useUser } from '../../contexts/UserContext';
 import { useProductDecimals } from '../../hooks/useProductDecimals.js';
 import './SingleTrade.css';
 // import { devLog } from '../../shared.js';
 import { SingleTradeProps } from '../../types';
+import { useUser } from '../../contexts/useUser.js';
+import { useData } from '../../contexts/useData.js';
+import useDeleteFetch from '../../hooks/useDeleteFetch.js';
 
 
 function SingleTrade(props: SingleTradeProps) {
   const { user, theme } = useUser();
-  const { productID, deleteOrder, syncPair } = useData();
+  const { productID, refreshOrders, syncPair } = useData();
 
   const [profit, setProfit] = useState<number>(0);
   const [deleting, setDeleting] = useState<boolean>(false);
   const [showAll, setShowAll] = useState<boolean>(false);
   const [sellFee, setSellFee] = useState<number>(1);
   const [buyFee, setBuyFee] = useState<number>(1);
+  const orderID = props.order.order_id;
+
+  const { deleteData: deleteOrder } = useDeleteFetch({ url: `/api/orders/${orderID}`, from: 'deleteOrder in data context' });
+
+  const deleteRefresh = async () => {
+    deleteOrder();
+    refreshOrders();
+    setDeleting(false);
+  }
+
 
   const { reorder } = props.order;
 
@@ -30,14 +41,14 @@ function SingleTrade(props: SingleTradeProps) {
     // calculate all the numbers when the component renders
 
     // pull from props and make more manageable
-    let original_sell_price = props.order.original_sell_price;
-    let base_size = props.order.base_size;
-    let original_buy_price = props.order.original_buy_price;
-    let maker_fee_rate = user.maker_fee;
+    const original_sell_price = props.order.original_sell_price;
+    const base_size = props.order.base_size;
+    const original_buy_price = props.order.original_buy_price;
+    const maker_fee_rate = user.maker_fee;
 
     // calculate fees
-    let sellFee = (maker_fee_rate * original_sell_price * base_size)
-    let buyFee = (maker_fee_rate * original_buy_price * base_size)
+    const sellFee = (maker_fee_rate * original_sell_price * base_size)
+    const buyFee = (maker_fee_rate * original_buy_price * base_size)
 
     // calculate profits
     const profit = Math.round((((original_sell_price * base_size - original_buy_price * base_size)) - (buyFee + sellFee)) * decimals.base_inverse_increment) / decimals.base_inverse_increment;
@@ -61,7 +72,7 @@ function SingleTrade(props: SingleTradeProps) {
     // this will work in safari once lookbehind is supported
     // return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
     // for now, use this
-    let parts = x.toString().split(".");
+    const parts = x.toString().split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     return parts.join(".");
   }
@@ -157,7 +168,7 @@ function SingleTrade(props: SingleTradeProps) {
         : !props.preview && !user.kill_locked && <button
           className={`btn-red kill-button ${user.theme}`}
           onClick={() => {
-            deleteOrder(props.order.order_id);
+            deleteRefresh();
             setDeleting(true)
           }}>
           Kill

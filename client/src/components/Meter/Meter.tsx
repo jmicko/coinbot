@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import './Meter.css'
-import { useData } from '../../contexts/DataContext';
 import { useWebSocket } from '../../contexts/useWebsocket';
+import { useData } from '../../contexts/useData';
 
 interface MeterProps {
   min: number;
@@ -10,8 +10,8 @@ interface MeterProps {
 
 function Meter(props: MeterProps) {
   const { tickers } = useWebSocket();
-  const { productID, pd } = useData();
-  const difference = Number((props.max - props.min).toFixed(pd));
+  const { productID, pqd } = useData();
+  const difference = Number((props.max - props.min).toFixed(pqd));
   const canvasRef = useRef(null);
   const currentPrice = tickers[productID]?.price;
   const canDraw = props.max > 0 && props.min >= 0 && difference > 0 && currentPrice
@@ -30,7 +30,7 @@ function Meter(props: MeterProps) {
     canvas.width = width;
 
     if (props.max > 0 && props.min >= 0 && difference > 0 && currentPrice) {
-      let adjustedCurrent = currentPrice - props.min;
+      const adjustedCurrent = currentPrice - props.min;
       // this is the important number
       const percentage = Number(((adjustedCurrent / difference) * 100).toFixed(0));
       const greenY = height - (height * (percentage / 100));

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useUser } from '../../contexts/UserContext.js';
 // import { no } from '../../shared.js';
 import './Draggable.css';
+import { useUser } from '../../contexts/useUser';
 
 const no = (e: React.MouseEvent) => { e.preventDefault(); }
 
@@ -10,13 +10,13 @@ const no = (e: React.MouseEvent) => { e.preventDefault(); }
 //   className: string;
 // }
 
-interface DraggerProps {
+export interface DraggerProps {
   beforeDrag: () => React.ReactNode;
-  afterDrag: () => React.ReactNode;
+  afterDrag: (props: { collapseParent: boolean; }) => JSX.Element;
   header?: () => React.ReactNode;
 }
 
-interface DraggableProps {
+export interface DraggableProps {
   children: (props: { Dragger: React.ComponentType<DraggerProps>, collapseParent: boolean }) => React.ReactNode;
   className: string;
 }
@@ -126,7 +126,7 @@ function Draggable({ children, className }: DraggableProps) {
           {props.beforeDrag()}
           <Collapser />
           {!isTouchDevice && <DragButton />}
-          {props.afterDrag()}
+          {props.afterDrag({ collapseParent })}
         </div>
         {props.header ? props.header() : null}
       </div>

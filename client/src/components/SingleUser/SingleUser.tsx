@@ -1,6 +1,4 @@
-import React, { useState } from 'react';
-import { useUser } from '../../contexts/UserContext';
-// import { useFetchData } from '../../hooks/fetchData.js';
+import { useState } from 'react';
 // import Confirm from '../Confirm/Confirm.js';
 import './SingleUser.css'
 import usePutFetch from '../../hooks/usePutFetch';
@@ -8,6 +6,7 @@ import { User } from '../../types/index.js';
 import useDeleteFetch from '../../hooks/useDeleteFetch';
 import useGetFetch from '../../hooks/useGetFetch';
 import Confirm from '../Confirm/Confirm';
+import { useUser } from '../../contexts/useUser.js';
 
 function SingleUser(props: { user: User, key: number, refreshUsers: () => void }) {
   // IMPORTANT to not that this is the user from the context, not the user from the props
@@ -138,7 +137,7 @@ function SingleUser(props: { user: User, key: number, refreshUsers: () => void }
           ? <p className="deleting">Approved</p>
           : (approving === true)
             ? <p className="deleting">Approving...</p>
-            : <button className="btn-green deleting" onClick={() => { approveUser({ id: props.user.id }) }}>Approve</button>)
+            : <button className="btn-green deleting" onClick={() => { setApproving(true); approveUser({ id: props.user.id }) }}>Approve</button>)
         }
         {/* Enable chat for a user */}
         {/* {JSON.stringify(props.user)} */}

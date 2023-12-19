@@ -35,7 +35,7 @@ const Login: React.FC = () => {
       refreshConnection();
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [refreshConnection]);
 
   useEffect(() => {
     // set interval to refresh user every 10 seconds, then clear interval on unmount
@@ -44,7 +44,7 @@ const Login: React.FC = () => {
       refreshUser();
     }, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [refreshUser]);
 
   const loginAccount = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

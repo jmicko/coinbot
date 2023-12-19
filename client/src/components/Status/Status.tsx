@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useData } from '../../contexts/DataContext';
-// import { useSocket } from '../../contexts/SocketProvider';
 import { useUser } from '../../contexts/useUser.js';
 import useLocalStorage from '../../hooks/useLocalStorage';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
@@ -8,6 +6,7 @@ import { numberWithCommas } from '../../shared';
 import './Status.css'
 import { ProfitForDuration } from '../../types/index';
 import { useWebSocket } from '../../contexts/useWebsocket';
+import { useData } from '../../contexts/useData.js';
 // import { useWebSocket } from '../../contexts/WebSocketContext';
 
 
@@ -78,8 +77,8 @@ function Status() {
           })}
         </select>
         {width > 800 ? <br /> : <div className='spacer' />}
-        ${numberWithCommas(Number(profit[profitDisplay]?.productProfit).toFixed(profitAccuracy))} /
-        ${numberWithCommas(Number(profit[profitDisplay]?.allProfit).toFixed(profitAccuracy))}
+        ${numberWithCommas(Number(profit[Number(profitDisplay)]?.productProfit).toFixed(profitAccuracy))} /
+        ${numberWithCommas(Number(profit[Number(profitDisplay)]?.allProfit).toFixed(profitAccuracy))}
       </div>
 
       <div className="info status-ticker">

@@ -1,9 +1,11 @@
-import React from 'react';
-import { useUser } from '../../../contexts/UserContext.js';
 import './SettingsNav.css'
+import { useUser } from '../../../contexts/useUser';
 
 
-function SettingsNav(props) {
+function SettingsNav(props: {
+  settingsPage: string,
+  setSettingsPage: (page: string) => void
+}) {
   const { user, theme } = useUser();
 
   return (

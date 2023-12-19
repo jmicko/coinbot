@@ -1,15 +1,14 @@
 // DataContext.ts
-import { createContext, useContext, useState, ReactNode, useRef } from 'react'
-import useGetFetch from '../hooks/useGetFetch.js';
-import useDeleteFetch from '../hooks/useDeleteFetch.js';
+import { useState, ReactNode, useRef, useEffect } from 'react'
+import useGetFetch from '../hooks/useGetFetch';
 import { addProductDecimals } from '../shared';
-// import { useUser } from './UserContext.js';
-import usePutFetch from '../hooks/usePutFetch.js';
-import { Product, ProductWithDecimals, marketOrderState } from '../types/index.js';
-import usePostFetch from '../hooks/usePostFetch.js';
-import { useUser } from './useUser.js';
-// import { devLog } from '../shared.js';
-const DataContext = createContext<any | null>(null)
+import usePutFetch from '../hooks/usePutFetch';
+import { OrderParams, Orders, Product, ProductWithDecimals, Products, ProfitForDuration } from '../types/index';
+import usePostFetch from '../hooks/usePostFetch';
+import { useUser } from './useUser';
+import { DataContext } from './useData';
+// import { devLog } from '../shared';
+
 
 export function DataProvider({ children }: { children: ReactNode }) {
   // console.log('DataProvider rendering ***************');
@@ -18,6 +17,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [productID, setProductID] = useState('DOGE-USD');
   const [isAutoScroll, setIsAutoScroll] = useState(true);
   const canScroll = useRef(true);
+
+  useEffect(() => {
+    canScroll.current = isAutoScroll;
+  }, [isAutoScroll]);
+
   // user
   const { user } = useUser();
   // sockets
@@ -28,11 +32,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
   /////////////////////////
   //////// ACCOUNT ////////
   /////////////////////////
-
-  interface Products {
-    allProducts: Product[];
-    activeProducts: Product[];
-  }
 
   // ACCOUNT ROUTES
   const {
@@ -50,7 +49,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const { data: profit,
     refresh: refreshProfit,
     // updateData: resetProfit,
-  } = useGetFetch(`/api/account/profit/${productID}`, {
+  } = useGetFetch<ProfitForDuration[]>(`/api/account/profit/${productID}`, {
     defaultState: [],
     preload: true,
     from: 'profit/{productID} in data context'
@@ -75,8 +74,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   })
 
   // // AVAILABLE FUNDS
-  const availableBase = user?.availableFunds?.[productID]?.base_available;
-  const availableQuote = user?.availableFunds?.[productID]?.quote_available;
+  const availableBase = user?.availableFunds?.[productID]?.base_available || 0;
+  const availableQuote = user?.availableFunds?.[productID]?.quote_available || 0;
 
   // // get errors sent from the bot
   // const { data: botErrors, refresh: refreshBotErrors }
@@ -102,8 +101,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // setData: setOrders,
     // createRefreshData: createOrderPair,
     // deleteRefreshData: deleteRangeForProduct
-  } = useGetFetch(`/api/orders/${productID}`, {
-    defaultState: {},
+  } = useGetFetch<Orders>(`/api/orders/${productID}`, {
+    defaultState: {
+      buys: [],
+      sells: [],
+      counts: {
+        totalOpenOrders: { count: 0 },
+        totalOpenBuys: { count: 0 },
+        totalOpenSells: { count: 0 }
+      }
+    },
     preload: true,
     from: 'orders/{productID} in data context'
   })
@@ -113,11 +120,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // deleteData: deleteAllNoRefresh
   } = usePutFetch({ url: `/api/orders`, from: 'syncOrders in data context' })
 
-  const deleteOrder = async (orderID: string) => {
-    const { deleteData } = useDeleteFetch({ url: `/api/orders/${orderID}`, from: 'deleteOrder in data context' });
-    await deleteData();
-    refreshOrders();
-  }
+  const { postData: createOrderPair } = usePostFetch({
+    url: `/api/orders/${productID}`,
+    from: 'createOrderPair in data context',
+    refreshCallback: refreshOrders,
+  })
+
+  // const deleteOrder = async (orderID: string) => {
+  //   const { deleteData } = useDeleteFetch({ url: `/api/orders/${orderID}`, from: 'deleteOrder in data context' });
+  //   await deleteData();
+  //   refreshOrders();
+  // }
   // ORDERS FUNCTIONS
   // combine delete and refresh into one function because they hit different routes
   // const deleteOrder = async (orderID) => { await deleteOrderNoRefresh(orderID); refreshOrders() }
@@ -129,7 +142,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // // TRADE ROUTES - for active "hot" trading
   // const { updateData: syncPair } = useFetchData(`/api/trade/`, { defaultState: {}, noLoad: true });
+  const { putData: syncPair } = usePutFetch({
+    url: `/api/trade`,
+    from: 'syncPair in data context',
+    refreshCallback: refreshOrders,
+  })
   // const { createData: createMarketTrade } = useFetchData(`/api/trade/market`, { defaultState: {}, noLoad: true });
+  const { postData: createMarketTrade } = usePostFetch({
+    url: `/api/trade/market`,
+    from: 'createMarketTrade in data context',
+    refreshCallback: refreshOrders,
+  })
   // const { data: exportableFiles, refresh: refreshExportableFiles } = useFetchData(`/api/account/exportableFiles`, { defaultState: [] })
   // TRADE FUNCTIONS
   const currentProductNoDecimals: Product | null
@@ -138,11 +161,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const currentProduct: ProductWithDecimals | null
     = currentProductNoDecimals ? addProductDecimals(currentProductNoDecimals) : null;
 
-    const pqd = currentProduct?.quote_increment_decimals
-    const pbd = currentProduct?.base_increment_decimals
+  const pqd = currentProduct?.quote_increment_decimals || 2;
+  const pbd = currentProduct?.base_increment_decimals || 2;
 
   // TRADE STATE
-  const [marketOrder, setMarketOrder] = useState<marketOrderState>({
+  const [marketOrder, setMarketOrder] = useState<OrderParams>({
     base_size: 0,
     quote_size: 0,
     side: 'BUY',
@@ -204,9 +227,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
           // // ORDERS
           orders, refreshOrders,
-          // createMarketTrade, createOrderPair, syncPair, 
+          createMarketTrade, createOrderPair, 
+          syncPair,
           syncOrders, // does this still realistically get used?
-          deleteOrder,
+          // deleteOrder,
           // deleteRangeForProduct,
           // deleteAll,
 
@@ -226,4 +250,4 @@ export function DataProvider({ children }: { children: ReactNode }) {
   )
 }
 
-export const useData = () => useContext(DataContext)
+// export const useData = () => useContext(DataContext)

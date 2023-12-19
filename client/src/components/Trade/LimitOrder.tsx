@@ -3,9 +3,11 @@ import { useState, useEffect, useCallback, useRef, FormEvent } from 'react';
 import IncrementButtons from './IncrementButtons';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
 import { numberWithCommas, tNum, no, fixedRound } from '../../shared';
-import { useUser } from '../../contexts/UserContext';
-import { useData } from '../../contexts/DataContext';
+// import { useUser } from '../../contexts/UserContext';
+// import { useData } from '../../contexts/DataContext';
 import { EventType } from '../../types';
+import { useUser } from '../../contexts/useUser';
+import { useData } from '../../contexts/useData';
 
 interface LimitOrderProps {
   toggleCollapse: () => void;
@@ -14,7 +16,7 @@ interface LimitOrderProps {
 
 function LimitOrder(props: LimitOrderProps) {
   // contexts
-  const { makerFee, theme, btnColor } = useUser();
+  const { maker_fee, theme, btnColor } = useUser();
   // const { currentPrice } = useSocket();
   const currentPrice = 20;
   const { productID, currentProduct, createOrderPair } = useData();
@@ -59,7 +61,7 @@ function LimitOrder(props: LimitOrderProps) {
 
   // functions
   // change limitOrder function that takes in a key and value and sets the limitOrder state
-  function changeLimitOrder(key: string, value: any) {
+  function changeLimitOrder(key: string, value: number | string) {
     setLimitOrder(prevState => ({
       ...prevState,
       [key]: value
@@ -77,8 +79,8 @@ function LimitOrder(props: LimitOrderProps) {
   const volumeCostBuy: number = Number(volumeCostBuyNR.toFixed(quote_increment_decimals));
   const volumeCostSellNR: number = sellPrice * base_size;
   const volumeCostSell: number = Number(volumeCostSellNR.toFixed(quote_increment_decimals));
-  const buyFee: number = volumeCostBuy * makerFee;
-  const sellFee: number = volumeCostSell * makerFee;
+  const buyFee: number = volumeCostBuy * maker_fee;
+  const sellFee: number = volumeCostSell * maker_fee;
   const totalfees: number = buyFee + sellFee;
   const pairMargin: number = volumeCostSell - volumeCostBuy;
   const pairProfit: number = pairMargin - totalfees;
@@ -87,7 +89,7 @@ function LimitOrder(props: LimitOrderProps) {
     if (currentPrice) {
       // console.log(price_rounding, 'price_rounding')
       // const newPrice = Number(currentPrice).toFixed(price_rounding);
-      const newPrice = fixedRound(currentPrice, price_rounding);
+      const newPrice = fixedRound(currentPrice, price_rounding || 2);
       changeLimitOrder('price', newPrice);
 
     }
@@ -101,7 +103,7 @@ function LimitOrder(props: LimitOrderProps) {
       setPriceLoaded(true);
       getCurrentPrice();
     }
-  }, [currentPrice, priceLoaded])
+  }, [currentPrice, priceLoaded, getCurrentPrice])
 
   // when the size changes, update the quote size and base size based on the sizeType
   const sizeTypeRef = useRef(sizeType);
@@ -118,13 +120,13 @@ function LimitOrder(props: LimitOrderProps) {
       const newQuoteSize = (base_size * price).toFixed(quote_increment_decimals);
       changeLimitOrder('quote_size', newQuoteSize);
     }
-  }, [base_size, price, quote_size, sizeType])
+  }, [base_size, price, quote_size, sizeType, base_increment_decimals, quote_increment_decimals])
 
 
   function submitTransaction(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     // calculate flipped price
-    let original_sell_price = (((price * (Number(trade_pair_ratio) + 100))) / 100);
+    const original_sell_price = (((price * (Number(trade_pair_ratio) + 100))) / 100);
     // let type = false;
     // if (currentPrice < price) {
     //   type = 'market';
@@ -176,8 +178,8 @@ function LimitOrder(props: LimitOrderProps) {
           />
 
           <IncrementButtons
-            firstButton={quote_increment * 10}
-            roundTo={quote_increment_decimals}
+            firstButton={Number(quote_increment) * 10}
+            roundTo={quote_increment_decimals || 2}
             currentValue={Number(price)}
             changeValue={(value) => { changeLimitOrder('price', Number(value)) }}
             theme={theme}
@@ -206,8 +208,8 @@ function LimitOrder(props: LimitOrderProps) {
             onChange={(e) => { changeLimitOrder(sizeType === 'quote' ? 'quote_size' : 'base_size', tNum(e)) }}
           />
           <IncrementButtons
-            firstButton={base_increment * 100000}
-            roundTo={base_increment_decimals}
+            firstButton={Number(base_increment) * 100000}
+            roundTo={base_increment_decimals || 2}
             currentValue={sizeType === 'quote' ? quote_size : base_size}
             changeValue={(v) => { changeLimitOrder(sizeType === 'quote' ? 'quote_size' : 'base_size', Number(v)) }}
             theme={theme}

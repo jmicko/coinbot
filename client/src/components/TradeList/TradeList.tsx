@@ -5,19 +5,19 @@ import coinbotFilled from "../../../src/coinbotFilled.png";
 import './TradeList.css'
 import Meter from '../Meter/Meter';
 import { useUser } from '../../contexts/useUser.js';
-import { useData } from '../../contexts/DataContext';
 import { Order } from '../../types/index';
 import { useWebSocket } from '../../contexts/useWebsocket';
+import { useData } from '../../contexts/useData.js';
 
 // props: { isAutoScroll: boolean }
 function TradeList() {
   const robotRef = useRef<HTMLDivElement | null>(null)
   const { tickers } = useWebSocket();
   const { user, theme, } = useUser();
-  const { orders, isAutoScroll, canScroll, productID, pd } = useData();
+  const { orders, canScroll, productID, pqd } = useData();
   // these will store mapped arrays as html so they can be used after page loads
-  const [buys, setBuys] = useState(<></>);
-  const [sells, setSells] = useState(<></>);
+  const [buys, setBuys] = useState([<></>]);
+  const [sells, setSells] = useState([<></>]);
 
   const [highestBuy, setHighestBuy] = useState(0);
   const [lowestSell, setLowestSell] = useState(0);
@@ -41,9 +41,7 @@ function TradeList() {
   }, [orders, orders.sells, orders.buys]);
 
   // set the canScroll to the value of isAutoScroll
-  useEffect(() => {
-    canScroll.current = isAutoScroll;
-  }, [isAutoScroll]);
+
 
   // scroll to the robot when the canScroll is true
   useEffect(() => {
@@ -53,7 +51,7 @@ function TradeList() {
         block: "center",
       });
     }
-  }, [buys]);
+  }, [buys, sells, canScroll]);
 
 
   return (
@@ -74,15 +72,15 @@ function TradeList() {
             {lowestSell !== 0 && highestBuy >= 0
               ? <p className='price'>&#9650; ${
                 // (lowestSell - currentPrice).toFixed(2)
-                (lowestSell - currentPrice).toFixed(pd || 2)
+                (lowestSell - currentPrice).toFixed(pqd || 2)
               }
                 <br />
                 <span className={`green ${theme}`} >
-                  {`> $${Number(currentPrice).toFixed(pd || 2)} <`}
+                  {`> $${Number(currentPrice).toFixed(pqd || 2)} <`}
                 </span>
                 <br />
                 &#9660; ${
-                  (currentPrice - highestBuy).toFixed(pd || 2)
+                  (currentPrice - highestBuy).toFixed(pqd || 2)
                 }
               </p>
               : <p>No Sells!</p>
@@ -99,7 +97,7 @@ function TradeList() {
           ? <center>
             <p>
               <strong>Margin</strong>
-              <br />${(lowestSell - highestBuy).toFixed(pd || 2)}
+              <br />${(lowestSell - highestBuy).toFixed(pqd || 2)}
             </p>
           </center>
           : <p>No Sells!</p>

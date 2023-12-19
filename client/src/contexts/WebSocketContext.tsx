@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, ReactNode } from 'react';
-import { useData } from './DataContext';
 import { Tickers } from '../types';
 import { WebSocketContext } from './useWebsocket';
+import { useData } from './useData';
 
 export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   const socketRef = useRef<WebSocket | null>(null);
   const [tickers, setTickers] = useState<Tickers>({ "BTC-USD": { price: 0 }, "ETH-USD": { price: 0 } });
   const [heartbeat, setHeartbeat] = useState({ heart: 'heart', beat: 'beat', count: 0 });
-  const setSocketStatus = useData().setSocketStatus;
+  const { setSocketStatus } = useData();
 
   useEffect(() => {
     let ENDPOINT = origin;

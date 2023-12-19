@@ -9,11 +9,11 @@ import Admin from './Admin/Admin';
 // import History from './History/History.js';
 import SettingsNav from './SettingsNav/SettingsNav';
 // import BulkDelete from './BulkDelete/BulkDelete.js';
-import { useUser } from '../../contexts/UserContext.js';
-import { useData } from '../../contexts/DataContext.js';
-import Draggable from '../Draggable/Draggable';
+import Draggable, { DraggerProps } from '../Draggable/Draggable';
 
 import './Settings.css'
+import { useUser } from '../../contexts/useUser';
+import { useData } from '../../contexts/useData';
 
 
 function Settings() {
@@ -48,11 +48,11 @@ function Settings() {
   }
 
   // receive props from Draggable component
-  function SettingsPanel({ Dragger, collapseParent }: { Dragger: React.ComponentType<any>, collapseParent: boolean }) {
+  function SettingsPanel({ Dragger, collapseParent }: { Dragger: React.ComponentType<DraggerProps>, collapseParent: boolean }) {
     return (
       <>
         <Dragger
-          text={'Settings'}
+          // text={'Settings'}
 
           // header={() => <h2 className={`settings-header ${collapseParent && 'hide'}`}>Settings</h2>}
           beforeDrag={() => <BeforeDrag />}

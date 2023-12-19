@@ -4,9 +4,9 @@ import { FormEvent } from 'react';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
 // import IncrementButtons from './IncrementButtons';
 import { numberWithCommas, tNum, no, fixedFloor, devLog } from '../../shared';
-import { useUser } from '../../contexts/UserContext';
-import { useData } from '../../contexts/DataContext';
-import { EventType, marketOrderState } from '../../types';
+import { EventType, OrderParams } from '../../types';
+import { useUser } from '../../contexts/useUser';
+import { useData } from '../../contexts/useData';
 
 interface limitOrderProps {
   toggleCollapse: () => void;
@@ -17,7 +17,6 @@ function LimitOrder(props: limitOrderProps) {
 
   // contexts
   const { user, theme, btnColor } = useUser();
-  // const { currentPrice } = useSocket();
   const currentPrice = 20;
   const {
     productID,
@@ -36,7 +35,7 @@ function LimitOrder(props: limitOrderProps) {
     no(e);
     // console.log(e.currentTarget.value, 'side');
     const side = e.currentTarget.value;
-    setMarketOrder((prevMarketOrder: marketOrderState) => {
+    setMarketOrder((prevMarketOrder: OrderParams) => {
       return { ...prevMarketOrder, side: side }
     })
   }
@@ -119,7 +118,7 @@ function LimitOrder(props: limitOrderProps) {
             required
             onChange={(e) => {
               // no(e);
-              setMarketOrder((prevMarketOrder: marketOrderState) => { return { ...prevMarketOrder, base_size: tNum(e) } })
+              setMarketOrder((prevMarketOrder: OrderParams) => { return { ...prevMarketOrder, base_size: tNum(e) } })
             }
             }
           />
@@ -127,7 +126,7 @@ function LimitOrder(props: limitOrderProps) {
           {(side === 'SELL') && <input
             className={`${btnColor} ${theme}`}
             // onClick={() => setBasicAmount(Number(user.availableFunds?.[productID].base_available))}
-            onClick={() => setMarketOrder((prevMarketOrder: marketOrderState) => { return { ...prevMarketOrder, base_size: Number(fixedFloor(user.availableFunds?.[productID].base_available, currentProduct.base_increment_decimals)) } })}
+            onClick={() => setMarketOrder((prevMarketOrder: OrderParams) => { return { ...prevMarketOrder, base_size: Number(fixedFloor(user?.availableFunds?.[productID].base_available || 1, currentProduct?.base_increment_decimals || 1)) } })}
             type="button"
             name="submit"
             value="Max" />}
@@ -137,7 +136,7 @@ function LimitOrder(props: limitOrderProps) {
           <input className={`btn-send-trade market ${btnColor} ${theme}`} type="submit" name="submit" value={`${side === 'BUY' ? 'Buy' : 'Sell'} ${base_size} ${currentProduct?.base_currency_id}`} />
           <p>
             This equates to about
-            <br />${numberWithCommas((base_size * currentPrice).toFixed(2))}
+            <br />${numberWithCommas(((base_size || 1) * currentPrice).toFixed(2))}
             <br />before fees
           </p>
 

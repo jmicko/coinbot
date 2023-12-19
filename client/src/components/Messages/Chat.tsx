@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useData } from "../../contexts/DataContext.js";
-import { useUser } from "../../contexts/UserContext.js";
 import { devLog } from "../../shared.js";
 import { EventType, Message } from "../../types/index.js";
+import { useUser } from "../../contexts/useUser.js";
+import { useData } from "../../contexts/useData.js";
 
 
 interface ChatProps {
@@ -13,7 +13,7 @@ interface ChatProps {
 
 function Chat({ chatLength, collapsed, messages }: ChatProps) {
   const { user } = useUser();
-  const { sendChat, } = useData()
+  const { sendChat, } = useData();
   // devLog('rendering chat form');
   const [newMessage, setNewMessage] = useState('');
 

@@ -13,6 +13,28 @@ export interface Order {
   reorder: boolean;
 }
 
+export interface Orders {
+  buys: Order[];
+  sells: Order[];
+  counts: {
+    totalOpenOrders: { count: number };
+    totalOpenBuys: { count: number };
+    totalOpenSells: { count: number };
+  }
+}
+
+export interface OrderParams {
+  side: string;
+  base_size?: number;
+  quote_size?: number;
+  limit_price?: number;
+  original_sell_price?: number;
+  original_buy_price?: number;
+  trade_pair_ratio?: number;
+  product_id?: string;
+  tradingPrice?: number;
+}
+
 export interface SingleTradeProps {
   order: Order;
   preview: boolean;
@@ -28,9 +50,11 @@ export interface BotSettings {
 export interface Funds {
   base_available: number;
   quote_available: number;
-  
+  // base currency is the currency you are buying, like BTC
   base_currency: string;
   base_increment: string,
+  // quote currency is the currency you are getting a price quote in, 
+  // normally USD
   quote_currency: string;
   quote_increment: string,
   base_increment_decimals: number,
@@ -75,6 +99,7 @@ export interface User {
   taker_fee: number;
   usd_volume: number;
   paused: boolean;
+  kill_locked: boolean;
 }
 
 export interface ProfitForDuration {
@@ -124,12 +149,17 @@ export interface Product {
   watched: boolean;
 }
 
+export interface Products {
+  allProducts: Product[];
+  activeProducts: Product[];
+}
+
 export interface Decimals {
   // baseIncrement: number;
   // baseMultiplier: number;
   // quoteIncrement: number;
   // quoteMultiplier: number;
-  
+
   base_increment: string,
   quote_increment: string,
   base_increment_decimals: number,
@@ -139,7 +169,7 @@ export interface Decimals {
   price_rounding: number,
 }
 
-export interface ProductWithDecimals extends Product, Decimals {}
+export interface ProductWithDecimals extends Product, Decimals { }
 
 export interface marketOrderState {
   base_size: number;
@@ -158,6 +188,12 @@ export interface Message {
   timeStamp: string;
   type: string;
 }
+
+// {
+//   botMessages: Message[];
+//   chatMessages: Message[];
+// }
+export type Messages = Message[];
 
 export interface Tickers {
   [key: string]: {

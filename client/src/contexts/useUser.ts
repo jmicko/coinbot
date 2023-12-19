@@ -2,7 +2,7 @@ import { createContext, useContext } from "react";
 import { User } from "../types";
 
 interface UserContextProps {
-  user: User | null;
+  user: User;
   userLoading: boolean;
   userError: Error | null;
   deleteLoading: boolean;
@@ -15,6 +15,7 @@ interface UserContextProps {
   deleteYourself: () => void;
   theme: string;
   btnColor: string;
+  maker_fee: number;
   // setUser: React.Dispatch<React.SetStateAction<User>>;
 }
 

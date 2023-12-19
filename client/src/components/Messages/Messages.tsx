@@ -3,8 +3,8 @@ import { useUser } from '../../contexts/useUser.js';
 
 import './Messages.css'
 import Chat from './Chat';
-import { useData } from '../../contexts/DataContext';
 import { Message } from '../../types';
+import { useData } from '../../contexts/useData.js';
 // import { devLog } from '../../shared';
 
 
@@ -18,7 +18,7 @@ function Messages() {
     },
     botErrors
     // , sendChat
-  } = useData()
+  } = useData();
   const messageMap = [
     {
       header: 'General Messages',
@@ -29,6 +29,11 @@ function Messages() {
       messages: botErrors
     }
   ]
+
+  console.log(botErrors, 'botErrors');
+  console.log(botMessages, 'botMessages');
+  
+  
 
   const [collapsed, setCollapsed] = useState(false);
 
@@ -101,7 +106,6 @@ function Messages() {
               sectionNum={i}
               header={section.header}
               messages={section.messages}
-            // mapLength={messageMap.length}
             />
           )
         })}

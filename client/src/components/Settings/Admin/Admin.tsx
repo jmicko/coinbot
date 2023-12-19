@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useUser } from '../../../contexts/UserContext.js';
-// import { useFetchData } from '../../../hooks/fetchData.js';
 // import Confirm from '../../Confirm/Confirm';
 import SingleUser from '../../SingleUser/SingleUser';
 import './Admin.css'
 import useGetFetch from '../../../hooks/useGetFetch';
 import { BotSettings, User } from '../../../types/index.js';
 import usePutFetch from '../../../hooks/usePutFetch';
+import { useUser } from '../../../contexts/useUser.js';
 
 
 function Admin(props: { tips: boolean }) {

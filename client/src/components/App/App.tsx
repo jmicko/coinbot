@@ -11,10 +11,11 @@ function App() {
 
   function CheckUser() {
     const { user, userLoading } = useUser();
+    console.log(user, 'user in App');
 
-    if (!user && userLoading) {
+    if (!user.id && userLoading) {
       return <center>Loading...</center>;
-    } else if (user) {
+    } else if (user.id) {
       return (
         < DataProvider >
           < WebSocketProvider >
