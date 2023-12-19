@@ -192,109 +192,146 @@ async function updateMultipleOrders(userID, params) {
 }
 
 
-function setupSocketIO(io) {
+// function setupSocketIO(io) {
 
-  io.use(rejectUnauthenticatedSocket);
+//   io.use(rejectUnauthenticatedSocket);
 
-  // handle new connections
-  io.on('connection', (socket) => {
-    let id = socket.id;
-    const userID = socket.request.session.passport?.user;
-    socket.userID = userID;
-    // add the socket to the user's socket storage
-    messenger?.[userID]?.addSocket(socket);
+//   // handle new connections
+//   io.on('connection', (socket) => {
+//     let id = socket.id;
+//     const userID = socket.request.session.passport?.user;
+//     socket.userID = userID;
+//     // add the socket to the user's socket storage
+//     messenger?.[userID]?.addSocket(socket);
 
-    const statMessage = {
-      type: 'socketStatus',
-      socketStatus: userStorage?.[userID]?.socketStatus
-    }
-    messenger[userID].instantMessage(statMessage)
+//     const statMessage = {
+//       type: 'socketStatus',
+//       socketStatus: userStorage?.[userID]?.socketStatus
+//     }
+//     messenger[userID].instantMessage(statMessage)
 
-    // userStorage?.[userID]?.socketStatus;
+//     // userStorage?.[userID]?.socketStatus;
 
-    if (!userID) {
-      console.log('socket connected but client is not logged in');
-      // disconnect the socket if the user is not logged in
-      socket.disconnect();
-    } else {
-      console.log(`client connected! with user id ${userID} socket id: ${id}`);
-    }
+//     if (!userID) {
+//       console.log('socket connected but client is not logged in');
+//       // disconnect the socket if the user is not logged in
+//       socket.disconnect();
+//     } else {
+//       console.log(`client connected! with user id ${userID} socket id: ${id}`);
+//     }
 
-    // send a ping to the client every 5 seconds
-    const pingInterval = setInterval(() => {
-      socket.emit('ping', 'ping');
-    }, 5000);
+//     // send a ping to the client every 5 seconds
+//     const pingInterval = setInterval(() => {
+//       socket.emit('ping', 'ping');
+//     }, 5000);
 
-    // server side pong handler
-    socket.on('pong', (data) => {
-      // console.log(data, 'pong from client');
-    });
-
-
-    // handle disconnect
-    socket.on("disconnect", (reason) => {
-      const userID = socket.request.session.passport?.user;
-      console.log(`client with id: ${id} disconnected, reason:`, reason);
-      messenger[userID].deleteSocket(socket);
-    });
-
-    socket.on('message', (message) => {
-      if (message === 'ping') {
-        // put some timeout function in here
-        // console.log(message, 'message from socket');
-      }
-      if (message.type === 'chat') {
-        const allUsers = userStorage.getAllUsers()
-        console.log(allUsers, 'ALL OF THE user');
-        allUsers.forEach(userID => {
-          messenger[userID].newMessage({
-            text: message.data,
-            type: 'chat'
-          });
-        });
-      }
-    })
+//     // server side pong handler
+//     socket.on('pong', (data) => {
+//       // console.log(data, 'pong from client');
+//     });
 
 
-  });
+//     // handle disconnect
+//     socket.on("disconnect", (reason) => {
+//       const userID = socket.request.session.passport?.user;
+//       console.log(`client with id: ${id} disconnected, reason:`, reason);
+//       messenger[userID].deleteSocket(socket);
+//     });
 
-  io.on('connect', (socket) => {
-    const session = socket.request.session;
-    console.log(`saving sid ${socket.id} in session ${session.id}`);
-    session.socketId = socket.id;
-    session.save();
-  })
+//     socket.on('message', (message) => {
+//       if (message === 'ping') {
+//         // put some timeout function in here
+//         // console.log(message, 'message from socket');
+//       }
+//       if (message.type === 'chat') {
+//         const allUsers = userStorage.getAllUsers()
+//         console.log(allUsers, 'ALL OF THE user');
+//         allUsers.forEach(userID => {
+//           messenger[userID].newMessage({
+//             text: message.data,
+//             type: 'chat'
+//           });
+//         });
+//       }
+//     })
 
-  // handle abnormal disconnects
-  io.engine.on("connection_error", (err) => {
-    console.log(err.code, 'the error code');     // the error code, for example 1
-    console.log(err.message, 'the error message');  // the error message, for example "Session ID unknown"
-    console.log(err.context, 'some additional error context');  // some additional error context
-  });
-  console.log('socket setup done');
-}
+
+//   });
+
+//   io.on('connect', (socket) => {
+//     const session = socket.request.session;
+//     console.log(`saving sid ${socket.id} in session ${session.id}`);
+//     session.socketId = socket.id;
+//     session.save();
+//   })
+
+//   // handle abnormal disconnects
+//   io.engine.on("connection_error", (err) => {
+//     console.log(err.code, 'the error code');     // the error code, for example 1
+//     console.log(err.message, 'the error message');  // the error message, for example "Session ID unknown"
+//     console.log(err.context, 'some additional error context');  // some additional error context
+//   });
+//   console.log('socket setup done');
+// }
 
 function setUpWebsocket(wss) {
 
   wss.on('connection', (ws, req) => {
     console.log('================NEW WEBSOCKET CONNECTION================');
     // Use the req object to access session and passport data
-    sessionMiddleware(req, {}, () => { 
+    sessionMiddleware(req, {}, () => {
 
-      passport.initialize()(req, {}, () => { 
+      passport.initialize()(req, {}, () => {
 
         passport.session()(req, {}, () => {
 
-          
-          // Now you can access req.session and req.user
-          // console.log(req.session, 'req.session in new websocket server');
-          // console.log(req.user, 'req.user in new websocket server');
-          
+          const session = req.session;
+          const user = req.user;
+          const id = session.id;
+          const userID = user?.id;
+          ws.userID = userID;
+
+          messenger?.[userID]?.addSocket(ws);
+
+          const statMessage = {
+            type: 'socketStatus',
+            socketStatus: userStorage?.[userID]?.socketStatus
+          }
+          messenger[userID].instantMessage(statMessage)
+
+          if (!userID) {
+            console.log('socket connected but client is not logged in');
+            // disconnect the socket if the user is not logged in
+            ws.disconnect();
+          } else {
+            console.log(`client connected! with user id ${userID} socket id: ${id}`);
+          }
+
+          // send a ping to the client every 5 seconds
+          const pingInterval = setInterval(() => {
+            ws.send(JSON.stringify({ type: 'ping', data: 'ping' }));
+          }, 5000);
+
+          // server side pong handler
           ws.on('message', (message) => {
-            console.log('received: %s', message);
+            console.log(message, 'message from socket');
+            // data = JSON.parse(message);
+            // if (data.type === 'pong') {
+            //   // console.log(data, 'pong from client');
+            // }
           });
-          
-          ws.send('Hello! Message from server!!');
+
+          ws.on('close', () => {
+            const userID = req.session.passport?.user;
+            console.log(`client:${user.username} with id: ${id} disconnected`);
+            messenger[userID].deleteSocket(ws);
+            clearInterval(pingInterval);
+          });
+
+          ws.send(JSON.stringify({
+            type: 'message',
+            data: 'Hello! Message from server!!'
+          }));
         });
       });
     });
@@ -304,4 +341,8 @@ function setUpWebsocket(wss) {
   console.log('websocket setup done');
 }
 
-export { startWebsocket, setupSocketIO, setUpWebsocket };
+export {
+  startWebsocket,
+  // setupSocketIO,
+  setUpWebsocket
+};

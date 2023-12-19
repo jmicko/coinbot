@@ -57,9 +57,6 @@ function Messages() {
 
   function MessageSection({ header, messages, sectionNum }: MessageSectionProps) {
 
-    console.log(messages, 'messages in message section');
-
-
     return (
       (
         (header === 'Chat' && user.can_chat)

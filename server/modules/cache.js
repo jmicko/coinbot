@@ -214,12 +214,20 @@ class Messenger {
         // count: 5
         count: ((userStorage[this.userID].loopNumber - 1) % botSettings.full_sync)
       }
-      socket.emit('message', msg);
+      const jsonMsg = JSON. stringify(msg);
+      socket.send(jsonMsg);
     })
   }
   newMessage(message) {
     // create the message
-    const newMessage = new Message(message.type, message.text, this.messageCount, this.chatMessageCount, message.orderUpdate, message.from);
+    const newMessage = new Message(
+      message.type,
+      message.text,
+      this.messageCount,
+      this.chatMessageCount,
+      message.orderUpdate,
+      message.from
+    );
     // add message to messages array if there is text to store
     if (message.text) {
       this.messages.unshift(newMessage);
@@ -238,7 +246,8 @@ class Messenger {
     }
     // tell user to update messages
     this.sockets.forEach(socket => {
-      socket.emit('message', message);
+      const jsonMsg = JSON. stringify(message);
+      socket.send(jsonMsg);
     })
   }
   getMessages() {
@@ -260,7 +269,8 @@ class Messenger {
   // pretty much just used for tickers
   instantMessage(message) {
     this.sockets.forEach(socket => {
-      socket.emit('message', message);
+      const jsonMsg = JSON. stringify(message);
+      socket.send(jsonMsg);
     })
   }
   orderUpdate() {
@@ -285,7 +295,9 @@ class Messenger {
       this.errors.length = 1000;
     }
     this.sockets.forEach(socket => {
-      socket.emit('message', error);
+      // socket.send('message', error);
+      const jsonErr = JSON. stringify(error);
+      socket.send(jsonErr);
     })
   }
   getErrors() {
@@ -304,7 +316,7 @@ class Messenger {
 const cbClients = new class {
   constructor() {
     this.apiStorage = new Object();
-   }
+  }
 
   async updateAPI(userID) {
     devLog('updating api for user: ' + userID)
@@ -312,7 +324,7 @@ const cbClients = new class {
 
     // Object.assign(apiStorage[userID], userAPI)
 
-    
+
     this.apiStorage[userID] = Object();
     Object.assign(this.apiStorage[userID], userAPI)
 
