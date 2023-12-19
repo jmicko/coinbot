@@ -88,7 +88,10 @@ export function SocketProvider({ children }) {
         const ticker = message.ticker
         // set the ticker based on the product id
         // devLog('ticker', ticker);
-        setTickers(prevTickers => ({ ...prevTickers, [ticker.product_id]: ticker }));
+        setTickers(prevTickers => ({
+          ...prevTickers,
+          [ticker.product_id]: ticker
+        }));
       }
       // handle heartbeat
       if (message.type === 'heartbeat') {
@@ -250,8 +253,8 @@ export function SocketProvider({ children }) {
           heartbeat,
           currentPrice,
           sendChat
-          // :socket.sendChat,
-          : sendChatRef,
+            // :socket.sendChat,
+            : sendChatRef,
         }
       }
     >

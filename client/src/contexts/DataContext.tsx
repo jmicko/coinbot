@@ -131,9 +131,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // const { createData: createMarketTrade } = useFetchData(`/api/trade/market`, { defaultState: {}, noLoad: true });
   // const { data: exportableFiles, refresh: refreshExportableFiles } = useFetchData(`/api/account/exportableFiles`, { defaultState: [] })
   // TRADE FUNCTIONS
-  const currentProductNoDecimals: Product | null = products.allProducts.find((product) => product.product_id === productID) || null;
+  const currentProductNoDecimals: Product | null
+    = products.allProducts.find((product) => product.product_id === productID) || null;
 
-  const currentProduct: ProductWithDecimals | null = currentProductNoDecimals ? addProductDecimals(currentProductNoDecimals) : null;
+  const currentProduct: ProductWithDecimals | null
+    = currentProductNoDecimals ? addProductDecimals(currentProductNoDecimals) : null;
+
+    const pd = currentProduct?.quote_increment_decimals
 
   // TRADE STATE
   const [marketOrder, setMarketOrder] = useState<marketOrderState>({
@@ -188,7 +192,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           availableBase, availableQuote,
 
           // // products
-          products, currentProduct,
+          products, currentProduct, pd,
           productID, setProductID, refreshProducts,
           // toggleActiveProduct,
 

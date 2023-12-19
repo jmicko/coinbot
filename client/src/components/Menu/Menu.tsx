@@ -11,7 +11,10 @@ function Menu() {
   const { logout, user, theme, btnColor } = useUser();
   const { productID, setProductID, products, showSettings, setShowSettings } = useData();
   const { refresh: refreshTestData }
-    = useGetFetch('/api/settings/test/cheese', { defaultState: {}, preload: false })
+    = useGetFetch('/api/settings/test/cheese', {
+      defaultState: {},
+      preload: false,
+      from: 'refreshTestData in Menu' })
 
   return (
     <div className={`Menu dark ${theme}`}>

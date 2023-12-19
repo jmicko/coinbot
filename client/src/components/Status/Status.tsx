@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react';
-import { useData } from '../../contexts/DataContext.js';
-// import { useSocket } from '../../contexts/SocketProvider.js';
-import { useUser } from '../../contexts/UserContext.js';
-import useLocalStorage from '../../hooks/useLocalStorage.js';
-import useWindowDimensions from '../../hooks/useWindowDimensions.js';
-import { numberWithCommas } from '../../shared.js';
+import { useData } from '../../contexts/DataContext';
+// import { useSocket } from '../../contexts/SocketProvider';
+import { useUser } from '../../contexts/UserContext';
+import useLocalStorage from '../../hooks/useLocalStorage';
+import useWindowDimensions from '../../hooks/useWindowDimensions';
+import { numberWithCommas } from '../../shared';
 import './Status.css'
-// import { useWebSocket } from '../../contexts/WebSocketContext.js';
-import { ProfitForDuration } from '../../types/index.js';
+import { ProfitForDuration } from '../../types/index';
+import { useWebSocket } from '../../contexts/WebSocketContext';
 
 
 function Status() {
   // devLog('rendering status');
 
   const { user, refreshUser, theme, btnColor } = useUser();
-  // const { tickers, heartbeat } = useWebSocket();
+  const { tickers, heartbeat } = useWebSocket();
   const {
     // socketStatus, coinbotSocket,
     orders, refreshOrders,
@@ -24,7 +24,7 @@ function Status() {
     isAutoScroll, setIsAutoScroll,
   } = useData();
 
-  // const productPrice = Number(tickers?.[productID]?.price).toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1));
+  const productPrice = Number(tickers?.[productID]?.price).toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1));
 
   const openOrdersInOrder = orders;
   const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
@@ -69,7 +69,7 @@ function Status() {
           value={profitDisplay}
           onChange={(e) => { setProfitDisplay(e.target.value) }}
         >
-          {profit.map((p:ProfitForDuration, i:number) => {
+          {profit.map((p: ProfitForDuration, i: number) => {
             return (
               <option key={i} value={i}>{p.duration} {p.duration !== 'Since Reset' && p.duration !== '4 Week Avg' && 'Profit'}</option>
             )
@@ -84,7 +84,7 @@ function Status() {
         <strong>{productID} Price</strong>
         {width > 800 ? <br /> : <div className='spacer' />}
         {/* jesus christ why would you build something so convoluted yet functional */}
-        {/* {productPrice} */}
+        {productPrice}
       </div>
 
       <div className="info status-ticker">
@@ -137,15 +137,15 @@ function Status() {
 
       <div className='controls'>
 
-        {/* <div className={`info status-ticker heartbeat ${theme} ${heartbeat?.count === 0 && 'blue'}`}>
-          <div>  leave this div here or the heartbeat will turn gray 
+        <div className={`info status-ticker heartbeat ${theme} ${heartbeat?.count === 0 && 'blue'}`}>
+          <div> {/* leave this div here or the heartbeat will turn gray  */}
             <strong>
-              <span className={`${coinbotSocket} ${theme}`}>&#x2022;</span>
+              {/* <span className={`${coinbotSocket} ${theme}`}>&#x2022;</span> */}
               {heartbeat?.heart}{heartbeat?.beat}
-              <span className={`${socketStatus} ${theme}`}>&#x2022;</span>
+              {/* <span className={`${socketStatus} ${theme}`}>&#x2022;</span> */}
             </strong>
-          </div>  leave this div here or the heartbeat will turn gray 
-        </div> */}
+          </div> {/* leave this div here or the heartbeat will turn gray  */}
+        </div>
 
         <button className={`${btnColor} ${theme}`} onClick={updateUser}>Refresh</button>
 
@@ -160,7 +160,7 @@ function Status() {
         {user.paused && <strong className='red'>~~~PAUSED~~~</strong>}
 
       </div>
-        {/* {JSON.stringify(profit)} */}
+      {/* {JSON.stringify(profit)} */}
     </div>
   )
 }

@@ -3,18 +3,18 @@ import SingleTrade from '../SingleTrade/SingleTrade'
 import coinbotFilled from "../../../src/coinbotFilled.png";
 // import coinbotFilledGif from "../../../src/coinbotFilled.gif";
 import './TradeList.css'
-// import Meter from '../Meter/Meter';
-import { useUser } from '../../contexts/UserContext.js';
-import { useData } from '../../contexts/DataContext.js';
-import { Order } from '../../types/index.js';
-// import { useWebSocket } from '../../contexts/WebSocketContext.js';
+import Meter from '../Meter/Meter';
+import { useUser } from '../../contexts/UserContext';
+import { useData } from '../../contexts/DataContext';
+import { Order } from '../../types/index';
+import { useWebSocket } from '../../contexts/WebSocketContext';
 
 // props: { isAutoScroll: boolean }
 function TradeList() {
   const robotRef = useRef<HTMLDivElement | null>(null)
-  // const { currentPrice } = useWebSocket();
+  const { tickers } = useWebSocket();
   const { user, theme, } = useUser();
-  const { orders, isAutoScroll, canScroll } = useData();
+  const { orders, isAutoScroll, canScroll, productID, currentProduct, pd } = useData();
   // these will store mapped arrays as html so they can be used after page loads
   const [buys, setBuys] = useState(<></>);
   const [sells, setSells] = useState(<></>);
@@ -22,6 +22,7 @@ function TradeList() {
   const [highestBuy, setHighestBuy] = useState(0);
   const [lowestSell, setLowestSell] = useState(0);
 
+  const currentPrice = tickers[productID]?.price;
 
   // this watches the store and maps arrays to html when it changes because can't map nothing
   useEffect(() => {
@@ -62,27 +63,26 @@ function TradeList() {
       <div className='robot' ref={robotRef}>
 
         <div className='live-price'>
-          {/* <Meter
+          <Meter
             // product={props.product}
             max={lowestSell}
             min={highestBuy}
           // current={socket.tickers[props.product].price}
-          /> */}
+          />
           <div>
 
             {lowestSell !== 0 && highestBuy >= 0
               ? <p className='price'>&#9650; ${
                 // (lowestSell - currentPrice).toFixed(2)
+                (lowestSell - currentPrice).toFixed(pd || 2)
               }
                 <br />
                 <span className={`green ${theme}`} >
-                  {`>`} ${
-                    // Number(currentPrice).toFixed(2)
-                  } {`<`}
+                  {`> $${Number(currentPrice).toFixed(pd || 2)} <`}
                 </span>
                 <br />
                 &#9660; ${
-                  // (currentPrice - highestBuy).toFixed(2)
+                  (currentPrice - highestBuy).toFixed(pd || 2)
                 }
               </p>
               : <p>No Sells!</p>
@@ -96,7 +96,12 @@ function TradeList() {
         }
 
         {lowestSell !== 0 && highestBuy >= 0
-          ? <center><p><strong>Margin</strong><br />${(lowestSell - highestBuy).toFixed(2)}</p></center>
+          ? <center>
+            <p>
+              <strong>Margin</strong>
+              <br />${(lowestSell - highestBuy).toFixed(pd || 2)}
+            </p>
+          </center>
           : <p>No Sells!</p>
         }
       </div>

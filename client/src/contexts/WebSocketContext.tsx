@@ -1,22 +1,35 @@
-import React, { createContext, useContext, useEffect, useRef, FC, useMemo } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 // import { useUser } from './UserContext';
+
+interface Tickers {
+  [key: string]: {
+    price: number;
+  }
+}
 
 interface WebSocketContextProps {
   socket: WebSocket | null;
+  heartbeat: { heart: string, beat: string, count: number };
+  tickers: Tickers;
 }
 
-const WebSocketContext = createContext<WebSocketContextProps | null>(null);
+const defaultContext: WebSocketContextProps = {
+  socket: null,
+  heartbeat: { heart: '', beat: '', count: 0 },
+  tickers: {},
+};
 
-export function useWebSocket(): WebSocketContextProps | null {
+const WebSocketContext = createContext<WebSocketContextProps >(defaultContext);
+
+export function useWebSocket(): WebSocketContextProps  {
   return useContext(WebSocketContext);
 }
 
-interface WebSocketProviderProps {
-  children: React.ReactNode;
-}
-
-export const WebSocketProvider: FC<WebSocketProviderProps> = ({ children }) => {
+export const WebSocketProvider = ({ children }: {children: ReactNode }) => {
   const socketRef = useRef<WebSocket | null>(null);
+  const [tickers, setTickers] = useState<Tickers>({ "BTC-USD": { price: 0 }, "ETH-USD": { price: 0 } });
+  const [heartbeat, setHeartbeat] = useState({ heart: 'heart', beat: 'beat', count: 0 });
+
   // const { user } = useUser();
 
   useEffect(() => {
@@ -47,9 +60,36 @@ export const WebSocketProvider: FC<WebSocketProviderProps> = ({ children }) => {
         };
 
         socket.onmessage = (event) => {
+
           const data = JSON.parse(event.data);
+
           if (data.type === 'ping') {
             socket.send(JSON.stringify({ type: 'pong' }));
+            
+          } else if (data.type === 'heartbeat') {
+            // console.log('heartbeat data: ', data);
+            setHeartbeat(prevHeartbeat => {
+              if (data.side === 'heart') {
+                return prevHeartbeat.heart === 'heart'
+                  ? ({ ...prevHeartbeat, count: data.count, heart: 'HEART' })
+                  : ({ ...prevHeartbeat, count: data.count, heart: 'heart' })
+              } else {
+                return prevHeartbeat.beat === 'beat'
+                  ? ({ ...prevHeartbeat, beat: 'BEAT' })
+                  : ({ ...prevHeartbeat, beat: 'beat' })
+              }
+            })
+
+          } else if (data.type === 'ticker') {
+            // console.log('ticker data: ', data);
+            const ticker = data.ticker;
+            setTickers(prevTickers => ({
+              ...prevTickers,
+              [ticker.product_id]: ticker
+            }));
+          } else if (data.type === 'socketStatus') {
+            // console.log('socketStatus data: ', data);
+            // setSocketStatus(data.status);
           } else {
             console.log('WebSocket message: ', data);
           }
@@ -109,11 +149,17 @@ export const WebSocketProvider: FC<WebSocketProviderProps> = ({ children }) => {
     };
   }, []);
 
-  const value = useMemo(() => ({ socket: socketRef.current }), []);
+  // const value = useMemo(() => ({ socket: socketRef.current }), []);
+
 
   return (
     <WebSocketContext.Provider
-      value={value}>
+      // value={value}>
+      value={{ 
+        socket: socketRef.current,
+        heartbeat,
+        tickers,
+         }}>
       {children}
     </WebSocketContext.Provider>
   );

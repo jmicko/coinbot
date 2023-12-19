@@ -313,12 +313,17 @@ function setUpWebsocket(wss) {
           }, 5000);
 
           // server side pong handler
-          ws.on('message', (message) => {
-            console.log(message, 'message from socket');
-            // data = JSON.parse(message);
-            // if (data.type === 'pong') {
-            //   // console.log(data, 'pong from client');
-            // }
+          ws.on('message', (data) => {
+            try {
+              data = JSON.parse(data);
+              if (data.type === 'pong') {
+                // console.log(data, 'pong from client');
+              } else {
+                console.log(data, 'message from socket');
+              }
+            } catch (err) {
+              console.log(err, 'error parsing ws message');
+            }
           });
 
           ws.on('close', () => {
