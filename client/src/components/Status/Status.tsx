@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useData } from '../../contexts/DataContext';
 // import { useSocket } from '../../contexts/SocketProvider';
-import { useUser } from '../../contexts/UserContext';
+import { useUser } from '../../contexts/useUser.js';
 import useLocalStorage from '../../hooks/useLocalStorage';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
 import { numberWithCommas } from '../../shared';
@@ -23,9 +23,10 @@ function Status() {
     profit, refreshProfit,
     availableBase, availableQuote,
     isAutoScroll, setIsAutoScroll,
+    pqd, pbd,
   } = useData();
 
-  const productPrice = Number(tickers?.[productID]?.price).toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1));
+  const productPrice = Number(tickers?.[productID]?.price).toFixed(pqd);
 
   const openOrdersInOrder = orders;
   const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
@@ -36,7 +37,7 @@ function Status() {
   const [availableFundsDisplay, setAvailableFundsDisplay] = useLocalStorage<string>('availableFundsDisplay', 'false');
   const [feeDisplay, setFeeDisplay] = useLocalStorage<string>('feeDisplay', 'true');
 
-  const profitAccuracy = user.profit_accuracy;
+  const profitAccuracy = user?.profit_accuracy;
 
   const { width } = useWindowDimensions();
 
@@ -93,17 +94,17 @@ function Status() {
           value={availableFundsDisplay}
           onChange={(e) => { setAvailableFundsDisplay(e.target.value) }}
         >
-          <option value={'true'}>Available {user.availableFunds?.[productID]?.base_currency}</option>
-          <option value={'false'}>Available {user.availableFunds?.[productID]?.quote_currency}</option>
+          <option value={'true'}>Available {user?.availableFunds?.[productID]?.base_currency}</option>
+          <option value={'false'}>Available {user?.availableFunds?.[productID]?.quote_currency}</option>
 
         </select>
         {width > 800 ? <br /> : <div className='spacer' />}
 
         {availableFundsDisplay === "true"
-          ? `${numberWithCommas(Number(availableBase).toFixed(Number(user.availableFunds?.[productID]?.base_increment.split('1')[0].length - 1)))}`
-          : `${user.availableFunds?.[productID]?.quote_currency === 'USD' && "$"}${numberWithCommas(Number(availableQuote)
-            .toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1)))}
-            ${user.availableFunds?.[productID]?.quote_currency !== 'USD' ? user.availableFunds?.[productID]?.quote_currency : ''}`
+          ? `${numberWithCommas(Number(availableBase).toFixed(pbd))}`
+          : `${user?.availableFunds?.[productID]?.quote_currency === 'USD' && "$"}${numberWithCommas(Number(availableQuote)
+            .toFixed(pqd))}
+            ${user?.availableFunds?.[productID]?.quote_currency !== 'USD' ? user?.availableFunds?.[productID]?.quote_currency : ''}`
         }
       </div>
 
@@ -118,15 +119,15 @@ function Status() {
         </select>
         {width > 800 ? <br /> : <div className='spacer' />}
         {feeDisplay === "true"
-          ? `${Number((user.maker_fee * 100).toFixed(2))}%`
-          : `${Number((user.taker_fee * 100).toFixed(2))}%`
+          ? `${Number(((user?.maker_fee || 0) * 100).toFixed(2))}%`
+          : `${Number(((user?.taker_fee || 0) * 100).toFixed(2))}%`
         }
       </div>
 
       <div className="info status-ticker">
         <strong>30 Day Volume</strong>
         {width > 800 ? <br /> : <div className='spacer' />}
-        ${numberWithCommas(Number(user.usd_volume).toFixed(2))}
+        ${numberWithCommas(Number(user?.usd_volume).toFixed(2))}
       </div>
 
       <div className="info status-ticker">
@@ -158,7 +159,7 @@ function Status() {
           />
         </div>
 
-        {user.paused && <strong className='red'>~~~PAUSED~~~</strong>}
+        {user?.paused && <strong className='red'>~~~PAUSED~~~</strong>}
 
       </div>
       {/* {JSON.stringify(profit)} */}

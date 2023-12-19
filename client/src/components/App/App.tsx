@@ -1,10 +1,11 @@
 import './App.css'
 // Directory imports
-import { UserProvider, useUser } from '../../contexts/UserContext';
+import { UserProvider } from '../../contexts/UserContext';
 import Home from '../Home/Home';
 import Login from '../Login/Login';
 import { DataProvider } from '../../contexts/DataContext';
 import { WebSocketProvider } from '../../contexts/WebSocketContext';
+import { useUser } from '../../contexts/useUser';
 
 function App() {
 

@@ -1,16 +1,17 @@
 // UserContext.tsx
-import { createContext, useContext, ReactNode } from 'react'
+import { ReactNode } from 'react'
 import useGetFetch from '../hooks/useGetFetch.js';
 import useDeleteFetch from '../hooks/useDeleteFetch.js';
+import { UserContext } from './useUser.js';
+import { Credentials, User } from '../types/index.js';
 
-type User = {
-  theme: string;
-  taker_fee: number;
-  maker_fee: number;
-  // other properties...
-};
+// type User = {
+//   theme: string;
+//   taker_fee: number;
+//   maker_fee: number;
+//   // other properties...
+// };
 
-const UserContext = createContext<any | null>(null)
 
 export function UserProvider({ children }: { children: ReactNode }) {
   console.log('UserProvider rendering ***************');
@@ -56,7 +57,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     clearUser()
   }
 
-  async function login(payload: any) {
+  async function login(payload: Credentials) {
     console.log(userLoading, 'userLoading before login', userError, 'userError before ...');
     const response = await fetch('/api/user/login', {
       method: 'POST',
@@ -74,7 +75,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     console.log(userLoading, 'userLoading', userError, 'userError');
   }
 
-  async function registerNew(payload: any) {
+  async function registerNew(payload: Credentials) {
     console.log(payload, 'payload in register')
     await fetch('/api/user/register', { headers: { 'Content-Type': 'application/json' }, method: 'POST', body: JSON.stringify(payload) })
     login(payload);
@@ -98,4 +99,3 @@ export function UserProvider({ children }: { children: ReactNode }) {
   )
 }
 
-export const useUser = () => useContext(UserContext)

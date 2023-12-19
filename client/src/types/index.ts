@@ -31,6 +31,7 @@ export interface Funds {
   
   base_currency: string;
   base_increment: string,
+  quote_currency: string;
   quote_increment: string,
   base_increment_decimals: number,
   quote_increment_decimals: number,
@@ -45,6 +46,11 @@ export interface Funds {
 
 export interface AvailableFunds {
   [key: string]: Funds;
+}
+
+export interface Credentials {
+  username: string;
+  password: string;
 }
 
 export interface User {
@@ -63,6 +69,12 @@ export interface User {
   availableFunds: AvailableFunds;
   exporting: boolean;
   simulating: boolean;
+  theme: string;
+  profit_accuracy: number;
+  maker_fee: number;
+  taker_fee: number;
+  usd_volume: number;
+  paused: boolean;
 }
 
 export interface ProfitForDuration {

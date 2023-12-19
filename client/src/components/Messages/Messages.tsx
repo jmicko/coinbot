@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useUser } from '../../contexts/UserContext';
+import { useUser } from '../../contexts/useUser.js';
 
 import './Messages.css'
 import Chat from './Chat';
@@ -59,17 +59,17 @@ function Messages() {
 
     return (
       (
-        (header === 'Chat' && user.can_chat)
+        (header === 'Chat' && user?.can_chat)
         || sectionNum !== 2)
       && <div
         className={
           `message-section
           message-window
           scrollable
-          admin-${user.admin}
+          admin-${user?.admin}
           ${sectionNum !== messageMap.length - 1 && 'not-last-message-section'}`
         }>
-        <h3 className={`title ${user.theme}`}>
+        <h3 className={`title ${user?.theme}`}>
           {collapsed && messages.length} {header} {sectionNum} {sectionNum}
           {/* <button className='btn-red'><span className='gg-trash'></span></button> */}
         </h3>
@@ -90,8 +90,8 @@ function Messages() {
 
   return (
     // show messages on screen
-    <div className={`Messages boxed ${collapsed && 'collapsed'} admin-${user.admin}`}>
-      <h3 className={`title ${user.theme}`} onClick={() => { setCollapsed(!collapsed) }}>Coinbot Message Board {collapsed ? <>&#9650;</> : <>&#9660;</>}</h3>
+    <div className={`Messages boxed ${collapsed && 'collapsed'} admin-${user?.admin}`}>
+      <h3 className={`title ${user?.theme}`} onClick={() => { setCollapsed(!collapsed) }}>Coinbot Message Board {collapsed ? <>&#9650;</> : <>&#9660;</>}</h3>
       <div className="message-board">
 
         {messageMap.map((section, i) => {
@@ -106,7 +106,7 @@ function Messages() {
           )
         })}
 
-        {user.can_chat && <Chat
+        {user?.can_chat && <Chat
           collapsed={collapsed}
           chatLength={chatMessages.length}
           messages={chatMessages}

@@ -4,7 +4,7 @@ import coinbotFilled from "../../../src/coinbotFilled.png";
 // import coinbotFilledGif from "../../../src/coinbotFilled.gif";
 import './TradeList.css'
 import Meter from '../Meter/Meter';
-import { useUser } from '../../contexts/UserContext';
+import { useUser } from '../../contexts/useUser.js';
 import { useData } from '../../contexts/DataContext';
 import { Order } from '../../types/index';
 import { useWebSocket } from '../../contexts/useWebsocket';
@@ -90,7 +90,7 @@ function TradeList() {
           </div>
         </div>
 
-        {user.botMaintenance
+        {user?.botMaintenance
           ? <strong className='red'>~~~UNDER MAINTENANCE~~~</strong>
           : <img className="coinbot-image" src={coinbotFilled} alt="coinbot" />
         }

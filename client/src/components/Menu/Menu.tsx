@@ -1,5 +1,5 @@
 import { useData } from '../../contexts/DataContext.js';
-import { useUser } from '../../contexts/UserContext.js';
+import { useUser } from '../../contexts/useUser.js';
 import useGetFetch from '../../hooks/useGetFetch.js';
 import './Menu.css'
 
@@ -21,7 +21,7 @@ function Menu() {
       <center>
         {
           products.activeProducts &&
-          <p className="greeting">{user.username}
+          <p className="greeting">{user?.username}
             &nbsp;
             <select
               className={`select-product ${theme}`}
@@ -42,7 +42,7 @@ function Menu() {
       </center>
       <div className="menu-buttons">
         {/* only show Test button in dev mode */}
-        {process.env.NODE_ENV === 'development' && user.admin && <button
+        {process.env.NODE_ENV === 'development' && user?.admin && <button
           className={`${btnColor} btn-logout ${theme}`}
           onClick={refreshTestData}>Test</button>}
         {/* control buttons */}

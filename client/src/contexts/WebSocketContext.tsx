@@ -3,26 +3,6 @@ import { useData } from './DataContext';
 import { Tickers } from '../types';
 import { WebSocketContext } from './useWebsocket';
 
-
-
-// interface WebSocketContextProps {
-//   socket: WebSocket | null;
-//   heartbeat: { heart: string, beat: string, count: number };
-//   tickers: Tickers;
-// }
-
-// const defaultContext: WebSocketContextProps = {
-//   socket: null,
-//   heartbeat: { heart: '', beat: '', count: 0 },
-//   tickers: {},
-// };
-
-// const WebSocketContext = createContext<WebSocketContextProps>(defaultContext);
-
-// export function useWebSocket(): WebSocketContextProps {
-//   return useContext(WebSocketContext);
-// }
-
 export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   const socketRef = useRef<WebSocket | null>(null);
   const [tickers, setTickers] = useState<Tickers>({ "BTC-USD": { price: 0 }, "ETH-USD": { price: 0 } });

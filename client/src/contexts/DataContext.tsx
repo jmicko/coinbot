@@ -3,10 +3,11 @@ import { createContext, useContext, useState, ReactNode, useRef } from 'react'
 import useGetFetch from '../hooks/useGetFetch.js';
 import useDeleteFetch from '../hooks/useDeleteFetch.js';
 import { addProductDecimals } from '../shared';
-import { useUser } from './UserContext.js';
+// import { useUser } from './UserContext.js';
 import usePutFetch from '../hooks/usePutFetch.js';
 import { Product, ProductWithDecimals, marketOrderState } from '../types/index.js';
 import usePostFetch from '../hooks/usePostFetch.js';
+import { useUser } from './useUser.js';
 // import { devLog } from '../shared.js';
 const DataContext = createContext<any | null>(null)
 
@@ -74,8 +75,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   })
 
   // // AVAILABLE FUNDS
-  const availableBase = user.availableFunds?.[productID]?.base_available;
-  const availableQuote = user.availableFunds?.[productID]?.quote_available;
+  const availableBase = user?.availableFunds?.[productID]?.base_available;
+  const availableQuote = user?.availableFunds?.[productID]?.quote_available;
 
   // // get errors sent from the bot
   // const { data: botErrors, refresh: refreshBotErrors }
@@ -137,7 +138,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const currentProduct: ProductWithDecimals | null
     = currentProductNoDecimals ? addProductDecimals(currentProductNoDecimals) : null;
 
-    const pd = currentProduct?.quote_increment_decimals
+    const pqd = currentProduct?.quote_increment_decimals
+    const pbd = currentProduct?.base_increment_decimals
 
   // TRADE STATE
   const [marketOrder, setMarketOrder] = useState<marketOrderState>({
@@ -192,7 +194,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           availableBase, availableQuote,
 
           // // products
-          products, currentProduct, pd,
+          products, currentProduct, pqd, pbd,
           productID, setProductID, refreshProducts,
           // toggleActiveProduct,
 

@@ -11,7 +11,7 @@ import Settings from '../Settings/Settings';
 // import NotActive from '../NotActive/NotActive.js';
 import MobileNav from '../MobileNav/MobileNav';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
-import { useUser } from '../../contexts/UserContext';
+import { useUser } from '../../contexts/useUser.js';
 // import { useData } from '../../contexts/DataContext';
 // import { devLog } from '../../shared.js';
 
@@ -33,7 +33,7 @@ function Home() {
 
   return (
     <div
-      className={`Home ${user.theme}`}
+      className={`Home ${user?.theme}`}
       style={{
         height: height,
         // width: width
@@ -50,14 +50,14 @@ function Home() {
           // which mobile page?
           ? mobilePage === 'newPair'
             // is the user active
-            ? user.active
+            ? user?.active
               // ? <></>
               ? <Trade />
               // : <NotActive />
               : <></>
             : mobilePage === 'tradeList'
               // is the user approved
-              ? user.approved
+              ? user?.approved
                 ? <TradeList
                 // isAutoScroll={isAutoScroll} 
                 />
@@ -69,13 +69,13 @@ function Home() {
 
           // show all pages
           : <>
-            {user.active
+            {user?.active
               ? <Trade />
               // ? <></>
               // : <NotActive />
               : <></>
             }
-            {user.approved
+            {user?.approved
               ? <TradeList
               // isAutoScroll={isAutoScroll}
               />
