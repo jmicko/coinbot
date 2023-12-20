@@ -112,7 +112,7 @@ function Investment(props: { tips: boolean }) {
     // hold up, this isn't getting the spent base, it's getting the value of the spent base in the quote currency
     let total = 0;
     // look at every product in the user.availableFunds object
-    for (let product in user.availableFunds) {
+    for (const product in user.availableFunds) {
       const spentBase = user.availableFunds?.[product]?.base_spent;
       // console.log(user.availableFunds?.[product].base_spent, 'product')
       total += spentBase * tickers?.[product]?.price;
@@ -123,7 +123,7 @@ function Investment(props: { tips: boolean }) {
   function getSpentQuoteAllProducts() {
     let total = 0;
     // look at every product in the user.availableFunds object
-    for (let product in user.availableFunds) {
+    for (const product in user.availableFunds) {
       const spentQuote = user.availableFunds?.[product]?.quote_spent_on_product;
       // console.log(user.availableFunds?.[product].base_spent, 'product')
       total += spentQuote;

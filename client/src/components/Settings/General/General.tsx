@@ -3,7 +3,6 @@ import './General.css'
 import coinbotFilled from '../../../coinbotFilled.png';
 import { no } from '../../../shared.js';
 import { useUser } from '../../../contexts/useUser.js';
-import { useData } from '../../../contexts/useData.js';
 // import usePostFetch from '../../../hooks/usePostFetch.js';
 import { EventType } from '../../../types/index.js';
 import usePutFetch from '../../../hooks/usePutFetch.js';
@@ -11,14 +10,6 @@ const themes: { [key: string]: string } = { original: 'Original', darkTheme: 'Da
 
 function General(props: { tips: boolean }) {
   const { user, theme, refreshUser } = useUser();
-  const {
-    // pause,
-    // killLock,
-    // setTheme,
-    // sendTradeLoadMax,
-    // updateProfitAccuracy,
-    // sendSyncQuantity
-  } = useData();
 
   const { putData: pause } = usePutFetch({
     url: '/api/settings/pause',
@@ -117,15 +108,15 @@ function General(props: { tips: boolean }) {
   }
 
   function urlBase64ToUint8Array(base64String: string) {
-    var padding = '='.repeat((4 - base64String.length % 4) % 4);
-    var base64 = (base64String + padding)
-      .replace(/\-/g, '+')
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, '+')
       .replace(/_/g, '/');
 
-    var rawData = window.atob(base64);
-    var outputArray = new Uint8Array(rawData.length);
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
 
-    for (var i = 0; i < rawData.length; ++i) {
+    for (let i = 0; i < rawData.length; ++i) {
       outputArray[i] = rawData.charCodeAt(i);
     }
     return outputArray;
