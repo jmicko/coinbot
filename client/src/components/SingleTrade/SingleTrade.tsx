@@ -22,7 +22,7 @@ function SingleTrade(props: SingleTradeProps) {
   const { deleteData: deleteOrder } = useDeleteFetch({ url: `/api/orders/${orderID}`, from: 'deleteOrder in data context' });
 
   const deleteRefresh = async () => {
-    deleteOrder();
+    await deleteOrder();
     refreshOrders();
     setDeleting(false);
   }
@@ -168,8 +168,8 @@ function SingleTrade(props: SingleTradeProps) {
         : !props.preview && !user.kill_locked && <button
           className={`btn-red kill-button ${user.theme}`}
           onClick={() => {
-            deleteRefresh();
             setDeleting(true)
+            deleteRefresh();
           }}>
           Kill
         </button>
