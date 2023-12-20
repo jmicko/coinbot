@@ -1,26 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { useData } from '../../../contexts/DataContext.js';
-import { useUser } from '../../../contexts/UserContext.js';
-import { useSocket } from '../../../contexts/SocketProvider.js';
-import { useFetchData } from '../../../hooks/fetchData.js';
-import Collapser from '../../Collapser/Collapser.js';
-import './Investment.css'
+import { useState, useEffect } from 'react';
+import { useUser } from '../../../contexts/useUser.js';
+import { useData } from '../../../contexts/useData.js';
+import Collapser from '../../Collapser/Collapser';
+import './Investment.css';
+import { useWebSocket } from '../../../contexts/useWebsocket.js';
+import usePutFetch from '../../../hooks/usePutFetch.js';
 
 
-function Investment(props) {
+function Investment(props: { tips: boolean }) {
   const { user, refreshUser, theme } = useUser();
-  const { productID, refreshOrders, deadCon, profit } = useData();
-  const { tickers } = useSocket();
+  const { productID, refreshOrders, profit, pqd } = useData();
+  const { tickers } = useWebSocket();
 
   // the base currency will be the crypto, like BTC or FTX hahaha jk
   // the quote currency will be USD
   // const quoteID = user.availableFunds?.[productID]?.quote_currency;
   const baseID = user.availableFunds?.[productID]?.base_currency;
-  const productPrice = Number(tickers?.[productID]?.price).toFixed(Number(user.availableFunds?.[productID]?.quote_increment.split('1')[0].length - 1));
+  const productPrice = Number(tickers?.[productID]?.price).toFixed(pqd);
   // const availableBase = user.availableFunds?.[productID]?.base_available;
   const spentBase = user.availableFunds?.[productID]?.base_spent;
   // const availableBaseValue = availableBase * productPrice;
-  const spentBaseValue = spentBase * productPrice;
+  const spentBaseValue = spentBase * Number(productPrice);
   // const availableQuote = user.availableFunds?.[productID]?.quote_available;
   const spentQuote = user.availableFunds?.[productID]?.quote_spent_on_product;
   // something is wrong here. We're combining numbers from individual products along with numbers from the entire portfolio
@@ -40,8 +40,8 @@ function Investment(props) {
   const currentProductValueLiquidized = spentBaseValue + spentQuote;
 
   // 3 month profit is the object in the profit array that has the "duration":"90 Day" property
-  const ProfitCurrentProduct90Day = profit.find((item) => item.duration === '90 Day').productProfit || 0;
-  const ProfitAllProducts90Day = profit.find((item) => item.duration === '90 Day').allProfit || 0;
+  const ProfitCurrentProduct90Day = profit.find((item) => item.duration === '90 Day')?.productProfit || 0;
+  const ProfitAllProducts90Day = profit.find((item) => item.duration === '90 Day')?.allProfit || 0;
   const currentProduct90DayAvg = ProfitCurrentProduct90Day / 90;
   const allProducts90DayAvg = ProfitAllProducts90Day / 90;
 
@@ -52,18 +52,56 @@ function Investment(props) {
   const projectedProfitCurrentProduct = currentProductValueLiquidized > 0 ? (((currentProduct90DayAvg * 365) / currentProductValueLiquidized) * 100) : 0;
 
   // ROUTES
-  const { updateData: updateBulkPairRatio } = useFetchData(`/api/orders/bulkPairRatio/${productID}`, { defaultState: null, noLoad: true });
-  const { updateData: updateReinvest } = useFetchData(`/api/account/reinvest`, { defaultState: null, noLoad: true })
-  const { updateData: updateReinvestRatio } = useFetchData(`/api/account/reinvestRatio`, { defaultState: null, noLoad: true })
-  const { updateData: updateReserve } = useFetchData(`/api/account/reserve`, { defaultState: null, noLoad: true })
-  const { updateData: updatePostMaxReinvest } = useFetchData(`/api/account/postMaxReinvestRatio`, { defaultState: null, noLoad: true })
-  const { updateData: updateMaxTradeSize } = useFetchData(`/api/account/maxTradeSize`, { defaultState: null, noLoad: true })
-  const { updateData: updateTradeMax } = useFetchData(`/api/account/tradeMax`, { defaultState: null, noLoad: true })
+
+  const { putData: updateBulkPairRatio } = usePutFetch({
+    url: `/api/orders/bulkPairRatio/${productID}`,
+    from: 'updateBulkPairRatio in data context',
+    refreshCallback: refreshOrders,
+  });
+
+  const { putData: updateReinvest } = usePutFetch({
+    url: `/api/account/reinvest`,
+    from: 'updateReinvest in data context',
+    refreshCallback: refreshUser,
+  });
+
+  const { putData: updateReinvestRatio } = usePutFetch({
+    url: `/api/account/reinvestRatio`,
+    from: 'updateReinvestRatio in data context',
+    refreshCallback: refreshUser,
+  });
+
+  const { putData: updateReserve } = usePutFetch({
+    url: `/api/account/reserve`,
+    from: 'updateReserve in data context',
+    refreshCallback: refreshUser,
+  });
+
+  const { putData: updatePostMaxReinvest } = usePutFetch({
+    url: `/api/account/postMaxReinvestRatio`,
+    from: 'updatePostMaxReinvest in data context',
+    refreshCallback: refreshUser,
+  });
+
+  const { putData: updateMaxTradeSize } = usePutFetch({
+    url: `/api/account/maxTradeSize`,
+    from: 'updateMaxTradeSize in data context',
+    refreshCallback: refreshUser,
+  });
+
+  const { putData: updateTradeMax } = usePutFetch({
+    url: `/api/account/tradeMax`,
+    from: 'updateTradeMax in data context',
+    refreshCallback: refreshUser,
+  });
+
+  const starterReserve = Number(Number(user.reserve).toFixed(pqd));
+
 
   // STATE
   const [reinvest_ratio, setReinvest_ratio] = useState(0);
-  const [reserve, setReserve] = useState(0);
-  const [bulk_pair_ratio, setBulk_pair_ratio] = useState(1.1);
+  const [reserve, setReserve] = useState(starterReserve);
+  const [bulk_pair_ratio, setBulk_pair_ratio] = useState(5);
   const [max_trade_size, setMaxTradeSize] = useState(30);
   const [postMaxReinvestRatio, setPostMaxReinvestRatio] = useState(0);
 
@@ -93,41 +131,11 @@ function Investment(props) {
     return total;
   }
 
-  async function storeMaxTradeSize() {
-    await updateMaxTradeSize({ max_trade_size });
-    deadCon && refreshUser();
-  }
-
-  async function savePostMaxReinvestRatio() {
-    await updatePostMaxReinvest({ postMaxReinvestRatio });
-    deadCon && refreshUser();
-  }
-
-  async function setBulkPairRatio() {
-    await updateBulkPairRatio({ bulk_pair_ratio })
-    deadCon && refreshOrders();
-  }
-
-  // this will toggle user reinvestment, and does not send any data
-  async function reinvest() {
-    await updateReinvest()
-    deadCon && refreshUser();
-  }
-
-  async function reinvestRatio() {
-    await updateReinvestRatio({ reinvest_ratio });
-    deadCon && refreshUser();
-  }
-
-  async function saveReserve() {
-    await updateReserve({ reserve });
-    deadCon && refreshUser();
-  }
-
-  async function tradeMax() {
-    await updateTradeMax();
-    deadCon && refreshUser();
-  }
+  // // this will toggle user reinvestment, and does not send any data
+  // async function reinvest() {
+  //   await updateReinvest()
+  //   deadCon && refreshUser();
+  // }
 
   // EFFECTS
 
@@ -208,8 +216,8 @@ function Investment(props) {
         work if the profit is too small.
       </p>}
       {(user.reinvest)
-        ? <button className={`btn-blue medium ${user.theme}`} onClick={reinvest}>Turn off</button>
-        : <button className={`btn-blue medium ${user.theme}`} onClick={reinvest}>Turn on</button>
+        ? <button className={`btn-blue medium ${user.theme}`} onClick={() => { updateReinvest() }}>Turn off</button>
+        : <button className={`btn-blue medium ${user.theme}`} onClick={() => { updateReinvest() }}>Turn on</button>
       }
       {user.reinvest &&
         <>
@@ -229,10 +237,15 @@ function Investment(props) {
             step={10}
             // max={200}
             required
-            onChange={(event) => setReinvest_ratio(event.target.value)}
+            onChange={(event) => setReinvest_ratio(Number(event.target.value))}
           />
           <br />
-          <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={(event) => { reinvestRatio(event) }}>Save reinvestment ratio</button>
+          <button
+            className={`btn-blue btn-reinvest medium ${user.theme}`}
+            onClick={() => { updateReinvestRatio({ reinvest_ratio }) }}
+          >
+            Save reinvestment ratio
+          </button>
           <div className={`divider ${theme}`} />
         </>
       }
@@ -245,7 +258,7 @@ function Investment(props) {
         This will not be automatically turned back on for you.
       </p>}
       <div className='left-border'>
-        <p>Current reserve: {user.reserve}</p>
+        <p>Current reserve: {Number(user.reserve).toFixed(pqd)}</p>
         <label htmlFor="reserve">
           Set Reserve:
         </label>
@@ -256,10 +269,15 @@ function Investment(props) {
           step={10}
           // max={200}
           required
-          onChange={(event) => setReserve(event.target.value)}
+          onChange={(event) => setReserve(Number(event.target.value))}
         />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={(event) => { saveReserve(event) }}>Save reserve</button>
+        <button
+          className={`btn-blue btn-reinvest medium ${user.theme}`}
+          onClick={() => { updateReserve({ reserve }) }}
+        >
+          Save reserve
+        </button>
       </div>
       <div className={`divider ${theme}`} />
 
@@ -277,8 +295,8 @@ function Investment(props) {
             Size cap is in USD. If set to 0, the bot will ignore it and default to the reinvestment ratio.
           </p>}
           {(user.max_trade)
-            ? <button className={`btn-blue medium ${user.theme}`} onClick={() => { tradeMax() }}>Turn off</button>
-            : <button className={`btn-blue medium ${user.theme}`} onClick={() => { tradeMax() }}>Turn on</button>
+            ? <button className={`btn-blue medium ${user.theme}`} onClick={() => { updateTradeMax() }}>Turn off</button>
+            : <button className={`btn-blue medium ${user.theme}`} onClick={() => { updateTradeMax() }}>Turn on</button>
           }
           {user.max_trade &&
             <>
@@ -296,7 +314,7 @@ function Investment(props) {
                 onChange={(event) => setMaxTradeSize(Number(event.target.value))}
               />
               <br />
-              <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={(event) => { storeMaxTradeSize(event) }}>Save Max</button>
+              <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { updateMaxTradeSize({ max_trade_size }) }}>Save Max</button>
               <>
                 {props.tips && <p>How much of the profits should the bot reinvest after the max is hit?
                   Leave this at 0 to stop reinvestment after the max. If set above 0, there is no limit to how large the
@@ -315,10 +333,10 @@ function Investment(props) {
                   step={10}
                   // max={200}
                   required
-                  onChange={(event) => setPostMaxReinvestRatio(event.target.value)}
+                  onChange={(event) => setPostMaxReinvestRatio(Number(event.target.value))}
                 />
                 <br />
-                <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={(event) => { savePostMaxReinvestRatio(event) }}>Save post-max ratio</button>
+                <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { updatePostMaxReinvest({ postMaxReinvestRatio }) }}>Save post-max ratio</button>
                 {/* <div className={`divider ${theme}`} /> */}
               </>
             </>
@@ -340,14 +358,19 @@ function Investment(props) {
           type="number"
           name="bulk_pair_ratio"
           value={bulk_pair_ratio}
-          step={.1}
+          step={1}
           max={100}
           min={0}
           required
           onChange={(event) => setBulk_pair_ratio(Number(event.target.value))}
         />
         <br />
-        <button className={`btn-blue btn-bulk-pair-ratio medium ${user.theme}`} onClick={() => { setBulkPairRatio({ bulk_pair_ratio }) }}>Set all trades to new ratio</button>
+        <button
+          className={`btn-blue btn-bulk-pair-ratio medium ${user.theme}`}
+          onClick={() => { updateBulkPairRatio({ bulk_pair_ratio }) }}
+        >
+          Set all trades to new ratio
+        </button>
       </div>
       <div className={`divider ${theme}`} />
 

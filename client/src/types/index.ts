@@ -107,6 +107,10 @@ export interface User {
   profit: number;
   reinvest: boolean;
   reinvest_ratio: number;
+  max_trade_size: number;
+  reserve: number;
+  max_trade: boolean;
+  post_max_reinvest_ratio: number;
 }
 
 export interface ProfitForDuration {

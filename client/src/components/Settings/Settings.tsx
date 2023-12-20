@@ -64,7 +64,7 @@ function Settings() {
             {
               'general': <General tips={tips} />,
               'products': <Products tips={tips} />,
-              // 'investment': <Investment tips={tips} />,
+              'investment': <Investment tips={tips} />,
               // 'autoSetup': <AutoSetup product={props.product} theme={theme} tips={tips} priceTicker={props.priceTicker} />,
               // 'bulkDelete': <BulkDelete product={props.product} theme={theme} tips={tips} />,
               // 'history': <History product={props.product} theme={theme} tips={tips} />,
