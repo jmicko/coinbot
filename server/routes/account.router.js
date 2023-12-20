@@ -114,13 +114,13 @@ router.put('/products', rejectUnauthenticated, async (req, res) => {
 * GET route to get total profit estimate
 */
 router.get('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
-  devLog('profits get route');
-  const userID = req.user.id;
-  const product_id = req.params.product_id;
-
-  const durations = ['24 Hour', '7 Day', '30 Day', '90 Day', '1 Year'];
-  const profits = [];
   try {
+    devLog('profits get route');
+    const userID = req.user.id;
+    const product_id = req.params.product_id;
+
+    const durations = ['24 Hour', '7 Day', '30 Day', '90 Day', '1 Year'];
+    const profits = [];
     for (let i = 0; i < durations.length; i++) {
       const duration = durations[i];
       // get profit for each duration by product
@@ -151,14 +151,19 @@ router.get('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
 // todo - add profit reset date column to products table and enable resetting per product
 // also this should take in a date in the params so the user can reset profits for a specific date
 router.put('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
-  devLog('reset profit route');
-  // get the object keys
-
-  const profit_reset = new Date();
-  const userID = req.user.id;
-  const queryText = `UPDATE "limit_orders" SET "include_in_profit" = false WHERE "userID"=$1 AND "settled"=true;`;
-  const timeQuery = `UPDATE "user_settings" SET "profit_reset" = $1 WHERE "userID" = $2;`
   try {
+    devLog('reset profit route');
+    // get the object keys
+
+    const profit_reset = new Date(req.body.profit_reset);
+    // console.log(date, 'date');
+
+    // const profit_reset = new Date(date);
+    // const profit_reset = new Date();
+    console.log(profit_reset, 'profit reset date');
+    const userID = req.user.id;
+    const queryText = `UPDATE "limit_orders" SET "include_in_profit" = false WHERE "userID"=$1 AND "settled"=true;`;
+    const timeQuery = `UPDATE "user_settings" SET "profit_reset" = $1 WHERE "userID" = $2;`
     await pool.query(queryText, [userID]);
     await pool.query(timeQuery, [profit_reset, userID]);
 

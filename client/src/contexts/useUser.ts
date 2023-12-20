@@ -16,6 +16,7 @@ interface UserContextProps {
   theme: string;
   btnColor: string;
   maker_fee: number;
+  clearUser: () => void;
   // setUser: React.Dispatch<React.SetStateAction<User>>;
 }
 

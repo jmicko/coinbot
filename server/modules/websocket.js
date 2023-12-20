@@ -192,81 +192,86 @@ function setUpWebsocket(wss) {
   wss.on('connection', (ws, req) => {
     console.log('================NEW WEBSOCKET CONNECTION================');
     // Use the req object to access session and passport data
-    sessionMiddleware(req, {}, () => {
+    try {
+      sessionMiddleware(req, {}, () => {
 
-      passport.initialize()(req, {}, () => {
+        passport.initialize()(req, {}, () => {
 
-        passport.session()(req, {}, () => {
+          passport.session()(req, {}, () => {
 
-          const session = req.session;
-          const user = req.user;
-          const id = session.id;
-          const userID = user?.id;
-          ws.userID = userID;
+            const session = req.session;
+            const user = req.user;
+            const id = session.id;
+            const userID = user?.id;
+            ws.userID = userID;
 
-          if (!userID) {
-            console.log('socket connected but client is not logged in');
-            // disconnect the socket if the user is not logged in
-            ws.disconnect();
-          } else {
-            try {
+            if (!userID) {
+              console.log('socket connected but client is not logged in');
+              // disconnect the socket if the user is not logged in
+              ws.close();
+            } else {
+              try {
 
-              messenger?.[userID]?.addSocket(ws);
+                messenger?.[userID]?.addSocket(ws);
 
-              const statMessage = {
-                type: 'socketStatus',
-                socketStatus: userStorage?.[userID]?.socketStatus
-              }
-              messenger[userID].instantMessage(statMessage)
-
-              if (!userID) {
-                console.log('socket connected but client is not logged in');
-                // disconnect the socket if the user is not logged in
-                ws.disconnect();
-              } else {
-                console.log(`client connected! with user id ${userID} socket id: ${id}`);
-              }
-
-              // send a ping to the client every 5 seconds
-              const pingInterval = setInterval(() => {
-                ws.send(JSON.stringify({ type: 'ping', data: 'ping' }));
-              }, 5000);
-
-              // server side pong handler
-              ws.on('message', (data) => {
-                try {
-                  data = JSON.parse(data);
-                  if (data.type === 'pong') {
-                    // console.log(data, 'pong from client');
-                  } else {
-                    console.log(data, 'message from socket');
-                  }
-                } catch (err) {
-                  console.log(err, 'error parsing ws message');
+                const statMessage = {
+                  type: 'socketStatus',
+                  socketStatus: userStorage?.[userID]?.socketStatus
                 }
-              });
+                messenger[userID].instantMessage(statMessage)
 
-              ws.on('close', () => {
-                const userID = req.session.passport?.user;
-                console.log(`client:${user.username} with id: ${id} disconnected`);
-                messenger[userID].deleteSocket(ws);
-                clearInterval(pingInterval);
-              });
+                if (!userID) {
+                  console.log('socket connected but client is not logged in');
+                  // disconnect the socket if the user is not logged in
+                  ws.close();
+                } else {
+                  console.log(`client connected! with user id ${userID} socket id: ${id}`);
+                }
 
-              ws.send(JSON.stringify({
-                type: 'message',
-                data: 'Hello! Message from server!!'
-              }));
+                // send a ping to the client every 5 seconds
+                const pingInterval = setInterval(() => {
+                  ws.send(JSON.stringify({ type: 'ping', data: 'ping' }));
+                }, 5000);
 
-            } catch (err) {
-              console.log(err, 'error in websocket setup');
-              ws.disconnect();
+                // server side pong handler
+                ws.on('message', (data) => {
+                  try {
+                    data = JSON.parse(data);
+                    if (data.type === 'pong') {
+                      // console.log(data, 'pong from client');
+                    } else {
+                      console.log(data, 'message from socket');
+                    }
+                  } catch (err) {
+                    console.log(err, 'error parsing ws message');
+                  }
+                });
+
+                ws.on('close', () => {
+                  const userID = req.session.passport?.user;
+                  console.log(`client:${user.username} with id: ${id} disconnected`);
+                  messenger[userID].deleteSocket(ws);
+                  clearInterval(pingInterval);
+                });
+
+                ws.send(JSON.stringify({
+                  type: 'message',
+                  data: 'Hello! Message from server!!'
+                }));
+
+              } catch (err) {
+                console.log(err, 'error in websocket setup');
+                ws.close();
+              }
+
             }
-
-          }
+          });
         });
       });
-    });
+    } catch (err) {
+      console.log(err, 'error in websocket setup');
+      ws?.close();
+    }
   });
 
 

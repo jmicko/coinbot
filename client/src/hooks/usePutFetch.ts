@@ -5,10 +5,11 @@ interface UsePutFetchProps<T> {
   options?: RequestInit;
   setData?: React.Dispatch<React.SetStateAction<T>>;
   refreshCallback?: () => void;
+  loadingDelay?: number;
   from: string;
 }
 
-const usePutFetch = <T>({ url, options, setData, refreshCallback, from }: UsePutFetchProps<T>) => {
+const usePutFetch = <T>({ url, options, setData, refreshCallback,loadingDelay, from }: UsePutFetchProps<T>) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -49,7 +50,9 @@ const usePutFetch = <T>({ url, options, setData, refreshCallback, from }: UsePut
         setError(new Error('An unknown error occurred.'));
       }
     } finally {
+      setTimeout(() => {
       setIsLoading(false);
+      }, loadingDelay || 0);
     }
   }, [url, options, setData, from, refreshCallback]);
 

@@ -4,7 +4,7 @@ import Admin from './Admin/Admin';
 import General from './General/General';
 import Products from './Products/Products';
 import Investment from './Investment/Investment';
-// import Reset from './Reset/Reset.js';
+import Reset from './Reset/Reset';
 // import Feedback from './Feedback/Feedback.js';
 import History from './History/History';
 import SettingsNav from './SettingsNav/SettingsNav';
@@ -67,8 +67,8 @@ function Settings() {
               'investment': <Investment tips={tips} />,
               // 'autoSetup': <AutoSetup tips={tips} priceTicker={props.priceTicker} />,
               'bulkDelete': <BulkDelete tips={tips} />,
-              'history': <History tips={tips} />,
-              // 'reset': <Reset tips={tips} />,
+              'history': <History />,
+              'reset': <Reset tips={tips} />,
               // 'feedback': <Feedback tips={tips} />,
               'admin': <Admin tips={tips} />
             }[settingsPage]

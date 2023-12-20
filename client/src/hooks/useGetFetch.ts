@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { FetchError } from '../types';
 
 type FetchDataOptions<T> = {
   url?: string;
@@ -6,6 +7,8 @@ type FetchDataOptions<T> = {
   preload: boolean;
   from: string;
 };
+
+
 
 const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
   const [data, setData] = useState<T>(options.defaultState);
@@ -24,13 +27,16 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
       });
 
       if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
+        throw new FetchError(`Error: ${response.status}`, response.status);
       }
       const data: T = await response.json();
       setData(data);
       setError(null);
     } catch (error) {
-      if (error instanceof Error) {
+      if (error instanceof FetchError) {
+
+        setError(error);
+      } else if (error instanceof Error) {
         setError(error);
       } else {
         setError(new Error('An unknown error occurred.'));

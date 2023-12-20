@@ -1,9 +1,9 @@
 // UserContext.tsx
-import { ReactNode } from 'react'
+import { ReactNode, useEffect } from 'react'
 import useGetFetch from '../hooks/useGetFetch.js';
 import useDeleteFetch from '../hooks/useDeleteFetch.js';
 import { UserContext } from './useUser.js';
-import { Credentials, User } from '../types/index.js';
+import { Credentials, FetchError, User } from '../types/index.js';
 
 // type User = {
 //   theme: string;
@@ -15,12 +15,6 @@ import { Credentials, User } from '../types/index.js';
 
 export function UserProvider({ children }: { children: ReactNode }) {
   console.log('UserProvider rendering ***************');
-  
-  const {
-    isLoading: deleteLoading,
-    error: deleteError,
-    deleteData: deleteYourself
-  } = useDeleteFetch({ url: '/api/user', from: 'deleteYourself in UserContext' });
 
   const {
     data: user,
@@ -38,15 +32,29 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   );
 
+  const {
+    isLoading: deleteLoading,
+    error: deleteError,
+    deleteData: deleteYourself
+  } = useDeleteFetch({
+    url: `/api/user/${user.id}`,
+    from: 'deleteYourself in UserContext'
+  });
+
   // infer theme from user object
   const theme = user ? user.theme : 'darkTheme';
   const btnColor = theme === 'darkTheme' ? 'btn-black' : 'btn-blue';
 
   // useEffect(() => {
   //   console.log(user, 'user in UserProvider, refreshing');
-    
-  //     refreshUser()
-  // }, [])
+  //   // clear the user if there is a 403 error
+  //   if (userError instanceof FetchError
+  //     && userError.status === 403) {
+  //     clearUser();
+  //   }
+
+  //   // refreshUser()
+  // }, [userError])
 
   async function logout() {
     await fetch('/api/user/logout', {
@@ -58,7 +66,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }
 
   async function login(payload: Credentials) {
-    console.log(userLoading, 'userLoading before login', userError, 'userError before ...');
+    console.log(
+      userLoading,
+      'userLoading before login',
+      userError, 'userError before ...'
+    );
     const response = await fetch('/api/user/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -77,7 +89,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   async function registerNew(payload: Credentials) {
     console.log(payload, 'payload in register')
-    await fetch('/api/user/register', { headers: { 'Content-Type': 'application/json' }, method: 'POST', body: JSON.stringify(payload) })
+    await fetch(
+      '/api/user/register',
+      {
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
     login(payload);
   }
 
@@ -90,7 +108,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
           // takerFee: user?.taker_fee, 
           maker_fee: user?.maker_fee || 1,
           userLoading, userError, deleteLoading, deleteError,
-          refreshUser, logout, login, registerNew, deleteYourself,
+          refreshUser, logout, login, registerNew, deleteYourself, clearUser,
           theme, btnColor
         }
       }>

@@ -10,10 +10,10 @@ import { useUser } from '../../contexts/useUser';
 function App() {
 
   function CheckUser() {
-    const { user, userLoading } = useUser();
+    const { user, userLoading, userError } = useUser();
     console.log(user, 'user in App');
 
-    if (!user.id && userLoading) {
+    if (!user.id && userLoading && !userError) {
       return <center>Loading...</center>;
     } else if (user.id) {
       return (

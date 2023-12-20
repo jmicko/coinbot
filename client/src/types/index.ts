@@ -97,6 +97,7 @@ export interface User {
   simulating: boolean;
   theme: string;
   profit_accuracy: number;
+  profit_reset: string;
   maker_fee: number;
   taker_fee: number;
   usd_volume: number;
@@ -209,5 +210,14 @@ export type Messages = Message[];
 export interface Tickers {
   [key: string]: {
     price: number;
+  }
+}
+
+export class FetchError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
   }
 }
