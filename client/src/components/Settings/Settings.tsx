@@ -5,7 +5,7 @@ import General from './General/General';
 import Products from './Products/Products';
 import Investment from './Investment/Investment';
 import Reset from './Reset/Reset';
-// import Feedback from './Feedback/Feedback.js';
+import Feedback from './Feedback/Feedback';
 import History from './History/History';
 import SettingsNav from './SettingsNav/SettingsNav';
 import BulkDelete from './BulkDelete/BulkDelete';
@@ -69,7 +69,7 @@ function Settings() {
               'bulkDelete': <BulkDelete tips={tips} />,
               'history': <History />,
               'reset': <Reset tips={tips} />,
-              // 'feedback': <Feedback tips={tips} />,
+              'feedback': <Feedback tips={tips} />,
               'admin': <Admin tips={tips} />
             }[settingsPage]
           }

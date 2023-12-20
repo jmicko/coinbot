@@ -1,7 +1,19 @@
-import React, { useState } from 'react';
-import { useFetchData } from '../../../hooks/fetchData.js';
-import { useUser } from '../../../contexts/UserContext.js';
+import { useState } from 'react';
 import './Feedback.css'
+import { useUser } from '../../../contexts/useUser';
+import useGetFetch from '../../../hooks/useGetFetch';
+import usePostFetch from '../../../hooks/usePostFetch';
+import useDeleteFetch from '../../../hooks/useDeleteFetch';
+import { ChangeEventTypes, EventType } from '../../../types';
+import { no } from '../../../shared';
+
+interface Feedback {
+  subject: string;
+  description: string;
+  created_at: string;
+  id: number;
+  username: string;
+}
 
 
 function Feedback() {
@@ -9,17 +21,31 @@ function Feedback() {
 
   const {
     data: oldFeedback,
-    createRefreshData: submitFeedback,
-    deleteRefreshData: deleteFeedback
-  } = useFetchData(`/api/settings/feedback`, { noLoad: false });
+    refresh: refreshFeedback,
+  } = useGetFetch('/none', {
+    url: `/api/settings/feedback`,
+    defaultState: [],
+    from: 'oldFeedback in Feedback',
+    preload: true,
+  });
+  const { postData: submitFeedback } = usePostFetch({
+    url: `/api/settings/feedback`,
+    refreshCallback: refreshFeedback,
+    from: 'submitFeedback in Feedback',
+  });
+  const { deleteData: deleteFeedback } = useDeleteFetch({
+    url: `/api/settings/feedback`,
+    refreshCallback: refreshFeedback,
+    from: 'deleteFeedback in Feedback',
+  });
 
-  const [feedback, setFeedback] = useState({
+  const [feedback, setFeedback] = useState<{ subject: string, description: string }>({
     subject: '',
     description: ''
   });
 
-  function handleSubmit(e) {
-    e.preventDefault();
+  function handleSubmit(e: EventType) {
+    no(e);
     console.log('feedback', feedback);
     submitFeedback(feedback);
     // clear inputs
@@ -29,10 +55,10 @@ function Feedback() {
     });
   }
 
-  function handleFeedbackChange(e) {
-    e.preventDefault();
+  function handleFeedbackChange(e: ChangeEventTypes) {
+    no(e);
     // check to make sure the input is under 5000 characters
-    if (e.target.value.length > 5000) return;
+    if (e.target?.value.length > 5000) return;
     setFeedback({
       ...feedback,
       [e.target.name]: e.target.value
@@ -92,18 +118,13 @@ function Feedback() {
 
       {/* display previous feedback submissions */}
       <div className="feedback-submissions">
-        {oldFeedback && oldFeedback.map((feedback, i) => {
+        {oldFeedback && oldFeedback.map((feedback: Feedback, i) => {
 
-          const description = feedback.description
+          const description: string = feedback.description;
 
           return (
             <div className="feedback-submission" key={i}>
-              <h5 className="feedback-submission-header">{feedback.subject}</h5>
-
-              {/* display description as paragraph, adding a line break where needed */}
-              {/* <p className="feedback-submission-description">
-                {description}
-              </p> */}
+              <h4 className="feedback-submission-header">{feedback.subject}</h4>
               <p className="feedback-submission-description">
                 {description.split('\n').map((line, i) => {
                   return (
@@ -121,7 +142,7 @@ function Feedback() {
                 {/* if user is admin, show who submitted the feedback */}
                 {user.admin && <p>Submitted by: {feedback.username}</p>}
                 {/* delete button */}
-                <button className={`btn-red ${theme}`} onClick={() => deleteFeedback(feedback.id)}>Delete</button>
+                <button className={`btn-red ${theme}`} onClick={() => deleteFeedback('/' + feedback.id.toString)}>Delete</button>
               </div>
             </div>
           )

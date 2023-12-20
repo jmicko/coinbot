@@ -191,6 +191,10 @@ export interface marketOrderState {
 
 export type EventType = MouseEvent | ChangeEvent | FormEvent;
 
+export type ChangeEventTypes = React.ChangeEvent<HTMLSelectElement>
+  | React.ChangeEvent<HTMLInputElement>
+  | React.ChangeEvent<HTMLTextAreaElement>
+
 export interface Message {
   cCount: null | number;
   from: null | string;
