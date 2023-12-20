@@ -1,18 +1,24 @@
-import React from 'react';
-import { useData } from '../../../contexts/DataContext.js';
-import { useUser } from '../../../contexts/UserContext.js';
 import { numberWithCommas } from '../../../shared.js';
 import './Products.css'
+import { useUser } from '../../../contexts/useUser.js';
+import { useData } from '../../../contexts/useData.js';
+import usePutFetch from '../../../hooks/usePutFetch.js';
 
 
-function Products(props) {
+function Products(props: { tips: boolean }) {
   const { theme } = useUser();
-  const { products, toggleActiveProduct } = useData();
+  const { refreshProducts, products } = useData();
 
-  function toggleActive(product) {
-    console.log('toggleActive?', product);
-    toggleActiveProduct(product);
-  }
+  // function toggleActive(product) {
+  //   console.log('toggleActive?', product);
+  //   toggleActiveProduct(product);
+  // }
+
+  const { putData: toggleActiveProduct } = usePutFetch({
+    url: '/api/account/products',
+    from: 'products in data context',
+    refreshCallback: refreshProducts,
+  })
 
   return (
     <div className="Products settings-panel scrollable">
@@ -46,7 +52,7 @@ function Products(props) {
                       <input
                         type="checkbox"
                         checked={product.active_for_user}
-                        onChange={() => toggleActive(product)}
+                        onChange={() => toggleActiveProduct(product )}
                       />
                     </center>
                   </td>
@@ -68,7 +74,7 @@ function Products(props) {
                   </td>
                   <td>
                     <center>
-                      {numberWithCommas(Number(product.volume_24h * product.price).toFixed(Number(product.quote_increment).toString().length - 2))} {product.quote_currency_id}
+                      {numberWithCommas((Number(product.volume_24h) * Number(product.price)).toFixed(Number(product.quote_increment).toString().length - 2))} {product.quote_currency_id}
                     </center>
                   </td>
                   <td>
@@ -109,39 +115,23 @@ function Products(props) {
               return (
                 <tr key={i}>
                   <td>
-                    {/* <center> */}
-                      <input
-                        type="checkbox"
-                        checked={product.active_for_user}
-                        onChange={() => toggleActive(product)}
-                      />
-                    {/* </center> */}
+                    <input
+                      type="checkbox"
+                      checked={product.active_for_user}
+                      onChange={() => toggleActiveProduct( product )}
+                    />
                   </td>
                   <td>
-                    {/* <center> */}
-                      {product.product_id}
-                    {/* </center> */}
+                    {product.product_id}
                   </td>
                   <td className='number'>
-                    {/* <center> */}
-                      {numberWithCommas(Number(product.price))}
-                    {/* </center> */}
-                  </td>
-                  {/* <td>
-                    // <center>
-                      {numberWithCommas(Number(product.volume_24h).toFixed(Number(product.quote_increment).toString().length - 2))}
-                      {numberWithCommas(Number(product.volume_24h).toFixed(2))}
-                    // </center>
-                  </td> */}
-                  <td className='number'>
-                    {/* <center> */}
-                      {numberWithCommas(Number(product.volume_24h * product.price).toFixed(2))} {product.quote_currency_id}
-                    {/* </center> */}
+                    {numberWithCommas(Number(product.price))}
                   </td>
                   <td className='number'>
-                    {/* <center> */}
-                      {product.price_percentage_change_24h}
-                    {/* </center> */}
+                    {numberWithCommas((Number(product.volume_24h) * Number(product.price)).toFixed(2))} {product.quote_currency_id}
+                  </td>
+                  <td className='number'>
+                    {product.price_percentage_change_24h}
                   </td>
                 </tr>
               )

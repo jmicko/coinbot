@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import Admin from './Admin/Admin';
 // import AutoSetup from './AutoSetup/AutoSetup.js';
 import General from './General/General';
-// import Products from './Products/Products.js';
-// import Investment from './Investment/Investment.js';
+import Products from './Products/Products';
+import Investment from './Investment/Investment';
 // import Reset from './Reset/Reset.js';
 // import Feedback from './Feedback/Feedback.js';
 // import History from './History/History.js';
@@ -63,8 +63,8 @@ function Settings() {
           {
             {
               'general': <General tips={tips} />,
-              // 'products': <Products product={props.product} theme={theme} tips={tips} />,
-              // 'investment': <Investment product={props.product} theme={theme} tips={tips} />,
+              'products': <Products tips={tips} />,
+              // 'investment': <Investment tips={tips} />,
               // 'autoSetup': <AutoSetup product={props.product} theme={theme} tips={tips} priceTicker={props.priceTicker} />,
               // 'bulkDelete': <BulkDelete product={props.product} theme={theme} tips={tips} />,
               // 'history': <History product={props.product} theme={theme} tips={tips} />,

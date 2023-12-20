@@ -49,7 +49,9 @@ export interface BotSettings {
 
 export interface Funds {
   base_available: number;
+  base_spent: number;
   quote_available: number;
+  quote_spent_on_product: number;
   // base currency is the currency you are buying, like BTC
   base_currency: string;
   base_increment: string,
@@ -102,6 +104,9 @@ export interface User {
   kill_locked: boolean;
   sync_quantity: number;
   max_trade_load: number;
+  profit: number;
+  reinvest: boolean;
+  reinvest_ratio: number;
 }
 
 export interface ProfitForDuration {
