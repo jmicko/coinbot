@@ -6,7 +6,7 @@ import Products from './Products/Products';
 import Investment from './Investment/Investment';
 // import Reset from './Reset/Reset.js';
 // import Feedback from './Feedback/Feedback.js';
-// import History from './History/History.js';
+import History from './History/History';
 import SettingsNav from './SettingsNav/SettingsNav';
 import BulkDelete from './BulkDelete/BulkDelete';
 import Draggable, { DraggerProps } from '../Draggable/Draggable';
@@ -65,11 +65,11 @@ function Settings() {
               'general': <General tips={tips} />,
               'products': <Products tips={tips} />,
               'investment': <Investment tips={tips} />,
-              // 'autoSetup': <AutoSetup product={props.product} theme={theme} tips={tips} priceTicker={props.priceTicker} />,
+              // 'autoSetup': <AutoSetup tips={tips} priceTicker={props.priceTicker} />,
               'bulkDelete': <BulkDelete tips={tips} />,
-              // 'history': <History product={props.product} theme={theme} tips={tips} />,
-              // 'reset': <Reset product={props.product} theme={theme} tips={tips} />,
-              // 'feedback': <Feedback product={props.product} theme={theme} tips={tips} />,
+              'history': <History tips={tips} />,
+              // 'reset': <Reset tips={tips} />,
+              // 'feedback': <Feedback tips={tips} />,
               'admin': <Admin tips={tips} />
             }[settingsPage]
           }

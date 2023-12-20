@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 type FetchDataOptions<T> = {
+  url?: string;
   defaultState: T;
   preload: boolean;
   from: string;
@@ -14,10 +15,11 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
 
   const fetchData = useCallback(async () => {
     console.log(options.from, '<== fetching data from');
+    const whichUrl = options.url ? options.url : url;
 
     setIsLoading(true);
     try {
-      const response = await fetch(url, {
+      const response = await fetch(whichUrl, {
         credentials: 'include', // Include credentials here
       });
 
@@ -27,16 +29,16 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
       const data: T = await response.json();
       setData(data);
       setError(null);
-    } catch (exception) {
-      if (exception instanceof Error) {
-        setError(exception);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error);
       } else {
         setError(new Error('An unknown error occurred.'));
       }
     } finally {
       setIsLoading(false);
     }
-  }, [url, options.from]);
+  }, [url, options]);
 
   const clear = () => {
     setData(options.defaultState)

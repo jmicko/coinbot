@@ -1,28 +1,65 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './History.css'
 // import xlsx from 'json-as-xlsx'
 import { granularities } from '../../../shared.js';
-import { useUser } from '../../../contexts/UserContext.js';
-import { useData } from '../../../contexts/DataContext.js';
-import { useFetchData } from '../../../hooks/fetchData.js';
+import { useUser } from '../../../contexts/useUser';
+import { useData } from '../../../contexts/useData';
+import useGetFetch from '../../../hooks/useGetFetch.js';
+import usePutFetch from '../../../hooks/usePutFetch.js';
+import useDownloadFile from '../../../hooks/useDownloadFile.js';
+// import useDownloadFile from '../../../hooks/useDownloadFile';
+// import { useFetchData } from '../../../hooks/fetchData.js';
 
 function History() {
   const { user, refreshUser, theme } = useUser();
-  const { exportableFiles, productID: product } = useData();
-  const { downloadFile } = useFetchData(`/api/account/downloadFile`, { noLoad: true, refreshUser });
-  const { updateData: generateCandleFile } = useFetchData(`/api/account/exportCandles`, { noLoad: true, refreshUser });
-  const { data: currentJSON, refresh: refreshCurrentJSON, clear: clearJSON } = useFetchData(`/api/account/exportCurrentJSON`, { noLoad: true, refreshUser });
+  const { productID } = useData();
+  const {
+    data: exportableFiles,
+    refresh: refreshExportableFiles,
+  } = useGetFetch('/none', {
+    url: `/api/account/exportableFiles`,
+    defaultState: [],
+    from: 'exportableFiles in History',
+    preload: true,
+  })
+  // const { downloadFile } = useFetchData(`/api/account/downloadFile`, { noLoad: true, refreshUser });
+  const { downloadFile, downloadTxt } = useDownloadFile({
+    url: `/api/account/downloadFile`,
+    from: 'downloadFile in History'
+  })
+  // const { updateData: generateCandleFile }
+  //   = useFetchData(`/api/account/exportCandles`, { noLoad: true, refreshUser });
+  const { putData: generateCandleFile } = usePutFetch({
+    url: `/api/account/exportCandles`,
+    refreshCallback: refreshExportableFiles,
+    from: 'generateCandleFile in History',
+  })
+  // const { data: currentJSON, refresh: refreshCurrentJSON, clear: clearJSON }
+  //   = useFetchData(`/api/account/exportCurrentJSON`, { noLoad: true, refreshUser });
+  const {
+    data: currentJSON,
+    refresh: exportCurrentJSON,
+    clear: clearCurrentJSON,
+  } = useGetFetch('/none', {
+    url: `/api/account/exportCurrentJSON`,
+    defaultState: null,
+    from: 'currentJSON in History',
+    preload: false,
+  })
+
+  // maybe bring these back later
   // const [jsonImport, setJSONImport] = useState('');
   // const [ignoreDuplicates, setIgnoreDuplicates] = useState(false);
-  // end should start as the current date withouth the time
+
+  // end should start as the current date without the time
   const [end, setEnd] = useState(new Date().toISOString().slice(0, 10));
   // start should start as 30 days ago
   const [start, setStart] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().slice(0, 10));
   const [granularity, setGranularity] = useState('ONE_MINUTE');
 
-  async function exportCandleXlxs() {
+  async function exportCandleXlsx() {
     await generateCandleFile({
-      product: product,
+      product: productID,
       granularity: granularity,
       start: start,
       end: end
@@ -30,18 +67,26 @@ function History() {
     refreshUser();
   }
 
-  async function exportCurrentJSON(params) {
-    if (params === 'clear') {
-      clearJSON();
-    } else {
-      refreshCurrentJSON()
+  useEffect(() => {
+    const refresh = async () => {
+      await refreshUser();
+      await refreshExportableFiles();
     }
-  }
+
+    let timer: NodeJS.Timeout;
+
+    if (user.exporting) {
+      timer = setTimeout(() => {
+        refresh();
+      }, 1000);
+    }
+
+    return () => clearTimeout(timer);
+  }, [user, refreshUser, refreshExportableFiles])
 
   function copyToClipboard() {
     navigator.clipboard.writeText(JSON.stringify(currentJSON));
   }
-
 
   return (
     <div className="History settings-panel scrollable">
@@ -49,8 +94,10 @@ function History() {
       <div className={`divider ${theme}`} />
       <h4>Candles</h4>
       <p>
-        select a date range and granularity and a file will be generated for you to download. This may take a few minutes.
+        select a date range and granularity and a file will be generated for you to download.
+        This may take a few minutes.
         The file will be available for download in the "Available files to download" section below.
+        If there are more than 5 files at any time, the oldest file will be deleted.
       </p>
       {/* {JSON.stringify(user)} */}
       {/* <br /> */}
@@ -81,7 +128,10 @@ function History() {
       <br />
       <br />
       {!user.exporting
-        ? <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCandleXlxs() }}>Generate</button>
+        ? <button
+          className={`btn-red medium ${user.theme}`}
+          onClick={() => { exportCandleXlsx() }}
+        >Generate</button>
         : <p>Generating...</p>
       }
 
@@ -93,7 +143,10 @@ function History() {
         return (
           <div key={index}>
             {/* each file should be a link that will call the download function */}
-            <button className={`btn-yellow btn-file ${user.theme}`} onClick={() => { downloadFile(file) }}>{file}</button>
+            <button
+              className={`btn-yellow btn-file ${user.theme}`}
+              onClick={() => { downloadFile(file, 'xlsx') }}
+            >{file}</button>
             <br />
             {/* <br /> */}
           </div>
@@ -109,37 +162,62 @@ function History() {
       <p>
         Export and download your entire trade history as an xlsx spreadsheet.
       </p>
-      <button className={`btn-red medium ${user.theme}`} onClick={() => { exportXlxs() }}>Export</button>
+      <button className={`btn-red medium ${user.theme}`} onClick={() => { exportXlsx() }}>Export</button>
       <div className={`divider ${theme}`} />
  */}
 
 
       <h4>Export current trade-pairs</h4>
-      <p>
-        Export all your current trade-pairs in JSON format.
-        {/* You can copy this to a text document
+      {!currentJSON &&
+        <p>
+          Export all your current trade-pairs in JSON format.
+          {/* You can copy this to a text document
         and use it later to import the same trades. This is useful if you want to transfer your
       trades to a different bot and can't or don't want to mess around with the database. */}
-      </p>
-      {currentJSON
-        ? <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCurrentJSON('clear') }}>Clear</button>
-        : <button className={`btn-red medium ${user.theme}`} onClick={() => { exportCurrentJSON() }}>Export</button>
+        </p>
       }
-      {currentJSON && <p>You should probably hit that copy all button instead of trying to copy the text from the box.</p>}
-      {/* <br></br> */}
-      {/* <br></br> */}
-      {currentJSON
-        && <textarea
-          rows="4"
-          cols="20"
-        >
-          {JSON.stringify(currentJSON)}
-        </textarea>
+      {!currentJSON &&
+        <button
+          className={`btn-red medium ${user.theme}`}
+          onClick={() => { exportCurrentJSON() }}
+        >Export</button>
+      }
+      {currentJSON &&
+        <p>
+          Copy it into your clipboard and paste it somewhere, or just download it as a .txt file.
+        </p>
+      }
+      {currentJSON &&
+        <button
+          className={`btn-blue medium ${user.theme}`}
+          onClick={() => { copyToClipboard() }}
+        >Copy All</button>
+      }
+      &nbsp;
+      {currentJSON &&
+        <button
+          className={`btn-yellow btn-file medium ${user.theme}`}
+          onClick={() => downloadTxt(JSON.stringify(currentJSON),
+            `${productID}_active_trades_${new Date().toISOString().slice(0, 10)}.txt`)}
+        >Download as .txt
+        </button>
       }
       <br />
-      {currentJSON
-        && <button className={`btn-blue medium ${user.theme}`} onClick={() => { copyToClipboard() }}>Copy All</button>
+      {currentJSON &&
+        <textarea
+          rows={4}
+          cols={29}
+          value={JSON.stringify(currentJSON)}
+          // don't allow editing of the text area
+          readOnly
+        />
       }
+      <br />
+      {currentJSON &&
+        <button
+          className={`btn-red medium ${user.theme}`}
+          onClick={() => { clearCurrentJSON() }}
+        >Clear</button>}
       <div className={`divider ${theme}`} />
       {/* 
       <h4>Import current trade-pairs</h4>

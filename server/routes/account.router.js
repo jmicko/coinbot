@@ -376,8 +376,8 @@ router.get('/downloadFile/:fileName', rejectUnauthenticated, async (req, res) =>
 router.get('/exportCurrentJSON', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   try {
-    let sqlText = `SELECT * FROM "limit_orders" WHERE "userID"=$1;`;
-    let result = await pool.query(sqlText, [userID]);
+    // let sqlText = `SELECT * FROM "limit_orders" WHERE "userID"=$1;`;
+    // let result = await pool.query(sqlText, [userID]);
     // const allOrders = JSON.stringify(result.rows);
     const allOrders = await databaseClient.getUnsettledTrades('all', userID);
 
