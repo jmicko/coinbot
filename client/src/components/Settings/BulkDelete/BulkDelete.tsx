@@ -1,17 +1,33 @@
-import React, { useState } from 'react';
-import { useData } from '../../../contexts/DataContext.js';
-import { useUser } from '../../../contexts/UserContext.js';
-import { useFetchData } from '../../../hooks/fetchData.js';
+import { useState } from 'react';
+import { useUser } from '../../../contexts/useUser.js';
+import { useData } from '../../../contexts/useData.js';
+// import { useFetchData } from '../../../hooks/fetchData.js';
 import './BulkDelete.css'
+import useDeleteFetch from '../../../hooks/useDeleteFetch.js';
 
 
-function BulkDelete(props) {
+function BulkDelete(props: { tips: boolean }) {
   const { user, theme } = useUser();
-  const { syncOrders, deleteRangeForProduct, deleteAll, productID } = useData();
-  const { deleteData: deleteAllForProduct } = useFetchData(`/api/orders/product/${productID}`, { defaultState: {}, notNull: [productID], noLoad: true })
-
   const [lowerLimit, setLowerLimit] = useState(0);
   const [upperLimit, setUpperLimit] = useState(0);
+
+  const { syncOrders, refreshOrders, productID } = useData();
+  // const { deleteData: deleteAllForProduct } = useFetchData(`/api/orders/product/${productID}`, { defaultState: {}, notNull: [productID], noLoad: true })
+  const { deleteData: deleteAllForProduct } = useDeleteFetch({
+    url: `/api/orders/product/${productID}`,
+    from: 'deleteAllForProduct in bulk delete',
+    refreshCallback: refreshOrders,
+  })
+  const { deleteData: deleteRangeForProduct } = useDeleteFetch({
+    url: `/api/orders/${productID}/${lowerLimit}/${upperLimit}`,
+    from: 'deleteRangeForProduct in bulk delete',
+    refreshCallback: refreshOrders,
+  })
+  const { deleteData: deleteAll } = useDeleteFetch({
+    url: `/api/orders`,
+    from: 'deleteAll in bulk delete',
+    refreshCallback: refreshOrders,
+  })
 
   // delete the order if the abandon button is clicked.
   // the loop already detects deleted orders, so only need to make a call to coinbase
@@ -27,7 +43,7 @@ function BulkDelete(props) {
   }
 
   function deleteRange() {
-    deleteRangeForProduct([lowerLimit, upperLimit])
+    deleteRangeForProduct()
   }
 
 
@@ -41,7 +57,7 @@ function BulkDelete(props) {
         This will delete all open orders from coinbase and replace them based on the trades stored in the
         database. It can sometimes fix issues that cause repeated errors, and may take a few minutes to complete.
       </p>}
-      <button className={`btn-blue medium ${user.theme}`} onClick={syncOrders}>Sync All Trades</button>
+      <button className={`btn-blue medium ${user.theme}`} onClick={() => { syncOrders() }}>Sync All Trades</button>
 
       {/* DELETE RANGE */}
       <div className={`divider ${theme}`} />

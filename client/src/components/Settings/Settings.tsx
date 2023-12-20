@@ -8,7 +8,7 @@ import Investment from './Investment/Investment';
 // import Feedback from './Feedback/Feedback.js';
 // import History from './History/History.js';
 import SettingsNav from './SettingsNav/SettingsNav';
-// import BulkDelete from './BulkDelete/BulkDelete.js';
+import BulkDelete from './BulkDelete/BulkDelete';
 import Draggable, { DraggerProps } from '../Draggable/Draggable';
 
 import './Settings.css'
@@ -66,7 +66,7 @@ function Settings() {
               'products': <Products tips={tips} />,
               'investment': <Investment tips={tips} />,
               // 'autoSetup': <AutoSetup product={props.product} theme={theme} tips={tips} priceTicker={props.priceTicker} />,
-              // 'bulkDelete': <BulkDelete product={props.product} theme={theme} tips={tips} />,
+              'bulkDelete': <BulkDelete tips={tips} />,
               // 'history': <History product={props.product} theme={theme} tips={tips} />,
               // 'reset': <Reset product={props.product} theme={theme} tips={tips} />,
               // 'feedback': <Feedback product={props.product} theme={theme} tips={tips} />,
