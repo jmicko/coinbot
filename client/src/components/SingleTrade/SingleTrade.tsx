@@ -17,7 +17,7 @@ function SingleTrade(props: SingleTradeProps) {
   const [showAll, setShowAll] = useState<boolean>(false);
   const [sellFee, setSellFee] = useState<number>(1);
   const [buyFee, setBuyFee] = useState<number>(1);
-  const orderID = props.order.order_id;
+  const orderID = 'order_id' in props.order ? props.order.order_id : '';
 
   const { deleteData: deleteOrder } = useDeleteFetch({ url: `/api/orders/${orderID}`, from: 'deleteOrder in data context' });
 
@@ -28,7 +28,7 @@ function SingleTrade(props: SingleTradeProps) {
   }
 
 
-  const { reorder } = props.order;
+  const { reorder } = 'reorder' in props.order ? props.order : { reorder: false };
 
   // devLog('reorder', reorder);
 
@@ -59,7 +59,7 @@ function SingleTrade(props: SingleTradeProps) {
 
   function syncTrade() {
     syncPair({
-      order_id: props.order.order_id,
+      order_id: 'order_id' in props.order ? props.order.order_id : props.key?.toString() || '',
     })
   }
 
@@ -68,7 +68,7 @@ function SingleTrade(props: SingleTradeProps) {
   }
 
   // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
-  const numberWithCommas = (x:string) => {
+  const numberWithCommas = (x: string) => {
     // this will work in safari once lookbehind is supported
     // return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
     // for now, use this
@@ -84,7 +84,7 @@ function SingleTrade(props: SingleTradeProps) {
     <div className={`Single-trade ${props.order.side} ${user.theme}`}>
       {/* {JSON.stringify(decimals)} */}
       {!props.preview && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>}
-      {showAll && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={syncTrade}>sync</button>}
+      {showAll && !props.preview && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={syncTrade}>sync</button>}
 
       <div className={"overlay"}>
 
@@ -137,13 +137,15 @@ function SingleTrade(props: SingleTradeProps) {
 
         <div><strong> Pair Increase:</strong> {Number(props.order.trade_pair_ratio)}%</div>
 
-        <div>
+        {!props.preview && <div>
           <strong>Time: </strong>
-          {!props.preview && <strong></strong>}{!props.preview && (props.order.flipped_at
-            ? new Date(props.order.flipped_at).toLocaleString('en-US')
-            : new Date(props.order.created_at).toLocaleString('en-US'))}
+          {!props.preview && <strong></strong>}{!props.preview
+            && 'flipped_at' in props.order
+            && (props.order.flipped_at
+              ? new Date(props.order.flipped_at).toLocaleString('en-US')
+              : new Date(props.order.created_at).toLocaleString('en-US'))}
           <span className={`${theme} ${reorder ? 'blue' : 'green'}`}> &#x2022;</span>
-        </div>
+        </div>}
 
 
 

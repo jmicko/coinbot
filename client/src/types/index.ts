@@ -1,14 +1,18 @@
 import { ChangeEvent, FormEvent } from "react";
 
-export interface Order {
-  order_id: string;
+interface MinimalOrder {
   side: string;
+  limit_price: number;
+  // product_id: string;
+}
+
+export interface Order extends MinimalOrder {
+  order_id: string;
   original_sell_price: number;
   original_buy_price: number;
   base_size: number;
   buy_quote_size: number;
   sell_quote_size: number;
-  limit_price: number;
   trade_pair_ratio: number;
   flipped_at: string;
   created_at: string;
@@ -37,15 +41,20 @@ export interface OrderParams {
   tradingPrice?: number;
 }
 
-export interface AutoSetupOrderParams extends OrderParams {
+export interface AutoSetupOrderParams extends MinimalOrder {
   buy_quote_size: number;
   sell_quote_size: number;
+  original_buy_price: number;
+  original_sell_price: number;
+  base_size: number;
+  trade_pair_ratio: number;
 }
 
 
 export interface SingleTradeProps {
-  order: Order;
+  order: Order | AutoSetupOrderParams;
   preview: boolean;
+  key?: string | number;
 }
 
 export interface BotSettings {

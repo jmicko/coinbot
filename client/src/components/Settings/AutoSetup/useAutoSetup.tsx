@@ -16,10 +16,10 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
     increment: 0.5,
     incrementType: 'percentage',
     size: 10,
-    maxSize: 100,
+    maxSize: 20,
     sizeType: 'quote',
     sizeCurve: 'linear',
-    steepness: 10,
+    steepness: 100,
     tradePairRatio: 5,
     availableQuote: Number(user.availableFunds?.[productID]?.quote_available),
   });
@@ -111,16 +111,21 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
 
         // THIS IS NOT OLD CODE FROM WHEN BTC-USD WAS THE ONLY PRODUCT. 
         // Using 100 here because the trade_pair_ratio is a percentage. 
-        const original_sell_price = (Math.round((buyPrice * (Number(tradePairRatio) + 100))) / 100);
+        // const original_sell_price = (Math.round((buyPrice * (Number(tradePairRatio) + 100))) / 100);
+
+        // that equation is wrong. It should be:\
+
+        const original_sell_price = Number((buyPrice * (Number(tradePairRatio) + 100) / 100).toFixed(pqd))
+
+        // console.log( (buyPrice * (Number(tradePairRatio) + 100) / 100).toFixed(pqd), '< test');
+
+        // console.log('buyPrice', buyPrice, 'tradePairRatio', tradePairRatio, 'original_sell_price', original_sell_price);
 
         /////// CREATE VALUES FOR AN ORDER ///////
 
-        console.log(buyPrice, 'buyPrice', typeof buyPrice, 'typeof buyPrice');
-
-
         const singleOrder: AutoSetupOrderParams = {
           side: side,
-          original_sell_price: original_sell_price,
+          original_sell_price: Number(original_sell_price),
           // get buy price rounded to cents the precision of the quote currency
           original_buy_price: Number(buyPrice.toFixed(pqd)),
           base_size: actualSize,
@@ -235,10 +240,6 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
       function incrementBuyPrice() {
         // can have either percentage or dollar amount increment
         if (incrementType === 'dollars') {
-          console.log(typeof buyPrice, '<-- buyPrice type before incrementing', buyPrice, '<-- buyPrice before incrementing');
-          console.log(typeof increment, '<-- increment type before incrementing', increment, '<-- increment before incrementing');
-
-
           // if incrementing by dollar amount
           (loopDirection === 'up')
             ? buyPrice += Number(increment)
@@ -258,15 +259,18 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
         const newIncrement = incrementType === 'percentage'
           ? increment * buyPrice
           : increment
+
+        // if sizeCurve is curve, use the bellCurve
         const newSize = (sizeCurve === 'curve')
-          // if sizeCurve is curve, use the bellCurve
-          ? maxSize / (1 + (1 / (steepness * newIncrement)) * (buyPrice - currentPrice) ** 2) + size
+          ? (maxSize - size) / (1 + (1 / (steepness * 10 * newIncrement)) * (buyPrice - currentPrice) ** 2) + size
           : size;
 
         if (sizeType === 'quote') {
           // if the size is in quote, convert it to base
           // use floor rounding because we can't ever round up or we risk overspending
-          const convertedToBase = Number(Math.floor((newSize / buyPrice) * product.base_inverse_increment)) / product.base_inverse_increment
+          const bii = product.base_inverse_increment;
+          const convertedToBase
+            = Number(Math.floor((newSize / buyPrice) * bii)) / bii
           // devLog(convertedToBase, 'convertedToBase', buyPrice, 'buyPrice', product.base_inverse_increment, 'product.base_inverse_increment');
           return convertedToBase
         } else {
@@ -274,8 +278,6 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
           return newSize
         }
       }
-
-
     }
 
     // Start a new timeout
@@ -288,7 +290,7 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
         clearTimeout(timeoutId);
       }
     };
-  }, [user, options]); // Re-run autoSetup whenever user or options change
+  }, [user, options, currentPrice]); // Re-run autoSetup whenever user or options change
 
   return { result, options, setOptions, calculating, recentInput };
 }

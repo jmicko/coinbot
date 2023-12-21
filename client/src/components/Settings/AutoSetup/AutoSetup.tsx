@@ -3,17 +3,20 @@ import { useWebSocket } from '../../../contexts/useWebsocket.js';
 import { useData } from '../../../contexts/useData.js';
 import { useEffect, useState } from "react";
 import FormItem from "./FormItem.js";
+import Graph from '../../Graph/Graph';
 import './AutoSetup.css';
 import { useUser } from "../../../contexts/useUser.js";
 import useAutoSetup from "./useAutoSetup.js";
 import { numberWithCommas } from "../../../shared.js";
+import SingleTrade from "../../SingleTrade/SingleTrade.js";
 
 function AutoSetup(props: { tips: boolean }) {
   const { tickers } = useWebSocket();
   const { productID, currentProduct, pqd, pbd } = useData();
   const currentPriceTicker = tickers[productID]?.price;
-  const { user } = useUser();
+  const { user, theme } = useUser();
   const baseID = user.availableFunds?.[productID]?.base_currency;
+  const quoteID = user.availableFunds?.[productID]?.quote_currency;
 
   const availableQuote = user.availableFunds?.[productID]?.quote_available;
   const availableBase = user.availableFunds?.[productID]?.base_available;
@@ -21,6 +24,10 @@ function AutoSetup(props: { tips: boolean }) {
   const [currentPrice, setCurrentPrice] = useState(currentPriceTicker);
 
   const { result: setupResults, options, setOptions, calculating, recentInput } = useAutoSetup(user, currentPrice, pqd);
+  const [showPreview, setShowPreview] = useState(false);
+  const [showGraph, setShowGraph] = useState(false);
+
+  const baseNeeded = setupResults ? Number((setupResults.btcToBuy - availableBase) > 0 ? setupResults.btcToBuy - availableBase : 0) : 0;
 
   if (!currentPriceTicker) return (
     <div className="AutoSetup settings-panel scrollable">
@@ -76,14 +83,14 @@ function AutoSetup(props: { tips: boolean }) {
   (how much each BUY should increase in price before selling)?`,
     sizeCurve: `Flat line: same size for each trade-pair
   Bell Curve: bigger size near current price`,
-    size: `What size in ${options.sizeType === "quote" ? "USD" : baseID} should each trade-pair be?`,
+    size: `What size in ${options.sizeType === "quote" ? quoteID : baseID} should each trade-pair be?`,
   }
 
 
   const FormItems = [
     { label: 'Starting Value', value: options.startingValue, type: 'number', },
-    { label: 'Skip First', value: options.skipFirst, type: 'checkbox', },
-    { label: 'Ending Value', value: options.endingValue, type: 'number', checked: (options.endingValue) },
+    { label: 'Skip First', value: options.skipFirst, type: 'checkbox', checked: (options.skipFirst) },
+    { label: 'Ending Value', value: options.endingValue, type: 'number', },
     { label: 'Ignore Funds', value: options.ignoreFunds, type: 'checkbox', checked: (options.ignoreFunds) },
     { label: 'Increment Type', value: "dollars", type: 'first-radio', checked: (options.incrementType === "dollars" && true) },
     { label: 'Increment Type', value: "percentage", type: 'radio', checked: (options.incrementType === "percentage" && true) },
@@ -131,7 +138,7 @@ function AutoSetup(props: { tips: boolean }) {
 
       < div className='auto-setup-form-and-results' >
         <form className='auto-setup-form left-border' >
-          <p>Current price: {currentPrice}</p>
+          <p>Current price: {quoteID === 'USD' && '$'}{Number(currentPrice).toFixed(pqd)}</p>
 
           {FormItems.map((item, index) => (
             <FormItem
@@ -178,51 +185,80 @@ function AutoSetup(props: { tips: boolean }) {
             {options.ignoreFunds
               ? <>
                 <p>
-                  Total USD cost at current price:
-                  <br />
-                  <strong>${numberWithCommas(((setupResults.cost) > 0 ? setupResults.cost : 0).toFixed(2))}</strong>
+                  Total USD cost at current price:<br />
+                  <strong>{quoteID === 'USD' && '$'}{numberWithCommas(((setupResults.cost) > 0 ? setupResults.cost : 0).toFixed(pqd))} {quoteID !== 'USD' && quoteID}</strong>
                 </p>
                 <p>
-                  USD to reserve:
-                  <br />
-                  <strong> {setupResults?.quoteToReserve.toFixed(pqd)}</strong>
+                  {quoteID} to reserve:<br />
+                  <strong>{quoteID === 'USD' && '$'}{setupResults?.quoteToReserve.toFixed(pqd)} {quoteID !== 'USD' && quoteID}</strong>
                 </p>
                 <p>
-                  {baseID} to reserve:
-                  <br />
+                  {baseID} to reserve:<br />
                   <strong>{numberWithCommas(setupResults.btcToBuy)}</strong>
                 </p>
                 <p>
-                  {baseID} you have:
-                  <br />
-                  <strong>{numberWithCommas(Number(availableBase).toFixed(pbd))}</strong>
+                  {baseID} you have:<br />
+                  <strong
+                    className={`${availableBase < setupResults.btcToBuy ? 'warning' : ''}`}
+                  >{numberWithCommas(Number(availableBase).toFixed(pbd))}</strong> {!baseNeeded && `✓ You have enough`}
                 </p>
-                <p>
-                  {baseID} you need to buy manually:
-                  <br />
-                  <strong>{numberWithCommas(((setupResults.btcToBuy - availableBase) > 0 ? setupResults.btcToBuy - availableBase : 0).toFixed(pbd))}</strong>
-                </p>
+                {baseNeeded > 0 &&
+                  <p>
+                    {baseID} you need to buy manually:<br />
+                    <strong
+                      className={`${availableBase < setupResults.btcToBuy ? 'warning' : ''}`}
+                    >{numberWithCommas(Number(baseNeeded).toFixed(pbd))}</strong>
+                  </p>
+                }
+                {baseNeeded > 0 &&
+                  <p>
+                    {numberWithCommas(baseNeeded)} {baseID} will cost you approximately:<br />
+                    <strong
+                      className={`${availableBase < setupResults.btcToBuy ? 'warning' : ''}`}
+                    >${numberWithCommas((baseNeeded * currentPrice).toFixed(pqd))}</strong>
+                  </p>
+                }
               </>
               : <>
                 <p>
-                  It will cost you:
-                  <br />
+                  It will cost you:<br />
                   <strong>${numberWithCommas(((setupResults.cost) > 0 ? setupResults.cost : 0).toFixed(2))}</strong>
                 </p>
               </>
             }
-
-            <p>Cost: {setupResults?.cost}</p>
-            <p>Quote to reserve: {setupResults?.quoteToReserve}</p>
-            <p>Buy count: {setupResults?.buyCount}</p>
-            <p>Sell count: {setupResults?.sellCount}</p>
-            <p>Valid: {setupResults?.valid ? 'true' : 'false'}</p>
             {/* <p>Options: {JSON.stringify(setupResults?.options)}</p> */}
           </div>
-            : !calculating && <p className='auto-setup-results'>Waiting for results<DotLoader /></p>
+            : calculating && <p className='auto-setup-results'>Waiting for results<DotLoader /></p>
         }
-
       </div >
+
+      <h4>Review</h4>
+      <button
+        className={`btn-black ${theme}`}
+        onClick={() => setShowPreview(!showPreview)}
+      >
+        {showPreview ? 'Hide Preview' : 'Show Preview'}
+      </button>
+      <button
+        className={`btn-black ${theme}`}
+        onClick={() => setShowGraph(!showGraph)}
+      >
+        {showGraph ? 'Hide Graph' : 'Show Graph'}
+      </button>
+
+      {(setupResults
+        && setupResults.orderList.length > 0)
+        && showGraph
+        && <Graph data={setupResults.orderList} setupResults={{ ...setupResults, options: { ...options, currentPrice } }} />
+      }
+
+      {setupResults
+        && showPreview
+        && setupResults?.orderList?.length > 0
+        && structuredClone(setupResults.orderList).reverse().map((order, i) => {
+          return <SingleTrade key={i} order={order} preview={true} />
+        })}
+
     </div >
   );
 }

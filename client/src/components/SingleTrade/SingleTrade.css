@@ -15,18 +15,11 @@
   /* flex-grow      : 1; */
   flex-wrap      : wrap;
   width          : 100%;
-  /* max-width      : fit-content; */
-  /* background-color: aquamarine; */
 }
 
 .overlay div {
   margin: auto 0.5rem;
-  /* background-color: aquamarine; */
-  /* color: rgb(190, 52, 52); */
-  /* word-wrap    : none; */
   width        : fit-content;
-  /* padding   : .25rem; */
-  /* text-align: center; */
 }
 
 @media screen and (max-width: 1230px) {

@@ -52,7 +52,7 @@ interface bellCurveOptions {
   increment: number,
   steepness: number,
   buyPrice: number,
-  tradingPrice: number,
+  currentPrice: number,
 }
 // function to implement the above equation using the same variable names as above
 function bellCurve(options: bellCurveOptions) {
@@ -372,7 +372,8 @@ function autoSetup(user: User, options: AutoSetupOptions) {
 
     if (sizeType === 'quote') {
       // if the size is in quote, convert it to base
-      const convertedToBase = Number(Math.floor((newSize / buyPrice) * product.base_inverse_increment)) / product.base_inverse_increment
+      const bii = product.base_inverse_increment;
+      const convertedToBase = Number(Math.floor((newSize / buyPrice) * bii)) / bii
       // devLog(convertedToBase, 'convertedToBase', buyPrice, 'buyPrice', product.base_inverse_increment, 'product.base_inverse_increment');
       return convertedToBase
     } else {
