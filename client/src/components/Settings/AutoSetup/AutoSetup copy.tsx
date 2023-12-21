@@ -4,41 +4,79 @@ import React, {
   // useCallback,
   useRef,
 } from 'react';
-import { useUser } from '../../../contexts/UserContext.js';
-import { useSocket } from '../../../contexts/SocketProvider.js';
 import { useProductDecimals } from '../../../hooks/useProductDecimals.js';
 import { autoSetup, devLog, no, numberWithCommas } from '../../../shared.js';
-import Graph from '../../Graph/Graph.js';
+// import Graph from '../../Graph/Graph.js';
 import SingleTrade from '../../SingleTrade/SingleTrade.js';
 import './AutoSetup.css'
-import { useData } from '../../../contexts/DataContext.js';
-import { useFetchData } from '../../../hooks/fetchData.js';
 import Confirm from '../../Confirm/Confirm.js';
+import { useUser } from '../../../contexts/useUser.js';
+import { useWebSocket } from '../../../contexts/useWebsocket.js';
+import { useData } from '../../../contexts/useData.js';
+import useGetFetch from '../../../hooks/useGetFetch.js';
+import usePostFetch from '../../../hooks/usePostFetch.js';
+import { DotLoader } from '../../Loading.js';
 
 
-function AutoSetup(props) {
+function AutoSetup(props: { tips: boolean }) {
 
   const { user, theme } = useUser();
-  const { currentPrice } = useSocket();
-  const { productID, currentProduct } = useData();
+  const { tickers } = useWebSocket();
+  const { productID, currentProduct, pqd, pbd } = useData();
+  const currentPrice = tickers[productID]?.price;
   const [showGraph, setShowGraph] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
-  const { createData: startAutoSetup } = useFetchData('/api/orders/autoSetup', { noLoad: true });
-  const {
-    data: simulationResults,
-    // refresh: refreshSimResults,
-    createRefreshData: startSimulation,
-    isLoading: simLoading
-  } = useFetchData(`/api/trade/simulation`, { defaultState: null, noLoad: true });
+  // const { createData: startAutoSetup } = useFetchData('/api/orders/autoSetup', { noLoad: true });
+  // const {
+  //   data: simulationResults,
+  //   // refresh: refreshSimResults,
+  //   createRefreshData: startSimulation,
+  //   isLoading: simLoading
+  // } = useFetchData(`/api/trade/simulation`, { defaultState: null, noLoad: true });
+
+  const { data: simulationResults,
+    refresh: refreshSimResults,
+    isLoading: simLoading,
+  } = useGetFetch(`/api/trade/simulation`, {
+    defaultState: null,
+    preload: false,
+    from: 'simulationResults in AutoSetup'
+  })
+
+  const { postData: startSimulation } = usePostFetch({
+    url: `/api/trade/simulation`,
+    from: 'startSimulation in AutoSetup',
+    refreshCallback: refreshSimResults,
+  })
+
+  const { postData: startAutoSetup } = usePostFetch({
+    url: `/api/orders/autoSetup`,
+    from: 'startAutoSetup in AutoSetup',
+  })
 
   // console.log(currentProduct, 'currentProduct')
 
+  if (!currentProduct) return (
+    <div className="AutoSetup settings-panel scrollable">
+      <p>Please select a product to start.</p>
+    </div>
+  )
+
+  if (!currentPrice) return (
+    <div className="AutoSetup settings-panel scrollable">
+      <p>Waiting for price data...</p>
+      <DotLoader />
+    </div>
+  )
+
   const [auto, setAuto] = useState({
     // startingValue: 1000,
-    startingValue: Number(((currentPrice || 1000) / 2).toFixed(currentProduct.quote_increment_decimals - 2 > 0 ? currentProduct.quote_increment_decimals - 2 : 0)),
+    // startingValue: Number(((currentPrice || 1000) / 2).toFixed(currentProduct.quote_increment_decimals - 2 > 0 ? currentProduct.quote_increment_decimals - 2 : 0)),
+    startingValue: ((currentPrice) / 2).toFixed(pqd),
     skipFirst: false,
-    endingValue: Number(((currentPrice || 1000) * 1.5).toFixed(currentProduct.quote_increment_decimals - 2 > 0 ? currentProduct.quote_increment_decimals - 2 : 0)),
+    // endingValue: Number(((currentPrice || 1000) * 1.5).toFixed(currentProduct.quote_increment_decimals - 2 > 0 ? currentProduct.quote_increment_decimals - 2 : 0)),
+    endingValue: ((currentPrice) * 1.5).toFixed(pqd),
     ignoreFunds: false,
     increment: 0.5,
     incrementType: 'percentage',
@@ -220,7 +258,8 @@ function AutoSetup(props) {
           //  setAutoTradeStarted(false)
         }} />}
       <div className={`divider ${theme}`} />
-      <h4>Auto Setup</h4>
+      <br />
+      {/* <h4>Auto Setup</h4> */}
       {/* {JSON.stringify(user.availableFunds?.[productID]?.quote_available)} */}
       {props.tips && <>
         <p>
@@ -694,10 +733,11 @@ function AutoSetup(props) {
       </button>
 
 
-      {(setupResults.valid
+      {/* {(setupResults.valid
         && setupResults.orderList.length > 0)
         && showGraph
-        && <Graph data={setupResults.orderList} product={decimals} setupResults={setupResults} />}
+        && <Graph data={setupResults.orderList} product={decimals} setupResults={setupResults} />
+        } */}
       {setupResults.valid
         && showPreview
         && setupResults?.orderList?.length > 0

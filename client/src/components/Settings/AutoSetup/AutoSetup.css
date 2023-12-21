@@ -1,5 +1,5 @@
 .auto-setup-results {
-  max-width: 40%;
+  max-width  : 40%;
   margin-left: auto;
 }
 
@@ -7,16 +7,31 @@
   padding-right: 1rem;
 }
 
-.auto-setup-form-and-results{
+.auto-setup-form-and-results {
   display: flex;
 }
 
+.auto-setup-form label {
+  display      : block;
+  margin-bottom: 0.5rem;
+}
+
+.auto-setup-form label.radio-button {
+  display     : inline-block;
+  /* margin-right: 10px; */
+}
+
+.auto-setup-form label.hidden {
+  display: none;
+}
+
 @media (max-width: 800px) {
-  .auto-setup-form-and-results{
+  .auto-setup-form-and-results {
     flex-direction: column;
   }
+
   .auto-setup-results {
     margin-left: auto;
-    max-width: unset;
+    max-width  : unset;
   }
 }

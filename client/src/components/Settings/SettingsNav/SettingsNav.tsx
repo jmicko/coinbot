@@ -21,6 +21,9 @@ function SettingsNav(props: {
         <button className={`btn-nav ${theme} ${props.settingsPage === "feedback" && "selected"}`} onClick={() => { props.setSettingsPage('feedback') }}>Feedback</button>
         {user.admin && <button className={`btn-nav ${theme} ${props.settingsPage === "admin" && "selected"}`} onClick={() => { props.setSettingsPage('admin') }}>Admin</button>}
       </center>
+      {/* <div className={`divider ${theme}`} />
+      <br /> */}
+      {/* todo - need to put something small here to break up the space visually */}
     </div>
   );
 }

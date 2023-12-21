@@ -51,6 +51,11 @@ export const SpaceLoader = () => {
 
 export const DotLoader = () => {
   const dots = useLoadingDots();
+  return <span>{`.`.repeat(dots)}</span>;
+};
+
+export const CaratDotLoader = () => {
+  const dots = useLoadingDots();
   return <span>{'<' + `.`.repeat(dots) + '>'}</span>;
 };
 
