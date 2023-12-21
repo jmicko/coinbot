@@ -234,7 +234,8 @@ export class FetchError extends Error {
   }
 }
 
-export type AutoSetupOptions = {
+export interface AutoSetupOptions {
+  [key: string]: number | string | boolean | ProductWithDecimals;
   product: ProductWithDecimals;
   startingValue: number;
   skipFirst: boolean;
@@ -255,6 +256,8 @@ export type AutoSetupResult = {
   valid: boolean;
   cost: number;
   orderList: AutoSetupOrderParams[];
+  lastBuyPrice: number;
+  btcToBuy: number;
   options: any;
   quoteToReserve: number;
   buyCount: number;

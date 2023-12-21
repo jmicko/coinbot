@@ -26,9 +26,11 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
 
   const [result, setResult] = useState<AutoSetupResult>(null);
   const [calculating, setCalculating] = useState(false);
+  const [recentInput, setRecentInput] = useState(false);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
+    setRecentInput(true);
     function autoSetup(user: User) {
       setCalculating(true);
 
@@ -55,6 +57,7 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
       let availableFunds = Number(options.availableQuote);
       let buyPrice = Number(startingValue);
       let quoteToReserve = 0;
+      let btcToBuy = 0;
       let buyCount = 0;
       let sellCount = 0;
       const loopDirection = (Number(endingValue) - Number(startingValue) < 0) ? "down" : "up";
@@ -97,11 +100,23 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
 
         const actualSize = getActualSize();
 
+        // count up how much base currency will need to be purchased to reserve for all the sell orders
+        if (side === 'SELL') {
+          // devLog(actualSize, 'actualSize', (actualSize * product.base_inverse_increment));
+          // okay why does this multiply by product.base_inverse_increment??
+          // because later on, the actualSize is divided by product.base_inverse_increment before returning it
+          // was this originally a rounding thing the just got lost in the loop?
+          btcToBuy += (actualSize * product.base_inverse_increment)
+        }
+
         // THIS IS NOT OLD CODE FROM WHEN BTC-USD WAS THE ONLY PRODUCT. 
         // Using 100 here because the trade_pair_ratio is a percentage. 
         const original_sell_price = (Math.round((buyPrice * (Number(tradePairRatio) + 100))) / 100);
 
         /////// CREATE VALUES FOR AN ORDER ///////
+
+        console.log(buyPrice, 'buyPrice', typeof buyPrice, 'typeof buyPrice');
+
 
         const singleOrder: AutoSetupOrderParams = {
           side: side,
@@ -184,14 +199,15 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
         valid: true,
         cost: cost,
         orderList: orderList,
-        // lastBuyPrice: orderList[orderList.length - 1]?.original_buy_price,
-        // btcToBuy: (btcToBuy / product.base_inverse_increment),
+        lastBuyPrice: orderList[orderList.length - 1]?.original_buy_price || 0,
+        btcToBuy: (btcToBuy / product.base_inverse_increment),
         options: options,
         quoteToReserve: quoteToReserve,
         buyCount: buyCount,
         sellCount: sellCount,
       });
       setCalculating(false);
+      setRecentInput(false)
 
 
       function stopChecker() {
@@ -204,9 +220,6 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
         if (((nextFunds) < 0) && !options.ignoreFunds) {
           console.log('ran out of funds!', availableFunds);
           stop = true;
-        } else {
-          console.log('still have funds', availableFunds);
-
         }
         // devLog('available funds is', availableFunds);
         // stop if the buy price passes the ending value
@@ -222,10 +235,14 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
       function incrementBuyPrice() {
         // can have either percentage or dollar amount increment
         if (incrementType === 'dollars') {
+          console.log(typeof buyPrice, '<-- buyPrice type before incrementing', buyPrice, '<-- buyPrice before incrementing');
+          console.log(typeof increment, '<-- increment type before incrementing', increment, '<-- increment before incrementing');
+
+
           // if incrementing by dollar amount
           (loopDirection === 'up')
-            ? buyPrice += increment
-            : buyPrice -= increment;
+            ? buyPrice += Number(increment)
+            : buyPrice -= Number(increment);
         } else {
           // if incrementing by percentage
           (loopDirection === 'up')
@@ -273,7 +290,7 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
     };
   }, [user, options]); // Re-run autoSetup whenever user or options change
 
-  return { result, options, setOptions, calculating };
+  return { result, options, setOptions, calculating, recentInput };
 }
 
 export default useAutoSetup;
