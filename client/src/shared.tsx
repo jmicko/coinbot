@@ -89,12 +89,7 @@ interface User {
 
 function autoSetup(user: User, options: AutoSetupOptions) {
   devLog('user', user, 'options', options);
-  // devLog('running autoSetup')
   const product = options.product;
-  // devLog(product_id, 'product_id')
-  // devLog(options.user, options.availableFunds, 'user')
-  // const available = options.availableQuote;
-  // a false return object to use when the function fails
   const falseReturn = {
     valid: false,
   }
@@ -105,17 +100,8 @@ function autoSetup(user: User, options: AutoSetupOptions) {
       devLog('bad options')
       return falseReturn;
     }
-    // else {
-    //   devLog(options[key], 'options[key]', key)
-    // }
   }
 
-
-  // if (!available) {
-  //   devLog('no available funds for this product')
-  //   return falseReturn;
-  // }
-  // devLog(options, 'options')
 
   // create an array to hold the new trades to put in
   const orderList = [];

@@ -155,11 +155,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   })
   // const { data: exportableFiles, refresh: refreshExportableFiles } = useFetchData(`/api/account/exportableFiles`, { defaultState: [] })
   // TRADE FUNCTIONS
-  const currentProductNoDecimals: Product | null
-    = products.allProducts.find((product) => product.product_id === productID) || null;
+  const currentProductNoDecimals: Product
+    = products.allProducts.find((product) => product.product_id === productID) || {} as Product;
 
-  const currentProduct: ProductWithDecimals | null
-    = currentProductNoDecimals ? addProductDecimals(currentProductNoDecimals) : null;
+  const currentProduct: ProductWithDecimals
+    =  addProductDecimals(currentProductNoDecimals);
 
   const pqd = currentProduct?.quote_increment_decimals || 2;
   const pbd = currentProduct?.base_increment_decimals || 2;

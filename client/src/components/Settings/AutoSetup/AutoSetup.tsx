@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import FormItem from "./FormItem.js";
 import './AutoSetup.css';
 import { useUser } from "../../../contexts/useUser.js";
+import useAutoSetup from "./useAutoSetup.js";
 
 function AutoSetup(props: { tips: boolean }) {
   const { tickers } = useWebSocket();
@@ -15,17 +16,19 @@ function AutoSetup(props: { tips: boolean }) {
 
   const [currentPrice, setCurrentPrice] = useState(currentPriceTicker);
 
+  const { result: setupResults, options, setOptions } = useAutoSetup(user, currentPrice, pqd);
+
   if (!currentPriceTicker) return (
     <div className="AutoSetup settings-panel scrollable">
       <p>Waiting for price data<DotLoader /></p>
     </div>
   )
 
-  if (!currentProduct) return (
-    <div className="AutoSetup settings-panel scrollable">
-      <p>Please select a product to start.</p>
-    </div>
-  )
+  // if (!currentProduct) return (
+  //   <div className="AutoSetup settings-panel scrollable">
+  //     <p>Please select a product to start.</p>
+  //   </div>
+  // )
 
   useEffect(() => {
     // if the price ticker is more than x% different than the current price, 
@@ -35,32 +38,17 @@ function AutoSetup(props: { tips: boolean }) {
     const priceDifference = currentPriceTicker - currentPrice;
     const percentDifference = priceDifference / currentPrice;
     const absolutePercentDifference = Math.abs(percentDifference);
-    console.log(absolutePercentDifference, 'percentDifference');
+    // console.log(absolutePercentDifference, 'percentDifference');
 
     if (absolutePercentDifference > 0.001) {
       setCurrentPrice(currentPriceTicker);
     }
   }, [currentPriceTicker, currentPrice])
 
-  const [auto, setAuto] = useState({
-    startingValue: ((currentPrice) / 2).toFixed(pqd),
-    skipFirst: false,
-    endingValue: ((currentPrice) * 1.5).toFixed(pqd),
-    ignoreFunds: false,
-    increment: 0.5,
-    incrementType: 'percentage',
-    size: 10,
-    maxSize: 100,
-    sizeType: 'quote',
-    // trade_pair_ratio: 1.1,
-    sizeCurve: 'linear',
-    steepness: 10,
-    trade_pair_ratio: 5
-  });
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
-    setAuto(prevState => ({
+    setOptions(prevState => ({
       ...prevState,
       [name]: value
     }));
@@ -71,41 +59,40 @@ function AutoSetup(props: { tips: boolean }) {
     endingValue: `What dollar amount to end at? (If not using all of your funds. \
     Checking 'Ignore Funds' will allow the bot to keep adding trades regardless of how \
     much cash you have until this limit is reached.)`,
-    increment: `What ${auto.incrementType === "dollars" ? "dollar amount" : "percentage"} \
+    increment: `What ${options.incrementType === "dollars" ? "dollar amount" : "percentage"} \
   to increment by?`,
     ratio: `What is the trade-pair percent increase \
   (how much each BUY should increase in price before selling)?`,
     sizeCurve: `Flat line: same size for each trade-pair
   Bell Curve: bigger size near current price`,
-    size: `What size in ${auto.sizeType === "quote" ? "USD" : baseID} should each trade-pair be?`,
+    size: `What size in ${options.sizeType === "quote" ? "USD" : baseID} should each trade-pair be?`,
   }
 
 
   const FormItems = [
-    { label: 'Starting Value', value: auto.startingValue, type: 'number', },
-    { label: 'Skip First', value: auto.skipFirst, type: 'checkbox', },
-    { label: 'Ending Value', value: auto.endingValue, type: 'number', },
-    { label: 'Ignore Funds', value: auto.ignoreFunds, type: 'checkbox', },
-    { label: 'Increment Type', value: "dollars", type: 'first-radio', checked: (auto.incrementType === "dollars" && true) },
-    { label: 'Increment Type', value: "percentage", type: 'radio', checked: (auto.incrementType === "percentage" && true) },
-    { label: 'Increment', value: auto.increment, type: 'number', },
-    { label: 'Size Type', value: "quote", type: 'first-radio', checked: (auto.sizeType === "quote") },
-    { label: 'Size Type', value: "base", type: 'radio', checked: (auto.sizeType === "base") },
-    { label: 'Size', value: auto.size, type: 'number', },
-    { label: 'Size Curve', value: "linear", type: 'first-radio', checked: (auto.sizeCurve === 'linear') },
-    { label: 'Size Curve', value: "curve", type: 'radio', checked: (auto.sizeCurve === "curve") },
-    { label: 'Max Size', value: auto.maxSize, type: 'number', hidden: auto.sizeCurve === 'linear' },
-    { label: 'Steepness', value: auto.steepness, type: 'number', hidden: (auto.sizeCurve === 'linear') },
-    { label: 'Trade Pair Ratio', value: auto.trade_pair_ratio, type: 'number', },
+    { label: 'Starting Value', value: options.startingValue, type: 'number', },
+    { label: 'Skip First', value: options.skipFirst, type: 'checkbox', },
+    { label: 'Ending Value', value: options.endingValue, type: 'number', },
+    { label: 'Ignore Funds', value: options.ignoreFunds, type: 'checkbox', },
+    { label: 'Increment Type', value: "dollars", type: 'first-radio', checked: (options.incrementType === "dollars" && true) },
+    { label: 'Increment Type', value: "percentage", type: 'radio', checked: (options.incrementType === "percentage" && true) },
+    { label: 'Increment', value: options.increment, type: 'number', },
+    { label: 'Size Type', value: "quote", type: 'first-radio', checked: (options.sizeType === "quote") },
+    { label: 'Size Type', value: "base", type: 'radio', checked: (options.sizeType === "base") },
+    { label: 'Size', value: options.size, type: 'number', },
+    { label: 'Size Curve', value: "linear", type: 'first-radio', checked: (options.sizeCurve === 'linear') },
+    { label: 'Size Curve', value: "curve", type: 'radio', checked: (options.sizeCurve === "curve") },
+    { label: 'Max Size', value: options.maxSize, type: 'number', hidden: options.sizeCurve === 'linear' },
+    { label: 'Steepness', value: options.steepness, type: 'number', hidden: (options.sizeCurve === 'linear') },
+    { label: 'Trade Pair Ratio', value: options.tradePairRatio, type: 'number', },
   ]
 
 
   return (
     <div className="AutoSetup settings-panel scrollable">
       {/* <div className="divider" /> */}
-      {/* map the auto state object by key, one line for each value */}
-      {/* {auto && Object.keys(auto).map((key, index) => {
-        return (<span key={index}>{key}: {JSON.stringify(auto[key])}<br /></span>)
+      {/* {options && Object.keys(options).map((key, index) => {
+        return (<span key={index}>{key}: {JSON.stringify(options[key])}<br /></span>)
       })} */}
 
       <h4>Auto Setup</h4>
@@ -147,11 +134,19 @@ function AutoSetup(props: { tips: boolean }) {
               tips={props.tips ? tips : {}}
             />
           ))}
-
-
         </form>
         <br />
-      </div>
+        <div className='auto-setup-results'>
+          <h4>Results</h4>
+          <p>Cost: {setupResults?.cost}</p>
+          <p>Quote to reserve: {setupResults?.quoteToReserve}</p>
+          <p>Buy count: {setupResults?.buyCount}</p>
+          <p>Sell count: {setupResults?.sellCount}</p>
+          <p>Valid: {setupResults?.valid ? 'true' : 'false'}</p>
+          {/* <p>Options: {JSON.stringify(setupResults?.options)}</p> */}
+        </div>
+
+      </div >
     </div >
   );
 }

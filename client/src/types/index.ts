@@ -6,6 +6,8 @@ export interface Order {
   original_sell_price: number;
   original_buy_price: number;
   base_size: number;
+  buy_quote_size: number;
+  sell_quote_size: number;
   limit_price: number;
   trade_pair_ratio: number;
   flipped_at: string;
@@ -34,6 +36,12 @@ export interface OrderParams {
   product_id?: string;
   tradingPrice?: number;
 }
+
+export interface AutoSetupOrderParams extends OrderParams {
+  buy_quote_size: number;
+  sell_quote_size: number;
+}
+
 
 export interface SingleTradeProps {
   order: Order;
@@ -225,3 +233,30 @@ export class FetchError extends Error {
     this.status = status;
   }
 }
+
+export type AutoSetupOptions = {
+  product: ProductWithDecimals;
+  startingValue: number;
+  skipFirst: boolean;
+  endingValue: number;
+  ignoreFunds: boolean;
+  increment: number;
+  incrementType: string;
+  size: number;
+  maxSize: number;
+  sizeType: string;
+  sizeCurve: string;
+  steepness: number;
+  tradePairRatio: number;
+  availableQuote: number;
+};
+
+export type AutoSetupResult = {
+  valid: boolean;
+  cost: number;
+  orderList: AutoSetupOrderParams[];
+  options: any;
+  quoteToReserve: number;
+  buyCount: number;
+  sellCount: number;
+} | null;

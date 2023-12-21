@@ -16,7 +16,7 @@ interface DataContextProps {
   refreshProfit: () => void;
   availableBase: number;
   availableQuote: number;
-  currentProduct: ProductWithDecimals | null;
+  currentProduct: ProductWithDecimals;
   pqd: number;
   pbd: number;
   refreshProducts: () => void;
