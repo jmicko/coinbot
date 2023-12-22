@@ -82,6 +82,12 @@ function SingleTrade(props: SingleTradeProps) {
 
   return (
     <div className={`Single-trade ${props.order.side} ${user.theme}`}>
+          {/* {props && Object.keys(props).map((key, index) => {
+            console.log(key, '< key\n', props[key], '< value\n\n');
+            return <></>
+            // return (<span key={index}>{key}:<br/> {JSON.stringify(props[key])}<br/> <br /></span>)
+          })} */}
+
       {/* {JSON.stringify(decimals)} */}
       {!props.preview && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>}
       {showAll && !props.preview && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={syncTrade}>sync</button>}
@@ -91,7 +97,6 @@ function SingleTrade(props: SingleTradeProps) {
 
         {/* <p className="single-trade-text" > */}
         <div>
-          {/* {JSON.stringify(user.theme)} */}
           <strong>
             {/* Price: */}
             {(props.order.side === 'BUY')
@@ -104,6 +109,7 @@ function SingleTrade(props: SingleTradeProps) {
             : numberWithCommas(Number(props.order.original_buy_price).toFixed(decimals.quote_increment_decimals))
           }
         </div>
+        
 
         <div>
           <strong>

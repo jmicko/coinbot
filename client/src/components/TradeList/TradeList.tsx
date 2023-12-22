@@ -15,35 +15,12 @@ function TradeList() {
   const { tickers } = useWebSocket();
   const { user, theme, } = useUser();
   const { orders, canScroll, productID, pqd } = useData();
-  // these will store mapped arrays as html so they can be used after page loads
-  const [buys, setBuys] = useState([<></>]);
-  const [sells, setSells] = useState([<></>]);
 
-  const [highestBuy, setHighestBuy] = useState(0);
-  const [lowestSell, setLowestSell] = useState(0);
-
+  const highestBuy = Number(orders.buys[0]?.limit_price || 0);
+  const lowestSell = Number(orders.sells[0]?.limit_price || 0);
   const currentPrice = tickers[productID]?.price;
 
-  // this watches the store and maps arrays to html when it changes because can't map nothing
-  useEffect(() => {
-    if (orders.sells !== undefined) {
-      setLowestSell(Number(orders.sells[0]?.limit_price || 0))
-      setSells(orders.sells.slice(0).reverse().map((sell: Order) => {
-        return <SingleTrade key={sell.order_id} order={sell} preview={false} />
-      }))
-    }
-    if (orders.buys !== undefined) {
-      setHighestBuy(Number(orders.buys[0]?.limit_price || 0))
-      setBuys(orders.buys.map((buy: Order) => {
-        return <SingleTrade key={buy.order_id} order={buy} preview={false} />
-      }))
-    }
-  }, [orders, orders.sells, orders.buys]);
-
-  // set the canScroll to the value of isAutoScroll
-
-
-  // scroll to the robot when the canScroll is true
+  // scroll to the robot when fresh trades are loaded and the canScroll is true
   useEffect(() => {
     if (canScroll.current) {
       robotRef.current?.scrollIntoView({
@@ -51,29 +28,27 @@ function TradeList() {
         block: "center",
       });
     }
-  }, [buys, sells, canScroll]);
-
+  }, [orders, canScroll]);
 
   return (
     <div className="TradeList scrollable boxed">
       {/* map the sell array on top and buy array on bottom */}
-      {sells}
-      <div className='robot' ref={robotRef}>
+      {orders.sells.slice(0).reverse().map((sell: Order) => (
+        <SingleTrade key={sell.order_id} order={sell} preview={false} />
+      ))}
 
+      {/* ROBOT */}
+      <div className='robot' ref={robotRef}>
         <div className='live-price'>
           <Meter
             // product={props.product}
             max={lowestSell}
             min={highestBuy}
-          // current={socket.tickers[props.product].price}
           />
           <div>
-
             {lowestSell !== 0 && highestBuy >= 0
-              ? <p className='price'>&#9650; ${
-                // (lowestSell - currentPrice).toFixed(2)
-                (lowestSell - currentPrice).toFixed(pqd || 2)
-              }
+              ? <p className='price'>
+                &#9650; ${(lowestSell - currentPrice).toFixed(pqd || 2)}
                 <br />
                 <span className={`green ${theme}`} >
                   {`> $${Number(currentPrice).toFixed(pqd || 2)} <`}
@@ -87,12 +62,10 @@ function TradeList() {
             }
           </div>
         </div>
-
         {user?.botMaintenance
           ? <strong className='red'>~~~UNDER MAINTENANCE~~~</strong>
           : <img className="coinbot-image" src={coinbotFilled} alt="coinbot" />
         }
-
         {lowestSell !== 0 && highestBuy >= 0
           ? <center>
             <p>
@@ -102,9 +75,11 @@ function TradeList() {
           </center>
           : <p>No Sells!</p>
         }
-      </div>
-      {/* {JSON.stringify(orders)} */}
-      {buys}
+      </div> {/* end robot */}
+
+      {orders.buys.map((buy: Order) => (
+        <SingleTrade key={buy.order_id} order={buy} preview={false} />
+      ))}
     </div>
   )
 }
