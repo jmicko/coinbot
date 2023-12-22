@@ -7,8 +7,11 @@ import Graph from '../../Graph/Graph';
 import './AutoSetup.css';
 import { useUser } from "../../../contexts/useUser.js";
 import useAutoSetup from "./useAutoSetup.js";
-import { numberWithCommas } from "../../../shared.js";
+import { devLog, no, numberWithCommas } from "../../../shared.js";
 import SingleTrade from "../../SingleTrade/SingleTrade.js";
+import useGetFetch from "../../../hooks/useGetFetch.js";
+import usePostFetch from "../../../hooks/usePostFetch.js";
+import Confirm from "../../Confirm/Confirm.js";
 
 function AutoSetup(props: { tips: boolean }) {
   const { tickers } = useWebSocket();
@@ -26,6 +29,13 @@ function AutoSetup(props: { tips: boolean }) {
   const { result: setupResults, options, setOptions, calculating, recentInput } = useAutoSetup(user, currentPrice, pqd);
   const [showPreview, setShowPreview] = useState(false);
   const [showGraph, setShowGraph] = useState(false);
+  const [confirmingAuto, setConfirmingAuto] = useState(false);
+  const [autoTradeStarted, setAutoTradeStarted] = useState(false);
+
+  const { postData: startAutoSetup } = usePostFetch({
+    url: `/api/orders/autoSetup`,
+    from: 'startAutoSetup in AutoSetup',
+  })
 
   const baseNeeded = setupResults ? Number((setupResults.btcToBuy - availableBase) > 0 ? setupResults.btcToBuy - availableBase : 0) : 0;
 
@@ -72,6 +82,16 @@ function AutoSetup(props: { tips: boolean }) {
     }));
   };
 
+  function submitAutoSetup() {
+    setAutoTradeStarted(true);
+    devLog('automatically setting up bot');
+    startAutoSetup( setupResults );
+    setTimeout(() => {
+      setAutoTradeStarted(false);
+
+    }, 5000);
+  }
+
   const tips = {
     startingValue: 'What dollar amount to start at?',
     endingValue: `What dollar amount to end at? (If not using all of your funds. \
@@ -104,6 +124,12 @@ function AutoSetup(props: { tips: boolean }) {
     { label: 'Steepness', value: options.steepness, type: 'number', hidden: (options.sizeCurve === 'linear') },
     { label: 'Trade Pair Ratio', value: options.tradePairRatio, type: 'number', },
   ]
+
+  // const resultsItems = [
+  //   { text: `The buy price of the last trade-pair will be close to:`, value: numberWithCommas(setupResults?.lastBuyPrice?.toFixed(pqd) || 0), hidden: false },
+  //   { text: `Approximate number of trades to create:`, value: numberWithCommas(setupResults?.orderList.length || 0), hidden: false },
+  //   {}
+  // ]
 
 
   return (
@@ -226,11 +252,37 @@ function AutoSetup(props: { tips: boolean }) {
                 </p>
               </>
             }
+
             {/* <p>Options: {JSON.stringify(setupResults?.options)}</p> */}
           </div>
             : calculating && <p className='auto-setup-results'>Waiting for results<DotLoader /></p>
         }
       </div >
+      <br />
+      {
+        confirmingAuto
+          ? <Confirm
+            text={
+              `Are you sure you want to automatically set up the bot with these parameters?
+               This will place ${setupResults?.orderList?.length} trades,
+               and they will be placed immediately!`}
+            execute={() => {
+              setConfirmingAuto(false);
+              submitAutoSetup();
+            }}
+            ignore={() => { setConfirmingAuto(false); }} />
+          : !autoTradeStarted
+            // ? <input className={`btn-store-api btn-blue medium ${user.theme}`} type="submit" name="submit" value="Start Setup" />
+            // ? <button className={`btn-store-api btn-blue medium ${user.theme}`} onClick={submitAutoSetup}>Start Setup</button>
+            ? <button
+              className={`btn-store-api btn-blue medium ${user.theme}`}
+              onClick={(e) => { no(e); setConfirmingAuto(true) }}
+            >Start Setup</button>
+            : autoTradeStarted
+              ? <p>Auto setup started...</p>
+              : <p>Awaiting confirmation...</p>
+      }
+
 
       <h4>Review</h4>
       <button

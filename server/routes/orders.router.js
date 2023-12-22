@@ -61,6 +61,117 @@ router.get('/:product', rejectUnauthenticated, (req, res) => {
 /////////////////////////
 
 
+// /**
+//  * POST route for auto setup
+//  */
+// router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
+//   devLog('in auto setup route! SHOULD NOT HAPPEN DURING SIMULATION======================');
+//   // POST route code here
+//   const user = req.user;
+//   if (user.active && user.approved) {
+//     // get the user available funds
+//     const funds = userStorage[user.id].getAvailableFunds();
+//     user.availableFunds = funds;
+//     let options = req.body;
+//     devLog('options in auto setup route', options.product);
+//     let setup = autoSetup(user, options)
+//     try {
+//       devLog('setup options:', options);
+//       // put a market order in for how much BTC need to be purchase for all the sell orders
+//       // if (false) {
+//       if (setup.btcToBuy >= 0.000016) {
+//         const tradeDetails = {
+//           side: 'BUY',
+//           base_size: setup.btcToBuy.toFixed(8), // BTC
+//           product_id: options.product.product_id,
+//           type: 'market',
+//           // tradingPrice: options.tradingPrice
+//         };
+//         devLog('BIG order', tradeDetails);
+//         if (!options.ignoreFunds) {
+//           let bigOrder = await cbClients[user.id].placeOrder(tradeDetails);
+//           devLog('big order to balance btc avail', bigOrder,);
+//         }
+//         await robot.updateFunds(user.id);
+//       }
+
+//       // put each trade into the db as a reorder so the sync loop can sync the right amount
+//       for (let i = 0; i < setup.orderList.length; i++) {
+//         const order = setup.orderList[i];
+
+//         const tradeDetails = {
+//           original_sell_price: JSON.stringify(Number(order.original_sell_price)),
+//           original_buy_price: JSON.stringify(Number(order.original_buy_price)),
+//           side: order.side,
+//           limit_price: JSON.stringify(Number(order.limit_price)), // USD
+//           base_size: JSON.stringify(Number(order.base_size)), // BTC
+//           product_id: order.product_id,
+//           total_fees: order.previous_total_fees,
+//           // stp: 'cn',
+//           userID: user.id,
+//           trade_pair_ratio: Number(options.trade_pair_ratio),
+//           client_order_id: uuidv4()
+//         };
+
+//         let fakeOrder = {
+//           order_id: uuidv4(),
+//           product_id: order.product_id,
+//           // user_id: '9f732868-9790-5667-b29a-f6eb8ab97966',
+//           order_configuration: {
+//             limit_limit_gtc: {
+//               base_size: JSON.stringify(Number(order.base_size)),
+//               limit_price: JSON.stringify(Number(order.limit_price)),
+//               post_only: false
+//             }
+//           },
+//           side: order.side,
+//           client_order_id: uuidv4(),
+//           status: 'PENDING',
+//           time_in_force: 'GOOD_UNTIL_CANCELLED',
+//           created_time: new Date(),
+//           completion_percentage: '0',
+//           filled_size: '0',
+//           average_filled_price: '0',
+//           fee: '',
+//           number_of_fills: '0',
+//           filled_value: '0',
+//           pending_cancel: false,
+//           size_in_quote: false,
+//           total_fees: '0',
+//           size_inclusive_of_fees: false,
+//           total_value_after_fees: '0',
+//           trigger_status: 'INVALID_ORDER_TYPE',
+//           order_type: 'LIMIT',
+//           reject_reason: 'REJECT_REASON_UNSPECIFIED',
+//           settled: false,
+//           product_type: 'SPOT',
+//           reject_message: '',
+//           cancel_message: '',
+//           reorder: true
+//         }
+//         await databaseClient.storeTrade(fakeOrder, tradeDetails, fakeOrder.created_time);
+//         // await databaseClient.storeTrade(order, order, time);
+//       }
+//       // tell DOM to update orders
+//       messenger[user.id].newMessage({
+//         type: 'general',
+//         text: `Auto setup complete!`,
+//         orderUpdate: true
+//       });
+//     } catch (err) {
+//       devLog(err, 'problem in autoSetup ');
+//       messenger[user.id].newError({
+//         errorData: err,
+//         errorText: `problem in auto setup`
+//       });
+//     }
+//     res.sendStatus(200);
+//   } else {
+//     devLog('user is not active and cannot trade!');
+//     res.sendStatus(404)
+//   }
+// });
+
 /**
  * POST route for auto setup
  */
@@ -70,13 +181,14 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   if (user.active && user.approved) {
     // get the user available funds
-    const funds = userStorage[user.id].getAvailableFunds();
-    user.availableFunds = funds;
-    let options = req.body;
-    devLog('options in auto setup route', options.product);
-    let setup = autoSetup(user, options)
     try {
-      devLog('setup options:', options);
+      const funds = userStorage[user.id].getAvailableFunds();
+      user.availableFunds = funds;
+      let options = req.body.options;
+      devLog(options.product, 'options in auto setup route');
+      let setup = req.body;
+      // devLog('setup options:', options);
+      // return
       // put a market order in for how much BTC need to be purchase for all the sell orders
       // if (false) {
       if (setup.btcToBuy >= 0.000016) {
@@ -99,23 +211,26 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
       for (let i = 0; i < setup.orderList.length; i++) {
         const order = setup.orderList[i];
 
+        const previous_total_fees = (order.side === 'BUY')
+          ? null
+          : order.original_buy_price * order.base_size * user.taker_fee;
+
         const tradeDetails = {
           original_sell_price: JSON.stringify(Number(order.original_sell_price)),
           original_buy_price: JSON.stringify(Number(order.original_buy_price)),
           side: order.side,
           limit_price: JSON.stringify(Number(order.limit_price)), // USD
           base_size: JSON.stringify(Number(order.base_size)), // BTC
-          product_id: order.product_id,
+          product_id: options.product.product_id,
           total_fees: order.previous_total_fees,
-          // stp: 'cn',
           userID: user.id,
-          trade_pair_ratio: Number(options.trade_pair_ratio),
+          trade_pair_ratio: Number(options.tradePairRatio),
           client_order_id: uuidv4()
         };
 
         let fakeOrder = {
           order_id: uuidv4(),
-          product_id: order.product_id,
+          product_id: options.product.product_id,
           // user_id: '9f732868-9790-5667-b29a-f6eb8ab97966',
           order_configuration: {
             limit_limit_gtc: {
@@ -493,7 +608,7 @@ router.delete('/product/:product_id', rejectUnauthenticated, async (req, res) =>
   const userID = req.user.id;
   const previousPauseStatus = req.user.paused;
   const product_id = req.params.product_id;
-  devLog('in delete all orders route', userID);
+  devLog('in delete all orders for product route', userID, '< user', product_id, '< product_id');
   try {
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID)

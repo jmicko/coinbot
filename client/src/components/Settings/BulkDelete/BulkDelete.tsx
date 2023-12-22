@@ -12,6 +12,8 @@ function BulkDelete(props: { tips: boolean }) {
   const [upperLimit, setUpperLimit] = useState(0);
 
   const { syncOrders, refreshOrders, productID } = useData();
+  console.log(productID, 'productID in bulk delete');
+  
   // const { deleteData: deleteAllForProduct } = useFetchData(`/api/orders/product/${productID}`, { defaultState: {}, notNull: [productID], noLoad: true })
   const { deleteData: deleteAllForProduct } = useDeleteFetch({
     url: `/api/orders/product/${productID}`,
