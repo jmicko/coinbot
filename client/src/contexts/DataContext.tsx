@@ -23,7 +23,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [isAutoScroll]);
 
   // user
-  const { user } = useUser();
+  const { user, refreshUser } = useUser();
   // sockets
   const [coinbotSocket, setCoinbotSocket] = useState('closed');
   const deadCon = (coinbotSocket !== 'open') ? true : false;
@@ -154,7 +154,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const { postData: createMarketTrade } = usePostFetch({
     url: `/api/trade/market`,
     from: 'createMarketTrade in data context',
-    refreshCallback: refreshOrders,
+    refreshCallback: () => {refreshOrders(); refreshUser()},
   })
   // const { data: exportableFiles, refresh: refreshExportableFiles } = useFetchData(`/api/account/exportableFiles`, { defaultState: [] })
   // TRADE FUNCTIONS
