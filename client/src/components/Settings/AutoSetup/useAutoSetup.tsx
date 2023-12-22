@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { AutoSetupOptions, AutoSetupOrderParams, AutoSetupResult, Order, OrderParams, User } from '../../../types';
-import { useUser } from '../../../contexts/useUser';
+import { AutoSetupOptions, AutoSetupOrderParams, AutoSetupResult, User } from '../../../types';
 import { useData } from '../../../contexts/useData';
 
 function useAutoSetup(user: User, currentPrice: number, pqd: number) {

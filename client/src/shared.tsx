@@ -519,7 +519,9 @@ const toFloor = (value: number, rounding: number) => {
 }
 const fixedFloor = (value: number, rounding: number) => {
   // find number of times rounding can be divided by 10
-  const logRound = Math.floor(Math.log10(rounding));
+  console.log(rounding, 'rounding');
+  
+  const logRound = Math.floor(Math.log10(rounding * 10));
   devLog(logRound, 'logRound');
   return (Math.floor(value * rounding) / rounding).toFixed(Number(logRound));
 }

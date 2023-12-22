@@ -7,7 +7,8 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   const socketRef = useRef<WebSocket | null>(null);
   const [tickers, setTickers] = useState<Tickers>({ "BTC-USD": { price: 0 }, "ETH-USD": { price: 0 } });
   const [heartbeat, setHeartbeat] = useState({ heart: 'heart', beat: 'beat', count: 0 });
-  const { setSocketStatus } = useData();
+  const { setSocketStatus, productID } = useData();
+  const currentPrice = tickers[productID]?.price;
 
   useEffect(() => {
     let ENDPOINT = origin;
@@ -136,6 +137,7 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         socket: socketRef.current,
         heartbeat,
         tickers,
+        currentPrice,
       }}>
       {children}
     </WebSocketContext.Provider>

@@ -9,17 +9,14 @@ import { useUser } from "../../../contexts/useUser.js";
 import useAutoSetup from "./useAutoSetup.js";
 import { devLog, no, numberWithCommas } from "../../../shared.js";
 import SingleTrade from "../../SingleTrade/SingleTrade.js";
-import useGetFetch from "../../../hooks/useGetFetch.js";
 import usePostFetch from "../../../hooks/usePostFetch.js";
 import Confirm from "../../Confirm/Confirm.js";
 
 function AutoSetup(props: { tips: boolean }) {
   const { tickers } = useWebSocket();
-  const { productID, pqd, pbd } = useData();
+  const { productID,baseID, quoteID, pqd, pbd } = useData();
   const currentPriceTicker = tickers[productID]?.price;
   const { user, theme } = useUser();
-  const baseID = user.availableFunds?.[productID]?.base_currency;
-  const quoteID = user.availableFunds?.[productID]?.quote_currency;
 
   const [currentPrice, setCurrentPrice] = useState(currentPriceTicker);
 

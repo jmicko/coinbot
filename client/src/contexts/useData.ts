@@ -19,16 +19,9 @@ interface DataContextProps {
   currentProduct: ProductWithDecimals;
   pqd: number;
   pbd: number;
+  baseID: string;
+  quoteID: string;
   refreshProducts: () => void;
-  // messages: {[key: string]: Messages};
-  // {
-  //   messages: {
-  //     botMessages,
-  //     chatMessages
-  //   },
-  //   botErrors
-  //   // , sendChat
-  // }
   messages: { botMessages: Messages, chatMessages: Messages };
   // messages: Messages;
   refreshBotMessages: () => void;

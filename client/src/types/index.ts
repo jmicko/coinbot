@@ -145,6 +145,7 @@ export interface BotSettings {
 }
 
 export interface Product {
+  [key: string]: string | number | boolean | null | undefined;
   activated_at: string;
   active_for_user: boolean;
   auction_mode: boolean;

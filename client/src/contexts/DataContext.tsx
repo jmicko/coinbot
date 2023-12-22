@@ -77,6 +77,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const availableBase = user?.availableFunds?.[productID]?.base_available || 0;
   const availableQuote = user?.availableFunds?.[productID]?.quote_available || 0;
 
+  const baseID = user.availableFunds?.[productID]?.base_currency;
+  const quoteID = user.availableFunds?.[productID]?.quote_currency;
+
   // // get errors sent from the bot
   // const { data: botErrors, refresh: refreshBotErrors }
   //   = useFetchData(`/api/account/errors`, { defaultState: [] })
@@ -157,6 +160,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // TRADE FUNCTIONS
   const currentProductNoDecimals: Product
     = products.allProducts.find((product) => product.product_id === productID) || {} as Product;
+    // console.log(currentProductNoDecimals, 'currentProductNoDecimals');
+    
 
   const currentProduct: ProductWithDecimals
     =  addProductDecimals(currentProductNoDecimals);
@@ -219,6 +224,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           // // products
           products, currentProduct, pqd, pbd,
           productID, setProductID, refreshProducts,
+          baseID, quoteID,
           // toggleActiveProduct,
 
           // // messages

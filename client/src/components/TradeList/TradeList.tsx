@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, } from 'react';
+import { useEffect, useRef, } from 'react';
 import SingleTrade from '../SingleTrade/SingleTrade'
 import coinbotFilled from "../../../src/coinbotFilled.png";
 // import coinbotFilledGif from "../../../src/coinbotFilled.gif";

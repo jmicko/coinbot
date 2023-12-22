@@ -7,6 +7,7 @@ import { numberWithCommas, tNum, no, fixedFloor, devLog } from '../../shared';
 import { EventType, OrderParams } from '../../types';
 import { useUser } from '../../contexts/useUser';
 import { useData } from '../../contexts/useData';
+import { useWebSocket } from '../../contexts/useWebsocket';
 
 interface limitOrderProps {
   toggleCollapse: () => void;
@@ -14,16 +15,23 @@ interface limitOrderProps {
 }
 
 function LimitOrder(props: limitOrderProps) {
+  const { currentPrice } = useWebSocket();
+  // const currentPrice = tickers[productID]?.price;
 
   // contexts
   const { user, theme, btnColor } = useUser();
-  const currentPrice = 20;
+  // const currentPrice = 20;
   const {
     productID,
     createMarketTrade,
     currentProduct,
     marketOrder,
     setMarketOrder,
+    baseID,
+    quoteID,
+    pqd,
+    pbd,
+    availableBase,
     // setTradeType,
   } = useData();
 
@@ -99,11 +107,29 @@ function LimitOrder(props: limitOrderProps) {
             <strong>
               {
                 side === 'BUY'
-                  ? 'Buying'
-                  : 'Selling'
+                  ? `Buying ${baseID} with ${quoteID}`
+                  : `Selling ${baseID} for ${quoteID}`
               }
             </strong>
           </h4>
+          <p>
+            {Number(currentProduct.base_increment)} {baseID} increments <br />
+            {/* {Number(currentProduct.quote_min_size).toFixed(pqd)} {quoteID} minimum <br /> */}
+            {Number(currentProduct.base_min_size).toFixed(pbd)} {baseID} minimum
+            <br />
+            <br />
+
+            {/* map all keys for currentProduct */}
+            {/* {currentProduct && Object.keys(currentProduct).map((key, index) => {
+              // console.log(key, '< key\n', currentProduct[key], '< value\n\n');
+              return (
+                <span key={index}>
+                  <span>{key}:</span>
+                  <span className='red'>{JSON.stringify(currentProduct[key]).split('"' || "'")}<br /></span>
+                </span>
+              )
+            })} */}
+          </p>
 
           {/* SIZE INPUT */}
           <label htmlFor="trade-amount">
@@ -114,11 +140,14 @@ function LimitOrder(props: limitOrderProps) {
             className={theme}
             type="number"
             name="trade-amount"
-            value={Number(base_size)}
+            value={base_size}
+            step={Number(currentProduct?.base_increment)}
+            min={Number(currentProduct?.base_min_size)}
+            max={Number(currentProduct?.base_max_size)}
             required
             onChange={(e) => {
               // no(e);
-              setMarketOrder((prevMarketOrder: OrderParams) => { return { ...prevMarketOrder, base_size: tNum(e) } })
+              setMarketOrder((prevMarketOrder: OrderParams) => { return { ...prevMarketOrder, base_size: e.target.value ? Number(e.target.value) : undefined } })
             }
             }
           />
@@ -126,19 +155,45 @@ function LimitOrder(props: limitOrderProps) {
           {(side === 'SELL') && <input
             className={`${btnColor} ${theme}`}
             // onClick={() => setBasicAmount(Number(user.availableFunds?.[productID].base_available))}
-            onClick={() => setMarketOrder((prevMarketOrder: OrderParams) => { return { ...prevMarketOrder, base_size: Number(fixedFloor(user?.availableFunds?.[productID].base_available || 1, currentProduct?.base_increment_decimals || 1)) } })}
+            onClick={() => setMarketOrder((prevMarketOrder: OrderParams) => {
+              console.log(pbd, 'pbd');
+              console.log(currentProduct?.base_increment_decimals, 'currentProduct?.base_increment_decimals');
+
+
+              return {
+                ...prevMarketOrder,
+                base_size: Number(Number(availableBase).toFixed(pbd))
+              }
+            })}
             type="button"
             name="submit"
             value="Max" />}
           <br />
 
           {/* SUBMIT ORDER BUTTON */}
-          <input className={`btn-send-trade market ${btnColor} ${theme}`} type="submit" name="submit" value={`${side === 'BUY' ? 'Buy' : 'Sell'} ${base_size} ${currentProduct?.base_currency_id}`} />
-          <p>
+          {(base_size !== undefined) && (base_size > 0) ? <input
+            className={`btn-send-trade market ${btnColor} ${theme}`}
+            type="submit"
+            name="submit"
+            value={`${side === 'BUY' ? 'Buy' : 'Sell'} ${base_size} ${currentProduct?.base_currency_id}`}
+          />
+            : <input
+              className={`btn-send-trade market ${btnColor} ${theme}`}
+              type="submit"
+              name="submit"
+              value={'Enter a Valid Amount'}
+              disabled
+            />
+          }
+          {(base_size !== undefined) && (base_size > 0) && <p>
+            {/* && (base_size > 0)) && <p> */}
             This equates to about
-            <br />${numberWithCommas(((base_size || 1) * currentPrice).toFixed(2))}
+            <br />${numberWithCommas(((base_size) * currentPrice).toFixed(pqd))}
             <br />before fees
           </p>
+          }
+          <div>
+          </div>
 
         </form>
       </div>
