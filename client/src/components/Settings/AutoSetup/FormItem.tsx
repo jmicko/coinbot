@@ -5,7 +5,7 @@ export default function FormItem(props: {
   label: string,
   value: string | number | boolean,
   type: string,
-  changeCallback: Function,
+  changeCallback: (e:  React.ChangeEvent<HTMLInputElement>) => void,
   checked?: boolean,
   hidden?: boolean,
   tips?: {[key: string]: string}

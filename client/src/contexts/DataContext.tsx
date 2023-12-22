@@ -37,18 +37,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const {
     data: products,
     refresh: refreshProducts,
-    // updateRefreshData: toggleActiveProduct,
   } = useGetFetch<Products>('/api/account/products', {
     defaultState: { allProducts: [], activeProducts: [] },
     preload: true,
     from: 'products in data context'
   })
-  // console.log(products, 'products object in data context');
 
   // get the profits for the selected product
   const { data: profit,
     refresh: refreshProfit,
-    // updateData: resetProfit,
   } = useGetFetch<ProfitForDuration[]>(`/api/account/profit/${productID}`, {
     defaultState: [],
     preload: true,
@@ -80,9 +77,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const baseID = user.availableFunds?.[productID]?.base_currency;
   const quoteID = user.availableFunds?.[productID]?.quote_currency;
 
-  // // get errors sent from the bot
-  // const { data: botErrors, refresh: refreshBotErrors }
-  //   = useFetchData(`/api/account/errors`, { defaultState: [] })
   const {
     data: botErrors,
     refresh: refreshBotErrors,
@@ -96,14 +90,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // //////// ORDERS ////////
   // ////////////////////////
 
-  // ORDERS ROUTES - for management of orders that are stored in the database
-  // delete range will take an array with the start and end values. deleteAllForProduct will take nothing?
   const {
     data: orders,
     refresh: refreshOrders,
-    // setData: setOrders,
-    // createRefreshData: createOrderPair,
-    // deleteRefreshData: deleteRangeForProduct
   } = useGetFetch<Orders>(`/api/orders/${productID}`, {
     defaultState: {
       buys: [],
@@ -119,8 +108,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
   })
   const {
     putData: syncOrders,
-    // deleteData: deleteOrderNoRefresh,
-    // deleteData: deleteAllNoRefresh
   } = usePutFetch({ url: `/api/orders`, from: 'syncOrders in data context' })
 
   const { postData: createOrderPair } = usePostFetch({
@@ -128,16 +115,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     from: 'createOrderPair in data context',
     refreshCallback: refreshOrders,
   })
-
-  // const deleteOrder = async (orderID: string) => {
-  //   const { deleteData } = useDeleteFetch({ url: `/api/orders/${orderID}`, from: 'deleteOrder in data context' });
-  //   await deleteData();
-  //   refreshOrders();
-  // }
-  // ORDERS FUNCTIONS
-  // combine delete and refresh into one function because they hit different routes
-  // const deleteOrder = async (orderID) => { await deleteOrderNoRefresh(orderID); refreshOrders() }
-  // const deleteAll = async () => { await deleteAllNoRefresh(); refreshOrders() }
 
   // ///////////////////////
   // //////// TRADE ////////
@@ -177,37 +154,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
   });
   const [tradeType, setTradeType] = useState('market');
 
-  // //////////////////////////
-  // //////// SETTINGS ////////
-  // ////////////////////////// 
-
-  // // SETTINGS ROUTES - for management of per user settings
-  // const { updateData: setProfitAccuracy } = useFetchData(`/api/settings/profitAccuracy`, { defaultState: null, noLoad: true })
-  // const { updateData: updateMaxTradeLoad } = useFetchData(`/api/settings/tradeLoadMax`, { defaultState: null, noLoad: true })
-  // const { updateData: updateKillLock } = useFetchData(`/api/settings/killLock`, { defaultState: null, noLoad: true })
-  // const { updateData: updatePause } = useFetchData(`/api/settings/pause`, { defaultState: null, noLoad: true })
-  // const { updateData: updateTheme } = useFetchData(`/api/settings/theme`, { defaultState: null, noLoad: true })
-  // const { updateData: updateSyncQuantity } = useFetchData(`/api/settings/syncQuantity`, { defaultState: null, noLoad: true })
-
-  // // SETTINGS FUNCTIONS
-  // async function updateProfitAccuracy(profit_accuracy) { await setProfitAccuracy({ profit_accuracy }); refreshUser(); }
-  // async function pause() { await updatePause(); refreshUser(); }
-  // async function killLock() { await updateKillLock(); refreshUser(); }
-  // async function setTheme(theme) { await updateTheme({ theme }); refreshUser(); }
-  // async function sendTradeLoadMax(max_trade_load) { await updateMaxTradeLoad({ max_trade_load }); refreshUser(); }
-  // async function sendSyncQuantity(sync_quantity) { await updateSyncQuantity({ sync_quantity }); refreshUser(); }
-
-
-  // ///////////////////
-  // //// UTILITIES ////
-  // ///////////////////
-  // // if products.activeProducts changes, the selected product will be set to the first product in the list
-  // useEffect(() => {
-  //   setProductID(products?.activeProducts?.[0]?.product_id);
-  // }, [products.activeProducts, setProductID])
-
-
-
   return (
     <DataContext.Provider
       value={
@@ -236,16 +182,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
           createMarketTrade, createOrderPair, 
           syncPair,
           syncOrders, // does this still realistically get used?
-          // deleteOrder,
-          // deleteRangeForProduct,
-          // deleteAll,
 
           // // TRADE
-          // exportableFiles, refreshExportableFiles,
           marketOrder, setMarketOrder, tradeType, setTradeType,
-
-          // // SETTINGS
-          // pause, killLock, setTheme, sendTradeLoadMax, updateProfitAccuracy, sendSyncQuantity,
 
           // SOCKETS
           coinbotSocket, setCoinbotSocket, socketStatus, setSocketStatus, deadCon,

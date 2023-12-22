@@ -52,7 +52,8 @@ interface bellCurveOptions {
   increment: number,
   steepness: number,
   buyPrice: number,
-  currentPrice: number,
+  // currentPrice: number,
+  tradingPrice: number,
 }
 // function to implement the above equation using the same variable names as above
 function bellCurve(options: bellCurveOptions) {

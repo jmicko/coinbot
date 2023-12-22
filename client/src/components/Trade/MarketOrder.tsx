@@ -1,9 +1,8 @@
 import './IncrementButtons.css';
 import { FormEvent } from 'react';
-// import { useSocket } from '../../contexts/SocketProvider';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
 // import IncrementButtons from './IncrementButtons';
-import { numberWithCommas, tNum, no, fixedFloor, devLog } from '../../shared';
+import { numberWithCommas, no, devLog } from '../../shared';
 import { EventType, OrderParams } from '../../types';
 import { useUser } from '../../contexts/useUser';
 import { useData } from '../../contexts/useData';
@@ -19,7 +18,7 @@ function LimitOrder(props: limitOrderProps) {
   // const currentPrice = tickers[productID]?.price;
 
   // contexts
-  const { user, theme, btnColor } = useUser();
+  const { theme, btnColor } = useUser();
   // const currentPrice = 20;
   const {
     productID,

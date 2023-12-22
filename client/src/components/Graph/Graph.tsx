@@ -1,21 +1,25 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AutoSetupOptions, AutoSetupOrderParams, AutoSetupResult } from '../../types';
 // import { devLog } from '../../shared.js';
 
 interface GraphProps {
-  data: any[];
+  data: AutoSetupOrderParams[];
   title?: string;
-  setupResults: any;
+  setupResults: AutoSetupResult;
 }
 
 function Graph(props: GraphProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [canvasWidth, setCanvasWidth] = useState(0);
+
+
   const [scaleToZeroX, setScaleToZeroX] = useState(false);
   const [scaleToZeroY, setScaleToZeroY] = useState(true);
   const [showSells, setShowSells] = useState(false);
   const [showCurrentPrice, setShowCurrentPrice] = useState(true);
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
 
-  const setupOptions = props.setupResults.options;
+  const setupOptions = props.setupResults?.options || {} as AutoSetupOptions;
 
   // devLog(setupOptions, 'props.setupResults in Graph.js');
 
@@ -36,6 +40,32 @@ function Graph(props: GraphProps) {
   // get the min and max values
   const minPrice = startingValueX;
   const maxPrice = endingValue;
+
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        setCanvasWidth(entry.contentRect.width - 50);
+      }
+    });
+
+    if (canvasRef.current && canvasRef.current.parentElement) {
+      resizeObserver.observe(canvasRef.current.parentElement);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  // useEffect(() => {
+  //   const canvas = canvasRef.current;
+  //   if (!canvas) return;
+  //   drawGraphBoundary(canvas);
+  //   // const context = canvas?.getContext('2d');
+
+  //   // Draw on the canvas using context
+
+  // }, [canvasRef]); // Empty dependency array means this effect runs once on mount
 
   // capture the mouse position
   const handleMouseMove = (e: MouseEvent) => {
@@ -324,8 +354,14 @@ function Graph(props: GraphProps) {
     // show the current price if it is within the range of the graph
     drawPriceTicker(canvas);
 
-  }, [data, canvasRef, scaleToZeroX, scaleToZeroY, drawAxis, drawTicks, drawDataPoints, drawPriceTicker, drawGraphBoundary, maxPrice, minPrice, maxSize, minSize,
-    mouse, canvasRef.current
+  }, [
+    data,
+    canvasRef,
+    scaleToZeroX,
+    scaleToZeroY,
+    drawAxis, drawTicks, drawDataPoints, drawPriceTicker, drawGraphBoundary,
+    maxPrice, minPrice, maxSize, minSize,
+    mouse, canvasWidth
   ]);
 
 
@@ -439,8 +475,9 @@ function Graph(props: GraphProps) {
 
 
 
-  }, [mouse, data, drawToolTip]);
+  }, [mouse, data, drawToolTip, maxPrice, minPrice, showSells, whichSize]);
 
+  // if (!setupOptions.sizeType) return null;
 
   return (
     <>
@@ -452,11 +489,12 @@ function Graph(props: GraphProps) {
         // width on mobile should be 300
         // width={window.innerWidth > 500 ? 500 : 300}
         width={
+          canvasWidth
           // get the width of the parent element
-          canvasRef.current
-            && canvasRef.current.parentElement
-            ? canvasRef.current.parentElement.offsetWidth - 50
-            : 500
+          // (canvasRef.current
+          //   && canvasRef.current.parentElement)
+          //   ? canvasRef.current.parentElement.offsetWidth - 50
+          //   : 500
         }
         style={{
           // width: '100%',

@@ -314,7 +314,7 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
         clearTimeout(timeoutId);
       }
     };
-  }, [user, options, currentPrice]); // Re-run autoSetup whenever user or options change
+  }, [user, options, currentPrice, availableQuote, pqd ]); // Re-run autoSetup whenever user or options change
 
   return { result, options, setOptions, calculating, recentInput, availableQuote };
 }

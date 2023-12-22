@@ -40,18 +40,6 @@ function AutoSetup(props: { tips: boolean }) {
 
   const quoteNeededForBaseNeeded = setupResults ? Number((baseNeeded * currentPrice) > 0 ? baseNeeded * currentPrice : 0) : 0;
 
-  if (!currentPriceTicker) return (
-    <div className="AutoSetup settings-panel scrollable">
-      <p>Waiting for price data<DotLoader /></p>
-    </div>
-  )
-
-  // if (!currentProduct) return (
-  //   <div className="AutoSetup settings-panel scrollable">
-  //     <p>Please select a product to start.</p>
-  //   </div>
-  // )
-
   useEffect(() => {
     // if the price ticker is more than x% different than the current price, 
     // update the current price.
@@ -67,6 +55,11 @@ function AutoSetup(props: { tips: boolean }) {
     }
   }, [currentPriceTicker, currentPrice])
 
+  if (!currentPriceTicker) return (
+    <div className="AutoSetup settings-panel scrollable">
+      <p>Waiting for price data<DotLoader /></p>
+    </div>
+  )
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = event.target;

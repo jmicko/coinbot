@@ -478,7 +478,7 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
 
   // get decimals after .
   const base_increment_decimals = prodFunds.base_increment.split('.')[1]?.split('').findIndex((char) => char !== '0') + 1;
-  // devLog(base_increment_decimals, 'base inc decccccccccccc')
+  // devLog(base_increment_decimals, 'base inc dec')
   const quote_increment_decimals = prodFunds.quote_increment.split('.')[1]?.split('').findIndex((char) => char !== '0') + 1;
 
   // add buy/sell requirement and price
