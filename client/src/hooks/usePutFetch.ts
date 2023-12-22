@@ -9,7 +9,7 @@ interface UsePutFetchProps<T> {
   from: string;
 }
 
-const usePutFetch = <T>({ url, options, setData, refreshCallback,loadingDelay, from }: UsePutFetchProps<T>) => {
+const usePutFetch = <T>({ url, options, setData, refreshCallback, loadingDelay, from }: UsePutFetchProps<T>) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -51,10 +51,10 @@ const usePutFetch = <T>({ url, options, setData, refreshCallback,loadingDelay, f
       }
     } finally {
       setTimeout(() => {
-      setIsLoading(false);
+        setIsLoading(false);
       }, loadingDelay || 0);
     }
-  }, [url, options, setData, from, refreshCallback]);
+  }, [url, options, setData, from, refreshCallback, loadingDelay]);
 
   return { isLoading, error, putData };
 };

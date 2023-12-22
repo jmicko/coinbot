@@ -258,8 +258,8 @@ export interface AutoSetupOptions {
   sizeCurve: string;
   steepness: number;
   tradePairRatio: number;
-  availableQuote: number;
-};
+  // availableQuote: number;
+}
 
 export type AutoSetupResult = {
   valid: boolean;
@@ -267,7 +267,7 @@ export type AutoSetupResult = {
   orderList: AutoSetupOrderParams[];
   lastBuyPrice: number;
   btcToBuy: number;
-  options: any;
+  options: AutoSetupOptions;
   quoteToReserve: number;
   buyCount: number;
   sellCount: number;

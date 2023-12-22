@@ -1,9 +1,9 @@
 // UserContext.tsx
-import { ReactNode, useEffect } from 'react'
+import { ReactNode } from 'react'
 import useGetFetch from '../hooks/useGetFetch.js';
 import useDeleteFetch from '../hooks/useDeleteFetch.js';
 import { UserContext } from './useUser.js';
-import { Credentials, FetchError, User } from '../types/index.js';
+import { Credentials, User } from '../types/index.js';
 
 // type User = {
 //   theme: string;

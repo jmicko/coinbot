@@ -15,16 +15,17 @@ import Confirm from "../../Confirm/Confirm.js";
 
 function AutoSetup(props: { tips: boolean }) {
   const { tickers } = useWebSocket();
-  const { productID, currentProduct, pqd, pbd } = useData();
+  const { productID, pqd, pbd } = useData();
   const currentPriceTicker = tickers[productID]?.price;
   const { user, theme } = useUser();
   const baseID = user.availableFunds?.[productID]?.base_currency;
   const quoteID = user.availableFunds?.[productID]?.quote_currency;
 
+  const [currentPrice, setCurrentPrice] = useState(currentPriceTicker);
+
   const availableQuote = user.availableFunds?.[productID]?.quote_available;
   const availableBase = user.availableFunds?.[productID]?.base_available;
-
-  const [currentPrice, setCurrentPrice] = useState(currentPriceTicker);
+  const availableBaseValue = Number((availableBase * currentPrice).toFixed(pqd));
 
   const { result: setupResults, options, setOptions, calculating, recentInput } = useAutoSetup(user, currentPrice, pqd);
   const [showPreview, setShowPreview] = useState(false);
@@ -38,6 +39,9 @@ function AutoSetup(props: { tips: boolean }) {
   })
 
   const baseNeeded = setupResults ? Number((setupResults.btcToBuy - availableBase) > 0 ? setupResults.btcToBuy - availableBase : 0) : 0;
+  const quoteNeeded = setupResults ? Number((setupResults.quoteToReserve - availableQuote) > 0 ? setupResults.quoteToReserve - availableQuote : 0) : 0;
+
+  const quoteNeededForBaseNeeded = setupResults ? Number((baseNeeded * currentPrice) > 0 ? baseNeeded * currentPrice : 0) : 0;
 
   if (!currentPriceTicker) return (
     <div className="AutoSetup settings-panel scrollable">
@@ -69,7 +73,7 @@ function AutoSetup(props: { tips: boolean }) {
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = event.target;
-    console.log(`changing ${name} which is type:${type} to ${Boolean(value)} (${!value})`, Boolean(value));
+    // console.log(`changing ${name} which is type:${type} to ${Boolean(value)} (${!value})`, Boolean(value));
 
     setOptions(prevState => ({
       ...prevState,
@@ -85,7 +89,7 @@ function AutoSetup(props: { tips: boolean }) {
   function submitAutoSetup() {
     setAutoTradeStarted(true);
     devLog('automatically setting up bot');
-    startAutoSetup( setupResults );
+    startAutoSetup(setupResults);
     setTimeout(() => {
       setAutoTradeStarted(false);
 
@@ -212,12 +216,48 @@ function AutoSetup(props: { tips: boolean }) {
               ? <>
                 <p>
                   Total USD cost at current price:<br />
-                  <strong>{quoteID === 'USD' && '$'}{numberWithCommas(((setupResults.cost) > 0 ? setupResults.cost : 0).toFixed(pqd))} {quoteID !== 'USD' && quoteID}</strong>
+                  <strong>
+                    {quoteID === 'USD' && '$'}{numberWithCommas(((setupResults.cost) > 0
+                      ? setupResults.cost
+                      : 0).toFixed(pqd))}
+                    {quoteID !== 'USD' && quoteID}
+                  </strong>
                 </p>
                 <p>
                   {quoteID} to reserve:<br />
-                  <strong>{quoteID === 'USD' && '$'}{setupResults?.quoteToReserve.toFixed(pqd)} {quoteID !== 'USD' && quoteID}</strong>
+                  <strong
+                    className={`${quoteNeeded > 0 ? 'warning' : ''}`}
+                  >{quoteID === 'USD' && '$'}{setupResults?.quoteToReserve.toFixed(pqd)} {quoteID !== 'USD' && quoteID}</strong>
+                  {/* {quoteNeeded.toFixed(pqd)} - {quoteID} needed */}
                 </p>
+                <p>
+                  {quoteID} you have:<br />
+                  <strong
+                    className={`${availableQuote < setupResults.quoteToReserve ? 'warning' : ''}`}
+                  >{quoteID === 'USD' && '$'}{numberWithCommas(Number(availableQuote).toFixed(pqd))}</strong>
+                  &nbsp;{!quoteNeeded ? `✓ You have enough` : `✗ You don't have enough`}
+                </p>
+                {quoteNeeded > 0 &&
+                  <>
+                    <p>
+                      {quoteID} you need to obtain:<br />
+                      <strong
+                        className={`${availableQuote < setupResults.quoteToReserve ? 'warning' : ''}`}
+                      >{quoteID === 'USD' && '$'}{numberWithCommas(Number(quoteNeeded).toFixed(pqd))}</strong>
+                    </p>
+                    {availableBaseValue > 0 &&
+                      <p>
+                        You can sell <strong
+                          className={`${availableBaseValue < quoteNeeded ? 'warning' : ''}`}
+                        >{numberWithCommas(availableBaseValue)} {baseID}</strong> for
+                        <strong
+                          className={`${availableBaseValue < quoteNeeded ? 'warning' : ''}`}
+                        >&nbsp;{quoteID === 'USD' && '$'}{numberWithCommas(Number(availableBaseValue).toFixed(pqd))} {quoteID !== 'USD' && quoteID}</strong>
+                        <br />
+                        {availableBaseValue > quoteNeeded ? `✓ You have enough` : `✗ You don't have enough`} {baseID}
+                      </p>}
+                  </>
+                }
                 <p>
                   {baseID} to reserve:<br />
                   <strong>{numberWithCommas(setupResults.btcToBuy)}</strong>
@@ -226,7 +266,7 @@ function AutoSetup(props: { tips: boolean }) {
                   {baseID} you have:<br />
                   <strong
                     className={`${availableBase < setupResults.btcToBuy ? 'warning' : ''}`}
-                  >{numberWithCommas(Number(availableBase).toFixed(pbd))}</strong> {!baseNeeded && `✓ You have enough`}
+                  >{numberWithCommas(Number(availableBase).toFixed(pbd))}</strong> {!baseNeeded ? `✓ You have enough` : `✗ You don't have enough`}
                 </p>
                 {baseNeeded > 0 &&
                   <p>
@@ -241,19 +281,29 @@ function AutoSetup(props: { tips: boolean }) {
                     {numberWithCommas(baseNeeded)} {baseID} will cost you approximately:<br />
                     <strong
                       className={`${availableBase < setupResults.btcToBuy ? 'warning' : ''}`}
-                    >${numberWithCommas((baseNeeded * currentPrice).toFixed(pqd))}</strong>
+                    >{quoteID === 'USD' && '$'}{numberWithCommas((quoteNeededForBaseNeeded).toFixed(pqd))}</strong> {quoteID !== 'USD' && quoteID}
+                  </p>
+                }
+                {/* {setupResults.cost}
+                <br />
+                {(Number(availableQuote) + Number(availableBaseValue))} */}
+
+                {(setupResults.cost > 0) && (setupResults.cost > (Number(availableQuote) + Number(availableBaseValue))) &&
+                  <p>
+                    You will need to deposit <strong
+                      className={`${availableBase < setupResults.btcToBuy ? 'warning' : ''}`}
+                    >{quoteID === 'USD' && '$'}{numberWithCommas((setupResults.cost - availableQuote - availableBaseValue).toFixed(pqd))}
+                    </strong> {quoteID !== 'USD' && quoteID} to satisfy the cost of the trades.
                   </p>
                 }
               </>
               : <>
                 <p>
                   It will cost you:<br />
-                  <strong>${numberWithCommas(((setupResults.cost) > 0 ? setupResults.cost : 0).toFixed(2))}</strong>
+                  <strong>${numberWithCommas(((setupResults.cost) > 0 ? setupResults.cost : 0).toFixed(pqd))}</strong>
                 </p>
               </>
             }
-
-            {/* <p>Options: {JSON.stringify(setupResults?.options)}</p> */}
           </div>
             : calculating && <p className='auto-setup-results'>Waiting for results<DotLoader /></p>
         }

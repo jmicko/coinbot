@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useUser } from '../../../contexts/useUser';
 import Confirm from '../../Confirm/Confirm.js';
 import './Reset.css'
 import usePutFetch from '../../../hooks/usePutFetch.js';
 import { useData } from '../../../contexts/useData.js';
-import { DotLoader, SpaceLoader, WaveLoader } from '../../Loading.js';
+import { WaveLoader } from '../../Loading.js';
 
 
 function Reset(props: { tips: boolean }) {

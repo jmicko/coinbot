@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AutoSetupOptions, AutoSetupOrderParams, AutoSetupResult, Order, OrderParams, User } from '../../../types';
 import { useUser } from '../../../contexts/useUser';
 import { useData } from '../../../contexts/useData';
 
 function useAutoSetup(user: User, currentPrice: number, pqd: number) {
   const { productID, currentProduct } = useData();
-  // if (!currentProduct) return { result: null, options: null, setOptions: null, calculating: false };
+  const resultStillValid = useRef(true);
+  resultStillValid.current = true;
 
   const [options, setOptions] = useState<AutoSetupOptions>({
     product: currentProduct,
@@ -21,18 +22,30 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
     sizeCurve: 'linear',
     steepness: 100,
     tradePairRatio: 5,
-    availableQuote: Number(user.availableFunds?.[productID]?.quote_available),
+    // availableQuote: Number(user.availableFunds?.[productID]?.quote_available),
   });
 
   const [result, setResult] = useState<AutoSetupResult>(null);
   const [calculating, setCalculating] = useState(false);
   const [recentInput, setRecentInput] = useState(false);
+  const availableQuote = Number(user.availableFunds?.[productID]?.quote_available)
+
+  const setResultIfValid = (result: AutoSetupResult) => {
+    if (resultStillValid.current) {
+      setResult(result)
+    } else {
+      console.log('result is no longer valid');
+    }
+  }
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
     setRecentInput(true);
-    function autoSetup(user: User) {
+    function autoSetup() {
       setCalculating(true);
+
+      // console.log(user,'< user', options, '<options', 'autoSetup running');
+
 
       const orderList: AutoSetupOrderParams[] = [];
       // const options = { ...options };
@@ -49,12 +62,13 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
         maxSize,
         steepness,
         product,
+        ignoreFunds,
       } = options;
 
       // starting values for the big loop
       // let availableFunds = options.availableQuote;
       let cost = Number(options.startingValue);
-      let availableFunds = Number(options.availableQuote);
+      let availableFunds = Number(availableQuote);
       let buyPrice = Number(startingValue);
       let quoteToReserve = 0;
       let btcToBuy = 0;
@@ -76,7 +90,7 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
         steepness <= 0 ||
         maxSize <= 0 ||
         currentPrice <= 0) {
-        setResult(null);
+        setResultIfValid(null);
         setCalculating(false);
         return;
       }
@@ -88,7 +102,7 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
           incrementBuyPrice();
           stopChecker();
           if (stop) {
-            setResult(null);
+            setResultIfValid(null);
             setCalculating(false);
             return;
           }
@@ -100,6 +114,12 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
 
         const actualSize = getActualSize();
 
+        if (!ignoreFunds && ((actualSize * buyPrice) > availableFunds)) {
+          console.log('ran out of funds!', availableFunds);
+          stop = true;
+          continue;
+        }
+
         // count up how much base currency will need to be purchased to reserve for all the sell orders
         if (side === 'SELL') {
           // devLog(actualSize, 'actualSize', (actualSize * product.base_inverse_increment));
@@ -107,6 +127,8 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
           // because later on, the actualSize is divided by product.base_inverse_increment before returning it
           // was this originally a rounding thing the just got lost in the loop?
           btcToBuy += (actualSize * product.base_inverse_increment)
+          console.log(product.base_inverse_increment, '< product.base_inverse_increment');
+
         }
 
         // THIS IS NOT OLD CODE FROM WHEN BTC-USD WAS THE ONLY PRODUCT. 
@@ -200,7 +222,7 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
 
 
 
-      setResult({
+      setResultIfValid({
         valid: true,
         cost: cost,
         orderList: orderList,
@@ -222,7 +244,7 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
           ? availableFunds - USDSize
           : availableFunds - size
         // devLog(((availableFunds - nextFunds) < 0) && !options.ignoreFunds, nextFunds, 'next funds', availableFunds, !options.ignoreFunds);
-        if (((nextFunds) < 0) && !options.ignoreFunds) {
+        if (((nextFunds) < 0) && !ignoreFunds) {
           console.log('ran out of funds!', availableFunds);
           stop = true;
         }
@@ -282,17 +304,20 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
 
     // Start a new timeout
     timeoutId = setTimeout(() => {
-      autoSetup(user);
+      autoSetup();
     }, 500); // 500ms delay
 
     return () => {
+      console.log(resultStillValid.current, 'autoSetup cleanup');
+      resultStillValid.current = false
+      console.log(resultStillValid.current, 'autoSetup cleanup');
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
     };
   }, [user, options, currentPrice]); // Re-run autoSetup whenever user or options change
 
-  return { result, options, setOptions, calculating, recentInput };
+  return { result, options, setOptions, calculating, recentInput, availableQuote };
 }
 
 export default useAutoSetup;
