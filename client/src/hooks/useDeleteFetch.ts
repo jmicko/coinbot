@@ -15,9 +15,9 @@ const useDeleteFetch = <T>({ url, options, setData, refreshCallback, from }: Use
   const deleteData = useCallback(async (moreUrl?: string) => {
     setIsLoading(true);
     try {
-      console.log('calling deleteData from:', from, 'to url:', url + moreUrl);
+      console.log('calling deleteData from:', from, 'to url:', url + (moreUrl || ''));
 
-      const response = await fetch(url + moreUrl || '', {
+      const response = await fetch(url + (moreUrl || ''), {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         ...options
