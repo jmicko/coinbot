@@ -699,7 +699,7 @@ async function reorder(orderToReorder) {
       // make new tradeDetails so client id is not passed from old order
       const tradeDetails = {
         side: upToDateDbOrder.side,
-        limit_price: upToDateDbOrder.limit_price, // quote currency
+        limit_price: Number(upToDateDbOrder.limit_price).toFixed(decimals.quote_increment_decimals), // quote currency
         base_size: Number(upToDateDbOrder.base_size).toFixed(decimals.base_increment_decimals), // base currency
         product_id: upToDateDbOrder.product_id,
       };
