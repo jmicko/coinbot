@@ -9,7 +9,7 @@
   z-index                  : 1;
   height                   : fit-content;
   /* width                 : 100%; */
-  width                    : calc(100% - 2rem);
+  width                    : calc(100vw - 2.8rem);
   max-width                : 50rem;
   /* width                 : 50rem; */
   margin                   : 0 auto;

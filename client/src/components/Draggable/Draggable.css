@@ -2,6 +2,10 @@
   cursor: default;
 }
 
+/* .draggable {
+  overflow: clip;
+} */
+
 .drag-button {
   display         : flex;
   justify-content : space-between;
@@ -52,15 +56,6 @@
 .drag-arrows-left {
   float         : left;
   margin-left: .5rem;
-}
-
-.drag-div {
-
-  display        : flex;
-  flex-direction : row;
-  justify-content: space-evenly;
-  /* overflow should not scroll */
-
 }
 
 .hide {

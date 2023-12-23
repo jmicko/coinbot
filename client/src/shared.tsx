@@ -511,7 +511,7 @@ function devLog(...args: unknown[]) {
 }
 
 
-const no = (e: EventType) => { e.preventDefault(); }
+const no = (e: EventType | TouchEvent) => { e.preventDefault(); }
 const tNum = (e: EventType) => { no(e); return Number((e.target as HTMLInputElement).value) }
 
 const toFloor = (value: number, rounding: number) => {

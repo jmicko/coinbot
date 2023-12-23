@@ -65,7 +65,7 @@ function Home() {
                 // : <NotApproved />
                 : <></>
               : mobilePage === 'messages' && <Messages />
-              // : mobilePage === 'messages' && <></>
+          // : mobilePage === 'messages' && <></>
 
           // show all pages
           : <>
@@ -84,7 +84,7 @@ function Home() {
               : <></>
             }
             {/* {devLog('rendering messages in home')} */}
-            {/* <Messages /> */}
+            <Messages />
           </>
         // 
 

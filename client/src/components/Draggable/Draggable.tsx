@@ -9,21 +9,49 @@ const Draggable = ({ children, className }: { children: React.ReactNode, classNa
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
-    no(e); if (e.stopPropagation) e.stopPropagation();
+  const startDrag = useCallback((clientX: number, clientY: number) => {
     setDragging(true);
-    setOffset({ x: e.clientX - pos.x, y: e.clientY - pos.y });
+    setOffset({ x: clientX - pos.x, y: clientY - pos.y });
   }, [pos]);
 
-  const onMouseMove = useCallback((e: MouseEvent) => {
+  const onDrag = useCallback((clientX: number, clientY: number) => {
     if (dragging) {
-      setPos({ x: e.clientX - offset.x, y: e.clientY - offset.y });
+      setPos({ x: clientX - offset.x, y: clientY - offset.y });
     }
   }, [dragging, offset]);
 
-  const onMouseUp = useCallback(() => {
+  const endDrag = useCallback(() => {
     setDragging(false);
   }, []);
+
+
+
+
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    no(e); if (e.stopPropagation) e.stopPropagation();
+    startDrag(e.clientX, e.clientY);
+  }, [startDrag]);
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    no(e); if (e.stopPropagation) e.stopPropagation();
+    const touch = e.touches[0];
+    startDrag(touch.clientX, touch.clientY);
+  }, [startDrag]);
+
+  const onMouseMove = useCallback((e: MouseEvent) => {
+    onDrag(e.clientX, e.clientY);
+  }, [onDrag]);
+
+
+
+
+
+  const onTouchMove = useCallback((e: TouchEvent) => {
+    no(e); if (e.stopPropagation) e.stopPropagation();
+    const touch = e.touches[0];
+    onDrag(touch.clientX, touch.clientY);
+  }, [onDrag]);
+
 
   const onMouseEnter = useCallback((e: React.MouseEvent) => {
     if (!e.buttons) {
@@ -31,27 +59,36 @@ const Draggable = ({ children, className }: { children: React.ReactNode, classNa
     }
   }, []);
 
+  const onMouseUp = endDrag;
+  const onTouchEnd = endDrag;
+
   useEffect(() => {
     if (dragging) {
       document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('touchmove', onTouchMove);
     } else {
       document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('touchmove', onTouchMove);
     }
+
     return () => {
       document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('touchmove', onTouchMove);
     };
-  }, [dragging, onMouseMove, onMouseUp]);
+  }, [dragging, onMouseMove, onTouchMove]);
 
   return (
     <div
-      className={className}
+      className={`${className} draggable`}
       style={{ left: `${pos.x}px`, top: `${pos.y}px` }}
     >
       <div
         className={`drag drag-button-touch ${theme}`}
         onMouseDown={onMouseDown}
+        onTouchStart={onTouchStart}
         onMouseEnter={onMouseEnter}
         onMouseUp={onMouseUp}
+        onTouchEnd={onTouchEnd}
       >
         <span className="drag-arrows-left">
           &#10018;

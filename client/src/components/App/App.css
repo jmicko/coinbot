@@ -15,11 +15,12 @@
 html {
   --scrollbarBG: #50575a;
   --thumbBG    : #41bcc060;
+  overflow     : hidden;
 }
 
 body {
   background-color: #c7c7b1;
-  overflow        : hidden;
+  overflow        : clip;
   background-color: #313131;
 }
 
@@ -67,7 +68,7 @@ body {
 
 /* === BOXES === */
 
-body,
+/* body, */
 .scrollable {
   overflow-y     : auto;
   max-height     : 100%;
@@ -93,7 +94,7 @@ body::-webkit-scrollbar-thumb,
 
 @media (max-width: 800px) {
 
-  body,
+  /* body, */
   .scrollable {
     overflow-y     : auto;
     /* max-height  : unset; */
