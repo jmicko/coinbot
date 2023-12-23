@@ -38,11 +38,11 @@ function Settings() {
       <p className="info tips">
         {!collapseParent && <strong>Show Tips</strong>}
         {/* <br /> */}
-        <input
+        {!collapseParent && <input
           type="checkbox"
           checked={tips}
           onChange={() => setTips(!tips)}
-        />
+        />}
       </p>
     )
   }

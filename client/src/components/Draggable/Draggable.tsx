@@ -141,7 +141,7 @@ function Draggable({ children, className }: DraggableProps) {
   };
 
   return (
-    <div style={style} className={className} >
+    <div style={style} className={`${className} ${collapseParent ? 'transparent' : ''}`} >
       {/* pass the Dragger to the children */}
       {children({ Dragger, collapseParent })}
     </div>

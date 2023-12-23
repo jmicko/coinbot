@@ -66,3 +66,7 @@
 .hide {
   display: none;
 }
+
+.transparent {
+  opacity: 83%;
+}
