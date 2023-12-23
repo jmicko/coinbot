@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Admin from './Admin/Admin';
 import AutoSetup from './AutoSetup/AutoSetup';
 import General from './General/General';
@@ -9,7 +9,8 @@ import Feedback from './Feedback/Feedback';
 import History from './History/History';
 import SettingsNav from './SettingsNav/SettingsNav';
 import BulkDelete from './BulkDelete/BulkDelete';
-import Draggable, { DraggerProps } from '../Draggable/Draggable';
+// import Draggable, { DraggerProps } from '../Draggable/Draggable';
+import Draggable from '../Draggable/Draggable';
 
 import './Settings.css'
 import { useUser } from '../../contexts/useUser';
@@ -48,18 +49,11 @@ function Settings() {
   }
 
   // receive props from Draggable component
-  function SettingsPanel({ Dragger, collapseParent }: { Dragger: React.ComponentType<DraggerProps>, collapseParent: boolean }) {
+  function SettingsPanel() {
     return (
       <>
-        <Dragger
-          // text={'Settings'}
-
-          // header={() => <h2 className={`settings-header ${collapseParent && 'hide'}`}>Settings</h2>}
-          beforeDrag={() => <BeforeDrag />}
-          afterDrag={(props: { collapseParent: boolean }) => <AfterDrag {...props} />}
-        />
-        {!collapseParent && <SettingsNav setSettingsPage={setSettingsPage} settingsPage={settingsPage} />}
-        <div className={`${collapseParent && 'hide'}`}>
+        <div>
+          <SettingsNav setSettingsPage={setSettingsPage} settingsPage={settingsPage} />
           {
             {
               'general': <General tips={tips} />,
@@ -71,7 +65,7 @@ function Settings() {
               'reset': <Reset tips={tips} />,
               'feedback': <Feedback />,
               'admin': <Admin tips={tips} />
-            }[settingsPage]
+            }[settingsPage] // man this bit is clever. it's an object with a key that unlocks the desired component
           }
         </div>
       </>
@@ -81,10 +75,10 @@ function Settings() {
 
   if (showSettings) {
     return (
-      <Draggable
-        children={SettingsPanel}
-        className={`Settings ${theme}`}
-      />
+      <Draggable className={`Settings ${theme}`}>
+        <SettingsPanel />
+
+      </Draggable>
       // {/* <SettingsPanel clickSettings={props.clickSettings} product={props.product} priceTicker={props.priceTicker} /> */ }
     );
   }
