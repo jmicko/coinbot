@@ -9,7 +9,7 @@ import { WaveLoader } from '../../Loading.js';
 
 function Reset(props: { tips: boolean }) {
   const { productID, refreshProfit } = useData();
-  const { user, theme, refreshUser, deleteYourself, clearUser } = useUser();
+  const { user, theme, refreshUser, deleteYourself } = useUser();
   const {
     putData: resetProfit,
     isLoading: resetLoading,
@@ -25,8 +25,6 @@ function Reset(props: { tips: boolean }) {
 
   async function deleteUser() {
     await deleteYourself();
-    clearUser();
-    refreshUser();
   }
 
   function cancelDeleteUser() {

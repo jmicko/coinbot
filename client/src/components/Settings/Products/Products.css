@@ -1,15 +1,53 @@
+.Products {
+  overflow-x: auto;
+  /* width  : 100%; */
+}
+
 .product-table {
-  width: 100%;
+  width          : 100%;
+  min-width      : max-content;
   border-collapse: collapse;
+  /* overflow-x  : scroll; */
 }
 
 /* number columns should align right */
-.product-table td.number {
-  text-align: right;
-  padding-right: 1rem;
+.product-table td.number,
+.product-table th.number {
+  text-align   : right;
+  padding      : 0 0.4rem;
+  /* width     : max-content; */
+  /* word-wrap : normal; */
+  /* word-break: keep-all; */
+  /* color     : red; */
+}
+
+.product-table th {
+  /* width: max-content; */
+  /* word-wrap: normal; */
+  /* word-break: keep-all; */
+  padding : 0 .2rem;
+  width   : max-content;
+  /* color: red; */
+}
+
+.table-product-id {
+  width        : max-content;
+  /* word-wrap : normal; */
+  /* word-break: keep-all; */
+  /* color     : red; */
+}
+
+td.number {
+  width: max-content;
 }
 
 /* all other columns should center */
 .product-table td:not(.number) {
   text-align: center;
+  /* color  : blueviolet; */
+}
+
+.product-table tbody tr {
+  /* word-wrap: unset; */
+  /* width: max-content; */
 }

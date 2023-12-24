@@ -11,7 +11,7 @@ import { DataContext } from './useData';
 
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  // console.log('DataProvider rendering ***************');
+  console.log('DataProvider rendering ***************');
   // state for this context
   const [showSettings, setShowSettings] = useState(false);
   const [productID, setProductID] = useState('DOGE-USD');
@@ -35,13 +35,33 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // ACCOUNT ROUTES
   const {
-    data: products,
+    data: productsNoVolume,
     refresh: refreshProducts,
   } = useGetFetch<Products>('/api/account/products', {
     defaultState: { allProducts: [], activeProducts: [] },
     preload: true,
     from: 'products in data context'
   })
+
+  const [products, setProducts] = useState<Products>({ allProducts: [], activeProducts: [] });
+
+  useEffect(() => {
+    const newAllProducts = productsNoVolume.allProducts.slice(0).map(product => ({
+      ...product,
+      volume_in_quote: (Number(product.volume_24h) * Number(product.price)).toFixed(5),
+    }));
+
+    const newActiveProducts = productsNoVolume.activeProducts.slice(0).map(product => ({
+      ...product,
+      volume_in_quote: (Number(product.volume_24h) * Number(product.price)).toFixed(5),
+    }));
+    // setTimeout(() => {
+
+      setProducts({ allProducts: newAllProducts, activeProducts: newActiveProducts });
+    // }, 5000);
+
+  }, [productsNoVolume]);
+
 
   // get the profits for the selected product
   const { data: profit,
@@ -74,8 +94,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const availableBase = user?.availableFunds?.[productID]?.base_available || 0;
   const availableQuote = user?.availableFunds?.[productID]?.quote_available || 0;
 
-  const baseID = user.availableFunds?.[productID]?.base_currency;
-  const quoteID = user.availableFunds?.[productID]?.quote_currency;
+  const baseID = user.availableFunds?.[productID]?.base_currency || '';
+  const quoteID = user.availableFunds?.[productID]?.quote_currency || '';
 
   const {
     data: botErrors,
@@ -131,17 +151,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const { postData: createMarketTrade } = usePostFetch({
     url: `/api/trade/market`,
     from: 'createMarketTrade in data context',
-    refreshCallback: () => {refreshOrders(); refreshUser()},
+    refreshCallback: () => { refreshOrders(); refreshUser() },
   })
   // const { data: exportableFiles, refresh: refreshExportableFiles } = useFetchData(`/api/account/exportableFiles`, { defaultState: [] })
   // TRADE FUNCTIONS
   const currentProductNoDecimals: Product
     = products.allProducts.find((product) => product.product_id === productID) || {} as Product;
-    // console.log(currentProductNoDecimals, 'currentProductNoDecimals');
-    
+  // console.log(currentProductNoDecimals, 'currentProductNoDecimals');
+
 
   const currentProduct: ProductWithDecimals
-    =  addProductDecimals(currentProductNoDecimals);
+    = addProductDecimals(currentProductNoDecimals);
 
   const pqd = currentProduct?.quote_increment_decimals || 2;
   const pbd = currentProduct?.base_increment_decimals || 2;
@@ -179,7 +199,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
           // // ORDERS
           orders, refreshOrders,
-          createMarketTrade, createOrderPair, 
+          createMarketTrade, createOrderPair,
           syncPair,
           syncOrders, // does this still realistically get used?
 
