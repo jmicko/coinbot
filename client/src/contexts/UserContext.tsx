@@ -1,20 +1,13 @@
 // UserContext.tsx
-import { ReactNode } from 'react'
+import { ReactNode, useCallback, useEffect, useState } from 'react'
 import useGetFetch from '../hooks/useGetFetch.js';
 import useDeleteFetch from '../hooks/useDeleteFetch.js';
 import { UserContext } from './useUser.js';
 import { Credentials, User } from '../types/index.js';
 
-// type User = {
-//   theme: string;
-//   taker_fee: number;
-//   maker_fee: number;
-//   // other properties...
-// };
-
-
 export function UserProvider({ children }: { children: ReactNode }) {
-  console.log('UserProvider rendering ***************');
+  console.log('UserProvider rendering @@@@@@@@@@@@@@@@');
+  const [loggedIn, setLoggedIn] = useState(false);
 
   const {
     data: user,
@@ -26,11 +19,35 @@ export function UserProvider({ children }: { children: ReactNode }) {
   } = useGetFetch<User>(
     '/api/user',
     {
-      defaultState: {} as User,
+      defaultState: { id: 0 } as User,
       preload: true,
       from: 'user in UserContext',
     }
   );
+
+  useEffect(() => {
+    if (user.id) {
+      setLoggedIn(true);
+    } else {
+      // setLoggedIn(false);
+    }
+  }, [user]);
+
+
+  // infer theme from user object
+  const theme = user ? user.theme : 'darkTheme';
+  const btnColor = theme === 'darkTheme' ? 'btn-black' : 'btn-blue';
+
+  const logout = useCallback(async () => {
+    await fetch('/api/user/logout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    })
+    clearUser();
+    setLoggedIn(false);
+  }, [clearUser]);
+
 
   const {
     isLoading: deleteLoading,
@@ -38,39 +55,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
     deleteData: deleteYourself
   } = useDeleteFetch({
     url: `/api/user/${user.id}`,
-    from: 'deleteYourself in UserContext'
+    from: 'deleteYourself in UserContext',
+    refreshCallback: logout,
   });
 
-  // infer theme from user object
-  const theme = user ? user.theme : 'darkTheme';
-  const btnColor = theme === 'darkTheme' ? 'btn-black' : 'btn-blue';
 
-  // useEffect(() => {
-  //   console.log(user, 'user in UserProvider, refreshing');
-  //   // clear the user if there is a 403 error
-  //   if (userError instanceof FetchError
-  //     && userError.status === 403) {
-  //     clearUser();
-  //   }
-
-  //   // refreshUser()
-  // }, [userError])
-
-  async function logout() {
-    await fetch('/api/user/logout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-    })
-    clearUser()
-  }
-
-  async function login(payload: Credentials) {
-    console.log(
-      userLoading,
-      'userLoading before login',
-      userError, 'userError before ...'
-    );
+  const login = useCallback(async (payload: Credentials) => {
     const response = await fetch('/api/user/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -83,12 +73,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
     } else {
       console.log('Login failed');
     }
-    console.log(user, response, 'logged in user, refreshing user');
-    console.log(userLoading, 'userLoading', userError, 'userError');
-  }
+  }, [setUser]);
 
-  async function registerNew(payload: Credentials) {
-    console.log(payload, 'payload in register')
+  const registerNew = useCallback(async (payload: Credentials) => {
     await fetch(
       '/api/user/register',
       {
@@ -97,18 +84,18 @@ export function UserProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify(payload)
       })
     login(payload);
-  }
+  }, [login]);
 
 
   return (
     <UserContext.Provider
       value={
         {
-          user,
+          user, loggedIn,
           // takerFee: user?.taker_fee, 
-          maker_fee: user?.maker_fee || 1,
+          // maker_fee: user.maker_fee,
           userLoading, userError, deleteLoading, deleteError,
-          refreshUser, logout, login, registerNew, deleteYourself, clearUser,
+          refreshUser, logout, login, registerNew, deleteYourself,
           theme, btnColor
         }
       }>

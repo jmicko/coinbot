@@ -15,8 +15,9 @@ interface UserContextProps {
   deleteYourself: () => void;
   theme: string;
   btnColor: string;
-  maker_fee: number;
-  clearUser: () => void;
+  // maker_fee: number;
+  // clearUser: () => void;
+  loggedIn: boolean;
   // setUser: React.Dispatch<React.SetStateAction<User>>;
 }
 

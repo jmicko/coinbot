@@ -23,36 +23,56 @@ function Settings() {
   const { theme } = useUser();
   const { showSettings, setShowSettings } = useData();
 
-  function BeforeDrag() {
-    return (
-      <button
-        className={`btn-logout btn-red close-settings ${theme}`}
-        onClick={() => { setShowSettings(!showSettings) }}
-      >
-        X
-      </button>
-    )
-  }
+  // function BeforeDrag() {
+  //   return (
+  //     <button
+  //       className={`btn-logout btn-red close-settings ${theme}`}
+  //       onClick={() => { setShowSettings(!showSettings) }}
+  //     >
+  //       X
+  //     </button>
+  //   )
+  // }
 
-  function AfterDrag({ collapseParent }: { collapseParent: boolean }) {
-    return (
-      <p className="info tips">
-        {!collapseParent && <strong>Show Tips</strong>}
-        {/* <br /> */}
-        {!collapseParent && <input
-          type="checkbox"
-          checked={tips}
-          onChange={() => setTips(!tips)}
-        />}
-      </p>
-    )
-  }
+  // function AfterDrag({ collapseParent }: { collapseParent: boolean }) {
+  //   return (
+  //     <p className="info tips">
+  //       {!collapseParent && <strong>Show Tips</strong>}
+  //       {/* <br /> */}
+  //       {!collapseParent && <input
+  //         type="checkbox"
+  //         checked={tips}
+  //         onChange={() => setTips(!tips)}
+  //       />}
+  //     </p>
+  //   )
+  // }
 
   // receive props from Draggable component
-  function SettingsPanel() {
+  // function SettingsPanel() {
+  //   return (
+  //     <>
+
+  //     </>
+  //   );
+  // }
+
+
+  if (showSettings) {
     return (
-      <>
+      <Draggable className={`Settings ${theme}`}>
+        {/* <SettingsPanel /> */}
         <div>
+          {/* <p className="info tips">
+            {!collapseParent && <strong>Show Tips</strong>}
+            
+            {!collapseParent && <input
+              type="checkbox"
+              checked={tips}
+              onChange={() => setTips(!tips)}
+            />}
+          </p> */}
+
           <SettingsNav setSettingsPage={setSettingsPage} settingsPage={settingsPage} />
           {
             {
@@ -68,16 +88,6 @@ function Settings() {
             }[settingsPage] // man this bit is clever. it's an object with a key that unlocks the desired component
           }
         </div>
-      </>
-    );
-  }
-
-
-  if (showSettings) {
-    return (
-      <Draggable className={`Settings ${theme}`}>
-        <SettingsPanel />
-
       </Draggable>
       // {/* <SettingsPanel clickSettings={props.clickSettings} product={props.product} priceTicker={props.priceTicker} /> */ }
     );

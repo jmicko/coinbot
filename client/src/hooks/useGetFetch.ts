@@ -8,8 +8,6 @@ type FetchDataOptions<T> = {
   from: string;
 };
 
-
-
 const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
   const [data, setData] = useState<T>(options.defaultState);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -30,6 +28,9 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
         throw new FetchError(`Error: ${response.status}`, response.status);
       }
       const data: T = await response.json();
+      // if (options.from === 'messages in data context') {
+      console.log(data, 'data from messages in data context:');
+      // }
       setData(data);
       setError(null);
     } catch (error) {
@@ -46,11 +47,11 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
     }
   }, [url, options]);
 
-  const clear = () => {
+  const clear = useCallback(() => {
     setData(options.defaultState)
     setIsLoading(false)
     setError(null)
-  }
+  }, [options.defaultState]);
 
   useEffect(() => {
     // options.preload && !hasFetched.current && fetchData();

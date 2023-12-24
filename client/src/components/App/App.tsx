@@ -6,29 +6,37 @@ import Login from '../Login/Login';
 import { DataProvider } from '../../contexts/DataContext';
 import { WebSocketProvider } from '../../contexts/WebSocketContext';
 import { useUser } from '../../contexts/useUser';
+import { useCallback } from 'react';
+
+
+
+function CheckUser() {
+  // const CheckUser = useCallback(() => {
+  const { loggedIn, userLoading, userError } = useUser();
+  // console.log(user, 'user in App');
+
+  if (!loggedIn && userLoading && !userError) {
+    return <center>Loading...</center>;
+  }
+  if (loggedIn) {
+    return (
+      < DataProvider >
+        < WebSocketProvider >
+          <Home />
+        </WebSocketProvider>
+      </DataProvider>
+    )
+  } else {
+    return (
+      <Login />
+    )
+  }
+}
+// }, []);
 
 function App() {
+  console.log('App rendering______________________');
 
-  function CheckUser() {
-    const { user, userLoading, userError } = useUser();
-    console.log(user, 'user in App');
-
-    if (!user.id && userLoading && !userError) {
-      return <center>Loading...</center>;
-    } else if (user.id) {
-      return (
-        < DataProvider >
-          < WebSocketProvider >
-            <Home />
-          </WebSocketProvider>
-        </DataProvider>
-      )
-    } else {
-      return (
-        <Login />
-      )
-    }
-  }
 
   return (
     <div className={`App darkTheme`}>
