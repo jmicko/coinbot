@@ -12,6 +12,7 @@ import Settings from '../Settings/Settings';
 import MobileNav from '../MobileNav/MobileNav';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
 import { useUser } from '../../contexts/useUser.js';
+import { useData } from '../../contexts/useData.js';
 // import { useData } from '../../contexts/DataContext';
 // import { devLog } from '../../shared.js';
 
@@ -19,30 +20,19 @@ function Home() {
 
   const { width, height } = useWindowDimensions();
   const { user } = useUser(); MobileNav
+  const { showSettings } = useData();
 
   // const { showSettings } = useData();
   const [mobilePage, setMobilePage] = useState('tradeList');
   // const [tradeType, setTradeType] = useState('pair');
-
-  // for checkbox to auto scroll
-  // const [isAutoScroll, setIsAutoScroll] = useState(true);
-
-  // const handleAutoScrollChange = () => {
-  //   setIsAutoScroll(!isAutoScroll);
-  // };
 
   return (
     <div
       className={`Home ${user?.theme}`}
       style={{
         height: height,
-        // width: width
       }}>
-      {/* {JSON.stringify(user)} */}
-      {/* {JSON.stringify(socket.product)}{JSON.stringify(product)} */}
       <Menu />
-
-      {/* {width}w {height}h */}
       {
         // on mobile?
         width <= 800
@@ -58,40 +48,31 @@ function Home() {
             : mobilePage === 'tradeList'
               // is the user approved
               ? user?.approved
-                ? <TradeList
-                // isAutoScroll={isAutoScroll} 
-                />
+                ? <TradeList />
                 // ? <></>
                 // : <NotApproved />
                 : <></>
               : mobilePage === 'messages' && <Messages />
-          // : mobilePage === 'messages' && <></>
 
-          // show all pages
+          // show all pages on desktop
           : <>
             {user?.active
               ? <Trade />
-              // ? <></>
               // : <NotActive />
               : <></>
             }
             {user?.approved
-              ? <TradeList
-              // isAutoScroll={isAutoScroll}
-              />
-              // ? <></>
+              ? <TradeList />
               // : <NotApproved />
               : <></>
             }
             {/* {devLog('rendering messages in home')} */}
             <Messages />
           </>
-        // 
-
       }
 
       <Status />
-      <Settings />
+      {showSettings && <Settings />}
       {width < 800 && <MobileNav
         setMobilePage={setMobilePage}
         mobilePage={mobilePage}

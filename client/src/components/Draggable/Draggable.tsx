@@ -4,7 +4,7 @@ import { useUser } from '../../contexts/useUser';
 import { no } from '../../shared';
 import { useData } from '../../contexts/useData';
 
-const Draggable = ({ children, className }: { children: React.ReactNode, className: string }) => {
+const Draggable = ({ children, className, windowBarElements }: { children: React.ReactNode, className: string, windowBarElements?: React.ReactNode[] }) => {
   const { theme } = useUser();
   const { showSettings, setShowSettings } = useData();
   const [collapseParent, setCollapseParent] = useState(false);
@@ -146,8 +146,15 @@ const Draggable = ({ children, className }: { children: React.ReactNode, classNa
           <span>&#10018;</span>
           <span>move</span>
           <span>&#10018;</span>
-        </div>
-      </div>
+        </div> {/* move-dragger */}
+
+        {windowBarElements && windowBarElements.length > 0
+          && windowBarElements.map((element: React.ReactNode, index: number) => (
+            <React.Fragment key={index}>
+              {element}
+            </React.Fragment>
+          ))}
+      </div> {/* window-bar */}
 
       <br />
       {!collapseParent && children}
