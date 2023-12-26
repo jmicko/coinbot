@@ -57,7 +57,7 @@ const Draggable = ({ children, className, windowBarElements }: { children: React
     const draggerRect = draggerElementRef.current?.getBoundingClientRect();
     const draggerOffset = draggerRect ? { x: draggerRect.left - pos.x, y: draggerRect.top - pos.y } : { x: 0, y: 0 };
     setDraggerOffset(draggerOffset);
-    
+
     if (draggerRect) {
       // Left edge
       if (pos.x < 0 - draggerOffset.x + 3) setPos({ x: 0 - draggerOffset.x + 3, y: pos.y });
@@ -68,7 +68,7 @@ const Draggable = ({ children, className, windowBarElements }: { children: React
       // Bottom edge
       if (pos.y + draggerRect.height > window.innerHeight - draggerOffset.y - 10) setPos({ x: pos.x, y: window.innerHeight - draggerRect.height - draggerOffset.y - 10 });
     }
-  }, [pos, draggerOffset]);
+  }, [pos]);
 
   useEffect(() => {
     window.addEventListener('resize', windowResize);

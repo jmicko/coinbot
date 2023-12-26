@@ -30,8 +30,8 @@ function Messages() {
     }
   ]
 
-  console.log(botErrors, 'botErrors');
-  console.log(botMessages, 'botMessages');
+  // console.log(botErrors, 'botErrors');
+  // console.log(botMessages, 'botMessages');
   
   
 

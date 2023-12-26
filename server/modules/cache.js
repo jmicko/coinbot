@@ -111,7 +111,7 @@ class User {
     return this.willCancel.has(order_id)
   }
   orderUpdate() {
-    messenger[this.userID].newMessage({ orderUpdate: true })
+    messenger[this.userID].newMessage({ type: orderUpdate, orderUpdate: true })
   }
   // increase the loop number by 1
   increaseLoopNumber() {
@@ -214,7 +214,7 @@ class Messenger {
         // count: 5
         count: ((userStorage[this.userID].loopNumber - 1) % botSettings.full_sync)
       }
-      const jsonMsg = JSON. stringify(msg);
+      const jsonMsg = JSON.stringify(msg);
       socket.send(jsonMsg);
     })
   }
@@ -246,7 +246,7 @@ class Messenger {
     }
     // tell user to update messages
     this.sockets.forEach(socket => {
-      const jsonMsg = JSON. stringify(message);
+      const jsonMsg = JSON.stringify(message);
       socket.send(jsonMsg);
     })
   }
@@ -269,12 +269,12 @@ class Messenger {
   // pretty much just used for tickers
   instantMessage(message) {
     this.sockets.forEach(socket => {
-      const jsonMsg = JSON. stringify(message);
+      const jsonMsg = JSON.stringify(message);
       socket.send(jsonMsg);
     })
   }
   orderUpdate() {
-    this.instantMessage({ orderUpdate: true })
+    this.instantMessage({ type: 'orderUpdate', orderUpdate: true })
   }
   userUpdate() {
     this.instantMessage({ userUpdate: true })
@@ -296,7 +296,7 @@ class Messenger {
     }
     this.sockets.forEach(socket => {
       // socket.send('message', error);
-      const jsonErr = JSON. stringify(error);
+      const jsonErr = JSON.stringify(error);
       socket.send(jsonErr);
     })
   }
