@@ -53,6 +53,33 @@ const Draggable = ({ children, className, windowBarElements }: { children: React
     }
   }, [dragging, offset, draggerOffset]);
 
+  const windowResize = useCallback(() => {
+    const draggerRect = draggerElementRef.current?.getBoundingClientRect();
+    const draggerOffset = draggerRect ? { x: draggerRect.left - pos.x, y: draggerRect.top - pos.y } : { x: 0, y: 0 };
+    setDraggerOffset(draggerOffset);
+    
+    if (draggerRect) {
+      // Left edge
+      if (pos.x < 0 - draggerOffset.x + 3) setPos({ x: 0 - draggerOffset.x + 3, y: pos.y });
+      // Right edge
+      if (pos.x + draggerRect.width > window.innerWidth - draggerOffset.x - 3) setPos({ x: window.innerWidth - draggerRect.width - draggerOffset.x - 3, y: pos.y });
+      // Top edge
+      if (pos.y < 0 - draggerOffset.y + 10) setPos({ x: pos.x, y: 0 - draggerOffset.y + 10 });
+      // Bottom edge
+      if (pos.y + draggerRect.height > window.innerHeight - draggerOffset.y - 10) setPos({ x: pos.x, y: window.innerHeight - draggerRect.height - draggerOffset.y - 10 });
+    }
+  }, [pos, draggerOffset]);
+
+  useEffect(() => {
+    window.addEventListener('resize', windowResize);
+    // also need to listen for orientation change
+    window.addEventListener('orientationchange', windowResize);
+    return () => {
+      window.removeEventListener('resize', windowResize);
+      window.removeEventListener('orientationchange', windowResize);
+    };
+  }, [windowResize]);
+
   const endDrag = useCallback(() => {
     setDragging(false);
   }, []);
