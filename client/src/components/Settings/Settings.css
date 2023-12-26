@@ -20,6 +20,14 @@
   background-color: rgb(40, 40, 40);
 }
 
+.settings-header {
+  text-align: center;
+}
+
+.settings-panel {
+  max-height: 65vh;
+}
+
 @media (max-width: 800px) {
   .Settings {
     /* display     : block; */
@@ -33,14 +41,6 @@
   .settings-panel {
     max-height: 60vh;
   }
-}
-
-.settings-header {
-  text-align: center;
-}
-
-.settings-panel {
-  max-height: 65vh;
 }
 
 .tips {
