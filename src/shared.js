@@ -162,7 +162,7 @@ function autoSetup(user, options) {
 
     // get buy price rounded to cents the precision of the quote currency
     buyPrice = Number(buyPrice.toFixed(product.quote_increment_decimals));
-    // get the sell price by mulltiplying the buy price by the trade pair ratio
+    // get the sell price by multiplying the buy price by the trade pair ratio
 
 
 
@@ -405,42 +405,70 @@ function autoSetup(user, options) {
   }
 }
 
+// function addProductDecimals(product) {
+
+//   // devLog(product, '=====================product=====================');
+//   const baseIncrementDecimals = findDecimals(product?.base_increment);
+//   const base_increment_decimals = findDecimals(product?.base_increment);
+//   // devLog(baseIncrement, 'baseIncrement');
+//   // const quoteIncrement = findDecimals(product?.quote_increment);
+//   const quoteIncrementDecimals = findDecimals(product?.quote_increment);
+//   const quote_increment_decimals = findDecimals(product?.quote_increment);
+//   // change that to this_style_of_variable which is called snake_case
+//   // inverse of the quote increment. This is used to round the size in quote to the nearest quote increment
+//   const quoteInverseIncrement = Math.pow(10, quoteIncrementDecimals);
+//   const quote_inverse_increment = Math.pow(10, quote_increment_decimals);
+//   // inverse of the base increment. This is used to round the size in base to the nearest base increment
+//   const baseInverseIncrement = Math.pow(10, baseIncrementDecimals);
+//   const base_inverse_increment = Math.pow(10, base_increment_decimals);
+//   // devLog(baseInverseIncrement, 'baseInverseIncrement', base_inverse_increment === baseInverseIncrement, 'base_inverse_increment');
+//   // create a rounding decimal place for the price. This is just nice to have and is not required
+//   const price_rounding = Math.pow(10, quoteIncrementDecimals - 2);
+
+
+
+
+
+//   return {
+//     ...product,
+//     baseIncrementDecimals,
+//     quoteIncrementDecimals,
+//     price_rounding,
+//     baseInverseIncrement,
+//     quoteInverseIncrement,
+//     base_increment_decimals,
+//     quote_increment_decimals,
+//     base_inverse_increment,
+//     quote_inverse_increment,
+//   };
+
+//   function findDecimals(number) {
+//     return number?.split('.')[1]?.split('').findIndex((char) => char !== '0') + 1;
+//   }
+// }
+
 function addProductDecimals(product) {
 
-  // devLog(product, '=====================product=====================');
-  const baseIncrementDecimals = findDecimals(product?.base_increment);
-  const base_increment_decimals = findDecimals(product?.base_increment);
-  // devLog(baseIncrement, 'baseIncrement');
-  // const quoteIncrement = findDecimals(product?.quote_increment);
-  const quoteIncrementDecimals = findDecimals(product?.quote_increment);
-  const quote_increment_decimals = findDecimals(product?.quote_increment);
-  // change that to this_style_of_variable which is called snake_case
-  // inverse of the quote increment. This is used to round the size in quote to the nearest quote increment
-  const quoteInverseIncrement = Math.pow(10, quoteIncrementDecimals);
+  const base_increment_decimals = findDecimals(product.base_increment);
+  const quote_increment_decimals = findDecimals(product.quote_increment);
   const quote_inverse_increment = Math.pow(10, quote_increment_decimals);
-  // inverse of the base increment. This is used to round the size in base to the nearest base increment
-  const baseInverseIncrement = Math.pow(10, baseIncrementDecimals);
   const base_inverse_increment = Math.pow(10, base_increment_decimals);
-  // devLog(baseInverseIncrement, 'baseInverseIncrement', base_inverse_increment === baseInverseIncrement, 'base_inverse_increment');
-  // create a rounding decimal place for the price. This is just nice to have and is not required
-  const price_rounding = Math.pow(10, quoteIncrementDecimals - 2);
+  const price_rounding = Math.pow(10, quote_increment_decimals - 2);
 
+  const pbd = base_increment_decimals || 2; // pbd = product base decimals
+  const pqd = quote_increment_decimals || 2; // pqd = product quote decimals
 
-
-
-
-  return {
+  const productWithDecimals = {
     ...product,
-    baseIncrementDecimals,
-    quoteIncrementDecimals,
-    price_rounding,
-    baseInverseIncrement,
-    quoteInverseIncrement,
     base_increment_decimals,
     quote_increment_decimals,
     base_inverse_increment,
     quote_inverse_increment,
-  };
+    price_rounding,
+    pqd,
+    pbd,
+  }
+  return productWithDecimals;
 
   function findDecimals(number) {
     return number?.split('.')[1]?.split('').findIndex((char) => char !== '0') + 1;

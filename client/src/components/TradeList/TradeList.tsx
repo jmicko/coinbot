@@ -32,6 +32,10 @@ function TradeList() {
 
   return (
     <div className="TradeList scrollable boxed">
+      {/* {JSON.stringify(orders.sells[0]?.limit_price)} <br />
+      {JSON.stringify(orders.buys[0]?.limit_price)} <br />
+      $$$ {JSON.stringify(currentPrice)} $$$ <br />
+      {JSON.stringify(tickers)} <br /> */}
       {/* map the sell array on top and buy array on bottom */}
       {orders.sells.slice(0).reverse().map((sell: Order) => (
         <SingleTrade key={sell.order_id} order={sell} preview={false} />

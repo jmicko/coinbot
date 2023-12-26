@@ -2,7 +2,144 @@
 import { pool } from './pool.js';
 // const { v4: uuidv4 } = require('uuid');
 import { v4 as uuidv4 } from 'uuid';
-import { devLog } from '../../src/shared.js';
+import { addProductDecimals, devLog } from '../../src/shared.js';
+
+export const dbUpgrade = async () => {
+  console.log('<><> dbUpgrade <><>');
+
+  try {
+    const productsColumnsResult = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name='products';
+    `);
+
+    const columns = productsColumnsResult.rows.map(row => row.column_name);
+
+    if (!columns.includes('base_increment_decimals')) {
+      devLog('<><> adding base_increment_decimals column <><>');
+      await pool.query(`
+        ALTER TABLE products 
+        ADD COLUMN base_increment_decimals numeric(32,16);
+      `);
+    }
+
+    if (columns.includes('base_increment_decimals')) {
+      devLog('<><> altering base_increment_decimals column <><>');
+      await pool.query(`
+        ALTER TABLE products 
+        ALTER COLUMN base_increment_decimals TYPE numeric(32,16)
+        USING base_increment_decimals::numeric(32,16);
+      `);
+    }
+
+    if (!columns.includes('quote_increment_decimals')) {
+      devLog('<><> adding quote_increment_decimals column <><>');
+      await pool.query(`
+        ALTER TABLE products 
+        ADD COLUMN quote_increment_decimals numeric(32,16);
+      `);
+    }
+
+    if (columns.includes('quote_increment_decimals')) {
+      devLog('<><> altering quote_increment_decimals column <><>');
+      await pool.query(`
+        ALTER TABLE products
+        ALTER COLUMN quote_increment_decimals TYPE numeric(32,16)
+        USING quote_increment_decimals::numeric(32,16);
+      `);
+    }
+
+    if (!columns.includes('quote_inverse_increment')) {
+      devLog('<><> adding quote_inverse_increment column <><>');
+      await pool.query(`
+        ALTER TABLE products 
+        ADD COLUMN quote_inverse_increment numeric(32,16);
+      `);
+    }
+
+    if (columns.includes('quote_inverse_increment')) {
+      devLog('<><> altering quote_inverse_increment column <><>');
+      await pool.query(`
+        ALTER TABLE products
+        ALTER COLUMN quote_inverse_increment TYPE numeric(32,16)
+        USING quote_inverse_increment::numeric(32,16);
+      `);
+    }
+
+    if (!columns.includes('base_inverse_increment')) {
+      devLog('<><> adding base_inverse_increment column <><>');
+      await pool.query(`
+        ALTER TABLE products 
+        ADD COLUMN base_inverse_increment numeric(32,16);
+      `);
+    }
+
+    if (columns.includes('base_inverse_increment')) {
+      devLog('<><> altering base_inverse_increment column <><>');
+      await pool.query(`
+        ALTER TABLE products
+        ALTER COLUMN base_inverse_increment TYPE numeric(32,16)
+        USING base_inverse_increment::numeric(32,16);
+      `);
+    }
+
+    if (!columns.includes('price_rounding')) {
+      devLog('<><> adding price_rounding column <><>');
+      await pool.query(`
+        ALTER TABLE products 
+        ADD COLUMN price_rounding numeric(32,16);
+      `);
+    }
+
+    if (columns.includes('price_rounding')) {
+      devLog('<><> altering price_rounding column <><>');
+      await pool.query(`
+        ALTER TABLE products
+        ALTER COLUMN price_rounding TYPE numeric(32,16)
+        USING price_rounding::numeric(32,16);
+      `);
+    }
+
+    if (!columns.includes('pbd')) {
+      devLog('<><> adding pbd column <><>');
+      await pool.query(`
+        ALTER TABLE products 
+        ADD COLUMN pbd numeric;
+      `);
+    }
+
+    if (columns.includes('pbd')) {
+      devLog('<><> altering pbd column <><>');
+      await pool.query(`
+        ALTER TABLE products
+        ALTER COLUMN pbd TYPE numeric
+        USING pbd::numeric;
+      `);
+    }
+
+    if (!columns.includes('pqd')) {
+      devLog('<><> adding pqd column <><>');
+      await pool.query(`
+        ALTER TABLE products 
+        ADD COLUMN pqd numeric;
+      `);
+    }
+
+    if (columns.includes('pqd')) {
+      devLog('<><> altering pqd column <><>');
+      await pool.query(`
+        ALTER TABLE products
+        ALTER COLUMN pqd TYPE numeric
+        USING pqd::numeric;
+      `);
+    }
+
+    devLog('<><> dbUpgrade complete <><>');
+  } catch (error) {
+    devLog('error in dbUpgrade', error);
+  }
+}
 
 // stores the details of a trade-pair. The originalDetails are details that stay with a trade-pair when it is flipped
 // flipped_at is the "Time" shown on the interface. It has no other function
@@ -353,8 +490,10 @@ const insertProducts = (products, userID) => {
       // now loop through the products and insert them into the database
       // if they already exist, update them
       for (let i = 0; i < products.length; i++) {
-        const product = products[i];
+        // const product = products[i];
+        const product = addProductDecimals(products[i]);
         if (productsInPortfolio.includes(product.product_id)) {
+          // devLog('product already exists for user, updating');
           // update the product
           const updateSqlText = `UPDATE "products" SET
           "quote_currency_id" = $1,
@@ -382,8 +521,15 @@ const insertProducts = (products, userID) => {
           "auction_mode" = $23,
           "product_type" = $24,
           "fcm_trading_session_details" = $25,
-          "mid_market_price" = $26
-          WHERE "product_id" = $27 AND "user_id" = $28;`;
+          "mid_market_price" = $26,
+          "base_increment_decimals" = $27,
+          "quote_increment_decimals" = $28,
+          "quote_inverse_increment" = $29,
+          "base_inverse_increment" = $30,
+          "price_rounding" = $31,
+          "pbd" = $32,
+          "pqd" = $33
+          WHERE "product_id" = $34 AND "user_id" = $35;`;
           await pool.query(updateSqlText, [
             product.quote_currency_id,
             product.base_currency_id,
@@ -411,10 +557,18 @@ const insertProducts = (products, userID) => {
             product.product_type,
             product.fcm_trading_session_details,
             product.mid_market_price || null,
+            product.base_increment_decimals || null,
+            product.quote_increment_decimals || null,
+            product.quote_inverse_increment || null,
+            product.base_inverse_increment || null,
+            product.price_rounding || null,
+            product.pbd || null,
+            product.pqd || null,
             product.product_id,
             userID,
           ]);
         } else {
+          // devLog('product does not exist for user, inserting');
           // insert the product
           const insertSqlText = `INSERT INTO "products" (
           "product_id",
@@ -444,8 +598,15 @@ const insertProducts = (products, userID) => {
           "auction_mode",
           "product_type",
           "fcm_trading_session_details",
-          "mid_market_price"
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28);`;
+          "mid_market_price",
+          "base_increment_decimals",
+          "quote_increment_decimals",
+          "quote_inverse_increment",
+          "base_inverse_increment",
+          "price_rounding",
+          "pbd",
+          "pqd"
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28,$29,$30,$31,$32,$33,$34,$35);`;
           await pool.query(insertSqlText, [
             product.product_id,
             userID,
@@ -475,6 +636,13 @@ const insertProducts = (products, userID) => {
             product.product_type,
             product.fcm_trading_session_details,
             product.mid_market_price || null,
+            product.base_increment_decimals || null,
+            product.quote_increment_decimals || null,
+            product.quote_inverse_increment || null,
+            product.base_inverse_increment || null,
+            product.price_rounding || null,
+            product.pbd || null,
+            product.pqd || null,
           ]);
           // if the product_id is BTC-USD, set active_for_user to true
           if (product.product_id === 'BTC-USD') {
@@ -1381,7 +1549,7 @@ async function getWeeklyAverageProfit(userID, product) {
       WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "filled_at" > now() - '12 weeks'::interval;`;
       // WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "filled_at" > now() - '4 weeks'::interval;`;
       const result = await pool.query(sqlText, [userID]);
-      
+
       const productSqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) / 12 AS "average_profit"
       FROM limit_orders
       WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "product_id" = $2 AND "filled_at" > now() - '12 weeks'::interval;`;
@@ -1434,7 +1602,7 @@ async function getOldestCandle(product_id, granularity) {
 }
 
 // save an array of candles to the database
-async function saveCandlesold(productID, granularity, candles) {
+async function saveCandlesOld(productID, granularity, candles) {
   return new Promise(async (resolve, reject) => {
     try {
       // save each candle to the database unless it already exists
@@ -1694,5 +1862,4 @@ const databaseClient = {
   getSubscriptionsForUser: getSubscriptionsForUser,
   getAllSubscriptions: getAllSubscriptions,
 };
-
 export { databaseClient };

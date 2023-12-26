@@ -20,6 +20,9 @@ import notificationsRouter from './routes/notifications.router.js';
 // bot process
 import { robot } from './modules/robot.js';
 import { devLog } from '../src/shared.js';
+import { dbUpgrade } from './modules/databaseClient.js';
+
+await dbUpgrade();
 
 devLog('!!!!!!!! you are running in DEVELOPMENT mode !!!!!!!!');
 // create the express app

@@ -14,27 +14,21 @@
 .product-table td.number,
 .product-table th.number {
   text-align   : right;
-  padding      : 0 0.4rem;
+  padding      : 0 0.3rem;
   /* width     : max-content; */
   /* word-wrap : normal; */
   /* word-break: keep-all; */
   /* color     : red; */
 }
 
+.product-table td,
 .product-table th {
-  /* width: max-content; */
-  /* word-wrap: normal; */
-  /* word-break: keep-all; */
   padding : 0 .2rem;
   width   : max-content;
-  /* color: red; */
 }
 
 .table-product-id {
   width        : max-content;
-  /* word-wrap : normal; */
-  /* word-break: keep-all; */
-  /* color     : red; */
 }
 
 td.number {
@@ -47,7 +41,23 @@ td.number {
   /* color  : blueviolet; */
 }
 
-.product-table tbody tr {
-  /* word-wrap: unset; */
-  /* width: max-content; */
+/* every other column red background */
+.product-table th:nth-child(even),
+.product-table td:nth-child(even) {
+  background-color: #222222;
+}
+
+.products-header {
+  display        : flex;
+  /* justify-content: space-between; */
+  /* put 1rem between each item */
+  gap            : 1rem;
+  align-items    : center;
+  /* background-color: #222222; */
+  /* color           : #eaeaea; */
+  /* font-family     : inherit; */
+  /* box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099; */
+  /* width           : 100%; */
+  /* height          : 1.5rem; */
+  /* padding         : 0 .5rem; */
 }

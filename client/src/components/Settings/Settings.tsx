@@ -14,7 +14,6 @@ import Draggable from '../Draggable/Draggable';
 
 import './Settings.css'
 import { useUser } from '../../contexts/useUser';
-import { useData } from '../../contexts/useData';
 
 
 function Settings() {
@@ -27,6 +26,7 @@ function Settings() {
       <p className="info tips">
         <strong>Show Tips </strong>
         <input
+          name="tips"
           type="checkbox"
           checked={tips}
           onChange={() => setTips(!tips)}
@@ -37,22 +37,22 @@ function Settings() {
 
   return (
     <Draggable className={`Settings ${theme}`} windowBarElements={[TipsCheck]}>
-      <div>
-        <SettingsNav setSettingsPage={setSettingsPage} settingsPage={settingsPage} />
+      {/* <div> */}
+      <SettingsNav setSettingsPage={setSettingsPage} settingsPage={settingsPage} />
+      {
         {
-          {
-            'general': <General tips={tips} />,
-            'products': <Products tips={tips} />,
-            'investment': <Investment tips={tips} />,
-            'autoSetup': <AutoSetup tips={tips} />,
-            'bulkDelete': <BulkDelete tips={tips} />,
-            'history': <History />,
-            'reset': <Reset tips={tips} />,
-            'feedback': <Feedback />,
-            'admin': <Admin tips={tips} />
-          }[settingsPage] // man this bit is clever. it's an object with a key that unlocks the desired component
-        }
-      </div>
+          'general': <General tips={tips} />,
+          'products': <Products tips={tips} />,
+          'investment': <Investment tips={tips} />,
+          'autoSetup': <AutoSetup tips={tips} />,
+          'bulkDelete': <BulkDelete tips={tips} />,
+          'history': <History />,
+          'reset': <Reset tips={tips} />,
+          'feedback': <Feedback />,
+          'admin': <Admin tips={tips} />
+        }[settingsPage] // man this bit is clever. it's an object with a key that unlocks the desired component
+      }
+      {/* </div> */}
     </Draggable>
   );
 }

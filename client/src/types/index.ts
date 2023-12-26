@@ -177,6 +177,14 @@ export interface Product {
   volume_24h: string;
   volume_percentage_change_24h: string;
   watched: boolean;
+
+  base_increment_decimals: number,
+  quote_increment_decimals: number,
+  base_inverse_increment: number,
+  quote_inverse_increment: number,
+  price_rounding: number,
+  pqd: number,
+  pbd: number,
 }
 
 export interface Products {
@@ -184,22 +192,16 @@ export interface Products {
   activeProducts: Product[];
 }
 
-export interface Decimals {
-  // baseIncrement: number;
-  // baseMultiplier: number;
-  // quoteIncrement: number;
-  // quoteMultiplier: number;
+//  interface Decimals {
+//   // baseIncrement: number;
+//   // baseMultiplier: number;
+//   // quoteIncrement: number;
+//   // quoteMultiplier: number;
 
-  base_increment: string,
-  quote_increment: string,
-  base_increment_decimals: number,
-  quote_increment_decimals: number,
-  base_inverse_increment: number,
-  quote_inverse_increment: number,
-  price_rounding: number,
-}
 
-export interface ProductWithDecimals extends Product, Decimals { }
+// }
+
+//  interface ProductWithDecimals extends Product, Decimals { }
 
 export interface marketOrderState {
   base_size: number;
@@ -245,8 +247,8 @@ export class FetchError extends Error {
 }
 
 export interface AutoSetupOptions {
-  [key: string]: number | string | boolean | ProductWithDecimals;
-  product: ProductWithDecimals;
+  [key: string]: number | string | boolean | Product;
+  product: Product;
   startingValue: number;
   skipFirst: boolean;
   endingValue: number;

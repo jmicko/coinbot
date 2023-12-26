@@ -1,5 +1,5 @@
 import { MutableRefObject, createContext, useContext } from "react";
-import { Messages, OrderParams, Orders, ProductWithDecimals, Products, ProfitForDuration } from "../types";
+import { Messages, OrderParams, Orders, Product, Products, ProfitForDuration } from "../types";
 
 interface DataContextProps {
   productID: string;
@@ -16,7 +16,7 @@ interface DataContextProps {
   refreshProfit: () => void;
   availableBase: number;
   availableQuote: number;
-  currentProduct: ProductWithDecimals;
+  currentProduct: Product;
   pqd: number;
   pbd: number;
   baseID: string;

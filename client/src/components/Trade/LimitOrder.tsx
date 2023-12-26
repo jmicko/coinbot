@@ -8,6 +8,7 @@ import { numberWithCommas, tNum, no, fixedRound } from '../../shared';
 import { EventType } from '../../types';
 import { useUser } from '../../contexts/useUser';
 import { useData } from '../../contexts/useData';
+import { useWebSocket } from '../../contexts/useWebsocket';
 
 interface LimitOrderProps {
   toggleCollapse: () => void;
@@ -16,9 +17,10 @@ interface LimitOrderProps {
 
 function LimitOrder(props: LimitOrderProps) {
   // contexts
-  const { maker_fee, theme, btnColor } = useUser();
-  // const { currentPrice } = useSocket();
-  const currentPrice = 20;
+  const { user, theme, btnColor } = useUser();
+  const { maker_fee } = user;
+  const { currentPrice } = useWebSocket();
+  // const currentPrice = 20;
   const { productID, currentProduct, createOrderPair } = useData();
 
   // hooks
@@ -53,7 +55,7 @@ function LimitOrder(props: LimitOrderProps) {
     base_increment_decimals,
     quote_increment_decimals,
     price_rounding
-  } = currentProduct || {};
+  } = currentProduct;
 
   // props
   const toggleCollapse = props.toggleCollapse;
@@ -142,6 +144,7 @@ function LimitOrder(props: LimitOrderProps) {
     })
   }
 
+  if (!currentProduct) return null;
 
   return (
     <div className="Trade scrollable boxed" >
@@ -170,9 +173,9 @@ function LimitOrder(props: LimitOrderProps) {
             className={theme}
             type="number"
             name="transaction_price"
+            id='transaction_price'
             value={Number(price)}
             // todo - this could possibly be changed to 100, or add a selector menu thing to toggle between different amounts
-            // step={1}
             required
             onChange={(event) => { changeLimitOrder('price', Number(event.target.value)) }}
           />
@@ -202,8 +205,8 @@ function LimitOrder(props: LimitOrderProps) {
             className={theme}
             type="number"
             name="transaction_amount"
+            id='transaction_amount'
             value={Number(sizeType === 'quote' ? quote_size : base_size)}
-            // step={0.001}
             required
             onChange={(e) => { changeLimitOrder(sizeType === 'quote' ? 'quote_size' : 'base_size', tNum(e)) }}
           />
@@ -227,8 +230,8 @@ function LimitOrder(props: LimitOrderProps) {
             className={theme}
             type="number"
             name="trade-pair-ratio"
+            id='trade-pair-ratio'
             value={Number(trade_pair_ratio)}
-            step={0.001}
             required
             onChange={(event) => setLimitOrder({
               ...limitOrder,

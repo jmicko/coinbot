@@ -260,7 +260,12 @@ function General(props: { tips: boolean }) {
         <br />
         <div className="notification-setting">
           {/* submit */}
-          <input className={`btn-blue medium ${user.theme}`} type="submit" value={"Save"} />
+          <input 
+          className={`btn-blue medium ${user.theme}`} 
+          id='submit-notifications'
+          type="submit" 
+          value={"Save"}
+           />
         </div>
       </form>
 
@@ -302,6 +307,7 @@ function General(props: { tips: boolean }) {
         <input
           type="number"
           name="reinvest_ratio"
+          id='reinvest_ratio'
           value={max_trade_load}
           required
           onChange={(event) => setMaxTradeLoad(Number(event.target.value))}
@@ -332,6 +338,7 @@ function General(props: { tips: boolean }) {
         <input
           type="number"
           name="sync_quantity"
+          id='sync_quantity'
           value={sync_quantity}
           required
           onChange={(event) => setSync_quantity(Number(event.target.value))}
@@ -355,6 +362,7 @@ function General(props: { tips: boolean }) {
         <input
           type="number"
           name="profit_accuracy"
+          id='profit_accuracy'
           value={profit_accuracy}
           required
           onChange={(event) => setProfit_accuracy(Number(event.target.value))}

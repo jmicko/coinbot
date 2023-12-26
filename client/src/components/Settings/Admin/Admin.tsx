@@ -174,6 +174,7 @@ function Admin(props: { tips: boolean }) {
         <input
           type="number"
           name="loopSpeed"
+          id='loopSpeed'
           value={loopSpeed}
           step={1}
           max={100}
@@ -208,6 +209,7 @@ function Admin(props: { tips: boolean }) {
         <input
           type="number"
           name="fullSync"
+          id='fullSync'
           value={fullSync}
           step={1}
           max={100}
@@ -239,12 +241,13 @@ function Admin(props: { tips: boolean }) {
       </p>}
       <p>Current quantity: {allSettings.orders_to_sync}</p>
       <div className='left-border'>
-        <label htmlFor="fullSync">
+        <label htmlFor="syncQuantity">
           Set Sync Quantity:
         </label>
         <input
           type="number"
           name="syncQuantity"
+          id='syncQuantity'
           value={syncQuantity}
           step={1}
           max={200}

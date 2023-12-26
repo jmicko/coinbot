@@ -172,9 +172,11 @@ async function syncOrders(userID) {
 async function updateProducts(userID) {
   return new Promise(async (resolve, reject) => {
     try {
+      devLog('---- updating products ----');
       const products = await cbClients[userID].getProducts();
       await databaseClient.insertProducts(products.products, userID);
       resolve();
+      devLog('---- finished updating products ----');
     } catch (err) {
       devLog(err, 'error updating products');
       reject(err);
@@ -786,7 +788,7 @@ async function getAvailableFunds(userID, userSettings) {
   userStorage[userID].updateStatus('get available funds');
   return new Promise(async (resolve, reject) => {
     try {
-      devLog('get available funds');
+      // devLog('get available funds');
       if (!userSettings?.active) {
         devLog('not active!');
         reject('user is not active')

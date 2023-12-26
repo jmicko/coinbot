@@ -142,7 +142,7 @@ function Feedback() {
                 {/* if user is admin, show who submitted the feedback */}
                 {user.admin && <p>Submitted by: {feedback.username}</p>}
                 {/* delete button */}
-                <button className={`btn-red ${theme}`} onClick={() => deleteFeedback('/' + feedback.id.toString)}>Delete</button>
+                <button className={`btn-red ${theme}`} onClick={() => deleteFeedback('/' + feedback.id.toString())}>Delete</button>
               </div>
             </div>
           )

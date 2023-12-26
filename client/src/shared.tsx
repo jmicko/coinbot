@@ -2,7 +2,7 @@
 // or for when circular imports would be a problem
 // DO NOT put anything in here that should never be seen by the client
 
-import { EventType, Product, ProductWithDecimals } from "./types";
+import { EventType, Product } from "./types";
 
 
 // function to pause for x milliseconds in any async function
@@ -65,8 +65,8 @@ function bellCurve(options: bellCurveOptions) {
 // size: the size of the trade in either base or quote currency
 // startingValue: the price to start the loop at
 interface AutoSetupOptions {
-  [key: string]: string | number | boolean | ProductWithDecimals,
-  product: ProductWithDecimals,
+  [key: string]: string | number | boolean | Product,
+  product: Product,
   size: number,
   startingValue: number,
   endingValue: number,
@@ -477,7 +477,7 @@ function addProductDecimals(product: Product) {
   //   base_inverse_increment,
   //   quote_inverse_increment,
   // };
-  const productWithDecimals: ProductWithDecimals = {
+  const productWithDecimals: Product = {
     ...product,
     base_increment_decimals,
     quote_increment_decimals,

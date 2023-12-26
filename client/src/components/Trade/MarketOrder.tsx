@@ -64,6 +64,29 @@ function LimitOrder(props: limitOrderProps) {
     })
   }
 
+  if (!currentProduct.base_increment) {
+    return (
+      <div className={`Trade scrollable boxed ${side}-color`} >
+        <h3 className={`title market-order ${theme}`}>
+          {width > 800 &&
+            <button
+              className={`${btnColor} ${theme}`}
+              onClick={toggleCollapse}
+            >
+              &#9664;
+            </button>} Market Order <button
+              className={`${btnColor} ${theme}`}
+              value={'limit'}
+              onClick={props.toggleTradeType}
+            >Switch</button>
+        </h3>
+        <div className={`Trade`}>
+          <p>loading...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={`Trade scrollable boxed ${side}-color`} >
 
@@ -139,10 +162,11 @@ function LimitOrder(props: limitOrderProps) {
             className={theme}
             type="number"
             name="trade-amount"
+            id="trade-amount"
             value={base_size}
-            step={Number(currentProduct?.base_increment)}
-            min={Number(currentProduct?.base_min_size)}
-            max={Number(currentProduct?.base_max_size)}
+            step={Number(currentProduct.base_increment)}
+            min={Number(currentProduct.base_min_size)}
+            max={Number(currentProduct.base_max_size)}
             required
             onChange={(e) => {
               // no(e);
@@ -194,7 +218,7 @@ function LimitOrder(props: limitOrderProps) {
           <div>
           </div>
 
-        </form>
+        </form> {/* end form */}
       </div>
     </div>
   )

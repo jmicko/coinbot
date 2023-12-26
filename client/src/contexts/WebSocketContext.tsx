@@ -74,8 +74,12 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
 
         // handle errors
         socket.onerror = (error) => {
-          console.log('WebSocket error: ', error);
-          socket.close();
+          try {
+            console.log('WebSocket error: ', error);
+            socket.close();
+          } catch (error) {
+            console.log('error closing socket: ', error);
+          }
         };
 
         socket.onclose = () => {
@@ -118,12 +122,20 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
 
     }
 
-    reconnect();
+    try {
+      reconnect();
+    } catch (error) {
+      console.log('error connecting: ', error);
+    }
 
     return () => {
       console.log('WebSocket closing on unmount');
       shouldClose = true;
-      socketRef.current?.close();
+      try {
+        socketRef.current?.close();
+      } catch (error) {
+        console.log('error closing socket: ', error);
+      }
     };
   }, [setSocketStatus]);
 

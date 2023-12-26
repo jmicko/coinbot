@@ -67,6 +67,7 @@ function Status() {
     <div className="Status boxed fit">
       <div className="info status-ticker">
         <select
+          id='profitDisplay-select'
           value={profitDisplay}
           onChange={(e) => { setProfitDisplay(e.target.value) }}
         >
@@ -90,6 +91,7 @@ function Status() {
 
       <div className="info status-ticker">
         <select
+          id='availableFundsDisplay-select'
           value={availableFundsDisplay}
           onChange={(e) => { setAvailableFundsDisplay(e.target.value) }}
         >
@@ -109,6 +111,7 @@ function Status() {
 
       <div className="info status-ticker">
         <select
+          id='feeDisplay-select'
           value={feeDisplay}
           onChange={(e) => { setFeeDisplay(e.target.value) }}
         >
@@ -153,6 +156,8 @@ function Status() {
         <div className="info status-ticker auto-scroll"><strong>Scroll</strong>
           <input
             type="checkbox"
+            name="autoScroll"
+            id="autoScroll"  
             checked={isAutoScroll}
             onChange={() => { setIsAutoScroll(!isAutoScroll); }}
           />

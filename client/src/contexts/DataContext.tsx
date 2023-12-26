@@ -1,9 +1,8 @@
 // DataContext.ts
 import { useState, ReactNode, useRef, useEffect } from 'react'
 import useGetFetch from '../hooks/useGetFetch';
-import { addProductDecimals } from '../shared';
 import usePutFetch from '../hooks/usePutFetch';
-import { OrderParams, Orders, Product, ProductWithDecimals, Products, ProfitForDuration } from '../types/index';
+import { OrderParams, Orders, Product, Products, ProfitForDuration } from '../types/index';
 import usePostFetch from '../hooks/usePostFetch';
 import { useUser } from './useUser';
 import { DataContext } from './useData';
@@ -46,18 +45,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Products>({ allProducts: [], activeProducts: [] });
 
   useEffect(() => {
-    const newAllProducts = productsNoVolume.allProducts.slice(0).map(product => ({
-      ...product,
-      volume_in_quote: (Number(product.volume_24h) * Number(product.price)).toFixed(5),
-    }));
+    const newAllProducts = productsNoVolume.allProducts.slice(0).map(product => {
+      // console.log(product, 'product');
+
+      return ({
+        ...product,
+        volume_in_quote: (Number(product.volume_24h) * Number(product.price)).toFixed(product.pqd || 2),
+      })
+    });
 
     const newActiveProducts = productsNoVolume.activeProducts.slice(0).map(product => ({
       ...product,
-      volume_in_quote: (Number(product.volume_24h) * Number(product.price)).toFixed(5),
+      volume_in_quote: (Number(product.volume_24h) * Number(product.price)).toFixed(product.pqd || 2),
     }));
     // setTimeout(() => {
 
-      setProducts({ allProducts: newAllProducts, activeProducts: newActiveProducts });
+    setProducts({ allProducts: newAllProducts, activeProducts: newActiveProducts });
     // }, 5000);
 
   }, [productsNoVolume]);
@@ -155,16 +158,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   })
   // const { data: exportableFiles, refresh: refreshExportableFiles } = useFetchData(`/api/account/exportableFiles`, { defaultState: [] })
   // TRADE FUNCTIONS
-  const currentProductNoDecimals: Product
+  const currentProduct: Product
     = products.allProducts.find((product) => product.product_id === productID) || {} as Product;
-  // console.log(currentProductNoDecimals, 'currentProductNoDecimals');
+  // console.log(currentProduct, '< currentProduct');
 
-
-  const currentProduct: ProductWithDecimals
-    = addProductDecimals(currentProductNoDecimals);
-
-  const pqd = currentProduct?.quote_increment_decimals || 2;
-  const pbd = currentProduct?.base_increment_decimals || 2;
+  const pqd = currentProduct?.pqd;
+  const pbd = currentProduct?.pbd;
 
   // TRADE STATE
   const [marketOrder, setMarketOrder] = useState<OrderParams>({
@@ -191,7 +190,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
           products, currentProduct, pqd, pbd,
           productID, setProductID, refreshProducts,
           baseID, quoteID,
-          // toggleActiveProduct,
 
           // // messages
           messages, refreshBotMessages,

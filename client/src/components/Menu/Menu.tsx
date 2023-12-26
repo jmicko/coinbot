@@ -25,6 +25,7 @@ function Menu() {
             &nbsp;
             <select
               className={`select-product ${theme}`}
+              id='productID-select'
               onChange={(event) => {
                 setProductID(event.target.value)
               }}

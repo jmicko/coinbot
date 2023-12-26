@@ -51,7 +51,7 @@ const Draggable = ({ children, className, windowBarElements }: { children: React
 
       setPos({ x: newX, y: newY });
     }
-  }, [dragging, offset]);
+  }, [dragging, offset, draggerOffset]);
 
   const endDrag = useCallback(() => {
     setDragging(false);
