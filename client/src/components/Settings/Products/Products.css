@@ -14,7 +14,7 @@
 .product-table td.number,
 .product-table th.number {
   text-align   : right;
-  padding      : 0 0.3rem;
+  padding      : 0 0.2rem;
   /* width     : max-content; */
   /* word-wrap : normal; */
   /* word-break: keep-all; */
@@ -27,8 +27,11 @@
   width   : max-content;
 }
 
-.table-product-id {
-  width        : max-content;
+.product-table td.table-product-id {
+  /* width        : max-content; */
+  align-items: start;
+  /* color: red; */
+  text-align: left;
 }
 
 td.number {

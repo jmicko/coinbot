@@ -105,11 +105,11 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         };
 
         socket.onclose = () => {
-          console.log('WebSocket closed');
+          console.log('WebSocket closed. Was it supposed to?', shouldClose);
           // attempt to reconnect
           if (shouldClose) return;
           setTimeout(() => {
-            // console.log(`trying again after ${backoff} milliseconds`);
+            console.log(`trying again after ${backoff} milliseconds`);
             reconnect();
             // console.log('reconnected');
           }, backoff);
@@ -165,7 +165,8 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     refreshOrders,
     refreshProducts,
     refreshProfit,
-    refreshUser]);
+    refreshUser
+  ]);
 
   // const value = useMemo(() => ({ socket: socketRef.current }), []);
 
