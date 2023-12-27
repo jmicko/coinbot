@@ -64,7 +64,7 @@ function Status() {
 
   return (
 
-    <div className="Status boxed fit">
+    <div className={`Status boxed fit ${theme}`}>
       <div className="info status-ticker">
         <select
           id='profitDisplay-select'
@@ -132,7 +132,7 @@ function Status() {
         ${numberWithCommas(Number(user?.usd_volume).toFixed(2))}
       </div>
 
-      <div className="info status-ticker">
+      <div className={`info status-ticker ${theme}`}>
         <strong>Open Order Counts</strong>
         {width > 800 ? <br /> : <div className='spacer' />}
         <strong>B:</strong>{numberWithCommas(openBuysQuantity)}&nbsp;<strong>S:</strong>{numberWithCommas(openSellsQuantity)}&nbsp;<strong>T:</strong>{numberWithCommas(openOrderQuantity)}
@@ -157,7 +157,7 @@ function Status() {
           <input
             type="checkbox"
             name="autoScroll"
-            id="autoScroll"  
+            id="autoScroll"
             checked={isAutoScroll}
             onChange={() => { setIsAutoScroll(!isAutoScroll); }}
           />

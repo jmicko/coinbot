@@ -11,7 +11,8 @@ type FetchDataOptions<T> = {
 const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
   const [data, setData] = useState<T>(options.defaultState);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<null | FetchError>(null);
+  const [unknownError, setUnknownError] = useState<null | Error>(null);
   const hasFetched = useRef<boolean>(false);
 
   const fetchData = useCallback(async () => {
@@ -33,14 +34,18 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
       // }
       setData(data);
       setError(null);
-    } catch (error) {
-      if (error instanceof FetchError) {
-
-        setError(error);
-      } else if (error instanceof Error) {
-        setError(error);
+    } catch (e) {
+      if (e instanceof FetchError) {
+        setError(e);
+        if (e.status === 403) {
+          console.log('UNAUTHORIZED! setting data to default state');
+          
+          setData(options.defaultState);
+        }
+      } else if (e instanceof Error) {
+        setUnknownError(e);
       } else {
-        setError(new Error('An unknown error occurred.'));
+        setUnknownError(new Error('An unknown error occurred.'));
       }
     } finally {
       setIsLoading(false);
@@ -51,7 +56,7 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
     setData(options.defaultState)
     setIsLoading(false)
     setError(null)
-  }, [options.defaultState]);
+  }, [options.defaultState, setData, setIsLoading, setError])
 
   useEffect(() => {
     // options.preload && !hasFetched.current && fetchData();
@@ -71,6 +76,7 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
     error,
     refresh: fetchData,
     clear,
+    unknownError,
   };
 };
 

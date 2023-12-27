@@ -2,8 +2,21 @@
   background-color: #313131;
   background-color: rgb(117, 136, 117);
   max-width       : 15rem;
-  margin          : 10vh auto;
+  margin          : auto;
   padding         : 1rem;
+}
+
+.login-background {
+  background-color: #c7c7b1;
+  font-family     : 'Syne Mono', monospace;
+  height: 100vh;
+  padding: 15vh 0;
+}
+
+.login-background.darkTheme {
+  background-color: #313131;
+  color           : white;
+  font-family     : 'Syne Mono', monospace;
 }
 
 .login-form {

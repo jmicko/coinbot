@@ -13,6 +13,8 @@ import MobileNav from '../MobileNav/MobileNav';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
 import { useUser } from '../../contexts/useUser.js';
 import { useData } from '../../contexts/useData.js';
+import NotActive from '../NotActive/NotActive.js';
+import NotApproved from '../NotApproved/NotApproved.js';
 // import { useData } from '../../contexts/DataContext';
 // import { devLog } from '../../shared.js';
 
@@ -43,28 +45,28 @@ function Home() {
             ? user?.active
               // ? <></>
               ? <Trade />
-              // : <NotActive />
-              : <></>
+              : <NotActive />
+              // : <></>
             : mobilePage === 'tradeList'
               // is the user approved
               ? user?.approved
                 ? <TradeList />
                 // ? <></>
-                // : <NotApproved />
-                : <></>
+                : <NotApproved />
+                // : <></>
               : mobilePage === 'messages' && <Messages />
 
           // show all pages on desktop
           : <>
             {user?.active
               ? <Trade />
-              // : <NotActive />
-              : <></>
+              : <NotActive />
+              // : <></>
             }
             {user?.approved
               ? <TradeList />
-              // : <NotApproved />
-              : <></>
+              : <NotApproved />
+              // : <></>
             }
             {/* {devLog('rendering messages in home')} */}
             <Messages />

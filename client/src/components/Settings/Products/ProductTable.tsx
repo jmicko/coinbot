@@ -37,11 +37,11 @@ function ProductTable(props: { products: ProductsProps[], parent: string, padNum
     }, 0)
   }, [products])
 
-  const longestVolumeDec = useMemo(() => {
-    return products.reduce((acc, product) => {
-      return Math.max(acc, Number(product.volume_in_quote).toFixed(product.pqd).split('.')[1]?.length || 0)
-    }, 0)
-  }, [products])
+  // const longestVolumeDec = useMemo(() => {
+  //   return products.reduce((acc, product) => {
+  //     return Math.max(acc, Number(product.volume_in_quote).toFixed(product.pqd).split('.')[1]?.length || 0)
+  //   }, 0)
+  // }, [products])
   // console.log(longestVolumeDec, '< longestVolumeDec');
 
 
@@ -80,7 +80,7 @@ function ProductTable(props: { products: ProductsProps[], parent: string, padNum
         {products.map((product) => {
 
           const decimalPadding = longestPriceDecimals - (Number(product.price).toFixed(product.pqd).split('.')[1]?.length || -1);
-          const volumePadding = longestVolumeDec - (Number(product.volume_in_quote).toFixed(product.pqd).split('.')[1]?.length || -1);
+          // const volumePadding = longestVolumeDec - (Number(product.volume_in_quote).toFixed(product.pqd).split('.')[1]?.length || -1);
           // shorten volume in quote to b, m, k for billions, millions, thousands
           // count the number of commas
           const volumeInQuoteCommas = numberWithCommas(Number(product.volume_in_quote).toFixed(0)).split('').filter(char => char === ',').length;

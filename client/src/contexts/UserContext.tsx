@@ -1,14 +1,22 @@
 // UserContext.tsx
-import { ReactNode, useCallback, useEffect, useState } from 'react'
+import { ReactNode, useCallback, useEffect, useMemo } from 'react'
 import useGetFetch from '../hooks/useGetFetch.js';
 import useDeleteFetch from '../hooks/useDeleteFetch.js';
 import { UserContext } from './useUser.js';
 import { Credentials, User } from '../types/index.js';
+import useLocalStorage from '../hooks/useLocalStorage.js';
+import usePostFetch from '../hooks/usePostFetch.js';
 
 export function UserProvider({ children }: { children: ReactNode }) {
   console.log('UserProvider rendering @@@@@@@@@@@@@@@@');
-  const [loggedIn, setLoggedIn] = useState(false);
+  // const [loggedIn, setLoggedIn] = useState(false);
+  const [defaultTheme, setDefaultTheme] = useLocalStorage<string>('defaultTheme', 'darkTheme', { defaultUser: true });
 
+  const userOptions = useMemo(() => ({
+    defaultState: {} as User,
+    preload: true,
+    from: 'user state in UserContext',
+  }), []);
   const {
     data: user,
     setData: setUser,
@@ -18,85 +26,89 @@ export function UserProvider({ children }: { children: ReactNode }) {
     clear: clearUser,
   } = useGetFetch<User>(
     '/api/user',
-    {
-      defaultState: { id: 0 } as User,
-      preload: true,
-      from: 'user in UserContext',
-    }
+    userOptions
+    // {
+    //   defaultState: {} as User,
+    //   preload: true,
+    //   from: 'user state in UserContext',
+    // }
   );
 
   useEffect(() => {
-    if (user.id) {
-      setLoggedIn(true);
-    } else {
-      // setLoggedIn(false);
+    if (user.theme) {
+      console.log('^^^^^^^^^^^^^^^^^^^^^^^^^^^^^setting default theme to', user.theme);
+      setDefaultTheme(user.theme);
     }
-  }, [user]);
+  }, [user.theme, setDefaultTheme]);
+
+  // useEffect(() => {
+  //   if (user && user.id) {
+  //     setLoggedIn(true);
+  //   }
+  // }, [user]);
 
 
   // infer theme from user object
-  const theme = user ? user.theme : 'darkTheme';
+  const theme = user.theme ? user.theme : defaultTheme;
   const btnColor = theme === 'darkTheme' ? 'btn-black' : 'btn-blue';
 
-  const logout = useCallback(async () => {
-    await fetch('/api/user/logout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-    })
-    clearUser();
-    setLoggedIn(false);
-  }, [clearUser]);
+  // const logout = useCallback(async () => {
+  //   await fetch('/api/user/logout', {
+  //     method: 'POST',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     credentials: 'include',
+  //   })
+  //   console.log('clearing user');
+  //   clearUser();
+  // }, [clearUser]);
+  const logoutOptions = useMemo(() => ({
+    url: '/api/user/logout',
+    from: 'logout in UserContext',
+    refreshCallback: clearUser,
+  }), [clearUser]);
+  const { postData: logout } = usePostFetch(logoutOptions);
 
-
+  const deleteYourselfOptions = useMemo(() => ({
+    url: `/api/user/${user.id}`,
+    from: 'deleteYourself in UserContext',
+    refreshCallback: clearUser,
+  }), [user.id, clearUser]);
   const {
     isLoading: deleteLoading,
     error: deleteError,
     deleteData: deleteYourself
-  } = useDeleteFetch({
-    url: `/api/user/${user.id}`,
-    from: 'deleteYourself in UserContext',
-    refreshCallback: logout,
-  });
+  } = useDeleteFetch(deleteYourselfOptions);
 
+  const loginOptions = useMemo(() => ({
+    url: '/api/user/login',
+    from: 'login in UserContext',
+    refreshCallback: clearUser,
+    setData: setUser,
+  }), [setUser, clearUser]);
+  const {
+    postData: login,
+  } = usePostFetch(loginOptions);
 
-  const login = useCallback(async (payload: Credentials) => {
-    const response = await fetch('/api/user/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    if (response.ok) {
-      const userData = await response.json();
-      console.log(userData, 'userData');
-      setUser(userData);
-    } else {
-      console.log('Login failed');
-    }
-  }, [setUser]);
-
-  const registerNew = useCallback(async (payload: Credentials) => {
-    await fetch(
-      '/api/user/register',
-      {
-        headers: { 'Content-Type': 'application/json' },
-        method: 'POST',
-        body: JSON.stringify(payload)
-      })
-    login(payload);
-  }, [login]);
+  const registerNewOptions = useMemo(() => ({
+    url: '/api/user/register',
+    from: 'registerNew in UserContext',
+    refreshCallback: clearUser,
+    setData: setUser,
+  }), [setUser, clearUser]);
+  const { postData: registerNew, } = usePostFetch(registerNewOptions);
 
 
   return (
     <UserContext.Provider
       value={
         {
-          user, loggedIn,
+          user,
+          // loggedIn,
           // takerFee: user?.taker_fee, 
           // maker_fee: user.maker_fee,
           userLoading, userError, deleteLoading, deleteError,
           refreshUser, logout, login, registerNew, deleteYourself,
-          theme, btnColor
+          theme, defaultTheme, btnColor
         }
       }>
       {children}

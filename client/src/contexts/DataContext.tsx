@@ -1,8 +1,8 @@
 // DataContext.ts
-import { useState, ReactNode, useRef, useEffect } from 'react'
+import { useState, ReactNode, useRef, useEffect, useMemo } from 'react'
 import useGetFetch from '../hooks/useGetFetch';
 import usePutFetch from '../hooks/usePutFetch';
-import { OrderParams, Orders, Product, Products, ProfitForDuration } from '../types/index';
+import { Messages, OrderParams, Orders, Product, Products, ProfitForDuration } from '../types/index';
 import usePostFetch from '../hooks/usePostFetch';
 import { useUser } from './useUser';
 import { DataContext } from './useData';
@@ -21,6 +21,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     canScroll.current = isAutoScroll;
   }, [isAutoScroll]);
 
+  console.log('productID: ', productID);
+
+
   // user
   const { user, refreshUser } = useUser();
   // sockets
@@ -33,14 +36,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
   /////////////////////////
 
   // ACCOUNT ROUTES
-  const {
-    data: productsNoVolume,
-    refresh: refreshProducts,
-  } = useGetFetch<Products>('/api/account/products', {
+  const productsNoVolumeOptions = useMemo(() => ({
     defaultState: { allProducts: [], activeProducts: [] },
     preload: true,
     from: 'products in data context'
-  })
+  }), []);
+  const {
+    data: productsNoVolume,
+    refresh: refreshProducts,
+  } = useGetFetch<Products>('/api/account/products',
+    productsNoVolumeOptions
+    // {
+    //   defaultState: { allProducts: [], activeProducts: [] },
+    //   preload: true,
+    //   from: 'products in data context'
+    // }
+  )
 
   const [products, setProducts] = useState<Products>({ allProducts: [], activeProducts: [] });
 
@@ -67,23 +78,40 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
 
   // get the profits for the selected product
-  const { data: profit,
-    refresh: refreshProfit,
-  } = useGetFetch<ProfitForDuration[]>(`/api/account/profit/${productID}`, {
+  const profitOptions = useMemo(() => ({
     defaultState: [],
     preload: true,
     from: 'profit/{productID} in data context'
-  })
+  }), []);
+  const { data: profit,
+    refresh: refreshProfit,
+  } = useGetFetch<ProfitForDuration[]>(`/api/account/profit/${productID}`,
+    profitOptions
+    // {
+    //   defaultState: [],
+    //   preload: true,
+    //   from: 'profit/{productID} in data context'
+    // }
+  )
   // get messages sent from the bot
+
+  const botMessagesOptions = useMemo(() => ({
+    defaultState: { botMessages: [], chatMessages: [] },
+    preload: true,
+    from: 'messages in data context',
+  }), []);
   const {
     data: messages,
     refresh: refreshBotMessages,
     // createRefreshData: sendChat,
-  } = useGetFetch(`/api/account/messages`, {
-    defaultState: { botMessages: [], chatMessages: [] },
-    preload: true,
-    from: 'messages in data context',
-  })
+  } = useGetFetch(`/api/account/messages`,
+    // {
+    //   defaultState: { botMessages: [], chatMessages: [] },
+    //   preload: true,
+    //   from: 'messages in data context',
+    // }
+    botMessagesOptions
+  )
   const {
     postData: sendChat,
     // deleteData: deleteChat,
@@ -94,29 +122,37 @@ export function DataProvider({ children }: { children: ReactNode }) {
   })
 
   // // AVAILABLE FUNDS
-  const availableBase = user?.availableFunds?.[productID]?.base_available || 0;
-  const availableQuote = user?.availableFunds?.[productID]?.quote_available || 0;
+  const availableBase = user.availableFunds?.[productID]?.base_available || 0;
+  const availableQuote = user.availableFunds?.[productID]?.quote_available || 0;
 
   const baseID = user.availableFunds?.[productID]?.base_currency || '';
   const quoteID = user.availableFunds?.[productID]?.quote_currency || '';
 
-  const {
-    data: botErrors,
-    refresh: refreshBotErrors,
-  } = useGetFetch(`/api/account/errors`, {
+  console.log('availableBase: ', availableBase);
+  console.log('availableQuote: ', availableQuote);
+
+  const botErrorsOptions = useMemo(() => ({
     defaultState: [],
     preload: true,
     from: 'botErrors in data context',
-  })
+  }), []);
+  const {
+    data: botErrors,
+    refresh: refreshBotErrors,
+  } = useGetFetch<Messages>(`/api/account/errors`,
+    // {
+    //   defaultState: [],
+    //   preload: true,
+    //   from: 'botErrors in data context',
+    // }
+    botErrorsOptions
+  )
 
   // ////////////////////////
   // //////// ORDERS ////////
   // ////////////////////////
 
-  const {
-    data: orders,
-    refresh: refreshOrders,
-  } = useGetFetch<Orders>(`/api/orders/${productID}`, {
+  const ordersOptions = useMemo(() => ({
     defaultState: {
       buys: [],
       sells: [],
@@ -127,8 +163,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
     },
     preload: true,
-    from: 'orders/{productID} in data context'
-  })
+    from: 'orders/${productID} in data context'
+  }), []);
+  const {
+    data: orders,
+    refresh: refreshOrders,
+  } = useGetFetch<Orders>(`/api/orders/${productID}`,
+    ordersOptions
+    // {
+    //   defaultState: {
+    //     buys: [],
+    //     sells: [],
+    //     counts: {
+    //       totalOpenOrders: { count: 0 },
+    //       totalOpenBuys: { count: 0 },
+    //       totalOpenSells: { count: 0 }
+    //     }
+    //   },
+    //   preload: true,
+    //   from: 'orders/{productID} in data context'
+    // }
+  )
   const {
     putData: syncOrders,
   } = usePutFetch({ url: `/api/orders`, from: 'syncOrders in data context' })

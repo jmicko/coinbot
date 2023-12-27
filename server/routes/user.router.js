@@ -143,14 +143,33 @@ router.post('/register', userCount, async (req, res, next) => {
       let secondResult = await pool.query(secondQueryText, [userID]);
 
       // create entry in user_settings table
-      let thirdQueryText = `INSERT INTO "user_settings" ("userID", "profit_reset") VALUES ($1, $2);`;
+      let thirdQueryText = `INSERT INTO "user_settings" ("userID", "profit_reset") VALUES ($1, $2) RETURNING *;`;
       let thirdResult = await pool.query(thirdQueryText, [userID, joined_at]);
+      user = { ...user, ...thirdResult.rows[0] }
     }
 
     // START THE LOOPS
-    robot.initializeUserLoops(user);
+    await robot.initializeUserLoops(user);
 
-    res.sendStatus(201);
+    const botSettings = await databaseClient.getBotSettings();
+    let fullUser = await databaseClient.getUser(user.id);
+
+    req.login(user, function (err) {
+      if (err) {
+        devLog(err, 'error in login after registration');
+        return next(err);
+      }
+
+      const availableFunds = userStorage[req.user.id].getAvailableFunds();
+      fullUser.availableFunds = availableFunds;
+      fullUser.botMaintenance = botSettings.maintenance;
+      fullUser.botSettings = botSettings;
+      fullUser.sandbox = false
+      fullUser = { ...fullUser, ...user }
+
+      res.status(201).send(fullUser);
+    });
+
   } catch (err) {
     devLog('User registration failed: ', err);
     res.sendStatus(500);
@@ -195,13 +214,18 @@ router.post('/login', userStrategy.authenticate('local'), async (req, res) => {
 
 // clear all server session information about this user
 router.post('/logout', rejectUnauthenticated, (req, res) => {
+  console.log('LOGGING OUT USER');
   try {
-    const userID = req.user.id;
     devLog('LOGGING OUT USER');
+    const userID = req.user.id;
     // Use passport's built-in method to log out the user
     req.logout();
     res.sendStatus(200);
     messenger[userID].userUpdate();
+    // messenger[userID].sockets.forEach(socket => {
+    //   console.log('closing socket', socket.id);
+    //   // socket.close();
+    // });
   } catch (err) {
     devLog(err, 'error in logout route');
   }
@@ -283,8 +307,11 @@ router.delete('/:user_id', rejectUnauthenticated, async (req, res) => {
         const userSettingsQueryText = `DELETE from "user_settings" WHERE "userID" = $1;`;
         await pool.query(userSettingsQueryText, [userToDelete]);
 
+        res.sendStatus(200);
+      } else {
+        devLog('you are NOT deleting yourself');
+        res.sendStatus(403);
       }
-      res.sendStatus(200);
     }
   } catch (err) {
     devLog(err, 'error in delete user route');

@@ -8,8 +8,14 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   const socketRef = useRef<WebSocket | null>(null);
   const [tickers, setTickers] = useState<Tickers>({ "BTC-USD": { price: 0 }, "ETH-USD": { price: 0 } });
   const [heartbeat, setHeartbeat] = useState({ heart: 'heart', beat: 'beat', count: 0 });
-  const { setSocketStatus, productID, refreshBotErrors, refreshBotMessages,
-    refreshOrders, refreshProducts, refreshProfit } = useData();
+  const { setSocketStatus,
+    productID,
+    refreshBotErrors,
+    refreshBotMessages,
+    refreshOrders,
+     refreshProducts, 
+     refreshProfit 
+  } = useData();
   const { refreshUser } = useUser();
   const currentPrice = tickers[productID]?.price;
 
@@ -70,27 +76,35 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
             // console.log('socketStatus data: ', data);
             setSocketStatus(data.status);
           } else if (data.type === 'error') {
+
+
+
             console.log('error socket message received: ');
             refreshBotErrors();
           } else if (data.type === 'messageUpdate' || data.type === 'chat' || data.type === 'general') {
             console.log('message socket message received: ');
             refreshBotMessages();
-          } else if (data.type === 'orderUpdate' || data.orderUpdate === true) {
-            console.log('order socket message received: ');
-            refreshOrders();
-            refreshProfit();
-          } else if (data.type === 'productUpdate' || data.productUpdate === true) {
-            console.log('order socket message received: ');
-            refreshProducts();
-          } else if (data.type === 'profitUpdate' || data.profitUpdate === true) {
-            console.log('profit socket message received: ');
-            refreshProfit();
-          } else if (data.type === 'userUpdate' || data.userUpdate === true) {
-            console.log('user socket message received: ');
-            refreshUser();
+            // } else if (data.type === 'orderUpdate' || data.orderUpdate === true) {
+            //   console.log('order socket message received: ');
+            //   refreshOrders();
+            //   refreshProfit();
+            // } else if (data.type === 'productUpdate' || data.productUpdate === true) {
+            //   console.log('order socket message received: ');
+            //   refreshProducts();
+            // } else if (data.type === 'profitUpdate' || data.profitUpdate === true) {
+            //   console.log('profit socket message received: ');
+            //   refreshProfit();
+            // } else if (data.type === 'userUpdate' || data.userUpdate === true) {
+            //   console.log('user socket message received: ');
+            // refreshUser();
+
+
           } else {
             console.log('WebSocket message: ', data);
           }
+
+
+
           timer(socket);
         };
 
@@ -145,7 +159,11 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      reconnect();
+      if (!shouldClose) {
+        reconnect();
+      } else {
+        console.log('WebSocket closing and not reconnecting');
+      }
     } catch (error) {
       console.log('error connecting: ', error);
     }
@@ -159,13 +177,14 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         console.log('error closing socket: ', error);
       }
     };
-  }, [setSocketStatus,
+  }, [
+    setSocketStatus,
     refreshBotErrors,
     refreshBotMessages,
     refreshOrders,
     refreshProducts,
     refreshProfit,
-    refreshUser
+    refreshUser,
   ]);
 
   // const value = useMemo(() => ({ socket: socketRef.current }), []);

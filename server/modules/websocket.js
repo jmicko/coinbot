@@ -204,6 +204,7 @@ function setUpWebsocket(wss) {
             const id = session.id;
             const userID = user?.id;
             ws.userID = userID;
+            ws.sessionID = id;
 
             if (!userID) {
               console.log('socket connected but client is not logged in');
@@ -211,6 +212,8 @@ function setUpWebsocket(wss) {
               ws.close();
             } else {
               try {
+                
+                console.log('socket ws', ws.sessionID, ws.userID);
 
                 messenger?.[userID]?.addSocket(ws);
 

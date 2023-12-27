@@ -2,14 +2,25 @@ import { Dispatch, SetStateAction, useEffect, useState } from 'react'
 import { useUser } from '../contexts/useUser.js';
 
 // this helps differentiate apps that are all running on localhost because local storage will conflict
-const PREFIX:string = process.env.NODE_ENV === 'development' ? 'coinbot-dev-' : 'coinbot-pqw9743yg5r8-'
+const PREFIX: string = process.env.NODE_ENV === 'development' ? 'coinbot-dev-' : 'coinbot-pqw9743yg5r8-'
 
 type InitialValue<T> = T | (() => T);
 
 // this function works like a normal useState, but persists everything into local storage
-export default function useLocalStorage<T>(key:string, initialValue: InitialValue<T>): [T, Dispatch<SetStateAction<T>>]  {
-  const { user } = useUser()
-  const prefixedKey:string = user.username ? PREFIX + user.username + '-' + key : PREFIX + key
+export default function useLocalStorage<T>(
+  key: string,
+  initialValue: InitialValue<T>,
+  { defaultUser = false }: { defaultUser?: boolean } = {}
+): [T, Dispatch<SetStateAction<T>>] {
+
+  const { user } = useUser();
+  // defaultUser ? { user: { username: 'defaultUser' } } :
+  // console.log(user, 'user from useLocalStorage hook');
+
+  const prefixedKey: string = user?.username && !defaultUser
+    ? PREFIX + user.username + '-' + key
+    : PREFIX + key
+
   const [value, setValue] = useState<T>(() => {
     // get the item that was stored
     const jsonValue = localStorage.getItem(prefixedKey)

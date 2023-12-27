@@ -14,10 +14,11 @@ interface UserContextProps {
   registerNew: ({username, password}: {username: string, password: string}) => void;
   deleteYourself: () => void;
   theme: string;
+  defaultTheme: string;
   btnColor: string;
   // maker_fee: number;
   // clearUser: () => void;
-  loggedIn: boolean;
+  // loggedIn: boolean;
   // setUser: React.Dispatch<React.SetStateAction<User>>;
 }
 

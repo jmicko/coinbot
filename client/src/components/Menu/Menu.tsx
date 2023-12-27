@@ -10,18 +10,20 @@ interface Product {
 function Menu() {
   const { logout, user, theme, btnColor } = useUser();
   const { productID, setProductID, products, showSettings, setShowSettings } = useData();
+
   const { refresh: refreshTestData }
     = useGetFetch('/api/settings/test/cheese', {
       defaultState: {},
       preload: false,
-      from: 'refreshTestData in Menu' })
+      from: 'refreshTestData in Menu'
+    })
 
   return (
     <div className={`Menu dark ${theme}`}>
       <center>
         {
           products.activeProducts &&
-          <p className="greeting">{user?.username}
+          <p className="greeting">{user.username}
             &nbsp;
             <select
               className={`select-product ${theme}`}
@@ -55,7 +57,7 @@ function Menu() {
         </button>
         <button
           className={`${btnColor} btn-logout ${theme}`}
-          onClick={logout}
+          onClick={() => { logout() }}
         >
           Log Out
         </button>

@@ -124,7 +124,7 @@ function SingleUser(props: { user: User, key: number, refreshUsers: () => void }
     <div className={`Single-trade`}>
       <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>
       {showAll && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={debug}>debug</button>}
-      {deleting && <Confirm execute={deleteUser} ignore={cancelDeleteUser} />}
+      {deleting && <Confirm execute={() => { deleteUser() }} ignore={cancelDeleteUser} />}
       <div className={"overlay"}>
         {/* Delete a user */}
         {(deleting === true)
@@ -141,6 +141,7 @@ function SingleUser(props: { user: User, key: number, refreshUsers: () => void }
         }
         {/* Enable chat for a user */}
         {/* {JSON.stringify(props.user)} */}
+        {/* jdfgkusahdfiu {props.user.id} fkshefuewsy */}
         {(props.user.can_chat
           ? <button
             className="btn-red deleting"

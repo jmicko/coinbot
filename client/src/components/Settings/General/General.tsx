@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import './General.css'
 import coinbotFilled from '../../../coinbotFilled.png';
 import { no } from '../../../shared.js';
@@ -11,41 +11,81 @@ const themes: { [key: string]: string } = { original: 'Original', darkTheme: 'Da
 function General(props: { tips: boolean }) {
   const { user, theme, refreshUser } = useUser();
 
-  const { putData: pause } = usePutFetch({
+  const pauseOptions = useMemo(() => ({
     url: '/api/settings/pause',
     from: 'pause in General.tsx',
     refreshCallback: refreshUser
-  });
+  }), [refreshUser]);
+  const { putData: pause } = usePutFetch(
+    pauseOptions
+    // {
+    //   url: '/api/settings/pause',
+    //   from: 'pause in General.tsx',
+    //   refreshCallback: refreshUser
+    // }
+  );
 
-  const { putData: killLock } = usePutFetch({
+  const killLockOptions = useMemo(() => ({
     url: '/api/settings/killLock',
     from: 'killLock in General.tsx',
     refreshCallback: refreshUser
-  });
+  }), [refreshUser]);
+  const { putData: killLock } = usePutFetch(
+    killLockOptions
+    // {
+    //   url: '/api/settings/killLock',
+    //   from: 'killLock in General.tsx',
+    //   refreshCallback: refreshUser
+    // }
+  );
 
-  const { putData: setTheme } = usePutFetch({
+  // const { putData: setTheme } = usePutFetch({
+  //   url: '/api/settings/theme',
+  //   from: 'setTheme in General.tsx',
+  //   refreshCallback: refreshUser
+  // });
+  const themeOptions = useMemo(() => ({
     url: '/api/settings/theme',
     from: 'setTheme in General.tsx',
     refreshCallback: refreshUser
-  });
+  }), [refreshUser]);
+  const { putData: setTheme } = usePutFetch(themeOptions);
 
-  const { putData: sendTradeLoadMax } = usePutFetch({
+  // const { putData: sendTradeLoadMax } = usePutFetch({
+  //   url: '/api/settings/tradeLoadMax',
+  //   from: 'sendTradeLoadMax in General.tsx',
+  //   refreshCallback: refreshUser
+  // });
+  const tradeLoadMaxOptions = useMemo(() => ({
     url: '/api/settings/tradeLoadMax',
     from: 'sendTradeLoadMax in General.tsx',
     refreshCallback: refreshUser
-  });
+  }), [refreshUser]);
+  const { putData: sendTradeLoadMax } = usePutFetch(tradeLoadMaxOptions);
 
-  const { putData: updateProfitAccuracy } = usePutFetch({
+  // const { putData: updateProfitAccuracy } = usePutFetch({
+  //   url: '/api/settings/profitAccuracy',
+  //   from: 'updateProfitAccuracy in General.tsx',
+  //   refreshCallback: refreshUser
+  // });
+  const profitAccuracyOptions = useMemo(() => ({
     url: '/api/settings/profitAccuracy',
     from: 'updateProfitAccuracy in General.tsx',
     refreshCallback: refreshUser
-  });
+  }), [refreshUser]);
+  const { putData: updateProfitAccuracy } = usePutFetch(profitAccuracyOptions);
 
-  const { putData: sendSyncQuantity } = usePutFetch({
+  // const { putData: sendSyncQuantity } = usePutFetch({
+  //   url: '/api/settings/syncQuantity',
+  //   from: 'sendSyncQuantity in General.tsx',
+  //   refreshCallback: refreshUser
+  // });
+  const syncQuantityOptions = useMemo(() => ({
     url: '/api/settings/syncQuantity',
     from: 'sendSyncQuantity in General.tsx',
     refreshCallback: refreshUser
-  });
+  }), [refreshUser]);
+  const { putData: sendSyncQuantity } = usePutFetch(syncQuantityOptions);
 
 
   const [max_trade_load, setMaxTradeLoad] = useState(user.max_trade_load);
@@ -260,12 +300,12 @@ function General(props: { tips: boolean }) {
         <br />
         <div className="notification-setting">
           {/* submit */}
-          <input 
-          className={`btn-blue medium ${user.theme}`} 
-          id='submit-notifications'
-          type="submit" 
-          value={"Save"}
-           />
+          <input
+            className={`btn-blue medium ${user.theme}`}
+            id='submit-notifications'
+            type="submit"
+            value={"Save"}
+          />
         </div>
       </form>
 
@@ -315,7 +355,7 @@ function General(props: { tips: boolean }) {
         <br />
         <button
           className={`btn-blue btn-reinvest medium ${user.theme}`}
-          onClick={() => { sendTradeLoadMax({max_trade_load}) }}
+          onClick={() => { sendTradeLoadMax({ max_trade_load }) }}
         >
           Save Max
         </button>
@@ -344,7 +384,7 @@ function General(props: { tips: boolean }) {
           onChange={(event) => setSync_quantity(Number(event.target.value))}
         />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { sendSyncQuantity({sync_quantity}) }}>Save</button>
+        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { sendSyncQuantity({ sync_quantity }) }}>Save</button>
       </div>
       <div className={`divider ${theme}`} />
 
@@ -368,7 +408,7 @@ function General(props: { tips: boolean }) {
           onChange={(event) => setProfit_accuracy(Number(event.target.value))}
         />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { updateProfitAccuracy({profit_accuracy}) }}>Save</button>
+        <button className={`btn-blue btn-reinvest medium ${user.theme}`} onClick={() => { updateProfitAccuracy({ profit_accuracy }) }}>Save</button>
       </div>
       <div className={`divider ${theme}`} />
     </div>

@@ -12,6 +12,10 @@
     /* width               : max-content; */
 }
 
+.MobileNav button {
+    flex: 1;
+}
+
 /* .greeting {
     margin: auto 1rem;
 }
