@@ -214,14 +214,14 @@ router.post('/login', userStrategy.authenticate('local'), async (req, res) => {
 
 // clear all server session information about this user
 router.post('/logout', rejectUnauthenticated, (req, res) => {
-  console.log('LOGGING OUT USER');
   try {
     devLog('LOGGING OUT USER');
+    const timestamp = req.headers['x-timestamp'];
     const userID = req.user.id;
     // Use passport's built-in method to log out the user
     req.logout();
     res.sendStatus(200);
-    messenger[userID].userUpdate();
+    messenger[userID].userUpdate(timestamp);
     // messenger[userID].sockets.forEach(socket => {
     //   console.log('closing socket', socket.id);
     //   // socket.close();

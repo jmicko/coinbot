@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { FetchError } from '../types';
+import { useTimestamps } from '../contexts/useTimestamps';
 
 interface usePostFetchProps<T> {
   url: string;
@@ -13,16 +14,22 @@ const usePostFetch = <T>({ url, options, setData, refreshCallback, from }: usePo
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<null | FetchError>(null);
   const [unknownError, setUnknownError] = useState<null | Error>(null);
+  const { fetchTimestamps } = useTimestamps();
 
   const postData = useCallback(async (body?: unknown) => {
     setIsLoading(true);
     try {
       console.log('calling postData from', from);
+      const timestamp = Date.now().toString() + url;
+      console.log(timestamp, 'timestamp from usePutFetch');
+      fetchTimestamps.current.push(timestamp);
+      console.log(fetchTimestamps, 'fetchTimestamps from usePutFetch');
 
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Timestamp': timestamp
         },
         body: JSON.stringify(body),
         ...options
@@ -42,14 +49,6 @@ const usePostFetch = <T>({ url, options, setData, refreshCallback, from }: usePo
       console.log('calling refreshCallback in post hook from:', from);
       refreshCallback && refreshCallback();
 
-      // if (setData && data) {
-      //   console.log('5555555555555555555555 5 5 5 5 5 5 5 setting data from put fetch from', from);
-      //   console.log(data, 'data from post fetch from', from);
-
-      //   setData(data);
-      //   // console.log('successfully set data from post fetch from', from);
-
-      // }
       setData && data && setData(data);
 
       setError(null);

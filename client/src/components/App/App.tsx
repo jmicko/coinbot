@@ -8,6 +8,7 @@ import { UserProvider } from '../../contexts/UserContext';
 // import { useUser } from '../../contexts/useUser';
 // import { DotLoader } from '../Loading';
 import CheckUser from '../CheckUser/CheckUser';
+import { TimestampProvider } from '../../contexts/TimestampContext';
 // import useLocalStorage from '../../hooks/useLocalStorage';
 
 
@@ -63,11 +64,13 @@ function App() {
 
 
   return (
-    <UserProvider >
-      {/* < DataProvider > */}
-      <CheckUser />
-      {/* </DataProvider> */}
-    </UserProvider >
+    <TimestampProvider>
+      <UserProvider >
+        {/* < DataProvider > */}
+        <CheckUser />
+        {/* </DataProvider> */}
+      </UserProvider >
+    </TimestampProvider>
   );
 }
 

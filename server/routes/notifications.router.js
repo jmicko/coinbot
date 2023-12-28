@@ -13,7 +13,7 @@ import userStrategy from '../strategies/user.strategy.js';
 // const robot = require('../modules/robot');
 import { robot } from '../modules/robot.js';
 import { databaseClient } from '../modules/databaseClient.js';
-import { userStorage, messenger } from '../modules/cache.js';
+import { userStorage } from '../modules/cache.js';
 import { devLog } from '../modules/utilities.js';
 import { instantSchedule } from '../modules/push.js';
 // import the web-push library

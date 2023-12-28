@@ -1,9 +1,9 @@
 // UserContext.tsx
-import { ReactNode, useCallback, useEffect, useMemo } from 'react'
+import { ReactNode, useEffect, useMemo, useRef } from 'react'
 import useGetFetch from '../hooks/useGetFetch.js';
 import useDeleteFetch from '../hooks/useDeleteFetch.js';
 import { UserContext } from './useUser.js';
-import { Credentials, User } from '../types/index.js';
+import { User } from '../types/index.js';
 import useLocalStorage from '../hooks/useLocalStorage.js';
 import usePostFetch from '../hooks/usePostFetch.js';
 
@@ -13,6 +13,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [defaultTheme, setDefaultTheme] = useLocalStorage<string>('defaultTheme', 'darkTheme', { defaultUser: true });
 
   const userOptions = useMemo(() => ({
+    url: '/api/user',
     defaultState: {} as User,
     preload: true,
     from: 'user state in UserContext',
@@ -24,15 +25,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     error: userError,
     refresh: refreshUser,
     clear: clearUser,
-  } = useGetFetch<User>(
-    '/api/user',
-    userOptions
-    // {
-    //   defaultState: {} as User,
-    //   preload: true,
-    //   from: 'user state in UserContext',
-    // }
-  );
+  } = useGetFetch<User>('', userOptions);
 
   useEffect(() => {
     if (user.theme) {
@@ -41,26 +34,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, [user.theme, setDefaultTheme]);
 
-  // useEffect(() => {
-  //   if (user && user.id) {
-  //     setLoggedIn(true);
-  //   }
-  // }, [user]);
-
-
   // infer theme from user object
   const theme = user.theme ? user.theme : defaultTheme;
   const btnColor = theme === 'darkTheme' ? 'btn-black' : 'btn-blue';
 
-  // const logout = useCallback(async () => {
-  //   await fetch('/api/user/logout', {
-  //     method: 'POST',
-  //     headers: { 'Content-Type': 'application/json' },
-  //     credentials: 'include',
-  //   })
-  //   console.log('clearing user');
-  //   clearUser();
-  // }, [clearUser]);
   const logoutOptions = useMemo(() => ({
     url: '/api/user/logout',
     from: 'logout in UserContext',
@@ -85,9 +62,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     refreshCallback: clearUser,
     setData: setUser,
   }), [setUser, clearUser]);
-  const {
-    postData: login,
-  } = usePostFetch(loginOptions);
+  const { postData: login, } = usePostFetch(loginOptions);
 
   const registerNewOptions = useMemo(() => ({
     url: '/api/user/register',
@@ -103,9 +78,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
       value={
         {
           user,
-          // loggedIn,
-          // takerFee: user?.taker_fee, 
-          // maker_fee: user.maker_fee,
           userLoading, userError, deleteLoading, deleteError,
           refreshUser, logout, login, registerNew, deleteYourself,
           theme, defaultTheme, btnColor

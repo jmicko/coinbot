@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTimestamps } from '../contexts/useTimestamps';
 
 interface UseDeleteFetchProps<T> {
   url: string;
@@ -11,15 +12,24 @@ interface UseDeleteFetchProps<T> {
 const useDeleteFetch = <T>({ url, options, setData, refreshCallback, from }: UseDeleteFetchProps<T>) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
+  const { fetchTimestamps } = useTimestamps();
 
   const deleteData = useCallback(async (moreUrl?: string) => {
     setIsLoading(true);
     try {
       console.log('calling deleteData from:', from, 'to url:', url + (moreUrl || ''));
 
+      const timestamp = Date.now().toString() + url;
+      console.log(timestamp, 'timestamp from useDeleteFetch');
+      fetchTimestamps.current.push(timestamp);
+      console.log(fetchTimestamps, 'fetchTimestamps from useDeleteFetch');
+
       const response = await fetch(url + (moreUrl || ''), {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Timestamp': timestamp
+        },
         ...options
       });
       console.log('done calling deleteData from:', from, 'to url:', url);

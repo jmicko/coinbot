@@ -42,10 +42,10 @@ export default function CheckUser() {
           <center>Loading<DotLoader /></center>
         </div>
         : <>
-          {/* default theme = {defaultTheme}<br />
+          default theme = {defaultTheme}<br />
           logged in = {JSON.stringify(user)}<br />
           user loading = {JSON.stringify(userLoading)}<br />
-          user error = {JSON.stringify(userError)}<br /> */}
+          user error = {JSON.stringify(userError)}<br />
           <Login />
         </>
 

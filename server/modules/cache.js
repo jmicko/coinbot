@@ -137,7 +137,7 @@ class User {
     this.active = bool;
     messenger[this.userID]?.userUpdate()
   }
-  async update() {
+  async update(timeStamp) {
     const user = await databaseClient.getUserAndSettings(this.userID);
     this.userID = user.id;
     this.username = user.username;
@@ -163,7 +163,7 @@ class User {
     this.auto_setup_number = user.auto_setup_number;
     this.profit_reset = user.profit_reset;
     this.can_chat = user.can_chat;
-    messenger[this.userID]?.userUpdate()
+    messenger[this.userID]?.userUpdate(timeStamp);
   }
   setSocketStatus(socketStatus) {
     this.socketStatus = socketStatus;
@@ -276,8 +276,8 @@ class Messenger {
   orderUpdate() {
     this.instantMessage({ type: 'orderUpdate', orderUpdate: true })
   }
-  userUpdate() {
-    this.instantMessage({ userUpdate: true })
+  userUpdate(timestamp) {
+    this.instantMessage({ type: 'userUpdate', userUpdate: true, timestamp: timestamp })
   }
   profitUpdate() {
     this.instantMessage({ profitUpdate: true })

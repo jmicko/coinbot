@@ -10,19 +10,17 @@ import { DataContext } from './useData';
 
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  console.log('DataProvider rendering ***************');
+  console.log('******   ****** DataProvider rendering ******   ******');
   // state for this context
   const [showSettings, setShowSettings] = useState(false);
   const [productID, setProductID] = useState('DOGE-USD');
   const [isAutoScroll, setIsAutoScroll] = useState(true);
   const canScroll = useRef(true);
 
+
   useEffect(() => {
     canScroll.current = isAutoScroll;
   }, [isAutoScroll]);
-
-  console.log('productID: ', productID);
-
 
   // user
   const { user, refreshUser } = useUser();
@@ -35,8 +33,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   //////// ACCOUNT ////////
   /////////////////////////
 
-  // ACCOUNT ROUTES
+  // GET PRODUCTS
   const productsNoVolumeOptions = useMemo(() => ({
+    url: '/api/account/products',
     defaultState: { allProducts: [], activeProducts: [] },
     preload: true,
     from: 'products in data context'
@@ -44,21 +43,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const {
     data: productsNoVolume,
     refresh: refreshProducts,
-  } = useGetFetch<Products>('/api/account/products',
-    productsNoVolumeOptions
-    // {
-    //   defaultState: { allProducts: [], activeProducts: [] },
-    //   preload: true,
-    //   from: 'products in data context'
-    // }
-  )
+  } = useGetFetch<Products>('', productsNoVolumeOptions)
 
   const [products, setProducts] = useState<Products>({ allProducts: [], activeProducts: [] });
 
   useEffect(() => {
     const newAllProducts = productsNoVolume.allProducts.slice(0).map(product => {
-      // console.log(product, 'product');
-
       return ({
         ...product,
         volume_in_quote: (Number(product.volume_24h) * Number(product.price)).toFixed(product.pqd || 2),
@@ -76,26 +66,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   }, [productsNoVolume]);
 
-
-  // get the profits for the selected product
+  // GET PROFIT
   const profitOptions = useMemo(() => ({
+    url: `/api/account/profit/${productID}`,
     defaultState: [],
     preload: true,
     from: 'profit/{productID} in data context'
-  }), []);
+  }), [productID]);
   const { data: profit,
     refresh: refreshProfit,
-  } = useGetFetch<ProfitForDuration[]>(`/api/account/profit/${productID}`,
-    profitOptions
-    // {
-    //   defaultState: [],
-    //   preload: true,
-    //   from: 'profit/{productID} in data context'
-    // }
-  )
-  // get messages sent from the bot
+  } = useGetFetch<ProfitForDuration[]>(``, profitOptions)
 
+  // GET BOT MESSAGES
   const botMessagesOptions = useMemo(() => ({
+    url: `/api/account/messages`,
     defaultState: { botMessages: [], chatMessages: [] },
     preload: true,
     from: 'messages in data context',
@@ -103,23 +87,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const {
     data: messages,
     refresh: refreshBotMessages,
-    // createRefreshData: sendChat,
-  } = useGetFetch(`/api/account/messages`,
-    // {
-    //   defaultState: { botMessages: [], chatMessages: [] },
-    //   preload: true,
-    //   from: 'messages in data context',
-    // }
-    botMessagesOptions
-  )
+  } = useGetFetch('', botMessagesOptions)
+
+  // SEND CHAT
+  const sendChatOptions = useMemo(() => ({
+    url: `/api/account/messages`,
+    from: 'sendChat in data context',
+  }), []);
   const {
     postData: sendChat,
     // deleteData: deleteChat,
-  } = usePostFetch({
-    url: `/api/account/messages`,
-    from: 'sendChat in data context',
-    refreshCallback: refreshBotMessages,
-  })
+  } = usePostFetch(sendChatOptions)
 
   // // AVAILABLE FUNDS
   const availableBase = user.availableFunds?.[productID]?.base_available || 0;
@@ -128,10 +106,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const baseID = user.availableFunds?.[productID]?.base_currency || '';
   const quoteID = user.availableFunds?.[productID]?.quote_currency || '';
 
-  console.log('availableBase: ', availableBase);
-  console.log('availableQuote: ', availableQuote);
+  // console.log('availableBase: ', availableBase);
+  // console.log('availableQuote: ', availableQuote);
 
   const botErrorsOptions = useMemo(() => ({
+    url: `/api/account/errors`,
     defaultState: [],
     preload: true,
     from: 'botErrors in data context',
@@ -139,20 +118,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const {
     data: botErrors,
     refresh: refreshBotErrors,
-  } = useGetFetch<Messages>(`/api/account/errors`,
-    // {
-    //   defaultState: [],
-    //   preload: true,
-    //   from: 'botErrors in data context',
-    // }
-    botErrorsOptions
-  )
+  } = useGetFetch<Messages>('', botErrorsOptions)
 
   // ////////////////////////
   // //////// ORDERS ////////
   // ////////////////////////
 
+  // GET ORDERS
   const ordersOptions = useMemo(() => ({
+    url: `/api/orders/${productID}`,
     defaultState: {
       buys: [],
       sells: [],
@@ -164,54 +138,47 @@ export function DataProvider({ children }: { children: ReactNode }) {
     },
     preload: true,
     from: 'orders/${productID} in data context'
-  }), []);
+  }), [productID]);
   const {
     data: orders,
     refresh: refreshOrders,
-  } = useGetFetch<Orders>(`/api/orders/${productID}`,
-    ordersOptions
-    // {
-    //   defaultState: {
-    //     buys: [],
-    //     sells: [],
-    //     counts: {
-    //       totalOpenOrders: { count: 0 },
-    //       totalOpenBuys: { count: 0 },
-    //       totalOpenSells: { count: 0 }
-    //     }
-    //   },
-    //   preload: true,
-    //   from: 'orders/{productID} in data context'
-    // }
-  )
+  } = useGetFetch<Orders>('', ordersOptions)
+
+  // SYNC ORDERS
+  const syncOrdersOptions = useMemo(() => ({
+    url: `/api/orders`,
+    from: 'syncOrders in data context'
+  }), []);
   const {
     putData: syncOrders,
-  } = usePutFetch({ url: `/api/orders`, from: 'syncOrders in data context' })
+  } = usePutFetch(syncOrdersOptions)
 
-  const { postData: createOrderPair } = usePostFetch({
+  // CREATE ORDER PAIR
+  const createOrderPairOptions = useMemo(() => ({
     url: `/api/orders/${productID}`,
     from: 'createOrderPair in data context',
     refreshCallback: refreshOrders,
-  })
+  }), [productID, refreshOrders]);
+  const { postData: createOrderPair } = usePostFetch(createOrderPairOptions)
 
-  // ///////////////////////
-  // //////// TRADE ////////
-  // ///////////////////////
+  ///////////////////////
+  //////// TRADE ////////
+  ///////////////////////
 
-  // // TRADE ROUTES - for active "hot" trading
-  // const { updateData: syncPair } = useFetchData(`/api/trade/`, { defaultState: {}, noLoad: true });
-  const { putData: syncPair } = usePutFetch({
+  // SYNC PAIR
+  const syncPairOptions = useMemo(() => ({
     url: `/api/trade`,
-    from: 'syncPair in data context',
-    refreshCallback: refreshOrders,
-  })
-  // const { createData: createMarketTrade } = useFetchData(`/api/trade/market`, { defaultState: {}, noLoad: true });
-  const { postData: createMarketTrade } = usePostFetch({
+    from: 'syncPair in data context'
+  }), []);
+  const { putData: syncPair } = usePutFetch(syncPairOptions)
+
+  const createMarketTradeOptions = useMemo(() => ({
     url: `/api/trade/market`,
     from: 'createMarketTrade in data context',
     refreshCallback: () => { refreshOrders(); refreshUser() },
-  })
-  // const { data: exportableFiles, refresh: refreshExportableFiles } = useFetchData(`/api/account/exportableFiles`, { defaultState: [] })
+  }), [refreshOrders, refreshUser]);
+  const { postData: createMarketTrade } = usePostFetch(createMarketTradeOptions)
+
   // TRADE FUNCTIONS
   const currentProduct: Product
     = products.allProducts.find((product) => product.product_id === productID) || {} as Product;

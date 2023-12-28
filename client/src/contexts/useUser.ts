@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { MutableRefObject, createContext, useContext } from "react";
 import { User } from "../types";
 
 interface UserContextProps {
@@ -10,8 +10,8 @@ interface UserContextProps {
   refreshUser: () => void;
   logout: () => void;
   // login: ({username: string, password: string}) => void;
-  login: ({username, password}: {username: string, password: string}) => void;
-  registerNew: ({username, password}: {username: string, password: string}) => void;
+  login: ({ username, password }: { username: string, password: string }) => void;
+  registerNew: ({ username, password }: { username: string, password: string }) => void;
   deleteYourself: () => void;
   theme: string;
   defaultTheme: string;
