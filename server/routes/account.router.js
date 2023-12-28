@@ -153,7 +153,7 @@ router.get('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
 router.put('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
   try {
     devLog('reset profit route');
-    const timestamp = req.headers['x-timestamp'];
+    const identifier = req.headers['x-identifier'];
     // get the object keys
 
     const profit_reset = new Date(req.body.profit_reset);
@@ -168,7 +168,7 @@ router.put('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
     await pool.query(queryText, [userID]);
     await pool.query(timeQuery, [profit_reset, userID]);
 
-    await userStorage[userID].update(timestamp);
+    await userStorage[userID].update(identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem resetting profit');
@@ -517,13 +517,13 @@ router.post('/messages', rejectUnauthenticated, async (req, res) => {
 router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
   devLog('reinvest route');
   try {
-    const timestamp = req.headers['x-timestamp'];
+    const identifier = req.headers['x-identifier'];
     const user = req.user;
     const queryText = `UPDATE "user_settings" SET "reinvest" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [!user.reinvest, user.id]);
 
-    await userStorage[user.id].update(timestamp);
-    // messenger[user.id].userUpdate(timestamp);
+    await userStorage[user.id].update(identifier);
+    // messenger[user.id].userUpdate(identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in REINVEST ROUTE');
@@ -537,13 +537,13 @@ router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
 router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
   devLog('reinvest ratio route');
   try {
-    const timestamp = req.headers['x-timestamp'];
+    const identifier = req.headers['x-identifier'];
     const user = req.user;
     const queryText = `UPDATE "user_settings" SET "reinvest_ratio" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.reinvest_ratio, user.id]);
 
-    await userStorage[user.id].update(timestamp);
-    // messenger[user.id].userUpdate(timestamp);
+    await userStorage[user.id].update(identifier);
+    // messenger[user.id].userUpdate(identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in REINVEST ROUTE');
@@ -557,13 +557,13 @@ router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
 router.put('/tradeMax', rejectUnauthenticated, async (req, res) => {
   devLog('trade max route');
   try {
-    const timestamp = req.headers['x-timestamp'];
+    const identifier = req.headers['x-identifier'];
     const user = req.user;
     const queryText = `UPDATE "user_settings" SET "max_trade" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [!user.max_trade, user.id]);
 
-    await userStorage[user.id].update(timestamp);
-    // messenger[user.id].userUpdate(timestamp);
+    await userStorage[user.id].update(identifier);
+    // messenger[user.id].userUpdate(identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in tradeMax ROUTE');
@@ -578,12 +578,12 @@ router.put('/tradeMax', rejectUnauthenticated, async (req, res) => {
 router.put('/reserve', rejectUnauthenticated, async (req, res) => {
   try {
     const user = req.user;
-    const timestamp = req.headers['x-timestamp'];
+    const identifier = req.headers['x-identifier'];
     const queryText = `UPDATE "user_settings" SET "reserve" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.reserve, user.id]);
-    await userStorage[user.id].update(timestamp);
+    await userStorage[user.id].update(identifier);
     res.sendStatus(200);
-    // messenger[user.id].userUpdate(timestamp);
+    // messenger[user.id].userUpdate(identifier);
   } catch (err) {
     devLog(err, 'problem in reserve ROUTE');
     res.sendStatus(500);
@@ -597,7 +597,7 @@ router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
   devLog('max trade size route');
   try {
     const user = req.user;
-    const timestamp = req.headers['x-timestamp'];
+    const identifier = req.headers['x-identifier'];
     if (req.body.max_trade_size >= 0) {
       const queryText = `UPDATE "user_settings" SET "max_trade_size" = $1 WHERE "userID" = $2`;
       await pool.query(queryText, [req.body.max_trade_size, user.id]);
@@ -606,8 +606,8 @@ router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
       await pool.query(queryText, [0, user.id]);
     }
 
-    await userStorage[user.id].update(timestamp);
-    // messenger[user.id].userUpdate(timestamp);
+    await userStorage[user.id].update(identifier);
+    // messenger[user.id].userUpdate(identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in maxTradeSize ROUTE');
@@ -621,12 +621,12 @@ router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
 router.put('/postMaxReinvestRatio', rejectUnauthenticated, async (req, res) => {
   try {
     const user = req.user;
-    const timestamp = req.headers['x-timestamp'];
+    const identifier = req.headers['x-identifier'];
     devLog("postMaxReinvestRatio route hit", req.body);
     const queryText = `UPDATE "user_settings" SET "post_max_reinvest_ratio" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.postMaxReinvestRatio, user.id]);
-    await userStorage[user.id].update(timestamp);
-    // messenger[user.id].userUpdate(timestamp);
+    await userStorage[user.id].update(identifier);
+    // messenger[user.id].userUpdate(identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in postMaxReinvestRatio ROUTE');

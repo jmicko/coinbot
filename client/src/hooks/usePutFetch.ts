@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useTimestamps } from '../contexts/useTimestamps';
+import { useIdentifiers } from '../contexts/useIdentifiers';
 
 interface UsePutFetchProps<T> {
   url: string;
@@ -13,23 +13,23 @@ interface UsePutFetchProps<T> {
 const usePutFetch = <T>({ url, options, setData, refreshCallback, loadingDelay, from }: UsePutFetchProps<T>) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
-  const { fetchTimestamps } = useTimestamps();
+  const { fetchIdentifiers } = useIdentifiers();
 
   const putData = useCallback(async (body?: unknown) => {
     setIsLoading(true);
     try {
       console.log('calling putData from', from, 'with body:', body);
 
-      const timestamp = Date.now().toString() + url;
-      console.log(timestamp, 'timestamp from usePutFetch');
-      fetchTimestamps.current.push(timestamp);
-      console.log(fetchTimestamps, 'fetchTimestamps from usePutFetch');
+      const identifier = Date.now().toString() + url;
+      console.log(identifier, 'identifier from usePutFetch');
+      fetchIdentifiers.current.push(identifier);
+      console.log(fetchIdentifiers, 'fetchIdentifiers from usePutFetch');
 
       const response = await fetch(url, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'X-Timestamp': timestamp
+          'X-identifier': identifier
         },
         body: JSON.stringify(body),
         ...options
@@ -62,7 +62,7 @@ const usePutFetch = <T>({ url, options, setData, refreshCallback, loadingDelay, 
         setIsLoading(false);
       }, loadingDelay || 0);
     }
-  }, [url, options, setData, from, refreshCallback, loadingDelay]);
+  }, [url, options, setData, from, refreshCallback, loadingDelay, fetchIdentifiers]);
 
   return { isLoading, error, putData };
 };

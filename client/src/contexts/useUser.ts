@@ -1,4 +1,4 @@
-import { MutableRefObject, createContext, useContext } from "react";
+import { createContext, useContext } from "react";
 import { User } from "../types";
 
 interface UserContextProps {

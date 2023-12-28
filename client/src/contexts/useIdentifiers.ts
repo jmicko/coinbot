@@ -1,10 +1,10 @@
 import { MutableRefObject, createContext, useContext } from "react";
 
 interface TimestampContextProps {
-  fetchTimestamps: MutableRefObject<string[]>;
+  fetchIdentifiers: MutableRefObject<string[]>;
 }
 
-export const TimestampContext
+export const IdentifierContext
   = createContext<TimestampContextProps>({} as TimestampContextProps)
 
-export const useTimestamps = () => useContext(TimestampContext)
+export const useIdentifiers = () => useContext(IdentifierContext)

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { FetchError } from '../types';
-import { useTimestamps } from '../contexts/useTimestamps';
+import { useIdentifiers } from '../contexts/useIdentifiers';
 
 interface usePostFetchProps<T> {
   url: string;
@@ -14,22 +14,22 @@ const usePostFetch = <T>({ url, options, setData, refreshCallback, from }: usePo
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<null | FetchError>(null);
   const [unknownError, setUnknownError] = useState<null | Error>(null);
-  const { fetchTimestamps } = useTimestamps();
+  const { fetchIdentifiers } = useIdentifiers();
 
   const postData = useCallback(async (body?: unknown) => {
     setIsLoading(true);
     try {
       console.log('calling postData from', from);
-      const timestamp = Date.now().toString() + url;
-      console.log(timestamp, 'timestamp from usePutFetch');
-      fetchTimestamps.current.push(timestamp);
-      console.log(fetchTimestamps, 'fetchTimestamps from usePutFetch');
+      const identifier = Date.now().toString() + url;
+      console.log(identifier, 'identifier from usePutFetch');
+      fetchIdentifiers.current.push(identifier);
+      console.log(fetchIdentifiers, 'fetchIdentifiers from usePutFetch');
 
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Timestamp': timestamp
+          'X-identifier': identifier
         },
         body: JSON.stringify(body),
         ...options
@@ -63,7 +63,7 @@ const usePostFetch = <T>({ url, options, setData, refreshCallback, from }: usePo
     } finally {
       setIsLoading(false);
     }
-  }, [url, options, setData, from, refreshCallback]);
+  }, [url, options, setData, from, refreshCallback, fetchIdentifiers]);
 
   return { isLoading, error, postData, unknownError };
 };

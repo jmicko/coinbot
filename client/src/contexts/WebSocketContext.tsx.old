@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, ReactNode } from 'react';
-import { Tickers, WsMessage } from '../types';
+import { Tickers } from '../types';
 import { WebSocketContext } from './useWebsocket';
 import { useData } from './useData';
 import { useUser } from './useUser';
@@ -53,11 +53,69 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         console.log('successfully set onopen');
 
         socket.onmessage = (event) => {
-          const data = JSON.parse(event.data);
-          // console.log('WebSocket message: ', data);
 
-          handleMessage(data, socket);
-          data.type !== 'ticker' && console.log('ding', random);
+          const data = JSON.parse(event.data);
+
+          if (data.type === 'ping') {
+            socket.send(JSON.stringify({ type: 'pong' }));
+
+          } else if (data.type === 'heartbeat') {
+            // console.log('heartbeat data: ', data);
+            setHeartbeat(prevHeartbeat => {
+              if (data.side === 'heart') {
+                return prevHeartbeat.heart === 'heart'
+                  ? ({ ...prevHeartbeat, count: data.count, heart: 'HEART' })
+                  : ({ ...prevHeartbeat, count: data.count, heart: 'heart' })
+              } else {
+                return prevHeartbeat.beat === 'beat'
+                  ? ({ ...prevHeartbeat, beat: 'BEAT' })
+                  : ({ ...prevHeartbeat, beat: 'beat' })
+              }
+            })
+
+          } else if (data.type === 'ticker') {
+            // console.log('ticker data: ', data);
+            const ticker = data.ticker;
+            setTickers(prevTickers => ({
+              ...prevTickers,
+              [ticker.product_id]: ticker
+            }));
+          } else if (data.type === 'socketStatus') {
+            console.log('-----socketStatus data: ', data);
+            setSocketStatus(data.socketStatus);
+          } else if (data.type === 'error') {
+            console.log('error socket message received: ');
+            refreshBotErrors();
+          } else if (data.type === 'messageUpdate' || data.type === 'chat' || data.type === 'general') {
+            console.log('message socket message received: ');
+            if (!fetchIdentifiers.current.includes(data.identifier)) {
+              refreshBotMessages();
+            }
+          } else if (data.type === 'orderUpdate' || data.orderUpdate === true) {
+            console.log('order socket message received: ');
+            if (!fetchIdentifiers.current.includes(data.identifier)) {
+              refreshOrders();
+              refreshProfit();
+            }
+          } else if (data.type === 'productUpdate' || data.productUpdate === true) {
+            console.log('order socket message received: ');
+            if (!fetchIdentifiers.current.includes(data.identifier)) {
+              refreshProducts();
+            }
+          } else if (data.type === 'profitUpdate' || data.profitUpdate === true) {
+            console.log('profit socket message received: ');
+            if (!fetchIdentifiers.current.includes(data.identifier)) {
+              refreshProfit();
+            }
+          } else if (data.type === 'userUpdate' || data.userUpdate === true) {
+            console.log(' update user socket message received \n', data);
+            if (!fetchIdentifiers.current.includes(data.identifier)) {
+              refreshUser();
+            }
+          } else {
+            console.log('WebSocket message: ', data);
+          }
+          // console.log('ding', random);
           timer(socket);
         };
         console.log('successfully set onmessage');
@@ -65,10 +123,8 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         // handle errors
         socket.onerror = (error) => {
           try {
-            console.log('WebSocket error: ', error);
-            // console.log('WebSocket closing on error');
-
-            // socket.close();
+            console.log('WebSocket closing on error:', error);
+            socket.close();
           } catch (error) {
             console.log('error closing socket: ', error);
           }
@@ -91,7 +147,7 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         console.log('successfully set onclose');
 
       } catch (error) {
-        console.log(error, '!!!!!!! !!!!!!! !!!!!!! error reconnecting !!!!!!! !!!!!!! !!!!!!!');
+        console.log(error, '!!!!!!! error reconnecting !!!!!!!');
         shouldClose = true;
         console.log('>>>>>>shouldClose set to true');
 
@@ -107,94 +163,6 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         }, backoff);
         backoff *= 2;
         if (backoff > 30000) backoff = 30000;
-      }
-
-      function handleMessage(data: WsMessage, socket: WebSocket) {
-        switch (data.type) {
-          case 'ping':
-            socket.send(JSON.stringify({ type: 'pong' }));
-            break;
-
-          case 'heartbeat':
-            // console.log('heartbeat data: ', data);
-            setHeartbeat(prevHeartbeat => {
-              if (data.side === 'heart') {
-                return prevHeartbeat.heart === 'heart'
-                  ? ({ ...prevHeartbeat, count: data.count, heart: 'HEART' })
-                  : ({ ...prevHeartbeat, count: data.count, heart: 'heart' });
-              } else {
-                return prevHeartbeat.beat === 'beat'
-                  ? ({ ...prevHeartbeat, beat: 'BEAT' })
-                  : ({ ...prevHeartbeat, beat: 'beat' });
-              }
-            });
-            break;
-
-          case 'ticker':
-            // console.log('ticker data: ', data);
-            const ticker = data.ticker;
-            setTickers(prevTickers => ({
-              ...prevTickers,
-              [ticker.product_id]: ticker
-            }));
-            break;
-
-          case 'socketStatus':
-            console.log('-----socketStatus data: ', data);
-            setSocketStatus(data.socketStatus);
-            break;
-
-          case 'error':
-            console.log('error socket message received: ');
-            refreshBotErrors();
-            break;
-
-          case 'messageUpdate' || 'chat' || 'general':
-            console.log('message socket message received: ');
-            // refresh if any provided identifier is not in fetchIdentifiers
-            if (alreadyFetched(data)) break;
-            refreshBotMessages();
-            if (data.orderUpdate) refreshOrders();
-            break;
-
-          case 'orderUpdate':
-            console.log('order socket message received: ');
-            // refresh if any provided identifier is not in fetchIdentifiers
-            if (alreadyFetched(data)) break;
-            refreshOrders();
-            refreshProfit();
-            break;
-
-          case 'productUpdate':
-            console.log('order socket message received: ');
-            // refresh if any provided identifier is not in fetchIdentifiers
-            if (alreadyFetched(data)) break;
-            refreshProducts();
-            break;
-
-          case 'profitUpdate':
-            console.log('profit socket message received: ');
-            // refresh if any provided identifier is not in fetchIdentifiers
-            if (alreadyFetched(data)) break;
-            refreshProfit();
-            break;
-
-          case 'userUpdate':
-            console.log(' update user socket message received \n', data);
-            // refresh if any provided identifier is not in fetchIdentifiers
-            if (alreadyFetched(data)) break;
-            refreshUser();
-            break;
-
-          default:
-            console.log('WebSocket message: ', data);
-            break;
-        }
-      }
-
-      function alreadyFetched(data: WsMessage) {
-        if (data.identifier && fetchIdentifiers.current.includes(data.identifier)) return true;
-        return false;
       }
 
       function timer(socket: WebSocket) {
@@ -241,8 +209,6 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     refreshProducts,
     refreshProfit,
     refreshUser,
-    fetchIdentifiers,
-    setCoinbotSocket,
   ]);
 
   // const value = useMemo(() => ({ socket: socketRef.current }), []);

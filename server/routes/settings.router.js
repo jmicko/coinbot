@@ -112,15 +112,15 @@ router.put('/pause', rejectUnauthenticated, async (req, res) => {
   try {
     devLog('pause route');
     const user = req.user;
-    const timestamp = req.headers['x-timestamp'];
+    const identifier = req.headers['x-identifier'];
     await databaseClient.setPause(!user.paused, user.id);
 
-    console.log('pause route', user.id, timestamp);
+    console.log('pause route', user.id, identifier);
 
-    await userStorage[user.id].update(timestamp);
+    await userStorage[user.id].update(identifier);
 
     // tell user to update user
-    // messenger[req.user.id].userUpdate(timestamp);
+    // messenger[req.user.id].userUpdate(identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in PAUSE ROUTE');
@@ -135,11 +135,11 @@ router.put('/theme', rejectUnauthenticated, async (req, res) => {
   try {
     const user = req.user;
     const theme = req.body.theme;
-    const timestamp = req.headers['x-timestamp'];
+    const identifier = req.headers['x-identifier'];
     devLog('theme route', theme);
     const queryText = `UPDATE "user_settings" SET "theme" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [theme, user.id]);
-    await userStorage[user.id].update(timestamp);
+    await userStorage[user.id].update(identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in THEME ROUTE');
@@ -154,16 +154,16 @@ router.put('/theme', rejectUnauthenticated, async (req, res) => {
 router.put('/tradeLoadMax', rejectUnauthenticated, async (req, res) => {
   try {
     const user = req.user;
-    const timestamp = req.headers['x-timestamp'];
+    const identifier = req.headers['x-identifier'];
     const queryText = `UPDATE "user_settings" SET "max_trade_load" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [req.body.max_trade_load, user.id]);
-    await userStorage[user.id].update(timestamp);
+    await userStorage[user.id].update(identifier);
     // update orders on client
     messenger[user.id].newMessage({
       type: 'general',
       text: `Max trades to load updated to ${req.body.max_trade_load}`,
       orderUpdate: true,
-      timestamp: timestamp
+      identifier: identifier
     })
     res.sendStatus(200);
   } catch (err) {
@@ -179,7 +179,7 @@ router.put('/tradeLoadMax', rejectUnauthenticated, async (req, res) => {
 router.put('/profitAccuracy', rejectUnauthenticated, async (req, res) => {
   try {
     const user = req.user;
-    const timestamp = req.headers['x-timestamp'];
+    const identifier = req.headers['x-identifier'];
     const accuracy = () => {
       if (req.body.profit_accuracy > 16) {
         return 16
@@ -192,7 +192,7 @@ router.put('/profitAccuracy', rejectUnauthenticated, async (req, res) => {
     devLog('profit_accuracy route hit', req.body);
     const queryText = `UPDATE "user_settings" SET "profit_accuracy" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [accuracy(), user.id]);
-    await userStorage[user.id].update(timestamp);
+    await userStorage[user.id].update(identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'error with profit accuracy route');
@@ -206,9 +206,9 @@ router.put('/profitAccuracy', rejectUnauthenticated, async (req, res) => {
 router.put('/killLock', rejectUnauthenticated, async (req, res) => {
   try {
   const user = req.user;
-    const timestamp = req.headers['x-timestamp'];
+    const identifier = req.headers['x-identifier'];
     await databaseClient.setKillLock(!user.kill_locked, user.id);
-    await userStorage[user.id].update(timestamp);
+    await userStorage[user.id].update(identifier);
     devLog('kill lock route hit', user);
     res.sendStatus(200);
   } catch (err) {
@@ -223,7 +223,7 @@ router.put('/killLock', rejectUnauthenticated, async (req, res) => {
 router.put('/syncQuantity', rejectUnauthenticated, async (req, res) => {
   try {
     const user = req.user;
-    const timestamp = req.headers['x-timestamp'];
+    const identifier = req.headers['x-identifier'];
     let newQuantity = req.body.sync_quantity;
     // get the bot settings
     const bot = botSettings.get();
@@ -237,7 +237,7 @@ router.put('/syncQuantity', rejectUnauthenticated, async (req, res) => {
     devLog('syncQuantity route', user.username);
     const queryText = `UPDATE "user_settings" SET "sync_quantity" = $1 WHERE "userID" = $2`;
     await pool.query(queryText, [newQuantity, user.id]);
-    await userStorage[user.id].update(timestamp);
+    await userStorage[user.id].update(identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'error with syncTrades route');

@@ -221,19 +221,104 @@ export interface Message {
   mCount: number;
   orderUpdate: boolean;
   text: string;
-  timeStamp: string;
+  timestamp: string;
   type: string;
 }
 
-// {
-//   botMessages: Message[];
-//   chatMessages: Message[];
-// }
 export type Messages = Message[];
+
+
+// WEBSOCKET MESSAGE TYPES
+
+// base message to extend from
+export interface BaseWsMessage {
+  type: string;
+  identifier?: string;
+  timestamp?: string;
+  // from: string;
+  // cCount: number;
+  // mCount: number;
+  // orderUpdate: boolean;
+}
+
+export interface TickerMessage extends BaseWsMessage {
+  type: 'ticker';
+  ticker: {
+    high_24_h: string;
+    high_52_w: string;
+    low_24_h: string;
+    low_52_w: string;
+    price: string;
+    price_percent_chg_24_h: string;
+    product_id: string;
+    volume_24_h: string;
+  };
+}
+
+export interface HeartBeatMessage extends BaseWsMessage {
+  type: 'heartbeat';
+  side: string;
+  count: number;
+  heart: 'HEART' | 'heart';
+  beat: 'BEAT' | 'beat';
+}
+
+export interface Ping extends BaseWsMessage {
+  type: 'ping';
+}
+
+export interface SocketStatusMessage extends BaseWsMessage {
+  type: 'socketStatus';
+  socketStatus: 'open' | 'closed' | 'timeout' | 'reopening';
+}
+
+export interface MessageUpdate extends BaseWsMessage {
+  type: 'messageUpdate' | 'chat' | 'general';
+  text?: string;
+  orderUpdate?: boolean;
+  // message: Message;
+}
+
+export interface OrderUpdate extends BaseWsMessage {
+  type: 'orderUpdate';
+  orderUpdate: boolean;
+}
+
+export interface ErrorUpdate extends BaseWsMessage {
+  type: 'error';
+  error?: string;
+}
+
+export interface ProductUpdate extends BaseWsMessage {
+  type: 'productUpdate';
+  product: Product;
+}
+
+export interface ProfitUpdate extends BaseWsMessage {
+  type: 'profitUpdate';
+  profit: number;
+}
+
+export interface UserUpdate extends BaseWsMessage {
+  type: 'userUpdate';
+}
+
+export type WsMessage
+  = TickerMessage
+  | HeartBeatMessage
+  | Ping
+  | SocketStatusMessage
+  | MessageUpdate
+  | OrderUpdate
+  | ErrorUpdate
+  | ProductUpdate
+  | ProfitUpdate
+  | UserUpdate;
+
 
 export interface Tickers {
   [key: string]: {
-    price: number;
+    price: string;
   }
 }
 

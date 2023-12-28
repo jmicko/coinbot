@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useTimestamps } from '../contexts/useTimestamps';
+import { useIdentifiers } from '../contexts/useIdentifiers';
 
 interface UseDeleteFetchProps<T> {
   url: string;
@@ -12,23 +12,23 @@ interface UseDeleteFetchProps<T> {
 const useDeleteFetch = <T>({ url, options, setData, refreshCallback, from }: UseDeleteFetchProps<T>) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
-  const { fetchTimestamps } = useTimestamps();
+  const { fetchIdentifiers } = useIdentifiers();
 
   const deleteData = useCallback(async (moreUrl?: string) => {
     setIsLoading(true);
     try {
       console.log('calling deleteData from:', from, 'to url:', url + (moreUrl || ''));
 
-      const timestamp = Date.now().toString() + url;
-      console.log(timestamp, 'timestamp from useDeleteFetch');
-      fetchTimestamps.current.push(timestamp);
-      console.log(fetchTimestamps, 'fetchTimestamps from useDeleteFetch');
+      const identifier = Date.now().toString() + url;
+      console.log(identifier, 'identifier from useDeleteFetch');
+      fetchIdentifiers.current.push(identifier);
+      console.log(fetchIdentifiers, 'fetchIdentifiers from useDeleteFetch');
 
       const response = await fetch(url + (moreUrl || ''), {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'X-Timestamp': timestamp
+          'X-identifier': identifier
         },
         ...options
       });
@@ -59,7 +59,7 @@ const useDeleteFetch = <T>({ url, options, setData, refreshCallback, from }: Use
     } finally {
       setIsLoading(false);
     }
-  }, [url, options, setData, from, refreshCallback]);
+  }, [url, options, setData, from, refreshCallback, fetchIdentifiers]);
 
   return { isLoading, error, deleteData, };
 };

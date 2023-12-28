@@ -216,12 +216,12 @@ router.post('/login', userStrategy.authenticate('local'), async (req, res) => {
 router.post('/logout', rejectUnauthenticated, (req, res) => {
   try {
     devLog('LOGGING OUT USER');
-    const timestamp = req.headers['x-timestamp'];
+    const identifier = req.headers['x-identifier'];
     const userID = req.user.id;
     // Use passport's built-in method to log out the user
     req.logout();
     res.sendStatus(200);
-    messenger[userID].userUpdate(timestamp);
+    messenger[userID].userUpdate(identifier);
     // messenger[userID].sockets.forEach(socket => {
     //   console.log('closing socket', socket.id);
     //   // socket.close();

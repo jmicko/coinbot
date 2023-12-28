@@ -2,18 +2,18 @@ import './App.css'
 // Directory imports
 import { UserProvider } from '../../contexts/UserContext';
 import CheckUser from '../CheckUser/CheckUser';
-import { TimestampProvider } from '../../contexts/TimestampContext';
+import { IdentifierProvider } from '../../contexts/IdentifierContext';
 
 function App() {
   console.log('App rendering_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_');
 
 
   return (
-    <TimestampProvider>
+    <IdentifierProvider>
       <UserProvider >
         <CheckUser />
       </UserProvider >
-    </TimestampProvider>
+    </IdentifierProvider>
   );
 }
 

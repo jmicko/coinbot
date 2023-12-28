@@ -182,7 +182,7 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
   if (user.active && user.approved) {
     // get the user available funds
     try {
-      const timestamp = req.headers['x-timestamp'];
+      const identifier = req.headers['x-identifier'];
       const funds = userStorage[user.id].getAvailableFunds();
       user.availableFunds = funds;
       let options = req.body.options;
@@ -273,7 +273,7 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
         type: 'general',
         text: `Auto setup complete!`,
         orderUpdate: true,
-        timestamp: timestamp
+        identifier: identifier
       });
     } catch (err) {
       devLog(err, 'problem in autoSetup ');
@@ -301,7 +301,7 @@ router.post('/:product_id', rejectUnauthenticated, async (req, res) => {
   devLog('in post order route');
   if (user.active && user.approved) {
     try {
-      const timestamp = req.headers['x-timestamp'];
+      const identifier = req.headers['x-identifier'];
       // tradeDetails const should take in values sent from trade component form
       const tradeDetails = {
         original_sell_price: JSON.stringify(Number(order.original_sell_price)),
@@ -356,7 +356,7 @@ router.post('/:product_id', rejectUnauthenticated, async (req, res) => {
       devLog('order to store', fakeOrder);
       // store the fake order in the db. It will be ordered later in the reorder function
       await databaseClient.storeTrade(fakeOrder, tradeDetails, fakeOrder.created_time);
-      await robot.updateFunds(userID, timestamp);
+      await robot.updateFunds(userID, identifier);
       // tell DOM to update orders
       messenger[userID].newMessage({
         type: 'general',
@@ -517,7 +517,7 @@ router.put('/bulkPairRatio/:product_id', rejectUnauthenticated, async (req, res)
 router.delete('/', rejectUnauthenticated, async (req, res) => {
   devLog('in delete all orders route');
   try {
-    const timestamp = req.headers['x-timestamp'];
+    const identifier = req.headers['x-identifier'];
     const userID = req.user.id;
     const previousPauseStatus = req.user.paused;
     devLog('in delete all orders route', userID);
@@ -539,7 +539,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
       type: 'general',
       text: `Deleted all orders`,
       orderUpdate: true,
-      timestamp: timestamp
+      identifier: identifier
     })
 
     devLog('+++++++ EVERYTHING WAS DELETED +++++++ for user:', userID);
@@ -559,7 +559,7 @@ router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
   devLog('in delete single order route');
   // DELETE route code here
   try {
-    const timestamp = req.headers['x-timestamp'];
+    const identifier = req.headers['x-identifier'];
     const userID = req.user.id;
     const orderId = req.params.order_id;
 
@@ -579,7 +579,7 @@ router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
       type: 'general',
       text: 'Successfully deleted trade-pair',
       orderUpdate: true,
-      timestamp: timestamp
+      identifier: identifier
     });
   } catch (err) {
     let errorText = 'FAILURE deleting trade-pair!';
@@ -615,7 +615,7 @@ router.delete('/product/:product_id', rejectUnauthenticated, async (req, res) =>
   const userID = req.user.id;
   const previousPauseStatus = req.user.paused;
   try {
-    const timestamp = req.headers['x-timestamp'];
+    const identifier = req.headers['x-identifier'];
     const product_id = req.params.product_id;
     devLog('in delete all orders for product route', userID, '< user', product_id, '< product_id');
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
@@ -636,7 +636,7 @@ router.delete('/product/:product_id', rejectUnauthenticated, async (req, res) =>
       type: 'general',
       text: `Deleted all orders for ${product_id}`,
       orderUpdate: true,
-      timestamp: timestamp
+      identifier: identifier
     })
 
     devLog(`+++++++ EVERYTHING FOR PRODUCT: ${product_id} WAS DELETED +++++++ for user:`, userID);
@@ -659,7 +659,7 @@ router.delete('/:product_id/:start/:end', rejectUnauthenticated, async (req, res
   const userID = req.user.id;
   const previousPauseStatus = req.user.paused;
   try {
-    const timestamp = req.headers['x-timestamp'];
+    const identifier = req.headers['x-identifier'];
     const start = req.params.start < req.params.end ? req.params.start : req.params.end;
     const end = req.params.end > req.params.start ? req.params.end : req.params.start;
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
@@ -683,7 +683,7 @@ router.delete('/:product_id/:start/:end', rejectUnauthenticated, async (req, res
       type: 'general',
       text: `Deleted orders between ${req.body.lowerLimit} and ${req.body.upperLimit} for ${req.body.product_id}`,
       orderUpdate: true,
-      timestamp: timestamp
+      identifier: identifier
     })
     devLog('+++++++ RANGE WAS DELETED +++++++ for user:', userID);
   } catch (err) {

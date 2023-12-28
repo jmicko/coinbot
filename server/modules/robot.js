@@ -897,7 +897,7 @@ async function getAvailableFunds(userID, userSettings) {
   })
 }
 
-async function updateFunds(userID, timestamp) {
+async function updateFunds(userID, identifier) {
   userStorage[userID].updateStatus('begin update funds');
   return new Promise(async (resolve, reject) => {
     try {
@@ -914,7 +914,7 @@ async function updateFunds(userID, timestamp) {
       // if the available funds have changed, update the DOM
       if (availableFundsChanged) {
         devLog('sending order update from updateFunds after available funds changed');
-        messenger[userID].userUpdate(timestamp);
+        messenger[userID].userUpdate(identifier);
       }
       resolve()
     } catch (err) {
