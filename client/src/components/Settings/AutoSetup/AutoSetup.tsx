@@ -1,4 +1,4 @@
-import { DotLoader, WaveLoader } from "../../Loading";
+import { CaratWaveLoader, DotLoader } from "../../Loading";
 import { useWebSocket } from '../../../contexts/useWebsocket.js';
 import { useData } from '../../../contexts/useData.js';
 import { useEffect, useState } from "react";
@@ -14,7 +14,7 @@ import Confirm from "../../Confirm/Confirm.js";
 
 function AutoSetup(props: { tips: boolean }) {
   const { tickers } = useWebSocket();
-  const { productID,baseID, quoteID, pqd, pbd } = useData();
+  const { productID, baseID, quoteID, pqd, pbd } = useData();
   const currentPriceTicker = tickers[productID]?.price;
   const { user, theme } = useUser();
 
@@ -176,7 +176,7 @@ function AutoSetup(props: { tips: boolean }) {
         <br />
 
         {recentInput
-          ? <div className='auto-setup-results'><h4>Calculating Results</h4><WaveLoader /></div>
+          ? <div className='auto-setup-results'><h4>Calculating Results</h4><CaratWaveLoader /></div>
           : setupResults ? <div className='auto-setup-results'>
             <h4>Results</h4>
             {/* LAST BUY PRICE */}

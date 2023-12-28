@@ -4,7 +4,7 @@ import Confirm from '../../Confirm/Confirm.js';
 import './Reset.css'
 import usePutFetch from '../../../hooks/usePutFetch.js';
 import { useData } from '../../../contexts/useData.js';
-import { WaveLoader } from '../../Loading.js';
+import { CaratWaveLoader } from '../../Loading.js';
 
 
 function Reset(props: { tips: boolean }) {
@@ -67,7 +67,7 @@ function Reset(props: { tips: boolean }) {
       />
       &nbsp;
       {resetLoading
-        ? <WaveLoader />
+        ? <CaratWaveLoader />
         :
         <button
           className={`btn-blue medium ${user.theme}`}

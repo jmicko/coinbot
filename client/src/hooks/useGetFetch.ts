@@ -19,15 +19,15 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
 
 
   const fetchData = useCallback(async () => {
-    console.log(options.from, '<== fetching data from');
+    // console.log(options.from, '<== fetching data from');
     const whichUrl = options.url ? options.url : url;
 
     setIsLoading(true);
     try {
       const timestamp = Date.now().toString() + whichUrl;
-      console.log(timestamp, 'timestamp from useGetFetch');
+      // console.log(timestamp, 'timestamp from useGetFetch');
       fetchTimestamps.current.push(timestamp);
-      console.log(fetchTimestamps, 'fetchTimestamps from useGetFetch');
+      // console.log(fetchTimestamps, 'fetchTimestamps from useGetFetch');
 
 
       const response = await fetch(whichUrl, {
@@ -40,7 +40,7 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
       }
       const data: T = await response.json();
       // if (options.from === 'messages in data context') {
-      console.log(data, 'data from messages in data context:');
+      // console.log(data, 'data from messages in data context:');
       // }
       setData(data);
       setError(null);

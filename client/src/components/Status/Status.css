@@ -17,11 +17,11 @@
 
 /* anything strong with a direct parent of status-ticker should be red, but child elements
 of these strong items should not take that property */
-.status-ticker strong {
+.status-ticker>strong {
     color: rgb(185, 29, 29);
 }
 
-.darkTheme .status-ticker strong {
+.darkTheme .status-ticker>strong {
     color: rgb(162, 162, 162);
 }
 

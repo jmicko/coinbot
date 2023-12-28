@@ -10,7 +10,7 @@ import { DataContext } from './useData';
 
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  console.log('******   ****** DataProvider rendering ******   ******');
+  // console.log('******   ****** DataProvider rendering ******   ******');
   // state for this context
   const [showSettings, setShowSettings] = useState(false);
   const [productID, setProductID] = useState('DOGE-USD');

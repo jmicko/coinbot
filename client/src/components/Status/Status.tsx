@@ -16,7 +16,8 @@ function Status() {
   const { user, refreshUser, theme, btnColor } = useUser();
   const { tickers, heartbeat } = useWebSocket();
   const {
-    // socketStatus, coinbotSocket,
+    socketStatus,
+    coinbotSocket,
     orders, refreshOrders,
     productID, refreshProducts,
     profit, refreshProfit,
@@ -144,12 +145,13 @@ function Status() {
         <div className={`info status-ticker heartbeat ${theme} ${heartbeat?.count === 0 && 'blue'}`}>
           <div> {/* leave this div here or the heartbeat will turn gray  */}
             <strong>
-              {/* <span className={`${coinbotSocket} ${theme}`}>&#x2022;</span> */}
-              {heartbeat?.heart}{heartbeat?.beat}
-              {/* <span className={`${socketStatus} ${theme}`}>&#x2022;</span> */}
+              <span className={`${coinbotSocket} ${theme}`}>&#x2022;</span>
+              {heartbeat?.heart}{heartbeat?.beat} 
+              <span className={`${socketStatus} ${theme}`}>&#x2022;</span>
             </strong>
           </div> {/* leave this div here or the heartbeat will turn gray  */}
         </div>
+              {/* ---- {JSON.stringify(socketStatus)} ---- */}
 
         <button className={`${btnColor} ${theme}`} onClick={updateUser}>Refresh</button>
 

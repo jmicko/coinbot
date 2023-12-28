@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import './Home.css';
 
 import Trade from '../Trade/Trade';
@@ -7,8 +7,6 @@ import Menu from '../Menu/Menu.js';
 import TradeList from '../TradeList/TradeList';
 import Status from '../Status/Status';
 import Settings from '../Settings/Settings';
-// import NotApproved from '../NotApproved/NotApproved.js';
-// import NotActive from '../NotActive/NotActive.js';
 import MobileNav from '../MobileNav/MobileNav';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
 import { useUser } from '../../contexts/useUser.js';
@@ -28,6 +26,7 @@ function Home() {
     isLoaded,
     // setIsLoaded
   ] = useState(false);
+  const onMobile = width <= 800;
   // const [hasRotated, setHasRotated] = useLocalStorage('hasRotated', false);
 
   // useEffect(() => {
@@ -53,7 +52,7 @@ function Home() {
       <Menu />
       {
         // on mobile?
-        width <= 800
+        onMobile
           // show mobile page
           // which mobile page?
           ? mobilePage === 'newPair'
@@ -91,7 +90,7 @@ function Home() {
 
       <Status />
       {showSettings && <Settings />}
-      {width < 800 && <MobileNav
+      {onMobile && <MobileNav
         setMobilePage={setMobilePage}
         mobilePage={mobilePage}
       />}

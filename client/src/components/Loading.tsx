@@ -46,6 +46,13 @@ export const SpaceLoader = () => {
   const dots = useLoadingDots();
   // const heart = '\u2665';
   const space = '\u00A0';
+  return <span>{`.`.repeat(dots) + space.repeat(4 - dots)}</span>;
+};
+
+export const CaratSpaceLoader = () => {
+  const dots = useLoadingDots();
+  // const heart = '\u2665';
+  const space = '\u00A0';
   return <span>{'<' + `.`.repeat(dots) + space.repeat(4 - dots) + '>'}</span>;
 };
 
@@ -60,6 +67,12 @@ export const CaratDotLoader = () => {
 };
 
 export const WaveLoader = () => {
+  const dots = useLoadingDots();
+  const middleDot = '\u00B7';
+  return <span>{'.'.repeat(dots) + middleDot + `.`.repeat(4 - dots)}</span>;
+}
+
+export const CaratWaveLoader = () => {
   const dots = useLoadingDots();
   const middleDot = '\u00B7';
   return <span>{'<' + '.'.repeat(dots) + middleDot + `.`.repeat(4 - dots) + '>'}</span>;
