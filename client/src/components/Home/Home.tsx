@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import './Home.css';
 
 import Trade from '../Trade/Trade';
@@ -15,6 +15,7 @@ import { useUser } from '../../contexts/useUser.js';
 import { useData } from '../../contexts/useData.js';
 import NotActive from '../NotActive/NotActive.js';
 import NotApproved from '../NotApproved/NotApproved.js';
+// import useLocalStorage from '../../hooks/useLocalStorage.js';
 // import { useData } from '../../contexts/DataContext';
 // import { devLog } from '../../shared.js';
 
@@ -23,6 +24,21 @@ function Home() {
   const { width, height } = useWindowDimensions();
   const { user } = useUser(); MobileNav
   const { showSettings } = useData();
+  const [
+    isLoaded,
+    // setIsLoaded
+  ] = useState(false);
+  // const [hasRotated, setHasRotated] = useLocalStorage('hasRotated', false);
+
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     if (hasRotated) return;
+  //     setIsLoaded(true);
+  //     setHasRotated(true);
+  //   }, 25000);
+
+  //   return () => clearTimeout(timer); // cleanup on unmount
+  // }, []);
 
   // const { showSettings } = useData();
   const [mobilePage, setMobilePage] = useState('tradeList');
@@ -30,7 +46,7 @@ function Home() {
 
   return (
     <div
-      className={`Home ${user?.theme}`}
+      className={`Home rotate ${user?.theme} ${isLoaded ? 'loaded' : ''}`}
       style={{
         height: height,
       }}>
@@ -46,14 +62,14 @@ function Home() {
               // ? <></>
               ? <Trade />
               : <NotActive />
-              // : <></>
+            // : <></>
             : mobilePage === 'tradeList'
               // is the user approved
               ? user?.approved
                 ? <TradeList />
                 // ? <></>
                 : <NotApproved />
-                // : <></>
+              // : <></>
               : mobilePage === 'messages' && <Messages />
 
           // show all pages on desktop

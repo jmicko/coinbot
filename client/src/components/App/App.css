@@ -15,23 +15,62 @@
 html {
   --scrollbarBG: #50575a;
   --thumbBG    : #41bcc060;
-  overflow     : hidden;
+  /* overflow     : clip; */
 }
 
-body {
+/* body { */
   /* background-color: #c7c7b1; */
-  overflow        : clip;
   /* background-color: #313131; */
-  /* height: 100vh; */
+  /* height          : 100vh; */
   
-}
+/* } */
 
 .App {
+  overflow           : clip;
   background-color: #c7c7b1;
   font-family     : 'Syne Mono', monospace;
-  /* height: 100vh; */
-  /* padding: 15vh 0; */
+  /* height       : 100vh; */
+  /* padding      : 15vh 0; */
 }
+
+.rotate {
+  transform       : rotate(0deg);
+  transition      : transform .1s;
+  transition-delay: 0s;
+}
+
+.rotate.loaded {
+  transform: rotate(15deg);
+  transition: transform .1s;
+  transition-delay: 1s;
+}
+
+/* @keyframes tilt {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(18deg);
+  }
+  75% {
+    transform: rotate(18deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.rotate.loaded {
+  animation: tilt .4s ease-in-out;
+} */
+
+/* .rotate {
+  transition: transform .1s;
+} */
+
+/* .rotate:hover {
+  transform: rotate(15deg);
+}  */
 
 .App.darkTheme {
   background-color: #313131;
@@ -81,13 +120,13 @@ body {
 
 body::-webkit-scrollbar,
 .scrollable::-webkit-scrollbar {
-  width: 18px;
+  width : 18px;
   height: 18px;
 }
 
 body .thin-scroll::-webkit-scrollbar,
 .scrollable .thin-scroll::-webkit-scrollbar {
-  width: 6px;
+  width : 6px;
   height: 6px;
 }
 
@@ -105,7 +144,7 @@ body::-webkit-scrollbar-thumb,
 
 body .thin-scroll::-webkit-scrollbar-thumb,
 .scrollable .thin-scroll::-webkit-scrollbar-thumb {
-  border          : 1px solid var(--scrollbarBG);
+  border: 1px solid var(--scrollbarBG);
 }
 
 @media (max-width: 800px) {

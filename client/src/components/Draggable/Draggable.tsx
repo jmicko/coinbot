@@ -98,12 +98,14 @@ const Draggable = ({ children, className, windowBarElements }: { children: React
   }, [startDrag]);
 
   const onMouseMove = useCallback((e: MouseEvent) => {
+    no(e);
     if (e.stopPropagation) e.stopPropagation();
     onDrag(e.clientX, e.clientY, false);
   }, [onDrag]);
 
   const onTouchMove = useCallback((e: TouchEvent) => {
-    // no(e);
+    if (!dragging) return;
+    no(e);
     if (e.stopPropagation) e.stopPropagation();
     const touch = e.touches[0];
     onDrag(touch.clientX, touch.clientY, true);

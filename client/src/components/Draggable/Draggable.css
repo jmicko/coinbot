@@ -36,7 +36,8 @@
   /* cursor         : move; */
   display        : flex;
   justify-content: space-between;
-  /* color: red; */
+  touch-action   : none;
+  /* color       : red; */
 }
 
 .collapse-arrows {
