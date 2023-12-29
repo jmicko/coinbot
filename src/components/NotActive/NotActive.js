@@ -84,7 +84,7 @@ function NotActive() {
         <br />
         {apiError &&
           <div className='api error-box notched'>
-            <p>{apiError === 401 ? "Invalid API Details!" : "Unkown Error"}</p>
+            <p>{apiError === 401 ? "Invalid API Details!" : "Unknown Error"}</p>
           </div>
         }
         {saving

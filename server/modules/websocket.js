@@ -212,7 +212,7 @@ function setUpWebsocket(wss) {
               ws.close();
             } else {
               try {
-                
+
                 console.log('socket ws', ws.sessionID, ws.userID);
 
                 messenger?.[userID]?.addSocket(ws);
@@ -252,7 +252,8 @@ function setUpWebsocket(wss) {
 
                 ws.on('close', () => {
                   const userID = req.session.passport?.user;
-                  console.log(`client:${user.username} with id: ${id} disconnected`);
+                  console.log(`===DISCONNECTION===\n`,
+                    `client:${user.username} with id: ${id} disconnected`);
                   messenger[userID].deleteSocket(ws);
                   clearInterval(pingInterval);
                 });

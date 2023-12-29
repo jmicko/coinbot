@@ -1,6 +1,6 @@
 // IdentifierContext.tsx
 import { ReactNode, useEffect, useRef } from 'react'
-import { IdentifierContext } from './useIdentifiers';
+import { IdentifierContext } from '../contexts/IdentifierContext';
 
 export function IdentifierProvider({ children }: { children: ReactNode }) {
   const fetchIdentifiers = useRef<string[]>([]);

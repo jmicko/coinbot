@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useIdentifiers } from '../contexts/useIdentifiers';
+import { useIdentifiers } from './useIdentifiers';
 
 interface UseDeleteFetchProps<T> {
   url: string;

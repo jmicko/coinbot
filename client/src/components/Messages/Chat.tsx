@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { devLog } from "../../shared.js";
 import { EventType, Message } from "../../types/index.js";
-import { useUser } from "../../contexts/useUser.js";
-import { useData } from "../../contexts/useData.js";
+import { useData } from "../../hooks/useData.js";
+import { useUser } from "../../hooks/useUser.js";
 
 
 interface ChatProps {
@@ -75,7 +75,7 @@ function Chat({ chatLength, collapsed, messages }: ChatProps) {
           !collapsed && messages.map((message, i) => {
             // if (message.text) {
             return message.text && <div key={i} className={`message-list`}>
-              <strong>{dateBuilder(message.timeStamp)}</strong>&nbsp;
+              <strong>{dateBuilder(message.timestamp)}</strong>&nbsp;
               {/* <br /> */}
               {/* {JSON.stringify(message)} */}
               {/* <p> */}

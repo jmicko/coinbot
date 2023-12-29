@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { FetchError } from '../types';
-import { useIdentifiers } from '../contexts/useIdentifiers';
+import { useIdentifiers } from './useIdentifiers';
 
 type FetchDataOptions<T> = {
   url?: string;
@@ -70,14 +70,18 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
 
   useEffect(() => {
     // options.preload && !hasFetched.current && fetchData();
-    if (options.preload && !hasFetched.current) {
+    if (options.preload
+      //  && !hasFetched.current
+    ) {
+      console.log('PRELOADING DATA AGAIN FROM:', options.from);
+      
       fetchData();
       // hasFetched.current = true;
     }
     return () => {
       hasFetched.current = true;
     }
-  }, [url, options.preload, fetchData]);
+  }, [url, options.preload, fetchData, options.from]);
 
   return {
     data,

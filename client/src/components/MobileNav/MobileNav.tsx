@@ -1,8 +1,7 @@
 import { Dispatch, SetStateAction } from 'react';
 
 import './MobileNav.css'
-import { useUser } from '../../contexts/useUser';
-
+import { useUser } from '../../hooks/useUser';
 function MobileNav(props: { setMobilePage: Dispatch<SetStateAction<string>>, mobilePage: string }) {
   const { user } = useUser();
   return (

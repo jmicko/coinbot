@@ -1,6 +1,6 @@
 import './Products.css'
-import { useUser } from '../../../contexts/useUser.js';
-import { useData } from '../../../contexts/useData.js';
+import { useUser } from '../../../hooks/useUser.js';
+import { useData } from '../../../hooks/useData.js';
 import ProductTable from './ProductTable.js';
 import { useEffect, useState } from 'react';
 // import useLocalStorage from '../../../hooks/useLocalStorage.js';

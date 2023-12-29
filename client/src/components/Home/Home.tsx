@@ -9,16 +9,14 @@ import Status from '../Status/Status';
 import Settings from '../Settings/Settings';
 import MobileNav from '../MobileNav/MobileNav';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
-import { useUser } from '../../contexts/useUser.js';
-import { useData } from '../../contexts/useData.js';
+import { useData } from '../../hooks/useData.js';
 import NotActive from '../NotActive/NotActive.js';
 import NotApproved from '../NotApproved/NotApproved.js';
+import { useUser } from '../../hooks/useUser.js';
 // import useLocalStorage from '../../hooks/useLocalStorage.js';
-// import { useData } from '../../contexts/DataContext';
-// import { devLog } from '../../shared.js';
 
 function Home() {
-
+  // console.log('rendering Home');
   const { width, height } = useWindowDimensions();
   const { user } = useUser(); MobileNav
   const { showSettings } = useData();

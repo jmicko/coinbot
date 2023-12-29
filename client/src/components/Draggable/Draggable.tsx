@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './Draggable.css';
-import { useUser } from '../../contexts/useUser';
 import { no } from '../../shared';
-import { useData } from '../../contexts/useData';
+import { useData } from '../../hooks/useData';
+import { useUser } from '../../hooks/useUser';
 
 const Draggable = ({ children, className, windowBarElements }: { children: React.ReactNode, className: string, windowBarElements?: React.ReactNode[] }) => {
   const { theme } = useUser();
@@ -109,7 +109,7 @@ const Draggable = ({ children, className, windowBarElements }: { children: React
     if (e.stopPropagation) e.stopPropagation();
     const touch = e.touches[0];
     onDrag(touch.clientX, touch.clientY, true);
-  }, [onDrag]);
+  }, [onDrag, dragging]);
 
 
   const onMouseEnter = useCallback((e: React.MouseEvent) => {

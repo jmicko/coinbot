@@ -4,21 +4,21 @@ import coinbotFilled from "../../../src/coinbotFilled.png";
 // import coinbotFilledGif from "../../../src/coinbotFilled.gif";
 import './TradeList.css'
 import Meter from '../Meter/Meter';
-import { useUser } from '../../contexts/useUser.js';
+import { useUser } from '../../hooks/useUser.js';
 import { Order } from '../../types/index';
-import { useWebSocket } from '../../contexts/useWebsocket';
-import { useData } from '../../contexts/useData.js';
+import { useData } from '../../hooks/useData.js';
+import { useWebSocket } from '../../hooks/useWebsocket.js';
 
 // props: { isAutoScroll: boolean }
 function TradeList() {
   const robotRef = useRef<HTMLDivElement | null>(null)
-  const { tickers } = useWebSocket();
   const { user, theme, } = useUser();
-  const { orders, canScroll, productID, pqd } = useData();
+  const { orders, canScroll, pqd, } = useData();
+  const { currentPrice } = useWebSocket();
 
   const highestBuy = Number(orders.buys[0]?.limit_price || 0);
   const lowestSell = Number(orders.sells[0]?.limit_price || 0);
-  const currentPrice = tickers[productID]?.price;
+  // const currentPrice = tickers[productID]?.price;
 
   // scroll to the robot when fresh trades are loaded and the canScroll is true
   useEffect(() => {
@@ -45,21 +45,20 @@ function TradeList() {
       <div className='robot' ref={robotRef}>
         <div className='live-price'>
           <Meter
-            // product={props.product}
             max={lowestSell}
             min={highestBuy}
           />
           <div>
             {lowestSell !== 0 && highestBuy >= 0
               ? <p className='price'>
-                &#9650; ${(lowestSell - currentPrice).toFixed(pqd || 2)}
+                &#9650; ${(lowestSell - Number(currentPrice)).toFixed(pqd || 2)}
                 <br />
                 <span className={`green ${theme}`} >
-                  {`> $${Number(currentPrice).toFixed(pqd || 2)} <`}
+                  {`> $${currentPrice} <`}
                 </span>
                 <br />
                 &#9660; ${
-                  (currentPrice - highestBuy).toFixed(pqd || 2)
+                  (Number(currentPrice) - highestBuy).toFixed(pqd || 2)
                 }
               </p>
               : <p>No Sells!</p>

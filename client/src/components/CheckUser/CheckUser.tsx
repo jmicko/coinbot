@@ -1,6 +1,6 @@
-import { DataProvider } from "../../contexts/DataContext";
-import { WebSocketProvider } from "../../contexts/WebSocketContext";
-import { useUser } from "../../contexts/useUser";
+import { useUser } from "../../hooks/useUser";
+import { DataProvider } from "../../providers/DataProvider";
+import { WebSocketProvider } from "../../providers/WebSocketProvider";
 import Home from "../Home/Home";
 import { SpaceLoader } from "../Loading";
 import Login from "../Login/Login";

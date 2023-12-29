@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useData } from '../../contexts/DataContext.js';
 import { useSocket } from '../../contexts/SocketProvider.js';
-import { useUser } from '../../contexts/UserContext.js';
+import { useUser } from '../../hooks/useUser.js';
 import useLocalStorage from '../../hooks/useLocalStorage.js';
 import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 import { numberWithCommas } from '../../shared.js';

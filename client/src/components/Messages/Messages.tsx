@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useUser } from '../../contexts/useUser.js';
+import { useUser } from '../../hooks/useUser.js';
 
 import './Messages.css'
 import Chat from './Chat';
 import { Message } from '../../types';
-import { useData } from '../../contexts/useData.js';
+import { useData } from '../../hooks/useData.js';
 // import { devLog } from '../../shared';
 
 
@@ -82,7 +82,7 @@ function Messages() {
         {!collapsed && messages.map((message, i) => {
           // if (message.text) {
           return message.text && <div key={i} className={`message-list`}>
-            <strong>{dateBuilder(message.timeStamp)}</strong>
+            <strong>{dateBuilder(message.timestamp)}</strong>
             <br />
             {/* {JSON.stringify(message)} */}
             {header === 'Chat' && `${message.from} > `}{message.text}

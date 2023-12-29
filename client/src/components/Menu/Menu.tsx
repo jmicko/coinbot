@@ -1,6 +1,6 @@
-import { useData } from '../../contexts/useData.js';
-import { useUser } from '../../contexts/useUser.js';
+import { useData } from '../../hooks/useData.js';
 import useGetFetch from '../../hooks/useGetFetch.js';
+import { useUser } from '../../hooks/useUser.js';
 import './Menu.css'
 
 interface Product {

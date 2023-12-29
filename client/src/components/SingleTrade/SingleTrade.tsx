@@ -3,8 +3,8 @@ import { useProductDecimals } from '../../hooks/useProductDecimals.js';
 import './SingleTrade.css';
 // import { devLog } from '../../shared.js';
 import { SingleTradeProps } from '../../types';
-import { useUser } from '../../contexts/useUser.js';
-import { useData } from '../../contexts/useData.js';
+import { useUser } from '../../hooks/useUser.js';
+import { useData } from '../../hooks/useData.js';
 import useDeleteFetch from '../../hooks/useDeleteFetch.js';
 
 

@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, useEffect, useState } from 'react'
-import { useUser } from '../contexts/useUser.js';
+import { useUser } from './useUser';
 
 // this helps differentiate apps that are all running on localhost because local storage will conflict
 const PREFIX: string = process.env.NODE_ENV === 'development' ? 'coinbot-dev-' : 'coinbot-pqw9743yg5r8-'

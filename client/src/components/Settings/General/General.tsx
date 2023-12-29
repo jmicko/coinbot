@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import './General.css'
 import coinbotFilled from '../../../coinbotFilled.png';
 import { no } from '../../../shared.js';
-import { useUser } from '../../../contexts/useUser.js';
+import { useUser } from '../../../hooks/useUser.js';
 // import usePostFetch from '../../../hooks/usePostFetch.js';
 import { EventType } from '../../../types/index.js';
 import usePutFetch from '../../../hooks/usePutFetch.js';

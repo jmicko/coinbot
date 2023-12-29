@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
-import './Meter.css'
-import { useWebSocket } from '../../contexts/useWebsocket';
-import { useData } from '../../contexts/useData';
+import './Meter.css';
+import { useData } from '../../hooks/useData';
+import { useWebSocket } from '../../hooks/useWebsocket';
 
 interface MeterProps {
   min: number;
@@ -9,11 +9,12 @@ interface MeterProps {
 }
 
 function Meter(props: MeterProps) {
-  const { tickers } = useWebSocket();
-  const { productID, pqd } = useData();
+  const { pqd } = useData();
+  const { currentPrice: priceString } = useWebSocket();
+  const currentPrice = Number(priceString);
   const difference = Number((props.max - props.min).toFixed(pqd));
   const canvasRef = useRef(null);
-  const currentPrice = tickers[productID]?.price;
+  // const  = tickers[productID]?.price;
   const canDraw = props.max > 0 && props.min >= 0 && difference > 0 && currentPrice
   // draw a meter bar on the canvas
   useEffect(() => {
@@ -47,25 +48,6 @@ function Meter(props: MeterProps) {
     }
   }, [props, currentPrice, difference])
 
-  // const MeterElement = () => {
-  //   return (
-  //     <canvas className="Meter" ref={canvasRef} />
-  //   )
-  // }
-
-  // const BrokenMeter = () => {
-  //   console.log('cannot draw');
-
-  //   return (
-  //     <p>
-  //       Somethin'<br />
-  //       ain't<br />
-  //       right<br />
-  //       here,<br />
-  //       boss
-  //     </p>
-  //   )
-  // }
   return (
     <>
       <canvas className={`Meter ${!canDraw && 'hidden'}`} ref={canvasRef} />
@@ -78,8 +60,6 @@ function Meter(props: MeterProps) {
       </p>
     </>
   )
-  // if (canDraw) return <MeterElement />
-  // else return <BrokenMeter />
 }
 
 export default Meter;

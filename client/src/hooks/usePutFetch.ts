@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useIdentifiers } from '../contexts/useIdentifiers';
+import { useIdentifiers } from './useIdentifiers';
 
 interface UsePutFetchProps<T> {
   url: string;

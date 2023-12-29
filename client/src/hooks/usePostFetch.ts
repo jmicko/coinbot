@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { FetchError } from '../types';
-import { useIdentifiers } from '../contexts/useIdentifiers';
+import { useIdentifiers } from './useIdentifiers';
 
 interface usePostFetchProps<T> {
   url: string;

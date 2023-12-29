@@ -2,10 +2,10 @@
 import { ReactNode, useEffect, useMemo } from 'react'
 import useGetFetch from '../hooks/useGetFetch.js';
 import useDeleteFetch from '../hooks/useDeleteFetch.js';
-import { UserContext } from './useUser.js';
 import { User } from '../types/index.js';
 import useLocalStorage from '../hooks/useLocalStorage.js';
 import usePostFetch from '../hooks/usePostFetch.js';
+import { UserContext } from '../contexts/UserContext.js';
 
 export function UserProvider({ children }: { children: ReactNode }) {
   console.log('UserProvider rendering @@@@@@@@@@@@@@@@');

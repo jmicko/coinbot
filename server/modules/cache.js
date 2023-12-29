@@ -111,7 +111,7 @@ class User {
     return this.willCancel.has(order_id)
   }
   orderUpdate() {
-    messenger[this.userID].newMessage({ type: orderUpdate, orderUpdate: true })
+    messenger[this.userID].newMessage({ type: 'orderUpdate', orderUpdate: true })
   }
   // increase the loop number by 1
   increaseLoopNumber() {

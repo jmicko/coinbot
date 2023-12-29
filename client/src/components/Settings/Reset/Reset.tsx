@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { useUser } from '../../../contexts/useUser';
+import { useUser } from '../../../hooks/useUser.js';
 import Confirm from '../../Confirm/Confirm.js';
 import './Reset.css'
 import usePutFetch from '../../../hooks/usePutFetch.js';
-import { useData } from '../../../contexts/useData.js';
+import { useData } from '../../../hooks/useData.js';
 import { CaratWaveLoader } from '../../Loading.js';
 
 

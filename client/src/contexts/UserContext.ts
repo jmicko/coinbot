@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext } from "react";
 import { User } from "../types";
 
 interface UserContextProps {
@@ -16,13 +16,8 @@ interface UserContextProps {
   theme: string;
   defaultTheme: string;
   btnColor: string;
-  // maker_fee: number;
-  // clearUser: () => void;
-  // loggedIn: boolean;
-  // setUser: React.Dispatch<React.SetStateAction<User>>;
 }
 
 
 export const UserContext = createContext<UserContextProps>({} as UserContextProps);
 
-export const useUser = () => useContext(UserContext)

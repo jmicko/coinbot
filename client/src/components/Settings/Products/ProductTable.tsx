@@ -1,7 +1,7 @@
 import { numberWithCommas } from '../../../shared.js';
 import './Products.css'
 // import { useUser } from '../../../contexts/useUser.js';
-import { useData } from '../../../contexts/useData.js';
+import { useData } from '../../../hooks/useData.js';
 import usePutFetch from '../../../hooks/usePutFetch.js';
 import { useMemo } from 'react';
 

@@ -13,8 +13,7 @@ import BulkDelete from './BulkDelete/BulkDelete';
 import Draggable from '../Draggable/Draggable';
 
 import './Settings.css'
-import { useUser } from '../../contexts/useUser';
-
+import { useUser } from '../../hooks/useUser';
 
 function Settings() {
   const [settingsPage, setSettingsPage] = useState('general');

@@ -1,14 +1,11 @@
 import { useState, useEffect, useCallback, useRef, FormEvent } from 'react';
-// import { useSocket } from '../../contexts/SocketProvider';
 import IncrementButtons from './IncrementButtons';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
 import { numberWithCommas, tNum, no, fixedRound } from '../../shared';
-// import { useUser } from '../../contexts/UserContext';
-// import { useData } from '../../contexts/DataContext';
 import { EventType } from '../../types';
-import { useUser } from '../../contexts/useUser';
-import { useData } from '../../contexts/useData';
-import { useWebSocket } from '../../contexts/useWebsocket';
+import { useData } from '../../hooks/useData';
+import { useWebSocket } from '../../hooks/useWebsocket';
+import { useUser } from '../../hooks/useUser';
 
 interface LimitOrderProps {
   toggleCollapse: () => void;
@@ -19,9 +16,10 @@ function LimitOrder(props: LimitOrderProps) {
   // contexts
   const { user, theme, btnColor } = useUser();
   const { maker_fee } = user;
-  const { currentPrice } = useWebSocket();
   // const currentPrice = 20;
-  const { productID, currentProduct, createOrderPair } = useData();
+  const { productID, currentProduct, createOrderPair, } = useData();
+  const { currentPrice: currentPriceString } = useWebSocket();
+  const currentPrice = Number(currentPriceString);
 
   // hooks
   const { width } = useWindowDimensions();

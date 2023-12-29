@@ -5,8 +5,8 @@ import MarketOrder from './MarketOrder';
 import useLocalStorage from '../../hooks/useLocalStorage';
 import { no } from '../../shared';
 import { EventType } from '../../types';
-import { useUser } from '../../contexts/useUser';
-import { useData } from '../../contexts/useData';
+import { useUser } from '../../hooks/useUser';
+import { useData } from '../../hooks/useData';
 
 
 function Trade() {

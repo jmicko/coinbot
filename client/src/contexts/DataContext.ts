@@ -1,4 +1,4 @@
-import { MutableRefObject, createContext, useContext } from "react";
+import { MutableRefObject, createContext } from "react";
 import { Messages, OrderParams, Orders, Product, Products, ProfitForDuration } from "../types";
 
 interface DataContextProps {
@@ -23,7 +23,6 @@ interface DataContextProps {
   quoteID: string;
   refreshProducts: () => void;
   messages: { botMessages: Messages, chatMessages: Messages };
-  // messages: Messages;
   refreshBotMessages: () => void;
   botErrors: Messages;
   refreshBotErrors: () => void;
@@ -32,19 +31,13 @@ interface DataContextProps {
   syncPair: (body: { order_id: string }) => void;
   sendChat: ({ type, data }: { type: string, data: string }) => void;
   syncOrders: () => void;
-  // deleteOrder: (orderID: string) => void;
   marketOrder: OrderParams;
   setMarketOrder: React.Dispatch<React.SetStateAction<OrderParams>>;
   tradeType: string;
   setTradeType: React.Dispatch<React.SetStateAction<string>>;
-  coinbotSocket: string;
-  setCoinbotSocket: React.Dispatch<React.SetStateAction<string>>;
-  socketStatus: string;
-  setSocketStatus: React.Dispatch<React.SetStateAction<string>>;
-  deadCon: boolean;
+  fetchHandlers: {
+    [key: string]: (() => Promise<void>) | (() => void);
+  }
 }
 
-// export const DataContext = createContext<DataContextProps>(defaultContext)
 export const DataContext = createContext<DataContextProps>({} as DataContextProps)
-
-export const useData = () => useContext(DataContext)

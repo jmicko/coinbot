@@ -1,21 +1,22 @@
 import { CaratWaveLoader, DotLoader } from "../../Loading";
-import { useWebSocket } from '../../../contexts/useWebsocket.js';
-import { useData } from '../../../contexts/useData.js';
+import { useData } from '../../../hooks/useData.js';
 import { useEffect, useState } from "react";
 import FormItem from "./FormItem.js";
 import Graph from '../../Graph/Graph';
 import './AutoSetup.css';
-import { useUser } from "../../../contexts/useUser.js";
+import { useUser } from '../../../hooks/useUser.js';
 import useAutoSetup from "./useAutoSetup.js";
 import { devLog, no, numberWithCommas } from "../../../shared.js";
 import SingleTrade from "../../SingleTrade/SingleTrade.js";
 import usePostFetch from "../../../hooks/usePostFetch.js";
 import Confirm from "../../Confirm/Confirm.js";
+import { useWebSocket } from "../../../hooks/useWebsocket.js";
 
 function AutoSetup(props: { tips: boolean }) {
-  const { tickers } = useWebSocket();
   const { productID, baseID, quoteID, pqd, pbd } = useData();
-  const currentPriceTicker = tickers[productID]?.price;
+  const { currentPrice: currentPriceString } = useWebSocket();
+  const currentPriceTicker = Number(currentPriceString);
+  // const currentPriceTicker = tickers[productID]?.price;
   const { user, theme } = useUser();
 
   const [currentPrice, setCurrentPrice] = useState(currentPriceTicker);

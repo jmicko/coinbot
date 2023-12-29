@@ -2,7 +2,7 @@ import { useState } from 'react';
 import permissions from "../../../src/permissions.png";
 import './NotActive.css';
 import { no } from '../../shared.js';
-import { useUser } from '../../contexts/useUser.js';
+import { useUser } from '../../hooks/useUser.js';
 import usePostFetch from '../../hooks/usePostFetch.js';
 import { EventType } from '../../types/index.js';
 
@@ -94,7 +94,7 @@ function NotActive() {
         <br />
         {apiError &&
           <div className='api error-box notched'>
-            <p>{apiError.status === 401 ? "Invalid API Details!" : "Unkown Error"}</p>
+            <p>{apiError.status === 401 ? "Invalid API Details!" : "Unknown Error"}</p>
           </div>
         }
         {saving

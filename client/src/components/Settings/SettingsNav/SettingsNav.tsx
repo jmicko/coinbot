@@ -1,5 +1,6 @@
+import { useUser } from '../../../hooks/useUser';
 import './SettingsNav.css'
-import { useUser } from '../../../contexts/useUser';
+// import { useUser } from '../../../contexts/UserContext';
 
 
 function SettingsNav(props: {

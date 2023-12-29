@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import './History.css'
 // import xlsx from 'json-as-xlsx'
 import { granularities } from '../../../shared.js';
-import { useUser } from '../../../contexts/useUser';
-import { useData } from '../../../contexts/useData';
+import { useUser } from '../../../hooks/useUser.js';
+import { useData } from '../../../hooks/useData.js';
 import useGetFetch from '../../../hooks/useGetFetch.js';
 import usePutFetch from '../../../hooks/usePutFetch.js';
 import useDownloadFile from '../../../hooks/useDownloadFile.js';

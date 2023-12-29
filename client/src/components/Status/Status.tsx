@@ -1,23 +1,20 @@
 import { useEffect, useState } from 'react';
-import { useUser } from '../../contexts/useUser.js';
+import { useUser } from '../../hooks/useUser.js';
 import useLocalStorage from '../../hooks/useLocalStorage';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
 import { numberWithCommas } from '../../shared';
 import './Status.css'
 import { ProfitForDuration } from '../../types/index';
-import { useWebSocket } from '../../contexts/useWebsocket';
-import { useData } from '../../contexts/useData.js';
-// import { useWebSocket } from '../../contexts/WebSocketContext';
+import { useData } from '../../hooks/useData.js';
+import { useWebSocket } from '../../hooks/useWebsocket.js';
 
 
 function Status() {
   // devLog('rendering status');
 
   const { user, refreshUser, theme, btnColor } = useUser();
-  const { tickers, heartbeat } = useWebSocket();
   const {
-    socketStatus,
-    coinbotSocket,
+
     orders, refreshOrders,
     productID, refreshProducts,
     profit, refreshProfit,
@@ -25,8 +22,15 @@ function Status() {
     isAutoScroll, setIsAutoScroll,
     pqd, pbd,
   } = useData();
+  const {
+    // tickers, 
+    heartbeat,
+    socketStatus,
+    coinbotSocket,
+    currentPrice: productPrice,
+  } = useWebSocket();
 
-  const productPrice = Number(tickers?.[productID]?.price).toFixed(pqd);
+  // const productPrice = Number(tickers?.[productID]?.price).toFixed(pqd);
 
   const openOrdersInOrder = orders;
   const [openSellsQuantity, setOpenSellsQuantity] = useState(0);
@@ -146,12 +150,12 @@ function Status() {
           <div> {/* leave this div here or the heartbeat will turn gray  */}
             <strong>
               <span className={`${coinbotSocket} ${theme}`}>&#x2022;</span>
-              {heartbeat?.heart}{heartbeat?.beat} 
+              {heartbeat?.heart}{heartbeat?.beat}
               <span className={`${socketStatus} ${theme}`}>&#x2022;</span>
             </strong>
           </div> {/* leave this div here or the heartbeat will turn gray  */}
         </div>
-              {/* ---- {JSON.stringify(socketStatus)} ---- */}
+        {/* ---- {JSON.stringify(socketStatus)} ---- */}
 
         <button className={`${btnColor} ${theme}`} onClick={updateUser}>Refresh</button>
 

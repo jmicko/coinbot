@@ -5,7 +5,7 @@ import './Admin.css'
 import useGetFetch from '../../../hooks/useGetFetch';
 import { BotSettings, User } from '../../../types/index.js';
 import usePutFetch from '../../../hooks/usePutFetch';
-import { useUser } from '../../../contexts/useUser.js';
+import { useUser } from '../../../hooks/useUser.js';
 
 
 function Admin(props: { tips: boolean }) {

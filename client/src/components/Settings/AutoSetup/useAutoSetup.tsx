@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { AutoSetupOptions, AutoSetupOrderParams, AutoSetupResult, User } from '../../../types';
-import { useData } from '../../../contexts/useData';
+import { useData } from '../../../hooks/useData';
 
 function useAutoSetup(user: User, currentPrice: number, pqd: number) {
   const { productID, currentProduct } = useData();

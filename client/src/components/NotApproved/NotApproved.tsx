@@ -1,6 +1,5 @@
 import './NotApproved.css'
-import { useUser } from '../../contexts/useUser';
-
+import { useUser } from '../../hooks/useUser';
 
 
 

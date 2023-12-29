@@ -6,7 +6,7 @@ import { User } from '../../types/index.js';
 import useDeleteFetch from '../../hooks/useDeleteFetch';
 import useGetFetch from '../../hooks/useGetFetch';
 import Confirm from '../Confirm/Confirm';
-import { useUser } from '../../contexts/useUser.js';
+import { useUser } from '../../hooks/useUser.js';
 
 function SingleUser(props: { user: User, key: number, refreshUsers: () => void }) {
   // IMPORTANT to not that this is the user from the context, not the user from the props
@@ -141,7 +141,6 @@ function SingleUser(props: { user: User, key: number, refreshUsers: () => void }
         }
         {/* Enable chat for a user */}
         {/* {JSON.stringify(props.user)} */}
-        {/* jdfgkusahdfiu {props.user.id} fkshefuewsy */}
         {(props.user.can_chat
           ? <button
             className="btn-red deleting"

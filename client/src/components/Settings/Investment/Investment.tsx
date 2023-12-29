@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useUser } from '../../../contexts/useUser.js';
-import { useData } from '../../../contexts/useData.js';
+import { useUser } from '../../../hooks/useUser.js';
+import { useData } from '../../../hooks/useData.js';
 import Collapser from '../../Collapser/Collapser';
 import './Investment.css';
-import { useWebSocket } from '../../../contexts/useWebsocket.js';
 import usePutFetch from '../../../hooks/usePutFetch.js';
+import { useWebSocket } from '../../../hooks/useWebsocket.js';
 
 
 function Investment(props: { tips: boolean }) {
   const { user, refreshUser, theme } = useUser();
-  const { productID, refreshOrders, profit, pqd } = useData();
+  const { productID, refreshOrders, profit, pqd, } = useData();
   const { tickers } = useWebSocket();
 
   // the base currency will be the crypto, like BTC or FTX hahaha jk
@@ -22,7 +22,7 @@ function Investment(props: { tips: boolean }) {
   // const availableBaseValue = availableBase * productPrice;
   const spentBaseValue = spentBase * Number(productPrice);
   // const availableQuote = user.availableFunds?.[productID]?.quote_available;
-  const spentQuote = user.availableFunds?.[productID]?.quote_spent_on_product;
+  const spentQuote = Number(user.availableFunds?.[productID]?.quote_spent_on_product);
   // something is wrong here. We're combining numbers from individual products along with numbers from the entire portfolio
 
   // here was the problem. spentBaseValue is for all products, but spentQuote is only for the current product
@@ -37,7 +37,7 @@ function Investment(props: { tips: boolean }) {
   // it does not account for fees, or any funds not held up in trades pairs.
   const portfolioValueLiquidized = spentBaseAllProductsValue + spentQuoteAllProducts;
 
-  const currentProductValueLiquidized = spentBaseValue + spentQuote;
+  const currentProductValueLiquidized = spentBaseValue + Number(spentQuote);
 
   // 3 month profit is the object in the profit array that has the "duration":"90 Day" property
   const ProfitCurrentProduct90Day = profit.find((item) => item.duration === '90 Day')?.productProfit || 0;
@@ -115,7 +115,7 @@ function Investment(props: { tips: boolean }) {
     for (const product in user.availableFunds) {
       const spentBase = user.availableFunds?.[product]?.base_spent;
       // console.log(user.availableFunds?.[product].base_spent, 'product')
-      total += spentBase * tickers?.[product]?.price;
+      total += spentBase * Number(tickers?.[product]?.price);
     }
     return total;
   }
@@ -155,7 +155,7 @@ function Investment(props: { tips: boolean }) {
     setMaxTradeSize(Number(user.max_trade_size))
   }, [user.max_trade_size])
 
-  console.log(user.availableFunds, 'user.availableFunds')
+  // console.log(user.availableFunds, 'user.availableFunds')
 
   return (
     <div className="Investment settings-panel scrollable">

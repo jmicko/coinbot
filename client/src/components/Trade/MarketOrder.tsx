@@ -4,9 +4,9 @@ import useWindowDimensions from '../../hooks/useWindowDimensions';
 // import IncrementButtons from './IncrementButtons';
 import { numberWithCommas, no, devLog } from '../../shared';
 import { EventType, OrderParams } from '../../types';
-import { useUser } from '../../contexts/useUser';
-import { useData } from '../../contexts/useData';
-import { useWebSocket } from '../../contexts/useWebsocket';
+import { useData } from '../../hooks/useData';
+import { useWebSocket } from '../../hooks/useWebsocket';
+import { useUser } from '../../hooks/useUser';
 
 interface limitOrderProps {
   toggleCollapse: () => void;
@@ -14,8 +14,6 @@ interface limitOrderProps {
 }
 
 function LimitOrder(props: limitOrderProps) {
-  const { currentPrice } = useWebSocket();
-  // const currentPrice = tickers[productID]?.price;
 
   // contexts
   const { theme, btnColor } = useUser();
@@ -31,8 +29,11 @@ function LimitOrder(props: limitOrderProps) {
     pqd,
     pbd,
     availableBase,
+
     // setTradeType,
   } = useData();
+  const { currentPrice: currentPriceString, } = useWebSocket();
+  const currentPrice = Number(currentPriceString);
 
   // hooks
   const { width } = useWindowDimensions();

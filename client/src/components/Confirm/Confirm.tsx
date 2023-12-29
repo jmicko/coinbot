@@ -1,4 +1,4 @@
-import { useUser } from '../../contexts/useUser';
+import { useUser } from '../../hooks/useUser';
 import './Confirm.css';
 
 interface Props {

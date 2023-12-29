@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { useUser } from '../../../contexts/useUser.js';
-import { useData } from '../../../contexts/useData.js';
+import { useData } from '../../../hooks/useData.js';
 // import { useFetchData } from '../../../hooks/fetchData.js';
 import './BulkDelete.css'
 import useDeleteFetch from '../../../hooks/useDeleteFetch.js';
+import { useUser } from '../../../hooks/useUser.js';
 
 
 function BulkDelete(props: { tips: boolean }) {

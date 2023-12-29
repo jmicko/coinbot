@@ -4,9 +4,8 @@ import useGetFetch from '../hooks/useGetFetch';
 import usePutFetch from '../hooks/usePutFetch';
 import { Messages, OrderParams, Orders, Product, Products, ProfitForDuration } from '../types/index';
 import usePostFetch from '../hooks/usePostFetch';
-import { useUser } from './useUser';
-import { DataContext } from './useData';
-// import { devLog } from '../shared';
+import { DataContext } from '../contexts/DataContext';
+import { useUser } from '../hooks/useUser';
 
 
 export function DataProvider({ children }: { children: ReactNode }) {
@@ -14,9 +13,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // state for this context
   const [showSettings, setShowSettings] = useState(false);
   const [productID, setProductID] = useState('DOGE-USD');
+  // const [currentPrice, setCurrentPrice] = useState(0);
   const [isAutoScroll, setIsAutoScroll] = useState(true);
   const canScroll = useRef(true);
-
 
   useEffect(() => {
     canScroll.current = isAutoScroll;
@@ -24,10 +23,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // user
   const { user, refreshUser } = useUser();
-  // sockets
-  const [coinbotSocket, setCoinbotSocket] = useState('closed');
-  const deadCon = (coinbotSocket !== 'open') ? true : false;
-  const [socketStatus, setSocketStatus] = useState('closed');
 
   /////////////////////////
   //////// ACCOUNT ////////
@@ -59,10 +54,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       ...product,
       volume_in_quote: (Number(product.volume_24h) * Number(product.price)).toFixed(product.pqd || 2),
     }));
-    // setTimeout(() => {
 
     setProducts({ allProducts: newAllProducts, activeProducts: newActiveProducts });
-    // }, 5000);
 
   }, [productsNoVolume]);
 
@@ -73,7 +66,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     preload: true,
     from: 'profit/{productID} in data context'
   }), [productID]);
-  const { data: profit,
+  const {
+    data: profit,
     refresh: refreshProfit,
   } = useGetFetch<ProfitForDuration[]>(``, profitOptions)
 
@@ -105,9 +99,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const baseID = user.availableFunds?.[productID]?.base_currency || '';
   const quoteID = user.availableFunds?.[productID]?.quote_currency || '';
-
-  // console.log('availableBase: ', availableBase);
-  // console.log('availableQuote: ', availableQuote);
 
   const botErrorsOptions = useMemo(() => ({
     url: `/api/account/errors`,
@@ -195,10 +186,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
   });
   const [tradeType, setTradeType] = useState('market');
 
+  ////////////////////////
+  //////// SOCKETS ///////
+  ////////////////////////
+
+  // handlers for the different socket messages
+  const fetchHandlers = useMemo(() => ({
+    'error': refreshBotErrors,
+    'messageUpdate': refreshBotMessages,
+    'orderUpdate': () => { refreshOrders(); refreshProfit(); },
+    'productUpdate': refreshProducts,
+    'profitUpdate': refreshProfit,
+    'userUpdate': refreshUser,
+  }), [refreshBotErrors, refreshBotMessages, refreshOrders, refreshProducts, refreshProfit, refreshUser]);
+
   return (
     <DataContext.Provider
       value={
         {
+          fetchHandlers,
           // SETTINGS
           showSettings, setShowSettings,
           isAutoScroll, setIsAutoScroll, canScroll,
@@ -211,6 +217,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           // // products
           products, currentProduct, pqd, pbd,
           productID, setProductID, refreshProducts,
+          // currentPrice,
           baseID, quoteID,
 
           // // messages
@@ -226,8 +233,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
           // // TRADE
           marketOrder, setMarketOrder, tradeType, setTradeType,
 
-          // SOCKETS
-          coinbotSocket, setCoinbotSocket, socketStatus, setSocketStatus, deadCon,
         }
       }>
       {children}
