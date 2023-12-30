@@ -1,4 +1,4 @@
-import React, { useEffect, useState, FormEvent, ChangeEvent } from 'react';
+import React, { useEffect, useState, FormEvent, ChangeEvent, useMemo } from 'react';
 import { useUser } from '../../hooks/useUser.js';
 // import { useFetchData } from '../../hooks/fetchData.js';
 import './Login.css'
@@ -16,18 +16,18 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [register, setRegister] = useState<boolean>(false);
+
+  const connectionOptions = useMemo(() => ({
+    url: '/api/settings/connection',
+    defaultState: { connection: false, loggedIn: false },
+    preload: false,
+    from: 'connection in Login'
+  }), []);
   const {
     data: connection,
     refresh: refreshConnection,
     error: connectionError
-  } = useGetFetch<{ connection: boolean, loggedIn: boolean }>(
-    '/api/settings/connection',
-    {
-      defaultState: { connection: false, loggedIn: false },
-      preload: false,
-      from: 'connection in Login'
-    }
-  );
+  } = useGetFetch<{ connection: boolean, loggedIn: boolean }>(connectionOptions);
 
   const loggedIn = connection.loggedIn;
 

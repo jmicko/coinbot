@@ -3,13 +3,13 @@ import { FetchError } from '../types';
 import { useIdentifiers } from './useIdentifiers';
 
 type FetchDataOptions<T> = {
-  url?: string;
+  url: string;
   defaultState: T;
   preload: boolean;
   from: string;
 };
 
-const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
+const useGetFetch = <T,>(options: FetchDataOptions<T>) => {
   const [data, setData] = useState<T>(options.defaultState);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<null | FetchError>(null);
@@ -20,17 +20,17 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
 
   const fetchData = useCallback(async () => {
     // console.log(options.from, '<== fetching data from');
-    const whichUrl = options.url ? options.url : url;
+    // const whichUrl = options.url ? options.url : url;
 
     setIsLoading(true);
     try {
-      const identifier = Date.now().toString() + whichUrl;
+      const identifier = Date.now().toString() + options.url;
       // console.log(identifier, 'identifier from useGetFetch');
       fetchIdentifiers.current.push(identifier);
       // console.log(fetchIdentifiers, 'fetchIdentifiers from useGetFetch');
 
 
-      const response = await fetch(whichUrl, {
+      const response = await fetch(options.url, {
         credentials: 'include', // Include credentials here
         headers: { 'X-identifier': identifier },
       });
@@ -60,7 +60,7 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
     } finally {
       setIsLoading(false);
     }
-  }, [url, options, fetchIdentifiers]);
+  }, [options, fetchIdentifiers]);
 
   const clear = useCallback(() => {
     setData(options.defaultState)
@@ -74,14 +74,14 @@ const useGetFetch = <T,>(url: string, options: FetchDataOptions<T>) => {
       //  && !hasFetched.current
     ) {
       console.log('PRELOADING DATA AGAIN FROM:', options.from);
-      
+
       fetchData();
       // hasFetched.current = true;
     }
     return () => {
       hasFetched.current = true;
     }
-  }, [url, options.preload, fetchData, options.from]);
+  }, [options.preload, fetchData, options.from, options.url]);
 
   return {
     data,

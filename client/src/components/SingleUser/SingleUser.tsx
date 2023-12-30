@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 // import Confirm from '../Confirm/Confirm.js';
 import './SingleUser.css'
 import usePutFetch from '../../hooks/usePutFetch';
@@ -96,15 +96,16 @@ function SingleUser(props: { user: User, key: number, refreshUsers: () => void }
     loopNumber: number;
   }
 
+  const debugOptions = useMemo(() => ({
+    url: `api/admin/debug/${props.user.id}`,
+    defaultState: { botStatus: [], loopNumber: 0 },
+    preload: false,
+    from: 'debug in SingleUser',
+  }), []);
   const {
     data: debugData,
     refresh: debug
-  } = useGetFetch<DebugData>(`api/admin/debug/${props.user.id}`,
-    {
-      defaultState: { botStatus: [], loopNumber: 0 },
-      preload: false,
-      from: 'debug in SingleUser',
-    });
+  } = useGetFetch<DebugData>(debugOptions);
 
 
   function toggleShowAll() {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import './Feedback.css'
 // import { useUser } from '../../../contexts/UserContext';
 import useGetFetch from '../../../hooks/useGetFetch';
@@ -20,15 +20,16 @@ interface Feedback {
 function Feedback() {
   const { user, theme } = useUser();
 
-  const {
-    data: oldFeedback,
-    refresh: refreshFeedback,
-  } = useGetFetch('/none', {
+  const oldFeedbackOptions = useMemo(() => ({
     url: `/api/settings/feedback`,
     defaultState: [],
     from: 'oldFeedback in Feedback',
     preload: true,
-  });
+  }), []);
+  const {
+    data: oldFeedback,
+    refresh: refreshFeedback,
+  } = useGetFetch(oldFeedbackOptions);
   const { postData: submitFeedback } = usePostFetch({
     url: `/api/settings/feedback`,
     refreshCallback: refreshFeedback,

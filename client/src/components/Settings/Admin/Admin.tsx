@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 // import Confirm from '../../Confirm/Confirm';
 import SingleUser from '../../SingleUser/SingleUser';
 import './Admin.css'
@@ -9,25 +9,24 @@ import { useUser } from '../../../hooks/useUser.js';
 
 
 function Admin(props: { tips: boolean }) {
-  const { user, theme } = useUser();
-  const {
-    data: allUsers,
-    // updateRefreshData: approveUser,
-    // deleteRefreshData: deleteUser,
-    refresh: refreshUsers
-  } = useGetFetch<User[]>('api/admin/users', {
+
+  const allUsersOptions = useMemo(() => ({
+    url: 'api/admin/users',
     defaultState: [],
     preload: true,
     from: 'allUsers in Admin'
-  });
+  }), []);
+  const { user, theme } = useUser();
+  const {
+    data: allUsers,
+    refresh: refreshUsers
+  } = useGetFetch<User[]>(allUsersOptions);
 
   // const { putData: approveChat }
   //   = usePutFetch('api/admin/users/chat', { defaultState: [], preload: false, from: 'approveChat in Admin' });
 
-  const {
-    data: allSettings,
-    refresh: refreshSettings
-  } = useGetFetch<BotSettings>('api/settings', {
+  const allSettingsOptions = useMemo(() => ({
+    url: 'api/settings',
     defaultState: {
       loop_speed: 1,
       orders_to_sync: 1,
@@ -36,7 +35,11 @@ function Admin(props: { tips: boolean }) {
     },
     preload: true,
     from: 'allSettings in Admin'
-  });
+  }), []);
+  const {
+    data: allSettings,
+    refresh: refreshSettings
+  } = useGetFetch<BotSettings>(allSettingsOptions);
   const { putData: updateLoopSpeed }
     = usePutFetch({
       url: 'api/admin/loop_speed',
@@ -69,38 +72,40 @@ function Admin(props: { tips: boolean }) {
   // const [factoryResetting, setFactoryResetting] = useState(false);
 
 
-  async function sendLoopSpeed() {
-    // setLoopSpeed(speed);
-    await updateLoopSpeed({ loopSpeed: loopSpeed });
-    // refreshSettings();
-  }
+  // async function sendLoopSpeed() {
+  //   // setLoopSpeed(speed);
+  //   await updateLoopSpeed({ loopSpeed: loopSpeed });
+  //   // refreshSettings();
+  // }
 
-  async function sendFullSync() {
-    await updateFullSync({ fullSync: fullSync });
-    // refreshSettings();
-  }
+  // async function sendFullSync() {
+  //   await updateFullSync({ fullSync: fullSync });
+  //   // refreshSettings();
+  // }
 
-  async function sendSyncQuantity() {
-    await updateSyncQuantity({ syncQuantity: syncQuantity });
-    // refreshSettings();
-  }
+  // async function sendSyncQuantity() {
+  //   await updateSyncQuantity({ syncQuantity: syncQuantity });
+  //   // refreshSettings();
+  // }
 
-  async function toggleMaintenance() {
-    await toggleMaintenanceMode();
-    // refreshSettings();
-  }
+  // async function toggleMaintenance() {
+  //   await toggleMaintenanceMode();
+  //   // refreshSettings();
+  // }
 
-  useEffect(() => {
-    // if (allSettings.loop_speed) {
-    //   setLoopSpeed(allSettings.loop_speed);
-    // }
-    if (allSettings.full_sync) {
-      setFullSync(allSettings.full_sync);
-    }
-    if (allSettings.orders_to_sync) {
-      setSyncQuantity(allSettings.orders_to_sync);
-    }
-  }, [allSettings]);
+
+
+  // useEffect(() => {
+  //   // if (allSettings.loop_speed) {
+  //   //   setLoopSpeed(allSettings.loop_speed);
+  //   // }
+  //   if (allSettings.full_sync) {
+  //     setFullSync(allSettings.full_sync);
+  //   }
+  //   if (allSettings.orders_to_sync) {
+  //     setSyncQuantity(allSettings.orders_to_sync);
+  //   }
+  // }, [allSettings]);
 
   return (
     <div className="Admin settings-panel scrollable">
@@ -125,14 +130,14 @@ function Admin(props: { tips: boolean }) {
         ?
         <button
           className={`btn-green btn-reinvest medium ${theme}`}
-          onClick={() => { toggleMaintenance() }}
+          onClick={toggleMaintenanceMode}
         >
           Turn off
         </button>
         :
         <button
           className={`btn-red btn-reinvest medium ${theme}`}
-          onClick={() => { toggleMaintenance() }}
+          onClick={toggleMaintenanceMode}
         >
           Turn on
         </button>
@@ -186,7 +191,7 @@ function Admin(props: { tips: boolean }) {
         <br />
         <button
           className={`btn-blue btn-reinvest medium ${theme}`}
-          onClick={() => { sendLoopSpeed() }}
+          onClick={() => { updateLoopSpeed({ loopSpeed: loopSpeed }) }}
         >
           Save speed
         </button>
@@ -221,7 +226,7 @@ function Admin(props: { tips: boolean }) {
         <br />
         <button
           className={`btn-blue btn-reinvest medium ${theme}`}
-          onClick={() => { sendFullSync() }}
+          onClick={() => { updateFullSync({ fullSync: fullSync }) }}
         >
           Save Frequency
         </button>
@@ -257,7 +262,10 @@ function Admin(props: { tips: boolean }) {
         />
         <br />
         <br />
-        <button className={`btn-blue btn-reinvest medium ${theme}`} onClick={() => { sendSyncQuantity() }}>Save Quantity</button>
+        <button
+          className={`btn-blue btn-reinvest medium ${theme}`}
+          onClick={() => { updateSyncQuantity({ syncQuantity: syncQuantity }) }}
+        >Save Quantity</button>
       </div>
       <div className={`divider ${theme}`} />
 

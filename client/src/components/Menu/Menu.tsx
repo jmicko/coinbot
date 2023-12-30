@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useData } from '../../hooks/useData.js';
 import useGetFetch from '../../hooks/useGetFetch.js';
 import { useUser } from '../../hooks/useUser.js';
@@ -11,12 +12,13 @@ function Menu() {
   const { logout, user, theme, btnColor } = useUser();
   const { productID, setProductID, products, showSettings, setShowSettings } = useData();
 
-  const { refresh: refreshTestData }
-    = useGetFetch('/api/settings/test/cheese', {
-      defaultState: {},
-      preload: false,
-      from: 'refreshTestData in Menu'
-    })
+  const testOptions = useMemo(() => ({
+    url: '/api/settings/test/cheese',
+    defaultState: {},
+    preload: false,
+    from: 'test in Menu'
+  }), []);
+  const { refresh: refreshTestData } = useGetFetch(testOptions)
 
   return (
     <div className={`Menu dark ${theme}`}>

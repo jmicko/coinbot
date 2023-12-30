@@ -38,7 +38,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const {
     data: productsNoVolume,
     refresh: refreshProducts,
-  } = useGetFetch<Products>('', productsNoVolumeOptions)
+  } = useGetFetch<Products>(productsNoVolumeOptions)
 
   const [products, setProducts] = useState<Products>({ allProducts: [], activeProducts: [] });
 
@@ -69,7 +69,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const {
     data: profit,
     refresh: refreshProfit,
-  } = useGetFetch<ProfitForDuration[]>(``, profitOptions)
+  } = useGetFetch<ProfitForDuration[]>( profitOptions)
 
   // GET BOT MESSAGES
   const botMessagesOptions = useMemo(() => ({
@@ -81,7 +81,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const {
     data: messages,
     refresh: refreshBotMessages,
-  } = useGetFetch('', botMessagesOptions)
+  } = useGetFetch( botMessagesOptions)
 
   // SEND CHAT
   const sendChatOptions = useMemo(() => ({
@@ -109,7 +109,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const {
     data: botErrors,
     refresh: refreshBotErrors,
-  } = useGetFetch<Messages>('', botErrorsOptions)
+  } = useGetFetch<Messages>(botErrorsOptions)
 
   // ////////////////////////
   // //////// ORDERS ////////
@@ -133,7 +133,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const {
     data: orders,
     refresh: refreshOrders,
-  } = useGetFetch<Orders>('', ordersOptions)
+  } = useGetFetch<Orders>(ordersOptions)
 
   // SYNC ORDERS
   const syncOrdersOptions = useMemo(() => ({

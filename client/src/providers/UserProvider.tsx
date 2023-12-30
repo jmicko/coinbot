@@ -25,7 +25,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     error: userError,
     refresh: refreshUser,
     clear: clearUser,
-  } = useGetFetch<User>('', userOptions);
+  } = useGetFetch<User>(userOptions);
 
   useEffect(() => {
     if (user.theme) {

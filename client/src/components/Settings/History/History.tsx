@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './History.css'
 // import xlsx from 'json-as-xlsx'
 import { granularities } from '../../../shared.js';
@@ -13,15 +13,17 @@ import useDownloadFile from '../../../hooks/useDownloadFile.js';
 function History() {
   const { user, refreshUser, theme } = useUser();
   const { productID } = useData();
-  const {
-    data: exportableFiles,
-    refresh: refreshExportableFiles,
-  } = useGetFetch('/none', {
+
+  const exportableFilesOptions = useMemo(() => ({
     url: `/api/account/exportableFiles`,
     defaultState: [],
     from: 'exportableFiles in History',
     preload: true,
-  })
+  }), []);
+  const {
+    data: exportableFiles,
+    refresh: refreshExportableFiles,
+  } = useGetFetch(exportableFilesOptions)
   // const { downloadFile } = useFetchData(`/api/account/downloadFile`, { noLoad: true, refreshUser });
   const { downloadFile, downloadTxt } = useDownloadFile({
     url: `/api/account/downloadFile`,
@@ -36,16 +38,17 @@ function History() {
   })
   // const { data: currentJSON, refresh: refreshCurrentJSON, clear: clearJSON }
   //   = useFetchData(`/api/account/exportCurrentJSON`, { noLoad: true, refreshUser });
-  const {
-    data: currentJSON,
-    refresh: exportCurrentJSON,
-    clear: clearCurrentJSON,
-  } = useGetFetch('/none', {
+  const currentJSONOptions = useMemo(() => ({
     url: `/api/account/exportCurrentJSON`,
     defaultState: null,
     from: 'currentJSON in History',
     preload: false,
-  })
+  }), []);
+  const {
+    data: currentJSON,
+    refresh: exportCurrentJSON,
+    clear: clearCurrentJSON,
+  } = useGetFetch(currentJSONOptions)
 
   // maybe bring these back later
   // const [jsonImport, setJSONImport] = useState('');
