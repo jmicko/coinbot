@@ -3,7 +3,7 @@
 export const registerServiceWorker = async () => {
   if ("serviceWorker" in navigator) {
     // unregister previous service worker
-    const registrations = await navigator.serviceWorker.getRegistrations();
+    // const registrations = await navigator.serviceWorker.getRegistrations();
     // for (const registration of registrations) {
     //   registration.unregister();
     // }

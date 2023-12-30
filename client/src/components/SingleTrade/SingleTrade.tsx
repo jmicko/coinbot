@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react';
-import { useProductDecimals } from '../../hooks/useProductDecimals.js';
 import './SingleTrade.css';
-// import { devLog } from '../../shared.js';
 import { SingleTradeProps } from '../../types';
 import { useUser } from '../../hooks/useUser.js';
 import { useData } from '../../hooks/useData.js';
 import useDeleteFetch from '../../hooks/useDeleteFetch.js';
+import { numberWithCommas } from '../../shared.js';
 
 
 function SingleTrade(props: SingleTradeProps) {
   const { user, theme } = useUser();
-  const { productID, refreshOrders, syncPair } = useData();
+  const { currentProduct, pqd, pbd, refreshOrders, syncPair } = useData();
 
   const [profit, setProfit] = useState<number>(0);
   const [deleting, setDeleting] = useState<boolean>(false);
@@ -27,39 +26,37 @@ function SingleTrade(props: SingleTradeProps) {
     setDeleting(false);
   }
 
-
   const { reorder } = 'reorder' in props.order ? props.order : { reorder: false };
 
-  // devLog('reorder', reorder);
+  // constants
+  const original_sell_price = props.order.original_sell_price;
+  const base_size = props.order.base_size;
+  const original_buy_price = props.order.original_buy_price;
+  const maker_fee_rate = user.maker_fee;
+  const side = props.order.side;
+  const created_at = 'created_at' in props.order ? props.order.created_at : '';
+  const flipped_at = 'flipped_at' in props.order ? props.order.flipped_at : '';
+  const limit_price = props.order.limit_price;
+  const trade_pair_ratio = props.order.trade_pair_ratio;
+  const order_id = 'order_id' in props.order ? props.order.order_id : '';
 
-  const decimals = useProductDecimals(productID, user.availableFunds);
-
-  // decimals.baseIncrement
 
   useEffect(() => {
-    // devLog('rendering single trade');
     // calculate all the numbers when the component renders
-
-    // pull from props and make more manageable
-    const original_sell_price = props.order.original_sell_price;
-    const base_size = props.order.base_size;
-    const original_buy_price = props.order.original_buy_price;
-    const maker_fee_rate = user.maker_fee;
-
     // calculate fees
     const sellFee = (maker_fee_rate * original_sell_price * base_size)
     const buyFee = (maker_fee_rate * original_buy_price * base_size)
 
     // calculate profits
-    const profit = Math.round((((original_sell_price * base_size - original_buy_price * base_size)) - (buyFee + sellFee)) * decimals.base_inverse_increment) / decimals.base_inverse_increment;
+    const profit = Math.round((((original_sell_price * base_size - original_buy_price * base_size)) - (buyFee + sellFee)) * currentProduct.base_inverse_increment) / currentProduct.base_inverse_increment;
     setProfit(profit);
     setBuyFee(buyFee)
     setSellFee(sellFee)
-  }, [props.order.original_sell_price, props.order.original_buy_price, props.order.base_size, user.maker_fee, decimals.base_inverse_increment]);
+  }, [original_sell_price, original_buy_price, base_size, user.maker_fee, currentProduct.base_inverse_increment, maker_fee_rate]);
 
   function syncTrade() {
     syncPair({
-      order_id: 'order_id' in props.order ? props.order.order_id : props.key?.toString() || '',
+      order_id: 'order_id' in props.order ? order_id : props.key?.toString() || '',
     })
   }
 
@@ -67,108 +64,86 @@ function SingleTrade(props: SingleTradeProps) {
     setShowAll(!showAll);
   }
 
-  // taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
-  const numberWithCommas = (x: string) => {
-    // this will work in safari once lookbehind is supported
-    // return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
-    // for now, use this
-    const parts = x.toString().split(".");
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return parts.join(".");
-  }
-
   // todo - probably need to refactor this thing asap. Should use more useState hooks to make these strings a bit less horrifying
   // postgres is much better at math using exact
 
   return (
-    <div className={`Single-trade ${props.order.side} ${user.theme}`}>
-          {/* {props && Object.keys(props).map((key, index) => {
-            console.log(key, '< key\n', props[key], '< value\n\n');
-            return <></>
-            // return (<span key={index}>{key}:<br/> {JSON.stringify(props[key])}<br/> <br /></span>)
-          })} */}
+    <div className={`Single-trade ${side} ${user.theme}`}>
 
       {/* {JSON.stringify(decimals)} */}
-      {!props.preview && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>}
-      {showAll && !props.preview && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={syncTrade}>sync</button>}
+      {!props.preview &&
+        <button
+          className={`btn-blue expand-single-trade ${user.theme}`}
+          onClick={toggleShowAll}
+        >{showAll ? <>&#9650;</> : <>&#9660;</>}</button>}
+      {showAll && !props.preview &&
+        <button
+          className={`btn-blue expand-single-trade ${user.theme}`}
+          onClick={syncTrade}
+        >sync</button>}
 
       <div className={"overlay"}>
-
-
-        {/* <p className="single-trade-text" > */}
         <div>
           <strong>
             {/* Price: */}
-            {(props.order.side === 'BUY')
+            {(side === 'BUY')
               ? 'Buy: '
               : 'Sell: '
             }
           </strong>
-          {(props.order.side === 'SELL')
-            ? numberWithCommas(Number(props.order.original_sell_price).toFixed(decimals.quote_increment_decimals))
-            : numberWithCommas(Number(props.order.original_buy_price).toFixed(decimals.quote_increment_decimals))
+          {(side === 'SELL')
+            ? numberWithCommas(Number(original_sell_price).toFixed(pqd))
+            : numberWithCommas(Number(original_buy_price).toFixed(pqd))
           }
         </div>
-        
 
         <div>
           <strong>
-            {(props.order.side === 'SELL')
+            {(side === 'SELL')
               ? 'Buy: '
               : 'Sell: '
             }
           </strong>
-          {(props.order.side === 'SELL')
-            ? numberWithCommas(Number(props.order.original_buy_price).toFixed(decimals.quote_increment_decimals))
-            : numberWithCommas(Number(props.order.original_sell_price).toFixed(decimals.quote_increment_decimals))
+          {(side === 'SELL')
+            ? numberWithCommas(Number(original_buy_price).toFixed(pqd))
+            : numberWithCommas(Number(original_sell_price).toFixed(pqd))
           }
         </div>
 
         <div>
-          <strong>Size: </strong>{Number(props.order.base_size).toFixed(decimals.base_increment_decimals)}{!props.preview && <></>}
+          <strong>Size: </strong>{Number(base_size).toFixed(pbd)}{!props.preview && <></>}
         </div>
 
-        {/* {!props.preview ? <strong> /</strong > : <strong> /</strong >} */}
         <div>
           <strong>Value: </strong>
           ${numberWithCommas((
-            Math.round((props.order.limit_price * props.order.base_size) * decimals.quote_inverse_increment)
-            / decimals.quote_inverse_increment).toFixed(decimals.quote_increment_decimals))}
+            Math.round((limit_price * base_size) * currentProduct.quote_inverse_increment)
+            / currentProduct.quote_inverse_increment).toFixed(pqd))}
         </div>
 
+        <div><strong>Profit</strong> ${profit.toFixed(3)}</div>
 
-        <div>
-          <strong>Profit</strong> ${profit.toFixed(3)}
-        </div>
-
-        <div><strong> Pair Increase:</strong> {Number(props.order.trade_pair_ratio)}%</div>
+        <div><strong> Pair Increase:</strong> {Number(trade_pair_ratio)}%</div>
 
         {!props.preview && <div>
           <strong>Time: </strong>
           {!props.preview && <strong></strong>}{!props.preview
             && 'flipped_at' in props.order
-            && (props.order.flipped_at
-              ? new Date(props.order.flipped_at).toLocaleString('en-US')
-              : new Date(props.order.created_at).toLocaleString('en-US'))}
+            && (flipped_at
+              ? new Date(flipped_at).toLocaleString('en-US')
+              : new Date(created_at).toLocaleString('en-US'))}
           <span className={`${theme} ${reorder ? 'blue' : 'green'}`}> &#x2022;</span>
         </div>}
 
-
-
-
-        {
-          showAll && !deleting && <div><strong>Buy Fees:</strong> {buyFee.toFixed(8)}</div>
-        }
-        {
-          showAll && !deleting && <div><strong>Sell Fees:</strong> {sellFee.toFixed(8)}</div>
-        }
-        {
-          showAll && !deleting && <div><strong>Total Fees:</strong> {(Number(sellFee.toFixed(8)) + Number(buyFee.toFixed(8))).toFixed(8)}</div>
-        }
-        {
-          showAll && !deleting && <div><strong>Gross Profit:</strong> {(props.order.original_sell_price * props.order.base_size - props.order.original_buy_price * props.order.base_size).toFixed(8)}</div>
-        }
-        {/* </p> */}
+        {showAll && !deleting && <>
+          <div><strong>Buy Fees:</strong> {buyFee.toFixed(8)}</div>
+          <div><strong>Sell Fees:</strong> {sellFee.toFixed(8)}</div>
+          <div><strong>Total Fees:</strong> {(Number(sellFee.toFixed(8)) + Number(buyFee.toFixed(8))).toFixed(8)}</div>
+          <div>
+            <strong>Gross Profit:</strong>
+            {(original_sell_price * base_size - original_buy_price * base_size).toFixed(8)}
+          </div>
+        </>}
       </div>
 
       {(deleting === true)
