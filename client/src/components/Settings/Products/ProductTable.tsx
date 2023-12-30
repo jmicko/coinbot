@@ -84,7 +84,7 @@ function ProductTable(props: { products: ProductsProps[], parent: string, padNum
           // shorten volume in quote to b, m, k for billions, millions, thousands
           // count the number of commas
           const volumeInQuoteCommas = numberWithCommas(Number(product.volume_in_quote).toFixed(0)).split('').filter(char => char === ',').length;
-          console.log(volumeInQuoteCommas, '< volumeInQuoteCommas');
+          // console.log(volumeInQuoteCommas, '< volumeInQuoteCommas');
           // split at the first comma
           const volumeInQuoteSplit = numberWithCommas(Number(product.volume_in_quote).toFixed(0)).split(',')[0];
           // pick which letter to use based on the number of commas. if there are no commas, use the whole number

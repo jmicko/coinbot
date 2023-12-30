@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import './General.css'
-import coinbotFilled from '../../../coinbotFilled.png';
 import { no } from '../../../shared.js';
 import { useUser } from '../../../hooks/useUser.js';
 // import usePostFetch from '../../../hooks/usePostFetch.js';
 import { EventType } from '../../../types/index.js';
 import usePutFetch from '../../../hooks/usePutFetch.js';
+import { getSubscription, randomNotification } from '../../../services/pushNotifications.js';
 const themes: { [key: string]: string } = { original: 'Original', darkTheme: 'Dark' };
 
 function General(props: { tips: boolean }) {
@@ -16,34 +16,15 @@ function General(props: { tips: boolean }) {
     from: 'pause in General.tsx',
     refreshCallback: refreshUser
   }), [refreshUser]);
-  const { putData: pause } = usePutFetch(
-    pauseOptions
-    // {
-    //   url: '/api/settings/pause',
-    //   from: 'pause in General.tsx',
-    //   refreshCallback: refreshUser
-    // }
-  );
+  const { putData: pause } = usePutFetch(pauseOptions);
 
   const killLockOptions = useMemo(() => ({
     url: '/api/settings/killLock',
     from: 'killLock in General.tsx',
     refreshCallback: refreshUser
   }), [refreshUser]);
-  const { putData: killLock } = usePutFetch(
-    killLockOptions
-    // {
-    //   url: '/api/settings/killLock',
-    //   from: 'killLock in General.tsx',
-    //   refreshCallback: refreshUser
-    // }
-  );
+  const { putData: killLock } = usePutFetch(killLockOptions);
 
-  // const { putData: setTheme } = usePutFetch({
-  //   url: '/api/settings/theme',
-  //   from: 'setTheme in General.tsx',
-  //   refreshCallback: refreshUser
-  // });
   const themeOptions = useMemo(() => ({
     url: '/api/settings/theme',
     from: 'setTheme in General.tsx',
@@ -51,11 +32,6 @@ function General(props: { tips: boolean }) {
   }), [refreshUser]);
   const { putData: setTheme } = usePutFetch(themeOptions);
 
-  // const { putData: sendTradeLoadMax } = usePutFetch({
-  //   url: '/api/settings/tradeLoadMax',
-  //   from: 'sendTradeLoadMax in General.tsx',
-  //   refreshCallback: refreshUser
-  // });
   const tradeLoadMaxOptions = useMemo(() => ({
     url: '/api/settings/tradeLoadMax',
     from: 'sendTradeLoadMax in General.tsx',
@@ -63,11 +39,6 @@ function General(props: { tips: boolean }) {
   }), [refreshUser]);
   const { putData: sendTradeLoadMax } = usePutFetch(tradeLoadMaxOptions);
 
-  // const { putData: updateProfitAccuracy } = usePutFetch({
-  //   url: '/api/settings/profitAccuracy',
-  //   from: 'updateProfitAccuracy in General.tsx',
-  //   refreshCallback: refreshUser
-  // });
   const profitAccuracyOptions = useMemo(() => ({
     url: '/api/settings/profitAccuracy',
     from: 'updateProfitAccuracy in General.tsx',
@@ -75,11 +46,6 @@ function General(props: { tips: boolean }) {
   }), [refreshUser]);
   const { putData: updateProfitAccuracy } = usePutFetch(profitAccuracyOptions);
 
-  // const { putData: sendSyncQuantity } = usePutFetch({
-  //   url: '/api/settings/syncQuantity',
-  //   from: 'sendSyncQuantity in General.tsx',
-  //   refreshCallback: refreshUser
-  // });
   const syncQuantityOptions = useMemo(() => ({
     url: '/api/settings/syncQuantity',
     from: 'sendSyncQuantity in General.tsx',
@@ -104,23 +70,6 @@ function General(props: { tips: boolean }) {
     setNotificationSettings({ ...notificationSettings, [name]: value });
   }
 
-
-  function randomNotification() {
-
-    console.log('displaying random notification');
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then(registration => {
-        registration.active?.postMessage(JSON.stringify({
-          type: 'show-notification',
-          title: 'Notifications are working!',
-          body: 'You can disable these at any time in your browser settings, or by clicking the lock icon in the address bar.',
-          icon: coinbotFilled,
-        }));
-      });
-    }
-  }
-
-
   function notificationHandler(e: EventType) {
     no(e);
     console.log('notification handler');
@@ -129,7 +78,7 @@ function General(props: { tips: boolean }) {
     } else if (Notification.permission === "granted") {
       console.log('Notification permission already granted');
       randomNotification();
-      getSubscription();
+      getSubscription(notificationSettings);
 
     } else if (Notification.permission !== "denied") {
       console.log('Notification permission not granted, requesting permission');
@@ -146,84 +95,6 @@ function General(props: { tips: boolean }) {
       console.log('Notification permission denied');
     }
   }
-
-  function urlBase64ToUint8Array(base64String: string) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding)
-      .replace(/-/g, '+')
-      .replace(/_/g, '/');
-
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-  }
-
-
-  // get the subscription object
-  const getSubscription = async () => {
-    console.log("getting subscription");
-    const registration = await navigator.serviceWorker.ready;
-    console.log(registration.pushManager, "registration ready")
-    const sub = await registration.pushManager.getSubscription();
-    // console.log(sub, "sub");
-    if (sub) {
-      console.log(sub, "sub");
-      await subscribe();
-      return sub;
-    } else {
-      console.log("no subscription");
-      return await subscribe();
-    }
-  };
-
-  // subscribe to push notifications
-  const subscribe = async () => {
-    console.log("subscribing");
-    const sw = await navigator.serviceWorker.ready;
-    console.log(sw, "registration");
-    // get the public key from the server
-    const response = await fetch("/api/notifications/public-key");
-    const publicKey = await response.text();
-    const convertedVapidKey = urlBase64ToUint8Array(publicKey);
-    // const convertedVapidKey = publicKey;
-    console.log("public key converted>>>>>>>>");
-
-
-    const subscription = await sw.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: convertedVapidKey
-    });
-    console.log(subscription, "subscription");
-
-    // create a date from the time string
-    const date = new Date();
-    const time = notificationSettings.dailyNotificationsTime.split(':');
-    date.setHours(Number(time[0]));
-    date.setMinutes(Number(time[1]));
-    date.setSeconds(0);
-    date.setMilliseconds(0);
-
-
-
-    // send the subscription object to the server
-    console.log("sending subscription to server");
-    await fetch("/api/notifications/subscribe", {
-      method: "POST",
-      body: JSON.stringify({
-        subscription: subscription,
-        notificationSettings: { ...notificationSettings, dailyNotificationsTime: date },
-      }),
-      headers: {
-        "content-type": "application/json",
-      },
-    });
-  };
-
-
 
   return (
     <div className="General settings-panel scrollable">

@@ -14,7 +14,7 @@ function Products(props: { tips: boolean }) {
   // const longestPriceDecimals = products?.allProducts?.reduce((acc, product) => {
   //   return Math.max(acc, Number(product.price).toString().split('.')[1]?.length || 0)
   // }, 0)
-  console.log('rendering products');
+  // console.log('rendering products');
 
   useEffect(() => {
     // refresh the products every 30 seconds
