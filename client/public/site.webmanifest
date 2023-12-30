@@ -3,7 +3,7 @@
   "name": "Coinbot - Coinbase Pro Trading bot",
   "icons": [
     {
-      "src": "favicon.ico",
+      "src": "favicon/favicon.ico",
       "sizes": "48x48",
       "type": "image/x-icon"
     },
@@ -20,6 +20,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
+  "theme_color": "#2b2b2b",
   "background_color": "#2b2b2b"
 }
