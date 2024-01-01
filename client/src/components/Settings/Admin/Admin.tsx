@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 // import Confirm from '../../Confirm/Confirm';
 import SingleUser from '../../SingleUser/SingleUser';
 import './Admin.css'
@@ -6,6 +6,7 @@ import useGetFetch from '../../../hooks/useGetFetch';
 import { BotSettings, User } from '../../../types/index.js';
 import usePutFetch from '../../../hooks/usePutFetch';
 import { useUser } from '../../../hooks/useUser.js';
+import Collapser from '../../Collapser/Collapser.js';
 
 
 function Admin(props: { tips: boolean }) {
@@ -16,7 +17,7 @@ function Admin(props: { tips: boolean }) {
     preload: true,
     from: 'allUsers in Admin'
   }), []);
-  const { user, theme } = useUser();
+  const { theme } = useUser();
   const {
     data: allUsers,
     refresh: refreshUsers
@@ -115,158 +116,171 @@ function Admin(props: { tips: boolean }) {
       <div className={`divider ${theme}`} />
       {/* TOGGLE MAINTENANCE */}
 
-      <h4>Toggle Maintenance Mode</h4>
-      {/* {JSON.stringify(allSettings)} */}
-      {props.tips && <p>
-        This essentially pauses all user loops. Can be useful when migrating the bot to another server for example.
-      </p>}
-      {allSettings.maintenance
-        ?
-        <p>Maintenance mode is currently ON</p>
-        :
-        <p>Maintenance mode is currently OFF</p>
-      }
-      {allSettings.maintenance
-        ?
-        <button
-          className={`btn-green btn-reinvest medium ${theme}`}
-          onClick={toggleMaintenanceMode}
-        >
-          Turn off
-        </button>
-        :
-        <button
-          className={`btn-red btn-reinvest medium ${theme}`}
-          onClick={toggleMaintenanceMode}
-        >
-          Turn on
-        </button>
-      }
+      {/* <h4>Toggle Maintenance Mode</h4> */}
+      <Collapser title='Toggle Maintenance Mode' >
+        <div className='left-border'>
+          {/* {JSON.stringify(allSettings)} */}
+          {props.tips && <p>
+            This essentially pauses all user loops. Can be useful when migrating the bot to another server for example.
+          </p>}
+          {allSettings.maintenance
+            ?
+            <p>Maintenance mode is currently ON</p>
+            :
+            <p>Maintenance mode is currently OFF</p>
+          }
+          {allSettings.maintenance
+            ?
+            <button
+              className={`btn-green btn-reinvest medium ${theme}`}
+              onClick={() => { toggleMaintenanceMode() }}
+            >
+              Turn off
+            </button>
+            :
+            <button
+              className={`btn-red btn-reinvest medium ${theme}`}
+              onClick={() => { toggleMaintenanceMode() }}
+            >
+              Turn on
+            </button>
+          }
+        </div>
+      </Collapser>
 
       <div className={`divider ${theme}`} />
 
       {/* MANAGE USERS */}
-      {(user.admin)
-        ? <div>
-          <h4>Manage Users</h4>
+      <div>
+        <Collapser
+          title='Manage Users'
+        >
           {allUsers.map((regUser: User) => {
             return <SingleUser
               key={regUser.id}
               user={regUser}
               refreshUsers={refreshUsers}
-            // deleteUser={deleteUser}
-            // approveUser={approveUser}
-            // approveUserChat={approveUserChat}
             />
           })}
-        </div>
-        : <></>
-      }
+        </Collapser>
+      </div>
+
+
       <div className={`divider ${theme}`} />
 
       {/* SET LOOP SPEED */}
-
-      <h4>Set Loop Speed</h4>
-      {props.tips && <p>
-        This will adjust the speed of the loop. You may want to slow it down to use fewer resources and handle more users.
-        Higher numbers are slower. 1 is the fastest, and the speed is a multiplier. So 4 is 4x slower than 1 for example.
-      </p>}
-      <p>Current loop speed: {allSettings.loop_speed}</p>
-      <div className='left-border'>
-        <label htmlFor="loopSpeed">
-          Set speed:
-        </label>
-        <input
-          type="number"
-          name="loopSpeed"
-          id='loopSpeed'
-          value={loopSpeed}
-          step={1}
-          max={100}
-          min={1}
-          required
-          onChange={(event) => setLoopSpeed(Number(event.target.value))}
-        />
-        <br />
-        <br />
-        <button
-          className={`btn-blue btn-reinvest medium ${theme}`}
-          onClick={() => { updateLoopSpeed({ loopSpeed: loopSpeed }) }}
-        >
-          Save speed
-        </button>
-      </div>
+      {/* <h4>Set Loop Speed</h4> */}
+      <Collapser
+        title='Set Loop Speed'
+      >
+        {props.tips && <p>
+          This will adjust the speed of the loop. You may want to slow it down to use fewer resources and handle more users.
+          Higher numbers are slower. 1 is the fastest, and the speed is a multiplier. So 4 is 4x slower than 1 for example.
+        </p>}
+        <p>Current loop speed: {allSettings.loop_speed}</p>
+        <div className='left-border'>
+          <label htmlFor="loopSpeed">
+            Set speed:
+          </label>
+          <input
+            type="number"
+            name="loopSpeed"
+            id='loopSpeed'
+            value={loopSpeed}
+            step={1}
+            max={100}
+            min={1}
+            required
+            onChange={(event) => setLoopSpeed(Number(event.target.value))}
+          />
+          <br />
+          <br />
+          <button
+            className={`btn-blue btn-reinvest medium ${theme}`}
+            onClick={() => { updateLoopSpeed({ loopSpeed: loopSpeed }) }}
+          >
+            Save speed
+          </button>
+        </div>
+      </Collapser>
 
       <div className={`divider ${theme}`} />
 
       {/* SET FULL SYNC FREQUENCY */}
 
-      <h4>Set Full Sync Frequency</h4>
-      {props.tips && <p>
-        This will adjust how often the bot does a full sync. A full sync takes longer and is more CPU intensive,
-        but will check for and delete extra trades etc. A quick sync only checks for recently settled trades.
-      </p>}
-      <p>Current frequency: Every {allSettings.full_sync} loop{allSettings.full_sync > 1 && 's'}</p>
-      <div className='left-border'>
-        <label htmlFor="fullSync">
-          Set frequency:
-        </label>
-        <input
-          type="number"
-          name="fullSync"
-          id='fullSync'
-          value={fullSync}
-          step={1}
-          max={100}
-          min={1}
-          required
-          onChange={(event) => setFullSync(Number(event.target.value))}
-        />
-        <br />
-        <br />
-        <button
-          className={`btn-blue btn-reinvest medium ${theme}`}
-          onClick={() => { updateFullSync({ fullSync: fullSync }) }}
-        >
-          Save Frequency
-        </button>
-      </div>
+      {/* <h4>Set Full Sync Frequency</h4> */}
+      <Collapser
+        title='Set Full Sync Frequency'
+      >
+        {props.tips && <p>
+          This will adjust how often the bot does a full sync. A full sync takes longer and is more CPU intensive,
+          but will check for and delete extra trades etc. A quick sync only checks for recently settled trades.
+        </p>}
+        <p>Current frequency: Every {allSettings.full_sync} loop{allSettings.full_sync > 1 && 's'}</p>
+        <div className='left-border'>
+          <label htmlFor="fullSync">
+            Set frequency:
+          </label>
+          <input
+            type="number"
+            name="fullSync"
+            id='fullSync'
+            value={fullSync}
+            step={1}
+            max={100}
+            min={1}
+            required
+            onChange={(event) => setFullSync(Number(event.target.value))}
+          />
+          <br />
+          <br />
+          <button
+            className={`btn-blue btn-reinvest medium ${theme}`}
+            onClick={() => { updateFullSync({ fullSync: fullSync }) }}
+          >
+            Save Frequency
+          </button>
+        </div>
+      </Collapser>
 
       <div className={`divider ${theme}`} />
 
       {/* SET ORDER SYNC QUANTITY */}
 
-      <h4>Set Max Synced Order Quantity</h4>
-      {/* {JSON.stringify(allSettings)} */}
-      {props.tips && <p>
-        Users are able to adjust how many trades per side to keep in sync with Coinbase (How many buys, how many sells).
-        Changing this number puts a limit on how high users are able to set their own sync quantities. There is a max of 200, which
-        keeps the total under the 500 order limit on Coinbase, while also allowing a margin for flipping trades. Putting a low number here
-        may slightly increase the speed of the bot or lower CPU usage, but risks that all trades on one side will settle before the bot has the chance to sync more.
-      </p>}
-      <p>Current quantity: {allSettings.orders_to_sync}</p>
-      <div className='left-border'>
-        <label htmlFor="syncQuantity">
-          Set Sync Quantity:
-        </label>
-        <input
-          type="number"
-          name="syncQuantity"
-          id='syncQuantity'
-          value={syncQuantity}
-          step={1}
-          max={200}
-          min={1}
-          required
-          onChange={(event) => setSyncQuantity(Number(event.target.value))}
-        />
-        <br />
-        <br />
-        <button
-          className={`btn-blue btn-reinvest medium ${theme}`}
-          onClick={() => { updateSyncQuantity({ syncQuantity: syncQuantity }) }}
-        >Save Quantity</button>
-      </div>
+      {/* <h4>Set Max Synced Order Quantity</h4> */}
+      <Collapser
+        title='Set Max Synced Order Quantity'
+      >
+        {props.tips && <p>
+          Users are able to adjust how many trades per side to keep in sync with Coinbase (How many buys, how many sells).
+          Changing this number puts a limit on how high users are able to set their own sync quantities. There is a max of 200, which
+          keeps the total under the 500 order limit on Coinbase, while also allowing a margin for flipping trades. Putting a low number here
+          may slightly increase the speed of the bot or lower CPU usage, but risks that all trades on one side will settle before the bot has the chance to sync more.
+        </p>}
+        <p>Current quantity: {allSettings.orders_to_sync}</p>
+        <div className='left-border'>
+          <label htmlFor="syncQuantity">
+            Set Sync Quantity:
+          </label>
+          <input
+            type="number"
+            name="syncQuantity"
+            id='syncQuantity'
+            value={syncQuantity}
+            step={1}
+            max={200}
+            min={1}
+            required
+            onChange={(event) => setSyncQuantity(Number(event.target.value))}
+          />
+          <br />
+          <br />
+          <button
+            className={`btn-blue btn-reinvest medium ${theme}`}
+            onClick={() => { updateSyncQuantity({ syncQuantity: syncQuantity }) }}
+          >Save Quantity</button>
+        </div>
+      </Collapser>
       <div className={`divider ${theme}`} />
 
       {/* FACTORY RESET */}

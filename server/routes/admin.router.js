@@ -507,6 +507,7 @@ router.put('/order_sync_quantity', rejectUnauthenticated, async (req, res) => {
  */
 router.put('/maintenance', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
+  console.log('maintenance route hit');
   if (user.admin) {
     try {
       await databaseClient.toggleMaintenance();

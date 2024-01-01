@@ -1,0 +1,13 @@
+.collapser-title {
+  cursor: pointer;
+  user-select: none;
+  /* background-color: aliceblue; */
+  display: flex;
+  justify-content: space-between;
+  /* width: fit-content; */
+  border-radius: 0.1rem;
+  margin: 0;
+  padding: .2rem;
+  padding-left: .5rem;
+}
+

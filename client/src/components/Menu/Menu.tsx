@@ -21,7 +21,7 @@ function Menu() {
   const { refresh: refreshTestData } = useGetFetch(testOptions)
 
   return (
-    <div className={`Menu dark ${theme}`}>
+    <div className={`Menu`}>
       <center>
         {
           products.activeProducts &&

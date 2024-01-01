@@ -5,7 +5,7 @@ import { useUser } from '../../hooks/useUser';
 function MobileNav(props: { setMobilePage: Dispatch<SetStateAction<string>>, mobilePage: string }) {
   const { user } = useUser();
   return (
-    <div className={`MobileNav dark ${user.theme}`}>
+    <div className={`MobileNav ${user.theme}`}>
       {/* <div className="MobileNav-buttons"> */}
       <button
         className={`btn-nav ${user.theme} ${props.mobilePage === 'tradeList' && 'selected'}`}

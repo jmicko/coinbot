@@ -7,6 +7,7 @@ import useDeleteFetch from '../../hooks/useDeleteFetch';
 import useGetFetch from '../../hooks/useGetFetch';
 import Confirm from '../Confirm/Confirm';
 import { useUser } from '../../hooks/useUser.js';
+import { WaveLoader } from '../Loading.js';
 
 function SingleUser(props: { user: User, key: number, refreshUsers: () => void }) {
   // IMPORTANT to not that this is the user from the context, not the user from the props
@@ -107,11 +108,9 @@ function SingleUser(props: { user: User, key: number, refreshUsers: () => void }
     refresh: debug
   } = useGetFetch<DebugData>(debugOptions);
 
-
   function toggleShowAll() {
     setShowAll(!showAll);
   }
-
 
   function cancelDeleteUser() {
     setDeleting(false)
@@ -122,68 +121,103 @@ function SingleUser(props: { user: User, key: number, refreshUsers: () => void }
   }
 
   return (
-    <div className={`Single-trade`}>
-      <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={toggleShowAll}>{showAll ? <>&#9650;</> : <>&#9660;</>}</button>
-      {showAll && <button className={`btn-blue expand-single-trade ${user.theme}`} onClick={debug}>debug</button>}
-      {deleting && <Confirm execute={() => { deleteUser() }} ignore={cancelDeleteUser} />}
-      <div className={"overlay"}>
-        {/* Delete a user */}
-        {(deleting === true)
-          ? <p className="deleting">Deleting...</p>
-          : <button className="btn-red deleting" onClick={() => { confirmDelete() }}>Delete</button>
-        }
-        {/* ddd{props.user.can_chat ? 'chat' : "no"}chat */}
-        {/* Approve a user */}
-        {!deleting && ((props.user.approved)
-          ? <p className="deleting">Approved</p>
-          : (approving === true)
-            ? <p className="deleting">Approving...</p>
-            : <button className="btn-green deleting" onClick={() => { setApproving(true); approveUser({ id: props.user.id }) }}>Approve</button>)
-        }
-        {/* Enable chat for a user */}
-        {/* {JSON.stringify(props.user)} */}
-        {(props.user.can_chat
-          ? <button
-            className="btn-red deleting"
-            onClick={() => {
-              approveChat({
-                id: props.user.id,
-                chatPermission: !props.user.can_chat
-              })
-            }}
-          >
-            Remove Chat
-          </button>
-          : <button
-            className="btn-green deleting"
-            onClick={() => {
-              approveChat({
-                id: props.user.id,
-                chatPermission: !props.user.can_chat
-              })
-            }}
-          >
-            Approve Chat
-          </button>)
-        }
+    <div className={`Single-user ${props.user.approved ? 'active-user' : ''} ${user.theme}`}>
+      <div className='single-user-buttons'>
+
+
+        {deleting &&
+          <Confirm
+            execute={() => { deleteUser() }}
+            ignore={cancelDeleteUser}
+          />}
+
+        <button
+          className={`btn-blue expand-single-trade ${user.theme}`}
+          onClick={toggleShowAll}
+        >{showAll ? <>&#9650;</> : <>&#9660;</>}</button>
+
+
+
+        <div className='single-user-buttons'>
+          {/* Delete a user */}
+          {(deleting === true)
+            ? <p><WaveLoader /></p>
+            : <button className="btn-red" onClick={() => { confirmDelete() }}>Delete</button>
+          }
+
+          {/* Approve a user */}
+          {!deleting && ((props.user.approved)
+            ? <p>Approved</p>
+            : (approving === true)
+              ? <p >Approving...</p>
+              : <button className="btn-green" onClick={() => { setApproving(true); approveUser({ id: props.user.id }) }}>Approve</button>)
+          }
+
+          {/* Enable chat for a user */}
+          {(props.user.can_chat
+            ? <button
+              className="btn-red"
+              onClick={() => {
+                approveChat({
+                  id: props.user.id,
+                  chatPermission: !props.user.can_chat
+                })
+              }}
+            >
+              Remove Chat
+            </button>
+            : <button
+              className="btn-green"
+              onClick={() => {
+                approveChat({
+                  id: props.user.id,
+                  chatPermission: !props.user.can_chat
+                })
+              }}
+            >
+              Approve Chat
+            </button>)
+          }
+        </div>
+
+
         {/* User details */}
-        <p className="single-trade-text">
-          <strong>
-            ID: </strong>
-          {props.user.id}
-          ~ <strong>
-            Username: </strong>
-          {props.user.username}
-          ~ <strong>Active: </strong>
-          {JSON.stringify(props.user.active)}
+        <div className='user-details'>
+          <p>
+            <strong>
+              ID: </strong>
+            {props.user.id}
+          </p>
+
+          <p>
+            <strong>Username: </strong>
+            {props.user.username}
+          </p>
+
+          <p>
+            <strong>Active: </strong>
+            {JSON.stringify(props.user.active)}
+          </p>
           {/* ~ <strong>Approved: </strong>{ }
-          {JSON.stringify(props.user.approved)} */}
-        </p>
+  {JSON.stringify(props.user.approved)} */}
+        </div>
+
+
       </div>
+
+      {/* </div> */}
       {showAll &&
         <div className='user-info'>
+
           {/* BOT STATUS LIST */}
-          <h4>User Bot Status</h4>
+          <h4>
+            User Bot Status&nbsp;
+            {showAll &&
+              <button
+                className={`btn-blue ${user.theme}`}
+                onClick={debug}
+              >debug</button>}
+          </h4>
           <ol>
             <li>Loop #{debugData?.loopNumber}</li>
             {/* <p>{JSON.stringify(debugData)}</p> */}

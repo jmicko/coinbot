@@ -23,15 +23,21 @@
 
 .product-table td,
 .product-table th {
-  padding : 0 .2rem;
-  width   : max-content;
+  background-color: var(--table-bg-alt);
+  padding         : 0 .2rem;
+  width           : max-content;
+}
+
+.product-table th:nth-child(even),
+.product-table td:nth-child(even) {
+  background-color: var(--table-background);
 }
 
 .product-table td.table-product-id {
   /* width        : max-content; */
   align-items: start;
-  /* color: red; */
-  text-align: left;
+  /* color   : red; */
+  text-align : left;
 }
 
 td.number {
@@ -41,21 +47,13 @@ td.number {
 /* all other columns should center */
 .product-table td:not(.number) {
   text-align: center;
-  /* color  : blueviolet; */
-}
-
-/* every other column red background */
-.product-table th:nth-child(even),
-.product-table td:nth-child(even) {
-  background-color: #222222;
 }
 
 .products-header {
-  display        : flex;
-  /* justify-content: space-between; */
-  /* put 1rem between each item */
-  gap            : 1rem;
-  align-items    : center;
+  display            : flex;
+  /* justify-content : space-between; */
+  gap                : 1rem;
+  align-items        : center;
   /* background-color: #222222; */
   /* color           : #eaeaea; */
   /* font-family     : inherit; */

@@ -5,7 +5,8 @@
   position        : relative;
   grid-column     : 2/5;
   grid-row        : 3/5;
-  background-color: #acacaf;
+  /* background-color: #acacaf; */
+  background-color: var(--bg-darker);
   z-index         : 1;
   height          : fit-content;
   width           : calc(100vw - 2.8rem);
@@ -15,9 +16,38 @@
   border-radius   : .25rem;
 }
 
+.SettingsNav {
+  display        : flex;
+  justify-content: space-evenly;
+  flex-wrap      : wrap;
+  align-items    : center;
+  margin-bottom  : 1rem;
+}
+
+/* @media (max-width: 900rem) {
+  .SettingsNav>button {
+    min-width: 10rem;
+  }
+} */
+
+/* @media (max-width: 45rem) {
+  .SettingsNav>button {
+    min-width: 2rem;
+  }
+
+} */
+
+.SettingsNav>button {
+  /* height: 1.5rem; */
+  /* width       : max-content; */
+  flex-grow   : 1;
+  /* word-wrap: ; */
+}
+
 .Settings.darkTheme {
-  color           : rgb(215, 215, 215);
-  background-color: rgb(40, 40, 40);
+  color              : var(--text);
+  /* background-color: rgb(40, 40, 40); */
+  background-color   : var(--bg-darker);
 }
 
 .settings-header {
@@ -26,6 +56,25 @@
 
 .settings-panel {
   max-height: 65vh;
+}
+
+.settings-panel>.collapser>button {
+  height     : 1.7rem;
+  margin-top : .5rem;
+  margin-left: .5rem;
+}
+
+.settings-panel h4.expanded {
+  background-color: rgba(0, 136, 255, 0.103);
+  /* color        : red; */
+}
+
+.settings-panel h4.expanded:first-child {
+  background-color: rgba(0, 136, 255, 0.199);
+}
+
+.settings-panel .left-border {
+  margin-bottom: 1rem;
 }
 
 @media (max-width: 800px) {

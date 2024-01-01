@@ -68,7 +68,7 @@ function SingleTrade(props: SingleTradeProps) {
   // postgres is much better at math using exact
 
   return (
-    <div className={`Single-trade ${side} ${user.theme}`}>
+    <div className={`Single-trade overlay ${side} ${user.theme}`}>
 
       {/* {JSON.stringify(decimals)} */}
       {!props.preview &&
@@ -82,7 +82,7 @@ function SingleTrade(props: SingleTradeProps) {
           onClick={syncTrade}
         >sync</button>}
 
-      <div className={"overlay"}>
+      <div className={""}>
         <div>
           <strong>
             {/* Price: */}

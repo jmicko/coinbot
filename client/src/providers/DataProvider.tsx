@@ -6,6 +6,7 @@ import { Messages, OrderParams, Orders, Product, Products, ProfitForDuration } f
 import usePostFetch from '../hooks/usePostFetch';
 import { DataContext } from '../contexts/DataContext';
 import { useUser } from '../hooks/useUser';
+import useLocalStorage from '../hooks/useLocalStorage';
 
 
 export function DataProvider({ children }: { children: ReactNode }) {
@@ -16,6 +17,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // const [currentPrice, setCurrentPrice] = useState(0);
   const [isAutoScroll, setIsAutoScroll] = useState(true);
   const canScroll = useRef(true);
+  const [collapses, setCollapses] = useLocalStorage<{ [key: string]: boolean }>('collapses', {});
 
   useEffect(() => {
     canScroll.current = isAutoScroll;
@@ -69,7 +71,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const {
     data: profit,
     refresh: refreshProfit,
-  } = useGetFetch<ProfitForDuration[]>( profitOptions)
+  } = useGetFetch<ProfitForDuration[]>(profitOptions)
 
   // GET BOT MESSAGES
   const botMessagesOptions = useMemo(() => ({
@@ -81,7 +83,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const {
     data: messages,
     refresh: refreshBotMessages,
-  } = useGetFetch( botMessagesOptions)
+  } = useGetFetch(botMessagesOptions)
 
   // SEND CHAT
   const sendChatOptions = useMemo(() => ({
@@ -207,6 +209,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           fetchHandlers,
           // SETTINGS
           showSettings, setShowSettings,
+          collapses, setCollapses,
           isAutoScroll, setIsAutoScroll, canScroll,
 
           // // ACCOUNT

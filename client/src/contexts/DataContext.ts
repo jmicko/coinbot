@@ -35,6 +35,8 @@ interface DataContextProps {
   setMarketOrder: React.Dispatch<React.SetStateAction<OrderParams>>;
   tradeType: string;
   setTradeType: React.Dispatch<React.SetStateAction<string>>;
+  collapses: { [key: string]: boolean };
+  setCollapses: React.Dispatch<React.SetStateAction<{ [key: string]: boolean }>>;
   fetchHandlers: {
     [key: string]: (() => Promise<void>) | (() => void);
   }

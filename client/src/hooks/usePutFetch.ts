@@ -52,6 +52,8 @@ const usePutFetch = <T>({ url, options, setData, refreshCallback, loadingDelay, 
       refreshCallback && refreshCallback();
       setError(null);
     } catch (error) {
+      console.log(error, 'error from put hook');
+
       if (error instanceof Error) {
         setError(error);
       } else {

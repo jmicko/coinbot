@@ -33,7 +33,8 @@
 }
 
 .drag.move-dragger {
-  /* cursor         : move; */
+  user-select    : none;
+  cursor         : move;
   display        : flex;
   justify-content: space-between;
   touch-action   : none;
@@ -41,6 +42,8 @@
 }
 
 .collapse-arrows {
+  user-select    : none;
+  cursor         : pointer;
   display        : flex;
   justify-content: space-around;
   margin         : auto;

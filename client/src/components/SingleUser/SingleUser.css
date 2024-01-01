@@ -1,6 +1,93 @@
-.delete button{
+/* .delete button{
   float        : right;
   margin       : 0;
   padding      : .2rem;
-  /* text-align: center; */
+  text-align: center;
+} */
+
+.Single-user {
+  margin : .2rem;
+  padding: .2rem;
+}
+
+.single-user-buttons {
+  justify-content: space-between;
+  display        : flex;
+  flex-wrap      : wrap;
+  flex-direction : row-reverse;
+  gap            : .2rem;
+  min-width      : fit-content;
+}
+
+.single-user-buttons>.single-user-buttons {
+  flex-direction: row;
+}
+
+.Single-user p {
+  margin: 0 .2rem;
+}
+
+.Single-user button {
+  height    : fit-content;
+  min-height: 1.7rem;
+}
+
+.user-details {
+  display       : flex;
+  flex-direction: column;
+  flex-grow     : 1;
+  flex-basis    : 100%;
+  flex-wrap     : wrap;
+}
+
+.user-details p {
+  width: max-content;
+}
+
+.Single-user {
+  background-color: var(--sell-color-light-shaded);
+}
+
+.Single-user:not(.active-user):nth-of-type(2n) {
+  /* color: red; */
+  background-color: var(--sell-color-light);
+}
+
+.Single-user.active-user {
+  background-color: var(--buy-color-light);
+}
+
+
+.Single-user.active-user.darkTheme {
+  color: var(--buy-color-light);
+}
+
+.Single-user.darkTheme {
+  color           : var(--sell-color-light);
+  background-color: var(--bg-color-dark);
+}
+
+.Single-user.active-user:nth-of-type(2n) {
+  background-color: var(--buy-color-light-shaded);
+}
+
+.Single-user.darkTheme:nth-of-type(2n) {
+  background-color: var(--bg-color-dark-shaded);
+}
+
+.user-info {
+  background-color: rgba(255, 255, 255, 0.274);
+  padding         : 0.2rem .2rem;
+  margin          : .2rem 0;
+}
+
+.darkTheme .user-info {
+  background-color: rgba(0, 136, 255, 0.103);
+}
+
+.user-info h4 {
+  /* filter: brightness(1.2); */
+  margin         : .2rem 0 0;
+  display        : flex;
+  justify-content: space-between;
 }
