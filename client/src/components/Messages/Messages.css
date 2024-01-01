@@ -1,8 +1,6 @@
 .Messages {
   grid-row        : 5;
   grid-column     : 2 / 5;
-  margin-bottom   : .4rem;
-  /* border-bottom: none; */
 }
 
 .Messages.collapsed {

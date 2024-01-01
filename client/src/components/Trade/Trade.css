@@ -1,44 +1,16 @@
-/* === MAIN === */
-
-.Trade {
-  display    : block;
-  grid-column: 2;
-  grid-row   : 3/5;
-}
-
-@media (max-width: 800px) {
-  .Trade {
-    display    : block;
-    grid-column: 2;
-    grid-row   : 5;
-    min-height : 20vh;
-  }
-}
-
-
 /* === FORM === */
-
+.basic-trade-form,
 .new-trade-form {
   margin: .4rem;
 }
 
-.basic-trade-form {
-  margin: .4rem;
-}
-
 .Trade.SELL-color {
-  /* width: max-content; */
-  /* margin: 5px; */
   background-color: rgba(168, 31, 31, 0.15);
 }
 
 .Trade.BUY-color {
-  /* width: max-content; */
-  /* margin: 5px; */
-  /* height: max-content; */
   background-color: rgba(19, 133, 29, 0.15);
 }
-
 
 /* === INPUTS === */
 
@@ -47,38 +19,20 @@
   display       : flex;
   flex-direction: column;
   margin        : .4rem auto;
-
 }
 
 /* === BUTTONS === */
 
-/* .increment-buttons {
-  margin: .1rem auto;
-  width : max-content;
-}
-
-.increase input {
-  width: 4rem;
-}
-
-.decrease input {
-  width: 4rem;
-} */
-
-/* .collapsed{
-  height: min-content;
-} */
-
-.btn-collapse{
+.btn-collapse {
   height: unset;
   height: 100%;
-  float: left;
+  float : left;
 }
 
 .btn-send-trade {
   height   : 3rem;
   margin   : 1rem auto;
-  width: 100%;
+  width    : 100%;
   font-size: larger;
 }
 
@@ -86,7 +40,6 @@
   height      : 3rem;
   width       : 50%;
   min-width   : 8rem;
-  /* margin   : 1rem auto; */
   font-size   : larger;
 }
 

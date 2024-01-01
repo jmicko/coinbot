@@ -1,19 +1,35 @@
 /* === MAIN === */
 
 .Settings {
-  display         : block;
-  position        : relative;
-  grid-column     : 2/5;
-  grid-row        : 3/5;
+  display            : block;
+  position           : relative;
+  grid-column        : 1/6;
+  grid-row           : 3/5;
+  justify-self         : center;
   /* background-color: #acacaf; */
-  background-color: var(--bg-darker);
-  z-index         : 1;
-  height          : fit-content;
-  width           : calc(100vw - 2.8rem);
-  max-width       : 50rem;
-  margin          : 0 auto;
-  padding         : 1rem;
-  border-radius   : .25rem;
+  background-color   : var(--bg-darker);
+  z-index            : 1;
+  height             : fit-content;
+  width              : calc(100vw - 2.8rem);
+  max-width          : 50rem;
+  /* margin          : 0 auto; */
+  padding            : 1rem;
+  border-radius      : .25rem;
+}
+
+@media (max-width: 800px) {
+  .Settings {
+    /* display     : block; */
+    grid-column    : 2;
+    grid-row       : 3/6;
+    /* width       : calc(100% - 2rem); */
+    width          : calc(100vw - 1.8rem);
+    padding        : .5rem;
+  }
+
+  .settings-panel {
+    max-height: 60vh;
+  }
 }
 
 .SettingsNav {
@@ -23,19 +39,6 @@
   align-items    : center;
   margin-bottom  : 1rem;
 }
-
-/* @media (max-width: 900rem) {
-  .SettingsNav>button {
-    min-width: 10rem;
-  }
-} */
-
-/* @media (max-width: 45rem) {
-  .SettingsNav>button {
-    min-width: 2rem;
-  }
-
-} */
 
 .SettingsNav>button {
   /* height: 1.5rem; */
@@ -75,21 +78,6 @@
 
 .settings-panel .left-border {
   margin-bottom: 1rem;
-}
-
-@media (max-width: 800px) {
-  .Settings {
-    /* display     : block; */
-    grid-column    : 2;
-    grid-row       : 3/6;
-    /* width       : calc(100% - 2rem); */
-    width          : calc(100vw - 1.8rem);
-    padding        : .5rem;
-  }
-
-  .settings-panel {
-    max-height: 60vh;
-  }
 }
 
 .tips {

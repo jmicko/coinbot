@@ -1,8 +1,9 @@
 .Status {
-    grid-column: 2/4;
-    grid-row   : 2;
     display    : flex;
     flex-wrap  : wrap;
+
+    /* height     : fit-content; */
+    /* bottom     : 0; */
 }
 
 .status-ticker {
@@ -52,16 +53,14 @@ of these strong items should not take that property */
 
 @media (max-width: 800px) {
     .Status {
-        grid-column: 2/3;
-        grid-row   : 3;
-        /* display : block; */
         flex-flow  : column-reverse;
+        padding    : 0.2rem 0;
     }
 
     .status-ticker {
         /* width: fit-content; */
         text-align     : left;
-        margin         : auto 0.5rem;
+        margin         : auto 0.3rem;
         display        : flex;
         flex-direction : row;
         justify-content: space-between;
@@ -85,11 +84,11 @@ of these strong items should not take that property */
 
 
     .controls {
-        display        : flex;
-        flex-wrap      : wrap;
-        flex-direction : row-reverse;
+        display           : flex;
+        flex-wrap         : wrap;
+        flex-direction    : row-reverse;
         /* justify-content: space-around; */
-        justify-content: space-between;
+        justify-content   : space-between;
     }
 }
 
