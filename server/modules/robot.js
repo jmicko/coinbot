@@ -199,7 +199,6 @@ function MainLoopErrors(userID, err) {
     errorText = 'Internal server error from coinbase';
   } else if (err?.response?.status === 401) {
     devLog(err?.response?.data, 'Invalid Signature');
-    devLog(err?.response?.data, 'Invalid Signature');
     errorText = 'Invalid Signature. Probably nothing to worry about unless it keeps happening quickly.';
   } else if (err?.response?.statusText === 'Bad Gateway') {
     devLog('bad gateway');
@@ -215,7 +214,7 @@ function MainLoopErrors(userID, err) {
     errorText = 'Too many requests. Rate limit exceeded. Nothing to worry about.';
   } else {
     devLog(err, 'unknown error at end of syncOrders');
-    errorData = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???'
+    errorData = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???';
     errorText = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???';
   }
   messenger[userID].newError({
@@ -384,7 +383,6 @@ async function processOrders(userID) {
           // ...send the new trade
           try {
 
-
             // check if the trade should be canceled. This is the point of no return
             const willCancel = userStorage[userID].checkCancel(dbOrder.order_id);
             if (!willCancel) {
@@ -414,9 +412,6 @@ async function processOrders(userID) {
                 })
               }
             }
-
-
-
 
           } catch (err) {
             let errorText;
@@ -517,7 +512,6 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
       if (amountToReinvest <= 0) {
         amountToReinvest = 0;
         !simulation && messenger[userID].newError({
-          type: 'error',
           errorData: dbOrder,
           errorText: `Just saw a negative profit! Maybe increase your trade-pair ratio? 
           This may also be due to fees that were charged during setup or at a different fee tier.`
@@ -889,7 +883,7 @@ async function getAvailableFunds(userID, userSettings) {
       resolve(availableFundsObject)
     } catch (err) {
       messenger[userID].newError({
-        text: 'error getting available funds',
+        errorText: 'error getting available funds',
         data: err
       })
       reject(err)
@@ -918,8 +912,8 @@ async function updateFunds(userID, identifier) {
       }
       resolve()
     } catch (err) {
-      messenger[userID].newError(userID, {
-        text: 'error getting available funds',
+      messenger[userID].newError({
+        errorText: 'error getting available funds',
         data: err
       })
       reject(err)

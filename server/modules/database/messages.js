@@ -1,0 +1,95 @@
+import { pool } from '../pool.js';
+
+export const createMessagesTable = async () => {
+  // Hey there, friend! 
+  // Remove the '--' from the first line if you want to reset the messages table.
+  // DON'T FORGET TO PUT IT BACK WHEN YOU'RE DONE!
+  await pool.query(`
+    -- DROP TABLE IF EXISTS messages;
+    CREATE TABLE IF NOT EXISTS "messages" (
+      id SERIAL PRIMARY KEY,
+      "user_id" integer,
+      "type" VARCHAR(255),
+      "text" TEXT,
+      "timestamp" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      "from" VARCHAR(255),
+      "to" VARCHAR(255) DEFAULT 'all',
+      "deleted" BOOLEAN DEFAULT false,
+      "read" BOOLEAN DEFAULT false,
+      "data" JSONB
+    );
+  `);
+}
+
+
+export async function getAllMessages(userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `
+      SELECT * 
+      FROM "messages" 
+      WHERE "user_id" = $1 AND "type" != 'error'
+      ORDER BY "timestamp" DESC LIMIT 1000;`;
+      const result = await pool.query(sqlText, [userID]);
+      resolve(result.rows);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+export async function getAllErrorMessages(userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `
+      SELECT * 
+      FROM "messages" 
+      WHERE "user_id" = $1 AND "type" = 'error'
+      ORDER BY "timestamp" DESC LIMIT 1000;`;
+      const result = await pool.query(sqlText, [userID]);
+      resolve(result.rows);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+export async function getChatMessages(userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `
+      SELECT * 
+      FROM "messages" 
+      WHERE "type" = 'chat' AND ("to" = $1 OR "to" = 'all')
+      ORDER BY "timestamp" DESC LIMIT 1000; `;
+      const result = await pool.query(sqlText, [userID]);
+      resolve(result.rows);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+export async function saveMessage(userID, message) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `INSERT INTO "messages" ("user_id", "type", "text", "from", "to") VALUES ($1, $2, $3, $4, $5);`;
+      const result = await pool.query(sqlText, [userID, message.type, message.text, message.from, message.to]);
+      resolve(result);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+export async function deleteMessage(messageID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `UPDATE "messages" SET "deleted" = true WHERE "id" = $1;`;
+      const result = await pool.query(sqlText, [messageID]);
+      resolve(result);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}

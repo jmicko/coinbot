@@ -1,70 +1,114 @@
+.Messages>.title.collapser {
+  /* color : rgb(173, 14, 14); */
+  user-select: none;
+}
+
 .message-section {
-  display       : flex;
-  border-left   : black 1px solid;
-  flex-direction: column;
-  transition    : height .5s;
-  max-height    : 10rem;
-  flex          : 1;
+  display          : flex;
+  border-left      : black 1px solid;
+  flex-direction   : column;
+  /* max-height    : 10rem; */
+  flex             : 1;
+  transition       : max-height .08s;
+}
+
+.message-section:first-of-type {
+  border-left: none;
+}
+
+.message-section.collapsed {
+  /* transition: max-height .5s; */
+  max-height: calc(1.4rem - 1px);
+  overflow  : hidden;
+}
+
+.message-section.expanded {
+  max-height: 10rem;
 }
 
 .message-board {
   display: flex;
 }
 
+.message-list {
+  display         : flex;
+  flex-direction  : column-reverse;
+  /* justify-items: flex-start; */
+  height          : 100%;
+  /* overflow-y   : auto; */
+}
+
 @media (max-width: 800px) {
 
-  /* .Home {
-    grid-template-columns: 0fr 1fr 0fr;
-    grid-template-rows   : min-content min-content min-content min-content 1fr 1fr 1fr min-content min-content;
-    gap                  : .4rem;
-  } */
-
   .Messages {
-    height: 100%;
+    height    : 100%;
     overflow-y: auto;
+    border-top: none;
   }
 
   .message-board {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: repeat(auto minmax(0, 1fr));
-    height: 100%;
+    display               : grid;
+    grid-template-columns : auto-fit;
+    grid-template-rows    : auto-fit;
+    /* align-items        : stretch; */
+    height                : 100%;
   }
-  
+
+  div.spacer {
+    height      : 100rem;
+    width       : 100%;
+    /* flex-grow: 1; */
+  }
+
   .message-section {
-    grid-column: 1;
-    /* grid */
-    max-height: unset;
-    /* min-height: 0; */
-    /* height: auto; */
-    overflow-y: auto;
-    border-left: none;
-    width: 100%;
-  }
-
-  .message-list {
-    height: 100%;
-    /* overflow-y: auto; */
-  }
-
-  /* .message-section {
-    max-height : unset;
-    border-left: none;
-    overflow-y : auto;
-    height     : calc(100% + 0.4rem - 1px);
-    border     : black 1px solid;
-    border-top : none;
-  } */
-
-  /* .message-section.general-messages {
     border-top: black 1px solid;
-    height    : calc(100% + 0.4rem - 2px);
-  } */
 
+    grid-column: 1;
+    overflow-y : auto;
+    border-left: none;
+    width      : 100%;
+    max-height : 100%;
+    transition : none;
+  }
+
+  .message-section h3 {
+    /* .message-section h3.expanded.fully  */
+    /* color        : red; */
+    display: flex;
+    border          : none;
+    min-height          : 2rem;
+    justify-content: center;
+    align-items    : center;
+    flex-grow: 0;
+    /* border-bottom: none; */
+    /* margin       : 0; */
+    /* padding      : 0; */
+  }
+
+  .message-section.expanded {
+    max-height           : calc(100%);
+    /* height            : 100%; */
+    /* justify-self      : stretch; */
+    /* align-self        : stretch; */
+    /* border-bottom     : none; */
+
+  }
+
+  .message-section.collapsed {
+    border-top: black 1px solid;
+    display   : block;
+    max-height: calc(1.8rem);
+    overflow  : hidden;
+  }
+
+  .collapsed .message-list,
+  .collapsed .chat-form {
+    display: none;
+  }
 }
 
 .message-item {
-  margin      : auto .1rem;
+  margin      : 0 .1rem;
   padding-left: 5px;
   position    : relative;
   word-wrap   : break-word;
@@ -90,21 +134,17 @@
   border-bottom: 2px solid #7b7b7b;
 }
 
-.not-last-message-section {
-  /* border-right: black 1px solid; */
-}
-
 .chat-input {
   /* box-sizing: border-box; */
   /* width: calc(100%); */
   /* margin: 3px; */
-  flex-grow: 1;
-  resize: none;
-  /* height: 1.4rem; */
-  min-height: 1.4rem;
+  flex-grow    : 1;
+  resize       : none;
+  /* height    : 1.4rem; */
+  min-height   : 1.4rem;
   /* max-height: 3.6rem; */
-  margin-right: 3px;
-  overflow: auto;
+  margin-right : 3px;
+  overflow     : auto;
 }
 
 .chat-submit {
@@ -112,16 +152,16 @@
 }
 
 .chat-form {
-  padding     : 3px;
-  display     : flex;
-  flex-direction: row;
-  justify-content:stretch;
+  padding        : 3px;
+  display        : flex;
+  flex-direction : row;
+  justify-content: stretch;
 }
 
 .chat-input:focus {
-  outline: rgb(144, 58, 58) solid 2px;
+  outline      : rgb(144, 58, 58) solid 2px;
   border-radius: 1px;
-  /* height: 3.6rem; */
+  /* height    : 3.6rem; */
 }
 
 .chat-input.expanded {

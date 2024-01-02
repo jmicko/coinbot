@@ -367,6 +367,9 @@ router.post('/:product_id', rejectUnauthenticated, async (req, res) => {
     } catch (err) {
       devLog(err, "FAILURE creating new trade-pair");
       const errorText = 'FAILURE creating new trade-pair!';
+      if (err?.error_response?.message) {
+        errorText = errorText + ' Reason: ' + err.error_response.message
+      }
       const errorData = err;
       messenger[userID].newError({
         errorData: errorData,

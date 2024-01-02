@@ -216,9 +216,7 @@ export type ChangeEventTypes = React.ChangeEvent<HTMLSelectElement>
   | React.ChangeEvent<HTMLTextAreaElement>
 
 export interface Message {
-  cCount: null | number;
   from: null | string;
-  mCount: number;
   orderUpdate: boolean;
   text: string;
   timestamp: string;
@@ -236,8 +234,6 @@ export interface BaseWsMessage {
   identifier?: string;
   timestamp?: string;
   // from: string;
-  // cCount: number;
-  // mCount: number;
   // orderUpdate: boolean;
 }
 

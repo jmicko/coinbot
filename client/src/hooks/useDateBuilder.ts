@@ -49,7 +49,7 @@ export default function useDateBuilder(msgDate: string) {
       secondsAgo <= 4
         ? 'now'
         : secondsAgo < 60
-          ? `${secondsAgo - secondsAgo % 5}s ago`
+          ? `${secondsAgo - secondsAgo % 5}s`
           : (todayYear === year && todayMonth === month && todayDay === day)
             ? `${hours}:${minutes}`
             : (yesterdayYear === year && yesterdayMonth === month && yesterdayDay === day)

@@ -21,6 +21,7 @@ function Status() {
     availableBase, availableQuote,
     isAutoScroll, setIsAutoScroll,
     pqd, pbd,
+    refreshBotErrors, refreshBotMessages,
   } = useData();
   const {
     // tickers, 
@@ -50,6 +51,8 @@ function Status() {
     refreshOrders();
     refreshProducts();
     refreshUser();
+    refreshBotErrors();
+    refreshBotMessages();
   }
 
   // watch to see if accuracy changes

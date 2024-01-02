@@ -173,11 +173,10 @@ async function updateMultipleOrders(userID, params) {
       } catch (err) {
         userStorage[userID].updateStatus('error in UMO loop');
         // handle not found order
-        let errorText = `Error updating order details`
         console.log(err, 'error in updateMultipleOrders loop');
         messenger[userID].newError({
           errorData: orderToCheck,
-          errorText: errorText
+          errorText: `Error updating order details`
         });
 
       } // end catch

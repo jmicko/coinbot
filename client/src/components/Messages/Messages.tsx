@@ -2,36 +2,17 @@ import { useState } from 'react';
 import { useUser } from '../../hooks/useUser';
 
 import './Messages.css'
-import Chat from './Chat';
-import { Message } from '../../types';
 import { useData } from '../../hooks/useData';
 import { MessageSection } from './MessageSection';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
 // import { devLog } from '../../shared';
-
-
-function dateBuilder(d: string) {
-  // new Date(message.timeStamp).toLocaleString('en-US')
-  const date = new Date(d);
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  const year = date.getFullYear();
-  const hours = date.getHours();
-  const minutes = date.getMinutes();
-  const seconds = date.getSeconds();
-  // if message was sent today, don't show date. only show time
-  if (new Date().toLocaleDateString() === new Date(d).toLocaleDateString()) {
-    return `${hours}:${minutes}:${seconds}`
-  } else {
-    return `${month}/${day}/${year} ${hours}:${minutes}:${seconds}${new Date().toLocaleDateString()}`
-  }
-}
 
 function Messages() {
   // devLog('rendering messages');
   const { user } = useUser();
   const { width } = useWindowDimensions();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileCollapsed, setMobileCollapsed] = useState('');
   const onMobile = width <= 800;
   const {
     messages: {
@@ -53,7 +34,15 @@ function Messages() {
     {
       header: 'Chat',
       messages: chatMessages
-    }
+    },
+    // {
+    //   header: 'Fake',
+    //   messages: chatMessages
+    // },
+    // {
+    //   header: 'Faker',
+    //   messages: chatMessages
+    // }
   ]
 
   const up = "\u25B2 ".repeat(3);
@@ -63,7 +52,7 @@ function Messages() {
       <div className={`Messages boxed ${collapsed && 'collapsed'}`}>
         {!onMobile &&
           <h3
-            className={`title ${user?.theme}`}
+            className={`title collapser ${user?.theme}`}
             onClick={() => { setCollapsed(!collapsed) }}
           >{collapsed ? up : down}</h3>}
         <div className="message-board">
@@ -75,6 +64,8 @@ function Messages() {
                 header={section.header}
                 messages={section.messages}
                 collapsed={collapsed}
+                mobileCollapsed={mobileCollapsed}
+                setMobileCollapsed={setMobileCollapsed}
               />
             )
           })}

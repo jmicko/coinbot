@@ -3,8 +3,8 @@ const router = express.Router();
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
 import { databaseClient } from '../modules/databaseClient.js';
 import { robot } from '../modules/robot.js';
-import {  userStorage, cbClients, messenger } from '../modules/cache.js';
-import {  devLog, sleep } from '../../src/shared.js';
+import { userStorage, cbClients, messenger } from '../modules/cache.js';
+import { devLog, sleep } from '../../src/shared.js';
 import { fork } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -40,7 +40,7 @@ router.post('/market', rejectUnauthenticated, async (req, res) => {
       if (!basic.success) {
         messenger[userID].newError({
           errorData: basic,
-          errorText: `Could not place trade. ${basic?.error_response?.message}`
+          errorText: `Could not place trade. ${JSON.stringify(basic?.error_response?.message)}`
         });
 
       }

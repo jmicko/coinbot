@@ -3,137 +3,19 @@ import { pool } from './pool.js';
 // const { v4: uuidv4 } = require('uuid');
 import { v4 as uuidv4 } from 'uuid';
 import { addProductDecimals, devLog } from '../../src/shared.js';
+import { updateProductsTable } from './database/products.js';
+import { createMessagesTable } from './database/messages.js';
+import { updateFeedbackTable } from './database/feedback.js';
+import { updateLimitOrdersTable } from './database/limit_orders.js';
 
 export const dbUpgrade = async () => {
   console.log('<><> dbUpgrade <><>');
 
   try {
-    const productsColumnsResult = await pool.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name='products';
-    `);
-
-    const columns = productsColumnsResult.rows.map(row => row.column_name);
-
-    if (!columns.includes('base_increment_decimals')) {
-      devLog('<><> adding base_increment_decimals column <><>');
-      await pool.query(`
-        ALTER TABLE products 
-        ADD COLUMN base_increment_decimals numeric(32,16);
-      `);
-    }
-
-    if (columns.includes('base_increment_decimals')) {
-      devLog('<><> altering base_increment_decimals column <><>');
-      await pool.query(`
-        ALTER TABLE products 
-        ALTER COLUMN base_increment_decimals TYPE numeric(32,16)
-        USING base_increment_decimals::numeric(32,16);
-      `);
-    }
-
-    if (!columns.includes('quote_increment_decimals')) {
-      devLog('<><> adding quote_increment_decimals column <><>');
-      await pool.query(`
-        ALTER TABLE products 
-        ADD COLUMN quote_increment_decimals numeric(32,16);
-      `);
-    }
-
-    if (columns.includes('quote_increment_decimals')) {
-      devLog('<><> altering quote_increment_decimals column <><>');
-      await pool.query(`
-        ALTER TABLE products
-        ALTER COLUMN quote_increment_decimals TYPE numeric(32,16)
-        USING quote_increment_decimals::numeric(32,16);
-      `);
-    }
-
-    if (!columns.includes('quote_inverse_increment')) {
-      devLog('<><> adding quote_inverse_increment column <><>');
-      await pool.query(`
-        ALTER TABLE products 
-        ADD COLUMN quote_inverse_increment numeric(32,16);
-      `);
-    }
-
-    if (columns.includes('quote_inverse_increment')) {
-      devLog('<><> altering quote_inverse_increment column <><>');
-      await pool.query(`
-        ALTER TABLE products
-        ALTER COLUMN quote_inverse_increment TYPE numeric(32,16)
-        USING quote_inverse_increment::numeric(32,16);
-      `);
-    }
-
-    if (!columns.includes('base_inverse_increment')) {
-      devLog('<><> adding base_inverse_increment column <><>');
-      await pool.query(`
-        ALTER TABLE products 
-        ADD COLUMN base_inverse_increment numeric(32,16);
-      `);
-    }
-
-    if (columns.includes('base_inverse_increment')) {
-      devLog('<><> altering base_inverse_increment column <><>');
-      await pool.query(`
-        ALTER TABLE products
-        ALTER COLUMN base_inverse_increment TYPE numeric(32,16)
-        USING base_inverse_increment::numeric(32,16);
-      `);
-    }
-
-    if (!columns.includes('price_rounding')) {
-      devLog('<><> adding price_rounding column <><>');
-      await pool.query(`
-        ALTER TABLE products 
-        ADD COLUMN price_rounding numeric(32,16);
-      `);
-    }
-
-    if (columns.includes('price_rounding')) {
-      devLog('<><> altering price_rounding column <><>');
-      await pool.query(`
-        ALTER TABLE products
-        ALTER COLUMN price_rounding TYPE numeric(32,16)
-        USING price_rounding::numeric(32,16);
-      `);
-    }
-
-    if (!columns.includes('pbd')) {
-      devLog('<><> adding pbd column <><>');
-      await pool.query(`
-        ALTER TABLE products 
-        ADD COLUMN pbd numeric;
-      `);
-    }
-
-    if (columns.includes('pbd')) {
-      devLog('<><> altering pbd column <><>');
-      await pool.query(`
-        ALTER TABLE products
-        ALTER COLUMN pbd TYPE numeric
-        USING pbd::numeric;
-      `);
-    }
-
-    if (!columns.includes('pqd')) {
-      devLog('<><> adding pqd column <><>');
-      await pool.query(`
-        ALTER TABLE products 
-        ADD COLUMN pqd numeric;
-      `);
-    }
-
-    if (columns.includes('pqd')) {
-      devLog('<><> altering pqd column <><>');
-      await pool.query(`
-        ALTER TABLE products
-        ALTER COLUMN pqd TYPE numeric
-        USING pqd::numeric;
-      `);
-    }
+    await updateProductsTable();
+    await createMessagesTable();
+    await updateFeedbackTable();
+    await updateLimitOrdersTable();
 
     devLog('<><> dbUpgrade complete <><>');
   } catch (error) {
@@ -143,7 +25,7 @@ export const dbUpgrade = async () => {
 
 // stores the details of a trade-pair. The originalDetails are details that stay with a trade-pair when it is flipped
 // flipped_at is the "Time" shown on the interface. It has no other function
-const storeTrade = (newOrder, originalDetails, flipped_at) => {
+export const storeTrade = (newOrder, originalDetails, flipped_at) => {
   devLog('NEW ORDER IN STORETRADE', newOrder, 'originalDetails', originalDetails, 'flipped_at', flipped_at);
   return new Promise(async (resolve, reject) => {
     // add new order to the database
@@ -238,7 +120,7 @@ const storeTrade = (newOrder, originalDetails, flipped_at) => {
 
 // hahahahahaha may you never have to change this
 // update a trade by any set of parameters
-const updateTrade = (order) => {
+export const updateTrade = (order) => {
   return new Promise(async (resolve, reject) => {
     const columns = []
     // add new order to the database
@@ -438,7 +320,7 @@ const updateTrade = (order) => {
 // This function is used when importing trades from the user interface
 // IT MUST USE THE USER ID FROM PASSPORT AUTHENTICATION!!!
 // otherwise you could import false trades for someone else!
-const importTrade = (details, userID) => {
+export const importTrade = (details, userID) => {
   devLog(details.id, 'details.id in importTrade');
   return new Promise((resolve, reject) => {
     // add new order to the database
@@ -479,7 +361,7 @@ const importTrade = (details, userID) => {
 // function to insert an array of products into the database for a user
 // if the product already exists for the user, everything EXCEPT "active_for_user" is updated.
 // if the product_id is BTC-USD, make sure to set active_for_user to true
-const insertProducts = (products, userID) => {
+export const insertProducts = (products, userID) => {
   return new Promise(async (resolve, reject) => {
     try {
       // first get which products are in the portfolio
@@ -660,7 +542,7 @@ const insertProducts = (products, userID) => {
 }
 
 // get a product by product id
-const getProduct = (productID, userID) => {
+export const getProduct = (productID, userID) => {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `SELECT * FROM "products" WHERE "product_id" = $1 AND "user_id" = $2;`;
@@ -674,7 +556,7 @@ const getProduct = (productID, userID) => {
 }
 
 // get all active products in the portfolio
-const getActiveProducts = (userID) => {
+export const getActiveProducts = (userID) => {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `SELECT * FROM "products" WHERE "user_id" = $1 AND "active_for_user" = true ORDER BY "activated_at" ASC;`;
@@ -689,7 +571,7 @@ const getActiveProducts = (userID) => {
 
 
 // get all active products in the portfolio
-const getActiveProductIDs = (userID) => {
+export const getActiveProductIDs = (userID) => {
   return new Promise(async (resolve, reject) => {
     try {
       const activeProducts = await getActiveProducts(userID);
@@ -707,7 +589,7 @@ const getActiveProductIDs = (userID) => {
 }
 
 // update the active_for_user column for a product
-const updateProductActiveStatus = (userID, productID, active) => {
+export const updateProductActiveStatus = (userID, productID, active) => {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `UPDATE "products" SET "active_for_user" = $1, "activated_at" = now() WHERE "user_id" = $2 AND "product_id" = $3;`;
@@ -723,7 +605,7 @@ const updateProductActiveStatus = (userID, productID, active) => {
 
 // get all products in the portfolio that have USD as the quote currency
 // this will be displayed in the client as available products to trade
-const getUserProducts = (userID) => {
+export const getUserProducts = (userID) => {
   return new Promise(async (resolve, reject) => {
     try {
       // get which products are currently traded in the portfolio
@@ -741,7 +623,7 @@ const getUserProducts = (userID) => {
 
 // gets all open orders in db based on a specified limit. 
 // The limit is for each side, so the results will potentially double that
-const getLimitedUnsettledTrades = (userID, limit) => {
+export const getLimitedUnsettledTrades = (userID, limit) => {
   return new Promise(async (resolve, reject) => {
     // get limit of buys
     // get limit of sells
@@ -773,7 +655,7 @@ const getLimitedUnsettledTrades = (userID, limit) => {
 // can be limited by how many should be synced, or how many should be shown on the interface 
 // depending on where it is being called from
 // this is very similar to the function above, but gets only one side at a time so they are easier to split
-const getUnsettledTradesByProduct = (side, product, userID, max_trade_load) => {
+export const getUnsettledTradesByProduct = (side, product, userID, max_trade_load) => {
   return new Promise(async (resolve, reject) => {
     let sqlText;
     // the only time 'BUY' or 'SELL' is passed is when the frontend is calling for all trades. 
@@ -832,7 +714,7 @@ const getUnsettledTradesByProduct = (side, product, userID, max_trade_load) => {
 // can be limited by how many should be synced, or how many should be shown on the interface 
 // depending on where it is being called from
 // this is very similar to the function above, but gets only one side at a time so they are easier to split
-const getUnsettledTrades = (side, userID, max_trade_load) => {
+export const getUnsettledTrades = (side, userID, max_trade_load) => {
   return new Promise(async (resolve, reject) => {
     let sqlText;
     // the only time 'BUY' or 'SELL' is passed is when the frontend is calling for all trades. 
@@ -888,7 +770,7 @@ const getUnsettledTrades = (side, userID, max_trade_load) => {
 }
 
 // This will get trades that have settled but not yet been flipped, meaning they need to be processed
-const getAllSettledTrades = (userID) => {
+export const getAllSettledTrades = (userID) => {
   return new Promise(async (resolve, reject) => {
     try {
       // check all trades in db that are both settled and NOT flipped
@@ -907,7 +789,7 @@ const getAllSettledTrades = (userID) => {
 }
 
 // This will get trades that have settled but not yet been flipped, meaning they need to be processed
-const getSettledTrades = (userID) => {
+export const getSettledTrades = (userID) => {
   return new Promise(async (resolve, reject) => {
     try {
       // check all trades in db that are both settled and NOT flipped
@@ -927,7 +809,7 @@ const getSettledTrades = (userID) => {
 
 
 // This will get orders for a user
-const getAllOrders = (userID) => {
+export const getAllOrders = (userID) => {
   return new Promise(async (resolve, reject) => {
     try {
       // check all trades in db that are both settled and NOT flipped
@@ -946,7 +828,7 @@ const getAllOrders = (userID) => {
 }
 
 // get the number of open orders from the DB
-const getUnsettledTradeCounts = (userID, product) => {
+export const getUnsettledTradeCounts = (userID, product) => {
   return new Promise(async (resolve, reject) => {
     try {
       // get total open buys
@@ -981,7 +863,7 @@ const getUnsettledTradeCounts = (userID, product) => {
 }
 
 // get all details of an order
-const getSingleTrade = (order_id) => {
+export const getSingleTrade = (order_id) => {
   return new Promise((resolve, reject) => {
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
@@ -1000,7 +882,7 @@ const getSingleTrade = (order_id) => {
 }
 
 // get all details of an array of orders
-const getTradesByIDs = (userID, IDs) => {
+export const getTradesByIDs = (userID, IDs) => {
   return new Promise(async (resolve, reject) => {
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
@@ -1017,7 +899,7 @@ const getTradesByIDs = (userID, IDs) => {
 }
 
 // get all details of an array of order IDs
-const getUnsettledTradesByIDs = (userID, IDs) => {
+export const getUnsettledTradesByIDs = (userID, IDs) => {
   return new Promise(async (resolve, reject) => {
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
@@ -1034,7 +916,7 @@ const getUnsettledTradesByIDs = (userID, IDs) => {
 }
 
 // get all details of an array of order IDs
-const getUnfilledTradesByIDs = (userID, IDs) => {
+export const getUnfilledTradesByIDs = (userID, IDs) => {
   return new Promise(async (resolve, reject) => {
     let sqlText;
     // put sql stuff here, extending the pool promise to the parent function
@@ -1053,7 +935,7 @@ const getUnfilledTradesByIDs = (userID, IDs) => {
 
 // get the total USD that is on trade-pairs in the DB. This should be higher or the same as what is reported by CBP
 // because the bot stores more "open" orders than CBP will allow for
-const getSpentUSD = (userID, makerFee) => {
+export const getSpentUSD = (userID, makerFee) => {
   return new Promise((resolve, reject) => {
     let sqlText = `SELECT sum("limit_price"*"base_size"*$1)
     FROM "limit_orders"
@@ -1074,7 +956,7 @@ const getSpentUSD = (userID, makerFee) => {
 
 // get the total USD that is on trade-pairs in the DB. This should be higher or the same as what is reported by CBP
 // because the bot stores more "open" orders than CBP will allow for
-const getSpentQuote = (userID, takerFee, product_id) => {
+export const getSpentQuote = (userID, takerFee, product_id) => {
   return new Promise((resolve, reject) => {
     let sqlText = `SELECT sum("limit_price"*"base_size"*$1)
     FROM "limit_orders"
@@ -1095,7 +977,7 @@ const getSpentQuote = (userID, takerFee, product_id) => {
 
 // get the total BTC that is on trade-pairs in the DB. This should be higher or the same as what is reported by CBP
 // because the bot stores more "open" orders than CBP will allow for
-const getSpentBase = (userID, product_id) => {
+export const getSpentBase = (userID, product_id) => {
   return new Promise((resolve, reject) => {
     let sqlText = `SELECT sum("base_size")
     FROM "limit_orders"
@@ -1116,7 +998,7 @@ const getSpentBase = (userID, product_id) => {
 
 // get the total BTC that is on trade-pairs in the DB. This should be higher or the same as what is reported by CBP
 // because the bot stores more "open" orders than CBP will allow for
-const getSpentBTC = (userID) => {
+export const getSpentBTC = (userID) => {
   return new Promise((resolve, reject) => {
     let sqlText = `SELECT sum("base_size")
     FROM "limit_orders"
@@ -1135,7 +1017,7 @@ const getSpentBTC = (userID) => {
 }
 
 // get [limit] number of orders closest to the spread
-const getReorders = (userID, limit) => {
+export const getReorders = (userID, limit) => {
   return new Promise(async (resolve, reject) => {
     try {
       // first get active products
@@ -1176,7 +1058,7 @@ const getReorders = (userID, limit) => {
 // when the user kills a trade-pair, the current open order is first set to will_cancel=true 
 // this is because it can take a few seconds to connect and cancel on CBP, so the order should be ignored while this is happening
 // connecting to the DB and setting will_cancel to true is much faster
-const checkIfCancelling = async (order_id) => {
+export const checkIfCancelling = async (order_id) => {
   return new Promise(async (resolve, reject) => {
     try {
       let sqlText;
@@ -1195,7 +1077,7 @@ const checkIfCancelling = async (order_id) => {
 
 // delete a trade from the DB. Generally this should be done in combination with cancelling a trade on CB
 // unless it is a settled trade
-const deleteTrade = async (order_id) => {
+export const deleteTrade = async (order_id) => {
   return new Promise(async (resolve, reject) => {
     try {
       const queryText = `DELETE from "limit_orders" WHERE "order_id"=$1;`;
@@ -1207,7 +1089,7 @@ const deleteTrade = async (order_id) => {
   });
 }
 
-async function deleteMarkedOrders(userID) {
+export async function deleteMarkedOrders(userID) {
   return new Promise(async (resolve, reject) => {
     try {
       const queryText = `DELETE from "limit_orders" WHERE "will_cancel"=true AND "userID"=$1;`;
@@ -1220,7 +1102,7 @@ async function deleteMarkedOrders(userID) {
 }
 
 // get user information
-async function getUser(userID) {
+export async function getUser(userID) {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `SELECT * FROM "user" WHERE "id"=$1;`;
@@ -1234,7 +1116,7 @@ async function getUser(userID) {
 }
 
 // get all user information minus password
-async function getAllUsers() {
+export async function getAllUsers() {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `SELECT "id", "username", "active", "admin", "approved", "joined_at" FROM "user";`;
@@ -1249,7 +1131,7 @@ async function getAllUsers() {
 
 // get all user information and settings except for the API details. 
 // Keeping them separate helps prevent accidentally sending an API outside the server
-async function getAllUserAndSettings() {
+export async function getAllUserAndSettings() {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `SELECT * 
@@ -1267,7 +1149,7 @@ async function getAllUserAndSettings() {
 
 // get all user information and settings except for the API details. 
 // Keeping them separate helps prevent accidentally sending an API outside the server
-async function getUserAndSettings(userID) {
+export async function getUserAndSettings(userID) {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `SELECT * 
@@ -1283,7 +1165,7 @@ async function getUserAndSettings(userID) {
 }
 
 // get the API details for a user
-async function getUserAPI(userID) {
+export async function getUserAPI(userID) {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `SELECT * FROM "user_api" WHERE "userID"=$1;`;
@@ -1297,7 +1179,7 @@ async function getUserAPI(userID) {
 }
 
 // get all bot settings
-async function getBotSettings() {
+export async function getBotSettings() {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `SELECT * FROM "bot_settings";`;
@@ -1312,7 +1194,7 @@ async function getBotSettings() {
 
 // turns maintenance mode on and off to stop trading on all accounts.
 // This prevents loss of data if the bot needs to be shut down 
-async function toggleMaintenance() {
+export async function toggleMaintenance() {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `UPDATE "bot_settings" SET "maintenance" = NOT "maintenance";`;
@@ -1326,7 +1208,7 @@ async function toggleMaintenance() {
 
 // get all the trades that are outside the limit of the synced orders qty setting, 
 // but all still probably synced with CB (based on reorder=false)
-async function getDeSyncs(userID, limit, side) {
+export async function getDeSyncs(userID, limit, side) {
   return new Promise(async (resolve, reject) => {
     try {
       // first get active products
@@ -1367,7 +1249,7 @@ async function getDeSyncs(userID, limit, side) {
 
 // setting an order to reorder will bypass some functions in the bot that check if the order needs to be reordered.
 // setting this to true for trades that are desynced from CB will save time later
-async function setSingleReorder(order_id) {
+export async function setSingleReorder(order_id) {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `UPDATE "limit_orders" SET "reorder" = true WHERE "order_id" = $1;`;
@@ -1381,7 +1263,7 @@ async function setSingleReorder(order_id) {
 
 // setting an order to reorder will bypass some functions in the bot that check if the order needs to be reordered.
 // setting this to true for trades that are desynced from CB will save time later
-async function setManyReorders(idArray) {
+export async function setManyReorders(idArray) {
   return new Promise(async (resolve, reject) => {
     devLog(idArray, 'setting many reorders');
     try {
@@ -1427,7 +1309,7 @@ async function setPause(status, userID) {
 
 // toggles the kill button on the tradelist on the interface
 // turning it on will not show the kill button, preventing accidental trade-pair cancellation
-async function setKillLock(status, userID) {
+export async function setKillLock(status, userID) {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `UPDATE "user_settings" SET "kill_locked" = $1 WHERE "userID" = $2`;
@@ -1440,7 +1322,7 @@ async function setKillLock(status, userID) {
 }
 
 
-async function setAutoSetupNumber(number, userID) {
+export async function setAutoSetupNumber(number, userID) {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `UPDATE "user_settings" SET "auto_setup_number" = $1 WHERE "userID" = $2`;
@@ -1453,7 +1335,7 @@ async function setAutoSetupNumber(number, userID) {
 }
 
 // update the fees and 30 day trade volume
-async function saveFees(fees, userID) {
+export async function saveFees(fees, userID) {
   return new Promise(async (resolve, reject) => {
     try {
       const totalVolume = Number(fees.advanced_trade_only_volume) + Number(fees.coinbase_pro_volume);
@@ -1467,7 +1349,7 @@ async function saveFees(fees, userID) {
 }
 
 // update the fees and 30 day trade volume
-async function markAsFlipped(order_id) {
+export async function markAsFlipped(order_id) {
   return new Promise(async (resolve, reject) => {
     try {
       devLog('marking as flipped', order_id);
@@ -1481,7 +1363,7 @@ async function markAsFlipped(order_id) {
 }
 
 // get profit for a product and for all products for a duration of time
-async function getProfitForDurationByProduct(userID, product, duration) {
+export async function getProfitForDurationByProduct(userID, product, duration) {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
@@ -1497,7 +1379,7 @@ async function getProfitForDurationByProduct(userID, product, duration) {
 }
 
 // get profit for a product and for all products for a duration of time
-async function getProfitForDurationByAllProducts(userID, duration) {
+export async function getProfitForDurationByAllProducts(userID, duration) {
   devLog('getting profit for duration by all products', userID, duration);
   return new Promise(async (resolve, reject) => {
     try {
@@ -1513,7 +1395,7 @@ async function getProfitForDurationByAllProducts(userID, duration) {
 }
 
 // get profit for a product and for all products for a duration of time
-async function getProfitSinceDate(userID, date, product) {
+export async function getProfitSinceDate(userID, date, product) {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
@@ -1541,7 +1423,7 @@ async function getProfitSinceDate(userID, date, product) {
 }
 
 // get the weekly average profit for a product for the last 4 weeks
-async function getWeeklyAverageProfit(userID, product) {
+export async function getWeeklyAverageProfit(userID, product) {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) / 12 AS "average_profit"
@@ -1569,7 +1451,7 @@ async function getWeeklyAverageProfit(userID, product) {
 
 
 
-async function getNewestCandle(product_id, granularity) {
+export async function getNewestCandle(product_id, granularity) {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `
@@ -1585,7 +1467,7 @@ async function getNewestCandle(product_id, granularity) {
   })
 }
 
-async function getOldestCandle(product_id, granularity) {
+export async function getOldestCandle(product_id, granularity) {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `
@@ -1602,7 +1484,7 @@ async function getOldestCandle(product_id, granularity) {
 }
 
 // save an array of candles to the database
-async function saveCandlesOld(productID, granularity, candles) {
+export async function saveCandlesOld(productID, granularity, candles) {
   return new Promise(async (resolve, reject) => {
     try {
       // save each candle to the database unless it already exists
@@ -1625,7 +1507,7 @@ async function saveCandlesOld(productID, granularity, candles) {
   })
 }
 
-async function saveCandles(productID, granularity, candles) {
+export async function saveCandles(productID, granularity, candles) {
   return new Promise(async (resolve, reject) => {
     try {
       // candles is an array of objects with properties that correspond to the columns in the database
@@ -1656,7 +1538,7 @@ async function saveCandles(productID, granularity, candles) {
 }
 
 
-async function getMissingCandles({ productID, granularity }) {
+export async function getMissingCandles({ productID, granularity }) {
   return new Promise(async (resolve, reject) => {
     try {
       // get start value for all candles in the database
@@ -1711,7 +1593,7 @@ async function getMissingCandles({ productID, granularity }) {
 
 
 // get all candles for a product and granularity
-async function getCandles(productID, granularity, start, end) {
+export async function getCandles(productID, granularity, start, end) {
   return new Promise(async (resolve, reject) => {
     try {
       devLog('getting candles FROM DB', productID, granularity, start, end);
@@ -1725,7 +1607,7 @@ async function getCandles(productID, granularity, start, end) {
 }
 
 // get the candle with the lowest start that is higher than the given start
-async function getNextCandles(productID, granularity, start) {
+export async function getNextCandles(productID, granularity, start) {
   return new Promise(async (resolve, reject) => {
     try {
       devLog('getting next candles FROM DB', productID, granularity, start);
@@ -1742,7 +1624,7 @@ async function getNextCandles(productID, granularity, start) {
 }
 
 // get average high low ratio for a product and granularity
-async function getCandlesAverage(productID, granularity) {
+export async function getCandlesAverage(productID, granularity) {
   return new Promise(async (resolve, reject) => {
     try {
       // get the unix date in seconds for 30 days ago
@@ -1758,7 +1640,7 @@ async function getCandlesAverage(productID, granularity) {
 }
 
 
-async function addSubscription({ subscription, notificationSettings, user_id }) {
+export async function addSubscription({ subscription, notificationSettings, user_id }) {
   return new Promise(async (resolve, reject) => {
     try {
       // insert the subscription into the database, or update it if it already exists, then return the result
@@ -1776,7 +1658,7 @@ async function addSubscription({ subscription, notificationSettings, user_id }) 
   })
 }
 
-async function getSubscriptionsForUser(userID) {
+export async function getSubscriptionsForUser(userID) {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `SELECT * FROM "subscriptions" WHERE "user_id" = $1;`;
@@ -1788,7 +1670,7 @@ async function getSubscriptionsForUser(userID) {
   })
 }
 
-async function getAllSubscriptions() {
+export async function getAllSubscriptions() {
   return new Promise(async (resolve, reject) => {
     try {
       const sqlText = `SELECT * FROM "subscriptions";`;

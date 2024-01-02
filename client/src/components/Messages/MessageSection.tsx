@@ -30,9 +30,17 @@ interface MessageSectionProps {
   header: string;
   collapsed: boolean;
   messages: Message[];
+  mobileCollapsed?: string;
+  setMobileCollapsed?: (collapsed: string) => void;
 }
 
-export function MessageSection({ header, collapsed, messages }: MessageSectionProps) {
+export function MessageSection({
+  header,
+  collapsed,
+  messages,
+  mobileCollapsed,
+  setMobileCollapsed
+}: MessageSectionProps) {
   const { user } = useUser();
   const { sendChat, } = useData();
   const { width } = useWindowDimensions();
@@ -65,28 +73,49 @@ export function MessageSection({ header, collapsed, messages }: MessageSectionPr
     }
   }, [messages]);
 
+
   return (
     (user.can_chat || header !== 'Chat') &&
-    <div className={`message-section ` + header.split(' ').join('-').toLowerCase()}>
+    <div className={`message-section ${(collapsed && !onMobile) || (mobileCollapsed !== header && mobileCollapsed !== '' && onMobile)
+      ? 'collapsed'
+      : 'expanded'} ` + header.split(' ').join('-').toLowerCase()}>
 
 
-      <h3 className={`title message-header ${user.theme}`}>
+      <h3 className={
+        `${(collapsed && !onMobile)
+          || (mobileCollapsed !== header && mobileCollapsed !== '' && onMobile)
+          ? 'collapsed'
+          : 'expanded'} title message-header ${user.theme}`
+      }
+        onClick={() => {
+          if (onMobile) {
+            if (mobileCollapsed === header) {
+              setMobileCollapsed && setMobileCollapsed('');
+            } else {
+              console.log('setting mobile collapsed to ', header);
+              setMobileCollapsed && setMobileCollapsed(header)
+            }
+          }
+        }}
+      >
         {(collapsed && !onMobile) && messages.length} {header}
       </h3>
 
-      {(!collapsed || onMobile) && <div className={`message-list scrollable`}>
+      {<div className={`message-list scrollable ${(collapsed && !onMobile) ? 'collapsed' : 'expanded'}`}>
+        <div ref={messagesEndRef} />
         {
-          messages.slice(0).reverse().slice(0, 100).filter(message => message.text).map((message, i) => {
+          messages.slice(0, 100).filter(message => message.text).map((message, i) => {
 
             return message.text &&
               <MessageItem key={i} message={message} />
           })
         }
-        <div ref={messagesEndRef} />
+        <div className="spacer" />
       </div>}
 
-      {header === 'Chat' && (onMobile || !collapsed) &&
-        <form className={`chat-form`}
+      {header === 'Chat' &&
+        //  (onMobile || !collapsed) &&
+        <form className={`chat-form ${(collapsed && !onMobile) ? 'collapsed' : 'expanded'}`}
           onSubmit={((e) => { e.preventDefault(); sendChatMessage(e) })}
         >
           <button
@@ -99,9 +128,7 @@ export function MessageSection({ header, collapsed, messages }: MessageSectionPr
             // type="text"
             value={newMessage}
             placeholder='Send to everyone'
-            onChange={(e) => {
-              e.preventDefault(); setNewMessage(e.target.value), console.log(newMessage);
-            }}
+            onChange={(e) => { e.preventDefault(); setNewMessage(e.target.value) }}
 
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey && !expandedInput) {
@@ -121,7 +148,14 @@ export function MessageSection({ header, collapsed, messages }: MessageSectionPr
           <input
             className='chat-submit btn-nav'
             type="submit"
-            value=" > " />
+            value=" > "
+            onClick={(e) => {
+              e.preventDefault();
+              sendChatMessage(e);
+              // put the focus back on the input
+              document.getElementById('chat-input')?.focus();
+            }}
+          />
         </form>}
 
 
