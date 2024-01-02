@@ -45,12 +45,7 @@ function Chat({ chatLength, collapsed, messages }: ChatProps) {
   }
 
   return (
-    <div className={`
-    message-section 
-
-
-     
-    admin-${user.admin}`}>
+    <div className={`message-section admin-${user.admin}`}>
 
       <h3 className={`title chat-header ${user.theme}`}>
         {collapsed && chatLength} Chat:
@@ -73,16 +68,10 @@ function Chat({ chatLength, collapsed, messages }: ChatProps) {
       >
         {
           !collapsed && messages.map((message, i) => {
-            // if (message.text) {
             return message.text && <div key={i} className={`message-list`}>
               <strong>{dateBuilder(message.timestamp)}</strong>&nbsp;
-              {/* <br /> */}
-              {/* {JSON.stringify(message)} */}
-              {/* <p> */}
               <strong className="red-text">{`${message.from} > `}</strong>{message.text}
-              {/* </p> */}
             </div>
-            // }
           })
         }
 

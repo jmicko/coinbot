@@ -38,9 +38,15 @@
   grid-column: 3 / 5;
 }
 
+.Messages {
+  grid-row   : 5;
+  grid-column: 2 / 5;
+}
+
 @media (max-width: 800px) {
   .Home {
-    grid-template-columns: 0fr auto 0fr;
+    /* height               : 100vh; */
+    grid-template-columns: 0fr 1fr 0fr;
     grid-template-rows   : min-content min-content min-content min-content 1fr min-content;
     gap                  : .4rem;
   }
@@ -52,21 +58,39 @@
   }
 
   .Status {
-    grid-column: 2/3;
-    grid-row   : 3;
-}
-
-  .Trade {
-    grid-row   : 5;
     grid-column: 2;
+    grid-row   : 3;
   }
 
   .TradeList {
-    grid-row   : 5;
     grid-column: 2;
+    grid-row   : 5;
   }
 
+  .Trade {
+    grid-column: 2;
+    grid-row   : 5;
+  }
 
+  .Messages {
+    grid-column: 2;
+    grid-row   : 5;
+  }
+
+  /* .message-section.general-messages {
+    grid-column: 2;
+    grid-row   : 5;
+  }
+
+  .message-section.bot-errors {
+    grid-column: 2;
+    grid-row   : 6;
+  }
+
+  .message-section.chat {
+    grid-column: 2;
+    grid-row   : 7;
+  } */
 
 }
 

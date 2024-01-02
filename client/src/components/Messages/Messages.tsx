@@ -1,24 +1,46 @@
 import { useState } from 'react';
-import { useUser } from '../../hooks/useUser.js';
+import { useUser } from '../../hooks/useUser';
 
 import './Messages.css'
 import Chat from './Chat';
 import { Message } from '../../types';
-import { useData } from '../../hooks/useData.js';
+import { useData } from '../../hooks/useData';
+import { MessageSection } from './MessageSection';
+import useWindowDimensions from '../../hooks/useWindowDimensions';
 // import { devLog } from '../../shared';
 
+
+function dateBuilder(d: string) {
+  // new Date(message.timeStamp).toLocaleString('en-US')
+  const date = new Date(d);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const year = date.getFullYear();
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const seconds = date.getSeconds();
+  // if message was sent today, don't show date. only show time
+  if (new Date().toLocaleDateString() === new Date(d).toLocaleDateString()) {
+    return `${hours}:${minutes}:${seconds}`
+  } else {
+    return `${month}/${day}/${year} ${hours}:${minutes}:${seconds}${new Date().toLocaleDateString()}`
+  }
+}
 
 function Messages() {
   // devLog('rendering messages');
   const { user } = useUser();
+  const { width } = useWindowDimensions();
+  const [collapsed, setCollapsed] = useState(false);
+  const onMobile = width <= 800;
   const {
     messages: {
       botMessages,
       chatMessages
     },
     botErrors
-    // , sendChat
   } = useData();
+
   const messageMap = [
     {
       header: 'General Messages',
@@ -27,97 +49,38 @@ function Messages() {
     {
       header: 'Bot Errors',
       messages: botErrors
+    },
+    {
+      header: 'Chat',
+      messages: chatMessages
     }
   ]
 
-  // console.log(botErrors, 'botErrors');
-  // console.log(botMessages, 'botMessages');
-  
-  
-
-  const [collapsed, setCollapsed] = useState(false);
-
-  function dateBuilder(d: string) {
-    // new Date(message.timeStamp).toLocaleString('en-US')
-    const date = new Date(d);
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const year = date.getFullYear();
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const seconds = date.getSeconds();
-    // if message was sent today, don't show date. only show time
-    if (new Date().toLocaleDateString() === new Date(d).toLocaleDateString()) {
-      return `${hours}:${minutes}:${seconds}`
-    } else {
-      return `${month}/${day}/${year} ${hours}:${minutes}:${seconds}${new Date().toLocaleDateString()}`
-    }
-  }
-
-  interface MessageSectionProps {
-    header: string;
-    messages: Message[];
-    sectionNum: number;
-  }
-
-  function MessageSection({ header, messages, sectionNum }: MessageSectionProps) {
-
-    return (
-      (
-        (header === 'Chat' && user?.can_chat)
-        || sectionNum !== 2)
-      && <div
-        className={
-          `message-section
-          message-window
-          scrollable
-          admin-${user?.admin}
-          ${sectionNum !== messageMap.length - 1 && 'not-last-message-section'}`
-        }>
-        <h3 className={`title ${user?.theme}`}>
-          {collapsed && messages.length} {header} {sectionNum} {sectionNum}
-          {/* <button className='btn-red'><span className='gg-trash'></span></button> */}
-        </h3>
-
-        {!collapsed && messages.map((message, i) => {
-          // if (message.text) {
-          return message.text && <div key={i} className={`message-list`}>
-            <strong>{dateBuilder(message.timestamp)}</strong>
-            <br />
-            {/* {JSON.stringify(message)} */}
-            {header === 'Chat' && `${message.from} > `}{message.text}
-          </div>
-          // }
-        })}
-      </div>
-    )
-  }
+  const up = "\u25B2 ".repeat(3);
+  const down = "\u25BC ".repeat(3);
 
   return (
-    // show messages on screen
-    <div className={`Messages boxed ${collapsed && 'collapsed'} admin-${user?.admin}`}>
-      <h3 className={`title ${user?.theme}`} onClick={() => { setCollapsed(!collapsed) }}>Coinbot Message Board {collapsed ? <>&#9650;</> : <>&#9660;</>}</h3>
-      <div className="message-board">
+      <div className={`Messages boxed ${collapsed && 'collapsed'}`}>
+        {!onMobile &&
+          <h3
+            className={`title ${user?.theme}`}
+            onClick={() => { setCollapsed(!collapsed) }}
+          >{collapsed ? up : down}</h3>}
+        <div className="message-board">
 
-        {messageMap.map((section, i) => {
-          return (
-            <MessageSection
-              key={i}
-              sectionNum={i}
-              header={section.header}
-              messages={section.messages}
-            />
-          )
-        })}
+          {messageMap.map((section, i) => {
+            return (
+              <MessageSection
+                key={i}
+                header={section.header}
+                messages={section.messages}
+                collapsed={collapsed}
+              />
+            )
+          })}
 
-        {user?.can_chat && <Chat
-          collapsed={collapsed}
-          chatLength={chatMessages.length}
-          messages={chatMessages}
-        />}
-
+        </div>
       </div>
-    </div>
   );
 }
 
