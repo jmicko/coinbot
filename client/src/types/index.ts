@@ -221,6 +221,9 @@ export interface Message {
   text: string;
   timestamp: string;
   type: string;
+  id?: number;
+  deleted?: boolean;
+  user_id?: number;
 }
 
 export type Messages = Message[];

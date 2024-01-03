@@ -12,6 +12,7 @@ import fs from 'fs';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { devLog } from '../modules/utilities.js';
+import { deleteMessage } from '../modules/database/messages.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 
@@ -488,15 +489,24 @@ router.post('/messages', rejectUnauthenticated, async (req, res) => {
     const userID = user.id;
     const message = req.body;
 
+    devLog(message, 'message to send to all');
+
     if (message.type === 'chat') {
       const allUsers = userStorage.getAllUsers()
       devLog(allUsers, 'ALL OF THE user', user.username);
-      allUsers.forEach(userID => {
-        messenger[userID].newMessage({
-          from: user.username,
-          text: message.data,
-          type: 'chat'
-        });
+
+
+      const savedMessage = await messenger[userID].newMessage({
+        from: user.username,
+        text: message.data,
+        type: 'chat'
+      });
+
+      console.log(savedMessage, '< savedMessage');
+
+      allUsers.forEach(otherUserID => {
+        if (otherUserID === userID) return;
+        messenger[otherUserID].newChatFromOther(savedMessage);
       });
     }
 
@@ -509,6 +519,39 @@ router.post('/messages', rejectUnauthenticated, async (req, res) => {
     res.sendStatus(500)
   }
 });
+
+/**
+ * DELETE route to delete a chat message
+ */
+
+router.delete('/messages/:message_id', rejectUnauthenticated, async (req, res) => {
+  devLog('delete messages route');
+  try {
+    const user = req.user;
+    if (!user.can_chat) {
+      res.sendStatus(403);
+      return;
+    }
+    const userID = user.id;
+    const messageID = req.params.message_id;
+    devLog(messageID, 'messageID');
+    await deleteMessage(userID, messageID);
+
+    // all users should resaturate their messages
+    const allUsers = userStorage.getAllUsers()
+    devLog(allUsers, 'ALL OF THE user', user.username);
+    allUsers.forEach(async (userID) => {
+      await messenger[userID].saturateMessages();
+      messenger[userID].messageUpdate();
+    });
+
+    res.sendStatus(200);
+  } catch (err) {
+    devLog(err, 'problem in delete messages route');
+    res.sendStatus(500)
+  }
+});
+
 
 
 /**

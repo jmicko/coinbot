@@ -113,6 +113,9 @@ class User {
   orderUpdate() {
     messenger[this.userID].newMessage({ type: 'orderUpdate', orderUpdate: true })
   }
+  messageUpdate() {
+    messenger[this.userID].newMessage({ type: 'messageUpdate', messageUpdate: true })
+  }
   // increase the loop number by 1
   increaseLoopNumber() {
     this.loopNumber++;
@@ -224,6 +227,7 @@ class Messenger {
   async saturateMessages() {
     // get the messages from the database
     const messages = await getAllMessages(this.userID);
+    // console.log(messages, 'all messages from database', this.userID);
     // clear the messages array and add the messages from the database
     this.messages.length = 0;
     this.messages.push(...messages);
@@ -241,7 +245,8 @@ class Messenger {
     this.errorCount = this.errors.length;
   }
 
-  newMessage(message) {
+  async newMessage(message) {
+    let fullMessage;
     // create the message
     const newMessage = new Message(
       // message.type,
@@ -252,9 +257,11 @@ class Messenger {
     );
     // add message to messages array if there is text to store
     if (message.text) {
-      this.messages.unshift(newMessage);
+      const saved = await saveMessage(this.userID, newMessage);
+      // console.log(saved, 'saved and returned from saveMessage');
+      this.messages.unshift(saved);
+      fullMessage = saved;
       // save the message to the database
-      saveMessage(this.userID, newMessage);
     }
     // increase the counts
     this.messageCount++;
@@ -269,8 +276,30 @@ class Messenger {
       this.messages.length = 1000;
     }
     // tell user to update messages
+    const jsonMsg = JSON.stringify(message);
+    console.log(jsonMsg, 'jsonMsg');
     this.sockets.forEach(socket => {
-      const jsonMsg = JSON.stringify(message);
+      socket.send(jsonMsg);
+    })
+    return fullMessage;
+  }
+  newChatFromOther(message) {
+    // message will already be formatted as a message object
+    // add message to messages array if there is text to store
+    if (message.text) {
+      this.messages.unshift(message);
+      // message is already in the database
+    }
+    // increase the counts
+    this.messageCount++;
+    this.chatMessageCount++;
+    // check and limit the number of stored messages
+    if (this.messages.length > 1000) {
+      this.messages.length = 1000;
+    }
+    // tell user to update messages
+    const jsonMsg = JSON.stringify(message);
+    this.sockets.forEach(socket => {
       socket.send(jsonMsg);
     })
   }
@@ -278,7 +307,7 @@ class Messenger {
     const messages = [];
 
     this.messages.forEach(message => {
-      console.log(message, 'message');
+      // console.log(message, 'message');
       if (message.type !== 'chat' && message.type !== 'error') {
         messages.push(message);
       }
@@ -292,7 +321,7 @@ class Messenger {
     // extract the chats
 
     this.messages.forEach(message => {
-      console.log(message, 'message');
+      // console.log(message, 'message');
       if (message.type === 'chat') {
         chats.push(message);
       }
@@ -318,6 +347,9 @@ class Messenger {
   fileUpdate() {
     this.instantMessage({ fileUpdate: true })
   }
+  messageUpdate() {
+    this.instantMessage({ type: 'messageUpdate', messageUpdate: true })
+  }
   // todo - should probably use type: 'error' and get rid of this
   newError(err) {
     try {
@@ -328,8 +360,8 @@ class Messenger {
         data: err.data ? err.data : null
       });
       if (error.text) {
-        this.errors.unshift(error);
-        saveMessage(this.userID, error);
+        const saved = saveMessage(this.userID, error);
+        this.errors.unshift(saved);
       }
 
       this.errorCount++;

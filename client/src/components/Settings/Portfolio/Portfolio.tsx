@@ -96,7 +96,7 @@ function Portfolio(props: { tips: boolean }) {
     refreshCallback: refreshUser,
   });
 
-  const { downloadFile, downloadTxt } = useDownloadFile({
+  const { downloadTxt } = useDownloadFile({
     url: `/api/account/downloadFile`,
     from: 'downloadFile in History'
   })

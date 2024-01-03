@@ -1,23 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export default function useDateBuilder(msgDate: string) {
 
   const [dateString, setDateString] = useState<string>('');
 
-  useEffect(() => {
-    saveTheDate();
-    const interval = setInterval(() => {
-
-      saveTheDate();
-    }, 1000); // Update every minute
-
-    return () => clearInterval(interval); // Clean up on unmount
-  }, [msgDate]);
-
-  return dateString;
-
-
-  function saveTheDate() {
+  const saveTheDate = useCallback(() => {
     const messageDate = new Date(msgDate);
     const month = messageDate.getMonth() + 1;
     const day = messageDate.getDate();
@@ -56,5 +43,17 @@ export default function useDateBuilder(msgDate: string) {
               ? 'Yesterday'
               : `${month}/${day}/${year}`
     );
-  }
+  }, [msgDate]);
+
+  useEffect(() => {
+    saveTheDate();
+    const interval = setInterval(() => {
+
+      saveTheDate();
+    }, 1000); // Update every minute
+
+    return () => clearInterval(interval); // Clean up on unmount
+  }, [saveTheDate]);
+
+  return dateString;
 }

@@ -1,19 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
+// import { useEffect, useMemo, useState } from 'react';
 import './History.css'
 // import xlsx from 'json-as-xlsx'
-import { granularities } from '../../../shared.js';
+// import { granularities } from '../../../shared.js';
 import { useUser } from '../../../hooks/useUser.js';
-import { useData } from '../../../hooks/useData.js';
-import useGetFetch from '../../../hooks/useGetFetch.js';
-import usePutFetch from '../../../hooks/usePutFetch.js';
-import useDownloadFile from '../../../hooks/useDownloadFile.js';
-import Collapser from '../../Collapser/Collapser.js';
+// import { useData } from '../../../hooks/useData.js';
+// import useGetFetch from '../../../hooks/useGetFetch.js';
+// import usePutFetch from '../../../hooks/usePutFetch.js';
+// import useDownloadFile from '../../../hooks/useDownloadFile.js';
+// import Collapser from '../../Collapser/Collapser.js';
 // import useDownloadFile from '../../../hooks/useDownloadFile';
 // import { useFetchData } from '../../../hooks/fetchData.js';
 
 function History() {
-  const { user, theme } = useUser();
-  const { productID } = useData();
+  const {  theme } = useUser();
+  // const { productID } = useData();
 
 
   // const { downloadFile } = useFetchData(`/api/account/downloadFile`, { noLoad: true, refreshUser });

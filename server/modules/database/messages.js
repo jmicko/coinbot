@@ -12,7 +12,7 @@ export const createMessagesTable = async () => {
       "type" VARCHAR(255),
       "text" TEXT,
       "timestamp" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-      "from" VARCHAR(255),
+      "from" integer,
       "to" VARCHAR(255) DEFAULT 'all',
       "deleted" BOOLEAN DEFAULT false,
       "read" BOOLEAN DEFAULT false,
@@ -28,9 +28,9 @@ export async function getAllMessages(userID) {
       const sqlText = `
       SELECT * 
       FROM "messages" 
-      WHERE "user_id" = $1 AND "type" != 'error'
+      WHERE ("user_id" = $1 OR ("to" = $2 OR "to" = 'all')) AND "type" != 'error'
       ORDER BY "timestamp" DESC LIMIT 1000;`;
-      const result = await pool.query(sqlText, [userID]);
+      const result = await pool.query(sqlText, [userID, userID.toString()]);
       resolve(result.rows);
     } catch (err) {
       reject(err);
@@ -73,20 +73,31 @@ export async function getChatMessages(userID) {
 export async function saveMessage(userID, message) {
   return new Promise(async (resolve, reject) => {
     try {
-      const sqlText = `INSERT INTO "messages" ("user_id", "type", "text", "from", "to") VALUES ($1, $2, $3, $4, $5);`;
+      const sqlText = `
+        INSERT INTO "messages" ("user_id", "type", "text", "from", "to") 
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING *;`;
       const result = await pool.query(sqlText, [userID, message.type, message.text, message.from, message.to]);
-      resolve(result);
+      resolve(result.rows[0]);
     } catch (err) {
       reject(err);
     }
   })
 }
 
-export async function deleteMessage(messageID) {
+export async function deleteMessage(userID, messageID) {
   return new Promise(async (resolve, reject) => {
     try {
-      const sqlText = `UPDATE "messages" SET "deleted" = true WHERE "id" = $1;`;
-      const result = await pool.query(sqlText, [messageID]);
+      console.log('messageID', messageID, 'userID', userID);
+      const sqlText = `
+        UPDATE "messages" 
+        SET "deleted" = true,
+        "read" = true,
+        "text" = 'deleted'
+        WHERE "id" = $1 AND "user_id" = $2
+        RETURNING *;`;
+      const result = await pool.query(sqlText, [messageID, userID]);
+      console.log(result.rows, 'result.rows');
       resolve(result);
     } catch (err) {
       reject(err);

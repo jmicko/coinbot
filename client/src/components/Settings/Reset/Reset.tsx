@@ -1,14 +1,11 @@
 import { useState } from 'react';
 import { useUser } from '../../../hooks/useUser.js';
 import Confirm from '../../Confirm/Confirm.js';
-import usePutFetch from '../../../hooks/usePutFetch.js';
-import { useData } from '../../../hooks/useData.js';
-import { CaratWaveLoader } from '../../Loading.js';
 import Collapser from '../../Collapser/Collapser.js';
 
 
-function Reset(props: { tips: boolean }) {
-  const { user, theme, refreshUser, deleteYourself } = useUser();
+function Reset() {
+  const { user, theme, deleteYourself } = useUser();
 
 
   const [deleting, setDeleting] = useState(false);
@@ -24,8 +21,6 @@ function Reset(props: { tips: boolean }) {
   function confirmDelete() {
     setDeleting(true)
   }
-
-
 
   return (
     <div className="Reset settings-panel scrollable">

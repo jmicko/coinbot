@@ -38,6 +38,21 @@
   /* overflow-y   : auto; */
 }
 
+.msg-line.deleted {
+  color: rgba(187, 74, 74, 0.541);
+}
+
+.message-item .delete-btn {
+  position: absolute;
+  left    : 0;
+  top     : 0;
+  cursor  : pointer;
+}
+
+.message-item strong {
+  user-select: none;
+}
+
 @media (max-width: 800px) {
 
   .Messages {
@@ -61,8 +76,7 @@
   }
 
   .message-section {
-    border-top: black 1px solid;
-
+    border-top : black 1px solid;
     grid-column: 1;
     overflow-y : auto;
     border-left: none;
@@ -74,12 +88,12 @@
   .message-section h3 {
     /* .message-section h3.expanded.fully  */
     /* color        : red; */
-    display: flex;
+    display         : flex;
     border          : none;
-    min-height          : 2rem;
-    justify-content: center;
-    align-items    : center;
-    flex-grow: 0;
+    min-height      : 2rem;
+    justify-content : center;
+    align-items     : center;
+    flex-grow       : 0;
     /* border-bottom: none; */
     /* margin       : 0; */
     /* padding      : 0; */
@@ -97,7 +111,7 @@
   .message-section.collapsed {
     border-top: black 1px solid;
     display   : block;
-    max-height: calc(1.8rem);
+    max-height: calc(2rem);
     overflow  : hidden;
   }
 
@@ -174,6 +188,10 @@
 
 .message-item strong.red-text {
   color: rgb(187, 74, 74);
+}
+
+.message-item strong.def-text {
+  color: var(--btn-text);
 }
 
 

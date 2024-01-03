@@ -102,7 +102,8 @@ function SingleUser(props: { user: User, key: number, refreshUsers: () => void }
     defaultState: { botStatus: [], loopNumber: 0 },
     preload: false,
     from: 'debug in SingleUser',
-  }), []);
+  }), [props.user.id]);
+
   const {
     data: debugData,
     refresh: debug
