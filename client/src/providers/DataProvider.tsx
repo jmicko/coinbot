@@ -58,6 +58,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }));
 
     setProducts({ allProducts: newAllProducts, activeProducts: newActiveProducts });
+    setProductID(productsNoVolume.activeProducts[0]?.product_id || 'DOGE-USD')
 
   }, [productsNoVolume]);
 
