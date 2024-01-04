@@ -37,6 +37,8 @@ interface DataContextProps {
   setTradeType: React.Dispatch<React.SetStateAction<string>>;
   collapses: { [key: string]: boolean };
   setCollapses: React.Dispatch<React.SetStateAction<{ [key: string]: boolean }>>;
+  collapseTradePanel: boolean;
+  setCollapseTradePanel: React.Dispatch<React.SetStateAction<boolean>>;
   fetchHandlers: {
     [key: string]: (() => Promise<void>) | (() => void);
   }

@@ -47,18 +47,20 @@ export function MessageSection({
 
 
   useEffect(() => {
-    if (messagesEndRef.current) {
-      // console.log('scrolling to bottom');
+    if (messagesEndRef.current && mobileCollapsed !== header) {
+      // console.log('scrolling to bottom', mobileCollapsed);
 
       messagesEndRef.current.scrollIntoView({ behavior: initialRender.current ? "instant" : "smooth" });
+    } else {
+      // console.log('not scrolling to bottom', mobileCollapsed);
     }
 
     if (initialRender.current) {
-      console.log(initialRender.current, 'initial render');
+      // console.log(initialRender.current, 'initial render');
 
       initialRender.current = false;
     }
-  }, [messages, initialRender]);
+  }, [messages, initialRender, mobileCollapsed]);
 
 
   return (

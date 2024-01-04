@@ -7,12 +7,12 @@ import { useData } from '../../hooks/useData';
 import { useWebSocket } from '../../hooks/useWebsocket';
 import { useUser } from '../../hooks/useUser';
 
-interface LimitOrderProps {
-  toggleCollapse: () => void;
-  toggleTradeType: (e: EventType) => void;
-}
+// interface LimitOrderProps {
+//   toggleCollapse: () => void;
+//   toggleTradeType: (e: EventType) => void;
+// }
 
-function LimitOrder(props: LimitOrderProps) {
+function LimitOrder() {
   // contexts
   const { user, theme, btnColor } = useUser();
   const { maker_fee } = user;
@@ -56,7 +56,7 @@ function LimitOrder(props: LimitOrderProps) {
   } = currentProduct;
 
   // props
-  const toggleCollapse = props.toggleCollapse;
+  // const toggleCollapse = props.toggleCollapse;
   // const toggleTradeType = props.toggleTradeType;
 
   // functions
@@ -145,27 +145,22 @@ function LimitOrder(props: LimitOrderProps) {
   if (!currentProduct) return null;
 
   return (
-    <div className="Trade scrollable boxed" >
-      <h3 className={`title ${theme}`}>
-        {width > 800
-          && <button
-            className={`${btnColor} ${theme}`}
-            onClick={toggleCollapse} >&#9664;</button>
-        } New Trade-Pair <button
-          className={`${btnColor} ${theme}`}
-          value={'market'}
-          onClick={props.toggleTradeType}
-        >Switch</button>
-      </h3>
-      {/* form for setting up individual trade-pairs */}
-      <form className="new-trade-form" onSubmit={submitTransaction} >
+    // <div className="Trade scrollable boxed" >
+
+    // {/* form for setting up individual trade-pairs */}
+    <form className="new-trade-form " onSubmit={submitTransaction} >
+      <div className='form-contents'>
         <div className="number-inputs">
           {/* input for setting the price/BTC per transaction. Can be adjusted in $500 steps, or manually input */}
           <label htmlFor="transaction_price">
-            Trade price per 1 {base_currency_id} (in {quote_currency_id}): <button className={`btn-blue ${theme}`} onClick={(e) => {
-              no(e);
-              getCurrentPrice();
-            }}> Get Current (rounded)</button>
+            Trade price per 1 {base_currency_id} (in {quote_currency_id}):&nbsp;
+            <br />
+            <button
+              className={`btn-blue ${theme}`}
+              onClick={(e) => {
+                no(e);
+                getCurrentPrice();
+              }}> Get Current (rounded)</button>
           </label>
           <input
             className={theme}
@@ -272,8 +267,9 @@ function LimitOrder(props: LimitOrderProps) {
             This is mostly due to rounding issues and market conditions.
           </p>
         </div>
-      </form>
-    </div>
+      </div>
+    </form>
+    // {/* </div> */}
   );
 }
 

@@ -14,7 +14,7 @@ function MobileNav(props: { setMobilePage: Dispatch<SetStateAction<string>>, mob
       <button
         className={`btn-nav ${user.theme} ${props.mobilePage === 'newPair' && 'selected'}`}
         onClick={() => { props.setMobilePage('newPair') }}
-      >{user.active ? 'New Trade' : 'API'}</button>
+      >{user.active ? 'New' : 'API'}</button>
       <button
         className={`btn-nav ${user.theme} ${props.mobilePage === 'messages' && 'selected'}`}
         onClick={() => { props.setMobilePage('messages') }}

@@ -2,11 +2,12 @@ import './Trade.css';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
 import LimitOrder from './LimitOrder';
 import MarketOrder from './MarketOrder';
-import useLocalStorage from '../../hooks/useLocalStorage';
+// import useLocalStorage from '../../hooks/useLocalStorage';
 import { no } from '../../shared';
 import { EventType } from '../../types';
 import { useUser } from '../../hooks/useUser';
 import { useData } from '../../hooks/useData';
+import { useMemo } from 'react';
 
 
 function Trade() {
@@ -14,9 +15,7 @@ function Trade() {
   const { user } = useUser();
 
   // state
-  // const [tradeType, setTradeType] = useLocalStorage<boolean>('tradeType', true);
-  const [collapse, setCollapse] = useLocalStorage<boolean>('collapse', true);
-  const { tradeType, setTradeType } = useData();
+  const { tradeType, setTradeType, collapseTradePanel, setCollapseTradePanel } = useData();
 
   // hooks
   const { width } = useWindowDimensions();
@@ -31,42 +30,69 @@ function Trade() {
   }
 
   function toggleCollapse() {
-    setCollapse((prevCollapse) => {
+    console.log('toggle collapse');
+
+    setCollapseTradePanel((prevCollapse) => {
+      console.log('prevCollapse', prevCollapse);
+
       if (prevCollapse) {
+        console.log('setting collapse to false', collapseTradePanel);
+
         return false
       } else {
+        console.log('setting collapse to true', collapseTradePanel);
         return true
       }
     });
   }
 
+  interface TradePages {
+    [key: string]: JSX.Element;
+  }
+
+  const tradePages: TradePages = useMemo(() => ({
+    "Trade Pair": <LimitOrder />,
+    "Market Order": <MarketOrder />,
+  }), []);
+
   return (
-    !collapse || width < 800
-      ? tradeType === 'limit'
-        ?
-        <LimitOrder
-          toggleCollapse={toggleCollapse}
-          toggleTradeType={toggleTradeType}
-        />
-        :
-        <MarketOrder
-          toggleCollapse={toggleCollapse}
-          toggleTradeType={toggleTradeType}
-        />
-      : <div className={`Trade scrollable boxed collapsed`} >
+    <div className={`Trade boxed`} >
+
+      {width > 800 &&
         <button
-          className={`btn-black btn-collapse ${user.theme}`}
+          className={`btn-black trade-collapse ${user.theme}`}
           onClick={toggleCollapse}
         >
-          &#9654;<br />&#9654;<br />&#9654;
-        </button>
-        {/* <button
-          className={`btn-black btn-collapse ${user.theme}`}
-          onClick={toggleCollapse}
-        >
-          &#9654;<br /><br />&#9654;<br /><br />&#9654;
-        </button> */}
+          {collapseTradePanel
+            ? <>&#9654;<br />&#9654;<br />&#9654;</>
+            : <>&#9664;<br />&#9664;<br />&#9664;</>
+          }
+        </button>}
+
+      {/* <div className="trade-panel"> */}
+
+      <div className="trade-nav">
+        {(!collapseTradePanel || width < 800) &&
+          Object.keys(tradePages).map((page, i) => {
+            return (
+              <button
+                key={i}
+                className={`btn-nav ${user.theme} ${tradeType === page && "selected"}`}
+                value={page}
+                onClick={() => { setTradeType(page) }}
+              >{page}</button>
+            )
+          })
+        }
       </div>
+
+      <div className="trade-pages scrollable">
+        {(!collapseTradePanel || width < 800) &&
+          tradePages[tradeType]
+        }
+      </div>
+      {/* </div> */}
+    </div>
   );
 }
 

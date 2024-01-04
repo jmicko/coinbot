@@ -173,20 +173,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const { postData: createMarketTrade } = usePostFetch(createMarketTradeOptions)
 
   // TRADE FUNCTIONS
-  const currentProduct: Product
-    = products.allProducts.find((product) => product.product_id === productID) || {} as Product;
+  const currentProduct: Product = useMemo(() => {
+    return (
+      products.allProducts.find((product) => product.product_id === productID) || {} as Product);
+  }, [products.allProducts, productID]);
   // console.log(currentProduct, '< currentProduct');
 
   const pqd = currentProduct?.pqd;
   const pbd = currentProduct?.pbd;
 
   // TRADE STATE
+  const [collapseTradePanel, setCollapseTradePanel] = useLocalStorage<boolean>('collapseTradePanel', true);
   const [marketOrder, setMarketOrder] = useState<OrderParams>({
     base_size: 0,
     quote_size: 0,
     side: 'BUY',
   });
-  const [tradeType, setTradeType] = useState('market');
+
+  const [tradeType, setTradeType] = useState('Market Order');
+
+  useEffect(() => {
+    setMarketOrder((prevMarketOrder: OrderParams) => {
+      return { ...prevMarketOrder, base_size: Number(currentProduct.base_min_size) }
+    })
+  }, [currentProduct]);
 
   ////////////////////////
   //////// SOCKETS ///////
@@ -235,7 +245,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
           // // TRADE
           marketOrder, setMarketOrder, tradeType, setTradeType,
-
+          collapseTradePanel, setCollapseTradePanel,
         }
       }>
       {children}
