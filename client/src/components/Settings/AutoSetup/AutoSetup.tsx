@@ -13,7 +13,7 @@ import Confirm from "../../Confirm/Confirm.js";
 import { useWebSocket } from "../../../hooks/useWebsocket.js";
 
 function AutoSetup(props: { tips: boolean }) {
-  const { productID, baseID, quoteID, pqd, pbd } = useData();
+  const { productID, baseID, quoteID, pqd, pbd, refreshOrders } = useData();
   const { currentPrice: currentPriceString } = useWebSocket();
   const currentPriceTicker = Number(currentPriceString);
   // const currentPriceTicker = tickers[productID]?.price;
@@ -34,6 +34,7 @@ function AutoSetup(props: { tips: boolean }) {
   const { postData: startAutoSetup } = usePostFetch({
     url: `/api/orders/autoSetup`,
     from: 'startAutoSetup in AutoSetup',
+    refreshCallback: refreshOrders,
   })
 
   const baseNeeded = setupResults ? Number((setupResults.btcToBuy - availableBase) > 0 ? setupResults.btcToBuy - availableBase : 0) : 0;
