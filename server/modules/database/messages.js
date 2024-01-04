@@ -12,7 +12,7 @@ export const createMessagesTable = async () => {
       "type" VARCHAR(255),
       "text" TEXT,
       "timestamp" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-      "from" integer,
+      "from" VARCHAR(255),
       "to" VARCHAR(255) DEFAULT 'all',
       "deleted" BOOLEAN DEFAULT false,
       "read" BOOLEAN DEFAULT false,
