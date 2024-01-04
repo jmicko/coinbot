@@ -2,9 +2,6 @@ import './Trade.css';
 import useWindowDimensions from '../../hooks/useWindowDimensions';
 import LimitOrder from './LimitOrder';
 import MarketOrder from './MarketOrder';
-// import useLocalStorage from '../../hooks/useLocalStorage';
-import { no } from '../../shared';
-import { EventType } from '../../types';
 import { useUser } from '../../hooks/useUser';
 import { useData } from '../../hooks/useData';
 import { useMemo } from 'react';
@@ -21,14 +18,6 @@ function Trade() {
   const { width } = useWindowDimensions();
 
   // functions
-  function toggleTradeType(e: EventType) {
-    no(e);
-    if (e.currentTarget) {
-      const newTradeType = (e.currentTarget as HTMLInputElement).value || 'limit'
-      setTradeType(newTradeType);
-    }
-  }
-
   function toggleCollapse() {
     console.log('toggle collapse');
 
@@ -36,11 +25,11 @@ function Trade() {
       console.log('prevCollapse', prevCollapse);
 
       if (prevCollapse) {
-        console.log('setting collapse to false', collapseTradePanel);
+        // console.log('setting collapse to false', collapseTradePanel);
 
         return false
       } else {
-        console.log('setting collapse to true', collapseTradePanel);
+        // console.log('setting collapse to true', collapseTradePanel);
         return true
       }
     });

@@ -60,7 +60,7 @@ export function MessageSection({
 
       initialRender.current = false;
     }
-  }, [messages, initialRender, mobileCollapsed]);
+  }, [messages, initialRender, mobileCollapsed, header]);
 
 
   return (

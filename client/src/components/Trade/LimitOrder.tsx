@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useRef, FormEvent } from 'react';
 import IncrementButtons from './IncrementButtons';
-import useWindowDimensions from '../../hooks/useWindowDimensions';
 import { numberWithCommas, tNum, no, fixedRound } from '../../shared';
-import { EventType } from '../../types';
 import { useData } from '../../hooks/useData';
 import { useWebSocket } from '../../hooks/useWebsocket';
 import { useUser } from '../../hooks/useUser';
@@ -14,15 +12,11 @@ import { useUser } from '../../hooks/useUser';
 
 function LimitOrder() {
   // contexts
-  const { user, theme, btnColor } = useUser();
+  const { user, theme } = useUser();
   const { maker_fee } = user;
-  // const currentPrice = 20;
   const { productID, currentProduct, createOrderPair, } = useData();
   const { currentPrice: currentPriceString } = useWebSocket();
   const currentPrice = Number(currentPriceString);
-
-  // hooks
-  const { width } = useWindowDimensions();
 
   // state
   const [priceLoaded, setPriceLoaded] = useState<boolean>(false);

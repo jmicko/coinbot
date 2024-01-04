@@ -3,7 +3,7 @@ import { FormEvent } from 'react';
 // import useWindowDimensions from '../../hooks/useWindowDimensions';
 // import IncrementButtons from './IncrementButtons';
 import { numberWithCommas, no, devLog } from '../../shared';
-import { EventType, OrderParams } from '../../types';
+import { OrderParams } from '../../types';
 import { useData } from '../../hooks/useData';
 import { useWebSocket } from '../../hooks/useWebsocket';
 import { useUser } from '../../hooks/useUser';
