@@ -519,10 +519,10 @@ router.put('/bulkPairRatio/:product_id', rejectUnauthenticated, async (req, res)
 */
 router.delete('/', rejectUnauthenticated, async (req, res) => {
   devLog('in delete all orders route');
+  const userID = req.user.id;
+  const previousPauseStatus = req.user.paused;
   try {
     const identifier = req.headers['x-identifier'];
-    const userID = req.user.id;
-    const previousPauseStatus = req.user.paused;
     devLog('in delete all orders route', userID);
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID)
@@ -658,8 +658,8 @@ router.delete('/product/:product_id', rejectUnauthenticated, async (req, res) =>
 */
 router.delete('/:product_id/:start/:end', rejectUnauthenticated, async (req, res) => {
   // devLog('in delete range route');
-  devLog('in delete range route', userID, start, end);
   const userID = req.user.id;
+  devLog('in delete range route', userID);
   const previousPauseStatus = req.user.paused;
   try {
     const identifier = req.headers['x-identifier'];
