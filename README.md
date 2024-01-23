@@ -81,13 +81,15 @@ A maximum trade size can also be set, and the bot will adjust the reinvestment b
 
 The bot can handle multiple users at once. The first user created will be the admin and can approve and manage the other users. Users will not be allowed to trade until they are approved by the admin.
 
+Stress testing the server capacity is difficult due to the way Coinbase handles API access, so it is currently unknown how many users can be supported at once. The bot can be slowed down to lower system resource usage, so potentially thousands if not accounting for bandwidth constraints or attack vectors. But this is not the intended usage. Better to just keep it to yourself and a few friends.
+
 ### Admin Controls
 
 The admin account can control settings that affect resource usage, as well as approving or deleting users.
 
 ## `Important notes`
 
-- The coinbot will detect any trading action placed on the Coinbase website manually from the connected Coinbase account, and cancel those orders. Orders cannot be placed or deleted on Coinbase. That must be done from the coinbot interface. It is recommended to create a separate profile on Coinbase exclusively for Coinbot or you will not be able to do anything on your own.
+- The coinbot will detect any trading action placed on the Coinbase website manually from the connected Coinbase account, and cancel those orders if they are for products that the coinbot is actively trading. Orders cannot be placed or deleted on Coinbase. That must be done from the coinbot interface. Unfortunately, Coinbase Advanced does not currently support multiple portfolios, but this feature is in beta. Once supported, it is recommended to create a separate portfolio exclusively for the coinbot to avoid any conflicts with manual trading.
 
 # `Setup`
 
@@ -118,18 +120,20 @@ Runs the express server in the backend.\
 This is where the coinbot lives, and must be done.\
 This will call the server in plain node.js. You can choose your own daemon.
 
-### `npm run nodemonServer`
+### `npm run dev` in the root directory
 
 Runs the server with nodemon to watch the files and restart on changes.\
 This is ideal for development, but can cause problems with trade duplication if restarted when maintenance mode is off.
 
 ### `npm run pm2server`
 
+Beginner friendly production script.\
 Runs the server as a background process so it will continue to run even if you close the terminal.\
 You should only run this once, or you will have multiple instances running.\
 The included script contains the configuration for pm2, but you will need to configure PM2 for persistence etc to your liking.\
 Note that this script is not set to watch the files for changes, so you will need to restart the process manually if you make changes to the production server. But you should not be doing that anyway.\
-PM2 is not required, but it is better for production environments.
+PM2 is not required, but it is nice for production environments and does not require configuration of systemd or other daemons.\
+you can learn more about PM2 [here](https://pm2.keymetrics.io/).
 
 ### `npm run start`
 
@@ -164,6 +168,34 @@ If you aren’t satisfied with the build tool and configuration choices, you can
 Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
 
 You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+
+## New Client Scripts
+
+The above scripts will work for the server and the old client that was built with create-react-app.\
+There are new scripts for the new client that was built with Vite.\
+Once the client rewrite is complete, the old client will be removed along with the old scripts.\
+For the new client, you can move to the client directory and run the following scripts:
+
+### `npm run dev` in the client directory
+
+Runs the client in development mode.\
+NOT TO BE CONFUSED WITH THE SERVER DEV SCRIPT. Make sure you are in the client directory.\
+When the rewrite is complete, the server scripts will be moved to the server directory to avoid confusion.\
+Open [http://localhost:5173](http://localhost:5173) to view it in the browser.\
+you can also run `npm run dev -- --host` to make the server available on your local network.
+
+### `npm run build` in the client directory
+
+Builds the client for production to the `dist` folder.\
+It correctly bundles React in production mode and optimizes the build for the best performance.
+
+### `npm run lint`
+
+Runs the linter on the client code. This is not automatically run on the dev script, so you will need to run it occasionally unless your editor is configured to do it for you.
+
+### `npm run preview`
+
+Runs the client in production mode to preview the build locally.\
 
 # Technologies used
 
