@@ -114,6 +114,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     refresh: refreshBotErrors,
   } = useGetFetch<Messages>(botErrorsOptions)
 
+  console.log(botErrors, '< botErrors');
+
+
   // ////////////////////////
   // //////// ORDERS ////////
   // ////////////////////////

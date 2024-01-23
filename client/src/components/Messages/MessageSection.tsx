@@ -62,6 +62,8 @@ export function MessageSection({
     }
   }, [messages, initialRender, mobileCollapsed, header]);
 
+  console.log(messages, 'messages ' + header);
+
 
   return (
     (user.can_chat || header !== 'Chat') &&
@@ -70,12 +72,13 @@ export function MessageSection({
       : 'expanded'} ` + header.split(' ').join('-').toLowerCase()}>
 
 
-      <h3 className={
-        `${(collapsed && !onMobile)
-          || (mobileCollapsed !== header && mobileCollapsed !== '' && onMobile)
-          ? 'collapsed'
-          : 'expanded'} title message-header ${user.theme}`
-      }
+      <h3
+        className={
+          `${(collapsed && !onMobile)
+            || (mobileCollapsed !== header && mobileCollapsed !== '' && onMobile)
+            ? 'collapsed'
+            : 'expanded'} title message-header ${user.theme}`
+        }
         onClick={() => {
           if (onMobile) {
             if (mobileCollapsed === header) {
@@ -84,7 +87,7 @@ export function MessageSection({
               console.log('setting mobile collapsed to ', header);
               setMobileCollapsed && setMobileCollapsed(header)
             }
-          }
+          } header
         }}
       >
         {(collapsed && !onMobile) && messages.length} {header}
@@ -100,6 +103,7 @@ export function MessageSection({
           })
         }
         <div className="spacer" />
+        {/* {JSON.stringify(messages)} */}
       </div>}
 
       {header === 'Chat' &&

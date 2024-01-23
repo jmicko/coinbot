@@ -351,7 +351,7 @@ class Messenger {
     this.instantMessage({ type: 'messageUpdate', messageUpdate: true })
   }
   // todo - should probably use type: 'error' and get rid of this
-  newError(err) {
+  async newError(err) {
     try {
       devLog(err.errorText);
       const error = new Message({
@@ -360,7 +360,7 @@ class Messenger {
         data: err.data ? err.data : null
       });
       if (error.text) {
-        const saved = saveMessage(this.userID, error);
+        const saved = await saveMessage(this.userID, error);
         this.errors.unshift(saved);
       }
 
@@ -379,6 +379,15 @@ class Messenger {
   }
   getErrors() {
     return this.errors;
+    // const errors = [];
+
+    // this.messages.forEach(message => {
+    //   // console.log(message, 'message');
+    //   if (message.type === 'error') {
+    //     errors.push(message);
+    //   }
+    // });
+    // return errors;
   }
   clearErrors() {
     this.errors.length = 0;
