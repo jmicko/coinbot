@@ -7,7 +7,6 @@ const urlsToCache = [
   '/index.html',
   '/favicon/favicon.ico',
   '/manifest.json',
-  '/sw.js',
   // '/static/js/bundle.js', 
 ];
 
