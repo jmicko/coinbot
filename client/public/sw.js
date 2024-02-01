@@ -1,11 +1,11 @@
 // SERVICE WORKER
 
-const CACHE_NAME = 'coinbot-cache-v1.2.11';
+const CACHE_NAME = 'coinbot-cache-v1.3.0';
 
 const urlsToCache = [
   '/',
   '/index.html',
-  '/favicon.ico',
+  '/favicon/favicon.ico',
   '/manifest.json',
   '/sw.js',
   // '/static/js/bundle.js', 
@@ -19,12 +19,31 @@ self.addEventListener('install', (event) => {
         console.log('Opened cache');
         return cache.addAll(urlsToCache);
       })
+      .catch((err) => {
+        console.log(err, '< error caching');
+      })
   );
 });
+
+// self.addEventListener('install', (event) => {
+//   self.skipWaiting();
+//   event.waitUntil(
+//     caches.open(CACHE_NAME)
+//       .then((cache) => {
+//         console.log('Opened cache');
+//         return Promise.all(
+//           urlsToCache.map((url) =>
+//             cache.add(url).catch((error) => console.log(`Error caching ${url}: ${error}`))
+//           )
+//         );
+//       })
+//   );
+// });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
+      console.log('DELETING OLD CACHES');
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
@@ -33,7 +52,7 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    }),
+    }).then(() => self.clients.claim())
   );
 });
 

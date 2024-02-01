@@ -138,24 +138,24 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   }, [url, fetchHandlers, handleMessage]);
 
   useEffect(() => {
-    console.log('changing socket status based on new readyState');
+    // console.log('changing socket status based on new readyState');
     if (socketRef.current) {
       switch (socketRef.current.readyState) {
         case WebSocket.OPEN:
-          console.log('socket is open');
+          // console.log('socket is open');
           setCoinbotSocket('open');
           break;
         case WebSocket.CLOSED:
           setCoinbotSocket('closed');
-          console.log('socket is closed');
+          // console.log('socket is closed');
           break;
         case WebSocket.CONNECTING:
           setCoinbotSocket('reopening');
-          console.log('socket is reopening');
+          // console.log('socket is reopening');
           break;
         default:
           setCoinbotSocket('closed');
-          console.log('socket is closed by default');
+          // console.log('socket is closed by default');
       }
     }
   }, [socketRef.current?.readyState]);

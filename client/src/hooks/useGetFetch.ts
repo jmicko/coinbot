@@ -73,7 +73,7 @@ const useGetFetch = <T,>(options: FetchDataOptions<T>) => {
     if (options.preload
       //  && !hasFetched.current
     ) {
-      console.log('PRELOADING DATA AGAIN FROM:', options.from);
+      // console.log('PRELOADING DATA AGAIN FROM:', options.from);
 
       fetchData();
       // hasFetched.current = true;
