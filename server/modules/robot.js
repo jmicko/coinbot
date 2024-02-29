@@ -210,7 +210,7 @@ function MainLoopErrors(userID, err) {
     devLog('10 sec timeout');
     errorText = '10 second timeout. Nothing to worry about, Coinbase was just slow to respond.';
   } else if (err?.response?.status === 429) {
-    devLog('too many requests');
+    devLog(err, 'too many requests');
     errorText = 'Too many requests. Rate limit exceeded. Nothing to worry about.';
   } else {
     devLog(err, 'unknown error at end of syncOrders');

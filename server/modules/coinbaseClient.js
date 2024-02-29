@@ -189,7 +189,7 @@ class Coinbase {
         // data should just be blank
         const data = null;
         const API = {
-          url: `https://coinbase.com/api/v3/brokerage/accounts`,
+          url: `https://api.coinbase.com/api/v3/brokerage/accounts`,
           path: "/api/v3/brokerage/accounts",
           method: 'GET',
         }
@@ -238,7 +238,7 @@ class Coinbase {
         // data should just be blank
         const data = null;
         const API = {
-          url: `https://coinbase.com/api/v3/brokerage/orders/historical/fills`,
+          url: `https://api.coinbase.com/api/v3/brokerage/orders/historical/fills`,
           path: "/api/v3/brokerage/orders/historical/fills",
           method: 'GET',
         }
@@ -261,7 +261,7 @@ class Coinbase {
         // data should just be blank
         const data = null;
         const API = {
-          url: `https://coinbase.com/api/v3/brokerage/orders/historical/batch`,
+          url: `https://api.coinbase.com/api/v3/brokerage/orders/historical/batch`,
           path: "/api/v3/brokerage/orders/historical/batch",
           method: 'GET',
         }
@@ -283,7 +283,7 @@ class Coinbase {
         // data should just be blank
         const data = null;
         const API = {
-          url: `https://coinbase.com/api/v3/brokerage/transaction_summary`,
+          url: `https://api.coinbase.com/api/v3/brokerage/transaction_summary`,
           path: "/api/v3/brokerage/transaction_summary",
           method: 'GET',
         }
@@ -308,7 +308,7 @@ class Coinbase {
         // data should just be blank
         const data = null;
         const API = {
-          url: `https://coinbase.com/api/v3/brokerage/products/${product_id}`,
+          url: `https://api.coinbase.com/api/v3/brokerage/products/${product_id}`,
           path: `/api/v3/brokerage/products/${product_id}`,
           method: 'GET',
         }
@@ -330,7 +330,7 @@ class Coinbase {
         // data should just be blank
         const data = null;
         const API = {
-          url: `https://coinbase.com/api/v3/brokerage/products`,
+          url: `https://api.coinbase.com/api/v3/brokerage/products`,
           path: "/api/v3/brokerage/products",
           method: 'GET',
         }
@@ -357,7 +357,7 @@ class Coinbase {
         // data should just be blank
         const data = null;
         const API = {
-          url: `https://coinbase.com/api/v3/brokerage/products/${product_id}/ticker/`,
+          url: `https://api.coinbase.com/api/v3/brokerage/products/${product_id}/ticker/`,
           path: `/api/v3/brokerage/products/${product_id}/ticker/`,
           method: 'GET',
         }
@@ -384,7 +384,7 @@ class Coinbase {
         // data should just be blank
         const data = null;
         const API = {
-          url: `https://coinbase.com/api/v3/brokerage/products/${product_id}/candles/`,
+          url: `https://api.coinbase.com/api/v3/brokerage/products/${product_id}/candles/`,
           path: `/api/v3/brokerage/products/${product_id}/candles/`,
           method: 'GET',
         }
@@ -409,7 +409,7 @@ class Coinbase {
         // data should just be blank
         const data = null;
         const API = {
-          url: `https://coinbase.com/api/v3/brokerage/orders/historical/${order_id}`,
+          url: `https://api.coinbase.com/api/v3/brokerage/orders/historical/${order_id}`,
           path: `/api/v3/brokerage/orders/historical/${order_id}`,
           method: 'GET',
         }
@@ -429,7 +429,7 @@ class Coinbase {
     return new Promise(async (resolve, reject) => {
       try {
         const API = {
-          url: `https://coinbase.com/api/v3/brokerage/orders`,
+          url: `https://api.coinbase.com/api/v3/brokerage/orders`,
           path: "/api/v3/brokerage/orders",
           method: 'POST',
         }
@@ -543,7 +543,7 @@ class Coinbase {
       try {
 
         const API = {
-          url: `https://coinbase.com/api/v3/brokerage/orders`,
+          url: `https://api.coinbase.com/api/v3/brokerage/orders`,
           path: "/api/v3/brokerage/orders",
           method: 'POST',
         }
@@ -601,7 +601,7 @@ class Coinbase {
         // data should just be an array of IDs
         const data = { order_ids: orderIdArray }
         const API = {
-          url: `https://coinbase.com/api/v3/brokerage/orders/batch_cancel`,
+          url: `https://api.coinbase.com/api/v3/brokerage/orders/batch_cancel`,
           path: "/api/v3/brokerage/orders/batch_cancel",
           method: 'POST',
         }
