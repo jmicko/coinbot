@@ -53,6 +53,8 @@ There is a function in the settings menu that will allow you to input the desire
 
 ### Simulator
 
+\# Not currently implemented - need to rewrite it because I just don't trust the accuracy \#
+
 Before starting the auto setup, you can use the simulator to see how the bot would have performed with the parameters you have set, using historical data. This is a great way to test out different strategies before committing to them. Note that the historical data does lack some of the volatility that is present in the real market, so the results will not be 100% accurate.
 
 ### Auto Fee Detection
@@ -108,7 +110,7 @@ Postgresql should be setup and a new database should be created with the name "c
 
 ### Environment Variables
 
-- Environment variables will need to be set. There is an example .env file in the root folder named 'env'. Change the name to '.env', and change the values appropriately, or you can set the variables in your OS if you prefer. Server session secret should be a long string that is not easily guessed, as it is used to identify sessions. If you do not change it, anyone with this repo will be able to guess it. Setting the NODE_ENV variable to 'production' will generate a cryptographically sound string for you. This will log out any users every time the bot is restarted, but is more secure.
+- Environment variables will need to be set. There is an example .env file in the server directory named 'env'. Change the name to '.env', and change the values appropriately, or you can set the variables in your OS if you prefer. Server session secret should be a long string that is not easily guessed, as it is used to identify sessions. If you do not change it, anyone with this repo will be able to guess it. Setting the NODE_ENV variable to 'production' will generate a cryptographically sound string for you. This will log out any users every time the bot is restarted, but is more secure. But very annoying if you run in an unstable vm that constantly restarts.
 
 ## Server Scripts
 
@@ -138,30 +140,6 @@ you can learn more about PM2 [here](https://pm2.keymetrics.io/).
 #### \# Note about server scripts \#
 
 There is a package for building .xlsx files that is... not easy on ram when dealing with the quantity of data in the coinbot. The server scripts take that into account, allocating ~8GB of ram to the node.js process. Honestly this is horrible and I'll find another solution at some point, but for now you will need to change the script for devices with less ram. The server will crash if it runs out of memory, so be careful about file exports with this. It can also crash if a large number of people are generating exports at the same time. I can't stress enough that you should not run this app in a public facing production environment.
-
-### `npm run start`
-
-Runs the web app interface in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-The page will reload if you make edits.\
-You will also see any lint errors in the console.\
-Nodemon is required for this script.
-
-<!-- ### `npm run test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information. -->
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
 ## Client Scripts
 
