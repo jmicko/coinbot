@@ -2,7 +2,7 @@
 import { pool } from './pool.js';
 // const { v4: uuidv4 } = require('uuid');
 import { v4 as uuidv4 } from 'uuid';
-import { addProductDecimals, devLog } from '../../src/shared.js';
+import { addProductDecimals, devLog } from './utilities.js';
 import { updateProductsTable } from './database/products.js';
 import { createMessagesTable } from './database/messages.js';
 import { updateFeedbackTable } from './database/feedback.js';

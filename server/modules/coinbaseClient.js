@@ -7,8 +7,7 @@ import  axios  from 'axios';
 // const { cache } = require("./cache");
 // const { v4: uuidv4 } = require('uuid');
 import { v4 as uuidv4 } from 'uuid';
-import { devLog } from './utilities.js';
-import { sleep } from '../../src/shared.js';
+import { devLog, sleep } from './utilities.js';
 
 class Coinbase {
   constructor(key, secret) {

@@ -19,7 +19,7 @@ import adminRouter from './routes/admin.router.js';
 import notificationsRouter from './routes/notifications.router.js';
 // bot process
 import { robot } from './modules/robot.js';
-import { devLog } from '../src/shared.js';
+import { devLog } from './modules/utilities.js';
 import { dbUpgrade } from './modules/databaseClient.js';
 
 await dbUpgrade();

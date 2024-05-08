@@ -6,7 +6,7 @@ import { databaseClient } from '../modules/databaseClient.js';
 import { cbClients, userStorage, messenger } from '../modules/cache.js';
 import { Coinbase } from '../modules/coinbaseClient.js';
 import excel from 'exceljs';
-import { granularities } from '../../src/shared.js';
+import { granularities } from '../modules/utilities.js';
 import { fork } from 'child_process';
 import fs from 'fs';
 import path, { dirname } from 'path';

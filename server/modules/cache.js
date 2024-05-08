@@ -1,5 +1,4 @@
-// const { Coinbase } = require("./coinbaseClient");
-import { devLog } from "../../src/shared.js";
+import { devLog } from "./utilities.js";
 import { Coinbase } from "./coinbaseClient.js";
 import { getAllErrorMessages, getAllMessages, saveMessage } from "./database/messages.js";
 import { databaseClient } from "./databaseClient.js";

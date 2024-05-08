@@ -1,17 +1,10 @@
 // const express = require('express');
 import express from 'express';
 const router = express.Router();
-// const pool = require('../modules/pool');
 import { pool } from '../modules/pool.js';
-// const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
-// const databaseClient = require('../modules/databaseClient');
 import { databaseClient } from '../modules/databaseClient.js';
-// const robot = require('../modules/robot');
-import { robot } from '../modules/robot.js';
 import { botSettings, cbClients, userStorage, messenger } from '../modules/cache.js';
-// const { sleep } = require('../../src/shared');
-import { sleep } from '../../src/shared.js';
 import { devLog } from '../modules/utilities.js';
 
 /**

@@ -33,9 +33,9 @@
   "scripts": {
     "start": "react-scripts start",
     "client": "react-scripts start",
-    "server": "node --max-old-space-size=7000 --require dotenv/config server/server.js",
-    "dev": "nodemon --max-old-space-size=7000 --require dotenv/config --watch server server/server.js",
-    "pm2server": "pm2 start --node-args='--max-old-space-size=7000 --require dotenv/config' server/server.js --name coinbot",
+    "server": "node --max-old-space-size=7000 --require dotenv/config server.js",
+    "dev": "nodemon --max-old-space-size=7000 --require dotenv/config --watch ./ server.js",
+    "pm2server": "pm2 start --node-args='--max-old-space-size=7000 --require dotenv/config' server.js --name coinbot",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

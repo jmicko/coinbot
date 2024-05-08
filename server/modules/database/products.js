@@ -1,4 +1,4 @@
-import { devLog } from '../../../src/shared.js';
+import { devLog } from '../utilities.js';
 import { pool } from '../pool.js';
 
 export const updateProductsTable = async () => {

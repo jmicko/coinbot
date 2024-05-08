@@ -110,22 +110,22 @@ Postgresql should be setup and a new database should be created with the name "c
 
 - Environment variables will need to be set. There is an example .env file in the root folder named 'env'. Change the name to '.env', and change the values appropriately, or you can set the variables in your OS if you prefer. Server session secret should be a long string that is not easily guessed, as it is used to identify sessions. If you do not change it, anyone with this repo will be able to guess it. Setting the NODE_ENV variable to 'production' will generate a cryptographically sound string for you. This will log out any users every time the bot is restarted, but is more secure.
 
-## Available Scripts
+## Server Scripts
 
-In the project directory, you can run:
+In the server directory, you can run:
 
-### `npm run server`
+### `npm run dev` in the server directory
+
+Runs the server with nodemon to watch the files and restart on changes.\
+This is ideal for development, but can cause problems with trade duplication if restarted when maintenance mode is off.
+
+### `npm run server` in the server directory
 
 Runs the express server in the backend.\
 This is where the coinbot lives, and must be done.\
 This will call the server in plain node.js. You can choose your own daemon.
 
-### `npm run dev` in the root directory
-
-Runs the server with nodemon to watch the files and restart on changes.\
-This is ideal for development, but can cause problems with trade duplication if restarted when maintenance mode is off.
-
-### `npm run pm2server`
+### `npm run pm2server` in the server directory
 
 Beginner friendly production script.\
 Runs the server as a background process so it will continue to run even if you close the terminal.\
@@ -134,6 +134,10 @@ The included script contains the configuration for pm2, but you will need to con
 Note that this script is not set to watch the files for changes, so you will need to restart the process manually if you make changes to the production server. But you should not be doing that anyway.\
 PM2 is not required, but it is nice for production environments and does not require configuration of systemd or other daemons.\
 you can learn more about PM2 [here](https://pm2.keymetrics.io/).
+
+#### \# Note about server scripts \#
+
+There is a package for building .xlsx files that is... not easy on ram when dealing with the quantity of data in the coinbot. The server scripts take that into account, allocating ~8GB of ram to the node.js process. Honestly this is horrible and I'll find another solution at some point, but for now you will need to change the script for devices with less ram. The server will crash if it runs out of memory, so be careful about file exports with this. It can also crash if a large number of people are generating exports at the same time. I can't stress enough that you should not run this app in a public facing production environment.
 
 ### `npm run start`
 
@@ -159,22 +163,7 @@ Your app is ready to be deployed!
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## New Client Scripts
-
-The above scripts will work for the server and the old client that was built with create-react-app.\
-There are new scripts for the new client that was built with Vite.\
-Once the client rewrite is complete, the old client will be removed along with the old scripts.\
-For the new client, you can move to the client directory and run the following scripts:
+## Client Scripts
 
 ### `npm run dev` in the client directory
 
@@ -201,8 +190,6 @@ Runs the client in production mode to preview the build locally.\
 
 - Node.js
 - Express.js
-- Socket.io
 - Postgresql and PG
 - React
-- Redux
-- This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+- Vite

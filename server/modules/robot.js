@@ -2,7 +2,7 @@ import { databaseClient } from "./databaseClient.js";
 import { botSettings, userStorage, messenger, cbClients } from "./cache.js";
 import { startWebsocket } from "./websocket.js";
 import { resetAtMidnight } from './push.js';
-import { sleep, addProductDecimals } from "../../src/shared.js";
+import { sleep, addProductDecimals } from "./utilities.js";
 import { fork } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -16,7 +16,7 @@ async function startSync() {
   try {
     const path = __dirname;
     // fork a child process to import candles
-    const candleMaker = fork('./server/modules/candleMaker.js');
+    const candleMaker = fork('./modules/candleMaker.js');
     // load the bot settings
     await botSettings.refresh();
     // get all users from the db

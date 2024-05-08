@@ -1,7 +1,5 @@
 import { messenger, userStorage, botSettings, cbClients } from './cache.js';
 import { databaseClient } from './databaseClient.js';
-// import { rejectUnauthenticatedSocket } from './authentication-middleware.js';
-// import { devLog } from '../../src/shared.js';
 import { sessionMiddleware } from './session-middleware.js';
 import passport from 'passport';
 

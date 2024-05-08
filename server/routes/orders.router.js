@@ -1,20 +1,12 @@
 // orders.router.js
-// const express = require('express');
 import express from 'express';
 const router = express.Router();
-// const pool = require('../modules/pool');
 import { pool } from '../modules/pool.js';
-// const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
-// const databaseClient = require('../modules/databaseClient');
 import { databaseClient } from '../modules/databaseClient.js';
-// const { cbClients, messenger, userStorage, botSettings } = require('../modules/cache');
 import { cbClients, messenger, userStorage, botSettings } from '../modules/cache.js';
-// const { sleep, autoSetup } = require('../../src/shared');
-import { sleep, autoSetup, devLog } from '../../src/shared.js';
-// const { v4: uuidv4 } = require('uuid');
+import { sleep, devLog } from '../modules/utilities.js';
 import { v4 as uuidv4 } from 'uuid';
-// const robot = require('../modules/robot');
 import { robot } from '../modules/robot.js';
 
 
