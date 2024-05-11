@@ -450,7 +450,7 @@ router.get('/errors', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   try {
     const userErrors = messenger[userID].getErrors();
-    console.log(userErrors, '< userErrors');
+    // console.log(userErrors, '< userErrors');
     res.send(userErrors);
   } catch (err) {
     devLog(err, 'problem debug route');

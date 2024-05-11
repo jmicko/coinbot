@@ -652,6 +652,9 @@ async function updateMultipleOrders(userID, params) {
           if (updatedOrder.order.status === 'CANCELLED') {
             devLog('was canceled but should not have been!')
             updatedOrder.order.reorder = true;
+          } else if (updatedOrder.order.status === 'FAILED') {
+            devLog('original order failed! reordering')
+            updatedOrder.order.reorder = true;
           }
           // then update db with current status
           await databaseClient.updateTrade(updatedOrder.order);
