@@ -5,7 +5,7 @@ import http from 'http';
 // import { setupSocketIO } from './modules/websocket.js';
 import { setUpWebsocket } from './modules/websocket.js';
 // import { Server as socketIO } from 'socket.io';
-import WebSocket from 'ws';
+import {WebSocketServer} from 'ws';
 // Middleware
 import { sessionMiddleware, wrap } from './modules/session-middleware.js';
 import passport from './strategies/user.strategy.js';
@@ -52,7 +52,7 @@ app.use(passport.session());
 // io.use(wrap(passport.session()));
 
 // ws server
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocketServer({ server });
 
 setUpWebsocket(wss);
 
