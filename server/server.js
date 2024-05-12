@@ -66,7 +66,7 @@ app.use('/api/admin', adminRouter);
 app.use('/api/notifications', notificationsRouter);
 
 // Serve static files from the React app build folder
-app.use(express.static('client/dist'));
+app.use(express.static('../client/dist'));
 
 // Start the robot
 robot.startSync();
