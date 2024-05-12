@@ -212,24 +212,46 @@ router.post('/login', userStrategy.authenticate('local'), async (req, res) => {
   res.status(200).send(req.user);
 });
 
+// // clear all server session information about this user
+// router.post('/logout', rejectUnauthenticated, (req, res) => {
+//   try {
+//     devLog('LOGGING OUT USER');
+//     const identifier = req.headers['x-identifier'];
+//     const userID = req.user.id;
+//     // Use passport's built-in method to log out the user
+//     req.logout();
+//     res.sendStatus(200);
+//     messenger[userID].userUpdate(identifier);
+//   } catch (err) {
+//     devLog(err, 'error in logout route');
+//   }
+// });
+
 // clear all server session information about this user
+// this is a new method because new version of passport requires a callback function
 router.post('/logout', rejectUnauthenticated, (req, res) => {
   try {
     devLog('LOGGING OUT USER');
     const identifier = req.headers['x-identifier'];
     const userID = req.user.id;
+
     // Use passport's built-in method to log out the user
-    req.logout();
-    res.sendStatus(200);
-    messenger[userID].userUpdate(identifier);
-    // messenger[userID].sockets.forEach(socket => {
-    //   console.log('closing socket', socket.id);
-    //   // socket.close();
-    // });
+    req.logout(function(err) {
+      if (err) {
+        devLog(err, 'error in logout route');
+        return res.status(500).send('Logout failed');
+      }
+      res.sendStatus(200); // or use res.status(200).send('Logged out') for more clarity
+      if (messenger && messenger[userID]) {
+        messenger[userID].userUpdate(identifier);
+      }
+    });
   } catch (err) {
     devLog(err, 'error in logout route');
+    res.status(500).send('Error while logging out');
   }
 });
+
 
 /**
 * PUT route - Approve a single user. Only admin can do this
