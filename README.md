@@ -1,6 +1,22 @@
 
 # Coinbot
 
+## Notes about V3
+
+This is a complete rewrite of the coinbot project. The original project was a monolithic application that was difficult to maintain and scale. This version is split into a client and server, and uses a more modern stack. The client is built with React and Vite, and the server is built with Node.js and Express. The database is still Postgresql. The bot itself is still the same, but the interface has been updated for better maintainability and user experience.
+
+With the new changes, you will need to move some files around if you are pulling the repo into an older version, as they are in the gitignore. The .env file is now located in the `/server` directory, and there are new requirements for the new version of the vapid package. This is reflected in the new env example, and you will get a warning in the console if you need to change what you currently have.
+
+The old version put the `/node_modules` in the root directory, but this version puts them in the `/client` and `/server` directories. This is a better practice, but it does mean that you will need to run `npm install` in both directories to get the project up and running. you will also want to delete the node_modules in the root directory to avoid confusion and free up some space.
+
+You can also delete the old build directory in the root directory, as it is no longer used. The new client build is in the client directory, and the server has been updated to serve the client from there.
+
+The old client is still in the repo in the /old_fe and will remain there for a while as a reference. much of it is incompatible with the new server, but there are still one or two things that I need to pull from it, so for now it stays.
+
+Backend rewrite coming soon. :v:
+
+# `Description`
+
 Coinbot is a Bitcoin trading bot project built for the Coinbase Pro cryptocurrency exchange.
 
 ![Coinbot web interface](./coinbot.png)
@@ -27,11 +43,11 @@ You trade at your own risk.
 
 There are also currently no security features built in to the coinbot other than basic password protection. Hosting in the cloud or on any device that can be accessed from the internet, from an intranet, or by anyone who you do not want to be able access it is not recommended.
 
-## Advantages
+## `Advantages`
 
 This is a fairly low-risk strategy, as it requires no statistical analysis or market data. There is no risk of guessing trends incorrectly because the coinbot does not guess. It works off of predetermined prices. Profits are made when the price of Bitcoin passes the "buy" and "sell" prices of a trade-pair in that order. If left alone, the coinbot will do this automatically at the set price points as long as the price of bitcoin is hitting them. The coinbot actually benefits from higher volatility and large fast price swings because it increases the chances that the trade-pair values will be hit.
 
-## Disadvantages
+## `Disadvantages`
 
 A notable disadvantage of this strategy is that when the price takes a sharp upward trend, the coinbot will sell at a fixed price regardless. This slows down the potential rate of profits compared to strategies that attempt to calculate the tops and bottoms of market curves.
 
@@ -99,9 +115,9 @@ The admin account can control settings that affect resource usage, as well as ap
 
 Before you get started, make sure you have the following software installed on your computer:
 
-- [Node.js](https://nodejs.org/en/)
-- [PostrgeSQL](https://www.postgresql.org/)
-- [Nodemon](https://nodemon.io/) - optional, but makes development easier
+- [Node.js](https://nodejs.org/en/) - version 20
+- [PostrgeSQL](https://www.postgresql.org/) - currently using version 14, but nothing is very db fancy so other versions probably work just fine
+- [Nodemon](https://nodemon.io/) - You can install this globally with `npm install -g nodemon`. It is used by the dev scripts
 - [PM2](https://pm2.keymetrics.io/) - optional, for running in a production environment
 
 ### Database
