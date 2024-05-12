@@ -3,13 +3,13 @@
 
 ## Notes about V3
 
-This is a complete rewrite of the coinbot project. The original project was a monolithic application that was difficult to maintain and scale. This version is split into a client and server, and uses a more modern stack. The client is built with React and Vite, and the server is built with Node.js and Express. The database is still Postgresql. The bot itself is still the same, but the interface has been updated for better maintainability and user experience.
+This is a complete rewrite of the coinbot front end client, as well as a reorganization of the whole project structure. The original project was a rather monolithic repo and the server and client code was somewhat mixed together. This version is split into client and server folders, and uses a more modern stack for the front end. The client is built with React and Vite in typescript, and the server is built with Node.js and Express. The database is still Postgresql. The bot itself is still the same aside from some minor bug fixes, but the interface has been updated for better maintainability and user experience.
 
 With the new changes, you will need to move some files around if you are pulling the repo into an older version, as they are in the gitignore. The .env file is now located in the `/server` directory, and there are new requirements for the new version of the vapid package. This is reflected in the new env example, and you will get a warning in the console if you need to change what you currently have.
 
 The old version put the `/node_modules` in the root directory, but this version puts them in the `/client` and `/server` directories. This is a better practice, but it does mean that you will need to run `npm install` in both directories to get the project up and running. you will also want to delete the node_modules in the root directory to avoid confusion and free up some space.
 
-You can also delete the old build directory in the root directory, as it is no longer used. The new client build is in the client directory, and the server has been updated to serve the client from there.
+You can also delete the old build directory if you have it built in the root directory, as it is no longer used. The new client build is in the client directory, and the server has been updated to serve the client from there. Vite will put it in a `dist` directory in the client folder.
 
 The old client is still in the repo in the /old_fe and will remain there for a while as a reference. much of it is incompatible with the new server, but there are still one or two things that I need to pull from it, so for now it stays.
 
@@ -17,7 +17,7 @@ Backend rewrite coming soon. :v:
 
 # `Description`
 
-Coinbot is a Bitcoin trading bot project built for the Coinbase Pro cryptocurrency exchange.
+Coinbot is a Bitcoin trading bot project built for the Coinbase cryptocurrency exchange.
 
 ![Coinbot web interface](./coinbot.png)
 
