@@ -16,7 +16,7 @@ VAPID_PUBLIC_KEY='xxxxxxxxx'
 VAPID_PRIVATE_KEY='xxxxxxxxx'
 
 ### Domain name needed for vapid
-DOMAIN_NAME='localhost'
+DOMAIN_NAME='https://localhost.local'
 
 ### Misc
 # SAMPLE_ORDER_ID is only occasionally used to identify a specific order in the logs in development
