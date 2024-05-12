@@ -73,7 +73,7 @@ function Products(props: { tips: boolean }) {
       await refreshExportableFiles();
     }
 
-    let timer: NodeJS.Timeout;
+    let timer: number;
 
     if (user.exporting) {
       timer = setTimeout(() => {

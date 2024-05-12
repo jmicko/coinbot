@@ -505,7 +505,8 @@ const granularities = [
 
 // dev version of devLog that only logs when in dev mode
 function devLog(...args: unknown[]) {
-  if (process.env.NODE_ENV === 'development') {
+  const isDev = import.meta.env.MODE === 'development';
+  if (isDev) {
     console.log(...args);
   }
 }

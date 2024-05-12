@@ -11,7 +11,7 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   const currentPrice = Number(tickers[productID]?.price).toFixed(pqd || 2);
   const { fetchIdentifiers } = useIdentifiers();
   const socketRef = useRef<WebSocket | null>(null);
-  const timeOut = useRef<NodeJS.Timeout>();
+  const timeOut = useRef<number>();
   const [heartbeat, setHeartbeat] = useState({ heart: 'heart', beat: 'beat', count: 0 });
   const [coinbotSocket, setCoinbotSocket] = useState('closed');
   const [socketStatus, setSocketStatus] = useState('closed');

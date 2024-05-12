@@ -11,6 +11,7 @@ interface Product {
 function Menu() {
   const { logout, user, theme, btnColor } = useUser();
   const { productID, setProductID, products, showSettings, setShowSettings } = useData();
+  const isDev = import.meta.env.MODE === 'development';
 
   const testOptions = useMemo(() => ({
     url: '/api/settings/test/cheese',
@@ -47,7 +48,7 @@ function Menu() {
       </center>
       <div className="menu-buttons">
         {/* only show Test button in dev mode */}
-        {process.env.NODE_ENV === 'development' && user?.admin && <button
+        {isDev && <button
           className={`${btnColor} btn-logout ${theme}`}
           onClick={refreshTestData}>Test</button>}
         {/* control buttons */}

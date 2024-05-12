@@ -38,7 +38,7 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
   }
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout | null = null;
+    let timeoutId: number | null = null;
     setRecentInput(true);
     function autoSetup() {
       setCalculating(true);
