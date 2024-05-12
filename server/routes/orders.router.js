@@ -1,20 +1,12 @@
 // orders.router.js
-// const express = require('express');
 import express from 'express';
 const router = express.Router();
-// const pool = require('../modules/pool');
 import { pool } from '../modules/pool.js';
-// const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
-// const databaseClient = require('../modules/databaseClient');
 import { databaseClient } from '../modules/databaseClient.js';
-// const { cbClients, messenger, userStorage, botSettings } = require('../modules/cache');
 import { cbClients, messenger, userStorage, botSettings } from '../modules/cache.js';
-// const { sleep, autoSetup } = require('../../src/shared');
-import { sleep, autoSetup, devLog } from '../../src/shared.js';
-// const { v4: uuidv4 } = require('uuid');
+import { sleep, devLog } from '../modules/utilities.js';
 import { v4 as uuidv4 } from 'uuid';
-// const robot = require('../modules/robot');
 import { robot } from '../modules/robot.js';
 
 
@@ -61,6 +53,117 @@ router.get('/:product', rejectUnauthenticated, (req, res) => {
 /////////////////////////
 
 
+// /**
+//  * POST route for auto setup
+//  */
+// router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
+//   devLog('in auto setup route! SHOULD NOT HAPPEN DURING SIMULATION======================');
+//   // POST route code here
+//   const user = req.user;
+//   if (user.active && user.approved) {
+//     // get the user available funds
+//     const funds = userStorage[user.id].getAvailableFunds();
+//     user.availableFunds = funds;
+//     let options = req.body;
+//     devLog('options in auto setup route', options.product);
+//     let setup = autoSetup(user, options)
+//     try {
+//       devLog('setup options:', options);
+//       // put a market order in for how much BTC need to be purchase for all the sell orders
+//       // if (false) {
+//       if (setup.btcToBuy >= 0.000016) {
+//         const tradeDetails = {
+//           side: 'BUY',
+//           base_size: setup.btcToBuy.toFixed(8), // BTC
+//           product_id: options.product.product_id,
+//           type: 'market',
+//           // tradingPrice: options.tradingPrice
+//         };
+//         devLog('BIG order', tradeDetails);
+//         if (!options.ignoreFunds) {
+//           let bigOrder = await cbClients[user.id].placeOrder(tradeDetails);
+//           devLog('big order to balance btc avail', bigOrder,);
+//         }
+//         await robot.updateFunds(user.id);
+//       }
+
+//       // put each trade into the db as a reorder so the sync loop can sync the right amount
+//       for (let i = 0; i < setup.orderList.length; i++) {
+//         const order = setup.orderList[i];
+
+//         const tradeDetails = {
+//           original_sell_price: JSON.stringify(Number(order.original_sell_price)),
+//           original_buy_price: JSON.stringify(Number(order.original_buy_price)),
+//           side: order.side,
+//           limit_price: JSON.stringify(Number(order.limit_price)), // USD
+//           base_size: JSON.stringify(Number(order.base_size)), // BTC
+//           product_id: order.product_id,
+//           total_fees: order.previous_total_fees,
+//           // stp: 'cn',
+//           userID: user.id,
+//           trade_pair_ratio: Number(options.trade_pair_ratio),
+//           client_order_id: uuidv4()
+//         };
+
+//         let fakeOrder = {
+//           order_id: uuidv4(),
+//           product_id: order.product_id,
+//           // user_id: '9f732868-9790-5667-b29a-f6eb8ab97966',
+//           order_configuration: {
+//             limit_limit_gtc: {
+//               base_size: JSON.stringify(Number(order.base_size)),
+//               limit_price: JSON.stringify(Number(order.limit_price)),
+//               post_only: false
+//             }
+//           },
+//           side: order.side,
+//           client_order_id: uuidv4(),
+//           status: 'PENDING',
+//           time_in_force: 'GOOD_UNTIL_CANCELLED',
+//           created_time: new Date(),
+//           completion_percentage: '0',
+//           filled_size: '0',
+//           average_filled_price: '0',
+//           fee: '',
+//           number_of_fills: '0',
+//           filled_value: '0',
+//           pending_cancel: false,
+//           size_in_quote: false,
+//           total_fees: '0',
+//           size_inclusive_of_fees: false,
+//           total_value_after_fees: '0',
+//           trigger_status: 'INVALID_ORDER_TYPE',
+//           order_type: 'LIMIT',
+//           reject_reason: 'REJECT_REASON_UNSPECIFIED',
+//           settled: false,
+//           product_type: 'SPOT',
+//           reject_message: '',
+//           cancel_message: '',
+//           reorder: true
+//         }
+//         await databaseClient.storeTrade(fakeOrder, tradeDetails, fakeOrder.created_time);
+//         // await databaseClient.storeTrade(order, order, time);
+//       }
+//       // tell DOM to update orders
+//       messenger[user.id].newMessage({
+//         type: 'general',
+//         text: `Auto setup complete!`,
+//         orderUpdate: true
+//       });
+//     } catch (err) {
+//       devLog(err, 'problem in autoSetup ');
+//       messenger[user.id].newError({
+//         errorData: err,
+//         errorText: `problem in auto setup`
+//       });
+//     }
+//     res.sendStatus(200);
+//   } else {
+//     devLog('user is not active and cannot trade!');
+//     res.sendStatus(404)
+//   }
+// });
+
 /**
  * POST route for auto setup
  */
@@ -70,13 +173,15 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   if (user.active && user.approved) {
     // get the user available funds
-    const funds = userStorage[user.id].getAvailableFunds();
-    user.availableFunds = funds;
-    let options = req.body;
-    devLog('options in auto setup route', options.product);
-    let setup = autoSetup(user, options)
     try {
-      devLog('setup options:', options);
+      const identifier = req.headers['x-identifier'];
+      const funds = userStorage[user.id].getAvailableFunds();
+      user.availableFunds = funds;
+      let options = req.body.options;
+      devLog(options.product, 'options in auto setup route');
+      let setup = req.body;
+      // devLog('setup options:', options);
+      // return
       // put a market order in for how much BTC need to be purchase for all the sell orders
       // if (false) {
       if (setup.btcToBuy >= 0.000016) {
@@ -99,23 +204,26 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
       for (let i = 0; i < setup.orderList.length; i++) {
         const order = setup.orderList[i];
 
+        const previous_total_fees = (order.side === 'BUY')
+          ? null
+          : order.original_buy_price * order.base_size * user.taker_fee;
+
         const tradeDetails = {
           original_sell_price: JSON.stringify(Number(order.original_sell_price)),
           original_buy_price: JSON.stringify(Number(order.original_buy_price)),
           side: order.side,
           limit_price: JSON.stringify(Number(order.limit_price)), // USD
           base_size: JSON.stringify(Number(order.base_size)), // BTC
-          product_id: order.product_id,
+          product_id: options.product.product_id,
           total_fees: order.previous_total_fees,
-          // stp: 'cn',
           userID: user.id,
-          trade_pair_ratio: Number(options.trade_pair_ratio),
+          trade_pair_ratio: Number(options.tradePairRatio),
           client_order_id: uuidv4()
         };
 
         let fakeOrder = {
           order_id: uuidv4(),
-          product_id: order.product_id,
+          product_id: options.product.product_id,
           // user_id: '9f732868-9790-5667-b29a-f6eb8ab97966',
           order_configuration: {
             limit_limit_gtc: {
@@ -156,7 +264,8 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
       messenger[user.id].newMessage({
         type: 'general',
         text: `Auto setup complete!`,
-        orderUpdate: true
+        orderUpdate: true,
+        identifier: identifier
       });
     } catch (err) {
       devLog(err, 'problem in autoSetup ');
@@ -183,21 +292,22 @@ router.post('/:product_id', rejectUnauthenticated, async (req, res) => {
   const order = req.body;
   devLog('in post order route');
   if (user.active && user.approved) {
-    // tradeDetails const should take in values sent from trade component form
-    const tradeDetails = {
-      original_sell_price: JSON.stringify(Number(order.original_sell_price)),
-      original_buy_price: JSON.stringify(Number(order.limit_price)),
-      side: order.side,
-      limit_price: JSON.stringify(Number(order.limit_price)), // USD
-      base_size: JSON.stringify(Number(order.base_size)), // BTC
-      product_id: order.product_id,
-      // stp: 'cn',
-      userID: userID,
-      trade_pair_ratio: Number(order.trade_pair_ratio),
-      client_order_id: uuidv4()
-    };
-    devLog('trade details', tradeDetails);
     try {
+      const identifier = req.headers['x-identifier'];
+      // tradeDetails const should take in values sent from trade component form
+      const tradeDetails = {
+        original_sell_price: JSON.stringify(Number(order.original_sell_price)),
+        original_buy_price: JSON.stringify(Number(order.limit_price)),
+        side: order.side,
+        limit_price: JSON.stringify(Number(order.limit_price)), // USD
+        base_size: JSON.stringify(Number(order.base_size)), // BTC
+        product_id: order.product_id,
+        // stp: 'cn',
+        userID: userID,
+        trade_pair_ratio: Number(order.trade_pair_ratio),
+        client_order_id: uuidv4()
+      };
+      devLog('trade details', tradeDetails);
       // create a fake order, but set it to reorder
       let fakeOrder = {
         order_id: uuidv4(),
@@ -238,7 +348,7 @@ router.post('/:product_id', rejectUnauthenticated, async (req, res) => {
       devLog('order to store', fakeOrder);
       // store the fake order in the db. It will be ordered later in the reorder function
       await databaseClient.storeTrade(fakeOrder, tradeDetails, fakeOrder.created_time);
-      await robot.updateFunds(userID);
+      await robot.updateFunds(userID, identifier);
       // tell DOM to update orders
       messenger[userID].newMessage({
         type: 'general',
@@ -249,6 +359,9 @@ router.post('/:product_id', rejectUnauthenticated, async (req, res) => {
     } catch (err) {
       devLog(err, "FAILURE creating new trade-pair");
       const errorText = 'FAILURE creating new trade-pair!';
+      if (err?.error_response?.message) {
+        errorText = errorText + ' Reason: ' + err.error_response.message
+      }
       const errorData = err;
       messenger[userID].newError({
         errorData: errorData,
@@ -400,8 +513,9 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
   devLog('in delete all orders route');
   const userID = req.user.id;
   const previousPauseStatus = req.user.paused;
-  devLog('in delete all orders route', userID);
   try {
+    const identifier = req.headers['x-identifier'];
+    devLog('in delete all orders route', userID);
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID)
 
@@ -419,7 +533,8 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
     messenger[userID].newMessage({
       type: 'general',
       text: `Deleted all orders`,
-      orderUpdate: true
+      orderUpdate: true,
+      identifier: identifier
     })
 
     devLog('+++++++ EVERYTHING WAS DELETED +++++++ for user:', userID);
@@ -438,12 +553,13 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
 router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
   devLog('in delete single order route');
   // DELETE route code here
-  const userID = req.user.id;
-  const orderId = req.params.order_id;
-
-  userStorage[userID].setCancel(orderId);
-  // mark as canceled in db
   try {
+    const identifier = req.headers['x-identifier'];
+    const userID = req.user.id;
+    const orderId = req.params.order_id;
+
+    userStorage[userID].setCancel(orderId);
+    // mark as canceled in db
     let order = await databaseClient.updateTrade({
       will_cancel: true,
       order_id: orderId
@@ -457,7 +573,8 @@ router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
     messenger[userID].newMessage({
       type: 'general',
       text: 'Successfully deleted trade-pair',
-      orderUpdate: true
+      orderUpdate: true,
+      identifier: identifier
     });
   } catch (err) {
     let errorText = 'FAILURE deleting trade-pair!';
@@ -492,9 +609,10 @@ router.delete('/product/:product_id', rejectUnauthenticated, async (req, res) =>
   devLog('in delete all orders for product_id route');
   const userID = req.user.id;
   const previousPauseStatus = req.user.paused;
-  const product_id = req.params.product_id;
-  devLog('in delete all orders route', userID);
   try {
+    const identifier = req.headers['x-identifier'];
+    const product_id = req.params.product_id;
+    devLog('in delete all orders for product route', userID, '< user', product_id, '< product_id');
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID)
 
@@ -512,7 +630,8 @@ router.delete('/product/:product_id', rejectUnauthenticated, async (req, res) =>
     messenger[userID].newMessage({
       type: 'general',
       text: `Deleted all orders for ${product_id}`,
-      orderUpdate: true
+      orderUpdate: true,
+      identifier: identifier
     })
 
     devLog(`+++++++ EVERYTHING FOR PRODUCT: ${product_id} WAS DELETED +++++++ for user:`, userID);
@@ -532,11 +651,12 @@ router.delete('/product/:product_id', rejectUnauthenticated, async (req, res) =>
 router.delete('/:product_id/:start/:end', rejectUnauthenticated, async (req, res) => {
   // devLog('in delete range route');
   const userID = req.user.id;
+  devLog('in delete range route', userID);
   const previousPauseStatus = req.user.paused;
-  const start = req.params.start < req.params.end ? req.params.start : req.params.end;
-  const end = req.params.end > req.params.start ? req.params.end : req.params.start;
-  devLog('in delete range route', userID, start, end);
   try {
+    const identifier = req.headers['x-identifier'];
+    const start = req.params.start < req.params.end ? req.params.start : req.params.end;
+    const end = req.params.end > req.params.start ? req.params.end : req.params.start;
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID)
 
@@ -557,7 +677,8 @@ router.delete('/:product_id/:start/:end', rejectUnauthenticated, async (req, res
     messenger[userID].newMessage({
       type: 'general',
       text: `Deleted orders between ${req.body.lowerLimit} and ${req.body.upperLimit} for ${req.body.product_id}`,
-      orderUpdate: true
+      orderUpdate: true,
+      identifier: identifier
     })
     devLog('+++++++ RANGE WAS DELETED +++++++ for user:', userID);
   } catch (err) {

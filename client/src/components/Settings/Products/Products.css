@@ -1,0 +1,64 @@
+.Products {
+  /* overflow-x: auto; */
+  /* width  : 100%; */
+}
+
+.product-table {
+  width          : 100%;
+  min-width      : max-content;
+  border-collapse: collapse;
+  /* overflow-x  : scroll; */
+}
+
+/* number columns should align right */
+.product-table td.number,
+.product-table th.number {
+  text-align   : right;
+  padding      : 0 0.2rem;
+  /* width     : max-content; */
+  /* word-wrap : normal; */
+  /* word-break: keep-all; */
+  /* color     : red; */
+}
+
+.product-table td,
+.product-table th {
+  background-color: var(--table-bg-alt);
+  padding         : 0 .2rem;
+  width           : max-content;
+}
+
+.product-table th:nth-child(even),
+.product-table td:nth-child(even) {
+  background-color: var(--table-background);
+}
+
+.product-table td.table-product-id {
+  /* width        : max-content; */
+  align-items: start;
+  /* color   : red; */
+  text-align : left;
+}
+
+td.number {
+  width: max-content;
+}
+
+/* all other columns should center */
+.product-table td:not(.number) {
+  text-align: center;
+}
+
+.products-header {
+  display            : flex;
+  /* justify-content : space-between; */
+  gap                : 1rem;
+  align-items        : center;
+  /* background-color: #222222; */
+  /* color           : #eaeaea; */
+  /* font-family     : inherit; */
+  /* box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099; */
+  /* width           : 100%; */
+  /* height          : 1.5rem; */
+  /* padding         : 0 .5rem; */
+}

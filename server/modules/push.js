@@ -20,7 +20,7 @@ function resetAtMidnight({ notMidnight }) {
   const msToMidnight = night.getTime() - now.getTime();
   try {
 
-    devLog('msToMidnight', msToMidnight, 'notMidnight', notMidnight);
+    // devLog('msToMidnight', msToMidnight, 'notMidnight', notMidnight);
 
     runScheduled({ notMidnight }); // <-- This is the function being called at midnight.
   } catch (err) {
@@ -38,18 +38,18 @@ function resetAtMidnight({ notMidnight }) {
 // and send them at their scheduled time
 async function runScheduled({ notMidnight }) {
   try {
-    devLog('running scheduled push notifications');
+    // devLog('running scheduled push notifications');
     // get all subscriptions
     const subscriptions = await databaseClient.getAllSubscriptions();
     // send push notifications to each subscription at the scheduled time
     for (let i = 0; i < subscriptions.length; i++) {
       const subscription = subscriptions[i];
       const userID = subscription.user_id;
-      devLog('subscription', subscription, 'notMidnight', notMidnight);
+      // devLog('subscription', subscription, 'notMidnight', notMidnight);
 
       // if subscription.daily_notifications is false, skip this subscription
       if (!subscription.daily_notifications) {
-        devLog('daily notifications is false');
+        // devLog('daily notifications is false');
         continue;
       }
 
@@ -72,9 +72,9 @@ async function runScheduled({ notMidnight }) {
         );
         const scheduledTime = getDateFromTime(midnightNow, subscription);
         const msToSend = scheduledTime.getTime() - midnightNow.getTime();
-        devLog('msToSend', msToSend);
+        // devLog('msToSend', msToSend);
 
-        devLog('midnightNow', midnightNow, 'scheduledTime', scheduledTime);
+        // devLog('midnightNow', midnightNow, 'scheduledTime', scheduledTime);
 
 
         const scheduled = setTimeout(async () => {
@@ -99,11 +99,11 @@ function instantSchedule(subscription, userID) {
   try {
     const now = new Date();
     const scheduledTime = getDateFromTime(now, subscription);
-    devLog('now', now, 'scheduledTime', scheduledTime);
+    // devLog('now', now, 'scheduledTime', scheduledTime);
     const msToSend = scheduledTime - now;
     if (msToSend >= 0) {
       // if it is not past the scheduled time, schedule it for the day
-      devLog('not past scheduled time');
+      // devLog('not past scheduled time');
       const scheduled = setTimeout(async () => {
         await sendPushNotification(subscription);
       }, scheduledTime - now);
@@ -117,18 +117,18 @@ function instantSchedule(subscription, userID) {
       });
     }
   } catch (err) {
-    devLog('error instant scheduling', err);
+    // devLog('error instant scheduling', err);
   }
 }
 
 async function sendPushNotification(subscription) {
   try {
-    devLog('sending test notification');
-    devLog(subscription.user_id, 'subscription');
+    // devLog('sending test notification');
+    // devLog(subscription.user_id, 'subscription');
     const userID = subscription.user_id;
     // get 24 Hour profits for user
     const profits = await databaseClient.getProfitForDurationByAllProducts(userID, '24 Hour');
-    devLog('profits', profits);
+    // devLog('profits', profits);
     // include current time in the notification
     await webPush.sendNotification(subscription, JSON.stringify({
       type: 'update',

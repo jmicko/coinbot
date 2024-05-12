@@ -1,18 +1,10 @@
-// const express = require('express');
 import express from 'express';
-// const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
-// const { userCount } = require('../modules/userCount-middleware');
 import { userCount } from '../modules/userCount-middleware.js';
-// const encryptLib = require('../modules/encryption');
 import encryptLib from '../modules/encryption.js';
-// const pool = require('../modules/pool');
 import { pool } from '../modules/pool.js';
-// const userStrategy = require('../strategies/user.strategy');
 import userStrategy from '../strategies/user.strategy.js';
-// const robot = require('../modules/robot');
 import { robot } from '../modules/robot.js';
-// const databaseClient = require('../modules/databaseClient');
 import { databaseClient } from '../modules/databaseClient.js';
 import { userStorage, messenger } from '../modules/cache.js';
 import { devLog } from '../modules/utilities.js';
@@ -66,7 +58,7 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
 
     // get available funds from userStorage
     const availableFunds = userStorage[req.user.id].getAvailableFunds();
-    devLog('availableFunds', availableFunds);
+    // devLog('availableFunds', availableFunds);
     req.user.availableFunds = availableFunds;
 
     // get exporting value from userStorage
@@ -82,7 +74,7 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
   } catch (err) {
     devLog(err, 'error in user route');
   }
-  // devLog('user', req.user)
+  // devLog('user', req.user, 'user in get user route')
   // Send back user object from the session (previously queried from the database)
   res.send(req.user);
 });
@@ -151,14 +143,33 @@ router.post('/register', userCount, async (req, res, next) => {
       let secondResult = await pool.query(secondQueryText, [userID]);
 
       // create entry in user_settings table
-      let thirdQueryText = `INSERT INTO "user_settings" ("userID", "profit_reset") VALUES ($1, $2);`;
+      let thirdQueryText = `INSERT INTO "user_settings" ("userID", "profit_reset") VALUES ($1, $2) RETURNING *;`;
       let thirdResult = await pool.query(thirdQueryText, [userID, joined_at]);
+      user = { ...user, ...thirdResult.rows[0] }
     }
 
     // START THE LOOPS
-    robot.initializeUserLoops(user);
+    await robot.initializeUserLoops(user);
 
-    res.sendStatus(201);
+    const botSettings = await databaseClient.getBotSettings();
+    let fullUser = await databaseClient.getUser(user.id);
+
+    req.login(user, function (err) {
+      if (err) {
+        devLog(err, 'error in login after registration');
+        return next(err);
+      }
+
+      const availableFunds = userStorage[req.user.id].getAvailableFunds();
+      fullUser.availableFunds = availableFunds;
+      fullUser.botMaintenance = botSettings.maintenance;
+      fullUser.botSettings = botSettings;
+      fullUser.sandbox = false
+      fullUser = { ...fullUser, ...user }
+
+      res.status(201).send(fullUser);
+    });
+
   } catch (err) {
     devLog('User registration failed: ', err);
     res.sendStatus(500);
@@ -169,24 +180,78 @@ router.post('/register', userCount, async (req, res, next) => {
 // userStrategy.authenticate('local') is middleware that we run on this route
 // this middleware will run our POST if successful
 // this middleware will send a 401 if not successful
-router.post('/login', userStrategy.authenticate('local'), (req, res) => {
-  devLog('in login route');
-  res.sendStatus(200);
+router.post('/login', userStrategy.authenticate('local'), async (req, res) => {
+  devLog(req.user, 'in login route');
+  // res.sendStatus(200);
+  try {
+    const botSettings = await databaseClient.getBotSettings();
+    req.user.botMaintenance = botSettings.maintenance;
+    req.user.botSettings = botSettings;
+    req.user.sandbox = false
+
+    // get available funds from userStorage
+    const availableFunds = userStorage[req.user.id].getAvailableFunds();
+    devLog('availableFunds', availableFunds);
+    req.user.availableFunds = availableFunds;
+
+    // get exporting value from userStorage
+    const exporting = userStorage[req.user.id].exporting;
+    req.user.exporting = exporting;
+
+    // get simulating value from userStorage
+    const simulating = userStorage[req.user.id].simulating;
+    req.user.simulating = simulating;
+
+    // devLog('simulating', req.user);
+
+  } catch (err) {
+    devLog(err, 'error in user route');
+  }
+  // devLog('user', req.user, 'user in LOGIN ROUTE')
+  // Send back user object from the session (previously queried from the database)
+  res.status(200).send(req.user);
 });
 
+// // clear all server session information about this user
+// router.post('/logout', rejectUnauthenticated, (req, res) => {
+//   try {
+//     devLog('LOGGING OUT USER');
+//     const identifier = req.headers['x-identifier'];
+//     const userID = req.user.id;
+//     // Use passport's built-in method to log out the user
+//     req.logout();
+//     res.sendStatus(200);
+//     messenger[userID].userUpdate(identifier);
+//   } catch (err) {
+//     devLog(err, 'error in logout route');
+//   }
+// });
+
 // clear all server session information about this user
+// this is a new method because new version of passport requires a callback function
 router.post('/logout', rejectUnauthenticated, (req, res) => {
   try {
-    const userID = req.user.id;
     devLog('LOGGING OUT USER');
+    const identifier = req.headers['x-identifier'];
+    const userID = req.user.id;
+
     // Use passport's built-in method to log out the user
-    req.logout();
-    res.sendStatus(200);
-    messenger[userID].userUpdate();
+    req.logout(function(err) {
+      if (err) {
+        devLog(err, 'error in logout route');
+        return res.status(500).send('Logout failed');
+      }
+      res.sendStatus(200); // or use res.status(200).send('Logged out') for more clarity
+      if (messenger && messenger[userID]) {
+        messenger[userID].userUpdate(identifier);
+      }
+    });
   } catch (err) {
     devLog(err, 'error in logout route');
+    res.status(500).send('Error while logging out');
   }
 });
+
 
 /**
 * PUT route - Approve a single user. Only admin can do this
@@ -264,8 +329,11 @@ router.delete('/:user_id', rejectUnauthenticated, async (req, res) => {
         const userSettingsQueryText = `DELETE from "user_settings" WHERE "userID" = $1;`;
         await pool.query(userSettingsQueryText, [userToDelete]);
 
+        res.sendStatus(200);
+      } else {
+        devLog('you are NOT deleting yourself');
+        res.sendStatus(403);
       }
-      res.sendStatus(200);
     }
   } catch (err) {
     devLog(err, 'error in delete user route');

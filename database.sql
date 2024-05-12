@@ -9,6 +9,17 @@ DROP TABLE IF EXISTS "market_candles";
 DROP TABLE IF EXISTS "subscriptions";
 DROP TABLE IF EXISTS "feedback";
 
+CREATE TABLE IF NOT EXISTS "user" (
+  "id" SERIAL PRIMARY KEY,
+  "username" VARCHAR (80) UNIQUE NOT NULL,
+  "password" VARCHAR (1000) NOT NULL,
+  "active" boolean DEFAULT false,
+  "admin" boolean DEFAULT false,
+  "approved" boolean DEFAULT false,
+  "will_delete" boolean DEFAULT false,
+  "joined_at" timestamp
+);
+
 CREATE TABLE IF NOT EXISTS "user_api"
 (
   "API_ID" SERIAL PRIMARY KEY,
@@ -92,7 +103,6 @@ CREATE TABLE IF NOT EXISTS "market_candles"
   "volume" numeric(32,16) NOT NULL
 );
 
-
 CREATE TABLE IF NOT EXISTS "bot_settings"
 (
   "loop_speed" integer DEFAULT 1,
@@ -161,17 +171,6 @@ CREATE TABLE IF NOT EXISTS "limit_orders"
   -- executed_value numeric(32,16),
   -- "API_ID" character varying,
   CONSTRAINT orders_pkey PRIMARY KEY (order_id)
-);
-
-CREATE TABLE IF NOT EXISTS "user" (
-  "id" SERIAL PRIMARY KEY,
-  "username" VARCHAR (80) UNIQUE NOT NULL,
-  "password" VARCHAR (1000) NOT NULL,
-  "active" boolean DEFAULT false,
-  "admin" boolean DEFAULT false,
-  "approved" boolean DEFAULT false,
-  "will_delete" boolean DEFAULT false,
-  "joined_at" timestamp
 );
 
 -- create a feedback table with user id, subject, description, and timestamp

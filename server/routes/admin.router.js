@@ -1,21 +1,10 @@
-// const express = require('express');
 import express from 'express';
-// const { rejectUnauthenticated, } = require('../modules/authentication-middleware');
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
-// const { userCount } = require('../modules/userCount-middleware');
-import { userCount } from '../modules/userCount-middleware.js';
-// const encryptLib = require('../modules/encryption');
-import encryptLib from '../modules/encryption.js';
-// const pool = require('../modules/pool');
 import { pool } from '../modules/pool.js';
-// const userStrategy = require('../strategies/user.strategy');
-import userStrategy from '../strategies/user.strategy.js';
-// const robot = require('../modules/robot');
 import { robot } from '../modules/robot.js';
-// const databaseClient = require('../modules/databaseClient');
 import { databaseClient } from '../modules/databaseClient.js';
 import { userStorage, messenger, botSettings } from '../modules/cache.js';
-import { devLog } from '../../src/shared.js';
+import { devLog } from '../modules/utilities.js';
 
 const router = express.Router();
 
@@ -507,6 +496,7 @@ router.put('/order_sync_quantity', rejectUnauthenticated, async (req, res) => {
  */
 router.put('/maintenance', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
+  console.log('maintenance route hit');
   if (user.admin) {
     try {
       await databaseClient.toggleMaintenance();

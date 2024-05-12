@@ -1,0 +1,20 @@
+.black-segment {
+    background-color: rgb(125, 209, 132);
+}
+
+
+.white-segment {
+    background-color: rgb(167, 119, 92);
+}
+
+.segment {
+    width    : .5rem;
+    /* height: .5px; */
+    height   : 1%;
+}
+
+.Meter {
+    height      : 4rem;
+    /* float    : left; */
+    margin-right: .4rem;
+}

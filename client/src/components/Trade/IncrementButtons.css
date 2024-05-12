@@ -1,0 +1,17 @@
+/* === BUTTONS === */
+
+.increment-buttons {
+  margin: .1rem auto;
+  width : max-content;
+  display: flex;
+  flex-direction: row;
+  color: rgb(143, 94, 191);
+}
+
+.increase input {
+  width: 4rem;
+}
+
+.decrease input {
+  width: 4rem;
+}

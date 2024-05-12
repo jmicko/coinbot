@@ -2,7 +2,7 @@ import { databaseClient } from "./databaseClient.js";
 import { botSettings, userStorage, messenger, cbClients } from "./cache.js";
 import { startWebsocket } from "./websocket.js";
 import { resetAtMidnight } from './push.js';
-import { sleep, addProductDecimals } from "../../src/shared.js";
+import { sleep, addProductDecimals } from "./utilities.js";
 import { fork } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -16,7 +16,7 @@ async function startSync() {
   try {
     const path = __dirname;
     // fork a child process to import candles
-    const candleMaker = fork('./server/modules/candleMaker.js');
+    const candleMaker = fork('./modules/candleMaker.js');
     // load the bot settings
     await botSettings.refresh();
     // get all users from the db
@@ -172,9 +172,11 @@ async function syncOrders(userID) {
 async function updateProducts(userID) {
   return new Promise(async (resolve, reject) => {
     try {
+      devLog('---- updating products ----');
       const products = await cbClients[userID].getProducts();
       await databaseClient.insertProducts(products.products, userID);
       resolve();
+      devLog('---- finished updating products ----');
     } catch (err) {
       devLog(err, 'error updating products');
       reject(err);
@@ -197,7 +199,6 @@ function MainLoopErrors(userID, err) {
     errorText = 'Internal server error from coinbase';
   } else if (err?.response?.status === 401) {
     devLog(err?.response?.data, 'Invalid Signature');
-    devLog(err?.response?.data, 'Invalid Signature');
     errorText = 'Invalid Signature. Probably nothing to worry about unless it keeps happening quickly.';
   } else if (err?.response?.statusText === 'Bad Gateway') {
     devLog('bad gateway');
@@ -209,11 +210,11 @@ function MainLoopErrors(userID, err) {
     devLog('10 sec timeout');
     errorText = '10 second timeout. Nothing to worry about, Coinbase was just slow to respond.';
   } else if (err?.response?.status === 429) {
-    devLog('too many requests');
+    devLog(err, 'too many requests');
     errorText = 'Too many requests. Rate limit exceeded. Nothing to worry about.';
   } else {
     devLog(err, 'unknown error at end of syncOrders');
-    errorData = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???'
+    errorData = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???';
     errorText = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???';
   }
   messenger[userID].newError({
@@ -382,7 +383,6 @@ async function processOrders(userID) {
           // ...send the new trade
           try {
 
-
             // check if the trade should be canceled. This is the point of no return
             const willCancel = userStorage[userID].checkCancel(dbOrder.order_id);
             if (!willCancel) {
@@ -412,9 +412,6 @@ async function processOrders(userID) {
                 })
               }
             }
-
-
-
 
           } catch (err) {
             let errorText;
@@ -478,7 +475,7 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
 
   // get decimals after .
   const base_increment_decimals = prodFunds.base_increment.split('.')[1]?.split('').findIndex((char) => char !== '0') + 1;
-  // devLog(base_increment_decimals, 'base inc decccccccccccc')
+  // devLog(base_increment_decimals, 'base inc dec')
   const quote_increment_decimals = prodFunds.quote_increment.split('.')[1]?.split('').findIndex((char) => char !== '0') + 1;
 
   // add buy/sell requirement and price
@@ -515,7 +512,6 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
       if (amountToReinvest <= 0) {
         amountToReinvest = 0;
         !simulation && messenger[userID].newError({
-          type: 'error',
           errorData: dbOrder,
           errorText: `Just saw a negative profit! Maybe increase your trade-pair ratio? 
           This may also be due to fees that were charged during setup or at a different fee tier.`
@@ -656,6 +652,9 @@ async function updateMultipleOrders(userID, params) {
           if (updatedOrder.order.status === 'CANCELLED') {
             devLog('was canceled but should not have been!')
             updatedOrder.order.reorder = true;
+          } else if (updatedOrder.order.status === 'FAILED') {
+            devLog('original order failed! reordering')
+            updatedOrder.order.reorder = true;
           }
           // then update db with current status
           await databaseClient.updateTrade(updatedOrder.order);
@@ -699,7 +698,7 @@ async function reorder(orderToReorder) {
       // make new tradeDetails so client id is not passed from old order
       const tradeDetails = {
         side: upToDateDbOrder.side,
-        limit_price: upToDateDbOrder.limit_price, // quote currency
+        limit_price: Number(upToDateDbOrder.limit_price).toFixed(decimals.quote_increment_decimals), // quote currency
         base_size: Number(upToDateDbOrder.base_size).toFixed(decimals.base_increment_decimals), // base currency
         product_id: upToDateDbOrder.product_id,
       };
@@ -786,7 +785,7 @@ async function getAvailableFunds(userID, userSettings) {
   userStorage[userID].updateStatus('get available funds');
   return new Promise(async (resolve, reject) => {
     try {
-      devLog('get available funds');
+      // devLog('get available funds');
       if (!userSettings?.active) {
         devLog('not active!');
         reject('user is not active')
@@ -887,7 +886,7 @@ async function getAvailableFunds(userID, userSettings) {
       resolve(availableFundsObject)
     } catch (err) {
       messenger[userID].newError({
-        text: 'error getting available funds',
+        errorText: 'error getting available funds',
         data: err
       })
       reject(err)
@@ -895,7 +894,7 @@ async function getAvailableFunds(userID, userSettings) {
   })
 }
 
-async function updateFunds(userID) {
+async function updateFunds(userID, identifier) {
   userStorage[userID].updateStatus('begin update funds');
   return new Promise(async (resolve, reject) => {
     try {
@@ -912,12 +911,12 @@ async function updateFunds(userID) {
       // if the available funds have changed, update the DOM
       if (availableFundsChanged) {
         devLog('sending order update from updateFunds after available funds changed');
-        messenger[userID].userUpdate();
+        messenger[userID].userUpdate(identifier);
       }
       resolve()
     } catch (err) {
-      messenger[userID].newError(userID, {
-        text: 'error getting available funds',
+      messenger[userID].newError({
+        errorText: 'error getting available funds',
         data: err
       })
       reject(err)

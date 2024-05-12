@@ -1,0 +1,24 @@
+### Postgres
+PGHOST='localhost'
+PGUSER='username'
+PGPASSWORD='password'
+PGDATABASE='coinbot'
+PGPORT=5432
+
+### Session
+SERVER_SESSION_SECRET='pleaseForTheLoveOfMoneyPutADifferentSecretHere'
+
+### Node
+NODE_ENV='development'
+
+### vapid keys
+VAPID_PUBLIC_KEY='xxxxxxxxx'
+VAPID_PRIVATE_KEY='xxxxxxxxx'
+
+### Domain name needed for vapid
+DOMAIN_NAME='https://localhost.local'
+
+### Misc
+# SAMPLE_ORDER_ID is only occasionally used to identify a specific order in the logs in development
+# It should match a valid order id associated with the Coinbase account used for development
+SAMPLE_ORDER_ID='xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'

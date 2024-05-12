@@ -1,0 +1,22 @@
+.Menu {
+    background-color: var(--bg-dark);
+    display         : flex;
+    flex-direction  : column;
+    justify-content : space-evenly;
+}
+
+.greeting,
+.menu-buttons {
+    margin: 0 .4rem;
+}
+
+@media (max-width: 800px) {
+    .Menu {
+        flex-direction : row;
+        justify-content: space-between;
+    }
+
+    .menu-buttons {
+        margin-right: 0;
+    }
+}

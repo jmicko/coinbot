@@ -1,0 +1,543 @@
+/* #root {
+  max-width : 1280px;
+  margin    : 0 auto;
+  padding   : 2rem;
+  text-align: center;
+} */
+
+
+
+/* @import url('https://fonts.googleapis.com/css2?family=Syne+Mono&display=swap'); */
+@import "darkTheme.css";
+
+/* colors */
+
+:root {
+  --btn-warn      : #ff0000;
+  --btn-warn-hover: #ff4d4d;
+}
+
+.original {
+  --text    : #ffffff;
+  --btn-text: #000000;
+
+  --table-background: #eaeaea;
+  --table-bg-alt    : #d1d1d1;
+
+  --btn-red       : #ec4141;
+  --btn-red-hover : lightcoral;
+  --btn-warn      : #ff0000;
+  --btn-warn-hover: #ff4d4d;
+
+  --divider: #000000;
+
+  --bg-default: #c7c7b1;
+  --bg-dark   : #acacaf;
+  --bg-darker : #999999;
+}
+
+.darkTheme {
+  --text    : #d7d7d7;
+  --btn-text: #d7d7d7;
+
+  --table-background: #222222;
+  --table-bg-alt    : #353535;
+
+  --btn-red      : #7c3434;
+  --btn-red-hover: #975050;
+
+  --divider: #999999;
+
+  --bg-default: #303030;
+  --bg-dark   : #464646;
+  --bg-darker : #282828;
+}
+
+/* === MAIN === */
+
+html {
+  --scrollbarBG   : #50575a;
+  --thumbBG       : #41bcc060;
+  /* overflow     : clip; */
+}
+
+/* body { */
+/* background-color: #c7c7b1; */
+/* background-color: #313131; */
+/* height          : 100vh; */
+
+/* } */
+
+.App {
+  overflow        : clip;
+  background-color: var(--bg-default);
+  font-family     : 'Syne Mono', monospace;
+  /* height       : 100vh; */
+  /* padding      : 15vh 0; */
+}
+
+.rotate {
+  transform       : rotate(0deg);
+  transition      : transform .1s;
+  transition-delay: 0s;
+}
+
+.rotate.loaded {
+  transform       : rotate(15deg);
+  transition      : transform .1s;
+  transition-delay: 1s;
+}
+
+/* @keyframes tilt {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(18deg);
+  }
+  75% {
+    transform: rotate(18deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.rotate.loaded {
+  animation: tilt .4s ease-in-out;
+} */
+
+/* .rotate {
+  transition: transform .1s;
+} */
+
+/* .rotate:hover {
+  transform: rotate(15deg);
+}  */
+
+.App.darkTheme {
+  /* background-color: rgb(48, 48, 48); */
+  color      : white;
+  font-family: 'Syne Mono', monospace;
+}
+
+.title {
+  background-color: rgb(98, 127, 128);
+  margin          : 0;
+  text-align      : center;
+  border-bottom   : 1px solid black;
+}
+
+.title.darkTheme {
+  /* background-color: rgb(51, 59, 59); */
+  background-color: rgb(33, 36, 36);
+  margin          : 0;
+  text-align      : center;
+  border-bottom   : 1px solid black;
+}
+
+.info {
+  margin: .4rem;
+}
+
+.small {
+  font-size: small;
+}
+
+.right {
+  float: right;
+}
+
+.hidden {
+  display: none;
+}
+
+/* === BOXES === */
+
+/* body, */
+.scrollable {
+  overflow-y     : auto;
+  max-height     : 100%;
+  scrollbar-color: var(--thumbBG) var(--scrollbarBG);
+}
+
+body::-webkit-scrollbar,
+.scrollable::-webkit-scrollbar {
+  width : 18px;
+  height: 18px;
+}
+
+body .thin-scroll::-webkit-scrollbar,
+.scrollable .thin-scroll::-webkit-scrollbar {
+  width : 6px;
+  height: 6px;
+}
+
+body::-webkit-scrollbar-track,
+.scrollable::-webkit-scrollbar-track {
+  background: var(--scrollbarBG);
+}
+
+body::-webkit-scrollbar-thumb,
+.scrollable::-webkit-scrollbar-thumb {
+  background-color: var(--thumbBG);
+  /* border-radius: 6px; */
+  border          : 3px solid var(--scrollbarBG);
+}
+
+body .thin-scroll::-webkit-scrollbar-thumb,
+.scrollable .thin-scroll::-webkit-scrollbar-thumb {
+  border: 1px solid var(--scrollbarBG);
+}
+
+.overlay:hover {
+  background-color: #2cb7da46;
+}
+
+
+@media (max-width: 800px) {
+
+  .scrollable {
+    overflow-y     : auto;
+    scrollbar-color: var(--thumbBG) var(--scrollbarBG);
+  }
+
+  body::-webkit-scrollbar-track,
+  .scrollable::-webkit-scrollbar-track {
+    background: var(--scrollbarBG);
+  }
+
+  body::-webkit-scrollbar-thumb,
+  .scrollable::-webkit-scrollbar-thumb {
+    background-color: var(--thumbBG);
+    border          : 3px solid var(--scrollbarBG);
+  }
+}
+
+.boxed {
+  border: 1px solid black;
+}
+
+.left-border {
+  padding-left: .8rem;
+  position    : relative;
+}
+
+.left-border::before,
+.left-border::after {
+  position: absolute;
+  width   : .3rem;
+  height  : 100%;
+  content : "";
+
+  left         : 0;
+  top          : 0;
+  border-left  : 3px solid #7b7b7b;
+  border-top   : 3px solid #7b7b7b;
+  border-bottom: 3px solid #7b7b7b;
+}
+
+.notched {
+  /* css for notched corners taken from https://css-tricks.com/notched-boxes/ */
+  /* this variable is the size of the notch */
+  --notchSize: 1rem;
+  /* clip-path shows whatever is inside the specified region. Everything else is hidden */
+  clip-path  :
+    /* the region is a polygon. 8 points are defined, one for each corner */
+    polygon(0% var(--notchSize), var(--notchSize) 0%,
+      /* to keep corner sizes the same, the position is calculated as the 
+      difference between the notch size (1rem), and the total length of the 
+      side our point is on */
+      calc(100% - var(--notchSize)) 0%, 100% var(--notchSize), 100% calc(100% - var(--notchSize)), calc(100% - var(--notchSize)) 100%, var(--notchSize) 100%, 0% calc(100% - var(--notchSize)));
+  /* 1rem of padding to more than account for the size of the notch */
+  padding: 1rem;
+}
+
+.fit {
+  height: fit-content;
+}
+
+.divider {
+  background-color: var(--divider);
+  height          : 1px;
+  width           : 100%;
+  margin          : .1rem 0;
+}
+
+.dark {
+  background-color: darkgrey;
+  border          : none;
+}
+
+.dark.darkTheme {
+  background-color: rgb(70, 70, 70);
+  border          : none;
+}
+
+
+/* === BUTTONS === */
+
+.btn-nav.darkTheme {
+
+  color           : #eaeaea;
+  background-color: #1c1c1c;
+
+}
+
+.btn-nav.darkTheme.selected {
+  color           : black;
+  background-color: #eaeaea;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-nav.darkTheme:hover {
+  background-color: rgb(97, 93, 93);
+}
+
+.btn-nav.darkTheme.selected:hover {
+  background-color: #bebebe;
+}
+
+.btn-nav.darkTheme:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: #7b7b7bd3;
+}
+
+.btn-nav.darkTheme.selected:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: #eaeaea;
+}
+
+/* === BUTTONS === */
+
+input[type="button"],
+input[type="submit"],
+button {
+  color      : var(--btn-text);
+  box-shadow : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+  font-family: inherit;
+}
+
+button.medium {
+  font-size: medium;
+}
+
+.btn-nav {
+  color           : white;
+  font-size       : larger;
+  background-color: #363535;
+}
+
+.btn-nav.selected {
+  color           : black;
+  background-color: #ffffff;
+}
+
+.btn-nav:hover {
+  background-color: #615d5d;
+}
+
+.btn-nav.selected:hover {
+  background-color: #928b8b;
+}
+
+.btn-nav:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: #7e6f67d3;
+}
+
+.btn-nav.selected:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: #ffffff;
+}
+
+.btn-red {
+  /* background-color: #ec4141; */
+  background-color: var(--btn-red);
+}
+
+.btn-red:hover {
+  background-color: var(--btn-red-hover);
+}
+
+.btn-red:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: #b8718c81;
+}
+
+.btn-warn {
+  background-color: var(--btn-warn);
+}
+
+.btn-warn:hover {
+  filter    : brightness(1.2);
+  box-shadow: inset 1px 1px #ffffff99, inset -1px -1px #00000099;
+}
+
+.btn-green {
+  background-color: rgb(109, 145, 108);
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-green.darkTheme {
+  color           : #ffffff;
+  background-color: rgb(84, 109, 83);
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-green:hover {
+  background-color: rgb(156, 180, 155);
+}
+
+.btn-green:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: #80b19f98;
+}
+
+.btn-blue {
+  background-color: rgb(108, 123, 145);
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-blue.darkTheme {
+  color           : #ffffff;
+  background-color: rgb(48, 55, 66);
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-blue:hover {
+  background-color: #9ba0b4;
+}
+
+.btn-blue:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: #7773b398;
+}
+
+.btn-black {
+  color           : #ffffff;
+  background-color: #4b4b4b;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-black.darkTheme {
+  color           : #ffffff;
+  background-color: #171718;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #65656599, inset -2px -2px #00000099;
+}
+
+.btn-black:hover {
+  background-color: rgb(39, 39, 41);
+}
+
+.btn-black:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: rgba(54, 54, 57, 0.596);
+}
+
+.btn-yellow {
+  background-color: #fff7a0;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-yellow.darkTheme {
+  color           : #d7d7d7;
+  background-color: #360937;
+  font-family     : inherit;
+  box-shadow      : inset 2px 2px #ffffff99, inset -2px -2px #00000099;
+}
+
+.btn-yellow:hover {
+  background-color: #a0956c;
+}
+
+.btn-yellow.darkTheme:hover {
+  background-color: #5a165b;
+}
+
+.btn-yellow.darkTheme:focus {
+  outline            : none;
+  background-color   : #632364;
+  /* box-shadow      : inset 2px 2px #00000099, inset -2px -2px #ffffff99; */
+}
+
+button:focus:active {
+  /* outline         : none;
+  background-color: #632364; */
+  box-shadow: inset 2px 2px #00000099, inset -2px -2px #ffffff99;
+}
+
+.btn-yellow:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: #afb37398;
+}
+
+.btn-file {
+  margin-bottom: .2rem;
+}
+
+button:active {
+  box-shadow   : inset 2px 2px #00000099, inset -2px -2px #ffffff99;
+  /* box-shadow: inset -2px -2px #ffffff99, inset 2px 2px #00000099; */
+}
+
+/* === INPUTS === */
+
+input:not([type="button"]):not([type="submit"]) {
+  background      : #d1cac0;
+  /* color        : rgb(209, 202, 192); */
+  background-color: #d1cac0;
+  font-family     : inherit;
+  /* width        : 100%; */
+  /* margin       : 0% .2%; */
+}
+
+label span {
+  color: #ab1f1f;
+  color: #c79070;
+}
+
+select {
+  color           : #ffffff;
+  background-color: #4b4b4b;
+  font-family     : inherit;
+}
+
+select.darkTheme {
+  color           : #ffffff;
+  background-color: #2b2b2b;
+  font-family     : inherit;
+}
+
+select:focus {
+  /* remove annoying rounded blue outline when button is focused */
+  outline         : none;
+  /* change color when focused to resolve accessibility concerns */
+  background-color: #6d6d6dd3;
+}

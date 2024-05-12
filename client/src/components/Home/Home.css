@@ -1,0 +1,117 @@
+.Home {
+  display              : grid;
+  /* this is STRICTLY A BUSINESS ROBOT, and the color should reflect that! */
+  grid-template-columns: 0fr min-content 4fr max-content 0fr;
+  gap                  : .4rem;
+  grid-template-rows   : 0fr auto min-content 1fr auto auto;
+  width                : 100vw;
+  background-color     : #c7c7b1;
+  color                : #000000;
+}
+
+.Menu {
+  grid-column: 4/5;
+  grid-row   : 2;
+}
+
+.Status {
+  grid-column: 2/4;
+  grid-row   : 2;
+}
+
+.MobileNav {
+  grid-column    : 2/3;
+  grid-row       : 4;
+  display        : flex;
+  flex-direction : row;
+  justify-content: center;
+  top            : 0;
+}
+
+.Trade {
+  grid-column: 2;
+  grid-row   : 3/5;
+}
+
+.TradeList {
+  grid-row   : 3 / 5;
+  grid-column: 3 / 5;
+}
+
+.Messages {
+  grid-row   : 5;
+  grid-column: 2 / 5;
+}
+
+@media (max-width: 800px) {
+  .Home {
+    /* height               : 100vh; */
+    grid-template-columns: 0fr 1fr 0fr;
+    grid-template-rows   : min-content min-content min-content min-content 1fr min-content;
+    gap                  : .4rem;
+  }
+
+  .Menu {
+    grid-column: 2;
+    grid-row   : 2;
+    display    : flex;
+  }
+
+  .Status {
+    grid-column: 2;
+    grid-row   : 3;
+  }
+
+  .TradeList {
+    grid-column: 2;
+    grid-row   : 5;
+  }
+
+  .Trade {
+    grid-column: 2;
+    grid-row   : 5;
+  }
+
+  .Messages {
+    grid-column: 2;
+    grid-row   : 5;
+  }
+
+  /* .message-section.general-messages {
+    grid-column: 2;
+    grid-row   : 5;
+  }
+
+  .message-section.bot-errors {
+    grid-column: 2;
+    grid-row   : 6;
+  }
+
+  .message-section.chat {
+    grid-column: 2;
+    grid-row   : 7;
+  } */
+
+}
+
+@media (max-width: 800px) and (display-mode: standalone) {
+  .Home {
+    height: 100vh;
+  }
+}
+
+.Home.darkTheme {
+  background-color: #313131;
+  color           : #ffffff;
+}
+
+.header {
+  display         : none;
+  grid-column     : 1/6;
+  grid-row        : 1;
+  background-color: #000000;
+  text-align      : center;
+  align-items     : center;
+  font-size       : calc(9px + 2vmin);
+  color           : white;
+}

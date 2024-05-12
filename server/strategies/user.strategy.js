@@ -18,7 +18,8 @@ passport.serializeUser((user, done) => {
 // but password has already been salted/hashed before storing. Can we safely access it before salt/hash?
 passport.deserializeUser((id, done) => {
   pool.query(`SELECT * 
-  FROM "user" JOIN "user_settings" ON ("user"."id" = "user_settings"."userID")
+  FROM "user" 
+  JOIN "user_settings" ON ("user"."id" = "user_settings"."userID")
   WHERE id = $1;`, [id])
     .then((result) => {
       // Handle Errors
@@ -50,7 +51,13 @@ passport.use(
   'local',
   new LocalStrategy(
     (username, password, done) => {
-      pool.query('SELECT * FROM "user" WHERE username = $1', [username])
+      pool.query(
+        `SELECT *
+        FROM "user"
+        JOIN "user_settings" ON ("user"."id" = "user_settings"."userID")
+        WHERE username = $1`, 
+        [username]
+        )
         .then((result) => {
           const user = result && result.rows && result.rows[0];
           if (user && encryptLib.comparePassword(password, user.password)) {

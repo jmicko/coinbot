@@ -1,11 +1,7 @@
 import { messenger, userStorage, botSettings, cbClients } from './cache.js';
-// const databaseClient = require('./databaseClient');
 import { databaseClient } from './databaseClient.js';
-// const { rejectUnauthenticatedSocket } = require('./authentication-middleware');
-import { rejectUnauthenticatedSocket } from './authentication-middleware.js';
-import { devLog } from '../../src/shared.js';
-// const { sleep } = require('../../src/shared');
-// import { sleep } from '../../src/shared';
+import { sessionMiddleware } from './session-middleware.js';
+import passport from 'passport';
 
 async function startWebsocket(userID) {
 
@@ -61,7 +57,7 @@ async function startWebsocket(userID) {
     // can add custom event handlers
     // if (socketStatus === 'open') {
     //   cbClients[userID].ws.on('message', function () {
-    //     console.log('message recieved on new socket');
+    //     console.log('message received on new socket');
     //   });
     // }
   }
@@ -175,11 +171,10 @@ async function updateMultipleOrders(userID, params) {
       } catch (err) {
         userStorage[userID].updateStatus('error in UMO loop');
         // handle not found order
-        let errorText = `Error updating order details`
         console.log(err, 'error in updateMultipleOrders loop');
         messenger[userID].newError({
           errorData: orderToCheck,
-          errorText: errorText
+          errorText: `Error updating order details`
         });
 
       } // end catch
@@ -189,87 +184,103 @@ async function updateMultipleOrders(userID, params) {
   })
 }
 
+function setUpWebsocket(wss) {
 
-function setupSocketIO(io) {
+  wss.on('connection', (ws, req) => {
+    console.log('================NEW WEBSOCKET CONNECTION================');
+    // Use the req object to access session and passport data
+    try {
+      sessionMiddleware(req, {}, () => {
 
-  io.use(rejectUnauthenticatedSocket);
+        passport.initialize()(req, {}, () => {
 
-  // handle new connections
-  io.on('connection', (socket) => {
-    let id = socket.id;
-    const userID = socket.request.session.passport?.user;
-    socket.userID = userID;
-    // add the socket to the user's socket storage
-    messenger?.[userID]?.addSocket(socket);
+          passport.session()(req, {}, () => {
 
-    const statMessage = {
-      type: 'socketStatus',
-      socketStatus: userStorage?.[userID]?.socketStatus
-    }
-    messenger[userID].instantMessage(statMessage)
+            const session = req.session;
+            const user = req.user;
+            const id = session.id;
+            const userID = user?.id;
+            ws.userID = userID;
+            ws.sessionID = id;
 
-    // userStorage?.[userID]?.socketStatus;
+            if (!userID) {
+              console.log('socket connected but client is not logged in');
+              // disconnect the socket if the user is not logged in
+              ws.close();
+            } else {
+              try {
 
-    if (!userID) {
-      console.log('socket connected but client is not logged in');
-      // disconnect the socket if the user is not logged in
-      socket.disconnect();
-    } else {
-      console.log(`client connected! with user id ${userID} socket id: ${id}`);
-    }
+                console.log('socket ws', ws.sessionID, ws.userID);
 
-    // send a ping to the client every 5 seconds
-    const pingInterval = setInterval(() => {
-      socket.emit('ping', 'ping');
-    }, 5000);
+                messenger?.[userID]?.addSocket(ws);
 
-    // server side pong handler
-    socket.on('pong', (data) => {
-      // console.log(data, 'pong from client');
-    });
+                const statMessage = {
+                  type: 'socketStatus',
+                  socketStatus: userStorage?.[userID]?.socketStatus
+                }
+                messenger[userID].instantMessage(statMessage)
 
+                if (!userID) {
+                  console.log('socket connected but client is not logged in');
+                  // disconnect the socket if the user is not logged in
+                  ws.close();
+                } else {
+                  console.log(`client connected! with user id ${userID} socket id: ${id}`);
+                }
 
-    // handle disconnect
-    socket.on("disconnect", (reason) => {
-      const userID = socket.request.session.passport?.user;
-      console.log(`client with id: ${id} disconnected, reason:`, reason);
-      messenger[userID].deleteSocket(socket);
-    });
+                // send a ping to the client every 5 seconds
+                const pingInterval = setInterval(() => {
+                  ws.send(JSON.stringify({ type: 'ping', data: 'ping' }));
+                }, 5000);
 
-    socket.on('message', (message) => {
-      if (message === 'ping') {
-        // put some timeout function in here
-        // console.log(message, 'message from socket');
-      }
-      if (message.type === 'chat') {
-        const allUsers = userStorage.getAllUsers()
-        console.log(allUsers, 'ALLLLLLL OF THE user');
-        allUsers.forEach(userID => {
-          messenger[userID].newMessage({
-            text: message.data,
-            type: 'chat'
+                // server side pong handler
+                ws.on('message', (data) => {
+                  try {
+                    data = JSON.parse(data);
+                    if (data.type === 'pong') {
+                      // console.log(data, 'pong from client');
+                    } else {
+                      console.log(data, 'message from socket');
+                    }
+                  } catch (err) {
+                    console.log(err, 'error parsing ws message');
+                  }
+                });
+
+                ws.on('close', () => {
+                  const userID = req.session.passport?.user;
+                  console.log(`===DISCONNECTION===\n`,
+                    `client:${user.username} with id: ${id} disconnected`);
+                  messenger[userID].deleteSocket(ws);
+                  clearInterval(pingInterval);
+                });
+
+                ws.send(JSON.stringify({
+                  type: 'message',
+                  data: 'Hello! Message from server!!'
+                }));
+
+              } catch (err) {
+                console.log(err, 'error in websocket setup');
+                ws.close();
+              }
+
+            }
           });
         });
-      }
-    })
-
-
+      });
+    } catch (err) {
+      console.log(err, 'error in websocket setup');
+      ws?.close();
+    }
   });
 
-  io.on('connect', (socket) => {
-    const session = socket.request.session;
-    console.log(`saving sid ${socket.id} in session ${session.id}`);
-    session.socketId = socket.id;
-    session.save();
-  })
 
-  // handle abnormal disconnects
-  io.engine.on("connection_error", (err) => {
-    console.log(err.code, 'the error code');     // the error code, for example 1
-    console.log(err.message, 'the error message');  // the error message, for example "Session ID unknown"
-    console.log(err.context, 'some additional error context');  // some additional error context
-  });
-  console.log('socket setup done');
+  console.log('websocket setup done');
 }
 
-export { startWebsocket, setupSocketIO };
+export {
+  startWebsocket,
+  // setupSocketIO,
+  setUpWebsocket
+};

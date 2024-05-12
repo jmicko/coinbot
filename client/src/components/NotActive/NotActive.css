@@ -1,0 +1,94 @@
+/* === MAIN === */
+
+.NotActive {
+  display    : block;
+  grid-column: 2;
+  grid-row   : 3/5;
+  width      : 25rem;
+}
+
+@media (max-width: 800px) {
+  .NotActive {
+    /* display    : block;
+    grid-column: 2;
+    grid-row   : 5; */
+    width      : unset;
+
+    /* max-height: 80vh; */
+
+    grid-row     : 4;
+    grid-column  : 2 / 3;
+    /* overflow-y: auto; */
+    display      : block;
+    /* max-height: 50vh; */
+
+    display    : block;
+    grid-column: 2;
+    grid-row   : 5;
+  }
+
+}
+
+/* === FORM === */
+
+.api-form {
+  margin: 5px;
+}
+
+
+/* === INPUTS === */
+
+input {
+  font-family: inherit;
+}
+
+/* === BUTTONS === */
+
+.btn-store-api {
+  font-size: medium;
+  margin   : 0 0 2rem;
+}
+
+.btn-sandbox-api {
+  margin: .2rem .6rem;
+}
+
+.increment-buttons {
+  margin: .1rem auto;
+  width : max-content;
+}
+
+.increase input {
+  /* background-color: rgb(20, 238, 20); */
+  width: 4rem;
+}
+
+.decrease input {
+  width: 4rem;
+}
+
+.api.error-box {
+  margin: 0 5px 1rem;
+}
+/* 
+.flex-api {
+  display       : flex;
+  flex-direction: column;
+} */
+
+
+.required-permissions-image {
+  width: 100%;
+}
+
+.NotActive p,
+.NotActive .divider.short {
+  margin: 5px;
+  /* width: unset; */
+}
+
+.NotActive .divider.short {
+  /* background-color: red; */
+  /* margin: 5px; */
+  width: unset;
+}

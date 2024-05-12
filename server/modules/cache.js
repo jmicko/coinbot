@@ -1,7 +1,6 @@
-// const { Coinbase } = require("./coinbaseClient");
-import { devLog } from "../../src/shared.js";
+import { devLog } from "./utilities.js";
 import { Coinbase } from "./coinbaseClient.js";
-// const databaseClient = require("./databaseClient");
+import { getAllErrorMessages, getAllMessages, saveMessage } from "./database/messages.js";
 import { databaseClient } from "./databaseClient.js";
 
 const botSettings = new class BotSettings {
@@ -111,7 +110,10 @@ class User {
     return this.willCancel.has(order_id)
   }
   orderUpdate() {
-    messenger[this.userID].newMessage({ orderUpdate: true })
+    messenger[this.userID].newMessage({ type: 'orderUpdate', orderUpdate: true })
+  }
+  messageUpdate() {
+    messenger[this.userID].newMessage({ type: 'messageUpdate', messageUpdate: true })
   }
   // increase the loop number by 1
   increaseLoopNumber() {
@@ -137,7 +139,7 @@ class User {
     this.active = bool;
     messenger[this.userID]?.userUpdate()
   }
-  async update() {
+  async update(identifier) {
     const user = await databaseClient.getUserAndSettings(this.userID);
     this.userID = user.id;
     this.username = user.username;
@@ -163,7 +165,7 @@ class User {
     this.auto_setup_number = user.auto_setup_number;
     this.profit_reset = user.profit_reset;
     this.can_chat = user.can_chat;
-    messenger[this.userID]?.userUpdate()
+    messenger[this.userID]?.userUpdate(identifier);
   }
   setSocketStatus(socketStatus) {
     this.socketStatus = socketStatus;
@@ -171,14 +173,14 @@ class User {
 }
 
 class Message {
-  constructor(type, text, mCount, cCount, orderUpdate, from) {
+  constructor({ type, text, orderUpdate, from, to, data }) {
     this.type = type;
     this.text = String(text);
-    this.mCount = Number(mCount);
-    this.cCount = Number(cCount);
-    this.timeStamp = new Date();
+    this.timestamp = new Date();
     this.orderUpdate = Boolean(orderUpdate);
     this.from = from ? String(from) : null;
+    this.to = to ? String(to) : 'all';
+    this.data = data ? data : null;
   }
 }
 
@@ -214,15 +216,51 @@ class Messenger {
         // count: 5
         count: ((userStorage[this.userID].loopNumber - 1) % botSettings.full_sync)
       }
-      socket.emit('message', msg);
+      const jsonMsg = JSON.stringify(msg);
+      socket.send(jsonMsg);
     })
   }
-  newMessage(message) {
+
+
+  // saturate the user's messages with messages from the database
+  async saturateMessages() {
+    // get the messages from the database
+    const messages = await getAllMessages(this.userID);
+    // console.log(messages, 'all messages from database', this.userID);
+    // clear the messages array and add the messages from the database
+    this.messages.length = 0;
+    this.messages.push(...messages);
+    // set the message count to the length of the messages array
+    this.messageCount = this.messages.length;
+    // set the chat message count to the length of the chat messages array
+    this.chatMessageCount = this.getChatMessages().length;
+
+    // get the errors from the database
+    const errors = await getAllErrorMessages(this.userID);
+    // clear the errors array and add the errors from the database
+    this.errors.length = 0;
+    this.errors.push(...errors);
+    // set the error count to the length of the errors array
+    this.errorCount = this.errors.length;
+  }
+
+  async newMessage(message) {
+    let fullMessage;
     // create the message
-    const newMessage = new Message(message.type, message.text, this.messageCount, this.chatMessageCount, message.orderUpdate, message.from);
+    const newMessage = new Message(
+      // message.type,
+      // message.text,
+      // message.orderUpdate,
+      // message.from
+      { ...message }
+    );
     // add message to messages array if there is text to store
     if (message.text) {
-      this.messages.unshift(newMessage);
+      const saved = await saveMessage(this.userID, newMessage);
+      // console.log(saved, 'saved and returned from saveMessage');
+      this.messages.unshift(saved);
+      fullMessage = saved;
+      // save the message to the database
     }
     // increase the counts
     this.messageCount++;
@@ -237,12 +275,43 @@ class Messenger {
       this.messages.length = 1000;
     }
     // tell user to update messages
+    const jsonMsg = JSON.stringify(message);
+    console.log(jsonMsg, 'jsonMsg');
     this.sockets.forEach(socket => {
-      socket.emit('message', message);
+      socket.send(jsonMsg);
+    })
+    return fullMessage;
+  }
+  newChatFromOther(message) {
+    // message will already be formatted as a message object
+    // add message to messages array if there is text to store
+    if (message.text) {
+      this.messages.unshift(message);
+      // message is already in the database
+    }
+    // increase the counts
+    this.messageCount++;
+    this.chatMessageCount++;
+    // check and limit the number of stored messages
+    if (this.messages.length > 1000) {
+      this.messages.length = 1000;
+    }
+    // tell user to update messages
+    const jsonMsg = JSON.stringify(message);
+    this.sockets.forEach(socket => {
+      socket.send(jsonMsg);
     })
   }
   getMessages() {
-    return this.messages;
+    const messages = [];
+
+    this.messages.forEach(message => {
+      // console.log(message, 'message');
+      if (message.type !== 'chat' && message.type !== 'error') {
+        messages.push(message);
+      }
+    });
+    return messages;
   }
   getChatMessages() {
     const chats = [];
@@ -251,6 +320,7 @@ class Messenger {
     // extract the chats
 
     this.messages.forEach(message => {
+      // console.log(message, 'message');
       if (message.type === 'chat') {
         chats.push(message);
       }
@@ -260,14 +330,15 @@ class Messenger {
   // pretty much just used for tickers
   instantMessage(message) {
     this.sockets.forEach(socket => {
-      socket.emit('message', message);
+      const jsonMsg = JSON.stringify(message);
+      socket.send(jsonMsg);
     })
   }
   orderUpdate() {
-    this.instantMessage({ orderUpdate: true })
+    this.instantMessage({ type: 'orderUpdate', orderUpdate: true })
   }
-  userUpdate() {
-    this.instantMessage({ userUpdate: true })
+  userUpdate(identifier) {
+    this.instantMessage({ type: 'userUpdate', userUpdate: true, identifier: identifier })
   }
   profitUpdate() {
     this.instantMessage({ profitUpdate: true })
@@ -275,21 +346,47 @@ class Messenger {
   fileUpdate() {
     this.instantMessage({ fileUpdate: true })
   }
+  messageUpdate() {
+    this.instantMessage({ type: 'messageUpdate', messageUpdate: true })
+  }
   // todo - should probably use type: 'error' and get rid of this
-  newError(err) {
-    devLog(err.errorText);
-    const error = new Message('error', err.errorText, this.errorCount);
-    this.errors.unshift(error);
-    this.errorCount++;
-    if (this.errors.length > 1000) {
-      this.errors.length = 1000;
+  async newError(err) {
+    try {
+      devLog(err.errorText);
+      const error = new Message({
+        type: 'error',
+        text: err.errorText,
+        data: err.data ? err.data : null
+      });
+      if (error.text) {
+        const saved = await saveMessage(this.userID, error);
+        this.errors.unshift(saved);
+      }
+
+      this.errorCount++;
+      if (this.errors.length > 1000) {
+        this.errors.length = 1000;
+      }
+      this.sockets.forEach(socket => {
+        // socket.send('message', error);
+        const jsonErr = JSON.stringify(error);
+        socket.send(jsonErr);
+      })
+    } catch (err) {
+      console.log(err, 'error in newError. Probably cannot save error');
     }
-    this.sockets.forEach(socket => {
-      socket.emit('message', error);
-    })
   }
   getErrors() {
     return this.errors;
+    // const errors = [];
+
+    // this.messages.forEach(message => {
+    //   // console.log(message, 'message');
+    //   if (message.type === 'error') {
+    //     errors.push(message);
+    //   }
+    // });
+    // return errors;
   }
   clearErrors() {
     this.errors.length = 0;
@@ -304,7 +401,7 @@ class Messenger {
 const cbClients = new class {
   constructor() {
     this.apiStorage = new Object();
-   }
+  }
 
   async updateAPI(userID) {
     devLog('updating api for user: ' + userID)
@@ -312,7 +409,7 @@ const cbClients = new class {
 
     // Object.assign(apiStorage[userID], userAPI)
 
-    
+
     this.apiStorage[userID] = Object();
     Object.assign(this.apiStorage[userID], userAPI)
 
@@ -329,7 +426,10 @@ const cbClients = new class {
 const messenger = new class {
   constructor() { }
   newMessenger(userID) {
+    // good lorde there is so much abstraction going on here
     this[userID] = new Messenger(userID);
+    // saturate the messages with messages from the database
+    this[userID].saturateMessages();
   }
 };
 

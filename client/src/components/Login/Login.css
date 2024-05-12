@@ -1,0 +1,36 @@
+.Login {
+  background-color: #313131;
+  background-color: rgb(117, 136, 117);
+  max-width       : 15rem;
+  margin          : auto;
+  padding         : 1rem;
+}
+
+.login-background {
+  background-color: #c7c7b1;
+  font-family     : 'Syne Mono', monospace;
+  height: 100vh;
+  padding: 15vh 0;
+}
+
+.login-background.darkTheme {
+  background-color: #313131;
+  color           : white;
+  font-family     : 'Syne Mono', monospace;
+}
+
+.login-form {
+  display       : flex;
+  flex-direction: column;
+}
+
+.login-button {
+  margin-top: 2.6rem;
+}
+
+.error-box{
+  background-color: rgba(158, 12, 12, 0.685);
+  text-align: center;
+  padding: .1rem;
+  margin-top: 1rem;
+}

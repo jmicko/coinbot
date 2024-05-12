@@ -1,7 +1,23 @@
 
 # Coinbot
 
-Coinbot is a Bitcoin trading bot project built for the Coinbase Pro cryptocurrency exchange.
+## Notes about V3
+
+This is a complete rewrite of the coinbot front end client, as well as a reorganization of the whole project structure. The original project was a rather monolithic repo and the server and client code was somewhat mixed together. This version is split into client and server folders, and uses a more modern stack for the front end. The client is built with React and Vite in typescript, and the server is built with Node.js and Express. The database is still Postgresql. The bot itself is still the same aside from some minor bug fixes, but the interface has been updated for better maintainability and user experience.
+
+With the new changes, you will need to move some files around if you are pulling the repo into an older version, as they are in the gitignore. The .env file is now located in the `/server` directory, and there are new requirements for the new version of the vapid package. This is reflected in the new env example, and you will get a warning in the console if you need to change what you currently have.
+
+The old version put the `/node_modules` in the root directory, but this version puts them in the `/client` and `/server` directories. This is a better practice, but it does mean that you will need to run `npm install` in both directories to get the project up and running. you will also want to delete the node_modules in the root directory to avoid confusion and free up some space.
+
+You can also delete the old build directory if you have it built in the root directory, as it is no longer used. The new client build is in the client directory, and the server has been updated to serve the client from there. Vite will put it in a `dist` directory in the client folder.
+
+The old client is still in the repo in the /old_fe and will remain there for a while as a reference. much of it is incompatible with the new server, but there are still one or two things that I need to pull from it, so for now it stays.
+
+Backend rewrite coming soon. :v:
+
+# `Description`
+
+Coinbot is a Bitcoin trading bot project built for the Coinbase cryptocurrency exchange.
 
 ![Coinbot web interface](./coinbot.png)
 
@@ -27,11 +43,11 @@ You trade at your own risk.
 
 There are also currently no security features built in to the coinbot other than basic password protection. Hosting in the cloud or on any device that can be accessed from the internet, from an intranet, or by anyone who you do not want to be able access it is not recommended.
 
-## Advantages
+## `Advantages`
 
 This is a fairly low-risk strategy, as it requires no statistical analysis or market data. There is no risk of guessing trends incorrectly because the coinbot does not guess. It works off of predetermined prices. Profits are made when the price of Bitcoin passes the "buy" and "sell" prices of a trade-pair in that order. If left alone, the coinbot will do this automatically at the set price points as long as the price of bitcoin is hitting them. The coinbot actually benefits from higher volatility and large fast price swings because it increases the chances that the trade-pair values will be hit.
 
-## Disadvantages
+## `Disadvantages`
 
 A notable disadvantage of this strategy is that when the price takes a sharp upward trend, the coinbot will sell at a fixed price regardless. This slows down the potential rate of profits compared to strategies that attempt to calculate the tops and bottoms of market curves.
 
@@ -52,6 +68,8 @@ New trade-pair values can be individually created from the main interface. There
 There is a function in the settings menu that will allow you to input the desired parameters, and automatically place up to 10,000 trades (the maximum allowed) for you. This is much easier than manually entering them when they will all have similar values.
 
 ### Simulator
+
+\# Not currently implemented - need to rewrite it because I just don't trust the accuracy \#
 
 Before starting the auto setup, you can use the simulator to see how the bot would have performed with the parameters you have set, using historical data. This is a great way to test out different strategies before committing to them. Note that the historical data does lack some of the volatility that is present in the real market, so the results will not be 100% accurate.
 
@@ -81,13 +99,15 @@ A maximum trade size can also be set, and the bot will adjust the reinvestment b
 
 The bot can handle multiple users at once. The first user created will be the admin and can approve and manage the other users. Users will not be allowed to trade until they are approved by the admin.
 
+Stress testing the server capacity is difficult due to the way Coinbase handles API access, so it is currently unknown how many users can be supported at once. The bot can be slowed down to lower system resource usage, so potentially thousands if not accounting for bandwidth constraints or attack vectors. But this is not the intended usage. Better to just keep it to yourself and a few friends.
+
 ### Admin Controls
 
 The admin account can control settings that affect resource usage, as well as approving or deleting users.
 
 ## `Important notes`
 
-- The coinbot will detect any trading action placed on the Coinbase website manually from the connected Coinbase account, and cancel those orders. Orders cannot be placed or deleted on Coinbase. That must be done from the coinbot interface. It is recommended to create a separate profile on Coinbase exclusively for Coinbot or you will not be able to do anything on your own.
+- The coinbot will detect any trading action placed on the Coinbase website manually from the connected Coinbase account, and cancel those orders if they are for products that the coinbot is actively trading. Orders cannot be placed or deleted on Coinbase. That must be done from the coinbot interface. Unfortunately, Coinbase Advanced does not currently support multiple portfolios, but this feature is in beta. Once supported, it is recommended to create a separate portfolio exclusively for the coinbot to avoid any conflicts with manual trading.
 
 # `Setup`
 
@@ -95,9 +115,9 @@ The admin account can control settings that affect resource usage, as well as ap
 
 Before you get started, make sure you have the following software installed on your computer:
 
-- [Node.js](https://nodejs.org/en/)
-- [PostrgeSQL](https://www.postgresql.org/)
-- [Nodemon](https://nodemon.io/) - optional, but makes development easier
+- [Node.js](https://nodejs.org/en/) - version 20
+- [PostrgeSQL](https://www.postgresql.org/) - currently using version 14, but nothing is very db fancy so other versions probably work just fine
+- [Nodemon](https://nodemon.io/) - You can install this globally with `npm install -g nodemon`. It is used by the dev scripts
 - [PM2](https://pm2.keymetrics.io/) - optional, for running in a production environment
 
 ### Database
@@ -106,71 +126,64 @@ Postgresql should be setup and a new database should be created with the name "c
 
 ### Environment Variables
 
-- Environment variables will need to be set. There is an example .env file in the root folder named 'env'. Change the name to '.env', and change the values appropriately, or you can set the variables in your OS if you prefer. Server session secret should be a long string that is not easily guessed, as it is used to identify sessions. If you do not change it, anyone with this repo will be able to guess it. Setting the NODE_ENV variable to 'production' will generate a cryptographically sound string for you. This will log out any users every time the bot is restarted, but is more secure.
+- Environment variables will need to be set. There is an example .env file in the server directory named 'env'. Change the name to '.env', and change the values appropriately, or you can set the variables in your OS if you prefer. Server session secret should be a long string that is not easily guessed, as it is used to identify sessions. If you do not change it, anyone with this repo will be able to guess it. Setting the NODE_ENV variable to 'production' will generate a cryptographically sound string for you. This will log out any users every time the bot is restarted, but is more secure. But very annoying if you run in an unstable vm that constantly restarts.
 
-## Available Scripts
+## Server Scripts
 
-In the project directory, you can run:
+In the server directory, you can run:
 
-### `npm run server`
+### `npm run dev` in the server directory
+
+Runs the server with nodemon to watch the files and restart on changes.\
+This is ideal for development, but can cause problems with trade duplication if restarted when maintenance mode is off.
+
+### `npm run server` in the server directory
 
 Runs the express server in the backend.\
 This is where the coinbot lives, and must be done.\
 This will call the server in plain node.js. You can choose your own daemon.
 
-### `npm run nodemonServer`
+### `npm run pm2server` in the server directory
 
-Runs the server with nodemon to watch the files and restart on changes.\
-This is ideal for development, but can cause problems with trade duplication if restarted when maintenance mode is off.
-
-### `npm run pm2server`
-
+Beginner friendly production script.\
 Runs the server as a background process so it will continue to run even if you close the terminal.\
 You should only run this once, or you will have multiple instances running.\
 The included script contains the configuration for pm2, but you will need to configure PM2 for persistence etc to your liking.\
 Note that this script is not set to watch the files for changes, so you will need to restart the process manually if you make changes to the production server. But you should not be doing that anyway.\
-PM2 is not required, but it is better for production environments.
+PM2 is not required, but it is nice for production environments and does not require configuration of systemd or other daemons.\
+you can learn more about PM2 [here](https://pm2.keymetrics.io/).
 
-### `npm run start`
+#### \# Note about server scripts \#
 
-Runs the web app interface in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+There is a package for building .xlsx files that is... not easy on ram when dealing with the quantity of data in the coinbot. The server scripts take that into account, allocating ~8GB of ram to the node.js process. Honestly this is horrible and I'll find another solution at some point, but for now you will need to change the script for devices with less ram. The server will crash if it runs out of memory, so be careful about file exports with this. It can also crash if a large number of people are generating exports at the same time. I can't stress enough that you should not run this app in a public facing production environment.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.\
-Nodemon is required for this script.
+## Client Scripts
 
-<!-- ### `npm run test`
+### `npm run dev` in the client directory
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information. -->
+Runs the client in development mode.\
+NOT TO BE CONFUSED WITH THE SERVER DEV SCRIPT. Make sure you are in the client directory.\
+When the rewrite is complete, the server scripts will be moved to the server directory to avoid confusion.\
+Open [http://localhost:5173](http://localhost:5173) to view it in the browser.\
+you can also run `npm run dev -- --host` to make the server available on your local network.
 
-### `npm run build`
+### `npm run build` in the client directory
 
-Builds the app for production to the `build` folder.\
+Builds the client for production to the `dist` folder.\
 It correctly bundles React in production mode and optimizes the build for the best performance.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### `npm run lint`
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Runs the linter on the client code. This is not automatically run on the dev script, so you will need to run it occasionally unless your editor is configured to do it for you.
 
-### `npm run eject`
+### `npm run preview`
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+Runs the client in production mode to preview the build locally.\
 
 # Technologies used
 
 - Node.js
 - Express.js
-- Socket.io
 - Postgresql and PG
 - React
-- Redux
-- This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+- Vite

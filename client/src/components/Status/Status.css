@@ -1,0 +1,122 @@
+.Status {
+    display    : flex;
+    flex-wrap  : wrap;
+
+    /* height     : fit-content; */
+    /* bottom     : 0; */
+}
+
+.status-ticker {
+    /* width: fit-content; */
+    text-align   : center;
+    /* margin    : 0 0.5rem; */
+}
+
+/* .status-ticker strong {
+    color: rgb(162, 162, 162);
+} */
+
+/* anything strong with a direct parent of status-ticker should be red, but child elements
+of these strong items should not take that property */
+.status-ticker>strong {
+    color: rgb(185, 29, 29);
+}
+
+.darkTheme .status-ticker>strong {
+    color: rgb(162, 162, 162);
+}
+
+
+.red {
+    color: rgb(233, 63, 45);
+}
+
+.blue {
+    color: rgb(29, 120, 180);
+}
+
+.darkTheme.blue {
+    color: turquoise;
+}
+
+.controls {
+    display              : grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows   : 1.5rem 1.5rem;
+    align-items          : center;
+    grid-auto-flow       : column;
+}
+
+.controls button {
+    /* height: 1.5rem; */
+}
+
+@media (max-width: 800px) {
+    .Status {
+        flex-flow  : column-reverse;
+        padding    : 0.2rem 0;
+    }
+
+    .status-ticker {
+        /* width: fit-content; */
+        text-align     : left;
+        margin         : auto 0.3rem;
+        display        : flex;
+        flex-direction : row;
+        justify-content: space-between;
+    }
+
+    .status-ticker div.spacer {
+        background-color: rgb(162, 162, 162);
+        margin          : auto 0.5rem 0.1rem;
+        height          : 0.5px;
+        /* width        : 100%; */
+        flex-grow       : 1;
+    }
+
+    .status-ticker div {
+        width: fit-content;
+    }
+
+    .status-ticker select {
+        margin: 0.5px;
+    }
+
+
+    .controls {
+        display           : flex;
+        flex-wrap         : wrap;
+        flex-direction    : row-reverse;
+        /* justify-content: space-around; */
+        justify-content   : space-between;
+    }
+}
+
+/* ticker status dot */
+span.green,
+span.open {
+    color: green;
+}
+
+span.timeout {
+    color: yellow;
+}
+
+span.closed {
+    color: red;
+}
+
+span.blue,
+span.reopening {
+    color: blue;
+}
+
+span.darkTheme.green,
+span.darkTheme.open {
+    color: rgb(109, 163, 109);
+}
+
+span.darkTheme.blue,
+span.darkTheme.reopening {
+    color: rgb(14, 45, 85);
+}

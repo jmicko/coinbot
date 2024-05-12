@@ -1,0 +1,62 @@
+.feedback-form {
+  display           : flex;
+  flex-direction    : column;
+  align-items       : left;
+  /* justify-content: center; */
+  /* width          : 100%; */
+  height            : 100%;
+  padding           : 0 20px;
+}
+
+/* all text areas in the form */
+.feedback-form textarea {
+  background-color      : #919191;
+  width                 : 100%;
+  height                : 10rem;
+  resize                : none;
+  /* border             : 1px solid #ccc; */
+  padding               : 12px 20px;
+  box-sizing            : border-box;
+  margin-top            : 6px;
+  margin-bottom         : 16px;
+  font-size             : 16px;
+}
+
+.feedback-form textarea:focus {
+  background-color: #b1b1b1;
+  /* height       : 10rem; */
+}
+
+/* form submit input */
+.feedback-form input[type=submit] {
+  padding: 5px 20px;
+  cursor : pointer;
+  width  : fit-content;
+}
+
+/* previous feedback */
+.feedback-submission {
+  display       : flex;
+  flex-direction: column;
+  align-items   : left;
+  height        : 100%;
+  padding       : 0 1rem 1rem;
+}
+
+.feedback-submission:nth-child(odd) {
+  background-color: #414040;
+}
+
+.feedback-submission:nth-child(even) {
+  background-color: #2f2f2f;
+}
+
+.feedback-submission-body {
+  display           : flex;
+  flex-direction    : column;
+  align-items       : left;
+  /* justify-content: center; */
+  /* width          : 100%; */
+  height            : 100%;
+  padding           : 0 20px;
+}
