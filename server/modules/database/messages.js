@@ -28,10 +28,19 @@ export async function getAllMessages(userID) {
       const sqlText = `
       SELECT * 
       FROM "messages" 
-      WHERE ("user_id" = $1 OR ("to" = $2 OR "to" = 'all')) AND "type" != 'error'
+      WHERE ("user_id" = $1 OR ("to" = $2 OR "to" = 'all')) AND "type" != 'error' AND "type" != 'chat'
       ORDER BY "timestamp" DESC LIMIT 1000;`;
       const result = await pool.query(sqlText, [userID, userID.toString()]);
-      resolve(result.rows);
+
+      const chatSQLText = `
+      SELECT *
+      FROM "messages"
+      WHERE ("user_id" = $1 OR ("to" = $2 OR "to" = 'all')) AND "type" = 'chat'
+      ORDER BY "timestamp" DESC LIMIT 1000;`;
+      const chatResult = await pool.query(chatSQLText, [userID, userID.toString()]);
+      resolve([...result.rows, ...chatResult.rows]);
+
+      // resolve(result.rows);
     } catch (err) {
       reject(err);
     }
