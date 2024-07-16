@@ -234,6 +234,7 @@ class Coinbase {
   async getFills(params) {
     return new Promise(async (resolve, reject) => {
       try {
+        await sleep(100);
         // data should just be blank
         const data = null;
         const API = {

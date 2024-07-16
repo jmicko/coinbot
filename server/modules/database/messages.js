@@ -113,3 +113,17 @@ export async function deleteMessage(userID, messageID) {
     }
   })
 }
+
+export async function deletePrevious30DaysMessages() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `
+        DELETE FROM "messages"
+        WHERE "type" != 'chat' AND "timestamp" < NOW() - INTERVAL '30 days';`;
+      const result = await pool.query(sqlText);
+      resolve(result);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}

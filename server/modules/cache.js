@@ -271,9 +271,9 @@ class Messenger {
 
 
     // check and limit the number of stored messages
-    if (this.messages.length > 1000) {
-      this.messages.length = 1000;
-    }
+    // if (this.messages.length > 1000) {
+    //   this.messages.length = 1000;
+    // }
     // tell user to update messages
     const jsonMsg = JSON.stringify(message);
     console.log(jsonMsg, 'jsonMsg');
@@ -293,9 +293,9 @@ class Messenger {
     this.messageCount++;
     this.chatMessageCount++;
     // check and limit the number of stored messages
-    if (this.messages.length > 1000) {
-      this.messages.length = 1000;
-    }
+    // if (this.messages.length > 1000) {
+    //   this.messages.length = 1000;
+    // }
     // tell user to update messages
     const jsonMsg = JSON.stringify(message);
     this.sockets.forEach(socket => {
