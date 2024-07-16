@@ -102,7 +102,7 @@ async function syncOrders(userID) {
   // get the user settings from cache;
 
   // keep track of how long the loop takes. Helps prevent rate limiting
-  const t0 = performance.now();
+  const startTime = performance.now();
 
   try {
     const loopNumber = userStorage[userID].getLoopNumber();
@@ -152,10 +152,11 @@ async function syncOrders(userID) {
   } finally {
     // when everything is done, call the sync again if the user still exists
     if (user) {
-      const t1 = performance.now();
+      const endTime = performance.now();
       // API is limited to 10/sec, so make sure the bot waits that long between loops
-      if (100 - (t1 - t0) > 0) {
-        await sleep(100 - (t1 - t0));
+      if (100 - (endTime - startTime) > 0) {
+        // adding an extra 200ms because the bot was still getting rate limited
+        await sleep(300 - (endTime - startTime));
       }
       // wait however long the admin requires, then start new loop
       setTimeout(() => {
@@ -632,7 +633,7 @@ async function updateMultipleOrders(userID, params) {
     // loop over the array and update each trade
     for (let i = 0; i < ordersArray.length; i++) {
       // keep track of how long each loop takes. Helps prevent rate limiting
-      const t0 = performance.now();
+      const startTime = performance.now();
       messenger[userID].newMessage({
         type: 'general',
         text: `Syncing ${i + 1} of ${ordersArray.length} orders that need to be synced`
@@ -670,10 +671,10 @@ async function updateMultipleOrders(userID, params) {
           errorText: errorText
         })
       } // end catch
-      const t1 = performance.now();
+      const endTime = performance.now();
       // API is limited to 10/sec, so make sure the bot waits that long between loops
-      if (100 - (t1 - t0) > 0) {
-        await sleep(100 - (t1 - t0));
+      if (100 - (endTime - startTime) > 0) {
+        await sleep(100 - (endTime - startTime));
       }
     } // end for loop
     // delete orders to check since they have now been checked
