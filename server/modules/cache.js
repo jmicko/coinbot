@@ -1,6 +1,6 @@
 import { devLog } from "./utilities.js";
 import { Coinbase } from "./coinbaseClient.js";
-import { getAllErrorMessages, getAllMessages, saveMessage } from "./database/messages.js";
+import { getAllErrorMessages, getAllMessages, getBotMessages, getChatMessages, saveMessage } from "./database/messages.js";
 import { databaseClient } from "./databaseClient.js";
 
 const botSettings = new class BotSettings {
@@ -191,6 +191,7 @@ class Messenger {
     this.errors = new Array();
     this.messages = new Array();
     this.messageCount = Number(1);
+    this.chatMessages = new Array();
     this.chatMessageCount = Number(1);
     this.errorCount = Number(1);
   }
@@ -226,10 +227,15 @@ class Messenger {
   async saturateMessages() {
     // get the messages from the database
     const messages = await getAllMessages(this.userID);
+    const botMessages = await getBotMessages(this.userID);
+    const chatMessages = await getChatMessages(this.userID);
+    console.log(messages, 'all messages from database', this.userID);
     // console.log(messages, 'all messages from database', this.userID);
     // clear the messages array and add the messages from the database
     this.messages.length = 0;
-    this.messages.push(...messages);
+    this.messages.push(...botMessages);
+    this.chatMessages.length = 0;
+    this.chatMessages.push(...chatMessages);
     // set the message count to the length of the messages array
     this.messageCount = this.messages.length;
     // set the chat message count to the length of the chat messages array
@@ -258,21 +264,23 @@ class Messenger {
     if (message.text) {
       const saved = await saveMessage(this.userID, newMessage);
       // console.log(saved, 'saved and returned from saveMessage');
-      this.messages.unshift(saved);
+      if (message.type === 'chat') {
+        this.chatMessages.unshift(saved);
+        this.chatMessageCount++;
+        // check and limit the number of stored messages
+        if (this.chatMessages.length > 1000) {
+          this.chatMessages.length = 1000;
+        }
+      } else {
+        this.messages.unshift(saved);
+        this.messageCount++;
+        // check and limit the number of stored messages
+        if (this.messages.length > 1000) {
+          this.messages.length = 1000;
+        }
+      }
       fullMessage = saved;
       // save the message to the database
-    }
-    // increase the counts
-    this.messageCount++;
-    if (message.type === 'chat') {
-      // only increase chat count if it is a chat type message
-      this.chatMessageCount++;
-    }
-
-
-    // check and limit the number of stored messages
-    if (this.messages.length > 1000) {
-      this.messages.length = 1000;
     }
     // tell user to update messages
     const jsonMsg = JSON.stringify(message);
@@ -286,15 +294,14 @@ class Messenger {
     // message will already be formatted as a message object
     // add message to messages array if there is text to store
     if (message.text) {
-      this.messages.unshift(message);
+      this.chatMessages.unshift(message);
       // message is already in the database
     }
     // increase the counts
-    this.messageCount++;
     this.chatMessageCount++;
     // check and limit the number of stored messages
-    if (this.messages.length > 1000) {
-      this.messages.length = 1000;
+    if (this.chatMessages.length > 1000) {
+      this.chatMessages.length = 1000;
     }
     // tell user to update messages
     const jsonMsg = JSON.stringify(message);
@@ -319,7 +326,7 @@ class Messenger {
     // const messages = structuredClone(this.messages);
     // extract the chats
 
-    this.messages.forEach(message => {
+    this.chatMessages.forEach(message => {
       // console.log(message, 'message');
       if (message.type === 'chat') {
         chats.push(message);

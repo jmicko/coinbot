@@ -468,6 +468,13 @@ router.get('/messages', rejectUnauthenticated, async (req, res) => {
     const userMessages = {}
     userMessages.botMessages = messenger[userID].getMessages();
     userMessages.chatMessages = messenger[userID].getChatMessages();
+    if (userMessages.chatMessages.length > 1000) {
+      userMessages.chatMessages.length = 1000;
+    }
+    if (userMessages.botMessages.length > 1000) {
+      userMessages.botMessages.length = 1000;
+    }
+    console.log(userMessages.chatMessages.length, '< userMessages');
     res.send(userMessages);
   } catch (err) {
     devLog(err, 'problem in get messages route');

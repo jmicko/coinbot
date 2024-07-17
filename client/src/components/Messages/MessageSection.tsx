@@ -62,7 +62,7 @@ export function MessageSection({
     }
   }, [messages, initialRender, mobileCollapsed, header]);
 
-  console.log(messages, 'messages ' + header);
+  // console.log(messages, 'messages ' + header);
 
 
   return (
