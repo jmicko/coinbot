@@ -47,6 +47,23 @@ export async function getAllMessages(userID) {
   })
 }
 
+// get only the bot messages
+export async function getBotMessages(userID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `
+      SELECT * 
+      FROM "messages" 
+      WHERE ("user_id" = $1 OR ("to" = $2 OR "to" = 'all')) AND "type" != 'error' AND "type" != 'chat'
+      ORDER BY "timestamp" DESC LIMIT 1000;`;
+      const result = await pool.query(sqlText, [userID, userID.toString()]);
+      resolve(result.rows);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 export async function getAllErrorMessages(userID) {
   return new Promise(async (resolve, reject) => {
     try {
