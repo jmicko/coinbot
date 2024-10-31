@@ -69,7 +69,45 @@ export const storeTrade = (newOrder, originalDetails, flipped_at) => {
       "reject_message",
       "cancel_message"
       ) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37);`;
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37)
+      ON CONFLICT ("order_id") DO UPDATE SET 
+      "order_id" = EXCLUDED."order_id",
+      "userID" = EXCLUDED."userID",
+      "original_buy_price" = EXCLUDED."original_buy_price",
+      "original_sell_price" = EXCLUDED."original_sell_price",
+      "trade_pair_ratio" = EXCLUDED."trade_pair_ratio",
+      "flipped_at" = EXCLUDED."flipped_at",
+      "reorder" = EXCLUDED."reorder",
+      "product_id" = EXCLUDED."product_id",
+      "coinbase_user_id" = EXCLUDED."coinbase_user_id",
+      "base_size" = EXCLUDED."base_size",
+      "limit_price" = EXCLUDED."limit_price",
+      "post_only" = EXCLUDED."post_only",
+      "side" = EXCLUDED."side",
+      "client_order_id" = EXCLUDED."client_order_id",
+      "next_client_order_id" = EXCLUDED."next_client_order_id",
+      "status" = EXCLUDED."status",
+      "time_in_force" = EXCLUDED."time_in_force",
+      "created_time" = EXCLUDED."created_time",
+      "completion_percentage" = EXCLUDED."completion_percentage",
+      "filled_size" = EXCLUDED."filled_size",
+      "average_filled_price" = EXCLUDED."average_filled_price",
+      "fee" = EXCLUDED."fee",
+      "number_of_fills" = EXCLUDED."number_of_fills",
+      "filled_value" = EXCLUDED."filled_value",
+      "pending_cancel" = EXCLUDED."pending_cancel",
+      "size_in_quote" = EXCLUDED."size_in_quote",
+      "total_fees" = EXCLUDED."total_fees",
+      "previous_total_fees" = EXCLUDED."previous_total_fees",
+      "size_inclusive_of_fees" = EXCLUDED."size_inclusive_of_fees",
+      "total_value_after_fees" = EXCLUDED."total_value_after_fees",
+      "trigger_status" = EXCLUDED."trigger_status",
+      "order_type" = EXCLUDED."order_type",
+      "reject_reason" = EXCLUDED."reject_reason",
+      "settled" = EXCLUDED."settled",
+      "product_type" = EXCLUDED."product_type",
+      "reject_message" = EXCLUDED."reject_message",
+      "cancel_message" = EXCLUDED."cancel_message";`;
     try {
       const results = await pool.query(sqlText, [
         newOrder.order_id,
