@@ -275,7 +275,7 @@ router.put('/exportCandles', rejectUnauthenticated, async (req, res) => {
 
     // process the data on a separate thread
     // create a new worker
-    const worker = fork('./server/modules/exportWorker.js');
+    const worker = fork('./modules/exportWorker.js');
     worker.send({
       type: 'candles',
       params: { userID, username, product, granularity, start, end }
@@ -318,7 +318,7 @@ router.get('/exportableFiles', rejectUnauthenticated, async (req, res) => {
   devLog('export files files files files files route hit');
   try {
     const username = req.user.username;
-    const files = await fs.readdirSync('server/exports');
+    const files = await fs.readdirSync('exports');
     const userFiles = files.filter(file => file.includes(username));
     res.send(userFiles);
   } catch (error) {
@@ -342,7 +342,7 @@ router.get('/downloadFile/:fileName', rejectUnauthenticated, async (req, res) =>
     // verify that the file exists in the exports folder
     // and that the file name starts with the user id and username
     // get all files in the exports folder
-    const files = await fs.readdirSync('server/exports');
+    const files = await fs.readdirSync('exports');
     // filter the files to only include files with the user's username in the file name
     const fileStart = `${userID}-${username}`;
     // the beginning of the file name should be a concatenation of the user id and username
