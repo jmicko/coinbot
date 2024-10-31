@@ -229,7 +229,7 @@ class Messenger {
     const messages = await getAllMessages(this.userID);
     const botMessages = await getBotMessages(this.userID);
     const chatMessages = await getChatMessages(this.userID);
-    console.log(messages, 'all messages from database', this.userID);
+    // console.log(messages, 'all messages from database', this.userID);
     // console.log(messages, 'all messages from database', this.userID);
     // clear the messages array and add the messages from the database
     this.messages.length = 0;

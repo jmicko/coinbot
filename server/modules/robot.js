@@ -45,6 +45,15 @@ async function initializeUserLoops(user) {
   try {
     // set up cache for user
     await userStorage.createNewUser(user);
+        // update funds if the user is all of the above except for maintenance
+        user = userStorage.getUser(userID);
+        devLog(user, '<- user while init loops')
+        await sleep(10000);
+        if (user?.active && user?.approved && !botSettings.maintenance) {
+          await updateFunds(userID);
+          devLog('FUNDS INITED')
+          await sleep(5000);
+        }
     // start syncing orders over the REST api
     syncOrders(userID);
     // start looking for orders to process
@@ -388,15 +397,18 @@ async function processOrders(userID) {
             const willCancel = userStorage[userID].checkCancel(dbOrder.order_id);
             if (!willCancel) {
               // place the new trade on coinbase
+              // devLog(tradeDetails, '<- tradeDetails before placing the flipped order')
               let cbOrder = await cbClients[userID].placeOrder(tradeDetails);
               // let cbOrder = false
               // if the new trade was successfully placed...
+              // devLog(cbOrder, 'cbOrder before checking success')
               if (cbOrder.success) {
                 // ...get the new order from coinbase since not all details are returned when placing
-                const newOrder = await cbClients[userID].getOrder(cbOrder.order_id);
+                const newOrder = await cbClients[userID].getOrder(cbOrder.success_response.order_id);
                 // ...store the new trade
                 // take the time the new order was created, and use it as the flipped_at value
                 const flipped_at = newOrder.order.created_time
+                // devLog('storing trade', newOrder.order)
                 await databaseClient.storeTrade(newOrder.order, dbOrder, flipped_at);
                 // await databaseClient.storeTrade(cbOrder, dbOrder, cbOrder.created_at);
                 // ...mark the old trade as flipped
@@ -420,8 +432,8 @@ async function processOrders(userID) {
               devLog('Timed out!!!!! from processOrders');
               errorText = 'Coinbase timed out while flipping an order';
             } else if (err.response?.status === 400) {
-              devLog(err.response, 'Insufficient funds! from processOrders');
-              errorText = 'Insufficient funds while trying to flip a trade!';
+              devLog(err.response, 'Bad Request! from processOrders');
+              errorText = 'Bad request while trying to flip a trade! After the flip function';
               // todo - check funds to make sure there is enough for 
               // all of them to be replaced, and balance if needed
             } else {
@@ -472,7 +484,7 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
 
   const avail = userStorage[userID].getAvailableFunds();
   const prodFunds = avail[tradeDetails.product_id]
-  // devLog(dbOrder, 'dbOrder... needs to flip. Price is too many decimals?', prodFunds)
+  // devLog(dbOrder, '<- dbOrder... needs to flip. Price is too many decimals?', prodFunds, '<- prodfunds', avail, '<- avail')
 
   // get decimals after .
   const base_increment_decimals = prodFunds.base_increment.split('.')[1]?.split('').findIndex((char) => char !== '0') + 1;
@@ -647,8 +659,8 @@ async function updateMultipleOrders(userID, params) {
           await reorder(orderToCheck);
         } else {
           // if not a reorder, look up the full details on CB
+          // devLog(orderToCheck, 'order to check BIG PROBLEM');
           let updatedOrder = await cbClients[userID].getOrder(orderToCheck.order_id);
-          // devLog(orderToCheck, 'order to check');
           // if it was cancelled, set it for reorder
           if (updatedOrder.order.status === 'CANCELLED') {
             devLog('was canceled but should not have been!')
@@ -662,6 +674,7 @@ async function updateMultipleOrders(userID, params) {
         }
       } catch (err) {
         devLog(err, 'error in updateMultipleOrders loop');
+        await sleep(1000);
         let errorText = `Error updating order details`
         if (err?.error_response?.message) {
           errorText = errorText + '. Reason: ' + err.error_response.message
@@ -706,7 +719,8 @@ async function reorder(orderToReorder) {
       // send the new order with the trade details
       let pendingTrade = await cbClients[userID].placeOrder(tradeDetails);
       if (pendingTrade.success) {
-        let newTrade = await cbClients[userID].getOrder(pendingTrade.order_id)
+        // devLog(pendingTrade, '<- pendingTrade, should be a success and we need the id')
+        let newTrade = await cbClients[userID].getOrder(pendingTrade.success_response.order_id)
         // because the storeDetails function will see the upToDateDbOrder as the "old order", need to store previous_total_fees as just total_fees
         upToDateDbOrder.total_fees = upToDateDbOrder.previous_total_fees;
         // store the new trade in the db. the trade details are also sent to store trade position prices
@@ -728,6 +742,7 @@ async function reorder(orderToReorder) {
       }
     } catch (err) {
       devLog(err, 'error in reorder function in robot.js');
+      await sleep(1000);
       reject(err)
     }
     resolve();
