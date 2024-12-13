@@ -160,16 +160,16 @@ async function processCandleData(data) {
   const endDate = new Date(data.end * 1000).toISOString().split('T')[0];
 
   // create and name the file
-  await workbook.xlsx.writeFile(`server/exports/${data.userID}-${data.username}-${data.product}-${data.granularity}-${startDate}_thru_${endDate}.xlsx`);
+  await workbook.xlsx.writeFile(`exports/${data.userID}-${data.username}-${data.product}-${data.granularity}-${startDate}_thru_${endDate}.xlsx`);
 
   console.log('file created');
   // if there are more than 5 files in the exports folder with the userID and username of the user as the start of the file name,
   // delete the file with the oldest creation date until there are only 5 files left
-  const files = fs.readdirSync('server/exports');
+  const files = fs.readdirSync('exports');
   const userFiles = files.filter(file => file.startsWith(`${data.userID}-${data.username}`));
   if (userFiles.length > 5) {
-    const oldestFile = userFiles.sort((a, b) => fs.statSync(`server/exports/${a}`).ctime - fs.statSync(`server/exports/${b}`).ctime)[0];
-    fs.unlinkSync(`server/exports/${oldestFile}`);
+    const oldestFile = userFiles.sort((a, b) => fs.statSync(`exports/${a}`).ctime - fs.statSync(`exports/${b}`).ctime)[0];
+    fs.unlinkSync(`exports/${oldestFile}`);
   }
 
   // return the file name
