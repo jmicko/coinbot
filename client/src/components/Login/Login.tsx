@@ -153,9 +153,9 @@ const Login: React.FC = () => {
               name="submit"
               value="Log In >" />)
           }
-          {/* <button className="btn-blue" onClick={(e) => { e.preventDefault(); setRegister(!register); clearErrors(); }}>
+          <button className="btn-blue hidden" onClick={(e) => { e.preventDefault(); setRegister(!register); clearErrors(); }}>
             {register ? '< Back to Log In' : 'Register New'}
-          </button> */}
+          </button>
           <br />
           <p>
             We are not currently accepting new users. This project is open source, so you can host your own instance if you have a little technical know-how.
