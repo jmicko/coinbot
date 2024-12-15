@@ -157,7 +157,7 @@ const Login: React.FC = () => {
               />
               <input
                 type="submit"
-                className="btn-blue"
+                className="btn-blue register-button"
                 name="submit"
                 value="Register >"
               />
