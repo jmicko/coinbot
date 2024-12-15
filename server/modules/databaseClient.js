@@ -7,6 +7,7 @@ import { updateProductsTable } from './database/products.js';
 import { createMessagesTable } from './database/messages.js';
 import { updateFeedbackTable } from './database/feedback.js';
 import { updateLimitOrdersTable } from './database/limit_orders.js';
+import { updateSettingsTable } from './database/settings.js';
 
 export const dbUpgrade = async () => {
   console.log('<><> dbUpgrade <><>');
@@ -16,6 +17,7 @@ export const dbUpgrade = async () => {
     await createMessagesTable();
     await updateFeedbackTable();
     await updateLimitOrdersTable();
+    await updateSettingsTable();
 
     devLog('<><> dbUpgrade complete <><>');
   } catch (error) {

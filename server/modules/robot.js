@@ -47,7 +47,7 @@ async function initializeUserLoops(user) {
     await userStorage.createNewUser(user);
         // update funds if the user is all of the above except for maintenance
         user = userStorage.getUser(userID);
-        devLog(user, '<- user while init loops')
+        // devLog(user, '<- user while init loops')
         await sleep(10000);
         if (user?.active && user?.approved && !botSettings.maintenance) {
           await updateFunds(userID);

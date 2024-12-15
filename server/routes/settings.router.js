@@ -22,6 +22,22 @@ router.get('/connection', async (req, res) => {
   }
 });
 
+/**
+ * GET route for checking if registration is open
+ * No auth required
+ */
+router.get('/registration', async (req, res) => {
+  try {
+    const queryText = `SELECT registration_open FROM "bot_settings";`;
+    const results = await pool.query(queryText);
+    devLog('registration open: ', results.rows[0], 'registration route hit');
+    res.status(200).send({registrationOpen: results.rows[0].registration_open});
+  } catch (err) {
+    devLog(err, 'error with registration route');
+    res.sendStatus(500);
+  }
+});
+
 
 /**
  * GET route for testing functions in development
@@ -33,7 +49,7 @@ router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
   }
 
   const user = req.user;
-  const userID = user.id
+  const userID = user.id;
   // only admin can do this
   if (user.admin) {
     try {
@@ -198,7 +214,7 @@ router.put('/profitAccuracy', rejectUnauthenticated, async (req, res) => {
  */
 router.put('/killLock', rejectUnauthenticated, async (req, res) => {
   try {
-  const user = req.user;
+    const user = req.user;
     const identifier = req.headers['x-identifier'];
     await databaseClient.setKillLock(!user.kill_locked, user.id);
     await userStorage[user.id].update(identifier);
