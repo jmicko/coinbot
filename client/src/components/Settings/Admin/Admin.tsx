@@ -33,6 +33,7 @@ function Admin(props: { tips: boolean }) {
       orders_to_sync: 1,
       full_sync: 1,
       maintenance: false,
+      registration_open: true,
     },
     preload: true,
     from: 'allSettings in Admin'
@@ -41,6 +42,7 @@ function Admin(props: { tips: boolean }) {
     data: allSettings,
     refresh: refreshSettings
   } = useGetFetch<BotSettings>(allSettingsOptions);
+
   const { putData: updateLoopSpeed }
     = usePutFetch({
       url: 'api/admin/loop_speed',
@@ -63,6 +65,12 @@ function Admin(props: { tips: boolean }) {
     = usePutFetch({
       url: 'api/admin/maintenance',
       from: 'toggleMaintenanceMode in Admin',
+      refreshCallback: refreshSettings,
+    });
+  const { putData: toggleRegistration }
+    = usePutFetch({
+      url: 'api/admin/registration',
+      from: 'toggleRegistration in Admin',
       refreshCallback: refreshSettings,
     });
 
@@ -110,13 +118,9 @@ function Admin(props: { tips: boolean }) {
 
   return (
     <div className="Admin settings-panel scrollable">
-      {/* <center>
-        <p>Admin Settings Page</p>
-      </center> */}
       <div className={`divider ${theme}`} />
-      {/* TOGGLE MAINTENANCE */}
 
-      {/* <h4>Toggle Maintenance Mode</h4> */}
+      {/* TOGGLE MAINTENANCE */}
       <Collapser title='Toggle Maintenance Mode' >
         <div className='left-border'>
           {/* {JSON.stringify(allSettings)} */}
@@ -143,6 +147,40 @@ function Admin(props: { tips: boolean }) {
               onClick={() => { toggleMaintenanceMode() }}
             >
               Turn on
+            </button>
+          }
+        </div>
+      </Collapser>
+
+      <div className={`divider ${theme}`} />
+
+      {/* TOGGLE REGISTRATION */}
+      <Collapser title='Toggle Registration' >
+        <div className='left-border'>
+          {props.tips && <p>
+            This will toggle the registration form on the login page. If registration is off, no new users can sign up.
+            If the admin account is deleted, registration will be forced on and the next user to sign up will become the new admin.
+          </p>}
+          {allSettings.registration_open
+            ?
+            <p>New user registration is currently ENABLED</p>
+            :
+            <p>New user registration is currently DISABLED</p>
+          }
+          {allSettings.registration_open
+            ?
+            <button
+              className={`btn-red btn-registration medium ${theme}`}
+              onClick={() => { toggleRegistration() }}
+            >
+              Disable
+            </button>
+            :
+            <button
+              className={`btn-green btn-registration medium ${theme}`}
+              onClick={() => { toggleRegistration() }}
+            >
+              Enable
             </button>
           }
         </div>

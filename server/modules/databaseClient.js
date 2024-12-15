@@ -1772,6 +1772,7 @@ const databaseClient = {
   getUserAPI: getUserAPI,
   getBotSettings: getBotSettings,
   toggleMaintenance: toggleMaintenance,
+  toggleRegistration: toggleRegistration,
   getDeSyncs: getDeSyncs,
   setSingleReorder: setSingleReorder,
   setReorder: setReorder,

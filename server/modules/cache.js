@@ -8,7 +8,8 @@ const botSettings = new class BotSettings {
     this.loop_speed = Number();
     this.orders_to_sync = Number();
     this.full_sync = Number(1);
-    this.maintenance = Boolean(true)
+    this.maintenance = Boolean(true);
+    this.registration_open = Boolean(true);
   }
   async refresh() {
     const newBotSettings = await databaseClient.getBotSettings();

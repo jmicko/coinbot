@@ -62,6 +62,7 @@ export interface BotSettings {
   orders_to_sync: number;
   full_sync: number;
   maintenance: boolean;
+  registration_open: boolean;
 }
 
 export interface Funds {
