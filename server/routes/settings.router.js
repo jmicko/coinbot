@@ -26,12 +26,31 @@ router.get('/connection', async (req, res) => {
  * GET route for checking if registration is open
  * No auth required
  */
+
+// function to check if there are any admin users
+async function anyAdmins() {
+  return new Promise(async (resolve, reject) => {
+    const queryText = `SELECT count(*) FROM "user" WHERE "admin"=true;`;
+    try {
+      let result = await pool.query(queryText);
+      resolve(result.rows[0].count)
+    } catch (err) {
+      devLog('problem getting number of admins', err);
+    }
+  })
+}
+
 router.get('/registration', async (req, res) => {
   try {
     const queryText = `SELECT registration_open FROM "bot_settings";`;
     const results = await pool.query(queryText);
     devLog('registration open: ', results.rows[0], 'registration route hit');
-    res.status(200).send({registrationOpen: results.rows[0].registration_open});
+    let open = results.rows[0].registration_open;
+    const admins = await anyAdmins();
+    if (admins === 0) {
+      open = true;
+    };
+    res.status(200).send({registrationOpen: open});
   } catch (err) {
     devLog(err, 'error with registration route');
     res.sendStatus(500);
