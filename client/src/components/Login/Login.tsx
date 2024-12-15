@@ -185,6 +185,9 @@ const Login: React.FC = () => {
         {connectionError && <div className='error-box notched'>
           <p>Connection Error</p>
         </div>}
+        {registrationError && <div className='error-box notched'>
+          <p>Registration Error</p>
+        </div>}
         {(errors.loginMessage || errors.registrationMessage) &&
           <div className='error-box notched'>
             {errors.loginMessage && <p>{errors.loginMessage}</p>}
