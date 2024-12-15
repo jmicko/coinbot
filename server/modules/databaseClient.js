@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { addProductDecimals, devLog } from './utilities.js';
 import { updateProductsTable } from './database/products.js';
 import { createMessagesTable } from './database/messages.js';
+import { updateMessagesTable } from './database/messages.js';
 import { updateFeedbackTable } from './database/feedback.js';
 import { updateLimitOrdersTable } from './database/limit_orders.js';
 import { updateSettingsTable } from './database/settings.js';
@@ -15,6 +16,7 @@ export const dbUpgrade = async () => {
   try {
     await updateProductsTable();
     await createMessagesTable();
+    await updateMessagesTable();
     await updateFeedbackTable();
     await updateLimitOrdersTable();
     await updateSettingsTable();
