@@ -6,6 +6,6 @@
 
 ## Back end
 
-- [] add admin route to toggle new user registration open/closed
+- [x] add admin route to toggle new user registration open/closed
 - [] check registration_open status in registration route before creating a new user
 - [] store autosetup config for repeated use to expand range of coverage

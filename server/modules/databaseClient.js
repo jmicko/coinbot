@@ -1246,6 +1246,19 @@ export async function toggleMaintenance() {
   })
 }
 
+// toggle registration of new users on and off
+export async function toggleRegistration() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `UPDATE "bot_settings" SET "registration_open" = NOT "registration_open";`;
+      await pool.query(sqlText);
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 // get all the trades that are outside the limit of the synced orders qty setting, 
 // but all still probably synced with CB (based on reorder=false)
 export async function getDeSyncs(userID, limit, side) {
