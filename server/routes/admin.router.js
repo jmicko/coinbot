@@ -516,6 +516,30 @@ router.put('/maintenance', rejectUnauthenticated, async (req, res) => {
   }
 });
 
+
+/**
+ * PUT route toggling registration
+ */
+router.put('/registration', rejectUnauthenticated, async (req, res) => {
+  try {
+    const isAdmin = req.user.admin;
+    if (isAdmin) {
+      devLog('you are admin');
+      await databaseClient.toggleRegistration();
+      botSettings.refresh()
+      res.sendStatus(200);
+    } else {
+      devLog('user is NOT admin');
+      res.sendStatus(403);
+    }
+  } catch (err) {
+    devLog(err, 'error with toggleRegistration route');
+    res.sendStatus(500);
+    
+  }
+});
+
+
 /**
 * DELETE route - Delete a single user. Only admin can do this
 */

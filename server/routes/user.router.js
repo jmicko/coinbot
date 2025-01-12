@@ -6,12 +6,12 @@ import { pool } from '../modules/pool.js';
 import userStrategy from '../strategies/user.strategy.js';
 import { robot } from '../modules/robot.js';
 import { databaseClient } from '../modules/databaseClient.js';
-import { userStorage, messenger } from '../modules/cache.js';
+import { userStorage, messenger, botSettings } from '../modules/cache.js';
 import { devLog } from '../modules/utilities.js';
 
 const router = express.Router();
 
-// function to check if there are any users
+// function to check if there are any admin users
 async function anyAdmins() {
   return new Promise(async (resolve, reject) => {
     const queryText = `SELECT count(*) FROM "user" WHERE "admin"=true;`;
@@ -107,6 +107,14 @@ router.post('/register', userCount, async (req, res, next) => {
       return;
     }
 
+    // check if registration is open
+    // const botSettings = await databaseClient.getBotSettings();
+    if (botSettings.registration_open === false) {
+      devLog('user tried to register but registration is closed');
+      res.sendStatus(403);
+      return;
+    }
+
     const password = encryptLib.encryptPassword(pass);
     let adminCount = await anyAdmins();
     let user;
@@ -151,7 +159,7 @@ router.post('/register', userCount, async (req, res, next) => {
     // START THE LOOPS
     await robot.initializeUserLoops(user);
 
-    const botSettings = await databaseClient.getBotSettings();
+    // const botSettings = await databaseClient.getBotSettings();
     let fullUser = await databaseClient.getUser(user.id);
 
     req.login(user, function (err) {

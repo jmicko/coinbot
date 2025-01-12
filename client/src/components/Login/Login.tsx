@@ -31,6 +31,21 @@ const Login: React.FC = () => {
 
   const loggedIn = connection.loggedIn;
 
+  // check if registration is open
+  const registrationOptions = useMemo(() => ({
+    url: '/api/settings/registration',
+    defaultState: { registrationOpen: false },
+    preload: true,
+    from: 'registration in Login'
+  }), []);
+  const {
+    data: { registrationOpen },
+    // refresh: refreshRegistration,
+    error: registrationError
+  } = useGetFetch<{ registrationOpen: boolean }>(registrationOptions);
+
+  console.log('registrationOpen', registrationOpen);
+
   // check the connection every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
@@ -142,7 +157,7 @@ const Login: React.FC = () => {
               />
               <input
                 type="submit"
-                className="btn-blue"
+                className="btn-blue register-button"
                 name="submit"
                 value="Register >"
               />
@@ -151,14 +166,27 @@ const Login: React.FC = () => {
               className="btn-blue login-button"
               type="submit"
               name="submit"
-              value="Log In >" />)}
-          <button className="btn-blue" onClick={(e) => { e.preventDefault(); setRegister(!register); clearErrors(); }}>
+              value="Log In >" />)
+          }
+          <button className={`btn-blue ${!registrationOpen && 'hidden'}`} onClick={(e) => { e.preventDefault(); setRegister(!register); clearErrors(); }}>
             {register ? '< Back to Log In' : 'Register New'}
           </button>
+          <br />
+          {registrationOpen
+            ? <p> This project is open source. You can host your own instance if you have a little technical know-how. </p>
+            : <p>
+              We are not currently accepting new users. This project is open source, so you can host your own instance if you have a little technical know-how.
+            </p>}
+          <a href="https://github.com/jmicko/coinbot" target="_blank" rel="noreferrer">
+            View the project on github
+          </a>
         </form>
 
         {connectionError && <div className='error-box notched'>
           <p>Connection Error</p>
+        </div>}
+        {registrationError && <div className='error-box notched'>
+          <p>Registration Error</p>
         </div>}
         {(errors.loginMessage || errors.registrationMessage) &&
           <div className='error-box notched'>

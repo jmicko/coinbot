@@ -88,76 +88,26 @@ function ProductTable(props: { products: ProductsProps[], parent: string, padNum
           // split at the first comma
           const volumeInQuoteSplit = numberWithCommas(Number(product.volume_in_quote).toFixed(0)).split(',')[0];
           // pick which letter to use based on the number of commas. if there are no commas, use the whole number
-          const volumeInQuoteShortened = volumeInQuoteCommas === 0
-            ? volumeInQuoteSplit
-            : volumeInQuoteCommas === 1
-              ? volumeInQuoteSplit + 'k'
-              : volumeInQuoteCommas === 2
-                ? volumeInQuoteSplit + 'm'
-                : volumeInQuoteCommas === 3
-                  ? volumeInQuoteSplit + 'b'
-                  : volumeInQuoteCommas === 4
-                    ? volumeInQuoteSplit + 't'
-                    : volumeInQuoteCommas === 5
-                      ? volumeInQuoteSplit + 'q'
-                      // yo dawg
-                      : volumeInQuoteCommas === 6
-                        ? volumeInQuoteSplit + 'Q'
-                        : volumeInQuoteCommas === 7
-                          ? volumeInQuoteSplit + 's'
-                          : volumeInQuoteCommas === 8
-                            ? volumeInQuoteSplit + 'S'
-                            : volumeInQuoteCommas === 9
-                              ? volumeInQuoteSplit + 'o'
-                              : volumeInQuoteCommas === 10
-                                ? volumeInQuoteSplit + 'n'
-                                : volumeInQuoteCommas === 11
-                                  ? volumeInQuoteSplit + 'd'
-                                  // I heard you like ternaries
-                                  : volumeInQuoteCommas === 12
-                                    ? volumeInQuoteSplit + 'U'
-                                    : volumeInQuoteCommas === 13
-                                      ? volumeInQuoteSplit + 'D'
-                                      : volumeInQuoteCommas === 14
-                                        ? volumeInQuoteSplit + 'T'
-                                        : volumeInQuoteCommas === 15
-                                          ? volumeInQuoteSplit + 'q'
-                                          : volumeInQuoteCommas === 16
-                                            ? volumeInQuoteSplit + 'Q'
-                                            : volumeInQuoteCommas === 17
-                                              ? volumeInQuoteSplit + 's'
-                                              : volumeInQuoteCommas === 18
-                                                ? volumeInQuoteSplit + 'S'
-                                                // So I put a ternary in your ternary
-                                                : volumeInQuoteCommas === 19
-                                                  ? volumeInQuoteSplit + 'o'
-                                                  // So you can ternary
-                                                  : volumeInQuoteCommas === 20
-                                                    ? volumeInQuoteSplit + 'n'
-                                                    // or you can ternary
-                                                    : volumeInQuoteCommas === 21
-                                                      ? volumeInQuoteSplit + 'd'
-                                                      // or you can ternary
-                                                      : volumeInQuoteCommas === 22
-                                                        ? volumeInQuoteSplit + 'U'
-                                                        // or you can ternary
-                                                        : volumeInQuoteCommas === 23
-                                                          ? volumeInQuoteSplit + 'D'
-                                                          // or you can ternary
-                                                          : volumeInQuoteCommas === 24
-                                                            ? volumeInQuoteSplit + 'T'
-                                                            // or you can ternary
-                                                            : volumeInQuoteCommas === 25
-                                                              ? volumeInQuoteSplit + 'q'
-                                                              // or you can ternary
-                                                              : volumeInQuoteCommas === 26
-                                                                ? volumeInQuoteSplit + 'Q'
-                                                                // or you can ternary
-                                                                : volumeInQuoteCommas === 27
-                                                                  ? volumeInQuoteSplit + 's'
-                                                                  : 'ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha'
-          // none of the letters after the t were checked by a human as lining up with real numbers
+          const volumeSuffixes: { [key: number]: string } = {
+            0: '',
+            1: 'k',
+            2: 'm',
+            3: 'b',
+            4: 't',
+            5: 'q',
+            6: 'Q',
+            7: 's',
+            8: 'S',
+            9: 'o',
+            10: 'n',
+            11: 'd',
+            12: 'U',
+            13: 'D',
+            14: 'T'
+            // okay look kid, I don't think coinbase is ever going to support anything past 14 commas.
+          };
 
+          const volumeInQuoteShortened = volumeInQuoteSplit + volumeSuffixes[volumeInQuoteCommas] || '';
 
           const productPaddingBase = longestProductBase - product.base_currency_id.length > 0 ? longestProductBase - product.base_currency_id.length : 0;
           // const productPaddingQuote = longestProductQuote - product.quote_currency_id.length > 0 ? longestProductQuote - product.quote_currency_id.length : 0;

@@ -1,4 +1,5 @@
 import { pool } from '../pool.js';
+import { devLog } from '../utilities.js';
 
 export const createMessagesTable = async () => {
   // Hey there, friend! 
@@ -18,6 +19,41 @@ export const createMessagesTable = async () => {
       "read" BOOLEAN DEFAULT false,
       "data" JSONB
     );
+  `);
+}
+
+export const updateMessagesTable = async () => {
+  const messagesColumnsResult = await pool.query(`
+    SELECT column_name, column_default
+    FROM information_schema.columns
+    WHERE table_name='messages';
+  `);
+
+  const columns = messagesColumnsResult.rows.map(row => ({
+    name: row.column_name,
+    default: row.column_default
+  }));
+
+  // devLog('<><> columns <><>', columns);
+  
+  // remove "DEFAULT 'all'" from the "to" column if it is set
+  const toColumn = columns.find(column => column.name === 'to');
+  if (toColumn && toColumn.default) {
+    devLog('<><> removing DEFAULT from "to" column <><>');
+    await pool.query(`
+      ALTER TABLE "messages"
+      ALTER COLUMN "to" DROP DEFAULT;
+    `);
+  }
+  deleteOldMessages();
+}
+
+// delete all messages older than 30 days that are not chat messages
+export const deleteOldMessages = async () => {
+  devLog('<><> deleting old messages <><>');
+  await pool.query(`
+    DELETE FROM "messages"
+    WHERE "timestamp" < NOW() - INTERVAL '30 days' AND "type" != 'chat';
   `);
 }
 

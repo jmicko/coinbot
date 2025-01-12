@@ -5,8 +5,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { addProductDecimals, devLog } from './utilities.js';
 import { updateProductsTable } from './database/products.js';
 import { createMessagesTable } from './database/messages.js';
+import { updateMessagesTable } from './database/messages.js';
 import { updateFeedbackTable } from './database/feedback.js';
 import { updateLimitOrdersTable } from './database/limit_orders.js';
+import { updateSettingsTable } from './database/settings.js';
 
 export const dbUpgrade = async () => {
   console.log('<><> dbUpgrade <><>');
@@ -14,8 +16,10 @@ export const dbUpgrade = async () => {
   try {
     await updateProductsTable();
     await createMessagesTable();
+    await updateMessagesTable();
     await updateFeedbackTable();
     await updateLimitOrdersTable();
+    await updateSettingsTable();
 
     devLog('<><> dbUpgrade complete <><>');
   } catch (error) {
@@ -1244,6 +1248,19 @@ export async function toggleMaintenance() {
   })
 }
 
+// toggle registration of new users on and off
+export async function toggleRegistration() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `UPDATE "bot_settings" SET "registration_open" = NOT "registration_open";`;
+      await pool.query(sqlText);
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
 // get all the trades that are outside the limit of the synced orders qty setting, 
 // but all still probably synced with CB (based on reorder=false)
 export async function getDeSyncs(userID, limit, side) {
@@ -1757,6 +1774,7 @@ const databaseClient = {
   getUserAPI: getUserAPI,
   getBotSettings: getBotSettings,
   toggleMaintenance: toggleMaintenance,
+  toggleRegistration: toggleRegistration,
   getDeSyncs: getDeSyncs,
   setSingleReorder: setSingleReorder,
   setReorder: setReorder,
