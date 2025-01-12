@@ -42,15 +42,13 @@ async function anyAdmins() {
 
 router.get('/registration', async (req, res) => {
   try {
-    const queryText = `SELECT registration_open FROM "bot_settings";`;
-    const results = await pool.query(queryText);
-    devLog('registration open: ', results.rows[0], 'registration route hit');
-    let open = results.rows[0].registration_open;
+    let open = await databaseClient.getRegistrationOpen();
+
     const admins = await anyAdmins();
     if (admins === 0) {
       open = true;
     };
-    res.status(200).send({registrationOpen: open});
+    res.status(200).send({ registrationOpen: open });
   } catch (err) {
     devLog(err, 'error with registration route');
     res.sendStatus(500);
@@ -116,12 +114,13 @@ router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
  */
 router.get('/', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
+  devLog('get all settings route hit', user.admin);
   // only admin can do this
   if (user.admin) {
     try {
-      const queryText = `SELECT * FROM "bot_settings";`;
-      const results = await pool.query(queryText);
-      res.send(results.rows[0]);
+      const settings = await databaseClient.getBotSettings();
+      devLog('settings', settings);
+      res.send(settings);
     } catch (err) {
       devLog('error with get all settings route', err);
       res.sendStatus(500);

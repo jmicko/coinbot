@@ -9,6 +9,7 @@ import { updateMessagesTable } from './database/messages.js';
 import { updateFeedbackTable } from './database/feedback.js';
 import { updateLimitOrdersTable } from './database/limit_orders.js';
 import { updateSettingsTable } from './database/settings.js';
+import { botSettings } from './cache.js';
 
 export const dbUpgrade = async () => {
   console.log('<><> dbUpgrade <><>');
@@ -27,9 +28,23 @@ export const dbUpgrade = async () => {
   }
 }
 
+const cache = {
+  botSettings: new Map()
+};
+
+// cache helper functions
+function getCached(category, key) {
+  return cache[category].get(key);
+}
+
+function setCached(category, key, value) {
+  cache[category].set(key, value);
+}
+
 // stores the details of a trade-pair. The originalDetails are details that stay with a trade-pair when it is flipped
 // flipped_at is the "Time" shown on the interface. It has no other function
 export const storeTrade = (newOrder, originalDetails, flipped_at) => {
+
   devLog('NEW ORDER IN STORETRADE', newOrder, 'originalDetails', originalDetails, 'flipped_at', flipped_at);
   return new Promise(async (resolve, reject) => {
     // add new order to the database
@@ -1261,6 +1276,76 @@ export async function toggleRegistration() {
   })
 }
 
+export async function getRegistrationOpen() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `SELECT "registration_open" FROM "bot_settings";`;
+      let result = await pool.query(sqlText);
+      const registrationOpen = result.rows[0].registration_open;
+      resolve(registrationOpen);
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+export async function updateLoopSpeed(loopSpeed) {
+  devLog('updating loop speed', loopSpeed);
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `UPDATE "bot_settings" SET "loop_speed" = $1;`;
+      await pool.query(sqlText, [loopSpeed]);
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+export async function updateFullSync(fullSync) {
+  devLog('updating full sync', fullSync);
+  return new Promise(async (resolve, reject) => {
+    try {
+      const sqlText = `UPDATE "bot_settings" SET "full_sync" = $1;`;
+      await pool.query(sqlText, [fullSync]);
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
+
+export async function updateOrdersToSync(ordersToSync) {
+  return new Promise(async (resolve, reject) => {
+    // get a client for the transaction
+    const client = await pool.connect();
+    try {
+      const queryTextBot = `UPDATE "bot_settings" SET "orders_to_sync" = $1;`;
+      const queryTextUsers = `UPDATE "user_settings" SET "sync_quantity" = $1
+            WHERE "sync_quantity" > $1;`
+
+      // start a transaction
+      await client.query('BEGIN');
+      // update bot settings
+      await client.query(queryTextBot, [ordersToSync]);
+      // update user settings
+      await client.query(queryTextUsers, [ordersToSync]);
+      // commit the transaction
+      await client.query('COMMIT');
+      resolve();
+    } catch (err) {
+      // rollback the transaction
+      await client.query('ROLLBACK');
+      devLog(err, 'error trying to update orders to sync in db')
+      reject(err);
+    } finally {
+      // release the client
+      devLog('releasing client');
+      client.release();
+    }
+  })
+}
+
 // get all the trades that are outside the limit of the synced orders qty setting, 
 // but all still probably synced with CB (based on reorder=false)
 export async function getDeSyncs(userID, limit, side) {
@@ -1772,9 +1857,16 @@ const databaseClient = {
   getUserAndSettings: getUserAndSettings,
   checkIfCancelling: checkIfCancelling,
   getUserAPI: getUserAPI,
+
+  // bot settings
   getBotSettings: getBotSettings,
   toggleMaintenance: toggleMaintenance,
   toggleRegistration: toggleRegistration,
+  getRegistrationOpen: getRegistrationOpen,
+  updateLoopSpeed: updateLoopSpeed,
+  updateFullSync: updateFullSync,
+  updateOrdersToSync: updateOrdersToSync,
+
   getDeSyncs: getDeSyncs,
   setSingleReorder: setSingleReorder,
   setReorder: setReorder,
