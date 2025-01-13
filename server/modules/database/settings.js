@@ -1,5 +1,6 @@
 import { devLog } from '../utilities.js';
 import { pool } from '../pool.js';
+import { emitCacheEvent } from '../cacheEvents.js';
 
 export const updateSettingsTable = async () => {
 
@@ -145,6 +146,7 @@ export async function updateOrdersToSync(ordersToSync) {
       // clear cache
       refreshSettingsCache();
       // todo - update whatever cache ends up handling the user settings table
+      emitCacheEvent(cacheEvents.ALL_USER_SETTINGS_UPDATED);
       resolve();
     } catch (err) {
       // rollback the transaction

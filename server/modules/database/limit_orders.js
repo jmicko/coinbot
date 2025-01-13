@@ -2,6 +2,7 @@ import { pool } from "../pool.js";
 import { devLog as devLogUtilities } from "../utilities.js";
 import { v4 as uuidv4 } from 'uuid';
 import { getActiveProductIDs } from "./products.js";
+import { cacheEvents, onCacheEvent } from "../cacheEvents.js";
 
 let showLogs = true;
 const logTypes = {
@@ -72,6 +73,7 @@ function getUserTradesCache(userID) {
       settled: null,
       unsettled: null,
       unsettledTradesByIDs: new Map(),
+      unfilledTradesByIDs: new Map(),
       limited: null,
       all: null
     });
@@ -90,6 +92,11 @@ function clearAllUserCaches(userID) {
   clearUserTradesCache(userID);
   clearSingleTradeCache(userID);
 }
+
+onCacheEvent(cacheEvents.LIMIT_ORDERS_UPDATED, (userID) => {
+  devLog('LIMIT_ORDERS_UPDATED event received', userID);
+  clearAllUserCaches(userID);
+});
 
 function getSingleTradeCache(userID, order_id) {
   if (!limitOrdersCache.singleTrades.has(userID)) {
@@ -329,14 +336,22 @@ export const getAllSettledTrades = (userID) => {
 }
 
 // get all details of an array of order IDs
-export const getUnfilledTradesByIDs = (userID, IDs) => {
+export const getUnfilledTradesByIDs = (userID, IDs, IDsString) => {
   return new Promise(async (resolve, reject) => {
-    devLog('GETTER', 'getUnfilledTradesByIDs');
+  const cache = getUserTradesCache(userID);
+  const cacheKey = `${userID}-${IDsString}`;
+  if (cache.unfilledTradesByIDs.has(cacheKey)) {
+    // devLog('GETTER', 'getUnfilledTradesByIDs CACHE HIT');
+    resolve(cache.unfilledTradesByIDs.get(cacheKey));
+    return;
+  }
+    // devLog('GETTER', 'getUnfilledTradesByIDs CACHE MISS');
     const sqlText = `select *
     from limit_orders
     where order_id = ANY ($1) and filled_at IS NULL and settled=true and "userID" = $2;`;
     try {
       let result = await pool.query(sqlText, [IDs, userID]);
+      cache.unfilledTradesByIDs.set(cacheKey, result.rows);
       resolve(result.rows);
     } catch (err) {
       reject(err);

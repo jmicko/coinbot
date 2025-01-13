@@ -6,7 +6,9 @@ const cacheEventEmitter = new EventEmitter();
 // Define event types
 export const cacheEvents = {
   PRODUCTS_UPDATED: 'products_updated',
-  LIMIT_ORDERS_UPDATED: 'limit_orders_updated'
+  LIMIT_ORDERS_UPDATED: 'limit_orders_updated',
+  USER_SETTINGS_UPDATED: 'user_settings_updated',
+  ALL_USER_SETTINGS_UPDATED: 'all_user_settings_updated'
 };
 
 // Simple emit and subscribe functions
