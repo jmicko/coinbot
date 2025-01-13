@@ -553,17 +553,16 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
 router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
   devLog('in delete single order route');
   // DELETE route code here
+  const userID = req.user.id;
   try {
     const identifier = req.headers['x-identifier'];
-    const userID = req.user.id;
     const orderId = req.params.order_id;
 
     userStorage[userID].setCancel(orderId);
     // mark as canceled in db
-    let order = await databaseClient.updateTrade({
-      will_cancel: true,
-      order_id: orderId
-    })
+
+    let order = await databaseClient.markForCancel(userID, orderId);
+    devLog(order, 'order from markForCancel');
     // if it is a reorder, there is no reason to cancel on CB
     if (!order.reorder) {
       // send cancelOrder to cb
@@ -583,7 +582,7 @@ router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
       devLog(err.data.message, 'error message, trade router DELETE');
     }
     if (err.response?.status === 404) {
-      databaseClient.deleteTrade(orderId);
+      databaseClient.deleteTrade(orderId, userID);
       devLog('order not found in account', orderId);
       errorText = 'Order not found on coinbase, deleting from Coinbot.';
       res.sendStatus(404)

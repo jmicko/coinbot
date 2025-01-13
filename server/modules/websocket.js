@@ -167,6 +167,7 @@ async function updateMultipleOrders(userID, params) {
           updatedOrder.order.reorder = true;
         }
         // then update db with current status
+        updatedOrder.order.userID = userID;
         await databaseClient.updateTrade(updatedOrder.order);
       } catch (err) {
         userStorage[userID].updateStatus('error in UMO loop');

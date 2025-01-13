@@ -13,8 +13,8 @@ import { devLog } from '../modules/utilities.js';
 router.get('/connection', async (req, res) => {
   try {
     const user = req.user ? true : false;
-    devLog(user, 'connection route hit');
-    devLog('connection route hit');
+    // devLog(user, 'connection route hit');
+    // devLog('connection route hit');
     res.status(200).send({ connection: true, loggedIn: user });
   } catch (err) {
     devLog(err, 'connection route failed');

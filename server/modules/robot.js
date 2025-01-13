@@ -326,14 +326,18 @@ async function quickSync(userID) {
       const fills = response.fills; //this is the same as allFills
       // get an array of just the IDs
       const fillsIds = []
-      fills.forEach(fill => fillsIds.push(fill.order_id))
+      let fillsString = '';
+      fills.forEach(fill => {
+        fillsIds.push(fill.order_id);
+        fillsString += fill.order_id;
+      })
       // find unsettled orders in the db based on the IDs array
-      const unsettledFills = await databaseClient.getUnsettledTradesByIDs(userID, fillsIds);
+      const unsettledFills = await databaseClient.getUnsettledTradesByIDs(userID, fillsIds, fillsString);
 
 
 
       // get any fills that are not filled but are settled in the db. This will likely be from the previous loop
-      const unfilled = await databaseClient.getUnfilledTradesByIDs(userID, fillsIds);
+      const unfilled = await databaseClient.getUnfilledTradesByIDs(userID, fillsIds, fillsString);
 
       unfilled.forEach(async trade => {
 
@@ -342,6 +346,7 @@ async function quickSync(userID) {
         // make a small order to update the order with. 
         // this will prevent accidents if coinbase adds values that match the limit_orders table in the future
         const newFill = {
+          userID: userID,
           order_id: unfilledFill.order_id,
           filled_at: unfilledFill.trade_time
         }
@@ -409,10 +414,10 @@ async function processOrders(userID) {
                 // take the time the new order was created, and use it as the flipped_at value
                 const flipped_at = newOrder.order.created_time
                 // devLog('storing trade', newOrder.order)
-                await databaseClient.storeTrade(newOrder.order, dbOrder, flipped_at);
+                await databaseClient.storeTrade(newOrder.order, dbOrder, flipped_at, userID);
                 // await databaseClient.storeTrade(cbOrder, dbOrder, cbOrder.created_at);
                 // ...mark the old trade as flipped
-                await databaseClient.markAsFlipped(dbOrder.order_id);
+                await databaseClient.markAsFlipped(dbOrder.order_id, userID);
                 // tell the frontend that an update was made so the DOM can update
                 devLog('sending order update from processOrders');
                 // userStorage[userID].orderUpdate();
@@ -670,6 +675,7 @@ async function updateMultipleOrders(userID, params) {
             updatedOrder.order.reorder = true;
           }
           // then update db with current status
+          updatedOrder.order.userID = userID;
           await databaseClient.updateTrade(updatedOrder.order);
         }
       } catch (err) {
@@ -702,7 +708,7 @@ async function reorder(orderToReorder) {
     const userID = orderToReorder.userID;
     userStorage[userID].updateStatus('begin reorder');
     try {
-      const upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.order_id);
+      const upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.order_id, userID);
       // get the product from the db
       const product = await databaseClient.getProduct(upToDateDbOrder.product_id, userID);
       devLog(product, 'product in reorder');
@@ -728,7 +734,7 @@ async function reorder(orderToReorder) {
         let results = await databaseClient.storeTrade(newTrade.order, upToDateDbOrder, upToDateDbOrder.flipped_at);
 
         // delete the old order from the db
-        await databaseClient.deleteTrade(orderToReorder.order_id);
+        await databaseClient.deleteTrade(orderToReorder.order_id, userID);
         // tell the DOM to update
         messenger[userID].newMessage({
           type: 'general',
@@ -763,7 +769,7 @@ async function cancelAndReorder(ordersArray, userID) {
       } //end for loop
 
       try {
-        databaseClient.setManyReorders(idArray)
+        databaseClient.setManyReorders(idArray, userID)
         // cancel the orders in the array
         await cbClients[userID].cancelOrders(idArray);
         // update funds now that everything should be up to date

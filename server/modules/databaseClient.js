@@ -2,14 +2,70 @@
 import { pool } from './pool.js';
 // const { v4: uuidv4 } = require('uuid');
 import { v4 as uuidv4 } from 'uuid';
-import { addProductDecimals, devLog } from './utilities.js';
-import { updateProductsTable } from './database/products.js';
+import { addProductDecimals, devLog as devLogUtilities } from './utilities.js';
+// import { updateProductsTable } from './database/products.js';
 import { createMessagesTable } from './database/messages.js';
 import { updateMessagesTable } from './database/messages.js';
 import { updateFeedbackTable } from './database/feedback.js';
-import { updateLimitOrdersTable } from './database/limit_orders.js';
-import { updateSettingsTable } from './database/settings.js';
-import { botSettings } from './cache.js';
+// import limit_orders functions
+import {
+  getSingleTrade,
+  getTradesByIDs,
+  getSettledTrades,
+  getUnsettledTrades,
+  getLimitedUnsettledTrades,
+  getUnsettledTradesByIDs,
+  getAllSettledTrades,
+  getUnfilledTradesByIDs,
+  getAllOrders,
+  getUnsettledTradeCounts,
+  getUnsettledTradesByProduct,
+  getReorders,
+  getDeSyncs,
+  checkIfCancelling,
+  storeTrade,
+  updateTrade,
+  setSingleReorder,
+  setManyReorders,
+  setReorder,
+  markAsFlipped,
+  deleteTrade,
+  markForCancel,
+  deleteMarkedOrders,
+} from './database/limit_orders.js';
+// Import all settings functions
+import {
+  updateSettingsTable,
+  getBotSettings,
+  toggleMaintenance,
+  toggleRegistration,
+  getRegistrationOpen,
+  updateLoopSpeed,
+  updateFullSync,
+  updateOrdersToSync
+} from './database/settings.js';
+// import all products functions
+import {
+  updateProductsTable,
+  getProduct,
+  getActiveProducts,
+  getActiveProductIDs,
+  getUserProducts,
+  insertProducts,
+  updateProductActiveStatus,
+} from './database/products.js';
+
+let showLogs = true;
+
+export function toggleDBLogs(bool) {
+  showLogs = bool;
+}
+
+function devLog(message) {
+  if (showLogs) {
+    devLogUtilities(message);
+  }
+}
 
 export const dbUpgrade = async () => {
   console.log('<><> dbUpgrade <><>');
@@ -26,351 +82,6 @@ export const dbUpgrade = async () => {
   } catch (error) {
     devLog('error in dbUpgrade', error);
   }
-}
-
-const cache = {
-  botSettings: new Map()
-};
-
-// cache helper functions
-function getCached(category, key) {
-  return cache[category].get(key);
-}
-
-function setCached(category, key, value) {
-  cache[category].set(key, value);
-}
-
-// stores the details of a trade-pair. The originalDetails are details that stay with a trade-pair when it is flipped
-// flipped_at is the "Time" shown on the interface. It has no other function
-export const storeTrade = (newOrder, originalDetails, flipped_at) => {
-
-  devLog('NEW ORDER IN STORETRADE', newOrder, 'originalDetails', originalDetails, 'flipped_at', flipped_at);
-  return new Promise(async (resolve, reject) => {
-    // add new order to the database
-    const sqlText = `INSERT INTO "limit_orders" 
-      (
-      "order_id",
-      "userID",
-      "original_buy_price",
-      "original_sell_price",
-      "trade_pair_ratio",
-      "flipped_at",
-      "reorder",
-      "product_id",
-      "coinbase_user_id",
-      "base_size",
-      "limit_price",
-      "post_only",
-      "side",
-      "client_order_id",
-      "next_client_order_id",
-      "status",
-      "time_in_force",
-      "created_time",
-      "completion_percentage",
-      "filled_size",
-      "average_filled_price",
-      "fee",
-      "number_of_fills",
-      "filled_value",
-      "pending_cancel",
-      "size_in_quote",
-      "total_fees",
-      "previous_total_fees",
-      "size_inclusive_of_fees",
-      "total_value_after_fees",
-      "trigger_status",
-      "order_type",
-      "reject_reason",
-      "settled",
-      "product_type",
-      "reject_message",
-      "cancel_message"
-      ) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37)
-      ON CONFLICT ("order_id") DO UPDATE SET 
-      "order_id" = EXCLUDED."order_id",
-      "userID" = EXCLUDED."userID",
-      "original_buy_price" = EXCLUDED."original_buy_price",
-      "original_sell_price" = EXCLUDED."original_sell_price",
-      "trade_pair_ratio" = EXCLUDED."trade_pair_ratio",
-      "flipped_at" = EXCLUDED."flipped_at",
-      "reorder" = EXCLUDED."reorder",
-      "product_id" = EXCLUDED."product_id",
-      "coinbase_user_id" = EXCLUDED."coinbase_user_id",
-      "base_size" = EXCLUDED."base_size",
-      "limit_price" = EXCLUDED."limit_price",
-      "post_only" = EXCLUDED."post_only",
-      "side" = EXCLUDED."side",
-      "client_order_id" = EXCLUDED."client_order_id",
-      "next_client_order_id" = EXCLUDED."next_client_order_id",
-      "status" = EXCLUDED."status",
-      "time_in_force" = EXCLUDED."time_in_force",
-      "created_time" = EXCLUDED."created_time",
-      "completion_percentage" = EXCLUDED."completion_percentage",
-      "filled_size" = EXCLUDED."filled_size",
-      "average_filled_price" = EXCLUDED."average_filled_price",
-      "fee" = EXCLUDED."fee",
-      "number_of_fills" = EXCLUDED."number_of_fills",
-      "filled_value" = EXCLUDED."filled_value",
-      "pending_cancel" = EXCLUDED."pending_cancel",
-      "size_in_quote" = EXCLUDED."size_in_quote",
-      "total_fees" = EXCLUDED."total_fees",
-      "previous_total_fees" = EXCLUDED."previous_total_fees",
-      "size_inclusive_of_fees" = EXCLUDED."size_inclusive_of_fees",
-      "total_value_after_fees" = EXCLUDED."total_value_after_fees",
-      "trigger_status" = EXCLUDED."trigger_status",
-      "order_type" = EXCLUDED."order_type",
-      "reject_reason" = EXCLUDED."reject_reason",
-      "settled" = EXCLUDED."settled",
-      "product_type" = EXCLUDED."product_type",
-      "reject_message" = EXCLUDED."reject_message",
-      "cancel_message" = EXCLUDED."cancel_message";`;
-    try {
-      const results = await pool.query(sqlText, [
-        newOrder.order_id,
-        originalDetails.userID,
-        originalDetails.original_buy_price,
-        originalDetails.original_sell_price,
-        originalDetails.trade_pair_ratio,
-        flipped_at,
-        newOrder.reorder || false,
-        newOrder.product_id,
-        newOrder.coinbase_user_id,
-        newOrder.order_configuration.limit_limit_gtc.base_size,
-        newOrder.order_configuration.limit_limit_gtc.limit_price,
-        newOrder.order_configuration.limit_limit_gtc.post_only,
-        newOrder.side,
-        newOrder.client_order_id,
-        newOrder.next_client_order_id || uuidv4(),
-        newOrder.status,
-        newOrder.time_in_force,
-        newOrder.created_time,
-        newOrder.completion_percentage,
-        newOrder.filled_size,
-        newOrder.average_filled_price,
-        Number(newOrder.fee),
-        newOrder.number_of_fills,
-        newOrder.filled_value,
-        newOrder.pending_cancel,
-        newOrder.size_in_quote,
-        newOrder.total_fees,
-        // bring the fees from the previous order to the new one for more accurate profit calculation
-        originalDetails.total_fees,
-        newOrder.size_inclusive_of_fees,
-        newOrder.total_value_after_fees,
-        newOrder.trigger_status,
-        newOrder.order_type,
-        newOrder.reject_reason,
-        newOrder.settled,
-        newOrder.product_type,
-        newOrder.reject_message,
-        newOrder.cancel_message,
-      ])
-      resolve(results);
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
-
-// hahahahahaha may you never have to change this
-// update a trade by any set of parameters
-export const updateTrade = (order) => {
-  return new Promise(async (resolve, reject) => {
-    const columns = []
-    // add new order to the database
-    let first = true;
-    let singleSqlText = `UPDATE "limit_orders" SET `;
-    let multiSqlText = `UPDATE "limit_orders" SET (`;
-    let sqlText = ``;
-    if (order.original_buy_price) {
-      first ? first = false : sqlText += ', '
-      order.original_buy_price && (sqlText += `"original_buy_price"`) && columns.push(order.original_buy_price);
-    }
-    if (order.original_sell_price) {
-      first ? first = false : sqlText += ', '
-      order.original_sell_price && (sqlText += `"original_sell_price"`) && columns.push(order.original_sell_price);
-    }
-    if (order.trade_pair_ratio) {
-      first ? first = false : sqlText += ', '
-      order.trade_pair_ratio && (sqlText += `"trade_pair_ratio"`) && columns.push(order.trade_pair_ratio);
-    }
-    if (order.flipped_at) {
-      first ? first = false : sqlText += ', '
-      order.flipped_at && (sqlText += `"flipped_at"`) && columns.push(order.flipped_at);
-    }
-    if (order.filled_at) {
-      first ? first = false : sqlText += ', '
-      order.filled_at && (sqlText += `"filled_at"`) && columns.push(order.filled_at);
-    }
-    if (order.reorder != null) {
-      first ? first = false : sqlText += ', '
-      order.reorder != null && (sqlText += `"reorder"`) && columns.push(order.reorder);
-    }
-    if (order.product_id) {
-      first ? first = false : sqlText += ', '
-      order.product_id && (sqlText += `"product_id"`) && columns.push(order.product_id);
-    }
-    if (order.coinbase_user_id) {
-      first ? first = false : sqlText += ', '
-      order.coinbase_user_id && (sqlText += `"coinbase_user_id"`) && columns.push(order.coinbase_user_id);
-    }
-    if (order.base_size != null || order.order_configuration?.limit_limit_gtc?.base_size != null) {
-      first ? first = false : sqlText += ', '
-      order.base_size != null
-        ? (sqlText += `"base_size"`) && columns.push(order.base_size)
-        : order.order_configuration?.limit_limit_gtc?.base_size != null && (sqlText += `"base_size"`) && columns.push(order.order_configuration?.limit_limit_gtc?.base_size);
-    }
-    if (order.limit_price != null || order.order_configuration?.limit_limit_gtc?.limit_price != null) {
-      first ? first = false : sqlText += ', '
-      order.limit_price != null
-        ? (sqlText += `"limit_price"`) && columns.push(order.limit_price)
-        : order.order_configuration?.limit_limit_gtc?.limit_price != null && (sqlText += `"limit_price"`) && columns.push(order.order_configuration?.limit_limit_gtc?.limit_price);
-    }
-    if (order.post_only != null || order.order_configuration?.limit_limit_gtc?.post_only != null) {
-      first ? first = false : sqlText += ', '
-
-      order.post_only != null
-        ? (sqlText += `"post_only"`) && columns.push(order.post_only)
-        : order.order_configuration?.limit_limit_gtc?.post_only != null && (sqlText += `"post_only"`) && columns.push(order.order_configuration?.limit_limit_gtc?.post_only);
-    }
-    if (order.side) {
-      first ? first = false : sqlText += ', '
-      order.side && (sqlText += `"side"`) && columns.push(order.side);
-    }
-    if (order.client_order_id) {
-      first ? first = false : sqlText += ', '
-      order.client_order_id && (sqlText += `"client_order_id"`) && columns.push(order.client_order_id);
-    }
-    if (order.next_client_order_id) {
-      first ? first = false : sqlText += ', '
-      order.next_client_order_id && (sqlText += `"next_client_order_id"`) && columns.push(order.next_client_order_id);
-    }
-    if (order.status) {
-      first ? first = false : sqlText += ', '
-      order.status && (sqlText += `"status"`) && columns.push(order.status);
-    }
-    if (order.time_in_force) {
-      first ? first = false : sqlText += ', '
-      order.time_in_force && (sqlText += `"time_in_force"`) && columns.push(order.time_in_force);
-    }
-    if (order.created_time) {
-      first ? first = false : sqlText += ', '
-      order.created_time && (sqlText += `"created_time"`) && columns.push(order.created_time);
-    }
-    if (order.completion_percentage) {
-      first ? first = false : sqlText += ', '
-      order.completion_percentage && (sqlText += `"completion_percentage"`) && columns.push(order.completion_percentage);
-    }
-    if (order.filled_size) {
-      first ? first = false : sqlText += ', '
-      order.filled_size && (sqlText += `"filled_size"`) && columns.push(order.filled_size);
-    }
-    if (order.average_filled_price) {
-      first ? first = false : sqlText += ', '
-      order.average_filled_price && (sqlText += `"average_filled_price"`) && columns.push(order.average_filled_price);
-    }
-    if (order.fee) {
-      first ? first = false : sqlText += ', '
-      order.fee && (sqlText += `"fee"`) && columns.push(order.fee);
-    }
-    if (order.number_of_fills) {
-      first ? first = false : sqlText += ', '
-      order.number_of_fills && (sqlText += `"number_of_fills"`) && columns.push(order.number_of_fills);
-    }
-    if (order.filled_value) {
-      first ? first = false : sqlText += ', '
-      order.filled_value && (sqlText += `"filled_value"`) && columns.push(order.filled_value);
-    }
-    if (order.pending_cancel != null) {
-      first ? first = false : sqlText += ', '
-      order.pending_cancel != null && (sqlText += `"pending_cancel"`) && columns.push(order.pending_cancel);
-    }
-    if (order.will_cancel != null) {
-      first ? first = false : sqlText += ', '
-      order.will_cancel != null && (sqlText += `"will_cancel"`) && columns.push(order.will_cancel);
-    }
-    if (order.size_in_quote != null) {
-      first ? first = false : sqlText += ', '
-      order.size_in_quote != null && (sqlText += `"size_in_quote"`) && columns.push(order.size_in_quote);
-    }
-    if (order.total_fees) {
-      first ? first = false : sqlText += ', '
-      order.total_fees && (sqlText += `"total_fees"`) && columns.push(order.total_fees);
-    }
-    if (order.previous_total_fees) {
-      first ? first = false : sqlText += ', '
-      order.previous_total_fees && (sqlText += `"previous_total_fees"`) && columns.push(order.previous_total_fees);
-    }
-    if (order.size_inclusive_of_fees != null) {
-      first ? first = false : sqlText += ', '
-      order.size_inclusive_of_fees != null && (sqlText += `"size_inclusive_of_fees"`) && columns.push(order.size_inclusive_of_fees);
-    }
-    if (order.total_value_after_fees) {
-      first ? first = false : sqlText += ', '
-      order.total_value_after_fees && (sqlText += `"total_value_after_fees"`) && columns.push(order.total_value_after_fees);
-    }
-    if (order.trigger_status) {
-      first ? first = false : sqlText += ', '
-      order.trigger_status && (sqlText += `"trigger_status"`) && columns.push(order.trigger_status);
-    }
-    if (order.order_type) {
-      first ? first = false : sqlText += ', '
-      order.order_type && (sqlText += `"order_type"`) && columns.push(order.order_type);
-    }
-    if (order.reject_reason) {
-      first ? first = false : sqlText += ', '
-      order.reject_reason && (sqlText += `"reject_reason"`) && columns.push(order.reject_reason);
-    }
-    if (order.settled != null) {
-      first ? first = false : sqlText += ', '
-      order.settled != null && (sqlText += `"settled"`) && columns.push(order.settled);
-    }
-    if (order.product_type) {
-      first ? first = false : sqlText += ', '
-      order.product_type && (sqlText += `"product_type"`) && columns.push(order.product_type);
-    }
-    if (order.reject_message) {
-      first ? first = false : sqlText += ', '
-      order.reject_message && (sqlText += `"reject_message"`) && columns.push(order.reject_message);
-    }
-    if (order.cancel_message) {
-      first ? first = false : sqlText += ', '
-      order.cancel_message && (sqlText += `"cancel_message"`) && columns.push(order.cancel_message);
-    }
-
-    let finalSqlText = (columns.length === 1)
-      ? singleSqlText + sqlText + ` = `
-      : multiSqlText + sqlText + `) = (`
-
-    first = true;
-    // now loop through array of values and keep building the string
-    for (let i = 0; i < columns.length; i++) {
-      const value = columns[i];
-      first ? first = false : finalSqlText += ', '
-      finalSqlText += `$${i + 1}`
-    }
-    finalSqlText += (columns.length === 1)
-      ? `\nWHERE "order_id" = $${columns.length + 1}\nRETURNING *;`
-      : `)\nWHERE "order_id" = $${columns.length + 1}\nRETURNING *;`;
-
-    columns.push(order.order_id)
-
-
-    if (columns.length === 2) {
-
-    }
-
-    try {
-      const results = await pool.query(finalSqlText, columns)
-      resolve(results.rows[0]);
-      resolve();
-    } catch (err) {
-      reject(err);
-    }
-  });
 }
 
 
@@ -414,581 +125,6 @@ export const importTrade = (details, userID) => {
       });
   });
 }
-
-// function to insert an array of products into the database for a user
-// if the product already exists for the user, everything EXCEPT "active_for_user" is updated.
-// if the product_id is BTC-USD, make sure to set active_for_user to true
-export const insertProducts = (products, userID) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // first get which products are in the portfolio
-      const productsSqlText = `SELECT "product_id" FROM "products" WHERE "user_id" = $1;`;
-      const results = await pool.query(productsSqlText, [userID]);
-      const productsInPortfolio = results.rows.map((row) => row.product_id);
-
-      // now loop through the products and insert them into the database
-      // if they already exist, update them
-      for (let i = 0; i < products.length; i++) {
-        // const product = products[i];
-        const product = addProductDecimals(products[i]);
-        if (productsInPortfolio.includes(product.product_id)) {
-          // devLog('product already exists for user, updating');
-          // update the product
-          const updateSqlText = `UPDATE "products" SET
-          "quote_currency_id" = $1,
-          "base_currency_id" = $2,
-          "price" = $3,
-          "price_percentage_change_24h" = $4,
-          "volume_24h" = $5,
-          "volume_percentage_change_24h" = $6,
-          "base_increment" = $7,
-          "quote_increment" = $8,
-          "quote_min_size" = $9,
-          "quote_max_size" = $10,
-          "base_min_size" = $11,
-          "base_max_size" = $12,
-          "base_name" = $13,
-          "quote_name" = $14,
-          "watched" = $15,
-          "is_disabled" = $16,
-          "new" = $17,
-          "status" = $18,
-          "cancel_only" = $19,
-          "limit_only" = $20,
-          "post_only" = $21,
-          "trading_disabled" = $22,
-          "auction_mode" = $23,
-          "product_type" = $24,
-          "fcm_trading_session_details" = $25,
-          "mid_market_price" = $26,
-          "base_increment_decimals" = $27,
-          "quote_increment_decimals" = $28,
-          "quote_inverse_increment" = $29,
-          "base_inverse_increment" = $30,
-          "price_rounding" = $31,
-          "pbd" = $32,
-          "pqd" = $33
-          WHERE "product_id" = $34 AND "user_id" = $35;`;
-          await pool.query(updateSqlText, [
-            product.quote_currency_id,
-            product.base_currency_id,
-            product.price || null,
-            product.price_percentage_change_24h || null,
-            product.volume_24h || null,
-            product.volume_percentage_change_24h || null,
-            product.base_increment || null,
-            product.quote_increment || null,
-            product.quote_min_size || null,
-            product.quote_max_size || null,
-            product.base_min_size || null,
-            product.base_max_size || null,
-            product.base_name,
-            product.quote_name,
-            product.watched,
-            product.is_disabled,
-            product.new,
-            product.status,
-            product.cancel_only,
-            product.limit_only,
-            product.post_only,
-            product.trading_disabled,
-            product.auction_mode,
-            product.product_type,
-            product.fcm_trading_session_details,
-            product.mid_market_price || null,
-            product.base_increment_decimals || null,
-            product.quote_increment_decimals || null,
-            product.quote_inverse_increment || null,
-            product.base_inverse_increment || null,
-            product.price_rounding || null,
-            product.pbd || null,
-            product.pqd || null,
-            product.product_id,
-            userID,
-          ]);
-        } else {
-          // devLog('product does not exist for user, inserting');
-          // insert the product
-          const insertSqlText = `INSERT INTO "products" (
-          "product_id",
-          "user_id",
-          "quote_currency_id",
-          "base_currency_id",
-          "price",
-          "price_percentage_change_24h",
-          "volume_24h",
-          "volume_percentage_change_24h",
-          "base_increment",
-          "quote_increment",
-          "quote_min_size",
-          "quote_max_size",
-          "base_min_size",
-          "base_max_size",
-          "base_name",
-          "quote_name",
-          "watched",
-          "is_disabled",
-          "new",
-          "status",
-          "cancel_only",
-          "limit_only",
-          "post_only",
-          "trading_disabled",
-          "auction_mode",
-          "product_type",
-          "fcm_trading_session_details",
-          "mid_market_price",
-          "base_increment_decimals",
-          "quote_increment_decimals",
-          "quote_inverse_increment",
-          "base_inverse_increment",
-          "price_rounding",
-          "pbd",
-          "pqd"
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28,$29,$30,$31,$32,$33,$34,$35);`;
-          await pool.query(insertSqlText, [
-            product.product_id,
-            userID,
-            product.quote_currency_id,
-            product.base_currency_id,
-            product.price || null,
-            product.price_percentage_change_24h || null,
-            product.volume_24h || null,
-            product.volume_percentage_change_24h || null,
-            product.base_increment || null,
-            product.quote_increment || null,
-            product.quote_min_size || null,
-            product.quote_max_size || null,
-            product.base_min_size || null,
-            product.base_max_size || null,
-            product.base_name,
-            product.quote_name,
-            product.watched,
-            product.is_disabled,
-            product.new,
-            product.status,
-            product.cancel_only,
-            product.limit_only,
-            product.post_only,
-            product.trading_disabled,
-            product.auction_mode,
-            product.product_type,
-            product.fcm_trading_session_details,
-            product.mid_market_price || null,
-            product.base_increment_decimals || null,
-            product.quote_increment_decimals || null,
-            product.quote_inverse_increment || null,
-            product.base_inverse_increment || null,
-            product.price_rounding || null,
-            product.pbd || null,
-            product.pqd || null,
-          ]);
-          // if the product_id is BTC-USD, set active_for_user to true
-          if (product.product_id === 'BTC-USD') {
-            const updateSqlText = `UPDATE "products" SET "active_for_user" = true WHERE "product_id" = $1 AND "user_id" = $2;`;
-            await pool.query(updateSqlText, [product.product_id, userID]);
-          }
-        }
-      }
-      resolve();
-    } catch (error) {
-      devLog('Error in updateProducts', error);
-      reject(error);
-    }
-  });
-}
-
-// get a product by product id
-export const getProduct = (productID, userID) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `SELECT * FROM "products" WHERE "product_id" = $1 AND "user_id" = $2;`;
-      const result = await pool.query(sqlText, [productID, userID]);
-      resolve(result.rows[0]);
-    } catch (error) {
-      devLog('Error in getProduct', error);
-      reject(error);
-    }
-  });
-}
-
-// get all active products in the portfolio
-export const getActiveProducts = (userID) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `SELECT * FROM "products" WHERE "user_id" = $1 AND "active_for_user" = true ORDER BY "activated_at" ASC;`;
-      const result = await pool.query(sqlText, [userID]);
-      resolve(result.rows);
-    } catch (error) {
-      devLog('Error in getActiveProducts', error);
-      reject(error);
-    }
-  });
-}
-
-
-// get all active products in the portfolio
-export const getActiveProductIDs = (userID) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const activeProducts = await getActiveProducts(userID);
-      // get the product ids from the results and put them in an array
-      const productIDs = [];
-      for (let product of activeProducts) {
-        productIDs.push(product.product_id);
-      }
-      resolve(productIDs);
-    } catch (error) {
-      devLog('Error in getActiveProductIDs', error);
-      reject(error);
-    }
-  });
-}
-
-// update the active_for_user column for a product
-export const updateProductActiveStatus = (userID, productID, active) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `UPDATE "products" SET "active_for_user" = $1, "activated_at" = now() WHERE "user_id" = $2 AND "product_id" = $3;`;
-      await pool.query(sqlText, [active, userID, productID]);
-      resolve();
-    } catch (error) {
-      devLog('Error in updateProductActiveStatus', error);
-      reject(error);
-    }
-  });
-}
-
-
-// get all products in the portfolio that have USD as the quote currency
-// this will be displayed in the client as available products to trade
-export const getUserProducts = (userID) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // get which products are currently traded in the portfolio
-      const sqlText = `SELECT * FROM "products" WHERE "user_id"=$1 AND "quote_currency_id" = 'USD' AND "volume_24h" IS NOT NULL ORDER BY "volume_24h"*"price" DESC;`;
-      const products = await pool.query(sqlText, [userID]);
-
-      resolve(products.rows);
-
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
-
-
-// gets all open orders in db based on a specified limit. 
-// The limit is for each side, so the results will potentially double that
-export const getLimitedUnsettledTrades = (userID, limit) => {
-  return new Promise(async (resolve, reject) => {
-    // get limit of buys
-    // get limit of sells
-    try {
-      // first get which products are in the portfolio
-      const products = await getActiveProductIDs(userID);
-      // devLog('products', products);
-      let sqlText = `
-      (SELECT * FROM "limit_orders" WHERE "side" = 'SELL' AND "flipped" = false AND "settled" = false AND "will_cancel" = false AND "userID" = $1 AND "product_id" = $2 ORDER BY "limit_price" ASC LIMIT $3)
-      UNION
-      (SELECT * FROM "limit_orders" WHERE "side" = 'BUY' AND "flipped" = false AND "settled" = false AND "will_cancel" = false AND "userID" = $1 AND "product_id" = $2 ORDER BY "limit_price" DESC LIMIT $3)
-      ORDER BY "limit_price" DESC; `;
-      let results = [];
-      for (let i = 0; i < products.length; i++) {
-        const product = products[i];
-        const productResults = await pool.query(sqlText,
-          [userID, product, limit]);
-        results = [...results, ...productResults.rows];
-      }
-      resolve(results);
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
-
-
-// get a number of open orders in DB based on side. This will return them whether or not they are synced with CBP
-// can be limited by how many should be synced, or how many should be shown on the interface 
-// depending on where it is being called from
-// this is very similar to the function above, but gets only one side at a time so they are easier to split
-export const getUnsettledTradesByProduct = (side, product, userID, max_trade_load) => {
-  return new Promise(async (resolve, reject) => {
-    let sqlText;
-    // the only time 'BUY' or 'SELL' is passed is when the frontend is calling for all trades. 
-    // can request a limited amount of data to save on network costs
-    if (side == 'BUY') {
-      // gets all unsettled buys, sorted by price
-      sqlText = `SELECT * FROM "limit_orders" 
-      WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "product_id"=$1 AND "userID"=$2
-      ORDER BY "limit_price" DESC
-      LIMIT $3;`;
-      pool.query(sqlText, [product, userID, max_trade_load])
-        .then((results) => {
-          // promise returns promise from pool if success
-          resolve(results.rows);
-        })
-        .catch((err) => {
-          // or promise relays errors from pool to parent
-          reject(err);
-        })
-    } else if (side == 'SELL') {
-      // gets all unsettled sells, sorted by price
-      sqlText = `SELECT * FROM "limit_orders" 
-      WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "product_id"=$1 AND "userID"=$2
-      ORDER BY "limit_price" ASC
-      LIMIT $3;`;
-      pool.query(sqlText, [product, userID, max_trade_load])
-        .then((results) => {
-          // promise returns promise from pool if success
-          resolve(results.rows);
-        })
-        .catch((err) => {
-          // or promise relays errors from pool to parent
-          reject(err);
-        })
-    } else if (side == 'all') {
-      // gets all unsettled trades, sorted by price
-      sqlText = `SELECT * FROM "limit_orders" 
-      WHERE "flipped"=false AND "will_cancel"=false AND "product_id"=$1 AND "userID"=$2
-      ORDER BY "limit_price" ASC;`;
-      pool.query(sqlText, [userID])
-        .then((results) => {
-          // promise returns promise from pool if success
-          resolve(results.rows);
-        })
-        .catch((err) => {
-          // or promise relays errors from pool to parent
-          reject(err);
-        })
-    } else {
-      reject({ error: `no "side" parameter. Use 'BUY' 'SELL' or 'all'` })
-    }
-  });
-}
-
-// get a number of open orders in DB based on side. This will return them whether or not they are synced with CBP
-// can be limited by how many should be synced, or how many should be shown on the interface 
-// depending on where it is being called from
-// this is very similar to the function above, but gets only one side at a time so they are easier to split
-export const getUnsettledTrades = (side, userID, max_trade_load) => {
-  return new Promise(async (resolve, reject) => {
-    let sqlText;
-    // the only time 'BUY' or 'SELL' is passed is when the frontend is calling for all trades. 
-    // can request a limited amount of data to save on network costs
-    if (side == 'BUY') {
-      // gets all unsettled buys, sorted by price
-      sqlText = `SELECT * FROM "limit_orders" 
-      WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
-      ORDER BY "limit_price" DESC
-      LIMIT $2;`;
-      pool.query(sqlText, [userID, max_trade_load])
-        .then((results) => {
-          // promise returns promise from pool if success
-          resolve(results.rows);
-        })
-        .catch((err) => {
-          // or promise relays errors from pool to parent
-          reject(err);
-        })
-    } else if (side == 'SELL') {
-      // gets all unsettled sells, sorted by price
-      sqlText = `SELECT * FROM "limit_orders" 
-      WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
-      ORDER BY "limit_price" ASC
-      LIMIT $2;`;
-      pool.query(sqlText, [userID, max_trade_load])
-        .then((results) => {
-          // promise returns promise from pool if success
-          resolve(results.rows);
-        })
-        .catch((err) => {
-          // or promise relays errors from pool to parent
-          reject(err);
-        })
-    } else if (side == 'all') {
-      // gets all unsettled trades, sorted by price
-      sqlText = `SELECT * FROM "limit_orders" 
-      WHERE "flipped"=false AND "will_cancel"=false AND "userID"=$1
-      ORDER BY "limit_price" ASC;`;
-      pool.query(sqlText, [userID])
-        .then((results) => {
-          // promise returns promise from pool if success
-          resolve(results.rows);
-        })
-        .catch((err) => {
-          // or promise relays errors from pool to parent
-          reject(err);
-        })
-    } else {
-      reject({ error: `no "side" parameter. Use 'BUY' 'SELL' or 'all'` })
-    }
-  });
-}
-
-// This will get trades that have settled but not yet been flipped, meaning they need to be processed
-export const getAllSettledTrades = (userID) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // check all trades in db that are both settled and NOT flipped
-      sqlText = `SELECT * FROM "limit_orders" WHERE "settled"=true AND "userID"=$1;`;
-
-      const results = await pool.query(sqlText, [userID])
-      // .then((results) => {
-      const settled = results.rows;
-      // promise returns promise from pool if success
-      resolve(settled);
-    } catch (err) {
-      // or promise relays errors from pool to parent
-      reject(err);
-    }
-  });
-}
-
-// This will get trades that have settled but not yet been flipped, meaning they need to be processed
-export const getSettledTrades = (userID) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // check all trades in db that are both settled and NOT flipped
-      const sqlText = `SELECT * FROM "limit_orders" WHERE "settled"=true AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
-
-      const results = await pool.query(sqlText, [userID])
-      // .then((results) => {
-      const settled = results.rows;
-      // promise returns promise from pool if success
-      resolve(settled);
-    } catch (err) {
-      // or promise relays errors from pool to parent
-      reject(err);
-    }
-  });
-}
-
-
-// This will get orders for a user
-export const getAllOrders = (userID) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // check all trades in db that are both settled and NOT flipped
-      const sqlText = `SELECT * FROM "limit_orders" WHERE "userID"=$1;`;
-
-      const results = await pool.query(sqlText, [userID])
-      // .then((results) => {
-      const settled = results.rows;
-      // promise returns promise from pool if success
-      resolve(settled);
-    } catch (err) {
-      // or promise relays errors from pool to parent
-      reject(err);
-    }
-  });
-}
-
-// get the number of open orders from the DB
-export const getUnsettledTradeCounts = (userID, product) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // get total open buys
-      let sqlTextBuys = `SELECT COUNT(*) FROM "limit_orders" WHERE "userID"=$1 AND settled=false AND side='BUY' AND "product_id"=$2;`;
-
-      // get total open sells
-      let sqlTextSells = `SELECT COUNT(*) FROM "limit_orders" WHERE "userID"=$1 AND settled=false AND side='SELL' AND "product_id"=$2;`;
-
-      const totals = await Promise.all([
-        pool.query(sqlTextBuys, [userID, product]),
-        pool.query(sqlTextSells, [userID, product])
-      ])
-      const [totalOpenBuys] = totals[0].rows;
-      const [totalOpenSells] = totals[1].rows;
-
-      // combine buys and sells for total
-      const totalOpenOrders = { count: Number(totalOpenBuys.count) + Number(totalOpenSells.count) };
-
-      const unsettledOrderCounts = {
-        totalOpenOrders,
-        totalOpenBuys,
-        totalOpenSells
-      }
-
-      // promise returns promise from pool if success
-      resolve(unsettledOrderCounts);
-    } catch (err) {
-      // or promise relays errors from pool to parent
-      reject(err);
-    }
-  });
-}
-
-// get all details of an order
-export const getSingleTrade = (order_id) => {
-  return new Promise((resolve, reject) => {
-    let sqlText;
-    // put sql stuff here, extending the pool promise to the parent function
-    sqlText = `SELECT * FROM "limit_orders" WHERE "order_id"=$1;`;
-    pool.query(sqlText, [order_id])
-      .then((results) => {
-        const [singleTrade] = results.rows;
-        // promise returns promise from pool if success
-        resolve(singleTrade);
-      })
-      .catch((err) => {
-        // or promise relays errors from pool to parent
-        reject(err);
-      })
-  });
-}
-
-// get all details of an array of orders
-export const getTradesByIDs = (userID, IDs) => {
-  return new Promise(async (resolve, reject) => {
-    let sqlText;
-    // put sql stuff here, extending the pool promise to the parent function
-    sqlText = `select *
-    from limit_orders
-    where order_id = ANY ($1) and "userID" = $2;`;
-    try {
-      let result = await pool.query(sqlText, [IDs, userID]);
-      resolve(result.rows);
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
-
-// get all details of an array of order IDs
-export const getUnsettledTradesByIDs = (userID, IDs) => {
-  return new Promise(async (resolve, reject) => {
-    let sqlText;
-    // put sql stuff here, extending the pool promise to the parent function
-    sqlText = `select *
-    from limit_orders
-    where order_id = ANY ($1) and settled=false and "userID" = $2;`;
-    try {
-      let result = await pool.query(sqlText, [IDs, userID]);
-      resolve(result.rows);
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
-
-// get all details of an array of order IDs
-export const getUnfilledTradesByIDs = (userID, IDs) => {
-  return new Promise(async (resolve, reject) => {
-    let sqlText;
-    // put sql stuff here, extending the pool promise to the parent function
-    sqlText = `select *
-    from limit_orders
-    where order_id = ANY ($1) and filled_at IS NULL and settled=true and "userID" = $2;`;
-    try {
-      let result = await pool.query(sqlText, [IDs, userID]);
-      resolve(result.rows);
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
-
 
 // get the total USD that is on trade-pairs in the DB. This should be higher or the same as what is reported by CBP
 // because the bot stores more "open" orders than CBP will allow for
@@ -1073,91 +209,6 @@ export const getSpentBTC = (userID) => {
   });
 }
 
-// get [limit] number of orders closest to the spread
-export const getReorders = (userID, limit) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // first get active products
-      const products = await getActiveProductIDs(userID);
-      // first select the closest trades on either side according to the limit (which is in the bot settings table)
-      // then select from the results any that need to be reordered
-      let sqlText = `SELECT * FROM (
-        (
-        SELECT "order_id", "will_cancel", "userID", "limit_price", "reorder", "userID" 
-        FROM "limit_orders" 
-        WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "product_id" IN ($1) AND "userID"=$2 
-        ORDER BY "limit_price" ASC LIMIT $3)
-        UNION
-        (
-        SELECT "order_id", "will_cancel", "userID", "limit_price", "reorder", "userID" 
-        FROM "limit_orders" 
-        WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "product_id" IN ($1) AND "userID"=$2 
-        ORDER BY "limit_price" DESC LIMIT $3)
-        ORDER BY "limit_price" DESC
-        ) as reorders
-        WHERE "reorder"=true;`;
-      const results = await pool.query(sqlText, [products, userID, limit]);
-      // get the results from the DB for all products
-
-      // .then((results) => {
-      const reorders = results.rows;
-      // promise returns promise from pool if success
-      resolve(reorders);
-      // })
-    } catch (err) {
-      // or promise relays errors from pool to parent
-      reject(err);
-    }
-  });
-}
-
-// check to see if a trade is being canceled by the user
-// when the user kills a trade-pair, the current open order is first set to will_cancel=true 
-// this is because it can take a few seconds to connect and cancel on CBP, so the order should be ignored while this is happening
-// connecting to the DB and setting will_cancel to true is much faster
-export const checkIfCancelling = async (order_id) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      let sqlText;
-      // put sql stuff here, extending the pool promise to the parent function
-      sqlText = `SELECT * FROM "limit_orders" WHERE "order_id"=$1;`;
-      let result = await pool.query(sqlText, [order_id]);
-      const singleTrade = result.rows[0];
-      // promise returns promise from pool if success
-      resolve(singleTrade?.will_cancel);
-    } catch (err) {
-      // or promise relays errors from pool to parent
-      reject(err);
-    }
-  });
-}
-
-// delete a trade from the DB. Generally this should be done in combination with cancelling a trade on CB
-// unless it is a settled trade
-export const deleteTrade = async (order_id) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const queryText = `DELETE from "limit_orders" WHERE "order_id"=$1;`;
-      let result = await pool.query(queryText, [order_id]);
-      resolve(result);
-    } catch (err) {
-      reject(err)
-    }
-  });
-}
-
-export async function deleteMarkedOrders(userID) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const queryText = `DELETE from "limit_orders" WHERE "will_cancel"=true AND "userID"=$1;`;
-      let result = await pool.query(queryText, [userID]);
-      resolve(result);
-    } catch (err) {
-      reject(err)
-    }
-  });
-}
-
 // get user information
 export async function getUser(userID) {
   return new Promise(async (resolve, reject) => {
@@ -1235,204 +286,6 @@ export async function getUserAPI(userID) {
   })
 }
 
-// get all bot settings
-export async function getBotSettings() {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `SELECT * FROM "bot_settings";`;
-      let result = await pool.query(sqlText);
-      const settings = result.rows[0];
-      resolve(settings);
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-// turns maintenance mode on and off to stop trading on all accounts.
-// This prevents loss of data if the bot needs to be shut down 
-export async function toggleMaintenance() {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `UPDATE "bot_settings" SET "maintenance" = NOT "maintenance";`;
-      await pool.query(sqlText);
-      resolve();
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-// toggle registration of new users on and off
-export async function toggleRegistration() {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `UPDATE "bot_settings" SET "registration_open" = NOT "registration_open";`;
-      await pool.query(sqlText);
-      resolve();
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-export async function getRegistrationOpen() {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `SELECT "registration_open" FROM "bot_settings";`;
-      let result = await pool.query(sqlText);
-      const registrationOpen = result.rows[0].registration_open;
-      resolve(registrationOpen);
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-export async function updateLoopSpeed(loopSpeed) {
-  devLog('updating loop speed', loopSpeed);
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `UPDATE "bot_settings" SET "loop_speed" = $1;`;
-      await pool.query(sqlText, [loopSpeed]);
-      resolve();
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-export async function updateFullSync(fullSync) {
-  devLog('updating full sync', fullSync);
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `UPDATE "bot_settings" SET "full_sync" = $1;`;
-      await pool.query(sqlText, [fullSync]);
-      resolve();
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-export async function updateOrdersToSync(ordersToSync) {
-  return new Promise(async (resolve, reject) => {
-    // get a client for the transaction
-    const client = await pool.connect();
-    try {
-      const queryTextBot = `UPDATE "bot_settings" SET "orders_to_sync" = $1;`;
-      const queryTextUsers = `UPDATE "user_settings" SET "sync_quantity" = $1
-            WHERE "sync_quantity" > $1;`
-
-      // start a transaction
-      await client.query('BEGIN');
-      // update bot settings
-      await client.query(queryTextBot, [ordersToSync]);
-      // update user settings
-      await client.query(queryTextUsers, [ordersToSync]);
-      // commit the transaction
-      await client.query('COMMIT');
-      resolve();
-    } catch (err) {
-      // rollback the transaction
-      await client.query('ROLLBACK');
-      devLog(err, 'error trying to update orders to sync in db')
-      reject(err);
-    } finally {
-      // release the client
-      devLog('releasing client');
-      client.release();
-    }
-  })
-}
-
-// get all the trades that are outside the limit of the synced orders qty setting, 
-// but all still probably synced with CB (based on reorder=false)
-export async function getDeSyncs(userID, limit, side) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // first get active products
-      const products = await getActiveProductIDs(userID);
-
-      let results = []
-      if (side === 'buys') {
-        // WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
-        const sqlTextBuys = `SELECT * FROM "limit_orders" 
-        WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1 AND "product_id"=$2
-        ORDER BY "limit_price" DESC
-        OFFSET $3;`;
-        for (let i = 0; i < products.length; i++) {
-          const product = products[i].product_id;
-          const productResults = await pool.query(sqlTextBuys, [userID, product, limit]);
-          results = [...results, ...productResults.rows];
-        }
-        // results = await pool.query(sqlTextBuys, [userID, limit]);
-      } else {
-        // WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
-        const sqlTextSells = `SELECT * FROM "limit_orders" 
-        WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1 AND "product_id"=$2
-        ORDER BY "limit_price" ASC
-        OFFSET $3;`;
-        for (let i = 0; i < products.length; i++) {
-          const product = products[i].product_id;
-          const productResults = await pool.query(sqlTextSells, [userID, product, limit]);
-          results = [...results, ...productResults.rows];
-        }
-        // results = await pool.query(sqlTextSells, [userID, limit]);
-      }
-      resolve(results);
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-// setting an order to reorder will bypass some functions in the bot that check if the order needs to be reordered.
-// setting this to true for trades that are desynced from CB will save time later
-export async function setSingleReorder(order_id) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `UPDATE "limit_orders" SET "reorder" = true WHERE "order_id" = $1;`;
-      await pool.query(sqlText, [order_id]);
-      resolve();
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-// setting an order to reorder will bypass some functions in the bot that check if the order needs to be reordered.
-// setting this to true for trades that are desynced from CB will save time later
-export async function setManyReorders(idArray) {
-  return new Promise(async (resolve, reject) => {
-    devLog(idArray, 'setting many reorders');
-    try {
-      const sqlText = `UPDATE limit_orders
-      SET "reorder" = true 
-      WHERE "order_id" = ANY ($1);`;
-
-      await pool.query(sqlText, [idArray]);
-      resolve();
-    } catch (err) {
-      devLog('failed to set many reorders');
-      reject(err);
-    }
-  })
-}
-
-// this will set all trades to be reordered. Used when resyncing all orders
-// all orders should be cancelled on CB when doing this
-async function setReorder(userID) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `UPDATE "limit_orders" SET "reorder" = true WHERE "settled"=false AND "userID" = $1;`;
-      await pool.query(sqlText, [userID]);
-      resolve();
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
 
 // pause the bot for a user. Actually causes the bot to ignore all functions and continue looping while doing nothing
 async function setPause(status, userID) {
@@ -1481,20 +334,6 @@ export async function saveFees(fees, userID) {
       const totalVolume = Number(fees.advanced_trade_only_volume) + Number(fees.coinbase_pro_volume);
       const sqlText = `UPDATE "user_settings" SET "maker_fee" = $1, "taker_fee" = $2, "usd_volume" = $3  WHERE "userID" = $4`;
       let result = await pool.query(sqlText, [fees.fee_tier.maker_fee_rate, fees.fee_tier.taker_fee_rate, totalVolume, userID]);
-      resolve(result);
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-// update the fees and 30 day trade volume
-export async function markAsFlipped(order_id) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      devLog('marking as flipped', order_id);
-      const sqlText = `UPDATE "limit_orders" SET "flipped" = true WHERE "order_id"=$1;`;
-      let result = await pool.query(sqlText, [order_id]);
       resolve(result);
     } catch (err) {
       reject(err);
@@ -1825,37 +664,52 @@ export async function getAllSubscriptions() {
 
 
 const databaseClient = {
-  storeTrade: storeTrade,
-  updateTrade: updateTrade,
   importTrade: importTrade,
-  getLimitedUnsettledTrades: getLimitedUnsettledTrades,
-  getUnsettledTrades: getUnsettledTrades,
-  getUnsettledTradesByProduct: getUnsettledTradesByProduct,
-  getSettledTrades: getSettledTrades,
-  getAllOrders: getAllOrders,
+  
+  // products
   insertProducts: insertProducts,
+  getProduct: getProduct,
   getActiveProducts: getActiveProducts,
   getActiveProductIDs: getActiveProductIDs,
   getUserProducts: getUserProducts,
   updateProductActiveStatus: updateProductActiveStatus,
-  getAllSettledTrades: getAllSettledTrades,
-  getUnsettledTradeCounts: getUnsettledTradeCounts,
-  getSingleTrade: getSingleTrade,
-  getTradesByIDs: getTradesByIDs,
-  getUnsettledTradesByIDs: getUnsettledTradesByIDs,
-  getUnfilledTradesByIDs: getUnfilledTradesByIDs,
+  
+  
+  // limit orders
+  getSingleTrade,
+  getTradesByIDs,
+  getSettledTrades,
+  getUnsettledTrades,
+  getLimitedUnsettledTrades,
+  getUnsettledTradesByIDs,
+  getAllSettledTrades,
+  getUnfilledTradesByIDs,
+  getAllOrders,
+  getUnsettledTradeCounts,
+  getUnsettledTradesByProduct,
+  getReorders,
+  getDeSyncs,
+  checkIfCancelling,
+  storeTrade,
+  updateTrade,
+  setSingleReorder,
+  setManyReorders,
+  setReorder,
+  markAsFlipped,
+  deleteTrade,
+  markForCancel,
+  deleteMarkedOrders,
+  
+
+
   getSpentUSD: getSpentUSD,
   getSpentBTC: getSpentBTC,
   getSpentBase: getSpentBase,
   getSpentQuote: getSpentQuote,
-  getReorders: getReorders,
-  deleteTrade: deleteTrade,
-  deleteMarkedOrders: deleteMarkedOrders,
   getUser: getUser,
   getAllUsers: getAllUsers,
   getAllUserAndSettings: getAllUserAndSettings,
   getUserAndSettings: getUserAndSettings,
-  checkIfCancelling: checkIfCancelling,
   getUserAPI: getUserAPI,
 
   // bot settings
@@ -1867,15 +721,10 @@ const databaseClient = {
   updateFullSync: updateFullSync,
   updateOrdersToSync: updateOrdersToSync,
 
-  getDeSyncs: getDeSyncs,
-  setSingleReorder: setSingleReorder,
-  setReorder: setReorder,
-  setManyReorders: setManyReorders,
   setPause: setPause,
   setKillLock: setKillLock,
   setAutoSetupNumber: setAutoSetupNumber,
   saveFees: saveFees,
-  markAsFlipped: markAsFlipped,
   getProfitForDurationByProduct: getProfitForDurationByProduct,
   getProfitForDurationByAllProducts: getProfitForDurationByAllProducts,
   getProfitSinceDate: getProfitSinceDate,
@@ -1887,7 +736,6 @@ const databaseClient = {
   getCandlesAverage: getCandlesAverage,
   getNextCandles: getNextCandles,
   getMissingCandles: getMissingCandles,
-  getProduct: getProduct,
   addSubscription: addSubscription,
   getSubscriptionsForUser: getSubscriptionsForUser,
   getAllSubscriptions: getAllSubscriptions,
