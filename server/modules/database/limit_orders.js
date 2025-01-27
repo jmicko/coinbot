@@ -74,6 +74,7 @@ function getUserTradesCache(userID) {
       unsettled: null,
       unsettledTradesByIDs: new Map(),
       unfilledTradesByIDs: new Map(),
+      deSyncs: new Map(),
       limited: null,
       all: null
     });
@@ -338,13 +339,13 @@ export const getAllSettledTrades = (userID) => {
 // get all details of an array of order IDs
 export const getUnfilledTradesByIDs = (userID, IDs, IDsString) => {
   return new Promise(async (resolve, reject) => {
-  const cache = getUserTradesCache(userID);
-  const cacheKey = `${userID}-${IDsString}`;
-  if (cache.unfilledTradesByIDs.has(cacheKey)) {
-    // devLog('GETTER', 'getUnfilledTradesByIDs CACHE HIT');
-    resolve(cache.unfilledTradesByIDs.get(cacheKey));
-    return;
-  }
+    const cache = getUserTradesCache(userID);
+    const cacheKey = `${userID}-${IDsString}`;
+    if (cache.unfilledTradesByIDs.has(cacheKey)) {
+      // devLog('GETTER', 'getUnfilledTradesByIDs CACHE HIT');
+      resolve(cache.unfilledTradesByIDs.get(cacheKey));
+      return;
+    }
     // devLog('GETTER', 'getUnfilledTradesByIDs CACHE MISS');
     const sqlText = `select *
     from limit_orders
@@ -516,43 +517,44 @@ export const getReorders = (userID, limit) => {
 // get all the trades that are outside the limit of the synced orders qty setting, 
 // but all still probably synced with CB (based on reorder=false)
 export async function getDeSyncs(userID, limit, side) {
-  devLog('GETTER', 'getDeSyncs');
-  return new Promise(async (resolve, reject) => {
-    try {
-      // first get active products
-      const products = await getActiveProductIDs(userID);
+  const cache = getUserTradesCache(userID);
+  const cacheKey = `${userID}-${limit}-${side}`;
 
-      let results = []
-      if (side === 'buys') {
-        // WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
-        const sqlTextBuys = `SELECT * FROM "limit_orders" 
-        WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1 AND "product_id"=$2
-        ORDER BY "limit_price" DESC
-        OFFSET $3;`;
-        for (let i = 0; i < products.length; i++) {
-          const product = products[i].product_id;
-          const productResults = await pool.query(sqlTextBuys, [userID, product, limit]);
-          results = [...results, ...productResults.rows];
-        }
-        // results = await pool.query(sqlTextBuys, [userID, limit]);
-      } else {
-        // WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1
-        const sqlTextSells = `SELECT * FROM "limit_orders" 
-        WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "reorder"=false AND "userID"=$1 AND "product_id"=$2
-        ORDER BY "limit_price" ASC
-        OFFSET $3;`;
-        for (let i = 0; i < products.length; i++) {
-          const product = products[i].product_id;
-          const productResults = await pool.query(sqlTextSells, [userID, product, limit]);
-          results = [...results, ...productResults.rows];
-        }
-        // results = await pool.query(sqlTextSells, [userID, limit]);
+  return new Promise(async (resolve, reject) => {
+    if (cache.deSyncs.has(cacheKey)) {
+      resolve(cache.deSyncs.get(cacheKey));
+      return;
+    }
+
+    try {
+      // Convert 'buys'/'sells' to 'BUY'/'SELL'
+      const orderSide = side.slice(0, -1).toUpperCase();
+      
+      const sqlText = `SELECT * FROM "limit_orders" 
+        WHERE "side"=$1 
+        AND "flipped"=false 
+        AND "will_cancel"=false 
+        AND "reorder"=false 
+        AND "userID"=$2 
+        AND "product_id"=$3
+        ORDER BY "limit_price" ${orderSide === 'BUY' ? 'DESC' : 'ASC'}
+        OFFSET $4;`;
+
+      const products = await getActiveProductIDs(userID);
+      let results = [];
+      
+      for (const product of products) {
+        const productResults = await pool.query(sqlText, 
+          [orderSide, userID, product, limit]);
+        results = [...results, ...productResults.rows];
       }
+
+      cache.deSyncs.set(cacheKey, results);
       resolve(results);
     } catch (err) {
       reject(err);
     }
-  })
+  });
 }
 
 // check to see if a trade is being canceled by the user
