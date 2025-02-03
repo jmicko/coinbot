@@ -151,6 +151,23 @@ class Coinbase {
 
   // used for signing all REST requests
   signRequest(data, API) {
+    // If using new API credentials, use JWT auth
+    if (this.newKey && this.newSecret) {
+      devLog('===using new API credentials===');
+      const token = this.createAuthToken(API.method, API.path);
+      return {
+        method: API.method,
+        timeout: 10000,
+        url: API.url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        ...(data && { data })
+      };
+    }
+
+    devLog('!!! using legacy API credentials!!!');
     // convert the data to JSON, if any
     const body = data ? JSON.stringify(data) : '';
     // get the timestamp
@@ -257,9 +274,9 @@ class Coinbase {
   }
 
   // CALL IT LIKE THIS coinbase.getAccounts({ limit: 250, someKey:whateverValue })
-  async getAccountsLegacy(params) {
+  async getAccounts(params) {
     return new Promise(async (resolve, reject) => {
-      devLog('====getAccountsLegacy====', params, '<- params');
+      // devLog('====getAccountsLegacy====', params, '<- params');
       try {
         // data should just be blank
         const data = null;
@@ -273,7 +290,7 @@ class Coinbase {
         // add params, if any
         if (params) { this.addParams(options, params) };
 
-        devLog(options, 'options');
+        // devLog(options, 'options');
         // make the call
         let response = await axios.request(options);
         // devLog(response.data, 'response from getAccounts');
@@ -284,12 +301,13 @@ class Coinbase {
     })
   }
 
-  async getAccounts(params) {
+  async getAccountsNewTest(params) {
     // determine if we are using the legacy or new API
     // the new API is stored as the name and privateKey properties of the apiDetails object
     if (this.newKey && this.newSecret) {
       // we are using the new API
-      return this.getAccountsNew(params);
+      // return this.getAccountsNew(params);
+      return this.getAccountsLegacy(params);
     } else {
       // we are using the legacy API
       return this.getAccountsLegacy(params);
@@ -315,6 +333,7 @@ class Coinbase {
           // combine the two arrays
           result.accounts = result.accounts.concat(nextAccounts.accounts);
         }
+        // devLog(result, 'GET ALL ACCOUNTS result');
         resolve(result);
       } catch (err) {
         reject(err);
