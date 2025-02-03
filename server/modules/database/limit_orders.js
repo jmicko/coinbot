@@ -561,23 +561,23 @@ export async function getDeSyncs(userID, limit, side) {
 // when the user kills a trade-pair, the current open order is first set to will_cancel=true 
 // this is because it can take a few seconds to connect and cancel on CBP, so the order should be ignored while this is happening
 // connecting to the DB and setting will_cancel to true is much faster
-export const checkIfCancelling = async (order_id) => {
-  devLog('GETTER', 'checkIfCancelling');
-  return new Promise(async (resolve, reject) => {
-    try {
-      let sqlText;
-      // put sql stuff here, extending the pool promise to the parent function
-      sqlText = `SELECT * FROM "limit_orders" WHERE "order_id"=$1;`;
-      let result = await pool.query(sqlText, [order_id]);
-      const singleTrade = result.rows[0];
-      // promise returns promise from pool if success
-      resolve(singleTrade?.will_cancel);
-    } catch (err) {
-      // or promise relays errors from pool to parent
-      reject(err);
-    }
-  });
-}
+// export const checkIfCancelling = async (order_id) => {
+//   devLog('GETTER', 'checkIfCancelling');
+//   return new Promise(async (resolve, reject) => {
+//     try {
+//       let sqlText;
+//       // put sql stuff here, extending the pool promise to the parent function
+//       sqlText = `SELECT * FROM "limit_orders" WHERE "order_id"=$1;`;
+//       let result = await pool.query(sqlText, [order_id]);
+//       const singleTrade = result.rows[0];
+//       // promise returns promise from pool if success
+//       resolve(singleTrade?.will_cancel);
+//     } catch (err) {
+//       // or promise relays errors from pool to parent
+//       reject(err);
+//     }
+//   });
+// }
 
 // stores the details of a trade-pair. The originalDetails are details that stay with a trade-pair when it is flipped
 // flipped_at is the "Time" shown on the interface. It has no other function
@@ -1008,7 +1008,6 @@ export async function deleteTrade(order_id, userID) {
 }
 
 export async function markForCancel(userID, order_id) {
-  incrementDeletedTradeCount(userID);
   devLog('UPDATER', 'markForCancel');
   return new Promise(async (resolve, reject) => {
     try {
@@ -1017,6 +1016,7 @@ export async function markForCancel(userID, order_id) {
       WHERE "order_id"=$1
       RETURNING *;`;
       let result = await pool.query(queryText, [order_id]);
+      incrementDeletedTradeCount(userID);
       // update the user cache
       clearAllUserCaches(userID);
       resolve(result.rows[0]);

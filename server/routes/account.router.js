@@ -397,50 +397,6 @@ router.get('/exportCurrentJSON', rejectUnauthenticated, async (req, res) => {
   }
 });
 
-/**
-* POST route to import JSON of current orders
-*/
-router.post('/importCurrentJSON', rejectUnauthenticated, async (req, res) => {
-  const userID = req.user.id;
-  // try {
-  //   // devLog(req.body);
-  //   const IGNORE_DUPLICATES = req.body.ignoreDuplicates
-  //   const JSON_IMPORT = req.body.jsonImport
-  //   // devLog(JSON.parse(JSON_IMPORT));
-  //   const TRADES_TO_IMPORT = JSON.parse(JSON_IMPORT);
-
-  //   let { errors, newTradeList } = convertJSONImport(TRADES_TO_IMPORT, IGNORE_DUPLICATES);
-
-  //   // if there are no errors, import the new trades into the db
-  //   if (!errors) {
-  //     // there may still be db errors, so keep track of that
-  //     let dbErrors = false;
-  //     // import the trades into the db
-  //     newTradeList.forEach(async trade => {
-  //       // devLog(Date.now());
-  //       // devLog(trade.id);
-  //       try {
-  //         await databaseClient.importTrade(trade, userID);
-  //       } catch (error) {
-  //         devLog('problem importing a trade');
-  //         dbErrors = true;
-  //       }
-  //     });
-  //     if (dbErrors) {
-  //       res.sendStatus(500);
-  //     } else {
-  //       res.sendStatus(200);
-  //     }
-  //   } else {
-  res.sendStatus(500);
-  //   }
-
-  // } catch (err) {
-  //   devLog('problem getting all orders');
-  //   res.sendStatus(500);
-  // }
-});
-
 
 /**
 * GET route to get user's errors from cache

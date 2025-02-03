@@ -392,7 +392,7 @@ async function processOrders(userID) {
           // ...take the first trade that needs to be flipped, 
           let dbOrder = tradeList[i];
           // get the user of the trade
-          let user = await databaseClient.getUserAndSettings(dbOrder.userID);
+          let user = await databaseClient.getUserAndSettings(dbOrder.userID, 'processOrders');
           // ...flip the trade details
           let tradeDetails = flipTrade(dbOrder, user, tradeList);
           // ...send the new trade
@@ -920,7 +920,7 @@ async function updateFunds(userID, identifier) {
   userStorage[userID].updateStatus('begin update funds');
   return new Promise(async (resolve, reject) => {
     try {
-      const userSettings = await databaseClient.getUserAndSettings(userID);
+      const userSettings = await databaseClient.getUserAndSettings(userID, 'updateFunds');
       const available = await getAvailableFunds(userID, userSettings);
       const previousAvailable = userStorage[userID].getAvailableFunds();
 

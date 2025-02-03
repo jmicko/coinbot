@@ -22,7 +22,7 @@ import {
   getUnsettledTradesByProduct,
   getReorders,
   getDeSyncs,
-  checkIfCancelling,
+  // checkIfCancelling,
   storeTrade,
   updateTrade,
   setSingleReorder,
@@ -54,6 +54,18 @@ import {
   insertProducts,
   updateProductActiveStatus,
 } from './database/products.js';
+// import user functions
+import { 
+  getUser,
+  getAllUsers,
+  getAllUserAndSettings,
+  getUserAndSettings,
+  getUserAPI,
+  setPause,
+  setKillLock,
+  setAutoSetupNumber,
+  saveFees,
+ } from './database/user.js';
 
 let showLogs = true;
 
@@ -84,47 +96,6 @@ export const dbUpgrade = async () => {
   }
 }
 
-
-// This function is used when importing trades from the user interface
-// IT MUST USE THE USER ID FROM PASSPORT AUTHENTICATION!!!
-// otherwise you could import false trades for someone else!
-export const importTrade = (details, userID) => {
-  devLog(details.id, 'details.id in importTrade');
-  return new Promise((resolve, reject) => {
-    // add new order to the database
-    const sqlText = `INSERT INTO "orders"
-    ("id", "userID", "price", "size", "trade_pair_ratio", "side", "settled", "product_id", "time_in_force",
-      "created_at", "flipped_at", "done_at", "fill_fees", "previous_fill_fees", "filled_size", "executed_value", "original_buy_price", "original_sell_price", "reorder")
-  VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19); `;
-    pool.query(sqlText, [
-      details.id,
-      userID,
-      details.price,
-      details.size,
-      details.trade_pair_ratio,
-      details.side,
-      details.settled,
-      details.product_id,
-      details.time_in_force,
-      details.created_at,
-      details.flipped_at,
-      details.done_at,
-      details.fill_fees,
-      details.previous_fill_fees,
-      details.filled_size,
-      details.executed_value,
-      details.original_buy_price,
-      details.original_sell_price,
-      true
-    ])
-      .then((results) => {
-        resolve(results);
-      })
-      .catch((err) => {
-        reject(err);
-      });
-  });
-}
 
 // get the total USD that is on trade-pairs in the DB. This should be higher or the same as what is reported by CBP
 // because the bot stores more "open" orders than CBP will allow for
@@ -209,137 +180,6 @@ export const getSpentBTC = (userID) => {
   });
 }
 
-// get user information
-export async function getUser(userID) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `SELECT * FROM "user" WHERE "id"=$1;`;
-      let result = await pool.query(sqlText, [userID]);
-      const user = result.rows[0];
-      resolve(user);
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-// get all user information minus password
-export async function getAllUsers() {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `SELECT "id", "username", "active", "admin", "approved", "joined_at" FROM "user";`;
-      let result = await pool.query(sqlText);
-      const users = result.rows;
-      resolve(users);
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-// get all user information and settings except for the API details. 
-// Keeping them separate helps prevent accidentally sending an API outside the server
-export async function getAllUserAndSettings() {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `SELECT * 
-      FROM "user" JOIN "user_settings" ON ("user"."id" = "user_settings"."userID")
-      ORDER BY "user"."id";`;
-      let result = await pool.query(sqlText);
-      const users = result.rows;
-      resolve(users);
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-
-// get all user information and settings except for the API details. 
-// Keeping them separate helps prevent accidentally sending an API outside the server
-export async function getUserAndSettings(userID) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `SELECT * 
-      FROM "user" JOIN "user_settings" ON ("user"."id" = "user_settings"."userID")
-      WHERE id = $1;`;
-      let result = await pool.query(sqlText, [userID]);
-      const user = result.rows[0];
-      resolve(user);
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-// get the API details for a user
-export async function getUserAPI(userID) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `SELECT * FROM "user_api" WHERE "userID"=$1;`;
-      let result = await pool.query(sqlText, [userID]);
-      const userAPI = result.rows[0];
-      resolve(userAPI);
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-
-// pause the bot for a user. Actually causes the bot to ignore all functions and continue looping while doing nothing
-async function setPause(status, userID) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `UPDATE "user_settings" SET "paused" = $1 WHERE "userID" = $2`;
-      let result = await pool.query(sqlText, [status, userID]);
-      resolve(result);
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-// toggles the kill button on the tradelist on the interface
-// turning it on will not show the kill button, preventing accidental trade-pair cancellation
-export async function setKillLock(status, userID) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `UPDATE "user_settings" SET "kill_locked" = $1 WHERE "userID" = $2`;
-      let result = await pool.query(sqlText, [status, userID]);
-      resolve(result);
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-
-export async function setAutoSetupNumber(number, userID) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `UPDATE "user_settings" SET "auto_setup_number" = $1 WHERE "userID" = $2`;
-      let result = await pool.query(sqlText, [number, userID]);
-      resolve(result);
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-// update the fees and 30 day trade volume
-export async function saveFees(fees, userID) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const totalVolume = Number(fees.advanced_trade_only_volume) + Number(fees.coinbase_pro_volume);
-      const sqlText = `UPDATE "user_settings" SET "maker_fee" = $1, "taker_fee" = $2, "usd_volume" = $3  WHERE "userID" = $4`;
-      let result = await pool.query(sqlText, [fees.fee_tier.maker_fee_rate, fees.fee_tier.taker_fee_rate, totalVolume, userID]);
-      resolve(result);
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
 
 // get profit for a product and for all products for a duration of time
 export async function getProfitForDurationByProduct(userID, product, duration) {
@@ -664,7 +504,6 @@ export async function getAllSubscriptions() {
 
 
 const databaseClient = {
-  importTrade: importTrade,
   
   // products
   insertProducts: insertProducts,
@@ -689,7 +528,6 @@ const databaseClient = {
   getUnsettledTradesByProduct,
   getReorders,
   getDeSyncs,
-  checkIfCancelling,
   storeTrade,
   updateTrade,
   setSingleReorder,
@@ -700,17 +538,18 @@ const databaseClient = {
   markForCancel,
   deleteMarkedOrders,
   
+  // user
+  getUser: getUser,
+  getAllUsers: getAllUsers,
+  getAllUserAndSettings: getAllUserAndSettings,
+  getUserAndSettings: getUserAndSettings,
+  getUserAPI: getUserAPI,
 
 
   getSpentUSD: getSpentUSD,
   getSpentBTC: getSpentBTC,
   getSpentBase: getSpentBase,
   getSpentQuote: getSpentQuote,
-  getUser: getUser,
-  getAllUsers: getAllUsers,
-  getAllUserAndSettings: getAllUserAndSettings,
-  getUserAndSettings: getUserAndSettings,
-  getUserAPI: getUserAPI,
 
   // bot settings
   getBotSettings: getBotSettings,
