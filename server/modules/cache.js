@@ -416,13 +416,13 @@ const cbClients = new class {
     const userAPI = await databaseClient.getUserAPI(userID);
 
     // Object.assign(apiStorage[userID], userAPI)
-
+    // devLog(userAPI, 'userAPI')
 
     this.apiStorage[userID] = Object();
     Object.assign(this.apiStorage[userID], userAPI)
 
     if (userAPI.CB_ACCESS_KEY?.length) {
-      this[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET, ['BTC-USD', 'ETH-USD']);
+      this[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET, userAPI, ['BTC-USD', 'ETH-USD']);
       userStorage[userID].activate(true);
     } else {
       userStorage[userID].activate(false);

@@ -13,6 +13,10 @@ import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { devLog } from '../modules/utilities.js';
 import { deleteMessage } from '../modules/database/messages.js';
+import jwt from 'jsonwebtoken';
+const { sign } = jwt;
+import crypto from 'crypto';
+import axios from 'axios';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 
@@ -567,7 +571,7 @@ router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
     const user = req.user;
     const identifier = req.headers['x-identifier'];
     const size = req.body.max_trade_size > 0 ? req.body.max_trade_size : 0;
-    
+
     await databaseClient.setMaxTradeSize(size, user.id);
     await userStorage[user.id].update(identifier);
     res.sendStatus(200);
@@ -618,17 +622,77 @@ router.put('/postMaxReinvestRatio', rejectUnauthenticated, async (req, res) => {
  */
 router.put('/updateAPIKey', rejectUnauthenticated, async (req, res) => {
   devLog('update api key route');
-  const userID = req.user.id;
-  const apiKey = req.body.api_key;
-  if (!apiKey.name || !apiKey.privateKey) {
-    res.sendStatus(400);
-    return;
+  try {
+    const userID = req.user.id;
+    const apiKey = req.body.api_key;
+    if (!apiKey.name || !apiKey.privateKey) {
+      res.sendStatus(400);
+      return;
+    }
+    const key_name = apiKey.name;
+    const key_secret = apiKey.privateKey;
+    devLog(key_name, 'key name');
+    devLog(key_secret, 'key secret');
+
+
+    const request_method = "GET";
+    const url = "api.coinbase.com";
+    const request_path = "/api/v3/brokerage/accounts";
+
+    const algorithm = "ES256";
+    const uri = request_method + " " + url + request_path;
+
+    const token = sign(
+      {
+        iss: "cdp",
+        nbf: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 120,
+        sub: key_name,
+        uri,
+      },
+      key_secret,
+      {
+        algorithm,
+        header: {
+          kid: key_name,
+          nonce: crypto.randomBytes(16).toString("hex"),
+        },
+      }
+    );
+    console.log("export JWT=" + token);
+
+    const response = await axios.request({
+      method: 'GET',
+      timeout: 10000,
+      url: 'https://api.coinbase.com/api/v3/brokerage/accounts',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (response.status !== 200) {
+      devLog('API request failed:', response.status, response.statusText);
+      throw new Error(`API request failed: ${response.status}`);
+    }
+
+    const data = response.data;
+    devLog('API response:', data.accounts[0]);
+
+    if (data.accounts[0]) {
+      // update the api key in the database
+      await databaseClient.updateAPIKey(apiKey, userID);
+    } else {
+      devLog('API key is invalid');
+      res.sendStatus(401);
+      return;
+    }
+
+    res.sendStatus(200);
+  } catch (err) {
+    devLog(err, 'problem in update api key route');
+    res.sendStatus(500);
   }
-  const apiKeyName = apiKey.name;
-  const apiKeyPrivateKey = apiKey.privateKey;
-  devLog(apiKeyName, 'api key name');
-  devLog(apiKeyPrivateKey, 'api key private key');
-  res.sendStatus(200);
 });
 
 /**

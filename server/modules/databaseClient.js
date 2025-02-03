@@ -73,6 +73,7 @@ import {
   setMaxTradeSize,
   setReserve,
   setPostMaxReinvestRatio,
+  updateAPIKey,
   getUserCount,
   updateUserTables,
  } from './database/user.js';
@@ -564,7 +565,7 @@ const databaseClient = {
   setMaxTradeSize: setMaxTradeSize,
   setReserve: setReserve,
   setPostMaxReinvestRatio: setPostMaxReinvestRatio,
-
+  updateAPIKey: updateAPIKey,
   getSpentUSD: getSpentUSD,
   getSpentBTC: getSpentBTC,
   getSpentBase: getSpentBase,

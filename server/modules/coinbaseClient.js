@@ -1,21 +1,26 @@
 // const WebSocket = require('ws');
-import  WebSocket  from 'ws';
+import WebSocket from 'ws';
 // const CryptoJS = require("crypto-js");
 import CryptoJS from 'crypto-js';
 // const axios = require("axios").default;
-import  axios  from 'axios';
+import axios from 'axios';
 // const { cache } = require("./cache");
 // const { v4: uuidv4 } = require('uuid');
 import { v4 as uuidv4 } from 'uuid';
 import { devLog, sleep } from './utilities.js';
+import jwt from 'jsonwebtoken';
+const { sign } = jwt;
+import crypto from 'crypto';
 
 class Coinbase {
-  constructor(key, secret) {
+  constructor(key, secret, apiDetails) {
     if (!secret?.length || !key?.length) {
       throw new Error('Coinbase is missing mandatory key and/or secret!');
     }
     this.key = key;
     this.secret = secret;
+    this.newKey = apiDetails.name;
+    this.newSecret = apiDetails.privateKey;
     this.WS_API_URL = 'wss://advanced-trade-ws.coinbase.com';
     this.ws = null;
     this.products = null;
@@ -169,21 +174,92 @@ class Coinbase {
     };
     return options;
   }
-  addParams(options, params) {
+
+  addParams(endpoint, params) {
     // this function is only called if there are params, so add a ? to the url string
-    options.url = options.url + `?`;
+    endpoint.url = endpoint.url + `?`;
     // Iterate over each object key/value pair, adding them to the url
     Object.keys(params).forEach(key => {
       // add new param
-      options.url += `${key}=${params[key]}&`;
+      endpoint.url += `${key}=${params[key]}&`;
     });
     // cut off the last & symbol
-    options.url = options.url.slice(0, -1)
+    endpoint.url = endpoint.url.slice(0, -1)
+  }
+
+  createAuthToken(method, path) {
+    const uri = `${method} api.coinbase.com${path}`;
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    return jwt.sign(
+      {
+        iss: "cdp",
+        nbf: timestamp,
+        exp: timestamp + 120,
+        sub: this.newKey,
+        uri,
+      },
+      this.newSecret,
+      {
+        algorithm: "ES256",
+        header: {
+          kid: this.newKey,
+          nonce: crypto.randomBytes(16).toString("hex"),
+        },
+      }
+    );
+  }
+
+  createRequestOptions(endpoint, data) {
+    const token = this.createAuthToken(endpoint.method, endpoint.path);
+
+    const options = {
+      method: endpoint.method,
+      timeout: 10000,
+      url: endpoint.url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    };
+    // devLog('checking data');
+    if (data) {
+      devLog(data, 'adding data');
+      options.data = data;
+    }
+    // devLog(options, 'options');
+    return options;
+  }
+
+  async getAccountsNew(params) {
+    try {
+      // devLog('====getAccountsNew====', params, '<- params');
+      const endpoint = {
+        url: `https://api.coinbase.com/api/v3/brokerage/accounts`,
+        path: "/api/v3/brokerage/accounts",
+        method: 'GET',
+      }
+      // Add params if they exist (using your existing addParams method)
+      if (params) { this.addParams(endpoint, params); }
+
+      // Create the request options
+      const options = this.createRequestOptions(endpoint);
+
+      // devLog(options, 'options');
+      // Make the request
+      const response = await axios.request(options);
+      // devLog(response.data, 'response from getAccountsNew');
+      return response.data;
+    } catch (err) {
+      devLog('Error in getAccountsNew:', err);
+      throw err;
+    }
   }
 
   // CALL IT LIKE THIS coinbase.getAccounts({ limit: 250, someKey:whateverValue })
-  async getAccounts(params) {
+  async getAccountsLegacy(params) {
     return new Promise(async (resolve, reject) => {
+      devLog('====getAccountsLegacy====', params, '<- params');
       try {
         // data should just be blank
         const data = null;
@@ -196,6 +272,8 @@ class Coinbase {
         const options = this.signRequest(data, API);
         // add params, if any
         if (params) { this.addParams(options, params) };
+
+        devLog(options, 'options');
         // make the call
         let response = await axios.request(options);
         // devLog(response.data, 'response from getAccounts');
@@ -206,14 +284,28 @@ class Coinbase {
     })
   }
 
+  async getAccounts(params) {
+    // determine if we are using the legacy or new API
+    // the new API is stored as the name and privateKey properties of the apiDetails object
+    if (this.newKey && this.newSecret) {
+      // we are using the new API
+      return this.getAccountsNew(params);
+    } else {
+      // we are using the legacy API
+      return this.getAccountsLegacy(params);
+    }
+  }
+
+
   // Get all accounts. Call the above, and if it has_next, call this recursively with the cursor we get back until it doesn't have_next
   // this will return an array of all accounts
   async getAllAccounts(prevCursor) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('getAllAccounts');
         // if there is a prevCursor, add it to the params, always limit to 250
         const params = { limit: 250 };
-        if (prevCursor) { params.cursor = prevCursor }; 
+        if (prevCursor) { params.cursor = prevCursor };
         // get the accounts
         const result = await this.getAccounts(params);
         // if there is a next cursor, call this function again with the cursor
@@ -234,6 +326,7 @@ class Coinbase {
   async getFills(params) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('getFills');
         await sleep(100);
         // data should just be blank
         const data = null;
@@ -258,6 +351,7 @@ class Coinbase {
   async getOrders(params) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('getOrders');
         // data should just be blank
         const data = null;
         const API = {
@@ -280,6 +374,7 @@ class Coinbase {
   async getTransactionSummary(params) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('getTransactionSummary');
         // data should just be blank
         const data = null;
         const API = {
@@ -305,6 +400,7 @@ class Coinbase {
   async getProduct(product_id) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('getProduct');
         // data should just be blank
         const data = null;
         const API = {
@@ -327,6 +423,7 @@ class Coinbase {
   async getProducts(params) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('getProducts');
         // data should just be blank
         const data = null;
         const API = {
@@ -351,6 +448,7 @@ class Coinbase {
   async getMarketTrades(params) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('getMarketTrades');
         const product_id = params.product_id;
         // delete product_id from params
         delete params.product_id;
@@ -378,6 +476,7 @@ class Coinbase {
   async getMarketCandles(params) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('getMarketCandles');
         const product_id = params.product_id;
         // delete product_id from params
         delete params.product_id;
@@ -406,6 +505,7 @@ class Coinbase {
   async getOrder(order_id) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('getOrder');
         // data should just be blank
         const data = null;
         const API = {
@@ -428,6 +528,7 @@ class Coinbase {
   async placeOrder(order) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('placeOrder');
         const API = {
           url: `https://api.coinbase.com/api/v3/brokerage/orders`,
           path: "/api/v3/brokerage/orders",
@@ -541,7 +642,7 @@ class Coinbase {
   async placeMarketOrder(order) {
     return new Promise(async (resolve, reject) => {
       try {
-
+        devLog('placeMarketOrder');
         const API = {
           url: `https://api.coinbase.com/api/v3/brokerage/orders`,
           path: "/api/v3/brokerage/orders",
@@ -593,6 +694,7 @@ class Coinbase {
   async cancelOrders(orderIdArray) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('cancelOrders');
         // make sure we have an array and that it is not empty
         if (!Array.isArray(orderIdArray) || orderIdArray.length === 0) {
           reject('orderIdArray must be an array of order IDs');
@@ -619,6 +721,7 @@ class Coinbase {
   async cancelAll() {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('cancelAll');
         const openOrders = await this.getOrders({ order_status: 'OPEN', limit: 1000 });
         const idArray = [];
         openOrders.orders.forEach(order => {
@@ -644,6 +747,7 @@ class Coinbase {
   async cancelAllForProduct(product_id) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('cancelAllForProduct');
         const openOrders = await this.getOrders({ order_status: 'OPEN', product_id: product_id, limit: 1000 });
         const idArray = [];
         openOrders.orders.forEach(order => {

@@ -2,7 +2,7 @@ import { cacheEvents, emitCacheEvent, onCacheEvent } from '../cacheEvents.js';
 import { pool } from '../pool.js';
 import { devLog as devLogUtilities } from '../utilities.js';
 
-let showLogs = true;
+let showLogs = false;
 
 const logTypes = {
   GETTER: true,
@@ -329,6 +329,14 @@ export async function setPostMaxReinvestRatio(ratio, userID) {
   const sqlText = `UPDATE "user_settings" SET "post_max_reinvest_ratio" = $1 WHERE "userID" = $2`;
   let result = await pool.query(sqlText, [ratio, userID]);
   emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, userID);
+  return result;
+}
+
+export async function updateAPIKey(apiKey, userID) {
+  devLog('UPDATER', 'updateAPIKey');
+  const sqlText = `UPDATE "user_api" SET "name" = $1, "privateKey" = $2 WHERE "userID" = $3`;
+  let result = await pool.query(sqlText, [apiKey.name, apiKey.privateKey, userID]);
+  emitCacheEvent(cacheEvents.USER_API_UPDATED, userID);
   return result;
 }
 

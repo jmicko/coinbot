@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getActiveProductIDs } from "./products.js";
 import { cacheEvents, onCacheEvent } from "../cacheEvents.js";
 
-let showLogs = true;
+let showLogs = false;
 const logTypes = {
   GETTER: true,
   SETTER: true,
