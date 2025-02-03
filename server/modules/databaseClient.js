@@ -9,6 +9,7 @@ import { updateMessagesTable } from './database/messages.js';
 import { updateFeedbackTable } from './database/feedback.js';
 // import limit_orders functions
 import {
+  updateLimitOrdersTable,
   getSingleTrade,
   getTradesByIDs,
   getSettledTrades,
@@ -65,6 +66,15 @@ import {
   setKillLock,
   setAutoSetupNumber,
   saveFees,
+  setProfitReset,
+  setReinvest,
+  setReinvestRatio,
+  setTradeMax,
+  setMaxTradeSize,
+  setReserve,
+  setPostMaxReinvestRatio,
+  getUserCount,
+  updateUserTables,
  } from './database/user.js';
 
 let showLogs = true;
@@ -89,10 +99,12 @@ export const dbUpgrade = async () => {
     await updateFeedbackTable();
     await updateLimitOrdersTable();
     await updateSettingsTable();
+    await updateUserTables();
 
     devLog('<><> dbUpgrade complete <><>');
   } catch (error) {
     devLog('error in dbUpgrade', error);
+    throw error;
   }
 }
 
@@ -544,7 +556,14 @@ const databaseClient = {
   getAllUserAndSettings: getAllUserAndSettings,
   getUserAndSettings: getUserAndSettings,
   getUserAPI: getUserAPI,
-
+  setProfitReset: setProfitReset,
+  getUserCount: getUserCount,
+  setReinvest: setReinvest,
+  setReinvestRatio: setReinvestRatio,
+  setTradeMax: setTradeMax,
+  setMaxTradeSize: setMaxTradeSize,
+  setReserve: setReserve,
+  setPostMaxReinvestRatio: setPostMaxReinvestRatio,
 
   getSpentUSD: getSpentUSD,
   getSpentBTC: getSpentBTC,

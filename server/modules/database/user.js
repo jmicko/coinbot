@@ -22,6 +22,41 @@ function devLog(...message) {
   }
 }
 
+// add collumns to store new format of api keys
+// Looks like this:
+// {
+//   "name": "organizations/11111111-2222-3333-4444-555555555555/apiKeys/fasgf345-sfe3-423f-4576-hryjhfd3ty35",
+//   "privateKey": "-----BEGIN EC PRIVATE KEY-----\nxxxxx\nxxxx\nxxxx\n-----END EC PRIVATE KEY-----\n"
+// }
+
+export async function updateUserTables() {
+  devLog('<><> updating user tables <><>');
+
+  const userAPIColumnsResult = await pool.query(`
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_name='user_api';
+    `);
+  const userAPIColumns = userAPIColumnsResult.rows.map(row => row.column_name);
+  devLog(userAPIColumns, '<><> user_api columns <><>');
+
+  if (!userAPIColumns.includes('name')) {
+    devLog('<><> adding name column to user_api <><>');
+    let sqlText = `
+    ALTER TABLE "user_api"
+    ADD COLUMN "name" text;`;
+    await pool.query(sqlText);
+  }
+
+  if (!userAPIColumns.includes('privateKey')) {
+    devLog('<><> adding privateKey column to user_api <><>');
+    let sqlText = `
+    ALTER TABLE "user_api"
+    ADD COLUMN "privateKey" text;`;
+    await pool.query(sqlText);
+  }
+}
+
 // cache
 
 const singleUserCache = new Map();
@@ -241,13 +276,68 @@ export async function saveFees(fees, userID) {
   });
 }
 
+export async function setProfitReset(date, userID) {
+  devLog('UPDATER', 'setProfitReset');
+  const sqlText = `UPDATE "user_settings" SET "profit_reset" = $1 WHERE "userID" = $2`;
+  let result = await pool.query(sqlText, [date, userID]);
+  emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, userID);
+  return result;
+}
+
+export async function setReinvest(status, userID) {
+  devLog('UPDATER', 'setReinvest');
+  const sqlText = `UPDATE "user_settings" SET "reinvest" = $1 WHERE "userID" = $2`;
+  let result = await pool.query(sqlText, [status, userID]);
+  emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, userID);
+  return result;
+}
+
+export async function setReinvestRatio(ratio, userID) {
+  devLog('UPDATER', 'setReinvestRatio');
+  const sqlText = `UPDATE "user_settings" SET "reinvest_ratio" = $1 WHERE "userID" = $2`;
+  let result = await pool.query(sqlText, [ratio, userID]);
+  emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, userID);
+  return result;
+}
+
+export async function setTradeMax(max, userID) {
+  devLog('UPDATER', 'setTradeMax');
+  const sqlText = `UPDATE "user_settings" SET "max_trade" = $1 WHERE "userID" = $2`;
+  let result = await pool.query(sqlText, [max, userID]);
+  emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, userID);
+  return result;
+}
+
+export async function setMaxTradeSize(size, userID) {
+  devLog('UPDATER', 'setMaxTradeSize');
+  const sqlText = `UPDATE "user_settings" SET "max_trade_size" = $1 WHERE "userID" = $2`;
+  let result = await pool.query(sqlText, [size, userID]);
+  emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, userID);
+  return result;
+}
+
+export async function setReserve(reserve, userID) {
+  devLog('UPDATER', 'setReserve');
+  const sqlText = `UPDATE "user_settings" SET "reserve" = $1 WHERE "userID" = $2`;
+  let result = await pool.query(sqlText, [reserve, userID]);
+  emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, userID);
+  return result;
+}
+
+export async function setPostMaxReinvestRatio(ratio, userID) {
+  devLog('UPDATER', 'setPostMaxReinvestRatio');
+  const sqlText = `UPDATE "user_settings" SET "post_max_reinvest_ratio" = $1 WHERE "userID" = $2`;
+  let result = await pool.query(sqlText, [ratio, userID]);
+  emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, userID);
+  return result;
+}
+
 // get all user information minus password
 export async function getAllUsers() {
   devLog('GETTER', 'getAllUsers');
   return new Promise(async (resolve, reject) => {
     try {
       const cache = getAllUsersCache();
-      // devLog('cache', cache);
       if (cache.allUsers) {
         devLog('all users found in cache');
         resolve(cache.allUsers);
@@ -291,3 +381,10 @@ export async function getAllUserAndSettings() {
     }
   });
 }
+
+export async function getUserCount() {
+  const sqlText = `SELECT COUNT(*) FROM "user";`;
+  let result = await pool.query(sqlText);
+  return result.rows[0].count;
+}
+
