@@ -603,7 +603,7 @@ router.put('/postMaxReinvestRatio', rejectUnauthenticated, async (req, res) => {
     const user = req.user;
     const identifier = req.headers['x-identifier'];
     const ratio = req.body.postMaxReinvestRatio;
-    
+
     await databaseClient.setPostMaxReinvestRatio(ratio, user.id);
     await userStorage[user.id].update(identifier);
     res.sendStatus(200);
@@ -613,6 +613,23 @@ router.put('/postMaxReinvestRatio', rejectUnauthenticated, async (req, res) => {
   }
 });
 
+/**
+ * PUT route to update API key
+ */
+router.put('/updateAPIKey', rejectUnauthenticated, async (req, res) => {
+  devLog('update api key route');
+  const userID = req.user.id;
+  const apiKey = req.body.api_key;
+  if (!apiKey.name || !apiKey.privateKey) {
+    res.sendStatus(400);
+    return;
+  }
+  const apiKeyName = apiKey.name;
+  const apiKeyPrivateKey = apiKey.privateKey;
+  devLog(apiKeyName, 'api key name');
+  devLog(apiKeyPrivateKey, 'api key private key');
+  res.sendStatus(200);
+});
 
 /**
 * POST route to store API details
