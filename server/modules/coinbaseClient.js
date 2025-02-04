@@ -41,7 +41,9 @@ class Coinbase {
 
   openSocket(setup) {
     const key = this.key;
+    const newKey = this.newKey;
     const secret = this.secret;
+    const newSecret = this.newSecret;
     const products = this.products;
     const WS_API_URL = this.WS_API_URL
     const ws = new WebSocket(WS_API_URL);
@@ -49,6 +51,27 @@ class Coinbase {
     this.ws = ws;
     // bind this and setup to this function so it has the key etc when reopened
     const openSocket = this.openSocket.bind(this, setup)
+
+    // Create a new method for WS authentication
+    const createWSAuthToken = () => {
+      // Note: No URI needed for WebSocket JWT
+      return jwt.sign(
+        {
+          iss: 'cdp',
+          nbf: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + 120,
+          sub: this.newKey,
+        },
+        this.newSecret,
+        {
+          algorithm: 'ES256',
+          header: {
+            kid: this.newKey,
+            nonce: crypto.randomBytes(16).toString('hex'),
+          },
+        }
+      );
+    };
 
     // used for signing all SOCKET requests
     function timestampAndSignSocket(message, channel, products = []) {
@@ -59,6 +82,18 @@ class Coinbase {
     }
 
     function subscribe(products, channelName, ws) {
+      // If using new API credentials
+      if (newKey && newSecret) {
+        devLog(':) :) :) using new API credentials :) :) :)');
+        const message = {
+        type: 'subscribe',
+        product_ids: products,
+        channel: channelName,
+        jwt: createWSAuthToken()
+      };
+      ws.send(JSON.stringify(message));
+    } else {
+      devLog('!!! using legacy API credentials !!!');
       const message = {
         type: 'subscribe',
         channel: channelName,
@@ -66,20 +101,34 @@ class Coinbase {
         product_ids: products,
         user_id: '',
       };
-      const subscribeMsg = timestampAndSignSocket(message, channelName, products);
-      ws.send(JSON.stringify(subscribeMsg));
+        const subscribeMsg = timestampAndSignSocket(message, channelName, products);
+        ws.send(JSON.stringify(subscribeMsg));
+      }
     }
 
     function unsubscribe(products, channelName, ws) {
-      const message = {
-        type: 'unsubscribe',
-        channel: channelName,
-        api_key: this.key,
-        product_ids: products,
-      };
-      const subscribeMsg = this.timestampAndSignSocket(message, channelName, products);
-      ws.send(JSON.stringify(subscribeMsg));
+      // If using new API credentials
+      if (newKey && newSecret) {
+        const message = {
+          type: 'unsubscribe',
+          product_ids: products,
+          channel: channelName,
+          jwt: createWSAuthToken()
+        };
+        ws.send(JSON.stringify(message));
+      } else {
+        // Legacy authentication
+        const message = {
+          type: 'unsubscribe',
+          channel: channelName,
+          api_key: this.key,
+          product_ids: products,
+        };
+        const subscribeMsg = timestampAndSignSocket(message, channelName, products);
+        ws.send(JSON.stringify(subscribeMsg));
+      }
     }
+
     function timestampAndSignSocket(message, channel, products = []) {
       const timestamp = Math.floor(Date.now() / 1000).toString();
       const strToSign = `${timestamp}${channel}${products.join(',')}`;
