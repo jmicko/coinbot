@@ -1,6 +1,5 @@
 import express from 'express';
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
-import { pool } from '../modules/pool.js';
 import { robot } from '../modules/robot.js';
 import { databaseClient } from '../modules/databaseClient.js';
 import { userStorage, messenger, botSettings } from '../modules/cache.js';
@@ -79,8 +78,7 @@ router.put('/users', rejectUnauthenticated, async (req, res) => {
       devLog('you are admin');
       const userToApprove = req.body.id;
       devLog('in approve user route', userToApprove);
-      const queryText = `UPDATE "user" SET "approved" = true WHERE "id" = $1 RETURNING *;`;
-      const user = await pool.query(queryText, [userToApprove]);
+      const user = await databaseClient.approveUser(userToApprove);
       userStorage[userToApprove].approve(true);
       res.sendStatus(200);
     } else {
@@ -108,8 +106,7 @@ router.put('/users/chat', rejectUnauthenticated, async (req, res) => {
     const userToChange = req.body.id;
     const chatPermission = req.body.chatPermission;
     devLog('in chat permission route', userToChange, chatPermission);
-    const queryText = `UPDATE "user_settings" SET "can_chat" = $1 WHERE "userID" = $2 RETURNING *;`;
-    await pool.query(queryText, [chatPermission, userToChange]);
+    const user = await databaseClient.updateChatPermission(chatPermission, userToChange);
 
     userStorage[userToChange].update();
     res.sendStatus(200);
@@ -305,22 +302,7 @@ router.delete('/users/:user_id', rejectUnauthenticated, async (req, res) => {
     const isAdmin = req.user.admin;
     if (isAdmin) {
       devLog('you are admin');
-      // delete from user table first
-      const userQueryText = `DELETE from "user" WHERE "id" = $1;`;
-      await pool.query(userQueryText, [userToDelete]);
-
-      // delete from API table 
-      const apiQueryText = `DELETE from "user_api" WHERE "userID" = $1;`;
-      await pool.query(apiQueryText, [userToDelete]);
-
-      // delete from orders table 
-      const ordersQueryText = `DELETE from "limit_orders" WHERE "userID" = $1;`;
-      await pool.query(ordersQueryText, [userToDelete]);
-
-      // delete from user settings table 
-      const userSettingsQueryText = `DELETE from "user_settings" WHERE "userID" = $1;`;
-      await pool.query(userSettingsQueryText, [userToDelete]);
-
+      await databaseClient.deleteUser(userToDelete);
       res.sendStatus(200);
     } else {
       // const userToDelete = req.body.id;
@@ -332,10 +314,6 @@ router.delete('/users/:user_id', rejectUnauthenticated, async (req, res) => {
   } catch (err) {
     devLog(err, 'error in delete user route');
     res.sendStatus(500);
-  } finally {
-    userStorage.deleteUser(userToDelete);
-
-
   }
 });
 

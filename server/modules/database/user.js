@@ -1,3 +1,4 @@
+import { userStorage } from '../cache.js';
 import { cacheEvents, emitCacheEvent, onCacheEvent } from '../cacheEvents.js';
 import { pool } from '../pool.js';
 import { devLog as devLogUtilities } from '../utilities.js';
@@ -338,6 +339,49 @@ export async function updateAPIKey(apiKey, userID) {
   let result = await pool.query(sqlText, [apiKey.name, apiKey.privateKey, userID]);
   emitCacheEvent(cacheEvents.USER_API_UPDATED, userID);
   return result;
+}
+
+export async function approveUser(userID) {
+  devLog('UPDATER', 'approveUser');
+  const sqlText = `UPDATE "user" SET "approved" = true WHERE "id" = $1 RETURNING *;`;
+  let result = await pool.query(sqlText, [userID]);
+  emitCacheEvent(cacheEvents.USER_UPDATED, userID);
+  return result.rows[0];
+}
+
+export async function updateChatPermission(chatPermission, userID) {
+  devLog('UPDATER', 'updateChatPermission');
+  const sqlText = `UPDATE "user_settings" SET "can_chat" = $1 WHERE "userID" = $2`;
+  let result = await pool.query(sqlText, [chatPermission, userID]);
+  emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, userID);
+  return result;
+}
+
+export async function deleteUser(userID) {
+  devLog('UPDATER', 'deleteUser');
+  try {
+    // open a client for the transaction
+    const client = await pool.connect();
+    await client.query('BEGIN');
+    // delete the user from tables: user, user_api, limit_orders, user_settings
+    await client.query(`DELETE FROM "user" WHERE "id" = $1`, [userID]);
+    emitCacheEvent(cacheEvents.USER_UPDATED, userID);
+    await client.query(`DELETE FROM "user_api" WHERE "userID" = $1`, [userID]);
+    emitCacheEvent(cacheEvents.USER_API_UPDATED, userID);
+    await client.query(`DELETE FROM "limit_orders" WHERE "userID" = $1`, [userID]);
+    emitCacheEvent(cacheEvents.LIMIT_ORDERS_UPDATED, userID);
+    await client.query(`DELETE FROM "user_settings" WHERE "userID" = $1`, [userID]);
+    emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, userID);
+    await client.query('COMMIT');
+    // clear the userStorage cache
+    userStorage.deleteUser(userID);
+  } catch (err) {
+    // rollback the transaction on error
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 // get all user information minus password
