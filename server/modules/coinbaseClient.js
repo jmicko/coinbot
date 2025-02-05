@@ -7,10 +7,18 @@ import axios from 'axios';
 // const { cache } = require("./cache");
 // const { v4: uuidv4 } = require('uuid');
 import { v4 as uuidv4 } from 'uuid';
-import { devLog, sleep } from './utilities.js';
+import { devLog as devLogUtilities, sleep } from './utilities.js';
 import jwt from 'jsonwebtoken';
 const { sign } = jwt;
 import crypto from 'crypto';
+
+let showLogs = false;
+
+function devLog(...message) {
+  if (showLogs) {
+    devLogUtilities(...message);
+  }
+}
 
 class Coinbase {
   constructor(key, secret, apiDetails) {
@@ -84,7 +92,7 @@ class Coinbase {
     function subscribe(products, channelName, ws) {
       // If using new API credentials
       if (newKey && newSecret) {
-        devLog(':) :) :) using new API credentials :) :) :)');
+        // devLog(':) :) :) using new API credentials :) :) :)');
         const message = {
         type: 'subscribe',
         product_ids: products,
@@ -93,7 +101,7 @@ class Coinbase {
       };
       ws.send(JSON.stringify(message));
     } else {
-      devLog('!!! using legacy API credentials !!!');
+      // devLog('!!! using legacy API credentials !!!');
       const message = {
         type: 'subscribe',
         channel: channelName,
@@ -202,7 +210,7 @@ class Coinbase {
   signRequest(data, API) {
     // If using new API credentials, use JWT auth
     if (this.newKey && this.newSecret) {
-      devLog('===using new API credentials===');
+      // devLog('===using new API credentials===');
       const token = this.createAuthToken(API.method, API.path);
       return {
         method: API.method,
@@ -216,7 +224,7 @@ class Coinbase {
       };
     }
 
-    devLog('!!! using legacy API credentials!!!');
+    // devLog('!!! using legacy API credentials!!!');
     // convert the data to JSON, if any
     const body = data ? JSON.stringify(data) : '';
     // get the timestamp
@@ -297,31 +305,6 @@ class Coinbase {
     return options;
   }
 
-  async getAccountsNew(params) {
-    try {
-      // devLog('====getAccountsNew====', params, '<- params');
-      const endpoint = {
-        url: `https://api.coinbase.com/api/v3/brokerage/accounts`,
-        path: "/api/v3/brokerage/accounts",
-        method: 'GET',
-      }
-      // Add params if they exist (using your existing addParams method)
-      if (params) { this.addParams(endpoint, params); }
-
-      // Create the request options
-      const options = this.createRequestOptions(endpoint);
-
-      // devLog(options, 'options');
-      // Make the request
-      const response = await axios.request(options);
-      // devLog(response.data, 'response from getAccountsNew');
-      return response.data;
-    } catch (err) {
-      devLog('Error in getAccountsNew:', err);
-      throw err;
-    }
-  }
-
   // CALL IT LIKE THIS coinbase.getAccounts({ limit: 250, someKey:whateverValue })
   async getAccounts(params) {
     return new Promise(async (resolve, reject) => {
@@ -349,20 +332,6 @@ class Coinbase {
       }
     })
   }
-
-  async getAccountsNewTest(params) {
-    // determine if we are using the legacy or new API
-    // the new API is stored as the name and privateKey properties of the apiDetails object
-    if (this.newKey && this.newSecret) {
-      // we are using the new API
-      // return this.getAccountsNew(params);
-      return this.getAccountsLegacy(params);
-    } else {
-      // we are using the legacy API
-      return this.getAccountsLegacy(params);
-    }
-  }
-
 
   // Get all accounts. Call the above, and if it has_next, call this recursively with the cursor we get back until it doesn't have_next
   // this will return an array of all accounts
