@@ -17,6 +17,7 @@ import jwt from 'jsonwebtoken';
 const { sign } = jwt;
 import crypto from 'crypto';
 import axios from 'axios';
+import { emitCacheEvent } from '../modules/cacheEvents.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 
@@ -682,6 +683,7 @@ router.put('/updateAPIKey', rejectUnauthenticated, async (req, res) => {
     if (data.accounts[0]) {
       // update the api key in the database
       await databaseClient.updateAPIKey(apiKey, userID);
+      await cbClients.updateAPI(userID);
     } else {
       devLog('API key is invalid');
       res.sendStatus(401);
@@ -713,10 +715,10 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   const URI = getURI();
   try {
     // check if the api works first
-    const testClient = new Coinbase(api.key, api.secret);
-    const txSummary = await testClient.getTransactionSummary({ user_native_currency: 'USD' });
-    devLog(txSummary, 'test api results');
-    await databaseClient.saveFees(txSummary, userID);
+    // const testClient = new Coinbase(api.key, api.secret);
+    // const txSummary = await testClient.getTransactionSummary({ user_native_currency: 'USD' });
+    // devLog(txSummary, 'test api results');
+    // await databaseClient.saveFees(txSummary, userID);
 
     // store the api in the db
     const userAPIQueryText = `UPDATE "user_api" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4
@@ -733,6 +735,7 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
     const queryText = `UPDATE "user" SET "active" = true
     WHERE "id"=$1 RETURNING *;`;
     let result = await pool.query(queryText, [userID]);
+    emitCacheEvent(cacheEvents.USER_API_UPDATED, userID);
     // refresh the user's cache
     await cbClients.updateAPI(result.rows[0].id);
 

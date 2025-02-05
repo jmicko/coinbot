@@ -92,7 +92,7 @@ class Coinbase {
     function subscribe(products, channelName, ws) {
       // If using new API credentials
       if (newKey && newSecret) {
-        // devLog(':) :) :) using new API credentials :) :) :)');
+        devLog(':) :) :) using new API credentials :) :) :)');
         const message = {
         type: 'subscribe',
         product_ids: products,
@@ -101,7 +101,7 @@ class Coinbase {
       };
       ws.send(JSON.stringify(message));
     } else {
-      // devLog('!!! using legacy API credentials !!!');
+      devLog('!!! using legacy API credentials !!!');
       const message = {
         type: 'subscribe',
         channel: channelName,
