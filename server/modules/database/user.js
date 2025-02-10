@@ -186,6 +186,23 @@ export async function getUserAndSettings(userID, caller) {
   });
 }
 
+export async function getUserAndSettingsByUsername(username) {
+  devLog('GETTER', 'getUserAndSettingsByUsername');
+  try {
+    const sqlText = `
+      SELECT * 
+      FROM "user" 
+      JOIN "user_settings" 
+      ON ("user"."id" = "user_settings"."userID") 
+      WHERE "username" = $1;`;
+    let result = await pool.query(sqlText, [username]);
+    return result.rows[0];
+  } catch (err) {
+    devLog('problem getting user and settings by username');
+    throw err;
+  }
+}
+
 
 // get the API details for a user
 export async function getUserAPI(userID) {
@@ -341,6 +358,38 @@ export async function updateAPIKey(apiKey, userID) {
   return result;
 }
 
+export async function updateTheme(theme, userID) {
+  devLog('UPDATER', 'updateTheme');
+  const sqlText = `UPDATE "user_settings" SET "theme" = $1 WHERE "userID" = $2`;
+  let result = await pool.query(sqlText, [theme, userID]);
+  emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, userID);
+  return result;
+}
+
+export async function updateTradeLoadMax(max, userID) {
+  devLog('UPDATER', 'updateTradeLoadMax');
+  const sqlText = `UPDATE "user_settings" SET "max_trade_load" = $1 WHERE "userID" = $2`;
+  let result = await pool.query(sqlText, [max, userID]);
+  emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, userID);
+  return result;
+}
+
+export async function updateProfitAccuracy(accuracy, userID) {
+  devLog('UPDATER', 'updateProfitAccuracy');
+  const sqlText = `UPDATE "user_settings" SET "profit_accuracy" = $1 WHERE "userID" = $2`;
+  let result = await pool.query(sqlText, [accuracy, userID]);
+  emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, userID);
+  return result;
+}
+
+export async function updateSyncQuantity(quantity, userID) {
+  devLog('UPDATER', 'updateSyncQuantity');
+  const sqlText = `UPDATE "user_settings" SET "sync_quantity" = $1 WHERE "userID" = $2`;
+  let result = await pool.query(sqlText, [quantity, userID]);
+  emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, userID);
+  return result;
+}
+
 export async function approveUser(userID) {
   devLog('UPDATER', 'approveUser');
   const sqlText = `UPDATE "user" SET "approved" = true WHERE "id" = $1 RETURNING *;`;
@@ -359,22 +408,20 @@ export async function updateChatPermission(chatPermission, userID) {
 
 export async function deleteUser(userID) {
   devLog('UPDATER', 'deleteUser');
+  // open a client for the transaction
+  const client = await pool.connect();
   try {
-    // open a client for the transaction
-    const client = await pool.connect();
     await client.query('BEGIN');
     // delete the user from tables: user, user_api, limit_orders, user_settings
     await client.query(`DELETE FROM "user" WHERE "id" = $1`, [userID]);
-    emitCacheEvent(cacheEvents.USER_UPDATED, userID);
     await client.query(`DELETE FROM "user_api" WHERE "userID" = $1`, [userID]);
-    emitCacheEvent(cacheEvents.USER_API_UPDATED, userID);
     await client.query(`DELETE FROM "limit_orders" WHERE "userID" = $1`, [userID]);
-    emitCacheEvent(cacheEvents.LIMIT_ORDERS_UPDATED, userID);
     await client.query(`DELETE FROM "user_settings" WHERE "userID" = $1`, [userID]);
-    emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, userID);
     await client.query('COMMIT');
-    // clear the userStorage cache
-    userStorage.deleteUser(userID);
+    emitCacheEvent(cacheEvents.USER_UPDATED, userID);
+    emitCacheEvent(cacheEvents.USER_API_UPDATED, userID);
+    emitCacheEvent(cacheEvents.LIMIT_ORDERS_UPDATED, userID);
+    emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, userID);
   } catch (err) {
     // rollback the transaction on error
     await client.query('ROLLBACK');
@@ -440,3 +487,49 @@ export async function getUserCount() {
   return result.rows[0].count;
 }
 
+// function to check if there are any admin users
+export async function getAdminCount() {
+  const queryText = `SELECT count(*) FROM "user" WHERE "admin"=true;`;
+  try {
+    let result = await pool.query(queryText);
+    return result.rows[0].count;
+  } catch (err) {
+    devLog('problem getting number of admins', err);
+  }
+}
+
+export async function createUser(username, password, admin, approved, joined_at) {
+  // this should all be done in a transaction so that it can be rolled back if any of the steps fail
+  const client = await pool.connect();
+  await client.query('BEGIN');
+  try {
+    // create the user
+    const userText = `INSERT INTO "user" (username, password, admin, approved, joined_at) VALUES ($1, $2, $3, $4, $5) RETURNING *;`;
+    let userResult = await client.query(userText, [username, password, admin, approved, joined_at]);
+    let user = userResult.rows[0];
+    // create the user_api entry
+    const userAPIText = `INSERT INTO "user_api" ("userID") VALUES ($1);`;
+    await client.query(userAPIText, [user.id]);
+    // create the user_settings entry
+    const userSettingsText = `INSERT INTO "user_settings" ("userID", "profit_reset") VALUES ($1, $2) RETURNING *;`;
+    let userSettingsResult = await client.query(userSettingsText, [user.id, joined_at]);
+    await client.query('COMMIT');
+    emitCacheEvent(cacheEvents.USER_UPDATED, user.id);
+    emitCacheEvent(cacheEvents.USER_API_UPDATED, user.id);
+    emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, user.id);
+    user = { ...user, ...userSettingsResult.rows[0] }
+    return user;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateUserApproved(approved, userID) {
+  const sqlText = `UPDATE "user" SET "approved" = $1 WHERE "id" = $2 RETURNING *;`;
+  let result = await pool.query(sqlText, [approved, userID]);
+  emitCacheEvent(cacheEvents.USER_UPDATED, userID);
+  return result.rows[0];
+}

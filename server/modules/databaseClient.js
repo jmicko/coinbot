@@ -6,7 +6,15 @@ import { addProductDecimals, devLog as devLogUtilities } from './utilities.js';
 // import { updateProductsTable } from './database/products.js';
 import { createMessagesTable } from './database/messages.js';
 import { updateMessagesTable } from './database/messages.js';
-import { updateFeedbackTable } from './database/feedback.js';
+import {
+  updateFeedbackTable,
+  getFeedbackCount,
+  getFeedbackForUser,
+  getFeedbackForAllUsers,
+  storeFeedback,
+  deleteFeedback,
+  deleteSingleFeedbackForUser,
+} from './database/feedback.js';
 // import limit_orders functions
 import {
   updateLimitOrdersTable,
@@ -31,8 +39,12 @@ import {
   setReorder,
   markAsFlipped,
   deleteTrade,
+  deleteAllOrders,
+  deleteAllOrdersForProduct,
+  deleteRangeForProduct,
   markForCancel,
   deleteMarkedOrders,
+  bulkUpdateTradePairRatio,
 } from './database/limit_orders.js';
 // Import all settings functions
 import {
@@ -56,11 +68,11 @@ import {
   updateProductActiveStatus,
 } from './database/products.js';
 // import user functions
-import { 
+import {
+  updateUserTables,
   getUser,
-  getAllUsers,
-  getAllUserAndSettings,
   getUserAndSettings,
+  getUserAndSettingsByUsername,
   getUserAPI,
   setPause,
   setKillLock,
@@ -74,9 +86,20 @@ import {
   setReserve,
   setPostMaxReinvestRatio,
   updateAPIKey,
+  updateTheme,
+  updateTradeLoadMax,
+  updateProfitAccuracy,
+  updateSyncQuantity,
+  approveUser,
+  updateChatPermission,
+  deleteUser,
+  getAllUsers,
+  getAllUserAndSettings,
   getUserCount,
-  updateUserTables,
- } from './database/user.js';
+  getAdminCount,
+  createUser,
+  updateUserApproved,
+} from './database/user.js';
 
 let showLogs = true;
 
@@ -517,16 +540,16 @@ export async function getAllSubscriptions() {
 
 
 const databaseClient = {
-  
+
   // products
-  insertProducts: insertProducts,
-  getProduct: getProduct,
-  getActiveProducts: getActiveProducts,
-  getActiveProductIDs: getActiveProductIDs,
-  getUserProducts: getUserProducts,
-  updateProductActiveStatus: updateProductActiveStatus,
-  
-  
+  insertProducts,
+  getProduct,
+  getActiveProducts,
+  getActiveProductIDs,
+  getUserProducts,
+  updateProductActiveStatus,
+
+
   // limit orders
   getSingleTrade,
   getTradesByIDs,
@@ -548,55 +571,81 @@ const databaseClient = {
   setReorder,
   markAsFlipped,
   deleteTrade,
+  deleteAllOrders,
+  deleteAllOrdersForProduct,
+  deleteRangeForProduct,
   markForCancel,
   deleteMarkedOrders,
-  
+  bulkUpdateTradePairRatio,
+
   // user
-  getUser: getUser,
-  getAllUsers: getAllUsers,
-  getAllUserAndSettings: getAllUserAndSettings,
-  getUserAndSettings: getUserAndSettings,
-  getUserAPI: getUserAPI,
-  setProfitReset: setProfitReset,
-  getUserCount: getUserCount,
-  setReinvest: setReinvest,
-  setReinvestRatio: setReinvestRatio,
-  setTradeMax: setTradeMax,
-  setMaxTradeSize: setMaxTradeSize,
-  setReserve: setReserve,
-  setPostMaxReinvestRatio: setPostMaxReinvestRatio,
-  updateAPIKey: updateAPIKey,
-  getSpentUSD: getSpentUSD,
-  getSpentBTC: getSpentBTC,
-  getSpentBase: getSpentBase,
-  getSpentQuote: getSpentQuote,
+  updateUserTables,
+  getUser,
+  getUserAndSettings,
+  getUserAndSettingsByUsername,
+  getUserAPI,
+  setPause,
+  setKillLock,
+  setAutoSetupNumber,
+  saveFees,
+  setProfitReset,
+  setReinvest,
+  setReinvestRatio,
+  setTradeMax,
+  setMaxTradeSize,
+  setReserve,
+  setPostMaxReinvestRatio,
+  updateAPIKey,
+  updateTheme,
+  updateTradeLoadMax,
+  updateProfitAccuracy,
+  updateSyncQuantity,
+  approveUser,
+  updateChatPermission,
+  deleteUser,
+  getAllUsers,
+  getAllUserAndSettings,
+  getUserCount,
+  getAdminCount,
+  createUser,
+  updateUserApproved,
+
+  getSpentUSD,
+  getSpentBTC,
+  getSpentBase,
+  getSpentQuote,
+
 
   // bot settings
-  getBotSettings: getBotSettings,
-  toggleMaintenance: toggleMaintenance,
-  toggleRegistration: toggleRegistration,
-  getRegistrationOpen: getRegistrationOpen,
-  updateLoopSpeed: updateLoopSpeed,
-  updateFullSync: updateFullSync,
-  updateOrdersToSync: updateOrdersToSync,
+  getBotSettings,
+  toggleMaintenance,
+  toggleRegistration,
+  getRegistrationOpen,
+  updateLoopSpeed,
+  updateFullSync,
+  updateOrdersToSync,
 
-  setPause: setPause,
-  setKillLock: setKillLock,
-  setAutoSetupNumber: setAutoSetupNumber,
-  saveFees: saveFees,
-  getProfitForDurationByProduct: getProfitForDurationByProduct,
-  getProfitForDurationByAllProducts: getProfitForDurationByAllProducts,
-  getProfitSinceDate: getProfitSinceDate,
-  getWeeklyAverageProfit: getWeeklyAverageProfit,
-  getNewestCandle: getNewestCandle,
-  getOldestCandle: getOldestCandle,
-  saveCandles: saveCandles,
-  getCandles: getCandles,
-  getCandlesAverage: getCandlesAverage,
-  getNextCandles: getNextCandles,
-  getMissingCandles: getMissingCandles,
-  addSubscription: addSubscription,
-  getSubscriptionsForUser: getSubscriptionsForUser,
-  getAllSubscriptions: getAllSubscriptions,
+  getProfitForDurationByProduct,
+  getProfitForDurationByAllProducts,
+  getProfitSinceDate,
+  getWeeklyAverageProfit,
+  getNewestCandle,
+  getOldestCandle,
+  saveCandles,
+  getCandles,
+  getCandlesAverage,
+  getNextCandles,
+  getMissingCandles,
+  addSubscription,
+  getSubscriptionsForUser,
+  getAllSubscriptions,
+
+  // feedback
+  getFeedbackCount,
+  getFeedbackForUser,
+  getFeedbackForAllUsers,
+  storeFeedback,
+  deleteFeedback,
+  deleteSingleFeedbackForUser,
 };
 export { databaseClient };

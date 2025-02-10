@@ -2,7 +2,7 @@ import { pool } from "../pool.js";
 import { devLog as devLogUtilities } from "../utilities.js";
 import { v4 as uuidv4 } from 'uuid';
 import { getActiveProductIDs } from "./products.js";
-import { cacheEvents, onCacheEvent } from "../cacheEvents.js";
+import { cacheEvents, emitCacheEvent, onCacheEvent } from "../cacheEvents.js";
 
 let showLogs = false;
 const logTypes = {
@@ -529,7 +529,7 @@ export async function getDeSyncs(userID, limit, side) {
     try {
       // Convert 'buys'/'sells' to 'BUY'/'SELL'
       const orderSide = side.slice(0, -1).toUpperCase();
-      
+
       const sqlText = `SELECT * FROM "limit_orders" 
         WHERE "side"=$1 
         AND "flipped"=false 
@@ -542,9 +542,9 @@ export async function getDeSyncs(userID, limit, side) {
 
       const products = await getActiveProductIDs(userID);
       let results = [];
-      
+
       for (const product of products) {
-        const productResults = await pool.query(sqlText, 
+        const productResults = await pool.query(sqlText,
           [orderSide, userID, product, limit]);
         results = [...results, ...productResults.rows];
       }
@@ -1007,6 +1007,51 @@ export async function deleteTrade(order_id, userID) {
   });
 }
 
+export async function deleteAllOrders(userID) {
+  devLog('UPDATER', 'deleteAllOrders');
+  try {
+    const queryText = `DELETE from "limit_orders" WHERE "settled" = false AND "userID"=$1;`;
+    await pool.query(queryText, [userID]);
+    // update the user cache
+    emitCacheEvent(cacheEvents.LIMIT_ORDERS_UPDATED, userID);
+  } catch (err) {
+    devLog('error in deleteAllOrders');
+    throw err;
+  }
+}
+
+export async function deleteAllOrdersForProduct(userID, product_id) {
+  devLog('UPDATER', 'deleteAllOrdersForProduct');
+  try {
+    const queryText = `DELETE from "limit_orders" WHERE "settled" = false AND "userID"=$1 AND "product_id"=$2;`;
+    await pool.query(queryText, [userID, product_id]);
+    // update the user cache
+    emitCacheEvent(cacheEvents.LIMIT_ORDERS_UPDATED, userID);
+  } catch (err) {
+    devLog('error in deleteAllOrdersForProduct');
+    throw err;
+  }
+}
+
+export async function deleteRangeForProduct(userID, product_id, start, end) {
+  devLog('UPDATER', 'deleteRangeForProduct');
+  try {
+    const queryText = `
+    DELETE from "limit_orders" 
+    WHERE "settled" = false 
+    AND "userID"=$1 
+    AND "product_id"=$2 
+    AND "limit_price" 
+    BETWEEN $3 AND $4;`;
+    await pool.query(queryText, [userID, product_id, start, end]);
+    // update the user cache
+    emitCacheEvent(cacheEvents.LIMIT_ORDERS_UPDATED, userID);
+  } catch (err) {
+    devLog('error in deleteRangeForProduct');
+    throw err;
+  }
+}
+
 export async function markForCancel(userID, order_id) {
   devLog('UPDATER', 'markForCancel');
   return new Promise(async (resolve, reject) => {
@@ -1048,4 +1093,39 @@ export async function deleteMarkedOrders(userID) {
       reject(err)
     }
   });
+}
+
+export async function bulkUpdateTradePairRatio(userID, product_id, bulk_pair_ratio) {
+  // update the trade pair ratio for all trades for that user
+  devLog('updating trade pair ratio for all trades for user', userID)
+  await pool.query(`
+    UPDATE limit_orders
+    SET "trade_pair_ratio" = $1
+    WHERE "settled" = false 
+    AND "product_id" = $2 
+    AND "userID" = $3;`,
+    [bulk_pair_ratio, product_id, userID]
+  );
+
+  devLog('updating original sell price for all trades for user', userID)
+  // update original sell price after ratio is set
+  await pool.query(`
+    UPDATE limit_orders
+    SET "original_sell_price" = ROUND(((original_buy_price * ("trade_pair_ratio" + 100)) / 100), 2)
+    WHERE "settled" = false 
+    AND "product_id" = $1 
+    AND "userID" = $2;`,
+    [product_id, userID]
+  );
+
+  devLog('updating limit price for all trades for user', userID)
+  // need to update the current price on all sells after changing numbers on all trades
+  await pool.query(`
+    UPDATE limit_orders
+    SET "limit_price" = "original_sell_price"
+    WHERE "side" = 'SELL' 
+    AND "product_id" = $1 
+    AND "userID" = $2;`,
+    [product_id, userID]
+  );
 }

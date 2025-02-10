@@ -433,39 +433,7 @@ router.put('/bulkPairRatio/:product_id', rejectUnauthenticated, async (req, res)
     // wait 5 seconds to give the sync loop more time to finish
     await sleep(5000);
 
-    devLog('updating trade pair ratio for all trades for that user')
-    // update the trade-pair ratio for all trades for that user
-    const updateTradesQueryText = `UPDATE limit_orders
-    SET "trade_pair_ratio" = $1
-    WHERE "settled" = false AND "product_id" = $2 AND "userID" = $3;`
-
-    await pool.query(updateTradesQueryText, [
-      bulk_pair_ratio,
-      product_id,
-      userID
-    ]);
-
-    devLog('updating original sell price for all trades for that user')
-    // update original sell price after ratio is set
-    const updateOGSellPriceQueryText = `UPDATE limit_orders
-    SET "original_sell_price" = ROUND(((original_buy_price * ("trade_pair_ratio" + 100)) / 100), 2)
-    WHERE "settled" = false AND "product_id" = $1 AND "userID" = $2;`
-
-    await pool.query(updateOGSellPriceQueryText, [
-      product_id,
-      userID
-    ]);
-
-    devLog('updating limit price for all trades for that user')
-    // need to update the current price on all sells after changing numbers on all trades
-    const updateSellsPriceQueryText = `UPDATE limit_orders
-    SET "limit_price" = "original_sell_price"
-    WHERE "side" = 'SELL' AND "product_id" = $1 AND "userID" = $2;`;
-
-    await pool.query(updateSellsPriceQueryText, [
-      product_id,
-      userID
-    ]);
+    await databaseClient.bulkUpdateTradePairRatio(userID, product_id, bulk_pair_ratio);
 
     // Now cancel all trades so they can be reordered with the new numbers
     // mark all open orders as reorder
@@ -523,8 +491,7 @@ router.delete('/', rejectUnauthenticated, async (req, res) => {
     await sleep(5000);
 
     // delete from db first
-    const queryText = `DELETE from "limit_orders" WHERE "settled" = false AND "userID"=$1;`;
-    await pool.query(queryText, [userID]);
+    await databaseClient.deleteAllOrders(userID);
 
     // cancel all orders on coinbase
     await cbClients[userID].cancelAll();
@@ -619,8 +586,7 @@ router.delete('/product/:product_id', rejectUnauthenticated, async (req, res) =>
     await sleep(5000);
 
     // delete from db first
-    const queryText = `DELETE from "limit_orders" WHERE "settled" = false AND "userID"=$1 AND "product_id"=$2;`;
-    await pool.query(queryText, [userID, product_id]);
+    await databaseClient.deleteAllOrdersForProduct(userID, product_id);
 
     // cancel all orders for that product on coinbase
     await cbClients[userID].cancelAllForProduct(product_id);
@@ -654,17 +620,18 @@ router.delete('/:product_id/:start/:end', rejectUnauthenticated, async (req, res
   const previousPauseStatus = req.user.paused;
   try {
     const identifier = req.headers['x-identifier'];
+    const product_id = req.params.product_id;
     const start = req.params.start < req.params.end ? req.params.start : req.params.end;
     const end = req.params.end > req.params.start ? req.params.end : req.params.start;
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID)
 
-    // wait 5 seconds to give the synch loop more time to finish
+    // wait 5 seconds to give the sync loop more time to finish
+    // todo - create a more assertive way to check the loop status
     await sleep(5000);
 
     // delete from db
-    const queryText = `DELETE from "limit_orders" WHERE "userID"=$1 AND settled=false AND "product_id"=$2 AND limit_price BETWEEN $3 AND $4;`;
-    await pool.query(queryText, [userID, req.params.product_id, start, end]);
+    await databaseClient.deleteRangeForProduct(userID, product_id, start, end);
 
     // mark all open orders as reorder
     // await databaseClient.setReorder();

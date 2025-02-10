@@ -11,19 +11,6 @@ import { devLog } from '../modules/utilities.js';
 
 const router = express.Router();
 
-// function to check if there are any admin users
-async function anyAdmins() {
-  return new Promise(async (resolve, reject) => {
-    const queryText = `SELECT count(*) FROM "user" WHERE "admin"=true;`;
-    try {
-      let result = await pool.query(queryText);
-      resolve(result.rows[0].count)
-    } catch (err) {
-      devLog('problem getting number of admins', err);
-    }
-  })
-}
-
 // Handles request for all user information if user is authenticated and admin
 router.get('/all', rejectUnauthenticated, async (req, res) => {
   devLog('get all users route');
@@ -116,44 +103,17 @@ router.post('/register', userCount, async (req, res, next) => {
     }
 
     const password = encryptLib.encryptPassword(pass);
-    let adminCount = await anyAdmins();
+    let adminCount = await databaseClient.getAdminCount();
     let user;
     const joined_at = new Date();
     devLog('THERE ARE THIS MANY ADMINS!!!!!', adminCount);
 
     if (adminCount > 0) {
       // create the user
-      let queryText = `INSERT INTO "user" (username, password, joined_at)
-      VALUES ($1, $2, $3) RETURNING id;`;
-      let result = await pool.query(queryText, [username, password, joined_at]);
-      user = result.rows[0];
-      const userID = result.rows[0].id;
-
-      // create entry in api table
-      let secondQueryText = `INSERT INTO "user_api" ("userID")
-      VALUES ($1);`;
-      let secondResult = await pool.query(secondQueryText, [userID]);
-
-      // create entry in user_settings table
-      let thirdQueryText = `INSERT INTO "user_settings" ("userID", "profit_reset")
-      VALUES ($1, $2);`;
-      let thirdResult = await pool.query(thirdQueryText, [userID, joined_at]);
-
+      user = await databaseClient.createUser(username, password, false, false, joined_at);
     } else {
       // create the user
-      let queryText = `INSERT INTO "user" (username, password, admin, approved, joined_at) VALUES ($1, $2, true, true, $3) RETURNING id`;
-      let result = await pool.query(queryText, [username, password, joined_at]);
-      user = result.rows[0];
-      const userID = result.rows[0].id;
-
-      // create entry in api table
-      let secondQueryText = `INSERT INTO "user_api" ("userID") VALUES ($1);`;
-      let secondResult = await pool.query(secondQueryText, [userID]);
-
-      // create entry in user_settings table
-      let thirdQueryText = `INSERT INTO "user_settings" ("userID", "profit_reset") VALUES ($1, $2) RETURNING *;`;
-      let thirdResult = await pool.query(thirdQueryText, [userID, joined_at]);
-      user = { ...user, ...thirdResult.rows[0] }
+      user = await databaseClient.createUser(username, password, true, true, joined_at);
     }
 
     // START THE LOOPS
@@ -244,7 +204,7 @@ router.post('/logout', rejectUnauthenticated, (req, res) => {
     const userID = req.user.id;
 
     // Use passport's built-in method to log out the user
-    req.logout(function(err) {
+    req.logout(function (err) {
       if (err) {
         devLog(err, 'error in logout route');
         return res.status(500).send('Logout failed');
@@ -271,8 +231,7 @@ router.put('/approve', rejectUnauthenticated, async (req, res) => {
       devLog('you are admin');
       const userToApprove = req.body.data.id;
       devLog('in approve user route', userToApprove);
-      const queryText = `UPDATE "user" SET "approved" = true WHERE "id" = $1 RETURNING *;`;
-      const user = await pool.query(queryText, [userToApprove]);
+      await databaseClient.updateUserApproved(true, userToApprove);
       userStorage[userToApprove].approve(true);
       res.sendStatus(200);
     } else {
@@ -294,60 +253,20 @@ router.delete('/:user_id', rejectUnauthenticated, async (req, res) => {
   try {
     devLog('in delete user route');
     const isAdmin = req.user.admin;
-    if (isAdmin) {
-      devLog('you are admin');
-      // delete from user table first
-      const userQueryText = `DELETE from "user" WHERE "id" = $1;`;
-      await pool.query(userQueryText, [userToDelete]);
-
-      // delete from API table 
-      const apiQueryText = `DELETE from "user_api" WHERE "userID" = $1;`;
-      await pool.query(apiQueryText, [userToDelete]);
-
-      // delete from orders table 
-      const ordersQueryText = `DELETE from "limit_orders" WHERE "userID" = $1;`;
-      await pool.query(ordersQueryText, [userToDelete]);
-
-      // delete from user settings table 
-      const userSettingsQueryText = `DELETE from "user_settings" WHERE "userID" = $1;`;
-      await pool.query(userSettingsQueryText, [userToDelete]);
-
+    if (isAdmin || userID === userToDelete) {
+      devLog('deleting user', userToDelete);
+      // delete from user tables first
+      await databaseClient.deleteUser(userToDelete);
+      // clear the userStorage cache
+      userStorage.deleteUser(userToDelete);
       res.sendStatus(200);
     } else {
-      // const userToDelete = req.body.id;
-      devLog('you are NOT admin');
-      // check to make sure the user ID that was sent is the same as the user requesting the delete
-      // if (userID === userToDelete) {
-      if (userID === userToDelete) {
-        devLog('you are deleting yourself');
-
-        // delete from user table
-        const userQueryText = `DELETE from "user" WHERE "id" = $1;`;
-        await pool.query(userQueryText, [userToDelete]);
-
-        // delete from API table 
-        const apiQueryText = `DELETE from "user_api" WHERE "userID" = $1;`;
-        await pool.query(apiQueryText, [userToDelete]);
-
-        // delete from orders table 
-        const ordersQueryText = `DELETE from "limit_orders" WHERE "userID" = $1;`;
-        await pool.query(ordersQueryText, [userToDelete]);
-
-        // delete from user settings table 
-        const userSettingsQueryText = `DELETE from "user_settings" WHERE "userID" = $1;`;
-        await pool.query(userSettingsQueryText, [userToDelete]);
-
-        res.sendStatus(200);
-      } else {
-        devLog('you are NOT deleting yourself');
-        res.sendStatus(403);
-      }
+      devLog('you are NOT deleting yourself or anyone');
+      res.sendStatus(403);
     }
   } catch (err) {
     devLog(err, 'error in delete user route');
     res.sendStatus(500);
-  } finally {
-    userStorage.deleteUser(userToDelete);
   }
 });
 
