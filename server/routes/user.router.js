@@ -112,6 +112,7 @@ router.post('/register', userCount, async (req, res, next) => {
       // create the user
       user = await databaseClient.createUser(username, password, false, false, joined_at);
     } else {
+      devLog('there is no admin, creating an admin user');
       // create the user
       user = await databaseClient.createUser(username, password, true, true, joined_at);
     }
@@ -119,7 +120,6 @@ router.post('/register', userCount, async (req, res, next) => {
     // START THE LOOPS
     await robot.initializeUserLoops(user);
 
-    // const botSettings = await databaseClient.getBotSettings();
     let fullUser = await databaseClient.getUser(user.id);
 
     req.login(user, function (err) {

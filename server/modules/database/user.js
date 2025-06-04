@@ -3,7 +3,7 @@ import { cacheEvents, emitCacheEvent, onCacheEvent } from '../cacheEvents.js';
 import { pool } from '../pool.js';
 import { devLog as devLogUtilities } from '../utilities.js';
 
-let showLogs = false;
+let showLogs = false; // set to true to show logs, false to hide them
 
 const logTypes = {
   GETTER: true,
@@ -80,15 +80,28 @@ function getSingleUserCache(userID) {
 }
 
 function clearSingleUserCache(userID) {
-  singleUserCache.get(userID).singleUser = null;
+  devLog('clearSingleUserCache', userID);
+  if (!singleUserCache.has(userID)) {
+    devLog('singleUserCache does not have userID', userID);
+  } else {
+    singleUserCache.get(userID).singleUser = null;
+  }
 }
 
 function clearSingleUserAndSettingsCache(userID) {
-  singleUserCache.get(userID).singleUserAndSettings = null;
+  if (!singleUserCache.has(userID)) {
+    devLog('singleUserCache does not have userID', userID);
+  } else {
+    singleUserCache.get(userID).singleUserAndSettings = null;
+  }
 }
 
 function clearSingleUserAPICache(userID) {
-  singleUserCache.get(userID).singleUserAPI = null;
+  if (!singleUserCache.has(userID)) {
+    devLog('singleUserCache does not have userID', userID);
+  } else {
+    singleUserCache.get(userID).singleUserAPI = null;
+  }
 }
 
 function clearAllSingleUserCaches(userID) {
@@ -499,6 +512,7 @@ export async function getAdminCount() {
 }
 
 export async function createUser(username, password, admin, approved, joined_at) {
+  devLog('SETTER', 'createUser', username, admin, approved, joined_at);
   // this should all be done in a transaction so that it can be rolled back if any of the steps fail
   const client = await pool.connect();
   await client.query('BEGIN');
