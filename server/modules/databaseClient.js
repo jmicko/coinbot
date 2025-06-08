@@ -221,7 +221,7 @@ export const getSpentBTC = (userID) => {
 export async function getProfitForDurationByProduct(userID, product, duration) {
   return new Promise(async (resolve, reject) => {
     try {
-      const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
+      const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + COALESCE("previous_total_fees", "total_fees")))
       FROM limit_orders 
       WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "product_id" = $2 AND "filled_at" > now() - $3::interval;`;
       let result = await pool.query(sqlText, [userID, product, duration]);
@@ -238,7 +238,7 @@ export async function getProfitForDurationByAllProducts(userID, duration) {
   devLog('getting profit for duration by all products', userID, duration);
   return new Promise(async (resolve, reject) => {
     try {
-      const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
+      const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + COALESCE("previous_total_fees", "total_fees"))) 
       FROM limit_orders 
       WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "filled_at" > now() - $2::interval;`;
       let result = await pool.query(sqlText, [userID, duration]);
@@ -253,12 +253,12 @@ export async function getProfitForDurationByAllProducts(userID, duration) {
 export async function getProfitSinceDate(userID, date, product) {
   return new Promise(async (resolve, reject) => {
     try {
-      const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
+      const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + COALESCE("previous_total_fees", "total_fees"))) 
       FROM limit_orders 
       WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "filled_at" BETWEEN $2 AND now();`;
       let result = await pool.query(sqlText, [userID, date]);
 
-      const productSqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) 
+      const productSqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + COALESCE("previous_total_fees", "total_fees"))) 
       FROM limit_orders 
       WHERE "side" = 'SELL' AND "settled" = 'true' AND "product_id" = $1 AND "userID" = $2 AND "filled_at" BETWEEN $3 AND now();`;
       let productResult = await pool.query(productSqlText, [product, userID, date]);
@@ -281,13 +281,13 @@ export async function getProfitSinceDate(userID, date, product) {
 export async function getWeeklyAverageProfit(userID, product) {
   return new Promise(async (resolve, reject) => {
     try {
-      const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) / 12 AS "average_profit"
+      const sqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + COALESCE("previous_total_fees", "total_fees"))) / 12 AS "average_profit"
       FROM limit_orders
       WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "filled_at" > now() - '12 weeks'::interval;`;
       // WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "filled_at" > now() - '4 weeks'::interval;`;
       const result = await pool.query(sqlText, [userID]);
 
-      const productSqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + "previous_total_fees")) / 12 AS "average_profit"
+      const productSqlText = `SELECT SUM(("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + COALESCE("previous_total_fees", "total_fees"))) / 12 AS "average_profit"
       FROM limit_orders
       WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "product_id" = $2 AND "filled_at" > now() - '12 weeks'::interval;`;
       // WHERE "side" = 'SELL' AND "settled" = 'true' AND "userID" = $1 AND "product_id" = $2 AND "filled_at" > now() - '4 weeks'::interval;`;
