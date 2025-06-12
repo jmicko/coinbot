@@ -14,7 +14,7 @@ function NotActive() {
   // const { createData: saveApi, error: apiError, isLoading: saving } = useFetchData(`/api/account/storeApi`, { noLoad: true })
   const [apiKeyFile, setApiKeyFile] = useState<{ name: string, privateKey: string } | null>(null);
 
-  const { postData: saveApi, error: apiError, isLoading: saving }
+  const { error: apiError }
     = usePostFetch({
       url: `/api/account/storeApi`,
       from: 'saveApi in NotActive',
@@ -81,25 +81,25 @@ function NotActive() {
       {/* form for entering api details */}
       <form className="api-form" onSubmit={submitApi} >
 
-      <div className="divider short" />
-      {/* {JSON.stringify(apiError)} error */}
-      <input
-        type="file"
-        accept=".json"
-        onChange={handleApiKeyFileUpload}
-        className={`file-input ${theme}`}
-      />
-      {apiKeyFile && (
-        <div>
-          <p>API Key File:</p>
-          <pre>{JSON.stringify(apiKeyFile, null, 2)}</pre>
-        </div>
-      )}
-      <button
-        className={`btn-blue medium ${user.theme}`}
-        onClick={() => { updateApiKey({ api_key: apiKeyFile }) }}>
-        Save
-      </button>
+        <div className="divider short" />
+        {/* {JSON.stringify(apiError)} error */}
+        <input
+          type="file"
+          accept=".json"
+          onChange={handleApiKeyFileUpload}
+          className={`file-input ${theme}`}
+        />
+        {apiKeyFile && (
+          <div>
+            <p>API Key File:</p>
+            <pre>{JSON.stringify(apiKeyFile, null, 2)}</pre>
+          </div>
+        )}
+        <button
+          className={`btn-blue medium ${user.theme}`}
+          onClick={() => { updateApiKey({ api_key: apiKeyFile }) }}>
+          Save
+        </button>
 
 
 
