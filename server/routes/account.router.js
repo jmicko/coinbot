@@ -17,7 +17,7 @@ import jwt from 'jsonwebtoken';
 const { sign } = jwt;
 import crypto from 'crypto';
 import axios from 'axios';
-import { emitCacheEvent } from '../modules/cacheEvents.js';
+import { cacheEvents, emitCacheEvent } from '../modules/cacheEvents.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 
@@ -684,6 +684,15 @@ router.put('/updateAPIKey', rejectUnauthenticated, async (req, res) => {
       // update the api key in the database
       await databaseClient.updateAPIKey(apiKey, userID);
       await cbClients.updateAPI(userID);
+
+      // set the account as active
+      const queryText = `UPDATE "user" SET "active" = true
+      WHERE "id"=$1 RETURNING *;`;
+      let result = await pool.query(queryText, [userID]);
+      emitCacheEvent(cacheEvents.USER_API_UPDATED, userID);
+      // refresh the user's cache
+      await cbClients.updateAPI(result.rows[0].id);
+
     } else {
       devLog('API key is invalid');
       res.sendStatus(401);

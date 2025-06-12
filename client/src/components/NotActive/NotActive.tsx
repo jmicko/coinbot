@@ -1,16 +1,19 @@
-import { useState } from 'react';
-import permissions from "../../../src/permissions.png";
+import { ChangeEvent, useMemo, useState } from 'react';
+// import permissions from "../../../src/permissions.png";
 import './NotActive.css';
 import { no } from '../../shared.js';
 import { useUser } from '../../hooks/useUser.js';
 import usePostFetch from '../../hooks/usePostFetch.js';
 import { EventType } from '../../types/index.js';
+import usePutFetch from '../../hooks/usePutFetch.js';
 
 
 function NotActive() {
 
-  const { user, refreshUser } = useUser();
+  const { user, refreshUser, theme } = useUser();
   // const { createData: saveApi, error: apiError, isLoading: saving } = useFetchData(`/api/account/storeApi`, { noLoad: true })
+  const [apiKeyFile, setApiKeyFile] = useState<{ name: string, privateKey: string } | null>(null);
+
   const { postData: saveApi, error: apiError, isLoading: saving }
     = usePostFetch({
       url: `/api/account/storeApi`,
@@ -18,25 +21,49 @@ function NotActive() {
       refreshCallback: refreshUser,
     });
 
-  const [key, setKey] = useState('');
-  const [secret, setSecret] = useState('');
-  // const [URI, setURI] = useState('real');
-  // const [saving, setSaving] = useState(false);
-  const [showPermissions, setShowPermissions] = useState(false);
+
+  const updateApiKeyOptions = useMemo(() => ({
+    url: '/api/account/updateAPIKey',
+    from: 'updateApiKey in General.tsx',
+    refreshCallback: refreshUser
+  }), [refreshUser]);
+  const { putData: updateApiKey } = usePutFetch(updateApiKeyOptions);
+
+  // const [key, setKey] = useState('');
+  // const [secret, setSecret] = useState('');
 
   function submitApi(e: EventType) {
     no(e);
     // setSaving(true)
-    saveApi({
-      key: key,
-      secret: secret,
-      URI: 'real'
-    });
+    // saveApi({
+    //   key: key,
+    //   secret: secret,
+    //   URI: 'real'
+    // });
     // clear the form
     // setKey('');
     // setSecret('');
   }
 
+  const handleApiKeyFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const json = JSON.parse(e.target?.result as string);
+          console.log('Parsed API key file:', json);
+          setApiKeyFile(json);
+          // TODO: Add API call to update keys
+        } catch (error) {
+          console.error('Error parsing API key file:', error);
+          // TODO: Add error handling UI
+        }
+      };
+      reader.readAsText(file);
+      // setApiKeyFile(file);
+    }
+  };
 
   return (
     <div className="NotActive scrollable boxed">
@@ -44,23 +71,39 @@ function NotActive() {
       <h3 className={`title not-active ${user.theme}`}>You are not active!</h3>
       <p>
         You must store your API details from Coinbase Advanced Trading before you can trade. </p><p>
-        - You can create an API key <a href='https://www.coinbase.com/settings/api' target="_blank">here</a> <br />
+        - You can create an API key <a href="https://www.coinbase.com/settings/api" target="_blank" rel="noopener noreferrer">here</a> <br />
         - Click <strong>New API Key</strong>, and follow the prompts. <br />
-        - For accounts, select "all"<br />
-        -For permissions, select as shown <br />
-        <button
-          className={`btn-blue btn-sandbox-api medium ${user.theme}`}
-          onClick={(event) => { event.preventDefault(); setShowPermissions(!showPermissions) }}>here</button>or select "all"<br />
-        - You will be given a Key and Secret. Enter them below.
+        - Coinbase will give you a file to download that contains your API key and secret. <br />
+        - You can upload that file here to update your API key. <br />
+        - DO NOT modify the file in any way, and DO NOT share it with anyone.
       </p>
-      {showPermissions && <img className="required-permissions-image" src={permissions} alt="required-permissions-image" />}
-
-      <div className="divider short" />
-      {/* {JSON.stringify(apiError)} error */}
 
       {/* form for entering api details */}
       <form className="api-form" onSubmit={submitApi} >
-        <h4>API</h4>
+
+      <div className="divider short" />
+      {/* {JSON.stringify(apiError)} error */}
+      <input
+        type="file"
+        accept=".json"
+        onChange={handleApiKeyFileUpload}
+        className={`file-input ${theme}`}
+      />
+      {apiKeyFile && (
+        <div>
+          <p>API Key File:</p>
+          <pre>{JSON.stringify(apiKeyFile, null, 2)}</pre>
+        </div>
+      )}
+      <button
+        className={`btn-blue medium ${user.theme}`}
+        onClick={() => { updateApiKey({ api_key: apiKeyFile }) }}>
+        Save
+      </button>
+
+
+
+        {/* <h4>API</h4>
         <p>Paste your API key and secret from <a href='https://www.coinbase.com/settings/api' target="_blank">Coinbase</a> here</p>
         <label htmlFor="key">
           API Key:
@@ -81,7 +124,7 @@ function NotActive() {
           value={secret}
           required
           onChange={(event) => setSecret(event.target.value)}
-        /><br />
+        /><br /> */}
         {/* <label htmlFor="URI">
               Real money or sandbox?
             </label><br />
@@ -97,10 +140,10 @@ function NotActive() {
             <p>{apiError.status === 401 ? "Invalid API Details!" : "Unknown Error"}</p>
           </div>
         }
-        {saving
+        {/* {saving
           ? <p>Saving...</p>
           : <input className={`btn-store-api btn-blue medium ${user.theme}`} type="submit" name="submit" value="Store API details" />
-        }
+        } */}
       </form>
 
 
