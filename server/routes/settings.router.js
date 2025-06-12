@@ -13,8 +13,8 @@ import { devLog } from '../modules/utilities.js';
 router.get('/connection', async (req, res) => {
   try {
     const user = req.user ? true : false;
-    devLog(user, 'connection route hit');
-    devLog('connection route hit');
+    // devLog(user, 'connection route hit');
+    // devLog('connection route hit');
     res.status(200).send({ connection: true, loggedIn: user });
   } catch (err) {
     devLog(err, 'connection route failed');
@@ -27,30 +27,17 @@ router.get('/connection', async (req, res) => {
  * No auth required
  */
 
-// function to check if there are any admin users
-async function anyAdmins() {
-  return new Promise(async (resolve, reject) => {
-    const queryText = `SELECT count(*) FROM "user" WHERE "admin"=true;`;
-    try {
-      let result = await pool.query(queryText);
-      resolve(result.rows[0].count)
-    } catch (err) {
-      devLog('problem getting number of admins', err);
-    }
-  })
-}
+
 
 router.get('/registration', async (req, res) => {
   try {
-    const queryText = `SELECT registration_open FROM "bot_settings";`;
-    const results = await pool.query(queryText);
-    devLog('registration open: ', results.rows[0], 'registration route hit');
-    let open = results.rows[0].registration_open;
-    const admins = await anyAdmins();
+    let open = await databaseClient.getRegistrationOpen();
+
+    const admins = await databaseClient.getAdminCount();
     if (admins === 0) {
       open = true;
     };
-    res.status(200).send({registrationOpen: open});
+    res.status(200).send({ registrationOpen: open });
   } catch (err) {
     devLog(err, 'error with registration route');
     res.sendStatus(500);
@@ -116,12 +103,13 @@ router.get('/test/:parmesan', rejectUnauthenticated, async (req, res) => {
  */
 router.get('/', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
+  devLog('get all settings route hit', user.admin);
   // only admin can do this
   if (user.admin) {
     try {
-      const queryText = `SELECT * FROM "bot_settings";`;
-      const results = await pool.query(queryText);
-      res.send(results.rows[0]);
+      const settings = await databaseClient.getBotSettings();
+      devLog('settings', settings);
+      res.send(settings);
     } catch (err) {
       devLog('error with get all settings route', err);
       res.sendStatus(500);
@@ -165,8 +153,7 @@ router.put('/theme', rejectUnauthenticated, async (req, res) => {
     const theme = req.body.theme;
     const identifier = req.headers['x-identifier'];
     devLog('theme route', theme);
-    const queryText = `UPDATE "user_settings" SET "theme" = $1 WHERE "userID" = $2`;
-    await pool.query(queryText, [theme, user.id]);
+    await databaseClient.updateTheme(theme, user.id);
     await userStorage[user.id].update(identifier);
     res.sendStatus(200);
   } catch (err) {
@@ -183,13 +170,13 @@ router.put('/tradeLoadMax', rejectUnauthenticated, async (req, res) => {
   try {
     const user = req.user;
     const identifier = req.headers['x-identifier'];
-    const queryText = `UPDATE "user_settings" SET "max_trade_load" = $1 WHERE "userID" = $2`;
-    await pool.query(queryText, [req.body.max_trade_load, user.id]);
+    const maxTradeLoad = req.body.max_trade_load;
+    await databaseClient.updateTradeLoadMax(maxTradeLoad, user.id);
     await userStorage[user.id].update(identifier);
     // update orders on client
     messenger[user.id].newMessage({
       type: 'general',
-      text: `Max trades to load updated to ${req.body.max_trade_load}`,
+      text: `Max trades to load updated to ${maxTradeLoad}`,
       orderUpdate: true,
       identifier: identifier
     })
@@ -208,18 +195,18 @@ router.put('/profitAccuracy', rejectUnauthenticated, async (req, res) => {
   try {
     const user = req.user;
     const identifier = req.headers['x-identifier'];
-    const accuracy = () => {
-      if (req.body.profit_accuracy > 16) {
-        return 16
-      } else if (req.body.profit_accuracy < 0) {
-        return 0
-      } else {
-        return Math.round(req.body.profit_accuracy)
-      }
-    }
+    // const accuracy = () => {
+    //   if (req.body.profit_accuracy > 16) {
+    //     return 16
+    //   } else if (req.body.profit_accuracy < 0) {
+    //     return 0
+    //   } else {
+    //     return Math.round(req.body.profit_accuracy)
+    //   }
+    // }
+    const accuracy = Math.round(Math.min(Math.max(req.body.profit_accuracy, 0), 16));
     devLog('profit_accuracy route hit', req.body);
-    const queryText = `UPDATE "user_settings" SET "profit_accuracy" = $1 WHERE "userID" = $2`;
-    await pool.query(queryText, [accuracy(), user.id]);
+    await databaseClient.updateProfitAccuracy(accuracy, user.id);
     await userStorage[user.id].update(identifier);
     res.sendStatus(200);
   } catch (err) {
@@ -252,19 +239,18 @@ router.put('/syncQuantity', rejectUnauthenticated, async (req, res) => {
   try {
     const user = req.user;
     const identifier = req.headers['x-identifier'];
-    let newQuantity = req.body.sync_quantity;
+    let qty = req.body.sync_quantity;
     // get the bot settings
     const bot = botSettings.get();
     devLog(bot.orders_to_sync, 'bot settings');
-    if (newQuantity > bot.orders_to_sync) {
-      newQuantity = bot.orders_to_sync;
+    if (qty > bot.orders_to_sync) {
+      qty = bot.orders_to_sync;
     }
-    if (newQuantity < 1) {
-      newQuantity = 1;
+    if (qty < 1) {
+      qty = 1;
     }
     devLog('syncQuantity route', user.username);
-    const queryText = `UPDATE "user_settings" SET "sync_quantity" = $1 WHERE "userID" = $2`;
-    await pool.query(queryText, [newQuantity, user.id]);
+    await databaseClient.updateSyncQuantity(qty, user.id);
     await userStorage[user.id].update(identifier);
     res.sendStatus(200);
   } catch (err) {
@@ -300,22 +286,20 @@ router.post('/feedback', rejectUnauthenticated, async (req, res) => {
 
   try {
     // check if the user already has 5 feedbacks
-    const queryTextCount = `SELECT COUNT(*) FROM "feedback" WHERE "user_id" = $1;`;
-    const countResults = await pool.query(queryTextCount, [user.id]);
-    devLog(countResults.rows[0].count, 'count of feedbacks');
+    const count = await databaseClient.getFeedbackCount(user.id);
+    devLog(count, 'count of feedbacks');
 
     // if they do, send back a 403, else continue
     // admin can make unlimited feedbacks
-    if (countResults.rows[0].count >= 5 && !admin) {
+    if (count >= 5 && !admin) {
       res.sendStatus(403);
       return;
     }
 
 
     // store the feedback in the database
-    const queryText = `INSERT INTO "feedback" ("user_id", "subject", "description") VALUES ($1, $2, $3);`;
+    await databaseClient.storeFeedback(user.id, subject, description);
 
-    await pool.query(queryText, [user.id, subject, description]);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'error with feedback route');
@@ -338,15 +322,13 @@ router.get('/feedback', rejectUnauthenticated, async (req, res) => {
     if (admin) {
       // get all feedback, join with user table to get username
       // const queryText = `SELECT * FROM "feedback" ORDER BY "id" DESC;`;
-      const queryText = `SELECT "feedback".*, "user"."username" FROM "feedback" JOIN "user" ON "feedback"."user_id" = "user"."id" ORDER BY "id" DESC;`;
-      const results = await pool.query(queryText);
+      const results = await databaseClient.getFeedbackForAllUsers();
 
       res.send(results.rows);
     } else {
       // get feedback for the user
-      const queryText = `SELECT * FROM "feedback" WHERE "user_id" = $1 ORDER BY "id" DESC;`;
-      const results = await pool.query(queryText, [user.id]);
-      res.send(results.rows);
+      const results = await databaseClient.getFeedbackForUser(user.id);
+      res.send(results);
     }
   } catch (err) {
     devLog(err, 'error with feedback route');
@@ -368,14 +350,11 @@ router.delete('/feedback/:id', rejectUnauthenticated, async (req, res) => {
     // check if the user is an admin
     if (admin) {
       // delete the feedback
-      const queryText = `DELETE FROM "feedback" WHERE "id" = $1;`;
-
-      const results = await pool.query(queryText, [id]);
+      await databaseClient.deleteFeedback(id);
       res.sendStatus(200);
     } else {
       // delete feedback for the user
-      const queryText = `DELETE FROM "feedback" WHERE "id" = $1 AND "user_id" = $2;`;
-      const results = await pool.query(queryText, [id, user.id]);
+      await databaseClient.deleteSingleFeedbackForUser(user.id, id);
       res.sendStatus(200);
     }
   } catch (err) {

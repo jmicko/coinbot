@@ -1,21 +1,34 @@
 // const WebSocket = require('ws');
-import  WebSocket  from 'ws';
+import WebSocket from 'ws';
 // const CryptoJS = require("crypto-js");
 import CryptoJS from 'crypto-js';
 // const axios = require("axios").default;
-import  axios  from 'axios';
+import axios from 'axios';
 // const { cache } = require("./cache");
 // const { v4: uuidv4 } = require('uuid');
 import { v4 as uuidv4 } from 'uuid';
-import { devLog, sleep } from './utilities.js';
+import { devLog as devLogUtilities, sleep } from './utilities.js';
+import jwt from 'jsonwebtoken';
+const { sign } = jwt;
+import crypto from 'crypto';
+
+let showLogs = false;
+
+function devLog(...message) {
+  if (showLogs) {
+    devLogUtilities(...message);
+  }
+}
 
 class Coinbase {
-  constructor(key, secret) {
+  constructor(key, secret, apiDetails) {
     if (!secret?.length || !key?.length) {
       throw new Error('Coinbase is missing mandatory key and/or secret!');
     }
     this.key = key;
     this.secret = secret;
+    this.newKey = apiDetails.name;
+    this.newSecret = apiDetails.privateKey;
     this.WS_API_URL = 'wss://advanced-trade-ws.coinbase.com';
     this.ws = null;
     this.products = null;
@@ -36,7 +49,9 @@ class Coinbase {
 
   openSocket(setup) {
     const key = this.key;
+    const newKey = this.newKey;
     const secret = this.secret;
+    const newSecret = this.newSecret;
     const products = this.products;
     const WS_API_URL = this.WS_API_URL
     const ws = new WebSocket(WS_API_URL);
@@ -44,6 +59,27 @@ class Coinbase {
     this.ws = ws;
     // bind this and setup to this function so it has the key etc when reopened
     const openSocket = this.openSocket.bind(this, setup)
+
+    // Create a new method for WS authentication
+    const createWSAuthToken = () => {
+      // Note: No URI needed for WebSocket JWT
+      return jwt.sign(
+        {
+          iss: 'cdp',
+          nbf: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + 120,
+          sub: this.newKey,
+        },
+        this.newSecret,
+        {
+          algorithm: 'ES256',
+          header: {
+            kid: this.newKey,
+            nonce: crypto.randomBytes(16).toString('hex'),
+          },
+        }
+      );
+    };
 
     // used for signing all SOCKET requests
     function timestampAndSignSocket(message, channel, products = []) {
@@ -54,6 +90,18 @@ class Coinbase {
     }
 
     function subscribe(products, channelName, ws) {
+      // If using new API credentials
+      if (newKey && newSecret) {
+        devLog(':) :) :) using new API credentials :) :) :)');
+        const message = {
+        type: 'subscribe',
+        product_ids: products,
+        channel: channelName,
+        jwt: createWSAuthToken()
+      };
+      ws.send(JSON.stringify(message));
+    } else {
+      devLog('!!! using legacy API credentials !!!');
       const message = {
         type: 'subscribe',
         channel: channelName,
@@ -61,20 +109,34 @@ class Coinbase {
         product_ids: products,
         user_id: '',
       };
-      const subscribeMsg = timestampAndSignSocket(message, channelName, products);
-      ws.send(JSON.stringify(subscribeMsg));
+        const subscribeMsg = timestampAndSignSocket(message, channelName, products);
+        ws.send(JSON.stringify(subscribeMsg));
+      }
     }
 
     function unsubscribe(products, channelName, ws) {
-      const message = {
-        type: 'unsubscribe',
-        channel: channelName,
-        api_key: this.key,
-        product_ids: products,
-      };
-      const subscribeMsg = this.timestampAndSignSocket(message, channelName, products);
-      ws.send(JSON.stringify(subscribeMsg));
+      // If using new API credentials
+      if (newKey && newSecret) {
+        const message = {
+          type: 'unsubscribe',
+          product_ids: products,
+          channel: channelName,
+          jwt: createWSAuthToken()
+        };
+        ws.send(JSON.stringify(message));
+      } else {
+        // Legacy authentication
+        const message = {
+          type: 'unsubscribe',
+          channel: channelName,
+          api_key: this.key,
+          product_ids: products,
+        };
+        const subscribeMsg = timestampAndSignSocket(message, channelName, products);
+        ws.send(JSON.stringify(subscribeMsg));
+      }
     }
+
     function timestampAndSignSocket(message, channel, products = []) {
       const timestamp = Math.floor(Date.now() / 1000).toString();
       const strToSign = `${timestamp}${channel}${products.join(',')}`;
@@ -146,6 +208,23 @@ class Coinbase {
 
   // used for signing all REST requests
   signRequest(data, API) {
+    // If using new API credentials, use JWT auth
+    if (this.newKey && this.newSecret) {
+      // devLog('===using new API credentials===');
+      const token = this.createAuthToken(API.method, API.path);
+      return {
+        method: API.method,
+        timeout: 10000,
+        url: API.url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        ...(data && { data })
+      };
+    }
+
+    // devLog('!!! using legacy API credentials!!!');
     // convert the data to JSON, if any
     const body = data ? JSON.stringify(data) : '';
     // get the timestamp
@@ -169,21 +248,67 @@ class Coinbase {
     };
     return options;
   }
-  addParams(options, params) {
+
+  addParams(endpoint, params) {
     // this function is only called if there are params, so add a ? to the url string
-    options.url = options.url + `?`;
+    endpoint.url = endpoint.url + `?`;
     // Iterate over each object key/value pair, adding them to the url
     Object.keys(params).forEach(key => {
       // add new param
-      options.url += `${key}=${params[key]}&`;
+      endpoint.url += `${key}=${params[key]}&`;
     });
     // cut off the last & symbol
-    options.url = options.url.slice(0, -1)
+    endpoint.url = endpoint.url.slice(0, -1)
+  }
+
+  createAuthToken(method, path) {
+    const uri = `${method} api.coinbase.com${path}`;
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    return jwt.sign(
+      {
+        iss: "cdp",
+        nbf: timestamp,
+        exp: timestamp + 120,
+        sub: this.newKey,
+        uri,
+      },
+      this.newSecret,
+      {
+        algorithm: "ES256",
+        header: {
+          kid: this.newKey,
+          nonce: crypto.randomBytes(16).toString("hex"),
+        },
+      }
+    );
+  }
+
+  createRequestOptions(endpoint, data) {
+    const token = this.createAuthToken(endpoint.method, endpoint.path);
+
+    const options = {
+      method: endpoint.method,
+      timeout: 10000,
+      url: endpoint.url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    };
+    // devLog('checking data');
+    if (data) {
+      devLog(data, 'adding data');
+      options.data = data;
+    }
+    // devLog(options, 'options');
+    return options;
   }
 
   // CALL IT LIKE THIS coinbase.getAccounts({ limit: 250, someKey:whateverValue })
   async getAccounts(params) {
     return new Promise(async (resolve, reject) => {
+      // devLog('====getAccountsLegacy====', params, '<- params');
       try {
         // data should just be blank
         const data = null;
@@ -196,6 +321,8 @@ class Coinbase {
         const options = this.signRequest(data, API);
         // add params, if any
         if (params) { this.addParams(options, params) };
+
+        // devLog(options, 'options');
         // make the call
         let response = await axios.request(options);
         // devLog(response.data, 'response from getAccounts');
@@ -211,9 +338,10 @@ class Coinbase {
   async getAllAccounts(prevCursor) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('getAllAccounts');
         // if there is a prevCursor, add it to the params, always limit to 250
         const params = { limit: 250 };
-        if (prevCursor) { params.cursor = prevCursor }; 
+        if (prevCursor) { params.cursor = prevCursor };
         // get the accounts
         const result = await this.getAccounts(params);
         // if there is a next cursor, call this function again with the cursor
@@ -223,6 +351,7 @@ class Coinbase {
           // combine the two arrays
           result.accounts = result.accounts.concat(nextAccounts.accounts);
         }
+        // devLog(result, 'GET ALL ACCOUNTS result');
         resolve(result);
       } catch (err) {
         reject(err);
@@ -234,6 +363,7 @@ class Coinbase {
   async getFills(params) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('getFills');
         await sleep(100);
         // data should just be blank
         const data = null;
@@ -258,6 +388,7 @@ class Coinbase {
   async getOrders(params) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('getOrders');
         // data should just be blank
         const data = null;
         const API = {
@@ -280,6 +411,7 @@ class Coinbase {
   async getTransactionSummary(params) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('getTransactionSummary');
         // data should just be blank
         const data = null;
         const API = {
@@ -305,6 +437,7 @@ class Coinbase {
   async getProduct(product_id) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('getProduct');
         // data should just be blank
         const data = null;
         const API = {
@@ -327,6 +460,7 @@ class Coinbase {
   async getProducts(params) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('getProducts');
         // data should just be blank
         const data = null;
         const API = {
@@ -351,6 +485,7 @@ class Coinbase {
   async getMarketTrades(params) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('getMarketTrades');
         const product_id = params.product_id;
         // delete product_id from params
         delete params.product_id;
@@ -378,6 +513,7 @@ class Coinbase {
   async getMarketCandles(params) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('getMarketCandles');
         const product_id = params.product_id;
         // delete product_id from params
         delete params.product_id;
@@ -406,6 +542,7 @@ class Coinbase {
   async getOrder(order_id) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('getOrder');
         // data should just be blank
         const data = null;
         const API = {
@@ -428,6 +565,7 @@ class Coinbase {
   async placeOrder(order) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('placeOrder');
         const API = {
           url: `https://api.coinbase.com/api/v3/brokerage/orders`,
           path: "/api/v3/brokerage/orders",
@@ -541,7 +679,7 @@ class Coinbase {
   async placeMarketOrder(order) {
     return new Promise(async (resolve, reject) => {
       try {
-
+        devLog('placeMarketOrder');
         const API = {
           url: `https://api.coinbase.com/api/v3/brokerage/orders`,
           path: "/api/v3/brokerage/orders",
@@ -593,6 +731,7 @@ class Coinbase {
   async cancelOrders(orderIdArray) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('cancelOrders');
         // make sure we have an array and that it is not empty
         if (!Array.isArray(orderIdArray) || orderIdArray.length === 0) {
           reject('orderIdArray must be an array of order IDs');
@@ -619,6 +758,7 @@ class Coinbase {
   async cancelAll() {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('cancelAll');
         const openOrders = await this.getOrders({ order_status: 'OPEN', limit: 1000 });
         const idArray = [];
         openOrders.orders.forEach(order => {
@@ -644,6 +784,7 @@ class Coinbase {
   async cancelAllForProduct(product_id) {
     return new Promise(async (resolve, reject) => {
       try {
+        devLog('cancelAllForProduct');
         const openOrders = await this.getOrders({ order_status: 'OPEN', product_id: product_id, limit: 1000 });
         const idArray = [];
         openOrders.orders.forEach(order => {

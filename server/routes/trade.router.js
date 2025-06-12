@@ -80,7 +80,7 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
 
   try {
     await cbClients[userID].cancelOrders([orderId]);
-    await databaseClient.updateTrade({ reorder: true, order_id: orderId })
+    await databaseClient.updateTrade({ reorder: true, order_id: orderId, userID: userID })
     res.sendStatus(200);
 
   } catch (error) {
@@ -88,7 +88,7 @@ router.put('/', rejectUnauthenticated, async (req, res) => {
       devLog('error message, trade router sync:', error.data.message);
       // orders that have been canceled are deleted from coinbase and return a 404.
       if (error.data.message === 'order not found') {
-        await databaseClient.setSingleReorder(orderId);
+        await databaseClient.setSingleReorder(orderId, userID);
         devLog('order not found in account', orderId);
         res.sendStatus(400)
       }

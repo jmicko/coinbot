@@ -1,19 +1,12 @@
-// const pool = require('../modules/pool');
-import { pool } from '../modules/pool.js';
+import { getUserCount } from './database/user.js';
 
-const userCount = (req, res, next) => {
-  // check if there is already a user in the db
-  const queryText = `SELECT count(*) FROM "user" WHERE "active"=false;`;
-  pool.query(queryText)
-    .then((result) => {
-      if (result && result.rows && (result.rows[0].count < 10)) {
-        next();
-      } else {
-        console.log('too many users!');
-        // forbid additional user creation if there are too many users
-        res.sendStatus(403);
-      }
-    })
+const userCount = async (req, res, next) => {
+  const userCount = await getUserCount();
+  if (userCount < 10) {
+    next();
+  } else {
+    res.sendStatus(403);
+  }
 };
 
 export { userCount };

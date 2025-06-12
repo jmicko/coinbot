@@ -15,6 +15,12 @@ const themes: { [key: string]: string } = { original: 'Original', darkTheme: 'Da
 function General(props: { tips: boolean }) {
   const { productID, refreshProfit } = useData();
   const { user, theme, refreshUser, deleteYourself } = useUser();
+  // API key file looks like this:
+  // {
+  //   "name": "organizations/11111111-2222-3333-4444-555555555555/apiKeys/fasgf345-sfe3-423f-4576-hryjhfd3ty35",
+  //   "privateKey": "-----BEGIN EC PRIVATE KEY-----\nxxxxx\nxxxx\nxxxx\n-----END EC PRIVATE KEY-----\n"
+  // }
+  const [apiKeyFile, setApiKeyFile] = useState<{ name: string, privateKey: string } | null>(null);
 
   const {
     putData: resetProfit,
@@ -67,6 +73,13 @@ function General(props: { tips: boolean }) {
     refreshCallback: refreshUser
   }), [refreshUser]);
   const { putData: sendSyncQuantity } = usePutFetch(syncQuantityOptions);
+
+  const updateApiKeyOptions = useMemo(() => ({
+    url: '/api/account/updateAPIKey',
+    from: 'updateApiKey in General.tsx',
+    refreshCallback: refreshUser
+  }), [refreshUser]);
+  const { putData: updateApiKey } = usePutFetch(updateApiKeyOptions);
 
 
   const [max_trade_load, setMaxTradeLoad] = useState(user.max_trade_load);
@@ -122,6 +135,26 @@ function General(props: { tips: boolean }) {
       console.log('Notification permission denied');
     }
   }
+
+  const handleApiKeyFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const json = JSON.parse(e.target?.result as string);
+          console.log('Parsed API key file:', json);
+          setApiKeyFile(json);
+          // TODO: Add API call to update keys
+        } catch (error) {
+          console.error('Error parsing API key file:', error);
+          // TODO: Add error handling UI
+        }
+      };
+      reader.readAsText(file);
+      // setApiKeyFile(file);
+    }
+  };
 
   return (
     <div className="General settings-panel scrollable">
@@ -351,6 +384,41 @@ function General(props: { tips: boolean }) {
             >Reset Profit</button>
 
           }
+        </div>
+      </Collapser>
+
+      <div className={`divider ${theme}`} />
+
+      {/* API KEYS */}
+      <Collapser title='API Keys'>
+        <div className='left-border'>
+          <p>Update your API key</p>
+          <p>
+            You can generate a new API key <a href="https://www.coinbase.com/settings/api" target="_blank" rel="noopener noreferrer">here</a>.
+          </p>
+          {props.tips &&
+            <p>
+              {'<?>'} Coinbase will give you a file to download that contains your API key and secret.
+              You can upload that file here to update your API key.
+              DO NOT modify the file in any way, and DO NOT share it with anyone.
+            </p>}
+          <input
+            type="file"
+            accept=".json"
+            onChange={handleApiKeyFileUpload}
+            className={`file-input ${theme}`}
+          />
+          {apiKeyFile && (
+            <div>
+              <p>API Key File:</p>
+              <pre>{JSON.stringify(apiKeyFile, null, 2)}</pre>
+            </div>
+          )}
+          <button
+            className={`btn-blue medium ${user.theme}`}
+            onClick={() => { updateApiKey({ api_key: apiKeyFile }) }}>
+            Save
+          </button>
         </div>
       </Collapser>
 

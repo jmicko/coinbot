@@ -13,6 +13,11 @@ import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { devLog } from '../modules/utilities.js';
 import { deleteMessage } from '../modules/database/messages.js';
+import jwt from 'jsonwebtoken';
+const { sign } = jwt;
+import crypto from 'crypto';
+import axios from 'axios';
+import { cacheEvents, emitCacheEvent } from '../modules/cacheEvents.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 
@@ -155,19 +160,11 @@ router.put('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
   try {
     devLog('reset profit route');
     const identifier = req.headers['x-identifier'];
-    // get the object keys
-
     const profit_reset = new Date(req.body.profit_reset);
-    // console.log(date, 'date');
 
-    // const profit_reset = new Date(date);
-    // const profit_reset = new Date();
     console.log(profit_reset, 'profit reset date');
     const userID = req.user.id;
-    const queryText = `UPDATE "limit_orders" SET "include_in_profit" = false WHERE "userID"=$1 AND "settled"=true;`;
-    const timeQuery = `UPDATE "user_settings" SET "profit_reset" = $1 WHERE "userID" = $2;`
-    await pool.query(queryText, [userID]);
-    await pool.query(timeQuery, [profit_reset, userID]);
+    await databaseClient.setProfitReset(profit_reset, userID);
 
     await userStorage[userID].update(identifier);
     res.sendStatus(200);
@@ -183,9 +180,7 @@ router.put('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
 router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   try {
-    let sqlText = `SELECT * FROM "limit_orders" WHERE "userID"=$1;`;
-    let result = await pool.query(sqlText, [userID]);
-    const allOrders = result.rows;
+    const allOrders = await databaseClient.getAllOrders(userID);
 
     const data = [
       {
@@ -198,7 +193,6 @@ router.get('/exportXlsx', rejectUnauthenticated, async (req, res) => {
           { label: 'Side', value: 'side' },
           { label: 'Settled', value: 'settled' },
           { label: 'Flipped', value: 'flipped' },
-          { label: 'Include in profit', value: 'include_in_profit' },
           { label: 'Product', value: 'product_id' },
           { label: 'Created at', value: 'created_at' },
           { label: 'Flipped at', value: 'flipped_at' },
@@ -383,62 +377,13 @@ router.get('/downloadFile/:fileName', rejectUnauthenticated, async (req, res) =>
 router.get('/exportCurrentJSON', rejectUnauthenticated, async (req, res) => {
   const userID = req.user.id;
   try {
-    // let sqlText = `SELECT * FROM "limit_orders" WHERE "userID"=$1;`;
-    // let result = await pool.query(sqlText, [userID]);
-    // const allOrders = JSON.stringify(result.rows);
     const allOrders = await databaseClient.getUnsettledTrades('all', userID);
-
     devLog(allOrders);
-
     res.send(allOrders);
   } catch (err) {
     devLog('problem getting all orders');
     res.sendStatus(500);
   }
-});
-
-/**
-* POST route to import JSON of current orders
-*/
-router.post('/importCurrentJSON', rejectUnauthenticated, async (req, res) => {
-  const userID = req.user.id;
-  // try {
-  //   // devLog(req.body);
-  //   const IGNORE_DUPLICATES = req.body.ignoreDuplicates
-  //   const JSON_IMPORT = req.body.jsonImport
-  //   // devLog(JSON.parse(JSON_IMPORT));
-  //   const TRADES_TO_IMPORT = JSON.parse(JSON_IMPORT);
-
-  //   let { errors, newTradeList } = convertJSONImport(TRADES_TO_IMPORT, IGNORE_DUPLICATES);
-
-  //   // if there are no errors, import the new trades into the db
-  //   if (!errors) {
-  //     // there may still be db errors, so keep track of that
-  //     let dbErrors = false;
-  //     // import the trades into the db
-  //     newTradeList.forEach(async trade => {
-  //       // devLog(Date.now());
-  //       // devLog(trade.id);
-  //       try {
-  //         await databaseClient.importTrade(trade, userID);
-  //       } catch (error) {
-  //         devLog('problem importing a trade');
-  //         dbErrors = true;
-  //       }
-  //     });
-  //     if (dbErrors) {
-  //       res.sendStatus(500);
-  //     } else {
-  //       res.sendStatus(200);
-  //     }
-  //   } else {
-  res.sendStatus(500);
-  //   }
-
-  // } catch (err) {
-  //   devLog('problem getting all orders');
-  //   res.sendStatus(500);
-  // }
 });
 
 
@@ -570,11 +515,10 @@ router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
   try {
     const identifier = req.headers['x-identifier'];
     const user = req.user;
-    const queryText = `UPDATE "user_settings" SET "reinvest" = $1 WHERE "userID" = $2`;
-    await pool.query(queryText, [!user.reinvest, user.id]);
+
+    await databaseClient.setReinvest(!user.reinvest, user.id);
 
     await userStorage[user.id].update(identifier);
-    // messenger[user.id].userUpdate(identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in REINVEST ROUTE');
@@ -590,11 +534,10 @@ router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
   try {
     const identifier = req.headers['x-identifier'];
     const user = req.user;
-    const queryText = `UPDATE "user_settings" SET "reinvest_ratio" = $1 WHERE "userID" = $2`;
-    await pool.query(queryText, [req.body.reinvest_ratio, user.id]);
+    const ratio = req.body.reinvest_ratio;
+    await databaseClient.setReinvestRatio(ratio, user.id);
 
     await userStorage[user.id].update(identifier);
-    // messenger[user.id].userUpdate(identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in REINVEST ROUTE');
@@ -603,18 +546,16 @@ router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
-* PUT route to change maximum size of trades
+* PUT route to toggle attention to maximum trade size
 */
 router.put('/tradeMax', rejectUnauthenticated, async (req, res) => {
   devLog('trade max route');
   try {
     const identifier = req.headers['x-identifier'];
     const user = req.user;
-    const queryText = `UPDATE "user_settings" SET "max_trade" = $1 WHERE "userID" = $2`;
-    await pool.query(queryText, [!user.max_trade, user.id]);
+    await databaseClient.setTradeMax(!user.max_trade, user.id);
 
     await userStorage[user.id].update(identifier);
-    // messenger[user.id].userUpdate(identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in tradeMax ROUTE');
@@ -622,6 +563,24 @@ router.put('/tradeMax', rejectUnauthenticated, async (req, res) => {
   }
 });
 
+/**
+* PUT route to change maximum size of trades
+*/
+router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
+  devLog('max trade size route');
+  try {
+    const user = req.user;
+    const identifier = req.headers['x-identifier'];
+    const size = req.body.max_trade_size > 0 ? req.body.max_trade_size : 0;
+
+    await databaseClient.setMaxTradeSize(size, user.id);
+    await userStorage[user.id].update(identifier);
+    res.sendStatus(200);
+  } catch (err) {
+    devLog(err, 'problem in maxTradeSize ROUTE');
+    res.sendStatus(500);
+  }
+});
 
 /**
 * PUT route to set reserve
@@ -630,38 +589,13 @@ router.put('/reserve', rejectUnauthenticated, async (req, res) => {
   try {
     const user = req.user;
     const identifier = req.headers['x-identifier'];
-    const queryText = `UPDATE "user_settings" SET "reserve" = $1 WHERE "userID" = $2`;
-    await pool.query(queryText, [req.body.reserve, user.id]);
+    const reserve = req.body.reserve;
+
+    await databaseClient.setReserve(reserve, user.id);
     await userStorage[user.id].update(identifier);
     res.sendStatus(200);
-    // messenger[user.id].userUpdate(identifier);
   } catch (err) {
     devLog(err, 'problem in reserve ROUTE');
-    res.sendStatus(500);
-  }
-});
-
-/**
-* PUT route to change status of reinvestment ratio
-*/
-router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
-  devLog('max trade size route');
-  try {
-    const user = req.user;
-    const identifier = req.headers['x-identifier'];
-    if (req.body.max_trade_size >= 0) {
-      const queryText = `UPDATE "user_settings" SET "max_trade_size" = $1 WHERE "userID" = $2`;
-      await pool.query(queryText, [req.body.max_trade_size, user.id]);
-    } else {
-      const queryText = `UPDATE "user_settings" SET "max_trade_size" = $1 WHERE "userID" = $2`;
-      await pool.query(queryText, [0, user.id]);
-    }
-
-    await userStorage[user.id].update(identifier);
-    // messenger[user.id].userUpdate(identifier);
-    res.sendStatus(200);
-  } catch (err) {
-    devLog(err, 'problem in maxTradeSize ROUTE');
     res.sendStatus(500);
   }
 });
@@ -673,11 +607,10 @@ router.put('/postMaxReinvestRatio', rejectUnauthenticated, async (req, res) => {
   try {
     const user = req.user;
     const identifier = req.headers['x-identifier'];
-    devLog("postMaxReinvestRatio route hit", req.body);
-    const queryText = `UPDATE "user_settings" SET "post_max_reinvest_ratio" = $1 WHERE "userID" = $2`;
-    await pool.query(queryText, [req.body.postMaxReinvestRatio, user.id]);
+    const ratio = req.body.postMaxReinvestRatio;
+
+    await databaseClient.setPostMaxReinvestRatio(ratio, user.id);
     await userStorage[user.id].update(identifier);
-    // messenger[user.id].userUpdate(identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in postMaxReinvestRatio ROUTE');
@@ -685,6 +618,93 @@ router.put('/postMaxReinvestRatio', rejectUnauthenticated, async (req, res) => {
   }
 });
 
+/**
+ * PUT route to update API key
+ */
+router.put('/updateAPIKey', rejectUnauthenticated, async (req, res) => {
+  devLog('update api key route');
+  try {
+    const userID = req.user.id;
+    const apiKey = req.body.api_key;
+    if (!apiKey.name || !apiKey.privateKey) {
+      res.sendStatus(400);
+      return;
+    }
+    const key_name = apiKey.name;
+    const key_secret = apiKey.privateKey;
+    devLog(key_name, 'key name');
+    devLog(key_secret, 'key secret');
+
+
+    const request_method = "GET";
+    const url = "api.coinbase.com";
+    const request_path = "/api/v3/brokerage/accounts";
+
+    const algorithm = "ES256";
+    const uri = request_method + " " + url + request_path;
+
+    const token = sign(
+      {
+        iss: "cdp",
+        nbf: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 120,
+        sub: key_name,
+        uri,
+      },
+      key_secret,
+      {
+        algorithm,
+        header: {
+          kid: key_name,
+          nonce: crypto.randomBytes(16).toString("hex"),
+        },
+      }
+    );
+    console.log("export JWT=" + token);
+
+    const response = await axios.request({
+      method: 'GET',
+      timeout: 10000,
+      url: 'https://api.coinbase.com/api/v3/brokerage/accounts',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (response.status !== 200) {
+      devLog('API request failed:', response.status, response.statusText);
+      throw new Error(`API request failed: ${response.status}`);
+    }
+
+    const data = response.data;
+    devLog('API response:', data.accounts[0]);
+
+    if (data.accounts[0]) {
+      // update the api key in the database
+      await databaseClient.updateAPIKey(apiKey, userID);
+      await cbClients.updateAPI(userID);
+
+      // set the account as active
+      const queryText = `UPDATE "user" SET "active" = true
+      WHERE "id"=$1 RETURNING *;`;
+      let result = await pool.query(queryText, [userID]);
+      emitCacheEvent(cacheEvents.USER_API_UPDATED, userID);
+      // refresh the user's cache
+      await cbClients.updateAPI(result.rows[0].id);
+
+    } else {
+      devLog('API key is invalid');
+      res.sendStatus(401);
+      return;
+    }
+
+    res.sendStatus(200);
+  } catch (err) {
+    devLog(err, 'problem in update api key route');
+    res.sendStatus(500);
+  }
+});
 
 /**
 * POST route to store API details
@@ -704,10 +724,10 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   const URI = getURI();
   try {
     // check if the api works first
-    const testClient = new Coinbase(api.key, api.secret);
-    const txSummary = await testClient.getTransactionSummary({ user_native_currency: 'USD' });
-    devLog(txSummary, 'test api results');
-    await databaseClient.saveFees(txSummary, userID);
+    // const testClient = new Coinbase(api.key, api.secret);
+    // const txSummary = await testClient.getTransactionSummary({ user_native_currency: 'USD' });
+    // devLog(txSummary, 'test api results');
+    // await databaseClient.saveFees(txSummary, userID);
 
     // store the api in the db
     const userAPIQueryText = `UPDATE "user_api" SET "CB_SECRET" = $1, "CB_ACCESS_KEY" = $2, "CB_ACCESS_PASSPHRASE" = $3, "API_URI" = $4
@@ -724,6 +744,7 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
     const queryText = `UPDATE "user" SET "active" = true
     WHERE "id"=$1 RETURNING *;`;
     let result = await pool.query(queryText, [userID]);
+    emitCacheEvent(cacheEvents.USER_API_UPDATED, userID);
     // refresh the user's cache
     await cbClients.updateAPI(result.rows[0].id);
 
