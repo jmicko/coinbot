@@ -77,18 +77,7 @@ router.post('/register', userCount, async (req, res, next) => {
     if (
       !username ||
       !pass ||
-      username !== username.toLowerCase() ||
-      pass !== pass.toLowerCase() ||
-      username.includes(' ') ||
-      pass.includes(' ') ||
-      username.includes('\'') ||
-      pass.includes('\'') ||
-      username.includes('\"') ||
-      pass.includes('\"') ||
-      username.includes('`') ||
-      pass.includes('`') ||
-      username.includes('!')
-
+      username.includes(' ')
     ) {
       res.sendStatus(403);
       return;
