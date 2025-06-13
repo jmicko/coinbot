@@ -73,7 +73,7 @@ router.post('/register', userCount, async (req, res, next) => {
   try {
     const username = req.body.username;
     const pass = req.body.password;
-    devLog('registering user', username, pass);
+    devLog('registering user', username);
     if (
       !username ||
       !pass ||
