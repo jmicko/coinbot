@@ -18,8 +18,8 @@ async function startWebsocket(userID) {
   // const userAPI = cache.getAPI(userID)
   // const secret = userAPI.CB_SECRET;
   // const key = userAPI.CB_ACCESS_KEY;
-  const secret = cbClients[userID].secret;
-  const key = cbClients[userID].key;
+  const secret = cbClients[userID].newSecret;
+  const key = cbClients[userID].newKey;
 
   if (!secret?.length || !key?.length) {
     throw new Error('websocket connection to coinbase is missing mandatory environment variable(s)');

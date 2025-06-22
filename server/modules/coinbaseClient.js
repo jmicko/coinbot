@@ -22,8 +22,8 @@ function devLog(...message) {
 
 class Coinbase {
   constructor(key, secret, apiDetails) {
-    if (!secret?.length || !key?.length) {
-      throw new Error('Coinbase is missing mandatory key and/or secret!');
+    if (!apiDetails.name?.length || !apiDetails.privateKey?.length) {
+      throw new Error('Coinbase is missing mandatory name and/or privateKey!');
     }
     this.key = key;
     this.secret = secret;
