@@ -37,6 +37,11 @@ async function downloadCandles(user) {
   // devLog('downloadCandles', user, granularities);
   const userID = user.id;
 
+  if (!cbClients[userID]) {
+    devLog('skipping candle download because Coinbase API credentials are missing', userID);
+    return;
+  }
+
   // first get the active products
   const activeProducts = await databaseClient.getActiveProducts(userID);
 
@@ -178,6 +183,8 @@ async function getCandles({ userID, productID, granularity, start, end }) {
     }
 
     // devLog('params', params, userID);
+
+    if (!cbClients[userID]) return;
 
     const result = await cbClients[userID].getMarketCandles(params);
     const candles = result.candles;

@@ -10,6 +10,41 @@ import { devLog } from "./utilities.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const missingCoinbaseClientNotices = new Set();
+
+function hasCoinbaseClient(userID) {
+  return Boolean(cbClients[userID]);
+}
+
+function reportMissingCoinbaseClient(userID) {
+  userStorage[userID]?.setSocketStatus('missing_api_credentials');
+
+  if (!missingCoinbaseClientNotices.has(userID)) {
+    missingCoinbaseClientNotices.add(userID);
+    messenger[userID]?.newError({
+      errorText: 'Coinbase API credentials are missing. Trading and Coinbase sync are disabled for this user.'
+    });
+  }
+}
+
+function canUseCoinbase(userID, user, { requireUnpaused = true } = {}) {
+  if (!user?.active || !user?.approved || botSettings.maintenance) {
+    return false;
+  }
+
+  if (requireUnpaused && user.paused) {
+    return false;
+  }
+
+  if (!hasCoinbaseClient(userID)) {
+    reportMissingCoinbaseClient(userID);
+    return false;
+  }
+
+  missingCoinbaseClientNotices.delete(userID);
+  return true;
+}
+
 // start a sync loop for each active user
 async function startSync() {
   // const settings = botSettings
@@ -49,7 +84,7 @@ async function initializeUserLoops(user) {
         user = userStorage.getUser(userID);
         // devLog(user, '<- user while init loops')
         await sleep(10000);
-        if (user?.active && user?.approved && !botSettings.maintenance) {
+        if (canUseCoinbase(userID, user, { requireUnpaused: false })) {
           await updateFunds(userID);
           devLog('FUNDS INITED')
           await sleep(5000);
@@ -73,7 +108,7 @@ async function processingLoop(userID) {
   }
 
   // check that user is active, approved, and unpaused, and that the bot is not under maintenance
-  if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
+  if (canUseCoinbase(userID, user)) {
     // flip orders that are settled in the db
     try {
 
@@ -119,13 +154,13 @@ async function syncOrders(userID) {
     if (user) {
       heartBeat(userID, 'heart');
     }
-    if ((((loopNumber - 1) % (botSettings.full_sync * 10)) === 0) && user?.active && user?.approved && !botSettings.maintenance) {
+    if ((((loopNumber - 1) % (botSettings.full_sync * 10)) === 0) && canUseCoinbase(userID, user, { requireUnpaused: false })) {
       // every 10 full syncs, update the products in the database
       await updateProducts(userID);
 
     }
     // check that user is active, approved, and unpaused, and that the bot is not under maintenance
-    if (user?.active && user?.approved && !user.paused && !botSettings.maintenance) {
+    if (canUseCoinbase(userID, user)) {
 
       // *** WHICH SYNC ***
       if (((loopNumber - 1) % botSettings.full_sync) === 0) {
@@ -153,7 +188,7 @@ async function syncOrders(userID) {
       await sleep(5000);
     }
     // update funds if the user is all of the above except for maintenance
-    if (user?.active && user?.approved && !botSettings.maintenance) {
+    if (canUseCoinbase(userID, user, { requireUnpaused: false })) {
       await updateFunds(userID);
     }
   } catch (err) {
@@ -628,6 +663,28 @@ function calculateProfitBTC(dbOrder) {
   return profitBTC;
 }
 
+function getCoinbaseErrorDetails(err) {
+  return err?.response?.data?.error_response
+    || err?.response?.data
+    || err?.error_response
+    || {};
+}
+
+function isOrderNotFoundError(err) {
+  const details = getCoinbaseErrorDetails(err);
+  const status = err?.response?.status || err?.status;
+  const message = [
+    details.error,
+    details.message,
+    err?.message
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  return status === 404 || message.includes('not found');
+}
+
 
 // this should just update the status of each trade in the ordersToCheck cached array
 async function updateMultipleOrders(userID, params) {
@@ -680,15 +737,40 @@ async function updateMultipleOrders(userID, params) {
         }
       } catch (err) {
         devLog(err, 'error in updateMultipleOrders loop');
-        await sleep(1000);
-        let errorText = `Error updating order details`
-        if (err?.error_response?.message) {
-          errorText = errorText + '. Reason: ' + err.error_response.message
+        let handledError = false;
+        let errorText = `Error updating order details`;
+        const errorDetails = getCoinbaseErrorDetails(err);
+
+        if (isOrderNotFoundError(err)) {
+          try {
+            await databaseClient.setSingleReorder(orderToCheck.order_id, userID);
+            messenger[userID].newMessage({
+              type: 'general',
+              text: `Order was not found on Coinbase and will be reordered`,
+              orderUpdate: true,
+            });
+            await reorder({ ...orderToCheck, reorder: true, userID });
+            handledError = true;
+          } catch (reorderErr) {
+            devLog(reorderErr, 'error reordering missing Coinbase order');
+            const reorderErrorDetails = getCoinbaseErrorDetails(reorderErr);
+            errorText = `Order was not found on Coinbase, but reorder failed`;
+            if (reorderErrorDetails?.message) {
+              errorText = errorText + '. Reason: ' + reorderErrorDetails.message;
+            }
+          }
         }
-        messenger[userID].newError({
-          errorData: orderToCheck,
-          errorText: errorText
-        })
+
+        if (!handledError) {
+          await sleep(1000);
+          if (errorDetails?.message) {
+            errorText = errorText + '. Reason: ' + errorDetails.message
+          }
+          messenger[userID].newError({
+            errorData: orderToCheck,
+            errorText: errorText
+          })
+        }
       } // end catch
       const endTime = performance.now();
       // API is limited to 10/sec, so make sure the bot waits that long between loops
@@ -921,6 +1003,10 @@ async function updateFunds(userID, identifier) {
   return new Promise(async (resolve, reject) => {
     try {
       const userSettings = await databaseClient.getUserAndSettings(userID, 'updateFunds');
+      if (!canUseCoinbase(userID, userSettings, { requireUnpaused: false })) {
+        resolve();
+        return;
+      }
       const available = await getAvailableFunds(userID, userSettings);
       const previousAvailable = userStorage[userID].getAvailableFunds();
 

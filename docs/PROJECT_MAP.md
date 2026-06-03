@@ -15,6 +15,8 @@ Because the app can place real orders, dev work should use an isolated local dat
 - `server/`: Node.js, Express, Passport, PostgreSQL, websocket server, Coinbase integration, and bot loops.
 - `client/`: current Vite + React + TypeScript frontend.
 - `old_fe/`: old React frontend retained as reference. It is not the current app.
+- `scripts/`: local development helper scripts, currently focused on the Podman PostgreSQL database.
+- `compose.yaml`: Podman/Docker Compose definition for local PostgreSQL.
 - `todo.md`: older short task list. The current cleanup roadmap is in `docs/ROADMAP.md`.
 
 ## Runtime Entry Points
@@ -90,6 +92,11 @@ Routes are mounted in `server/server.js`:
 Current documented commands:
 
 ```sh
+./scripts/dev-db-start.sh
+cp server/.env.example server/.env
+```
+
+```sh
 cd server
 npm install
 npm run dev
@@ -104,7 +111,6 @@ npm run dev
 Current gaps:
 
 - There is no root-level script to start both apps.
-- There is no checked-in container/Podman database setup.
 - The server expects a PostgreSQL database to already exist.
 - `dbUpgrade()` is not yet a complete blank-database bootstrap.
 

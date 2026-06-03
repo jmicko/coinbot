@@ -100,16 +100,10 @@ The initial migration should support a blank database without needing manual SQL
 
 ## Local Dev Database Target
 
-Use Podman for an isolated PostgreSQL database. A likely starting point:
+Use Podman for an isolated PostgreSQL database:
 
 ```sh
-podman run --name coinbot-postgres \
-  -e POSTGRES_USER=coinbot \
-  -e POSTGRES_PASSWORD=coinbot \
-  -e POSTGRES_DB=coinbot_dev \
-  -p 5432:5432 \
-  -v coinbot-postgres:/var/lib/postgresql/data \
-  -d postgres:14
+./scripts/dev-db-start.sh
 ```
 
 Then `server/.env` can point at:
@@ -125,6 +119,8 @@ SERVER_SESSION_SECRET=replace-this-local-dev-secret
 ```
 
 Do not connect local development to the old shared development database until migrations are proven against disposable data.
+
+For details, including how to clone and sanitize the old dev database into the local Podman database, see `docs/DEV_ENVIRONMENT.md`.
 
 ## Current Cache Layers
 

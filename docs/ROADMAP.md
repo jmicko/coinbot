@@ -4,9 +4,9 @@ This is the initial priority list after reviewing the current branch. It is bias
 
 ## P0: Safe Local Dev Baseline
 
-- Add a Podman-based PostgreSQL dev setup.
-- Add a committed local setup guide and/or compose file.
-- Create `server/.env.example` from `server/env` and make the expected dev values explicit.
+- [x] Add a Podman-based PostgreSQL dev setup.
+- [x] Add a committed local setup guide and/or compose file.
+- [x] Create `server/.env.example` from `server/env` and make the expected dev values explicit.
 - Verify the server can point at a disposable local database.
 - Make sure dev startup cannot accidentally use production credentials.
 
@@ -28,6 +28,7 @@ This is the initial priority list after reviewing the current branch. It is bias
 - `server/modules/database/settings.js` references `cacheEvents` without importing it.
 - `settings.js` emits `cacheEvents.ALL_USER_SETTINGS_UPDATED`, but that event is not defined.
 - `dbUpgrade()` fails on a blank database because most upgrade helpers assume tables already exist.
+- `dbUpgrade()` deletes old non-chat messages during startup, which makes migration smoke tests mutate cloned data.
 
 ## P1: Schema Integrity
 
@@ -75,7 +76,14 @@ This is the initial priority list after reviewing the current branch. It is bias
 - Make robot loop startup explicit and configurable.
 - Review loop timing and rate-limit handling after tests exist.
 - Make child-process lifecycle for candle imports visible and stoppable.
+- Investigate repeated `unknown error getting candles` logs from `candleMaker` during startup against the cloned dev database.
 - Add graceful shutdown for HTTP server, websockets, database pool, bot loops, and child processes.
+
+## P2: Dependency Maintenance
+
+- Review npm audit output for the server dependency tree.
+- Review npm audit output for the client dependency tree.
+- Upgrade dependencies intentionally after smoke tests and migration tests are in place.
 
 ## P3: Frontend Cleanup
 

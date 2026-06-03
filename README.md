@@ -22,6 +22,7 @@ This repo now has first-pass maintenance notes for the cleanup work:
 - [`docs/PROJECT_MAP.md`](./docs/PROJECT_MAP.md): current architecture, runtime flow, and development entry points.
 - [`docs/DATABASE_AND_CACHE.md`](./docs/DATABASE_AND_CACHE.md): current schema/bootstrap state and caching layers.
 - [`docs/ROADMAP.md`](./docs/ROADMAP.md): prioritized cleanup plan, starting with safe local dev and database migrations.
+- [`docs/DEV_ENVIRONMENT.md`](./docs/DEV_ENVIRONMENT.md): local Podman PostgreSQL setup and old-dev database clone workflow.
 
 # `Description`
 
@@ -124,7 +125,7 @@ The admin account can control settings that affect resource usage, as well as ap
 Before you get started, make sure you have the following software installed on your computer:
 
 - [Node.js](https://nodejs.org/en/) - version 20
-- [PostrgeSQL](https://www.postgresql.org/) - currently using version 14, but nothing is very db fancy so other versions probably work just fine
+- [PostrgeSQL](https://www.postgresql.org/) - local dev scripts currently use version 16 to match the old dev database
 - [Nodemon](https://nodemon.io/) - You can install this globally with `npm install -g nodemon`. It is used by the dev scripts
 - [PM2](https://pm2.keymetrics.io/) - optional, for running in a production environment
 

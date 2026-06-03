@@ -3,6 +3,23 @@ import { databaseClient } from './databaseClient.js';
 import { sessionMiddleware } from './session-middleware.js';
 import passport from 'passport';
 
+const missingCredentialsNotices = new Set();
+
+function reportMissingCredentials(userID) {
+  userStorage[userID]?.setSocketStatus('missing_api_credentials');
+  messenger[userID]?.instantMessage({
+    type: 'socketStatus',
+    socketStatus: 'missing_api_credentials'
+  });
+
+  if (!missingCredentialsNotices.has(userID)) {
+    missingCredentialsNotices.add(userID);
+    messenger[userID]?.newError({
+      errorText: 'Coinbase API credentials are missing. Trading and Coinbase websocket sync are disabled for this user.'
+    });
+  }
+}
+
 async function startWebsocket(userID) {
 
   const user = userStorage.getUser(userID);
@@ -18,13 +35,19 @@ async function startWebsocket(userID) {
   // const userAPI = cache.getAPI(userID)
   // const secret = userAPI.CB_SECRET;
   // const key = userAPI.CB_ACCESS_KEY;
-  const secret = cbClients[userID].newSecret;
-  const key = cbClients[userID].newKey;
+  const cbClient = cbClients[userID];
+  const secret = cbClient?.newSecret;
+  const key = cbClient?.newKey;
 
   if (!secret?.length || !key?.length) {
-    throw new Error('websocket connection to coinbase is missing mandatory environment variable(s)');
+    reportMissingCredentials(userID);
+    setTimeout(() => {
+      startWebsocket(userID);
+    }, 5000);
+    return { success: false, reason: 'missing_api_credentials' }
   }
 
+  missingCredentialsNotices.delete(userID);
 
 
   function messageHandler(data) {
@@ -65,7 +88,7 @@ async function startWebsocket(userID) {
   // products to subscribe to
   // const products = ['BTC-USD', 'ETH-USD'];
   const products = await getProducts();
-  cbClients[userID].setProducts(products);
+  cbClient.setProducts(products);
   // devLog(cbClients[userID].products, 'cbClients[userID]');
 
   async function getProducts() {
@@ -88,7 +111,7 @@ async function startWebsocket(userID) {
     statusHandler: statusHandler // optional - socket will pass 'closed', 'open', 'timeout', and 'reopening' to this callback
   }
 
-  cbClients[userID].openSocket(setup)
+  cbClient.openSocket(setup)
 
 
   function handleSnapshot(event) {

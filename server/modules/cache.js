@@ -421,11 +421,12 @@ const cbClients = new class {
     this.apiStorage[userID] = Object();
     Object.assign(this.apiStorage[userID], userAPI)
 
-    if (userAPI.CB_ACCESS_KEY?.length || userAPI.privateKey?.length) {
+    if (userAPI?.name?.length && userAPI?.privateKey?.length) {
       this[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET, userAPI);
       userStorage[userID].activate(true);
     } else {
-      userStorage[userID].activate(false);
+      delete this[userID];
+      userStorage[userID].setSocketStatus('missing_api_credentials');
     }
     messenger[userID].userUpdate();
   }
