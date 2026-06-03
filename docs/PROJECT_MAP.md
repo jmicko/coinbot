@@ -18,6 +18,7 @@ Because the app can place real orders, dev work should use an isolated local dat
 - `scripts/`: local development helper scripts, currently focused on the Podman PostgreSQL database.
 - `compose.yaml`: Podman/Docker Compose definition for local PostgreSQL.
 - `todo.md`: older short task list. The current cleanup roadmap is in `docs/ROADMAP.md`.
+- `docs/ROBOT_SYNC.md`: notes on the current robot loop ordering, local funds ledger, and Coinbase reconciliation risks.
 
 ## Runtime Entry Points
 
@@ -65,6 +66,8 @@ In development, `client/vite.config.ts` proxies `/api` to `http://localhost:5000
 - `modules/coinbaseClient.js`: Coinbase API/websocket client wrapper.
 - `modules/candleMaker.js`: child process for candle import/update work.
 - `modules/push.js`: web push notification support.
+
+The robot loop deserves special care because it reconciles a local order book against a limited Coinbase open-order window. See `docs/ROBOT_SYNC.md` before changing order sync, reorder, funds, websocket, or flip behavior.
 
 ## REST API Areas
 

@@ -45,6 +45,8 @@ This is the initial priority list after reviewing the current branch. It is bias
 - Add a way to run the server without starting bot loops or Coinbase websocket loops.
 - Add a mock/no-op Coinbase client mode for UI and database development.
 - Make startup logs clearly show database name, maintenance mode, and whether trading loops are active.
+- Add explicit portfolio awareness to sync/reorder logic now that dev can use a dedicated Coinbase portfolio.
+- Use Coinbase portfolio breakdown as the Coinbase-side available-funds baseline, while still subtracting local DB-only order commitments.
 
 ## P1: Tests And Verification
 
@@ -75,6 +77,9 @@ This is the initial priority list after reviewing the current branch. It is bias
 
 - Make robot loop startup explicit and configurable.
 - Review loop timing and rate-limit handling after tests exist.
+- Add tests around `fullSync`, `quickSync`, `updateMultipleOrders`, and `reorder` before changing loop ordering.
+- Add tests around reinvestment reserve calculations and multiple simultaneous sell-to-buy flips.
+- Add tests for fee policy: internal availability/reinvestment gates should reserve with taker assumptions, while expected-profit displays may use maker assumptions.
 - Make child-process lifecycle for candle imports visible and stoppable.
 - Investigate repeated `unknown error getting candles` logs from `candleMaker` during startup against the cloned dev database.
 - Add graceful shutdown for HTTP server, websockets, database pool, bot loops, and child processes.

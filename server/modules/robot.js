@@ -11,6 +11,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const missingCoinbaseClientNotices = new Set();
+const orderNotFoundCounts = new Map();
+const ORDER_NOT_FOUND_REORDER_THRESHOLD = 10;
 
 function hasCoinbaseClient(userID) {
   return Boolean(cbClients[userID]);
@@ -43,6 +45,21 @@ function canUseCoinbase(userID, user, { requireUnpaused = true } = {}) {
 
   missingCoinbaseClientNotices.delete(userID);
   return true;
+}
+
+function orderNotFoundKey(userID, orderID) {
+  return `${userID}:${orderID}`;
+}
+
+function incrementOrderNotFoundCount(userID, orderID) {
+  const key = orderNotFoundKey(userID, orderID);
+  const count = (orderNotFoundCounts.get(key) || 0) + 1;
+  orderNotFoundCounts.set(key, count);
+  return count;
+}
+
+function clearOrderNotFoundCount(userID, orderID) {
+  orderNotFoundCounts.delete(orderNotFoundKey(userID, orderID));
 }
 
 // start a sync loop for each active user
@@ -719,10 +736,12 @@ async function updateMultipleOrders(userID, params) {
         if (orderToCheck.reorder && !orderToCheck.will_cancel) {
           // if it should be reordered and is not being canceled by the user, reorder it
           await reorder(orderToCheck);
+          clearOrderNotFoundCount(userID, orderToCheck.order_id);
         } else {
           // if not a reorder, look up the full details on CB
           // devLog(orderToCheck, 'order to check BIG PROBLEM');
           let updatedOrder = await cbClients[userID].getOrder(orderToCheck.order_id);
+          clearOrderNotFoundCount(userID, orderToCheck.order_id);
           // if it was cancelled, set it for reorder
           if (updatedOrder.order.status === 'CANCELLED') {
             devLog('was canceled but should not have been!')
@@ -741,24 +760,36 @@ async function updateMultipleOrders(userID, params) {
         let errorText = `Error updating order details`;
         const errorDetails = getCoinbaseErrorDetails(err);
 
-        if (isOrderNotFoundError(err)) {
-          try {
-            await databaseClient.setSingleReorder(orderToCheck.order_id, userID);
+        if (!orderToCheck.reorder && isOrderNotFoundError(err)) {
+          const notFoundCount = incrementOrderNotFoundCount(userID, orderToCheck.order_id);
+          handledError = true;
+
+          if (notFoundCount >= ORDER_NOT_FOUND_REORDER_THRESHOLD) {
+            try {
+              await databaseClient.setSingleReorder(orderToCheck.order_id, userID);
+              clearOrderNotFoundCount(userID, orderToCheck.order_id);
+              messenger[userID].newMessage({
+                type: 'general',
+                text: `Order was not found on Coinbase ${notFoundCount} times and was marked for reorder`,
+                orderUpdate: true,
+              });
+            } catch (markReorderErr) {
+              handledError = false;
+              devLog(markReorderErr, 'error marking missing Coinbase order for reorder');
+              const markReorderErrorDetails = getCoinbaseErrorDetails(markReorderErr);
+              errorText = `Order was not found on Coinbase, but could not be marked for reorder`;
+              if (markReorderErrorDetails?.message) {
+                errorText = errorText + '. Reason: ' + markReorderErrorDetails.message;
+              }
+            }
+          } else if (notFoundCount === 1) {
             messenger[userID].newMessage({
               type: 'general',
-              text: `Order was not found on Coinbase and will be reordered`,
-              orderUpdate: true,
+              text: `Order was not found on Coinbase. The bot will retry before marking it for reorder.`,
             });
-            await reorder({ ...orderToCheck, reorder: true, userID });
-            handledError = true;
-          } catch (reorderErr) {
-            devLog(reorderErr, 'error reordering missing Coinbase order');
-            const reorderErrorDetails = getCoinbaseErrorDetails(reorderErr);
-            errorText = `Order was not found on Coinbase, but reorder failed`;
-            if (reorderErrorDetails?.message) {
-              errorText = errorText + '. Reason: ' + reorderErrorDetails.message;
-            }
           }
+        } else {
+          clearOrderNotFoundCount(userID, orderToCheck.order_id);
         }
 
         if (!handledError) {
