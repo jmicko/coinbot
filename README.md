@@ -15,6 +15,14 @@ The old client is still in the repo in the /old_fe and will remain there for a w
 
 Backend rewrite coming soon. :v:
 
+## `Current orientation docs`
+
+This repo now has first-pass maintenance notes for the cleanup work:
+
+- [`docs/PROJECT_MAP.md`](./docs/PROJECT_MAP.md): current architecture, runtime flow, and development entry points.
+- [`docs/DATABASE_AND_CACHE.md`](./docs/DATABASE_AND_CACHE.md): current schema/bootstrap state and caching layers.
+- [`docs/ROADMAP.md`](./docs/ROADMAP.md): prioritized cleanup plan, starting with safe local dev and database migrations.
+
 # `Description`
 
 Coinbot is a Bitcoin trading bot project built for the Coinbase cryptocurrency exchange.
