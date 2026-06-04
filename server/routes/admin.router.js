@@ -1,11 +1,22 @@
 import express from 'express';
+import os from 'os';
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
 import { robot } from '../modules/robot.js';
 import { databaseClient } from '../modules/databaseClient.js';
 import { userStorage, messenger, botSettings } from '../modules/runtime/index.js';
 import { devLog } from '../modules/utilities.js';
+import { getDbMetricsSnapshot, resetDbMetrics } from '../modules/dbMetrics.js';
 
 const router = express.Router();
+
+function getMetricsLimit(req) {
+  return Math.min(Math.max(Number(req.query.limit) || 20, 1), 100);
+}
+
+function getMetricsFilename() {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  return `coinbot-db-metrics-${timestamp}.json`;
+}
 
 /**
 * GET all user information if user is authenticated and admin
@@ -49,6 +60,57 @@ router.get('/debug/:user_id', rejectUnauthenticated, async (req, res) => {
     devLog('error debug user route - not admin');
     res.sendStatus(403);
   }
+});
+
+/**
+ * GET route to inspect process-local database query metrics.
+ */
+router.get('/dbMetrics', rejectUnauthenticated, async (req, res) => {
+  if (!req.user.admin) {
+    res.sendStatus(403);
+    return;
+  }
+
+  const limit = getMetricsLimit(req);
+  res.status(200).send(getDbMetricsSnapshot({ limit }));
+});
+
+/**
+ * GET route to download process-local database query metrics.
+ */
+router.get('/dbMetrics/download', rejectUnauthenticated, async (req, res) => {
+  if (!req.user.admin) {
+    res.sendStatus(403);
+    return;
+  }
+
+  const report = {
+    exportedAt: new Date().toISOString(),
+    source: {
+      hostname: os.hostname(),
+      pid: process.pid,
+      nodeEnv: process.env.NODE_ENV || null,
+      pgDatabase: process.env.PGDATABASE || null,
+    },
+    metrics: getDbMetricsSnapshot({ limit: getMetricsLimit(req) }),
+  };
+
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Content-Disposition', `attachment; filename="${getMetricsFilename()}"`);
+  res.type('application/json').send(`${JSON.stringify(report, null, 2)}\n`);
+});
+
+/**
+ * DELETE route to reset process-local database query metrics.
+ */
+router.delete('/dbMetrics', rejectUnauthenticated, async (req, res) => {
+  if (!req.user.admin) {
+    res.sendStatus(403);
+    return;
+  }
+
+  resetDbMetrics();
+  res.sendStatus(204);
 });
 
 
@@ -247,6 +309,7 @@ router.put('/order_sync_quantity', rejectUnauthenticated, async (req, res) => {
  */
 router.put('/maintenance', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
+  const identifier = req.headers['x-identifier'];
   console.log('maintenance route hit');
   if (user.admin) {
     try {
@@ -255,8 +318,13 @@ router.put('/maintenance', rejectUnauthenticated, async (req, res) => {
 
       // refresh the process-local runtime snapshot
       await botSettings.refresh()
+      const updatedSettings = botSettings.get();
 
-      res.sendStatus(200);
+      userStorage.getAllUsers().forEach(userID => {
+        messenger[userID]?.instantMessage({ type: 'settingsUpdate', identifier });
+      });
+
+      res.status(200).send(updatedSettings);
     } catch (err) {
       devLog(err, 'error with toggleMaintenance route');
       res.sendStatus(500);

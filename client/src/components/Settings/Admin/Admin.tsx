@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 // import Confirm from '../../Confirm/Confirm';
 import SingleUser from '../../SingleUser/SingleUser';
 import './Admin.css'
@@ -17,7 +17,7 @@ function Admin(props: { tips: boolean }) {
     preload: true,
     from: 'allUsers in Admin'
   }), []);
-  const { theme } = useUser();
+  const { theme, refreshUser } = useUser();
   const {
     data: allUsers,
     refresh: refreshUsers
@@ -40,6 +40,7 @@ function Admin(props: { tips: boolean }) {
   }), []);
   const {
     data: allSettings,
+    setData: setAllSettings,
     refresh: refreshSettings
   } = useGetFetch<BotSettings>(allSettingsOptions);
 
@@ -62,10 +63,11 @@ function Admin(props: { tips: boolean }) {
       refreshCallback: refreshSettings,
     });
   const { putData: toggleMaintenanceMode }
-    = usePutFetch({
+    = usePutFetch<BotSettings>({
       url: 'api/admin/maintenance',
       from: 'toggleMaintenanceMode in Admin',
-      refreshCallback: refreshSettings,
+      setData: setAllSettings,
+      refreshCallback: refreshUser,
     });
   const { putData: toggleRegistration }
     = usePutFetch({
@@ -77,6 +79,8 @@ function Admin(props: { tips: boolean }) {
   const [loopSpeed, setLoopSpeed] = useState(1);
   const [fullSync, setFullSync] = useState(10);
   const [syncQuantity, setSyncQuantity] = useState(100);
+  const [metricsDownloading, setMetricsDownloading] = useState(false);
+  const [metricsError, setMetricsError] = useState('');
   // const [resettingOrders, setResettingOrders] = useState(false);
   // const [factoryResetting, setFactoryResetting] = useState(false);
 
@@ -115,6 +119,48 @@ function Admin(props: { tips: boolean }) {
   //     setSyncQuantity(allSettings.orders_to_sync);
   //   }
   // }, [allSettings]);
+
+  useEffect(() => {
+    const handleSettingsUpdate = () => {
+      refreshSettings();
+    };
+
+    window.addEventListener('coinbot:settingsUpdate', handleSettingsUpdate);
+
+    return () => {
+      window.removeEventListener('coinbot:settingsUpdate', handleSettingsUpdate);
+    };
+  }, [refreshSettings]);
+
+  async function downloadDbMetrics() {
+    setMetricsDownloading(true);
+    setMetricsError('');
+
+    try {
+      const response = await fetch('api/admin/dbMetrics/download?limit=100');
+      if (!response.ok) {
+        throw new Error(`Download failed with status ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const filenameMatch = contentDisposition?.match(/filename="([^"]+)"/);
+      const filename = filenameMatch?.[1] || `coinbot-db-metrics-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      setMetricsError(err instanceof Error ? err.message : 'Download failed');
+    } finally {
+      setMetricsDownloading(false);
+    }
+  }
 
   return (
     <div className="Admin settings-panel scrollable">
@@ -183,6 +229,25 @@ function Admin(props: { tips: boolean }) {
               Enable
             </button>
           }
+        </div>
+      </Collapser>
+
+      <div className={`divider ${theme}`} />
+
+      {/* DATABASE METRICS */}
+      <Collapser title='Database Metrics' >
+        <div className='left-border'>
+          {props.tips && <p>
+            These metrics live in server memory and reset when the server process restarts. Download them before restarting production.
+          </p>}
+          <button
+            className={`btn-blue btn-reinvest medium ${theme}`}
+            disabled={metricsDownloading}
+            onClick={downloadDbMetrics}
+          >
+            {metricsDownloading ? 'Downloading...' : 'Download metrics'}
+          </button>
+          {metricsError && <p>{metricsError}</p>}
         </div>
       </Collapser>
 

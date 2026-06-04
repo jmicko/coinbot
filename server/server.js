@@ -22,6 +22,7 @@ import { robot } from './modules/robot.js';
 import { devLog } from './modules/utilities.js';
 import { dbUpgrade } from './modules/databaseClient.js';
 import { startServerMaintenanceJobs } from './modules/serverMaintenance.js';
+import { dbMetricsMiddleware } from './modules/dbMetrics.js';
 
 await dbUpgrade();
 
@@ -38,6 +39,8 @@ const server = http.createServer(app);
 // Body parsing middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(dbMetricsMiddleware);
 
 // Configure session middleware
 app.use(sessionMiddleware);

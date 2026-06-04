@@ -213,6 +213,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     'orderUpdate': () => { refreshOrders(); refreshProfit(); },
     'productUpdate': refreshProducts,
     'profitUpdate': refreshProfit,
+    'settingsUpdate': refreshUser,
     'userUpdate': refreshUser,
   }), [refreshBotErrors, refreshBotMessages, refreshOrders, refreshProducts, refreshProfit, refreshUser]);
 

@@ -7,12 +7,18 @@ import { fork } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { devLog } from "./utilities.js";
+import { runWithDbContext } from './dbMetrics.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const missingCoinbaseClientNotices = new Set();
 const orderNotFoundCounts = new Map();
 const ORDER_NOT_FOUND_REORDER_THRESHOLD = 10;
+
+function runRobotDbContext(name, userID, callback) {
+  const contextName = userID ? `robot.${name} user:${userID}` : `robot.${name}`;
+  return runWithDbContext(contextName, callback);
+}
 
 function hasCoinbaseClient(userID) {
   return Boolean(cbClients[userID]);
@@ -64,169 +70,177 @@ function clearOrderNotFoundCount(userID, orderID) {
 
 // start a sync loop for each active user
 async function startSync() {
-  // const settings = botSettings
-  try {
-    // fork a child process to import candles
-    const candleMaker = fork('./modules/candleMaker.js');
-    // load the bot settings
-    await botSettings.refresh();
-    // get all users and settings from the db in one query for runtime startup
-    const userList = await databaseClient.getAllUserAndSettings();
-    // start the loops for each user
-    await Promise.all(userList.map(async user => {
-      await initializeUserLoops(user);
-      // deSyncOrderLoop(user, 0);
-      // send the user to the child process to import candles
-      candleMaker.send({ type: 'startUser', user });
-    }));
-    resetAtMidnight({ notMidnight: true });
-  } catch (err) {
-    devLog(err, 'error starting sync');
-  }
+  return runRobotDbContext('startSync', null, async () => {
+    // const settings = botSettings
+    try {
+      // fork a child process to import candles
+      const candleMaker = fork('./modules/candleMaker.js');
+      // load the bot settings
+      await botSettings.refresh();
+      // get all users and settings from the db in one query for runtime startup
+      const userList = await databaseClient.getAllUserAndSettings();
+      // start the loops for each user
+      await Promise.all(userList.map(async user => {
+        await initializeUserLoops(user);
+        // deSyncOrderLoop(user, 0);
+        // send the user to the child process to import candles
+        candleMaker.send({ type: 'startUser', user });
+      }));
+      resetAtMidnight({ notMidnight: true });
+    } catch (err) {
+      devLog(err, 'error starting sync');
+    }
+  });
 }
 
 // this is separated from the startSync function so it can be called separately when a new user is created
 async function initializeUserLoops(user) {
-  // if (!user.active || !user.approved) {
-  //   devLog(user, '<- the user');
-  //   return
-  // }
-  const userID = user.id;
-  try {
-    // set up process-local runtime state for user
-    await userStorage.createNewUser(user);
-    // update funds only after Coinbase credentials are available. New users do
-    // not have credentials yet, so avoid blocking registration on this delay.
-    user = userStorage.getUser(userID);
-    // devLog(user, '<- user while init loops')
-    if (canUseCoinbase(userID, user, { requireUnpaused: false })) {
-      await sleep(10000);
-      await updateFunds(userID);
-      devLog('FUNDS INITED')
-      await sleep(5000);
+  return runRobotDbContext('initializeUserLoops', user.id, async () => {
+    // if (!user.active || !user.approved) {
+    //   devLog(user, '<- the user');
+    //   return
+    // }
+    const userID = user.id;
+    try {
+      // set up process-local runtime state for user
+      await userStorage.createNewUser(user);
+      // update funds only after Coinbase credentials are available. New users do
+      // not have credentials yet, so avoid blocking registration on this delay.
+      user = userStorage.getUser(userID);
+      // devLog(user, '<- user while init loops')
+      if (canUseCoinbase(userID, user, { requireUnpaused: false })) {
+        await sleep(10000);
+        await updateFunds(userID);
+        devLog('FUNDS INITED')
+        await sleep(5000);
+      }
+      // start syncing orders over the REST api
+      syncOrders(userID);
+      // start looking for orders to process
+      processingLoop(userID);
+      // start websocket connection to coinbase for rapid order updates
+      startWebsocket(userID);
+    } catch (err) {
+      devLog(err, 'error initializing loops');
     }
-    // start syncing orders over the REST api
-    syncOrders(userID);
-    // start looking for orders to process
-    processingLoop(userID);
-    // start websocket connection to coinbase for rapid order updates
-    startWebsocket(userID);
-  } catch (err) {
-    devLog(err, 'error initializing loops');
-  }
+  });
 }
 
 async function processingLoop(userID) {
-  // get the user and bot settings from runtime state;
-  const user = userStorage.getUser(userID);
-  if (!user || user.deleting) {
-    return
-  }
-
-  // check that user is active, approved, and unpaused, and that the bot is not under maintenance
-  if (canUseCoinbase(userID, user)) {
-    // flip orders that are settled in the db
-    try {
-
-      await processOrders(userID);
-      // will_cancel orders can now be canceled.
-      // there is no need to update client after this because it is updated when user clicks the kill button
-      await databaseClient.deleteMarkedOrders(userID);
-    } catch (err) {
-      devLog(err, 'error at the end of the processing loop');
+  return runRobotDbContext('processingLoop', userID, async () => {
+    // get the user and bot settings from runtime state;
+    const user = userStorage.getUser(userID);
+    if (!user || user.deleting) {
+      return
     }
-  } else {
-    // if the user should not be trading, slow loop
-    await sleep(1000);
-  }
-  heartBeat(userID, 'beat');
-  if (user) {
-    setTimeout(() => {
-      processingLoop(userID);
-    }, 100);
-  } else {
-    devLog(`user ${userID} is NOT THERE, stopping processing loop for user`);
-  }
+
+    // check that user is active, approved, and unpaused, and that the bot is not under maintenance
+    if (canUseCoinbase(userID, user)) {
+      // flip orders that are settled in the db
+      try {
+
+        await processOrders(userID);
+        // will_cancel orders can now be canceled.
+        // there is no need to update client after this because it is updated when user clicks the kill button
+        await databaseClient.deleteMarkedOrders(userID);
+      } catch (err) {
+        devLog(err, 'error at the end of the processing loop');
+      }
+    } else {
+      // if the user should not be trading, slow loop
+      await sleep(1000);
+    }
+    heartBeat(userID, 'beat');
+    if (user) {
+      setTimeout(() => {
+        processingLoop(userID);
+      }, 100);
+    } else {
+      devLog(`user ${userID} is NOT THERE, stopping processing loop for user`);
+    }
+  });
 }
 
 // repeating loop to find orders that have settled on coinbase via REST API
 async function syncOrders(userID) {
-  const user = userStorage.getUser(userID)
-  if (!user || user.deleting) {
-    return
-  }
-  // increase the loop number tracker at the beginning of the loop
-  userStorage.increaseLoopNumber(userID);
-  userStorage.updateStatus(userID, 'begin main loop');
-
-  // get the user settings from runtime state;
-
-  // keep track of how long the loop takes. Helps prevent rate limiting
-  const startTime = performance.now();
-
-  try {
-    const loopNumber = userStorage.getLoopNumber(userID);
-    // send heartbeat signifying start of new loop
-    if (user) {
-      heartBeat(userID, 'heart');
+  return runRobotDbContext('syncOrders', userID, async () => {
+    const user = userStorage.getUser(userID)
+    if (!user || user.deleting) {
+      return
     }
-    if ((((loopNumber - 1) % (botSettings.full_sync * 10)) === 0) && canUseCoinbase(userID, user, { requireUnpaused: false })) {
-      // every 10 full syncs, update the products in the database
-      await updateProducts(userID);
+    // increase the loop number tracker at the beginning of the loop
+    userStorage.increaseLoopNumber(userID);
+    userStorage.updateStatus(userID, 'begin main loop');
 
-    }
-    // check that user is active, approved, and unpaused, and that the bot is not under maintenance
-    if (canUseCoinbase(userID, user)) {
+    // get the user settings from runtime state;
 
-      // *** WHICH SYNC ***
-      if (((loopNumber - 1) % botSettings.full_sync) === 0) {
+    // keep track of how long the loop takes. Helps prevent rate limiting
+    const startTime = performance.now();
 
-        // *** FULL SYNC ***
-        // full sync compares all trades that should be on CB with DB,
-        // and does other less frequent maintenance tasks
-        await fullSync(userID);
-      } else {
-
-        // *** QUICK SYNC ***
-        //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
-        await quickSync(userID);
-        // desync extra orders
-        await deSync(userID)
-      } // end which sync
-
-      // *** UPDATE ORDERS IN DATABASE ***
-      await updateMultipleOrders(userID);
-      // update funds after everything has been processed
-      // await updateFunds(userID);
-
-    } else {
-      // if the user is not active or is paused, loop every 5 seconds
-      await sleep(5000);
-    }
-    // update funds if the user is all of the above except for maintenance
-    if (canUseCoinbase(userID, user, { requireUnpaused: false })) {
-      await updateFunds(userID);
-    }
-  } catch (err) {
-    MainLoopErrors(userID, err);
-  } finally {
-    // when everything is done, call the sync again if the user still exists
-    if (user) {
-      const endTime = performance.now();
-      // API is limited to 10/sec, so make sure the bot waits that long between loops
-      if (100 - (endTime - startTime) > 0) {
-        // adding an extra 200ms because the bot was still getting rate limited
-        await sleep(300 - (endTime - startTime));
+    try {
+      const loopNumber = userStorage.getLoopNumber(userID);
+      // send heartbeat signifying start of new loop
+      if (user) {
+        heartBeat(userID, 'heart');
       }
-      // wait however long the admin requires, then start new loop
-      setTimeout(() => {
-        userStorage.clearStatus(userID);
-        syncOrders(userID);
-      }, (botSettings.loop_speed * 10));
-    } else {
-      devLog(`user ${userID} is NOT THERE, stopping main loop for user`);
+      if ((((loopNumber - 1) % (botSettings.full_sync * 10)) === 0) && canUseCoinbase(userID, user, { requireUnpaused: false })) {
+        // every 10 full syncs, update the products in the database
+        await updateProducts(userID);
+
+      }
+      // check that user is active, approved, and unpaused, and that the bot is not under maintenance
+      if (canUseCoinbase(userID, user)) {
+
+        // *** WHICH SYNC ***
+        if (((loopNumber - 1) % botSettings.full_sync) === 0) {
+
+          // *** FULL SYNC ***
+          // full sync compares all trades that should be on CB with DB,
+          // and does other less frequent maintenance tasks
+          await fullSync(userID);
+        } else {
+
+          // *** QUICK SYNC ***
+          //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
+          await quickSync(userID);
+          // desync extra orders
+          await deSync(userID)
+        } // end which sync
+
+        // *** UPDATE ORDERS IN DATABASE ***
+        await updateMultipleOrders(userID);
+        // update funds after everything has been processed
+        // await updateFunds(userID);
+
+      } else {
+        // if the user is not active or is paused, loop every 5 seconds
+        await sleep(5000);
+      }
+      // update funds if the user is all of the above except for maintenance
+      if (canUseCoinbase(userID, user, { requireUnpaused: false })) {
+        await updateFunds(userID);
+      }
+    } catch (err) {
+      MainLoopErrors(userID, err);
+    } finally {
+      // when everything is done, call the sync again if the user still exists
+      if (user) {
+        const endTime = performance.now();
+        // API is limited to 10/sec, so make sure the bot waits that long between loops
+        if (100 - (endTime - startTime) > 0) {
+          // adding an extra 200ms because the bot was still getting rate limited
+          await sleep(300 - (endTime - startTime));
+        }
+        // wait however long the admin requires, then start new loop
+        setTimeout(() => {
+          userStorage.clearStatus(userID);
+          syncOrders(userID);
+        }, (botSettings.loop_speed * 10));
+      } else {
+        devLog(`user ${userID} is NOT THERE, stopping main loop for user`);
+      }
     }
-  }
+  });
 }
 
 

@@ -170,6 +170,34 @@ Known issues:
 - Events are process-local only. Multiple server processes would not share invalidation.
 - Some writes directly clear local module caches, some emit events, and some do both.
 
+### Database Query Metrics
+
+`server/modules/dbMetrics.js` instruments PostgreSQL calls in-process. It does not cache query results or change database behavior; it only records counts and timings so cache work can target the expensive paths first.
+
+Metrics are collected by wrapping checked-out `pg` clients in `server/modules/pool.js`. This covers normal `pool.query()` calls, explicit transaction clients, promise-style queries, and callback-style queries used by dependencies such as the session store.
+
+Query metrics are grouped by context:
+
+- HTTP requests are recorded as `http METHOD /normalized/path`.
+- Robot loops are recorded at broad loop boundaries such as `robot.syncOrders user:1` and `robot.processingLoop user:1`.
+- Startup and background work without an explicit context is recorded as `uncategorized`.
+
+Admin-only endpoints:
+
+- `GET /api/admin/dbMetrics?limit=20`: returns totals, top contexts, top SQL statements, and recent slow queries.
+- `GET /api/admin/dbMetrics/download?limit=100`: downloads the same data plus source metadata as a JSON text file.
+- `DELETE /api/admin/dbMetrics`: resets the in-process counters.
+
+The Admin settings panel exposes the download route under `Database Metrics`. This is the intended way to collect production data before restarting or redeploying the server.
+
+Environment flags:
+
+- `DB_SLOW_QUERY_MS`: slow-query threshold in milliseconds. Default: `250`.
+- `DB_SLOW_QUERY_LOG=false`: disables slow-query console logs.
+- `DB_METRICS_HTTP_LOG=true`: logs per-request database counts and timings after each HTTP response.
+
+This is deliberately process-local. Coinbot is intended to run as a small single-server app, and local counters are enough to see whether repeated route refreshes, robot loops, or specific SQL statements are responsible for database load.
+
 ## Cache Cleanup Direction
 
 Before changing behavior, define ownership:

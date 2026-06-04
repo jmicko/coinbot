@@ -237,6 +237,8 @@ export interface BaseWsMessage {
   type: string;
   identifier?: string;
   timestamp?: string;
+  orderUpdate?: boolean;
+  userUpdate?: boolean;
   // from: string;
   // orderUpdate: boolean;
 }
@@ -303,6 +305,10 @@ export interface UserUpdate extends BaseWsMessage {
   type: 'userUpdate';
 }
 
+export interface SettingsUpdate extends BaseWsMessage {
+  type: 'settingsUpdate';
+}
+
 export type WsMessage
   = TickerMessage
   | HeartBeatMessage
@@ -313,7 +319,8 @@ export type WsMessage
   | ErrorUpdate
   | ProductUpdate
   | ProfitUpdate
-  | UserUpdate;
+  | UserUpdate
+  | SettingsUpdate;
 
 
 export interface Tickers {

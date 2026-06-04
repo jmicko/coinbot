@@ -2,6 +2,7 @@
 import pg from 'pg';
 // const url = require('url');
 import url from 'url';
+import { recordDbQueryResult, trackDbQuery } from './dbMetrics.js';
 
 
 let config = {};
@@ -43,6 +44,56 @@ if (process.env.DATABASE_URL) {
 
 // this creates the pool that will be shared by all other modules
 const pool = new pg.Pool(config);
+const rawPoolConnect = pool.connect.bind(pool);
+
+function isCallback(value) {
+  return typeof value === 'function';
+}
+
+function trackDbQueryWithCallback(query, callback) {
+  const start = performance.now();
+  return (err, result) => {
+    recordDbQueryResult(query, performance.now() - start, Boolean(err));
+    callback(err, result);
+  };
+}
+
+function wrapClient(client) {
+  if (!client || client.__coinbotDbMetricsWrapped) {
+    return client;
+  }
+
+  const rawClientQuery = client.query.bind(client);
+  client.query = (...queryArgs) => {
+    const callback = queryArgs.find(isCallback);
+    if (callback) {
+      const callbackIndex = queryArgs.indexOf(callback);
+      const instrumentedArgs = [...queryArgs];
+      instrumentedArgs[callbackIndex] = trackDbQueryWithCallback(queryArgs[0], callback);
+      return rawClientQuery(...instrumentedArgs);
+    }
+
+    return trackDbQuery(queryArgs[0], () => rawClientQuery(...queryArgs));
+  };
+
+  Object.defineProperty(client, '__coinbotDbMetricsWrapped', {
+    value: true,
+    enumerable: false,
+  });
+
+  return client;
+}
+
+pool.connect = (...args) => {
+  const callback = args.find(isCallback);
+  if (callback) {
+    return rawPoolConnect((err, client, done) => {
+      callback(err, wrapClient(client), done);
+    });
+  }
+
+  return rawPoolConnect(...args).then(wrapClient);
+};
 
 // the pool with emit an error on behalf of any idle clients
 // it contains if a backend error or network partition happens

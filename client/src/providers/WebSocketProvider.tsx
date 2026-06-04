@@ -23,6 +23,15 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
 
     if (alreadyFetched(data)) return;
 
+    function triggerFetchHandler(type: string) {
+      typeof fetchHandlers[type] === 'function' && fetchHandlers[type]();
+    }
+
+    function triggerFlaggedRefreshes(data: WsMessage) {
+      if (data.orderUpdate && data.type !== 'orderUpdate') triggerFetchHandler('orderUpdate');
+      if (data.userUpdate && data.type !== 'userUpdate') triggerFetchHandler('userUpdate');
+    }
+
     switch (data.type) {
       case 'ticker': {
         const ticker = data.ticker;
@@ -47,19 +56,23 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
       case 'ping':
         socketRef.current?.send(JSON.stringify({ type: 'pong' }));
         break;
+      case 'settingsUpdate':
+        window.dispatchEvent(new CustomEvent('coinbot:settingsUpdate'));
+        triggerFetchHandler('settingsUpdate');
+        break;
       case 'chat':
       case 'general':
       case 'messageUpdate':
-        if (data.orderUpdate) fetchHandlers['orderUpdate']();
-        fetchHandlers['messageUpdate']();
+        triggerFlaggedRefreshes(data);
+        triggerFetchHandler('messageUpdate');
         break;
       case 'socketStatus':
         setSocketStatus(data.socketStatus);
         break;
       default:
         console.log('default case from useWebSocket', data);
-        typeof fetchHandlers[data.type] === 'function' &&
-          fetchHandlers[data.type]();
+        triggerFetchHandler(data.type);
+        triggerFlaggedRefreshes(data);
     }
 
     function alreadyFetched(data: WsMessage) {
