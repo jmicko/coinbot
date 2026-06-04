@@ -2,7 +2,7 @@ import express from 'express';
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
 import { robot } from '../modules/robot.js';
 import { databaseClient } from '../modules/databaseClient.js';
-import { userStorage, messenger, botSettings } from '../modules/cache.js';
+import { userStorage, messenger, botSettings } from '../modules/runtime/index.js';
 import { devLog } from '../modules/utilities.js';
 
 const router = express.Router();
@@ -34,7 +34,7 @@ router.get('/debug/:user_id', rejectUnauthenticated, async (req, res) => {
   const userID = req.params.user_id;
   if (req.user.admin) {
     try {
-      const userInfo = userStorage[userID].getUser()
+      const userInfo = userStorage.getUser(userID)
       const userErrors = messenger[userID].getErrors();
       // devLog('debug - full storage', userInfo);
       // devLog('errors', userErrors);
@@ -79,7 +79,7 @@ router.put('/users', rejectUnauthenticated, async (req, res) => {
       const userToApprove = req.body.id;
       devLog('in approve user route', userToApprove);
       const user = await databaseClient.approveUser(userToApprove);
-      userStorage[userToApprove].approve(true);
+      userStorage.approve(userToApprove, true);
       res.sendStatus(200);
     } else {
       devLog('you are NOT admin');
@@ -108,7 +108,7 @@ router.put('/users/chat', rejectUnauthenticated, async (req, res) => {
     devLog('in chat permission route', userToChange, chatPermission);
     const user = await databaseClient.updateChatPermission(chatPermission, userToChange);
 
-    userStorage[userToChange].update();
+    await userStorage.refreshUser(userToChange);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'error in chat permission put route');
@@ -180,7 +180,7 @@ router.put('/full_sync', rejectUnauthenticated, async (req, res) => {
 
       // set the settings in the db first
       await databaseClient.updateFullSync(fullSync);
-      // then save to cache
+      // then update the process-local runtime snapshot
       botSettings.change({ full_sync: fullSync })
 
       devLog(botSettings, 'bot settings after change');
@@ -216,7 +216,7 @@ router.put('/order_sync_quantity', rejectUnauthenticated, async (req, res) => {
       // save to db
       await databaseClient.updateOrdersToSync(orders_to_sync);
 
-      // save to cache
+      // update the process-local runtime snapshot
       botSettings.change({ orders_to_sync: orders_to_sync });
 
       res.sendStatus(200);
@@ -253,7 +253,7 @@ router.put('/maintenance', rejectUnauthenticated, async (req, res) => {
       await databaseClient.toggleMaintenance();
       robot.alertAllUsers('Toggling maintenance mode!');
 
-      // refresh cache
+      // refresh the process-local runtime snapshot
       await botSettings.refresh()
 
       res.sendStatus(200);
@@ -277,7 +277,7 @@ router.put('/registration', rejectUnauthenticated, async (req, res) => {
     if (isAdmin) {
       devLog('you are admin');
       await databaseClient.toggleRegistration();
-      botSettings.refresh()
+      await botSettings.refresh()
       res.sendStatus(200);
     } else {
       devLog('user is NOT admin');

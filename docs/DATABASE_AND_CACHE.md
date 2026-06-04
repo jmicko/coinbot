@@ -120,20 +120,22 @@ Do not connect local development to the old shared development database until mi
 
 For details, including how to clone and sanitize the old dev database into the local Podman database, see `docs/DEV_ENVIRONMENT.md`.
 
-## Current Cache Layers
+## Current State And Cache Layers
 
-There are three broad cache categories.
+There are two different categories now: database read caches and process-local runtime state. Database reads should be cached in the table-oriented database modules, not in runtime state modules.
 
 ### Runtime Bot State
 
-Defined in `server/modules/cache.js`:
+Defined in `server/modules/runtime/`:
 
-- `botSettings`: in-memory copy of `bot_settings`.
-- `userStorage`: per-user runtime status, funds, active products, cancel sets, order check queues, loop status, export/simulation state, and websocket status.
-- `messenger`: per-user browser websocket fan-out plus message/error arrays.
-- `cbClients`: per-user Coinbase clients and API details.
+- `botSettings.js`: process-local snapshot of global bot settings for synchronous robot-loop gates.
+- `userStorage.js`: per-user runtime status, funds, cancel sets, order check queues, loop status, export/simulation state, and websocket status.
+- `messenger.js`: per-user browser websocket fan-out plus in-memory message/error windows.
+- `coinbaseClients.js`: per-user Coinbase client registry and API credential hydration.
 
-This state is process-local and is rebuilt on server start from database users/settings/API rows.
+This state is process-local and is rebuilt on server start from database users/settings/API rows. It is not treated as the database caching strategy.
+
+`userStorage.js` stores user runtime state internally in a `Map` and exposes explicit module methods such as `getUser()`, `getAvailableFunds()`, `queueOrdersToCheck()`, and `updateStatus()`. Route and robot code should use those methods rather than direct keyed property access.
 
 ### Table Query Caches
 
@@ -146,9 +148,9 @@ Defined inside database modules:
 
 These caches reduce database calls but make write-path invalidation critical.
 
-### Cache Events
+### Database Cache Events
 
-`server/modules/cacheEvents.js` provides a process-local `EventEmitter`.
+`server/modules/cacheEvents.js` provides a process-local `EventEmitter` for database cache invalidation.
 
 Current event types:
 
@@ -172,15 +174,14 @@ Known issues:
 
 Before changing behavior, define ownership:
 
-- Runtime state in `cache.js` is allowed to track bot-loop state that is not durable on its own.
+- Runtime state in `server/modules/runtime/` is allowed to track bot-loop state that is not durable on its own.
 - Database module caches should be read-through caches for expensive or frequently repeated queries.
 - Every database write should either invalidate a named cache scope or return fresh data and update the cache in one obvious place.
 - Cache invalidation should be centralized enough that route handlers do not need to know table-cache internals.
 
 Suggested near-term cleanup:
 
-1. Fix the broken imports/event names.
-2. Document each cached query and its invalidation trigger.
-3. Add tests around cache hits after writes for users, products, orders, and settings.
-4. Replace ad hoc cache clearing with a small explicit cache API per table.
-5. Only then consider more aggressive caching or removing duplicate caches.
+1. Document each cached database query and its invalidation trigger.
+2. Add tests around cache hits after writes for users, products, orders, and settings.
+3. Replace ad hoc cache clearing with a small explicit cache API per table.
+4. Only then consider more aggressive caching or removing duplicate caches.

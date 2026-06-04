@@ -13,7 +13,7 @@ import userStrategy from '../strategies/user.strategy.js';
 // const robot = require('../modules/robot');
 import { robot } from '../modules/robot.js';
 import { databaseClient } from '../modules/databaseClient.js';
-import { userStorage } from '../modules/cache.js';
+import { userStorage } from '../modules/runtime/index.js';
 import { devLog } from '../modules/utilities.js';
 import { instantSchedule } from '../modules/push.js';
 // import the web-push library
@@ -62,7 +62,7 @@ router.post('/subscribe', rejectUnauthenticated, async (req, res) => {
 
 
     // get timeouts from userStorage for this subscription and clear them
-    const timeouts = userStorage[user_id].getTimeoutForSub(subscription);
+    const timeouts = userStorage.getTimeoutForSub(user_id, subscription);
     console.log('timeouts', timeouts);
     timeouts?.forEach(timeout => {
       console.log('clearing timeout', timeout);

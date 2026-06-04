@@ -4,7 +4,7 @@ const router = express.Router();
 import { pool } from '../modules/pool.js';
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
 import { databaseClient } from '../modules/databaseClient.js';
-import { cbClients, messenger, userStorage, botSettings } from '../modules/cache.js';
+import { cbClients, messenger, userStorage, botSettings } from '../modules/runtime/index.js';
 import { sleep, devLog } from '../modules/utilities.js';
 import { v4 as uuidv4 } from 'uuid';
 import { robot } from '../modules/robot.js';
@@ -62,7 +62,7 @@ router.get('/:product', rejectUnauthenticated, (req, res) => {
 //   const user = req.user;
 //   if (user.active && user.approved) {
 //     // get the user available funds
-//     const funds = userStorage[user.id].getAvailableFunds();
+//     const funds = userStorage.getAvailableFunds(user.id);
 //     user.availableFunds = funds;
 //     let options = req.body;
 //     devLog('options in auto setup route', options.product);
@@ -183,7 +183,7 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
     // get the user available funds
     try {
       const identifier = req.headers['x-identifier'];
-      const funds = userStorage[user.id].getAvailableFunds();
+      const funds = userStorage.getAvailableFunds(user.id);
       user.availableFunds = funds;
       let options = req.body.options;
       devLog(options.product, 'options in auto setup route');
@@ -436,7 +436,7 @@ router.put('/bulkPairRatio/:product_id', rejectUnauthenticated, async (req, res)
   try {
     // pause trading before cancelling all orders or it will reorder them before done, making it take longer
     await databaseClient.setPause(true, userID);
-    await userStorage[user.id].update();
+    await userStorage.refreshUser(user.id);
 
     // wait 5 seconds to give the sync loop more time to finish
     await sleep(5000);
@@ -463,7 +463,7 @@ router.put('/bulkPairRatio/:product_id', rejectUnauthenticated, async (req, res)
 
     // set pause status to what it was before route was hit
     await databaseClient.setPause(previousPauseStatus, userID);
-    await userStorage[user.id].update();
+    await userStorage.refreshUser(user.id);
     // update orders on client
     messenger[userID].newMessage({
       type: 'general',
@@ -533,7 +533,7 @@ router.delete('/:order_id', rejectUnauthenticated, async (req, res) => {
     const identifier = req.headers['x-identifier'];
     const orderId = req.params.order_id;
 
-    userStorage[userID].setCancel(orderId);
+    userStorage.markWillCancel(userID, orderId);
     // mark as canceled in db
 
     let order = await databaseClient.markForCancel(userID, orderId);

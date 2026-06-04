@@ -3,7 +3,7 @@ const router = express.Router();
 import { pool } from '../modules/pool.js';
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
 import { databaseClient } from '../modules/databaseClient.js';
-import { cbClients, userStorage, messenger } from '../modules/cache.js';
+import { cbClients, userStorage, messenger } from '../modules/runtime/index.js';
 import { robot } from '../modules/robot.js';
 import { Coinbase } from '../modules/coinbaseClient.js';
 import excel from 'exceljs';
@@ -126,24 +126,7 @@ router.get('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
     const userID = req.user.id;
     const product_id = req.params.product_id;
 
-    const durations = ['24 Hour', '7 Day', '30 Day', '90 Day', '1 Year'];
-    const profits = [];
-    for (let i = 0; i < durations.length; i++) {
-      const duration = durations[i];
-      // get profit for each duration by product
-      let productProfit = await databaseClient.getProfitForDurationByProduct(userID, product_id, duration);
-      // get profit for each duration by all products
-      let allProfit = await databaseClient.getProfitForDurationByAllProducts(userID, duration);
-      // add profit to profits array along with duration
-      profits.push({ duration, productProfit, allProfit });
-    }
-
-    const weeklyAverage = await databaseClient.getWeeklyAverageProfit(userID, product_id);
-    profits.push(weeklyAverage);
-
-    const sinceDate = await databaseClient.getProfitSinceDate(userID, req.user.profit_reset, product_id)
-    // add since reset to profits array
-    profits.push(sinceDate);
+    const profits = await databaseClient.getProfitSummary(userID, product_id, req.user.profit_reset);
 
     res.send(profits);
   } catch (err) {
@@ -167,7 +150,7 @@ router.put('/profit/:product_id', rejectUnauthenticated, async (req, res) => {
     const userID = req.user.id;
     await databaseClient.setProfitReset(profit_reset, userID);
 
-    await userStorage[userID].update(identifier);
+    await userStorage.refreshUser(userID, identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem resetting profit');
@@ -260,13 +243,13 @@ router.put('/exportCandles', rejectUnauthenticated, async (req, res) => {
       return;
     }
     // ensure that the user is not already exporting data
-    if (userStorage[userID].exporting) {
+    if (userStorage.isExporting(userID)) {
       devLog('already exporting');
       res.sendStatus(400);
       return;
     }
     // set exporting to true
-    userStorage[userID].exporting = true;
+    userStorage.setExporting(userID, true);
 
     // process the data on a separate thread
     // create a new worker
@@ -284,7 +267,7 @@ router.put('/exportCandles', rejectUnauthenticated, async (req, res) => {
       // kill the worker
       worker.kill();
       // set exporting to false
-      userStorage[userID].exporting = false;
+      userStorage.setExporting(userID, false);
     });
     worker.on('exit', (code) => {
       devLog('worker exited');
@@ -389,7 +372,7 @@ router.get('/exportCurrentJSON', rejectUnauthenticated, async (req, res) => {
 
 
 /**
-* GET route to get user's errors from cache
+* GET route to get user's runtime error messages
 */
 router.get('/errors', rejectUnauthenticated, async (req, res) => {
   devLog('get errors route');
@@ -405,7 +388,7 @@ router.get('/errors', rejectUnauthenticated, async (req, res) => {
 });
 
 /**
-* GET route to get user's messages from cache
+* GET route to get user's runtime message window
 */
 router.get('/messages', rejectUnauthenticated, async (req, res) => {
   devLog('get messages route');
@@ -464,9 +447,6 @@ router.post('/messages', rejectUnauthenticated, async (req, res) => {
       });
     }
 
-    // const userMessages = cache.getChatMessages(userID);
-    // userMessages.push(message);
-    // cache.setChatMessages(userID, userMessages);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in post messages route');
@@ -519,7 +499,7 @@ router.put('/reinvest', rejectUnauthenticated, async (req, res) => {
 
     await databaseClient.setReinvest(!user.reinvest, user.id);
 
-    await userStorage[user.id].update(identifier);
+    await userStorage.refreshUser(user.id, identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in REINVEST ROUTE');
@@ -538,7 +518,7 @@ router.put('/reinvestRatio', rejectUnauthenticated, async (req, res) => {
     const ratio = req.body.reinvest_ratio;
     await databaseClient.setReinvestRatio(ratio, user.id);
 
-    await userStorage[user.id].update(identifier);
+    await userStorage.refreshUser(user.id, identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in REINVEST ROUTE');
@@ -556,7 +536,7 @@ router.put('/tradeMax', rejectUnauthenticated, async (req, res) => {
     const user = req.user;
     await databaseClient.setTradeMax(!user.max_trade, user.id);
 
-    await userStorage[user.id].update(identifier);
+    await userStorage.refreshUser(user.id, identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in tradeMax ROUTE');
@@ -575,7 +555,7 @@ router.put('/maxTradeSize', rejectUnauthenticated, async (req, res) => {
     const size = req.body.max_trade_size > 0 ? req.body.max_trade_size : 0;
 
     await databaseClient.setMaxTradeSize(size, user.id);
-    await userStorage[user.id].update(identifier);
+    await userStorage.refreshUser(user.id, identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in maxTradeSize ROUTE');
@@ -593,7 +573,7 @@ router.put('/reserve', rejectUnauthenticated, async (req, res) => {
     const reserve = req.body.reserve;
 
     await databaseClient.setReserve(reserve, user.id);
-    await userStorage[user.id].update(identifier);
+    await userStorage.refreshUser(user.id, identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in reserve ROUTE');
@@ -611,7 +591,7 @@ router.put('/postMaxReinvestRatio', rejectUnauthenticated, async (req, res) => {
     const ratio = req.body.postMaxReinvestRatio;
 
     await databaseClient.setPostMaxReinvestRatio(ratio, user.id);
-    await userStorage[user.id].update(identifier);
+    await userStorage.refreshUser(user.id, identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in postMaxReinvestRatio ROUTE');
@@ -692,7 +672,7 @@ router.put('/updateAPIKey', rejectUnauthenticated, async (req, res) => {
       let result = await pool.query(queryText, [userID]);
       emitCacheEvent(cacheEvents.USER_UPDATED, userID);
       emitCacheEvent(cacheEvents.USER_API_UPDATED, userID);
-      // refresh the user's cache
+      // refresh the process-local Coinbase client/runtime state
       await cbClients.updateAPI(result.rows[0].id, identifier);
       await robot.updateProducts(userID);
       messenger[userID]?.instantMessage({ type: 'productUpdate', identifier });
@@ -756,7 +736,7 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
     let result = await pool.query(queryText, [userID]);
     emitCacheEvent(cacheEvents.USER_UPDATED, userID);
     emitCacheEvent(cacheEvents.USER_API_UPDATED, userID);
-    // refresh the user's cache
+    // refresh the process-local Coinbase client/runtime state
     await cbClients.updateAPI(result.rows[0].id, identifier);
     await robot.updateProducts(userID);
     messenger[userID]?.instantMessage({ type: 'productUpdate', identifier });

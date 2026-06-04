@@ -9,19 +9,60 @@ type FetchDataOptions<T> = {
   from: string;
 };
 
+// Dedupe only currently running GETs; completed responses are not cached.
+const inFlightGetRequests = new Map<string, Promise<unknown>>();
+
+async function getJson<T>(url: string, identifier: string): Promise<T> {
+  const existingRequest = inFlightGetRequests.get(url);
+  if (existingRequest) {
+    return existingRequest as Promise<T>;
+  }
+
+  const request = fetch(url, {
+    credentials: 'include',
+    headers: { 'X-identifier': identifier },
+  }).then(async response => {
+    if (!response.ok) {
+      throw new FetchError(`Error: ${response.status}`, response.status);
+    }
+
+    return response.json() as Promise<T>;
+  });
+
+  inFlightGetRequests.set(url, request);
+
+  try {
+    return await request;
+  } finally {
+    if (inFlightGetRequests.get(url) === request) {
+      inFlightGetRequests.delete(url);
+    }
+  }
+}
+
 const useGetFetch = <T,>(options: FetchDataOptions<T>) => {
   const [data, setData] = useState<T>(options.defaultState);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<null | FetchError>(null);
   const [unknownError, setUnknownError] = useState<null | Error>(null);
-  const hasFetched = useRef<boolean>(false);
+  const isMounted = useRef<boolean>(false);
+  const latestRequest = useRef<number>(0);
   const { fetchIdentifiers } = useIdentifiers();
 
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+      latestRequest.current += 1;
+    };
+  }, []);
 
   const fetchData = useCallback(async () => {
     // console.log(options.from, '<== fetching data from');
     // const whichUrl = options.url ? options.url : url;
 
+    const requestNumber = latestRequest.current + 1;
+    latestRequest.current = requestNumber;
     setIsLoading(true);
     try {
       const identifier = Date.now().toString() + options.url;
@@ -29,22 +70,20 @@ const useGetFetch = <T,>(options: FetchDataOptions<T>) => {
       fetchIdentifiers.current.push(identifier);
       // console.log(fetchIdentifiers, 'fetchIdentifiers from useGetFetch');
 
-
-      const response = await fetch(options.url, {
-        credentials: 'include', // Include credentials here
-        headers: { 'X-identifier': identifier },
-      });
-
-      if (!response.ok) {
-        throw new FetchError(`Error: ${response.status}`, response.status);
+      const data = await getJson<T>(options.url, identifier);
+      if (!isMounted.current || latestRequest.current !== requestNumber) {
+        return;
       }
-      const data: T = await response.json();
       // if (options.from === 'messages in data context') {
       // console.log(data, 'data from messages in data context:');
       // }
       setData(data);
       setError(null);
+      setUnknownError(null);
     } catch (e) {
+      if (!isMounted.current || latestRequest.current !== requestNumber) {
+        return;
+      }
       if (e instanceof FetchError) {
         setError(e);
         if (e.status === 403) {
@@ -58,7 +97,9 @@ const useGetFetch = <T,>(options: FetchDataOptions<T>) => {
         setUnknownError(new Error('An unknown error occurred.'));
       }
     } finally {
-      setIsLoading(false);
+      if (isMounted.current && latestRequest.current === requestNumber) {
+        setIsLoading(false);
+      }
     }
   }, [options, fetchIdentifiers]);
 
@@ -66,20 +107,15 @@ const useGetFetch = <T,>(options: FetchDataOptions<T>) => {
     setData(options.defaultState)
     setIsLoading(false)
     setError(null)
+    setUnknownError(null)
   }, [options.defaultState, setData, setIsLoading, setError])
 
   useEffect(() => {
-    // options.preload && !hasFetched.current && fetchData();
     if (options.preload
-      //  && !hasFetched.current
     ) {
       // console.log('PRELOADING DATA AGAIN FROM:', options.from);
 
       fetchData();
-      // hasFetched.current = true;
-    }
-    return () => {
-      hasFetched.current = true;
     }
   }, [options.preload, fetchData, options.from, options.url]);
 

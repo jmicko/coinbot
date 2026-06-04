@@ -291,6 +291,51 @@ export async function getWeeklyAverageProfit(userID, product) {
   })
 }
 
+export async function getProfitSummary(userID, product, resetDate) {
+  const sqlText = `
+    WITH profits AS (
+      SELECT
+        "product_id",
+        "filled_at",
+        (("original_sell_price" * "base_size") - ("original_buy_price" * "base_size") - ("total_fees" + COALESCE("previous_total_fees", "total_fees"))) AS "profit"
+      FROM "limit_orders"
+      WHERE "side" = 'SELL'
+        AND "settled" = true
+        AND "userID" = $1
+        AND "filled_at" > LEAST(now() - '1 Year'::interval, COALESCE($3::timestamp, now() - '1 Year'::interval))
+    )
+    SELECT
+      COALESCE(SUM("profit") FILTER (WHERE "filled_at" > now() - '24 Hour'::interval), 0) AS "all_24_hour",
+      COALESCE(SUM("profit") FILTER (WHERE "product_id" = $2 AND "filled_at" > now() - '24 Hour'::interval), 0) AS "product_24_hour",
+      COALESCE(SUM("profit") FILTER (WHERE "filled_at" > now() - '7 Day'::interval), 0) AS "all_7_day",
+      COALESCE(SUM("profit") FILTER (WHERE "product_id" = $2 AND "filled_at" > now() - '7 Day'::interval), 0) AS "product_7_day",
+      COALESCE(SUM("profit") FILTER (WHERE "filled_at" > now() - '30 Day'::interval), 0) AS "all_30_day",
+      COALESCE(SUM("profit") FILTER (WHERE "product_id" = $2 AND "filled_at" > now() - '30 Day'::interval), 0) AS "product_30_day",
+      COALESCE(SUM("profit") FILTER (WHERE "filled_at" > now() - '90 Day'::interval), 0) AS "all_90_day",
+      COALESCE(SUM("profit") FILTER (WHERE "product_id" = $2 AND "filled_at" > now() - '90 Day'::interval), 0) AS "product_90_day",
+      COALESCE(SUM("profit") FILTER (WHERE "filled_at" > now() - '1 Year'::interval), 0) AS "all_1_year",
+      COALESCE(SUM("profit") FILTER (WHERE "product_id" = $2 AND "filled_at" > now() - '1 Year'::interval), 0) AS "product_1_year",
+      COALESCE(SUM("profit") FILTER (WHERE "filled_at" > now() - '12 weeks'::interval), 0) / 12 AS "all_12_week_avg",
+      COALESCE(SUM("profit") FILTER (WHERE "product_id" = $2 AND "filled_at" > now() - '12 weeks'::interval), 0) / 12 AS "product_12_week_avg",
+      COALESCE(SUM("profit") FILTER (WHERE "filled_at" BETWEEN $3 AND now()), 0) AS "all_since_reset",
+      COALESCE(SUM("profit") FILTER (WHERE "product_id" = $2 AND "filled_at" BETWEEN $3 AND now()), 0) AS "product_since_reset"
+    FROM profits;
+  `;
+
+  const result = await pool.query(sqlText, [userID, product, resetDate]);
+  const profit = result.rows[0];
+
+  return [
+    { duration: '24 Hour', productProfit: profit.product_24_hour, allProfit: profit.all_24_hour },
+    { duration: '7 Day', productProfit: profit.product_7_day, allProfit: profit.all_7_day },
+    { duration: '30 Day', productProfit: profit.product_30_day, allProfit: profit.all_30_day },
+    { duration: '90 Day', productProfit: profit.product_90_day, allProfit: profit.all_90_day },
+    { duration: '1 Year', productProfit: profit.product_1_year, allProfit: profit.all_1_year },
+    { duration: '12 Week Avg', productProfit: profit.product_12_week_avg, allProfit: profit.all_12_week_avg },
+    { duration: 'Since Reset', productProfit: profit.product_since_reset, allProfit: profit.all_since_reset },
+  ];
+}
+
 
 
 export async function getNewestCandle(product_id, granularity) {
@@ -615,6 +660,7 @@ const databaseClient = {
   getProfitForDurationByAllProducts,
   getProfitSinceDate,
   getWeeklyAverageProfit,
+  getProfitSummary,
   getNewestCandle,
   getOldestCandle,
   saveCandles,

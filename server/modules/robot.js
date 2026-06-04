@@ -1,5 +1,5 @@
 import { databaseClient } from "./databaseClient.js";
-import { botSettings, userStorage, messenger, cbClients } from "./cache.js";
+import { botSettings, userStorage, messenger, cbClients } from "./runtime/index.js";
 import { startWebsocket } from "./websocket.js";
 import { resetAtMidnight } from './push.js';
 import { sleep, addProductDecimals } from "./utilities.js";
@@ -19,7 +19,7 @@ function hasCoinbaseClient(userID) {
 }
 
 function reportMissingCoinbaseClient(userID) {
-  userStorage[userID]?.setSocketStatus('missing_api_credentials');
+  userStorage.setSocketStatus(userID, 'missing_api_credentials');
 
   if (!missingCoinbaseClientNotices.has(userID)) {
     missingCoinbaseClientNotices.add(userID);
@@ -66,21 +66,19 @@ function clearOrderNotFoundCount(userID, orderID) {
 async function startSync() {
   // const settings = botSettings
   try {
-    const path = __dirname;
     // fork a child process to import candles
     const candleMaker = fork('./modules/candleMaker.js');
     // load the bot settings
     await botSettings.refresh();
-    // get all users from the db
-    const userList = await databaseClient.getAllUsers();
+    // get all users and settings from the db in one query for runtime startup
+    const userList = await databaseClient.getAllUserAndSettings();
     // start the loops for each user
-    await userList.forEach(async user => {
+    await Promise.all(userList.map(async user => {
       await initializeUserLoops(user);
       // deSyncOrderLoop(user, 0);
       // send the user to the child process to import candles
       candleMaker.send({ type: 'startUser', user });
-
-    });
+    }));
     resetAtMidnight({ notMidnight: true });
   } catch (err) {
     devLog(err, 'error starting sync');
@@ -95,7 +93,7 @@ async function initializeUserLoops(user) {
   // }
   const userID = user.id;
   try {
-    // set up cache for user
+    // set up process-local runtime state for user
     await userStorage.createNewUser(user);
     // update funds only after Coinbase credentials are available. New users do
     // not have credentials yet, so avoid blocking registration on this delay.
@@ -119,9 +117,9 @@ async function initializeUserLoops(user) {
 }
 
 async function processingLoop(userID) {
-  // get the user and bot settings from cache;
-  const user = userStorage[userID].getUser();
-  if (user.deleting) {
+  // get the user and bot settings from runtime state;
+  const user = userStorage.getUser(userID);
+  if (!user || user.deleting) {
     return
   }
 
@@ -154,20 +152,20 @@ async function processingLoop(userID) {
 // repeating loop to find orders that have settled on coinbase via REST API
 async function syncOrders(userID) {
   const user = userStorage.getUser(userID)
-  if (user.deleting) {
+  if (!user || user.deleting) {
     return
   }
   // increase the loop number tracker at the beginning of the loop
-  userStorage[userID].increaseLoopNumber();
-  userStorage[userID].updateStatus('begin main loop');
+  userStorage.increaseLoopNumber(userID);
+  userStorage.updateStatus(userID, 'begin main loop');
 
-  // get the user settings from cache;
+  // get the user settings from runtime state;
 
   // keep track of how long the loop takes. Helps prevent rate limiting
   const startTime = performance.now();
 
   try {
-    const loopNumber = userStorage[userID].getLoopNumber();
+    const loopNumber = userStorage.getLoopNumber(userID);
     // send heartbeat signifying start of new loop
     if (user) {
       heartBeat(userID, 'heart');
@@ -222,7 +220,7 @@ async function syncOrders(userID) {
       }
       // wait however long the admin requires, then start new loop
       setTimeout(() => {
-        userStorage[userID].clearStatus();
+        userStorage.clearStatus(userID);
         syncOrders(userID);
       }, (botSettings.loop_speed * 10));
     } else {
@@ -280,20 +278,20 @@ function MainLoopErrors(userID, err) {
     errorData = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???';
     errorText = 'Unknown error at end of syncOrders. Who knows WHAT could be wrong???';
   }
-  messenger[userID].newError({
+  messenger[userID]?.newError({
     errorData: errorData,
     errorText: errorText
   });
 }
 
 async function deSync(userID) {
-  userStorage[userID].updateStatus('begin desync');
+  userStorage.updateStatus(userID, 'begin desync');
 
   return new Promise(async (resolve, reject) => {
     try {
       let allToDeSync = [];
       // get the user's settings
-      const user = userStorage[userID].getUser();
+      const user = userStorage.getUser(userID);
       // devLog(user.sync_quantity, 'desyncing');
       // get the buys and sells that need to desync
       const ordersToDeSync = await Promise.all([
@@ -322,10 +320,10 @@ async function deSync(userID) {
 
 // FULL SYNC, will compare all trades that should be on CB, and do other less frequent maintenance tasks
 async function fullSync(userID) {
-  userStorage[userID].updateStatus('begin full sync');
+  userStorage.updateStatus(userID, 'begin full sync');
   return new Promise(async (resolve, reject) => {
     try {
-      const user = userStorage[userID].getUser();
+      const user = userStorage.getUser(userID);
       // devLog(user.sync_quantity, 'desyncing');
       // get lists of trades to compare which have been settled
       const results = await Promise.all([
@@ -352,6 +350,14 @@ async function fullSync(userID) {
 
       // then filter out any orders that are not in the active products list
       const cbOrders = allCbOrders.filter(order => activeProducts.includes(order.product_id));
+
+      const cbOrderIDs = new Set(cbOrders.map(order => order.order_id));
+      dbOrders.forEach(order => {
+        if (cbOrderIDs.has(order.order_id)) {
+          clearOrderNotFoundCount(userID, order.order_id);
+        }
+      });
+
       // compare the arrays and remove any where the ids match in both,
       // leaving a list of orders that are open in the db, but not on cb. Probably settled, possibly canceled
       let toCheck = await orderElimination(dbOrders, cbOrders);
@@ -360,7 +366,7 @@ async function fullSync(userID) {
       // *** CANCEL EXTRA ORDERS ON COINBASE THAT ARE NOT OPEN IN DATABASE ***
       await cancelAndReorder(toCancel, userID);
       // save the orders that need to be individually checked against CB
-      userStorage[userID].addToCheck(toCheck);
+      userStorage.queueOrdersToCheck(userID, toCheck);
       resolve();
     } catch (err) {
       devLog('error in full sync');
@@ -370,7 +376,7 @@ async function fullSync(userID) {
 }
 
 async function quickSync(userID) {
-  userStorage[userID].updateStatus('begin quick sync');
+  userStorage.updateStatus(userID, 'begin quick sync');
   // IF QUICK SYNC, only get fills
   return new Promise(async (resolve, reject) => {
     try {
@@ -411,7 +417,7 @@ async function quickSync(userID) {
 
 
 
-      const user = userStorage[userID].getUser();
+      const user = userStorage.getUser(userID);
       // devLog(user.sync_quantity, 'desyncing');
       // after checking fills, store the most recent so don't need to check it later
       // this will check the specified number of trades to sync on either side to see if any 
@@ -421,7 +427,7 @@ async function quickSync(userID) {
       // combine the arrays
       const toCheck = unsettledFills.concat(reorders);
       // set orders to check so the next process can access them without needing to pass params through
-      userStorage[userID].addToCheck(toCheck);
+      userStorage.queueOrdersToCheck(userID, toCheck);
       resolve(toCheck);
     } catch (err) {
       devLog('error in quick sync');
@@ -433,7 +439,7 @@ async function quickSync(userID) {
 
 // process orders that have been settled
 async function processOrders(userID) {
-  userStorage[userID].updateStatus('start process orders');
+  userStorage.updateStatus(userID, 'start process orders');
   return new Promise(async (resolve, reject) => {
     try {
       // check all trades in db that are both settled and NOT flipped
@@ -452,7 +458,7 @@ async function processOrders(userID) {
           try {
 
             // check if the trade should be canceled. This is the point of no return
-            const willCancel = userStorage[userID].checkCancel(dbOrder.order_id);
+            const willCancel = userStorage.willCancel(userID, dbOrder.order_id);
             if (!willCancel) {
               // place the new trade on coinbase
               // devLog(tradeDetails, '<- tradeDetails before placing the flipped order')
@@ -473,7 +479,7 @@ async function processOrders(userID) {
                 await databaseClient.markAsFlipped(dbOrder.order_id, userID);
                 // tell the frontend that an update was made so the DOM can update
                 devLog('sending order update from processOrders');
-                // userStorage[userID].orderUpdate();
+                // userStorage.sendOrderUpdate(userID);
                 messenger[userID].orderUpdate();
               } else {
                 devLog(dbOrder, userID, 'new trade failed!!!');
@@ -521,7 +527,7 @@ async function processOrders(userID) {
 // Returns the tradeDetails object needed to send trade to CB
 function flipTrade(dbOrder, user, allFlips, simulation) {
   const userID = user.id
-  !simulation && userStorage[userID].updateStatus('start flip trade');
+  !simulation && userStorage.updateStatus(userID, 'start flip trade');
   const reinvestRatio = user.reinvest_ratio / 100;
   const postMaxReinvestRatio = user.post_max_reinvest_ratio / 100;
   const maxTradeSize = user.max_trade_size;
@@ -540,7 +546,7 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
     post_only: post_only,
   };
 
-  const avail = userStorage[userID].getAvailableFunds();
+  const avail = userStorage.getAvailableFunds(userID);
   const prodFunds = avail[tradeDetails.product_id]
   // devLog(dbOrder, '<- dbOrder... needs to flip. Price is too many decimals?', prodFunds, '<- prodfunds', avail, '<- avail')
 
@@ -566,7 +572,7 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
 
       // get available funds from userStorage
       const availableFunds = !simulation
-        ? userStorage[userID].getAvailableFunds()
+        ? userStorage.getAvailableFunds(userID)
         : user.availableFunds;
       const productID = dbOrder.product_id;
 
@@ -707,11 +713,11 @@ function isOrderNotFoundError(err) {
 // this should just update the status of each trade in the ordersToCheck cached array
 async function updateMultipleOrders(userID, params) {
   return new Promise(async (resolve, reject) => {
-    userStorage[userID].updateStatus('start updateMultipleOrders (UMO)');
+    userStorage.updateStatus(userID, 'start updateMultipleOrders (UMO)');
     // get the orders that need processing. This will have been taken directly from the db and include all details
     const ordersArray = params?.ordersArray
       ? params.ordersArray
-      : userStorage[userID].getToCheck();
+      : userStorage.getOrdersToCheck(userID);
 
     if (ordersArray?.length > 0) {
       messenger[userID].newMessage({
@@ -811,7 +817,7 @@ async function updateMultipleOrders(userID, params) {
       }
     } // end for loop
     // delete orders to check since they have now been checked
-    userStorage[userID].clearToCheck();
+    userStorage.clearOrdersToCheck(userID);
     resolve();
   })
 }
@@ -820,7 +826,7 @@ async function updateMultipleOrders(userID, params) {
 async function reorder(orderToReorder) {
   return new Promise(async (resolve, reject) => {
     const userID = orderToReorder.userID;
-    userStorage[userID].updateStatus('begin reorder');
+    userStorage.updateStatus(userID, 'begin reorder');
     try {
       const upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.order_id, userID);
       // get the product from the db
@@ -872,7 +878,7 @@ async function reorder(orderToReorder) {
 // cancels orders on coinbase. If they are in the db, it will set them as reorders.
 async function cancelAndReorder(ordersArray, userID) {
   return new Promise(async (resolve, reject) => {
-    userStorage[userID].updateStatus('begin cancelAndReorder (CMO)');
+    userStorage.updateStatus(userID, 'begin cancelAndReorder (CMO)');
     // avoid making calls with empty arrays
     if (ordersArray.length > 0) {
       // build an array of just the IDs that should be set to reorder
@@ -894,7 +900,7 @@ async function cancelAndReorder(ordersArray, userID) {
 
       // if all goes well, send message to user and resolve promise with success message
       devLog('sending order update from cancelAndReorder');
-      userStorage[userID].orderUpdate();
+      userStorage.sendOrderUpdate(userID);
       resolve({ success: true })
     } else {
       resolve({ success: true })
@@ -918,7 +924,7 @@ function orderElimination(dbOrders, cbOrders) {
 
 
 async function getAvailableFunds(userID, userSettings) {
-  userStorage[userID].updateStatus('get available funds');
+  userStorage.updateStatus(userID, 'get available funds');
   return new Promise(async (resolve, reject) => {
     try {
       // devLog('get available funds');
@@ -1031,7 +1037,7 @@ async function getAvailableFunds(userID, userSettings) {
 }
 
 async function updateFunds(userID, identifier) {
-  userStorage[userID].updateStatus('begin update funds');
+  userStorage.updateStatus(userID, 'begin update funds');
   return new Promise(async (resolve, reject) => {
     try {
       const userSettings = await databaseClient.getUserAndSettings(userID, 'updateFunds');
@@ -1040,10 +1046,10 @@ async function updateFunds(userID, identifier) {
         return;
       }
       const available = await getAvailableFunds(userID, userSettings);
-      const previousAvailable = userStorage[userID].getAvailableFunds();
+      const previousAvailable = userStorage.getAvailableFunds(userID);
 
-      // update the user's available funds in the userStorage
-      userStorage[userID].updateAvailableFunds(available);
+      // update the user's available funds in runtime state
+      userStorage.updateAvailableFunds(userID, available);
 
       // compare the previous available funds to the new available funds
       const availableFundsChanged = compareAvailableFunds(previousAvailable, available);
@@ -1096,7 +1102,7 @@ async function alertAllUsers(alertMessage) {
 }
 
 function heartBeat(userID, side) {
-  messenger[userID].heartBeat(side);
+  messenger[userID]?.heartBeat(side);
 }
 
 

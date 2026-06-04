@@ -3,7 +3,7 @@ const router = express.Router();
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
 import { databaseClient } from '../modules/databaseClient.js';
 import { robot } from '../modules/robot.js';
-import { userStorage, cbClients, messenger, botSettings } from '../modules/cache.js';
+import { userStorage, cbClients, messenger, botSettings } from '../modules/runtime/index.js';
 import { devLog, sleep } from '../modules/utilities.js';
 import { fork } from 'child_process';
 import path from 'path';
@@ -124,26 +124,24 @@ router.post('/simulation', rejectUnauthenticated, async (req, res) => {
   try {
     devLog('simulation route hit');
     // check if user is already running a simulation
-    if (userStorage[req.user.id].simulating) {
+    if (userStorage.isSimulating(req.user.id)) {
       devLog('user is already simulating');
       res.sendStatus(400);
       return;
     }
     // set user to simulating
-    userStorage[req.user.id].simulating = true;
+    userStorage.setSimulating(req.user.id, true);
 
     // clear out any previous simulation results
-    userStorage[req.user.id].simulationResults = null;
+    userStorage.setSimulationResults(req.user.id, null);
 
     // tell client to update user
     messenger[req.user.id].userUpdate();
 
     const user = req.user;
 
-    const funds = userStorage[user.id].getAvailableFunds();
+    const funds = userStorage.getAvailableFunds(user.id);
     user.availableFunds = funds;
-
-    // devLog('simulation route hit', userStorage[req.user.id]);
 
     const workerData = {
       user: user,
@@ -154,10 +152,7 @@ router.post('/simulation', rejectUnauthenticated, async (req, res) => {
 
     // start a child process to run the simulation
     // get the path
-    const path = __dirname;
-    // devLog('path', path);
-
-    const simulationWorker = fork(path + '../modules/simulationWorker.js');
+    const simulationWorker = fork(path.join(__dirname, '../modules/simulationWorker.js'));
     simulationWorker.send(workerData);
     // when the worker sends a message back, send it to the client
     simulationWorker.on('message', (message) => {
@@ -167,7 +162,7 @@ router.post('/simulation', rejectUnauthenticated, async (req, res) => {
         devLog('simulation was not valid');
         res.sendStatus(400);
         // set user to not simulating
-        userStorage[req.user.id].simulating = false;
+        userStorage.setSimulating(req.user.id, false);
         // tell client to update user
         messenger[req.user.id].userUpdate();
         // kill the worker after it sends the message
@@ -180,7 +175,7 @@ router.post('/simulation', rejectUnauthenticated, async (req, res) => {
         data: message
       });
 
-      userStorage[req.user.id].simulationResults = message;
+      userStorage.setSimulationResults(req.user.id, message);
 
       res.send(message).status(200);
       // kill the worker after it sends the message
@@ -192,7 +187,7 @@ router.post('/simulation', rejectUnauthenticated, async (req, res) => {
         devLog(`simulationWorker stopped with exit code ${code}`);
       }
       // set user to not simulating
-      userStorage[req.user.id].simulating = false;
+      userStorage.setSimulating(req.user.id, false);
       // tell client to update user
       messenger[req.user.id].userUpdate();
     });
@@ -200,7 +195,7 @@ router.post('/simulation', rejectUnauthenticated, async (req, res) => {
     devLog('error in simulation route', error);
     res.sendStatus(500);
     // set user to not simulating
-    userStorage[req.user.id].simulating = false;
+    userStorage.setSimulating(req.user.id, false);
     // tell client to update user
     messenger[req.user.id].userUpdate();
   }
@@ -214,7 +209,7 @@ router.get('/simulation', rejectUnauthenticated, async (req, res) => {
     const userID = req.user.id;
 
     for (let i = 0; i < 20; i++) {
-      const simulationResults = await userStorage[userID].simulationResults;
+      const simulationResults = await userStorage.getSimulationResults(userID);
       if (simulationResults?.simResults) {
         // devLog('simulation results', simulationResults);
         res.send(simulationResults).status(200);

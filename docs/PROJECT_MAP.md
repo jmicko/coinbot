@@ -63,8 +63,8 @@ In development, `client/vite.config.ts` proxies `/api` to `http://localhost:5000
 - `modules/database/*.js`: table-oriented query functions and some table-specific cache logic.
 - `modules/database/migrator.js`: migration runner for cold-start and upgrade schema setup.
 - `modules/serverMaintenance.js`: delayed daily runtime maintenance jobs, currently old non-chat message cleanup.
-- `modules/cache.js`: in-memory runtime state for bot settings, per-user bot state, Coinbase clients, and websocket message fan-out.
-- `modules/cacheEvents.js`: process-local event emitter for cache invalidation events.
+- `modules/runtime/*.js`: process-local runtime state for the bot settings snapshot, per-user loop state, Coinbase clients, and websocket/message fan-out.
+- `modules/cacheEvents.js`: process-local event emitter for database cache invalidation events.
 - `modules/robot.js`: main trading/sync loops, product updates, order settlement processing, reordering, and available-funds refresh.
 - `modules/websocket.js`: browser websocket server setup and Coinbase websocket startup per active approved user.
 - `modules/coinbaseClient.js`: Coinbase API/websocket client wrapper.
@@ -88,7 +88,7 @@ Routes are mounted in `server/server.js`:
 ## Data Flow Summary
 
 1. Browser fetches durable state through REST hooks in `client/src/hooks`.
-2. Server route handlers call `databaseClient`, `robot`, `cache.js`, and Coinbase client methods.
+2. Server route handlers call `databaseClient`, `robot`, runtime state modules, and Coinbase client methods.
 3. Database modules read and write PostgreSQL through the shared `pool`.
 4. Long-running bot loops maintain per-user runtime state in `userStorage`, `messenger`, `cbClients`, and `botSettings`.
 5. Server websocket messages notify the browser about updates, heartbeats, tickers, and Coinbase socket status.

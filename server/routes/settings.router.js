@@ -4,7 +4,7 @@ const router = express.Router();
 import { pool } from '../modules/pool.js';
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
 import { databaseClient } from '../modules/databaseClient.js';
-import { botSettings, cbClients, userStorage, messenger } from '../modules/cache.js';
+import { botSettings, cbClients, userStorage, messenger } from '../modules/runtime/index.js';
 import { devLog } from '../modules/utilities.js';
 
 /**
@@ -133,7 +133,7 @@ router.put('/pause', rejectUnauthenticated, async (req, res) => {
 
     console.log('pause route', user.id, identifier);
 
-    await userStorage[user.id].update(identifier);
+    await userStorage.refreshUser(user.id, identifier);
 
     // tell user to update user
     // messenger[req.user.id].userUpdate(identifier);
@@ -154,7 +154,7 @@ router.put('/theme', rejectUnauthenticated, async (req, res) => {
     const identifier = req.headers['x-identifier'];
     devLog('theme route', theme);
     await databaseClient.updateTheme(theme, user.id);
-    await userStorage[user.id].update(identifier);
+    await userStorage.refreshUser(user.id, identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'problem in THEME ROUTE');
@@ -172,7 +172,7 @@ router.put('/tradeLoadMax', rejectUnauthenticated, async (req, res) => {
     const identifier = req.headers['x-identifier'];
     const maxTradeLoad = req.body.max_trade_load;
     await databaseClient.updateTradeLoadMax(maxTradeLoad, user.id);
-    await userStorage[user.id].update(identifier);
+    await userStorage.refreshUser(user.id, identifier);
     // update orders on client
     messenger[user.id].newMessage({
       type: 'general',
@@ -207,7 +207,7 @@ router.put('/profitAccuracy', rejectUnauthenticated, async (req, res) => {
     const accuracy = Math.round(Math.min(Math.max(req.body.profit_accuracy, 0), 16));
     devLog('profit_accuracy route hit', req.body);
     await databaseClient.updateProfitAccuracy(accuracy, user.id);
-    await userStorage[user.id].update(identifier);
+    await userStorage.refreshUser(user.id, identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'error with profit accuracy route');
@@ -223,7 +223,7 @@ router.put('/killLock', rejectUnauthenticated, async (req, res) => {
     const user = req.user;
     const identifier = req.headers['x-identifier'];
     await databaseClient.setKillLock(!user.kill_locked, user.id);
-    await userStorage[user.id].update(identifier);
+    await userStorage.refreshUser(user.id, identifier);
     devLog('kill lock route hit', user);
     res.sendStatus(200);
   } catch (err) {
@@ -251,7 +251,7 @@ router.put('/syncQuantity', rejectUnauthenticated, async (req, res) => {
     }
     devLog('syncQuantity route', user.username);
     await databaseClient.updateSyncQuantity(qty, user.id);
-    await userStorage[user.id].update(identifier);
+    await userStorage.refreshUser(user.id, identifier);
     res.sendStatus(200);
   } catch (err) {
     devLog(err, 'error with syncTrades route');

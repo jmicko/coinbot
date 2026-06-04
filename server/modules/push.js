@@ -1,7 +1,7 @@
 import { databaseClient } from '../modules/databaseClient.js';
 import webPush from 'web-push';
 import { devLog } from './utilities.js';
-import { cbClients, userStorage, messenger } from '../modules/cache.js';
+import { cbClients, userStorage, messenger } from './runtime/index.js';
 
 // every hour on the hour, send push notifications to all users
 
@@ -81,11 +81,11 @@ async function runScheduled({ notMidnight }) {
           await sendPushNotification(subscription);
         }, msToSend);
 
-        userStorage[userID].timeouts.push({
+        userStorage.addTimeout(userID, {
           type: 'notification',
           timeout: scheduled,
           subscription,
-        })
+        });
 
       }
 
@@ -110,7 +110,7 @@ function instantSchedule(subscription, userID) {
 
 
       // devLog('scheduled', scheduled);
-      userStorage[userID].timeouts.push({
+      userStorage.addTimeout(userID, {
         type: 'notification',
         timeout: scheduled,
         subscription,

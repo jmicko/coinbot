@@ -6,7 +6,7 @@ import { pool } from '../modules/pool.js';
 import userStrategy from '../strategies/user.strategy.js';
 import { robot } from '../modules/robot.js';
 import { databaseClient } from '../modules/databaseClient.js';
-import { userStorage, messenger, botSettings } from '../modules/cache.js';
+import { userStorage, messenger, botSettings } from '../modules/runtime/index.js';
 import { devLog } from '../modules/utilities.js';
 
 const router = express.Router();
@@ -37,23 +37,22 @@ router.get('/', rejectUnauthenticated, async (req, res) => {
     req.user.botMaintenance = botSettings.maintenance;
     req.user.botSettings = botSettings;
 
-    // const URI = cache.getAPI(req.user.id).API_URI;
     req.user.sandbox = false
     //  (URI === 'https://api-public.sandbox.exchange.coinbase.com')
     // ? true
     // : false
 
     // get available funds from userStorage
-    const availableFunds = userStorage[req.user.id].getAvailableFunds();
+    const availableFunds = userStorage.getAvailableFunds(req.user.id);
     // devLog('availableFunds', availableFunds);
     req.user.availableFunds = availableFunds;
 
     // get exporting value from userStorage
-    const exporting = userStorage[req.user.id].exporting;
+    const exporting = userStorage.isExporting(req.user.id);
     req.user.exporting = exporting;
 
     // get simulating value from userStorage
-    const simulating = userStorage[req.user.id].simulating;
+    const simulating = userStorage.isSimulating(req.user.id);
     req.user.simulating = simulating;
 
     // devLog('simulating', req.user);
@@ -117,7 +116,7 @@ router.post('/register', userCount, async (req, res, next) => {
         return next(err);
       }
 
-      const availableFunds = userStorage[req.user.id].getAvailableFunds();
+      const availableFunds = userStorage.getAvailableFunds(req.user.id);
       fullUser.availableFunds = availableFunds;
       fullUser.botMaintenance = botSettings.maintenance;
       fullUser.botSettings = botSettings;
@@ -147,16 +146,16 @@ router.post('/login', userStrategy.authenticate('local'), async (req, res) => {
     req.user.sandbox = false
 
     // get available funds from userStorage
-    const availableFunds = userStorage[req.user.id].getAvailableFunds();
+    const availableFunds = userStorage.getAvailableFunds(req.user.id);
     devLog('availableFunds', availableFunds);
     req.user.availableFunds = availableFunds;
 
     // get exporting value from userStorage
-    const exporting = userStorage[req.user.id].exporting;
+    const exporting = userStorage.isExporting(req.user.id);
     req.user.exporting = exporting;
 
     // get simulating value from userStorage
-    const simulating = userStorage[req.user.id].simulating;
+    const simulating = userStorage.isSimulating(req.user.id);
     req.user.simulating = simulating;
 
     // devLog('simulating', req.user);
@@ -221,7 +220,7 @@ router.put('/approve', rejectUnauthenticated, async (req, res) => {
       const userToApprove = req.body.data.id;
       devLog('in approve user route', userToApprove);
       await databaseClient.updateUserApproved(true, userToApprove);
-      userStorage[userToApprove].approve(true);
+      userStorage.approve(userToApprove, true);
       res.sendStatus(200);
     } else {
       devLog('you are NOT admin');
@@ -246,7 +245,7 @@ router.delete('/:user_id', rejectUnauthenticated, async (req, res) => {
       devLog('deleting user', userToDelete);
       // delete from user tables first
       await databaseClient.deleteUser(userToDelete);
-      // clear the userStorage cache
+      // mark the process-local runtime state for deletion
       userStorage.deleteUser(userToDelete);
       res.sendStatus(200);
     } else {

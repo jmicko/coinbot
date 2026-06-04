@@ -30,7 +30,7 @@ For each user, `initializeUserLoops()` starts:
 - `processingLoop(userID)`: local settled-order processing and flipping
 - `startWebsocket(userID)`: Coinbase websocket updates for faster order/ticker notifications
 
-All of this is process-local. Restarting the server rebuilds runtime state from the database.
+All of this is process-local and now lives under `server/modules/runtime/`. Restarting the server rebuilds runtime state from the database. Database query caching is separate and lives in the table-oriented database modules.
 
 ## Trading Gates
 
@@ -94,7 +94,7 @@ This is intended to catch common settlement and reorder work without comparing t
 
 ## Update Multiple Orders
 
-`updateMultipleOrders(userID)` consumes `userStorage[userID].ordersToCheck`.
+`updateMultipleOrders(userID)` consumes the user's queued runtime `ordersToCheck` through `userStorage.getOrdersToCheck(userID)`.
 
 For each queued order:
 

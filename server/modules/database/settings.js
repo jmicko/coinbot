@@ -4,11 +4,9 @@ import { cacheEvents, emitCacheEvent } from '../cacheEvents.js';
 
 const settingsCache = new Map();
 
-function refreshSettingsCache() {
+function clearSettingsCache() {
   settingsCache.clear();
   devLog('settings cache cleared');
-  getBotSettings();
-  devLog('settings cache refreshed');
 }
 
 // get all bot settings
@@ -39,8 +37,8 @@ export async function toggleMaintenance() {
     try {
       const sqlText = `UPDATE "bot_settings" SET "maintenance" = NOT "maintenance";`;
       await pool.query(sqlText);
-      // clear cache
-      refreshSettingsCache();
+      // invalidate read-through settings cache
+      clearSettingsCache();
       resolve();
     } catch (err) {
       reject(err);
@@ -54,8 +52,8 @@ export async function toggleRegistration() {
     try {
       const sqlText = `UPDATE "bot_settings" SET "registration_open" = NOT "registration_open";`;
       await pool.query(sqlText);
-      // clear cache
-      refreshSettingsCache();
+      // invalidate read-through settings cache
+      clearSettingsCache();
       resolve();
     } catch (err) {
       reject(err);
@@ -81,8 +79,8 @@ export async function updateLoopSpeed(loopSpeed) {
     try {
       const sqlText = `UPDATE "bot_settings" SET "loop_speed" = $1;`;
       await pool.query(sqlText, [loopSpeed]);
-      // clear cache
-      refreshSettingsCache();
+      // invalidate read-through settings cache
+      clearSettingsCache();
       resolve();
     } catch (err) {
       reject(err);
@@ -96,8 +94,8 @@ export async function updateFullSync(fullSync) {
     try {
       const sqlText = `UPDATE "bot_settings" SET "full_sync" = $1;`;
       await pool.query(sqlText, [fullSync]);
-      // clear cache
-      refreshSettingsCache();
+      // invalidate read-through settings cache
+      clearSettingsCache();
       resolve();
     } catch (err) {
       reject(err);
@@ -122,9 +120,8 @@ export async function updateOrdersToSync(ordersToSync) {
       await client.query(queryTextUsers, [ordersToSync]);
       // commit the transaction
       await client.query('COMMIT');
-      // clear cache
-      refreshSettingsCache();
-      // todo - update whatever cache ends up handling the user settings table
+      // invalidate read-through settings cache
+      clearSettingsCache();
       emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED);
       resolve();
     } catch (err) {

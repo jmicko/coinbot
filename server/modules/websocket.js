@@ -1,11 +1,11 @@
-import { messenger, userStorage, botSettings, cbClients } from './cache.js';
+import { messenger, userStorage, botSettings, cbClients } from './runtime/index.js';
 import { databaseClient } from './databaseClient.js';
 import passport from 'passport';
 
 const missingCredentialsNotices = new Set();
 
 function reportMissingCredentials(userID) {
-  userStorage[userID]?.setSocketStatus('missing_api_credentials');
+  userStorage.setSocketStatus(userID, 'missing_api_credentials');
   messenger[userID]?.instantMessage({
     type: 'socketStatus',
     socketStatus: 'missing_api_credentials'
@@ -31,7 +31,6 @@ async function startWebsocket(userID) {
     }
     return { success: false }
   }
-  // const userAPI = cache.getAPI(userID)
   // const secret = userAPI.CB_SECRET;
   // const key = userAPI.CB_ACCESS_KEY;
   const cbClient = cbClients[userID];
@@ -73,9 +72,9 @@ async function startWebsocket(userID) {
       type: 'socketStatus',
       socketStatus: socketStatus
     };
-    messenger[userID].instantMessage(statMessage);
+    messenger[userID]?.instantMessage(statMessage);
     // save status to user storage
-    userStorage[userID].setSocketStatus(socketStatus);
+    userStorage.setSocketStatus(userID, socketStatus);
     // can add custom event handlers
     // if (socketStatus === 'open') {
     //   cbClients[userID].ws.on('message', function () {
@@ -142,7 +141,7 @@ async function startWebsocket(userID) {
         type: 'ticker',
         ticker: ticker
       }
-      messenger[userID].instantMessage(msg)
+      messenger[userID]?.instantMessage(msg)
       return
     });
   }
@@ -162,9 +161,9 @@ async function getActiveProducts() {
 // this should just update the status of each trade in the 'ordersToCheck' cached array
 async function updateMultipleOrders(userID, params) {
   return new Promise(async (resolve, reject) => {
-    userStorage[userID].updateStatus('start updateMultipleOrders (UMO)');
+    userStorage.updateStatus(userID, 'start updateMultipleOrders (UMO)');
     // get the orders that need processing. This will have been taken directly from the db and include all details
-    const ordersArray = params?.ordersArray
+    const ordersArray = params?.ordersArray || [];
     if (ordersArray.length > 0) {
       messenger[userID].newMessage({
         type: 'general',
@@ -180,7 +179,7 @@ async function updateMultipleOrders(userID, params) {
       });
       const orderToCheck = ordersArray[i];
       try {
-        userStorage[userID].updateStatus('UMO loop get order');
+        userStorage.updateStatus(userID, 'UMO loop get order');
         // if not a reorder, look up the full details on CB
         let updatedOrder = await cbClients[userID].getOrder(orderToCheck.order_id);
         // if it was cancelled, set it for reorder
@@ -192,7 +191,7 @@ async function updateMultipleOrders(userID, params) {
         updatedOrder.order.userID = userID;
         await databaseClient.updateTrade(updatedOrder.order);
       } catch (err) {
-        userStorage[userID].updateStatus('error in UMO loop');
+        userStorage.updateStatus(userID, 'error in UMO loop');
         // handle not found order
         console.log(err, 'error in updateMultipleOrders loop');
         messenger[userID].newError({
@@ -202,7 +201,7 @@ async function updateMultipleOrders(userID, params) {
 
       } // end catch
     } // end for loop
-    userStorage[userID].updateStatus('UMO all done');
+    userStorage.updateStatus(userID, 'UMO all done');
     resolve();
   })
 }
@@ -239,9 +238,9 @@ function setUpWebsocket(wss, sessionMiddleware) {
 
                 const statMessage = {
                   type: 'socketStatus',
-                  socketStatus: userStorage?.[userID]?.socketStatus
+                  socketStatus: userStorage.getSocketStatus(userID)
                 }
-                messenger[userID].instantMessage(statMessage)
+                messenger[userID]?.instantMessage(statMessage)
 
                 if (!userID) {
                   console.log('socket connected but client is not logged in');
@@ -274,7 +273,7 @@ function setUpWebsocket(wss, sessionMiddleware) {
                   const userID = req.session.passport?.user;
                   console.log(`===DISCONNECTION===\n`,
                     `client:${user.username} with id: ${id} disconnected`);
-                  messenger[userID].deleteSocket(ws);
+                  messenger[userID]?.deleteSocket(ws);
                   clearInterval(pingInterval);
                 });
 

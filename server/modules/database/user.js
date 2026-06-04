@@ -1,4 +1,3 @@
-import { userStorage } from '../cache.js';
 import { cacheEvents, emitCacheEvent, onCacheEvent } from '../cacheEvents.js';
 import { pool } from '../pool.js';
 import { devLog as devLogUtilities } from '../utilities.js';
@@ -61,6 +60,12 @@ function clearSingleUserAndSettingsCache(userID) {
   }
 }
 
+function clearAllSingleUserAndSettingsCaches() {
+  singleUserCache.forEach(cache => {
+    cache.singleUserAndSettings = null;
+  });
+}
+
 function clearSingleUserAPICache(userID) {
   if (!singleUserCache.has(userID)) {
     devLog('singleUserCache does not have userID', userID);
@@ -96,7 +101,11 @@ function clearAllUsersAndSettingsCache() {
 
 onCacheEvent(cacheEvents.USER_UPDATED, (userID) => {
   devLog('USER_UPDATED event received', userID);
-  clearAllSingleUserCaches(userID);
+  if (userID === undefined || userID === null) {
+    singleUserCache.clear();
+  } else {
+    clearAllSingleUserCaches(userID);
+  }
   clearAllUsersCache();
   clearAllUsersAndSettingsCache();
 });
@@ -108,7 +117,11 @@ onCacheEvent(cacheEvents.USER_API_UPDATED, (userID) => {
 
 onCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, (userID) => {
   devLog('USER_SETTINGS_UPDATED event received', userID);
-  clearSingleUserAndSettingsCache(userID);
+  if (userID === undefined || userID === null) {
+    clearAllSingleUserAndSettingsCaches();
+  } else {
+    clearSingleUserAndSettingsCache(userID);
+  }
   clearAllUsersAndSettingsCache();
 });
 
