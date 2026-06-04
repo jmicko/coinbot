@@ -21,22 +21,32 @@ const secret = process.env.NODE_ENV === 'production'
   : process.env.SERVER_SESSION_SECRET;
 process.env.SERVER_SESSION_SECRET = secret;
 
-const sessionMiddleware = session({
-  store: new pgS({
-    pool: pool, // Connection pool
-  }),
-  secret: process.env.SERVER_SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false, // does not save session/cookie until login with passport
-  // cookie age length could possibly drop for security, like how banks only give you like 5 minutes
-  // but then you couldn't sit and watch the bot making trades
-  // but then neither can your kids
-  // or guests
-  // or PRISM
-  // jk who even knows what PRISM can still do
-  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } // 1 week (7 days * 24 hr * 60 min * 60 sec * 1000 msec)
-});
+let sessionMiddleware;
+
+function createSessionMiddleware() {
+  if (sessionMiddleware) {
+    return sessionMiddleware;
+  }
+
+  sessionMiddleware = session({
+    store: new pgS({
+      pool: pool, // Connection pool
+    }),
+    secret: process.env.SERVER_SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false, // does not save session/cookie until login with passport
+    // cookie age length could possibly drop for security, like how banks only give you like 5 minutes
+    // but then you couldn't sit and watch the bot making trades
+    // but then neither can your kids
+    // or guests
+    // or PRISM
+    // jk who even knows what PRISM can still do
+    cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } // 1 week (7 days * 24 hr * 60 min * 60 sec * 1000 msec)
+  });
+
+  return sessionMiddleware;
+}
 
 const wrap = (expressMiddleware) => (socket, next) => expressMiddleware(socket.request, {}, next);
 
-export { sessionMiddleware, wrap };
+export { createSessionMiddleware, wrap };

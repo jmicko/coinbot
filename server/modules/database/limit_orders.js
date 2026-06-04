@@ -27,25 +27,6 @@ function devLog(...message) {
   }
 }
 
-export const updateLimitOrdersTable = async () => {
-  const user_id_fkey_rows = await pool.query(`
-    SELECT 1 
-    FROM pg_constraint 
-    WHERE conname = 'limit_orders_user_id_fkey'
-  `);
-
-  if (user_id_fkey_rows.rows.length === 0) {
-    devLog('<><> Adding limit_orders_user_id_fkey constraint <><>');
-    await pool.query(`
-      ALTER TABLE limit_orders 
-      ADD CONSTRAINT limit_orders_user_id_fkey 
-      FOREIGN KEY ("userID") REFERENCES "user" (id) ON DELETE SET NULL;
-    `);
-  } else {
-    devLog('<><> limit_orders_user_id_fkey constraint already exists <><>');
-  }
-}
-
 // cache
 const limitOrdersCache = {
   // For single trades by order_id

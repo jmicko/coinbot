@@ -327,6 +327,68 @@ button.medium {
   font-size: medium;
 }
 
+.api-key-upload-row {
+  align-items: stretch;
+  display: grid;
+  grid-template-columns: minmax(0, 16rem) max-content;
+  gap: .2rem;
+  margin: .2rem 0;
+  max-width: 100%;
+  width: min(20rem, 100%);
+}
+
+.api-key-upload-row > button {
+  min-width: max-content;
+}
+
+.file-picker {
+  align-items: stretch;
+  display: flex;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+.file-picker .file-input {
+  height: 1px;
+  opacity: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.file-picker-button {
+  align-items: center;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  padding: 0 .45rem;
+}
+
+.file-picker-button.disabled {
+  cursor: wait;
+  opacity: .7;
+}
+
+.file-picker-name {
+  align-items: center;
+  background-color: #d1cac0;
+  border: 2px inset #ffffff99;
+  color: #000000;
+  display: inline-flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 .45rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-picker-name.darkTheme {
+  background-color: #1f1f1f;
+  border-color: #00000099;
+  color: #ffffff;
+}
+
 .btn-nav {
   color           : white;
   font-size       : larger;

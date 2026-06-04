@@ -40,6 +40,8 @@ cp server/.env.example server/.env
 
 `server/.env` is ignored by git. Keep real database passwords, Coinbase credentials, and VAPID private keys out of committed files.
 
+For push notifications, `DOMAIN_NAME` is the VAPID subject. The `web-push` package requires it to be an `https:` or `mailto:` URL, even for local development. `https://localhost.local` is valid; `http://localhost:5000` is not.
+
 ## Clone Old Dev DB Into Podman
 
 Start the target database first:
@@ -89,13 +91,66 @@ Then start again for a fresh blank database:
 ./scripts/dev-db-start.sh
 ```
 
-## Next Verification Target
+## Cold-Start Verification
 
-The current server will not fully bootstrap a blank database yet. The expected near-term workflow is:
+To manually test the first-install experience, point `server/.env` at a database that exists but has no tables, then start the server normally. Do not run `dbUpgrade()` manually first; `server/server.js` should be the first application code to touch the database.
 
-1. Start a blank local database.
-2. Implement migrations until server startup succeeds against blank Postgres.
-3. Reset the local database.
-4. Clone the old dev database.
-5. Run the same migrations against the clone.
-6. Compare schema and smoke-test app startup before touching production-like data.
+The current manual cold-start database is:
+
+```sh
+PGDATABASE=coinbot_cold_start
+```
+
+Reset only the cold-start database back to zero tables:
+
+```sh
+./scripts/dev-db-reset-cold-start.sh --yes
+```
+
+Stop the server before running the reset. If nodemon is still running, it may reconnect and recreate the schema immediately after the database is recreated.
+
+Keep using separate databases for the two migration safety checks:
+
+1. Start or create a blank local database.
+2. Start the server and verify it creates `schema_migrations`, the baseline tables, and the default `bot_settings` row.
+3. Keep the cloned old dev database intact as the prod-shaped reference.
+4. Compare the generated blank schema against the clone.
+5. Add automated tests for the blank and prod-shaped migration paths before touching production-like data.
+
+Compare the public schema of two local databases:
+
+```sh
+./scripts/dev-db-compare-schema.sh coinbot_dev coinbot_cold_start
+```
+
+The comparison intentionally ignores `schema_migrations`, because existing production-shaped databases will not have that table until the new migration runner starts.
+
+## Prod-Shaped Smoke Copy
+
+When the local `coinbot_dev` database is a preserved clone of the old dev/prod-shaped database, make a disposable local copy before testing startup migrations against it:
+
+```sh
+podman exec coinbot-postgres \
+  psql -U coinbot -d postgres \
+  -c "create database coinbot_prod_shape_smoke with template coinbot_dev owner coinbot"
+```
+
+Before starting the server against that copy, enable maintenance mode and pause users in the copy:
+
+```sh
+podman exec coinbot-postgres \
+  psql -U coinbot -d coinbot_prod_shape_smoke \
+  -c "update bot_settings set maintenance = true; update user_settings set paused = true;"
+```
+
+Then run the server with a database override:
+
+```sh
+PGDATABASE=coinbot_prod_shape_smoke PORT=5505 npm run server
+```
+
+After startup, compare the migrated smoke-copy schema against the cold-start schema:
+
+```sh
+./scripts/dev-db-compare-schema.sh coinbot_prod_shape_smoke coinbot_cold_start
+```

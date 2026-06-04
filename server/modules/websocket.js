@@ -1,6 +1,5 @@
 import { messenger, userStorage, botSettings, cbClients } from './cache.js';
 import { databaseClient } from './databaseClient.js';
-import { sessionMiddleware } from './session-middleware.js';
 import passport from 'passport';
 
 const missingCredentialsNotices = new Set();
@@ -208,7 +207,7 @@ async function updateMultipleOrders(userID, params) {
   })
 }
 
-function setUpWebsocket(wss) {
+function setUpWebsocket(wss, sessionMiddleware) {
 
   wss.on('connection', (ws, req) => {
     console.log('================NEW WEBSOCKET CONNECTION================');

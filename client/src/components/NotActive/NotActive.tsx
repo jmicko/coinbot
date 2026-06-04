@@ -3,37 +3,41 @@ import { ChangeEvent, useMemo, useState } from 'react';
 import './NotActive.css';
 import { no } from '../../shared.js';
 import { useUser } from '../../hooks/useUser.js';
-import usePostFetch from '../../hooks/usePostFetch.js';
 import { EventType } from '../../types/index.js';
 import usePutFetch from '../../hooks/usePutFetch.js';
+import { CaratWaveLoader } from '../Loading.js';
+import { useData } from '../../hooks/useData.js';
 
 
 function NotActive() {
 
   const { user, refreshUser, theme } = useUser();
+  const { refreshProducts } = useData();
   // const { createData: saveApi, error: apiError, isLoading: saving } = useFetchData(`/api/account/storeApi`, { noLoad: true })
   const [apiKeyFile, setApiKeyFile] = useState<{ name: string, privateKey: string } | null>(null);
-
-  const { error: apiError }
-    = usePostFetch({
-      url: `/api/account/storeApi`,
-      from: 'saveApi in NotActive',
-      refreshCallback: refreshUser,
-    });
-
+  const [apiKeyFileName, setApiKeyFileName] = useState('');
 
   const updateApiKeyOptions = useMemo(() => ({
     url: '/api/account/updateAPIKey',
-    from: 'updateApiKey in General.tsx',
-    refreshCallback: refreshUser
-  }), [refreshUser]);
-  const { putData: updateApiKey } = usePutFetch(updateApiKeyOptions);
+    from: 'updateApiKey in NotActive.tsx',
+    refreshCallback: async () => {
+      await refreshUser();
+      await refreshProducts();
+    }
+  }), [refreshUser, refreshProducts]);
+  const {
+    putData: updateApiKey,
+    isLoading: apiKeyLoading,
+    error: apiError
+  } = usePutFetch(updateApiKeyOptions);
 
   // const [key, setKey] = useState('');
   // const [secret, setSecret] = useState('');
 
   function submitApi(e: EventType) {
     no(e);
+    if (!apiKeyFile || apiKeyLoading) return;
+    updateApiKey({ api_key: apiKeyFile });
     // setSaving(true)
     // saveApi({
     //   key: key,
@@ -54,9 +58,12 @@ function NotActive() {
           const json = JSON.parse(e.target?.result as string);
           console.log('Parsed API key file:', json);
           setApiKeyFile(json);
+          setApiKeyFileName(file.name);
           // TODO: Add API call to update keys
         } catch (error) {
           console.error('Error parsing API key file:', error);
+          setApiKeyFile(null);
+          setApiKeyFileName('');
           // TODO: Add error handling UI
         }
       };
@@ -83,23 +90,39 @@ function NotActive() {
 
         <div className="divider short" />
         {/* {JSON.stringify(apiError)} error */}
-        <input
-          type="file"
-          accept=".json"
-          onChange={handleApiKeyFileUpload}
-          className={`file-input ${theme}`}
-        />
+        <div className="api-key-upload-row">
+          <div className={`file-picker ${theme}`}>
+            <label
+              htmlFor="not-active-api-key-file"
+              className={`file-picker-button btn-blue medium ${theme} ${apiKeyLoading ? 'disabled' : ''}`}
+            >
+              Choose file
+            </label>
+            <span className={`file-picker-name ${theme}`}>
+              {apiKeyFileName || 'No file chosen'}
+            </span>
+            <input
+              id="not-active-api-key-file"
+              type="file"
+              accept=".json"
+              onChange={handleApiKeyFileUpload}
+              className="file-input"
+              disabled={apiKeyLoading}
+            />
+          </div>
+          <button
+            type="submit"
+            className={`btn-blue medium ${user.theme}`}
+            disabled={!apiKeyFile || apiKeyLoading}>
+            {apiKeyLoading ? <>Saving<CaratWaveLoader /></> : 'Save'}
+          </button>
+        </div>
         {apiKeyFile && (
           <div>
             <p>API Key File:</p>
             <pre>{JSON.stringify(apiKeyFile, null, 2)}</pre>
           </div>
         )}
-        <button
-          className={`btn-blue medium ${user.theme}`}
-          onClick={() => { updateApiKey({ api_key: apiKeyFile }) }}>
-          Save
-        </button>
 
 
 
@@ -137,7 +160,7 @@ function NotActive() {
         <br />
         {apiError &&
           <div className='api error-box notched'>
-            <p>{apiError.status === 401 ? "Invalid API Details!" : "Unknown Error"}</p>
+            <p>{'status' in apiError && apiError.status === 401 ? "Invalid API Details!" : "Unknown Error"}</p>
           </div>
         }
         {/* {saving

@@ -3,10 +3,20 @@ import { useUser } from '../../hooks/useUser.js';
 // import { useFetchData } from '../../hooks/fetchData.js';
 import './Login.css'
 import useGetFetch from '../../hooks/useGetFetch.js';
+import { SpaceLoader } from '../Loading.js';
 // import useWindowDimensions from '../../hooks/useWindowDimensions.js';
 
 const Login: React.FC = () => {
-  const { login, registerNew, refreshUser, defaultTheme } = useUser();
+  const {
+    login,
+    registerNew,
+    refreshUser,
+    defaultTheme,
+    loginLoading,
+    loginError,
+    registerLoading,
+    registerError
+  } = useUser();
 
   // const { width, height } = useWindowDimensions();
 
@@ -30,6 +40,7 @@ const Login: React.FC = () => {
   } = useGetFetch<{ connection: boolean, loggedIn: boolean }>(connectionOptions);
 
   const loggedIn = connection.loggedIn;
+  const authLoading = loginLoading || registerLoading;
 
   // check if registration is open
   const registrationOptions = useMemo(() => ({
@@ -45,9 +56,12 @@ const Login: React.FC = () => {
   } = useGetFetch<{ registrationOpen: boolean }>(registrationOptions);
 
   console.log('registrationOpen', registrationOpen);
+  const registrationStatusAvailable = !registrationError;
+  const canRegister = registrationOpen && registrationStatusAvailable;
 
   // check the connection every 5 seconds
   useEffect(() => {
+    refreshConnection();
     const interval = setInterval(() => {
       console.log('checking if connection is working')
       refreshConnection();
@@ -73,9 +87,11 @@ const Login: React.FC = () => {
 
   const loginAccount = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (loginLoading) return;
     // send login credentials
     console.log(username, password, 'logging in user');
     if (username && password) {
+      setErrors({ ...errors, loginMessage: '' });
       login({ username, password });
     } else {
       // this.props.dispatch({ type: 'LOGIN_INPUT_ERROR' });
@@ -85,8 +101,10 @@ const Login: React.FC = () => {
 
   const registerAccount = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (registerLoading) return;
     // send registration stuff
     if (username && password && confirmPassword && (password === confirmPassword)) {
+      setErrors({ ...errors, registrationMessage: '' });
       registerNew({ username, password });
     } else {
       console.log('registering new user');
@@ -125,6 +143,7 @@ const Login: React.FC = () => {
             name="username"
             id='username'
             required
+            disabled={authLoading}
             onChange={handleInputChange}
             value={username}
             autoComplete='username'
@@ -138,6 +157,7 @@ const Login: React.FC = () => {
             name="password"
             id='password'
             required
+            disabled={authLoading}
             onChange={handleInputChange}
             value={password}
             autoComplete='current-password'
@@ -152,31 +172,42 @@ const Login: React.FC = () => {
                 type="password"
                 name="confirmPassword"
                 required
+                disabled={authLoading}
                 onChange={handleInputChange}
                 value={confirmPassword}
               />
-              <input
+              <button
                 type="submit"
                 className="btn-blue register-button"
                 name="submit"
-                value="Register >"
-              />
+                disabled={registerLoading}
+              >
+                {registerLoading ? <>Registering<SpaceLoader /></> : 'Register >'}
+              </button>
             </>
-            : (<input
+            : (<button
               className="btn-blue login-button"
               type="submit"
               name="submit"
-              value="Log In >" />)
+              disabled={loginLoading}
+            >
+              {loginLoading ? <>Logging in<SpaceLoader /></> : 'Log In >'}
+            </button>)
           }
-          <button className={`btn-blue ${!registrationOpen && 'hidden'}`} onClick={(e) => { e.preventDefault(); setRegister(!register); clearErrors(); }}>
+          <button className={`btn-blue ${!canRegister && 'hidden'}`} disabled={authLoading} onClick={(e) => { e.preventDefault(); setRegister(!register); clearErrors(); }}>
             {register ? '< Back to Log In' : 'Register New'}
           </button>
           <br />
-          {registrationOpen
+          {canRegister
             ? <p> This project is open source. You can host your own instance if you have a little technical know-how. </p>
+            : registrationStatusAvailable
+              ? <p>
+                We are not currently accepting new users. This project is open source, so you can host your own instance if you have a little technical know-how.
+              </p>
             : <p>
-              We are not currently accepting new users. This project is open source, so you can host your own instance if you have a little technical know-how.
-            </p>}
+              This project is open source, so you can host your own instance if you have a little technical know-how.
+            </p>
+          }
           <a href="https://github.com/jmicko/coinbot" target="_blank" rel="noreferrer">
             View the project on github
           </a>
@@ -185,15 +216,18 @@ const Login: React.FC = () => {
         {connectionError && <div className='error-box notched'>
           <p>Connection Error</p>
         </div>}
-        {registrationError && <div className='error-box notched'>
-          <p>Registration Error</p>
-        </div>}
         {(errors.loginMessage || errors.registrationMessage) &&
           <div className='error-box notched'>
             {errors.loginMessage && <p>{errors.loginMessage}</p>}
             {errors.registrationMessage && <p>{errors.registrationMessage}</p>}
           </div>
         }
+        {loginError && <div className='error-box notched'>
+          <p>Login failed</p>
+        </div>}
+        {registerError && <div className='error-box notched'>
+          <p>Registration failed</p>
+        </div>}
       </div>
     </div>
   );

@@ -1,18 +1,19 @@
 import { useCallback, useState } from 'react';
 import { useIdentifiers } from './useIdentifiers';
+import { FetchError } from '../types';
 
 interface UsePutFetchProps<T> {
   url: string;
   options?: RequestInit;
   setData?: React.Dispatch<React.SetStateAction<T>>;
-  refreshCallback?: () => void;
+  refreshCallback?: () => void | Promise<void>;
   loadingDelay?: number;
   from: string;
 }
 
 const usePutFetch = <T>({ url, options, setData, refreshCallback, loadingDelay, from }: UsePutFetchProps<T>) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<FetchError | Error | null>(null);
   const { fetchIdentifiers } = useIdentifiers();
 
   const putData = useCallback(async (body?: unknown) => {
@@ -20,7 +21,7 @@ const usePutFetch = <T>({ url, options, setData, refreshCallback, loadingDelay, 
     try {
       console.log('calling putData from', from, 'with body:', body);
 
-      const identifier = Date.now().toString() + url;
+      const identifier = `${Date.now()}-${Math.random().toString(36).slice(2)}-${url}`;
       console.log(identifier, 'identifier from usePutFetch');
       fetchIdentifiers.current.push(identifier);
       console.log(fetchIdentifiers, 'fetchIdentifiers from usePutFetch');
@@ -36,7 +37,7 @@ const usePutFetch = <T>({ url, options, setData, refreshCallback, loadingDelay, 
       });
 
       if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
+        throw new FetchError(`Error: ${response.status}`, response.status);
       }
 
       let data: T | null = null;
@@ -49,7 +50,7 @@ const usePutFetch = <T>({ url, options, setData, refreshCallback, loadingDelay, 
       setData && data && setData(data);
 
       console.log('calling refreshCallback in put hook from:', from);
-      refreshCallback && refreshCallback();
+      refreshCallback && await refreshCallback();
       setError(null);
     } catch (error) {
       console.log(error, 'error from put hook');

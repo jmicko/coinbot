@@ -6,29 +6,34 @@ This is the initial priority list after reviewing the current branch. It is bias
 
 - [x] Add a Podman-based PostgreSQL dev setup.
 - [x] Add a committed local setup guide and/or compose file.
+- [x] Add a local-only cold-start database reset script.
 - [x] Create `server/.env.example` from `server/env` and make the expected dev values explicit.
-- Verify the server can point at a disposable local database.
+- [x] Verify the server can point at a disposable local database.
 - Make sure dev startup cannot accidentally use production credentials.
 
 ## P0: Database Bootstrap And Migrations
 
-- Replace manual `database.sql` setup with a real migration runner.
-- Add a `schema_migrations` table.
-- Create all base tables from a blank database.
-- Move runtime `ALTER TABLE` code into ordered migrations.
-- Include `messages`, `session`, `subscriptions`, and `market_candles` in the migration path.
-- Add seed/default handling for the singleton `bot_settings` row.
-- Make migrations idempotent at the runner level, not by destructive drops.
+- [x] Replace manual `database.sql` setup with a real migration runner.
+- [x] Add a `schema_migrations` table.
+- [x] Create all base tables from a blank database.
+- [x] Move current runtime `ALTER TABLE` code into the baseline migration.
+- [x] Include `messages`, `session`, `subscriptions`, and `market_candles` in the migration path.
+- [x] Add seed/default handling for the singleton `bot_settings` row.
+- [x] Make migrations idempotent at the runner level, not by destructive drops.
+- Add automated migration tests for blank and prod-shaped databases.
+- [x] Remove older runtime schema helper functions from the database modules.
 - Keep or generate `database.sql` only as a reference after migrations are working.
 
 ## P0: Immediate Bugs Found During Orientation
 
-- `server/modules/database/feedback.js` uses `emitCacheEvent` and `cacheEvents` without importing them.
-- `deleteFeedback()` in `feedback.js` emits with `userID`, but `userID` is not in scope.
-- `server/modules/database/settings.js` references `cacheEvents` without importing it.
-- `settings.js` emits `cacheEvents.ALL_USER_SETTINGS_UPDATED`, but that event is not defined.
-- `dbUpgrade()` fails on a blank database because most upgrade helpers assume tables already exist.
-- `dbUpgrade()` deletes old non-chat messages during startup, which makes migration smoke tests mutate cloned data.
+- [x] `server/modules/database/feedback.js` uses `emitCacheEvent` and `cacheEvents` without importing them.
+- [x] `deleteFeedback()` in `feedback.js` emits with `userID`, but `userID` is not in scope.
+- [x] `server/modules/database/settings.js` references `cacheEvents` without importing it.
+- [x] `settings.js` emits `cacheEvents.ALL_USER_SETTINGS_UPDATED`, but that event is not defined.
+- [x] `dbUpgrade()` fails on a blank database because most upgrade helpers assume tables already exist.
+- [x] `dbUpgrade()` deletes old non-chat messages during startup, which makes migration smoke tests mutate cloned data.
+- [x] Move old non-chat message deletion to a delayed daily server maintenance job.
+- [x] Delay PostgreSQL session-store creation until after migrations so cold-start pruning does not run before the `session` table exists.
 
 ## P1: Schema Integrity
 
@@ -37,7 +42,7 @@ This is the initial priority list after reviewing the current branch. It is bias
 - Enforce singleton semantics for `bot_settings`.
 - Add foreign keys for user-owned tables where deletion behavior is known.
 - Decide whether `limit_orders.userID` should be nullable after user deletion or cascade/deletion should be handled differently.
-- Separate schema migrations from runtime maintenance jobs like old-message cleanup.
+- [x] Separate schema migrations from runtime maintenance jobs like old-message cleanup.
 
 ## P1: Dev Safety Around Trading
 
@@ -54,6 +59,7 @@ This is the initial priority list after reviewing the current branch. It is bias
 - Add migration tests from an empty database.
 - Add migration tests from a schema resembling the current `database.sql` baseline.
 - Add tests for first-user registration/admin creation.
+- Add client or end-to-end tests for login, registration loading, API-key activation, and current-user refresh.
 - Add tests for cache invalidation after user/settings/products/orders writes.
 - Add a smoke test that starts the server in no-trade mode.
 
@@ -81,6 +87,7 @@ This is the initial priority list after reviewing the current branch. It is bias
 - Add tests around reinvestment reserve calculations and multiple simultaneous sell-to-buy flips.
 - Add tests for fee policy: internal availability/reinvestment gates should reserve with taker assumptions, while expected-profit displays may use maker assumptions.
 - Make child-process lifecycle for candle imports visible and stoppable.
+- Add tests around server maintenance jobs such as old-message retention.
 - Investigate repeated `unknown error getting candles` logs from `candleMaker` during startup against the cloned dev database.
 - Add graceful shutdown for HTTP server, websockets, database pool, bot loops, and child processes.
 
@@ -92,6 +99,7 @@ This is the initial priority list after reviewing the current branch. It is bias
 
 ## P3: Frontend Cleanup
 
+- [x] Document the REST refresh, websocket invalidation, and request-identifier flow.
 - Remove obvious debug logs from providers/components.
 - Confirm old frontend code is still needed. If not, archive or remove it in a separate change.
 - Keep websocket messages as invalidation hints unless a specific data stream needs direct state updates.

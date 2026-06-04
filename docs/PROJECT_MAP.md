@@ -19,6 +19,7 @@ Because the app can place real orders, dev work should use an isolated local dat
 - `compose.yaml`: Podman/Docker Compose definition for local PostgreSQL.
 - `todo.md`: older short task list. The current cleanup roadmap is in `docs/ROADMAP.md`.
 - `docs/ROBOT_SYNC.md`: notes on the current robot loop ordering, local funds ledger, and Coinbase reconciliation risks.
+- `docs/FRONTEND_REFRESH_FLOW.md`: notes on REST refreshes, websocket invalidation, and request identifiers.
 
 ## Runtime Entry Points
 
@@ -35,10 +36,11 @@ Startup order today:
 5. Create a `ws` `WebSocketServer` on the HTTP server.
 6. Mount REST routers under `/api/*`.
 7. Serve `../client/dist` for production builds.
-8. Start `robot.startSync()`.
-9. Listen on `PORT` or `5000`.
+8. Listen on `PORT` or `5000`.
+9. Start `robot.startSync()` from the listen callback.
+10. Start global runtime maintenance jobs from the listen callback.
 
-Important implication: bot loops start automatically when the server starts. During development, maintenance mode and isolated credentials matter.
+Important implication: bot loops start automatically after the HTTP/WebSocket server is accepting connections. During development, maintenance mode and isolated credentials matter.
 
 ### Client
 
@@ -59,6 +61,8 @@ In development, `client/vite.config.ts` proxies `/api` to `http://localhost:5000
 - `strategies/user.strategy.js`: Passport local strategy and session serialization/deserialization.
 - `modules/databaseClient.js`: aggregation facade for database functions and startup `dbUpgrade()`.
 - `modules/database/*.js`: table-oriented query functions and some table-specific cache logic.
+- `modules/database/migrator.js`: migration runner for cold-start and upgrade schema setup.
+- `modules/serverMaintenance.js`: delayed daily runtime maintenance jobs, currently old non-chat message cleanup.
 - `modules/cache.js`: in-memory runtime state for bot settings, per-user bot state, Coinbase clients, and websocket message fan-out.
 - `modules/cacheEvents.js`: process-local event emitter for cache invalidation events.
 - `modules/robot.js`: main trading/sync loops, product updates, order settlement processing, reordering, and available-funds refresh.
@@ -114,8 +118,7 @@ npm run dev
 Current gaps:
 
 - There is no root-level script to start both apps.
-- The server expects a PostgreSQL database to already exist.
-- `dbUpgrade()` is not yet a complete blank-database bootstrap.
+- The server expects a PostgreSQL database to exist, but it can now create the application schema inside a blank database on startup.
 
 ## Environment
 

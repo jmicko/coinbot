@@ -97,15 +97,16 @@ async function initializeUserLoops(user) {
   try {
     // set up cache for user
     await userStorage.createNewUser(user);
-        // update funds if the user is all of the above except for maintenance
-        user = userStorage.getUser(userID);
-        // devLog(user, '<- user while init loops')
-        await sleep(10000);
-        if (canUseCoinbase(userID, user, { requireUnpaused: false })) {
-          await updateFunds(userID);
-          devLog('FUNDS INITED')
-          await sleep(5000);
-        }
+    // update funds only after Coinbase credentials are available. New users do
+    // not have credentials yet, so avoid blocking registration on this delay.
+    user = userStorage.getUser(userID);
+    // devLog(user, '<- user while init loops')
+    if (canUseCoinbase(userID, user, { requireUnpaused: false })) {
+      await sleep(10000);
+      await updateFunds(userID);
+      devLog('FUNDS INITED')
+      await sleep(5000);
+    }
     // start syncing orders over the REST api
     syncOrders(userID);
     // start looking for orders to process
@@ -1104,6 +1105,7 @@ const robot = {
   syncOrders: syncOrders,
   processOrders: processOrders,
   updateMultipleOrders: updateMultipleOrders,
+  updateProducts: updateProducts,
   startSync: startSync,
   initializeUserLoops: initializeUserLoops,
   getAvailableFunds: getAvailableFunds,

@@ -1,62 +1,21 @@
 import { pool } from '../pool.js';
-import { devLog } from '../utilities.js';
 
-export const createMessagesTable = async () => {
-  // Hey there, friend! 
-  // Remove the '--' from the first line if you want to reset the messages table.
-  // DON'T FORGET TO PUT IT BACK WHEN YOU'RE DONE!
-  await pool.query(`
-    -- DROP TABLE IF EXISTS messages;
-    CREATE TABLE IF NOT EXISTS "messages" (
-      id SERIAL PRIMARY KEY,
-      "user_id" integer,
-      "type" VARCHAR(255),
-      "text" TEXT,
-      "timestamp" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-      "from" VARCHAR(255),
-      "to" VARCHAR(255) DEFAULT 'all',
-      "deleted" BOOLEAN DEFAULT false,
-      "read" BOOLEAN DEFAULT false,
-      "data" JSONB
-    );
-  `);
-}
+// Runtime retention cleanup. Chat messages are kept; bot/error/status messages
+// older than the retention window are deleted to keep the table from growing forever.
+export async function deleteOldNonChatMessages({ olderThanDays = 30 } = {}) {
+  const retentionDays = Number(olderThanDays);
 
-export const updateMessagesTable = async () => {
-  const messagesColumnsResult = await pool.query(`
-    SELECT column_name, column_default
-    FROM information_schema.columns
-    WHERE table_name='messages';
-  `);
-
-  const columns = messagesColumnsResult.rows.map(row => ({
-    name: row.column_name,
-    default: row.column_default
-  }));
-
-  // devLog('<><> columns <><>', columns);
-  
-  // remove "DEFAULT 'all'" from the "to" column if it is set
-  const toColumn = columns.find(column => column.name === 'to');
-  if (toColumn && toColumn.default) {
-    devLog('<><> removing DEFAULT from "to" column <><>');
-    await pool.query(`
-      ALTER TABLE "messages"
-      ALTER COLUMN "to" DROP DEFAULT;
-    `);
+  if (!Number.isInteger(retentionDays) || retentionDays <= 0) {
+    throw new Error(`Invalid message retention window: ${olderThanDays}`);
   }
-  deleteOldMessages();
-}
 
-// delete all messages older than 30 days that are not chat messages
-export const deleteOldMessages = async () => {
-  devLog('<><> deleting old messages <><>');
-  await pool.query(`
+  const sqlText = `
     DELETE FROM "messages"
-    WHERE "timestamp" < NOW() - INTERVAL '30 days' AND "type" != 'chat';
-  `);
+    WHERE "timestamp" < NOW() - ($1::int * INTERVAL '1 day')
+      AND "type" != 'chat';`;
+  const result = await pool.query(sqlText, [retentionDays]);
+  return result.rowCount;
 }
-
 
 export async function getAllMessages(userID) {
   return new Promise(async (resolve, reject) => {
@@ -160,20 +119,6 @@ export async function deleteMessage(userID, messageID) {
         RETURNING *;`;
       const result = await pool.query(sqlText, [messageID, userID]);
       console.log(result.rows, 'result.rows');
-      resolve(result);
-    } catch (err) {
-      reject(err);
-    }
-  })
-}
-
-export async function deletePrevious30DaysMessages() {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `
-        DELETE FROM "messages"
-        WHERE "type" != 'chat' AND "timestamp" < NOW() - INTERVAL '30 days';`;
-      const result = await pool.query(sqlText);
       resolve(result);
     } catch (err) {
       reject(err);

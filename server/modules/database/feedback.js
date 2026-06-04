@@ -1,24 +1,5 @@
-import { devLog } from '../utilities.js';
 import { pool } from '../pool.js';
-
-export const updateFeedbackTable = async () => {
-  const user_id_fkey_rows = await pool.query(`
-    SELECT 1 
-    FROM pg_constraint 
-    WHERE conname = 'feedback_user_id_fkey'
-  `);
-
-  if (user_id_fkey_rows.rows.length === 0) {
-    devLog('<><> adding feedback_user_id_fkey constraint <><>');
-    await pool.query(`
-      ALTER TABLE feedback 
-      ADD CONSTRAINT feedback_user_id_fkey 
-      FOREIGN KEY (user_id) REFERENCES "user" (id) ON DELETE CASCADE;
-    `);
-  } else {
-    devLog('<><> feedback_user_id_fkey constraint already exists <><>');
-  }
-}
+import { cacheEvents, emitCacheEvent } from '../cacheEvents.js';
 
 export async function getFeedbackCount(userID) {
   const queryText = `SELECT COUNT(*) FROM "feedback" WHERE "user_id" = $1;`;
@@ -47,7 +28,7 @@ export async function storeFeedback(userID, subject, description) {
 export async function deleteFeedback(id) {
   const queryText = `DELETE FROM "feedback" WHERE "id" = $1;`;
   await pool.query(queryText, [id]);
-  emitCacheEvent(cacheEvents.FEEDBACK_UPDATED, userID);
+  emitCacheEvent(cacheEvents.FEEDBACK_UPDATED);
 }
 
 export async function deleteSingleFeedbackForUser(userID, id) {

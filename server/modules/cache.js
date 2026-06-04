@@ -136,9 +136,9 @@ class User {
     this.approved = bool;
     messenger[this.userID]?.userUpdate()
   }
-  activate(bool) {
+  activate(bool, identifier) {
     this.active = bool;
-    messenger[this.userID]?.userUpdate()
+    messenger[this.userID]?.userUpdate(identifier)
   }
   async update(identifier) {
     const user = await databaseClient.getUserAndSettings(this.userID);
@@ -411,7 +411,7 @@ const cbClients = new class {
     this.apiStorage = new Object();
   }
 
-  async updateAPI(userID) {
+  async updateAPI(userID, identifier) {
     devLog('updating api for user: ' + userID)
     const userAPI = await databaseClient.getUserAPI(userID);
 
@@ -423,12 +423,12 @@ const cbClients = new class {
 
     if (userAPI?.name?.length && userAPI?.privateKey?.length) {
       this[userID] = new Coinbase(userAPI.CB_ACCESS_KEY, userAPI.CB_SECRET, userAPI);
-      userStorage[userID].activate(true);
+      userStorage[userID].activate(true, identifier);
     } else {
       delete this[userID];
       userStorage[userID].setSocketStatus('missing_api_credentials');
+      messenger[userID]?.userUpdate(identifier);
     }
-    messenger[userID].userUpdate();
   }
 };
 // store an object with arrays for messages and errors

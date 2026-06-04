@@ -23,41 +23,6 @@ function devLog(...message) {
   }
 }
 
-// add collumns to store new format of api keys
-// Looks like this:
-// {
-//   "name": "organizations/11111111-2222-3333-4444-555555555555/apiKeys/fasgf345-sfe3-423f-4576-hryjhfd3ty35",
-//   "privateKey": "-----BEGIN EC PRIVATE KEY-----\nxxxxx\nxxxx\nxxxx\n-----END EC PRIVATE KEY-----\n"
-// }
-
-export async function updateUserTables() {
-  devLog('<><> updating user tables <><>');
-
-  const userAPIColumnsResult = await pool.query(`
-    SELECT column_name
-    FROM information_schema.columns
-    WHERE table_name='user_api';
-    `);
-  const userAPIColumns = userAPIColumnsResult.rows.map(row => row.column_name);
-  devLog(userAPIColumns, '<><> user_api columns <><>');
-
-  if (!userAPIColumns.includes('name')) {
-    devLog('<><> adding name column to user_api <><>');
-    let sqlText = `
-    ALTER TABLE "user_api"
-    ADD COLUMN "name" text;`;
-    await pool.query(sqlText);
-  }
-
-  if (!userAPIColumns.includes('privateKey')) {
-    devLog('<><> adding privateKey column to user_api <><>');
-    let sqlText = `
-    ALTER TABLE "user_api"
-    ADD COLUMN "privateKey" text;`;
-    await pool.query(sqlText);
-  }
-}
-
 // cache
 
 const singleUserCache = new Map();

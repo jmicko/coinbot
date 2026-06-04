@@ -5,13 +5,17 @@ interface UserContextProps {
   user: User;
   userLoading: boolean;
   userError: Error | null;
+  loginLoading: boolean;
+  loginError: Error | null;
+  registerLoading: boolean;
+  registerError: Error | null;
   deleteLoading: boolean;
   deleteError: Error | null;
   refreshUser: () => void;
   logout: () => void;
   // login: ({username: string, password: string}) => void;
-  login: ({ username, password }: { username: string, password: string }) => void;
-  registerNew: ({ username, password }: { username: string, password: string }) => void;
+  login: ({ username, password }: { username: string, password: string }) => Promise<void>;
+  registerNew: ({ username, password }: { username: string, password: string }) => Promise<void>;
   deleteYourself: () => void;
   theme: string;
   defaultTheme: string;
@@ -20,4 +24,3 @@ interface UserContextProps {
 
 
 export const UserContext = createContext<UserContextProps>({} as UserContextProps);
-

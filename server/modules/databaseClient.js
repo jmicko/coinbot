@@ -3,11 +3,8 @@ import { pool } from './pool.js';
 // const { v4: uuidv4 } = require('uuid');
 import { v4 as uuidv4 } from 'uuid';
 import { addProductDecimals, devLog as devLogUtilities } from './utilities.js';
-// import { updateProductsTable } from './database/products.js';
-import { createMessagesTable } from './database/messages.js';
-import { updateMessagesTable } from './database/messages.js';
+import { runMigrations } from './database/migrator.js';
 import {
-  updateFeedbackTable,
   getFeedbackCount,
   getFeedbackForUser,
   getFeedbackForAllUsers,
@@ -17,7 +14,6 @@ import {
 } from './database/feedback.js';
 // import limit_orders functions
 import {
-  updateLimitOrdersTable,
   getSingleTrade,
   getTradesByIDs,
   getSettledTrades,
@@ -48,7 +44,6 @@ import {
 } from './database/limit_orders.js';
 // Import all settings functions
 import {
-  updateSettingsTable,
   getBotSettings,
   toggleMaintenance,
   toggleRegistration,
@@ -59,7 +54,6 @@ import {
 } from './database/settings.js';
 // import all products functions
 import {
-  updateProductsTable,
   getProduct,
   getActiveProducts,
   getActiveProductIDs,
@@ -69,7 +63,6 @@ import {
 } from './database/products.js';
 // import user functions
 import {
-  updateUserTables,
   getUser,
   getUserAndSettings,
   getUserAndSettingsByUsername,
@@ -117,13 +110,7 @@ export const dbUpgrade = async () => {
   console.log('<><> dbUpgrade <><>');
 
   try {
-    await updateProductsTable();
-    await createMessagesTable();
-    await updateMessagesTable();
-    await updateFeedbackTable();
-    await updateLimitOrdersTable();
-    await updateSettingsTable();
-    await updateUserTables();
+    await runMigrations();
 
     devLog('<><> dbUpgrade complete <><>');
   } catch (error) {
@@ -579,7 +566,6 @@ const databaseClient = {
   bulkUpdateTradePairRatio,
 
   // user
-  updateUserTables,
   getUser,
   getUserAndSettings,
   getUserAndSettingsByUsername,

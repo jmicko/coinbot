@@ -4,14 +4,20 @@ This document captures the current state of schema setup and caching on the `db-
 
 ## Current Database State
 
-The database is PostgreSQL. The current schema knowledge is split between:
+The database is PostgreSQL. Startup now uses a migration runner for schema setup, and runtime maintenance jobs are kept separate from migrations.
 
-- `database.sql`: a destructive manual bootstrap snapshot.
-- `server/modules/databaseClient.js`: calls table update helpers from `dbUpgrade()`.
-- `server/modules/database/*.js`: scattered `CREATE TABLE`, `ALTER TABLE`, constraint, and cleanup logic.
+- `server/modules/database/migrator.js`: runs ordered migrations and records them in `schema_migrations`.
+- `server/modules/database/migrations/001_baseline_schema.js`: creates the current baseline schema from a blank database.
+- `database.sql`: a destructive legacy manual bootstrap snapshot, kept only as a reference for now.
+- `server/modules/database/*.js`: table-oriented query/cache modules. The old runtime schema helper functions have been folded into the baseline migration.
+- `server/modules/serverMaintenance.js`: starts global runtime maintenance jobs after schema bootstrap.
 - `connect-pg-simple`: expects a `session` table compatible with its session store.
 
-The app currently cannot be trusted to bootstrap a completely blank database. Most update helpers query `information_schema` or `pg_constraint`, then run `ALTER TABLE` against tables that are assumed to already exist.
+The new baseline migration was verified against a separate blank local database, `coinbot_bootstrap_test`, and the generated schema matched the cloned dev database on tables, columns, data types, defaults, nullability, constraints, and indexes.
+
+It was also verified against a disposable database loaded from the legacy `database.sql` snapshot, `coinbot_legacy_sql_test`. Running the migration on that legacy-shaped database produced the same schema shape as the cloned dev database. Existing `bot_settings` rows are preserved; only a truly blank database gets the default seed row with `maintenance = false`.
+
+The current cold-start database, `coinbot_cold_start`, was compared against the preserved old clone, `coinbot_dev`, with `scripts/dev-db-compare-schema.sh`; the schemas matched when ignoring `schema_migrations`. A local template copy of the old clone, `coinbot_prod_shape_smoke`, was then started through the server, migrated successfully, served HTTP on port `5505`, and still matched `coinbot_cold_start`.
 
 ## Startup Upgrade Flow
 
@@ -23,22 +29,25 @@ await dbUpgrade();
 
 `dbUpgrade()` currently runs:
 
-1. `updateProductsTable()`
-2. `createMessagesTable()`
-3. `updateMessagesTable()`
-4. `updateFeedbackTable()`
-5. `updateLimitOrdersTable()`
-6. `updateSettingsTable()`
-7. `updateUserTables()`
+1. `runMigrations()`
 
-This order works only after the base schema already exists. On a blank database:
+The migration runner:
 
-- `updateProductsTable()` will try to `ALTER TABLE products` even if `products` does not exist.
-- `updateFeedbackTable()` assumes `feedback` and `user` exist.
-- `updateLimitOrdersTable()` assumes `limit_orders` and `user` exist.
-- `updateSettingsTable()` assumes `bot_settings` exists.
-- `updateUserTables()` assumes `user_api` exists.
-- `subscriptions`, `session`, `market_candles`, `user`, `user_settings`, `user_api`, `bot_settings`, and `limit_orders` are not created by `dbUpgrade()`.
+1. Creates `schema_migrations` if needed.
+2. Takes a PostgreSQL advisory lock so only one process runs migrations at a time.
+3. Runs each unapplied migration inside a transaction.
+4. Records successful migrations by ID and timestamp.
+
+Startup no longer runs non-schema maintenance inside `dbUpgrade()`.
+
+The PostgreSQL session store is created after `dbUpgrade()` completes. This avoids `connect-pg-simple` trying to prune expired sessions before the baseline migration has created the `session` table during a cold start.
+
+After the server is bootstrapped, `serverMaintenance.js` starts runtime housekeeping. The first job is old-message retention:
+
+- `messages` rows older than 30 days are deleted when `type != 'chat'`.
+- Chat messages are retained.
+- The first cleanup runs after a startup delay, then repeats daily.
+- This is deliberately not part of migrations and not part of a per-user robot loop.
 
 ## `database.sql`
 
@@ -64,39 +73,28 @@ It also creates indexes:
 - `user_active`
 - `candles`
 
-Important mismatches with runtime upgrade code:
+Important differences from the old manual snapshot:
 
-- `products` gets additional runtime columns: `base_increment_decimals`, `quote_increment_decimals`, `quote_inverse_increment`, `base_inverse_increment`, `price_rounding`, `pbd`, and `pqd`.
-- `user_api` gets additional runtime columns: `name` and `privateKey`.
-- `bot_settings` gets additional runtime column: `registration_open`.
-- `messages` exists only in runtime code, not in `database.sql`.
-- `feedback` and `limit_orders` foreign keys are added in runtime code, not in `database.sql`.
+- `products` needs additional columns beyond `database.sql`: `base_increment_decimals`, `quote_increment_decimals`, `quote_inverse_increment`, `base_inverse_increment`, `price_rounding`, `pbd`, and `pqd`.
+- `user_api` needs additional columns beyond `database.sql`: `name` and `privateKey`.
+- `bot_settings` needs additional column beyond `database.sql`: `registration_open`.
+- `messages` is absent from `database.sql`.
+- `feedback` and `limit_orders` foreign keys are absent from `database.sql`.
 
 ## Schema Risks To Fix
 
-- There is no migrations table, version number, or ordered migration history.
-- Blank-database startup is not supported yet.
 - `database.sql` is destructive and easy to misuse.
-- Some schema exists only in code and some exists only in `database.sql`.
 - `bot_settings` is treated as a singleton, but the table does not enforce a single row.
 - `products` has no primary key or unique constraint, even though the code treats `(user_id, product_id)` as unique.
 - Several foreign-key relationships are missing or added after the fact.
-- `session` table setup is not part of `dbUpgrade()`.
-- `subscriptions` and `market_candles` have no runtime table creation/update function.
-- Startup cleanup deletes old non-chat messages as part of `updateMessagesTable()`, which mixes migration and maintenance behavior.
 
 ## Recommended Migration Direction
 
-For this branch, the clean target should be:
+For this branch, the remaining clean target should be:
 
-1. Add a real migration runner that executes ordered SQL files once.
-2. Create a `schema_migrations` table with migration name and applied timestamp.
-3. Convert the current full schema into an initial non-destructive migration.
-4. Convert scattered runtime `ALTER TABLE` blocks into ordered migrations.
-5. Make `dbUpgrade()` run migrations, then run non-schema startup maintenance separately.
-6. Keep `database.sql` only as a generated/schema-reference artifact or remove it after replacement.
-
-The initial migration should support a blank database without needing manual SQL.
+1. Add automated migration tests for blank and prod-shaped databases.
+2. Add intentional schema integrity migrations for singleton `bot_settings`, product identity, and known foreign keys.
+3. Keep `database.sql` only as a generated/schema-reference artifact or remove it after replacement.
 
 ## Local Dev Database Target
 
@@ -169,10 +167,6 @@ Known issues:
 
 - Events are process-local only. Multiple server processes would not share invalidation.
 - Some writes directly clear local module caches, some emit events, and some do both.
-- Some event names referenced in code are missing from `cacheEvents`.
-- `feedback.js` emits cache events but does not import `cacheEvents` or `emitCacheEvent`.
-- `settings.js` imports `emitCacheEvent` but references `cacheEvents` without importing it.
-- `settings.js` emits `cacheEvents.ALL_USER_SETTINGS_UPDATED`, which is not defined.
 
 ## Cache Cleanup Direction
 

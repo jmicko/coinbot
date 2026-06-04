@@ -33,6 +33,12 @@
   margin-bottom: .4rem;
 }
 
+.login-form button:disabled,
+.login-form input:disabled {
+  cursor: wait;
+  opacity: .7;
+}
+
 .error-box{
   background-color: rgba(158, 12, 12, 0.685);
   text-align: center;

@@ -59,18 +59,24 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const loginOptions = useMemo(() => ({
     url: '/api/user/login',
     from: 'login in UserContext',
-    refreshCallback: clearUser,
     setData: setUser,
-  }), [setUser, clearUser]);
-  const { postData: login, } = usePostFetch(loginOptions);
+  }), [setUser]);
+  const {
+    postData: login,
+    isLoading: loginLoading,
+    error: loginError,
+  } = usePostFetch<User>(loginOptions);
 
   const registerNewOptions = useMemo(() => ({
     url: '/api/user/register',
     from: 'registerNew in UserContext',
-    refreshCallback: clearUser,
     setData: setUser,
-  }), [setUser, clearUser]);
-  const { postData: registerNew, } = usePostFetch(registerNewOptions);
+  }), [setUser]);
+  const {
+    postData: registerNew,
+    isLoading: registerLoading,
+    error: registerError,
+  } = usePostFetch<User>(registerNewOptions);
 
 
   return (
@@ -78,7 +84,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
       value={
         {
           user,
-          userLoading, userError, deleteLoading, deleteError,
+          userLoading, userError,
+          loginLoading, loginError,
+          registerLoading, registerError,
+          deleteLoading, deleteError,
           refreshUser, logout, login, registerNew, deleteYourself,
           theme, defaultTheme, btnColor
         }
@@ -87,4 +96,3 @@ export function UserProvider({ children }: { children: ReactNode }) {
     </UserContext.Provider>
   )
 }
-

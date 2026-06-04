@@ -6,7 +6,7 @@ interface usePostFetchProps<T> {
   url: string;
   options?: RequestInit;
   setData?: React.Dispatch<React.SetStateAction<T>>;
-  refreshCallback?: () => void;
+  refreshCallback?: () => void | Promise<void>;
   from: string;
 }
 
@@ -20,7 +20,7 @@ const usePostFetch = <T>({ url, options, setData, refreshCallback, from }: usePo
     setIsLoading(true);
     try {
       console.log('calling postData from', from);
-      const identifier = Date.now().toString() + url;
+      const identifier = `${Date.now()}-${Math.random().toString(36).slice(2)}-${url}`;
       console.log(identifier, 'identifier from usePutFetch');
       fetchIdentifiers.current.push(identifier);
       console.log(fetchIdentifiers, 'fetchIdentifiers from usePutFetch');
@@ -46,10 +46,10 @@ const usePostFetch = <T>({ url, options, setData, refreshCallback, from }: usePo
         console.log('data from post fetch from', from, data);
       }
 
-      console.log('calling refreshCallback in post hook from:', from);
-      refreshCallback && refreshCallback();
-
       setData && data && setData(data);
+
+      console.log('calling refreshCallback in post hook from:', from);
+      refreshCallback && await refreshCallback();
 
       setError(null);
     } catch (e) {

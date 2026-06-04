@@ -13,7 +13,7 @@ import Confirm from '../../Confirm/Confirm.js';
 const themes: { [key: string]: string } = { original: 'Original', darkTheme: 'Dark' };
 
 function General(props: { tips: boolean }) {
-  const { productID, refreshProfit } = useData();
+  const { productID, refreshProfit, refreshProducts } = useData();
   const { user, theme, refreshUser, deleteYourself } = useUser();
   // API key file looks like this:
   // {
@@ -21,6 +21,7 @@ function General(props: { tips: boolean }) {
   //   "privateKey": "-----BEGIN EC PRIVATE KEY-----\nxxxxx\nxxxx\nxxxx\n-----END EC PRIVATE KEY-----\n"
   // }
   const [apiKeyFile, setApiKeyFile] = useState<{ name: string, privateKey: string } | null>(null);
+  const [apiKeyFileName, setApiKeyFileName] = useState('');
 
   const {
     putData: resetProfit,
@@ -77,9 +78,16 @@ function General(props: { tips: boolean }) {
   const updateApiKeyOptions = useMemo(() => ({
     url: '/api/account/updateAPIKey',
     from: 'updateApiKey in General.tsx',
-    refreshCallback: refreshUser
-  }), [refreshUser]);
-  const { putData: updateApiKey } = usePutFetch(updateApiKeyOptions);
+    refreshCallback: async () => {
+      await refreshUser();
+      await refreshProducts();
+    }
+  }), [refreshUser, refreshProducts]);
+  const {
+    putData: updateApiKey,
+    isLoading: apiKeyLoading,
+    error: apiKeyError
+  } = usePutFetch(updateApiKeyOptions);
 
 
   const [max_trade_load, setMaxTradeLoad] = useState(user.max_trade_load);
@@ -145,9 +153,12 @@ function General(props: { tips: boolean }) {
           const json = JSON.parse(e.target?.result as string);
           console.log('Parsed API key file:', json);
           setApiKeyFile(json);
+          setApiKeyFileName(file.name);
           // TODO: Add API call to update keys
         } catch (error) {
           console.error('Error parsing API key file:', error);
+          setApiKeyFile(null);
+          setApiKeyFileName('');
           // TODO: Add error handling UI
         }
       };
@@ -402,23 +413,44 @@ function General(props: { tips: boolean }) {
               You can upload that file here to update your API key.
               DO NOT modify the file in any way, and DO NOT share it with anyone.
             </p>}
-          <input
-            type="file"
-            accept=".json"
-            onChange={handleApiKeyFileUpload}
-            className={`file-input ${theme}`}
-          />
+          <div className="api-key-upload-row">
+            <div className={`file-picker ${theme}`}>
+              <label
+                htmlFor="settings-api-key-file"
+                className={`file-picker-button btn-blue medium ${theme} ${apiKeyLoading ? 'disabled' : ''}`}
+              >
+                Choose file
+              </label>
+              <span className={`file-picker-name ${theme}`}>
+                {apiKeyFileName || 'No file chosen'}
+              </span>
+              <input
+                id="settings-api-key-file"
+                type="file"
+                accept=".json"
+                onChange={handleApiKeyFileUpload}
+                className="file-input"
+                disabled={apiKeyLoading}
+              />
+            </div>
+            <button
+              className={`btn-blue medium ${user.theme}`}
+              disabled={!apiKeyFile || apiKeyLoading}
+              onClick={() => { updateApiKey({ api_key: apiKeyFile }) }}>
+              {apiKeyLoading ? <>Saving<CaratWaveLoader /></> : 'Save'}
+            </button>
+          </div>
           {apiKeyFile && (
             <div>
               <p>API Key File:</p>
               <pre>{JSON.stringify(apiKeyFile, null, 2)}</pre>
             </div>
           )}
-          <button
-            className={`btn-blue medium ${user.theme}`}
-            onClick={() => { updateApiKey({ api_key: apiKeyFile }) }}>
-            Save
-          </button>
+          {apiKeyError &&
+            <div className='api error-box notched'>
+              <p>{'status' in apiKeyError && apiKeyError.status === 401 ? "Invalid API Details!" : "Unknown Error"}</p>
+            </div>
+          }
         </div>
       </Collapser>
 

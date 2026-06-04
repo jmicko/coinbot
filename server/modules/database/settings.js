@@ -1,27 +1,6 @@
 import { devLog } from '../utilities.js';
 import { pool } from '../pool.js';
-import { emitCacheEvent } from '../cacheEvents.js';
-
-export const updateSettingsTable = async () => {
-
-  const settingsColumnsResult = await pool.query(`
-    SELECT column_name 
-    FROM information_schema.columns 
-    WHERE table_name='bot_settings';
-  `);
-
-  const columns = settingsColumnsResult.rows.map(row => row.column_name);
-  // devLog('<><> columns <><>', columns);
-
-  if (!columns.includes('registration_open')) {
-    devLog('<><> adding registration_open column <><>');
-    await pool.query(`
-    ALTER TABLE bot_settings 
-    ADD COLUMN registration_open boolean DEFAULT true;
-  `);
-  }
-}
-
+import { cacheEvents, emitCacheEvent } from '../cacheEvents.js';
 
 const settingsCache = new Map();
 
@@ -146,7 +125,7 @@ export async function updateOrdersToSync(ordersToSync) {
       // clear cache
       refreshSettingsCache();
       // todo - update whatever cache ends up handling the user settings table
-      emitCacheEvent(cacheEvents.ALL_USER_SETTINGS_UPDATED);
+      emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED);
       resolve();
     } catch (err) {
       // rollback the transaction

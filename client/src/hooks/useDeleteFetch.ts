@@ -5,7 +5,7 @@ interface UseDeleteFetchProps<T> {
   url: string;
   options?: RequestInit;
   setData?: React.Dispatch<React.SetStateAction<T>>;
-  refreshCallback?: () => void;
+  refreshCallback?: () => void | Promise<void>;
   from: string;
 }
 
@@ -19,7 +19,7 @@ const useDeleteFetch = <T>({ url, options, setData, refreshCallback, from }: Use
     try {
       console.log('calling deleteData from:', from, 'to url:', url + (moreUrl || ''));
 
-      const identifier = Date.now().toString() + url;
+      const identifier = `${Date.now()}-${Math.random().toString(36).slice(2)}-${url}`;
       console.log(identifier, 'identifier from useDeleteFetch');
       fetchIdentifiers.current.push(identifier);
       console.log(fetchIdentifiers, 'fetchIdentifiers from useDeleteFetch');
@@ -48,7 +48,7 @@ const useDeleteFetch = <T>({ url, options, setData, refreshCallback, from }: Use
       setData && data && setData(data);
 
       console.log('calling refreshCallback in delete hook from:', from);
-      refreshCallback && refreshCallback();
+      refreshCallback && await refreshCallback();
       setError(null);
     } catch (exception) {
       if (exception instanceof Error) {

@@ -4,6 +4,7 @@ import { pool } from '../modules/pool.js';
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
 import { databaseClient } from '../modules/databaseClient.js';
 import { cbClients, userStorage, messenger } from '../modules/cache.js';
+import { robot } from '../modules/robot.js';
 import { Coinbase } from '../modules/coinbaseClient.js';
 import excel from 'exceljs';
 import { granularities } from '../modules/utilities.js';
@@ -625,6 +626,7 @@ router.put('/updateAPIKey', rejectUnauthenticated, async (req, res) => {
   devLog('update api key route');
   try {
     const userID = req.user.id;
+    const identifier = req.headers['x-identifier'];
     const apiKey = req.body.api_key;
     if (!apiKey.name || !apiKey.privateKey) {
       res.sendStatus(400);
@@ -683,15 +685,17 @@ router.put('/updateAPIKey', rejectUnauthenticated, async (req, res) => {
     if (data.accounts[0]) {
       // update the api key in the database
       await databaseClient.updateAPIKey(apiKey, userID);
-      await cbClients.updateAPI(userID);
 
       // set the account as active
       const queryText = `UPDATE "user" SET "active" = true
       WHERE "id"=$1 RETURNING *;`;
       let result = await pool.query(queryText, [userID]);
+      emitCacheEvent(cacheEvents.USER_UPDATED, userID);
       emitCacheEvent(cacheEvents.USER_API_UPDATED, userID);
       // refresh the user's cache
-      await cbClients.updateAPI(result.rows[0].id);
+      await cbClients.updateAPI(result.rows[0].id, identifier);
+      await robot.updateProducts(userID);
+      messenger[userID]?.instantMessage({ type: 'productUpdate', identifier });
 
     } else {
       devLog('API key is invalid');
@@ -701,8 +705,13 @@ router.put('/updateAPIKey', rejectUnauthenticated, async (req, res) => {
 
     res.sendStatus(200);
   } catch (err) {
-    devLog(err, 'problem in update api key route');
-    res.sendStatus(500);
+    if (err.response?.status === 401) {
+      devLog('Invalid API key');
+      res.sendStatus(401);
+    } else {
+      devLog(err, 'problem in update api key route');
+      res.sendStatus(500);
+    }
   }
 });
 
@@ -712,6 +721,7 @@ router.put('/updateAPIKey', rejectUnauthenticated, async (req, res) => {
 router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
   devLog('store api route');
   const userID = req.user.id;
+  const identifier = req.headers['x-identifier'];
   function getURI() {
     if (api.URI === "sandbox") {
       return "https://api-public.sandbox.exchange.coinbase.com";
@@ -744,9 +754,12 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
     const queryText = `UPDATE "user" SET "active" = true
     WHERE "id"=$1 RETURNING *;`;
     let result = await pool.query(queryText, [userID]);
+    emitCacheEvent(cacheEvents.USER_UPDATED, userID);
     emitCacheEvent(cacheEvents.USER_API_UPDATED, userID);
     // refresh the user's cache
-    await cbClients.updateAPI(result.rows[0].id);
+    await cbClients.updateAPI(result.rows[0].id, identifier);
+    await robot.updateProducts(userID);
+    messenger[userID]?.instantMessage({ type: 'productUpdate', identifier });
 
     res.sendStatus(200);
   } catch (err) {

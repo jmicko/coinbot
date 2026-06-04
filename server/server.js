@@ -7,7 +7,7 @@ import { setUpWebsocket } from './modules/websocket.js';
 // import { Server as socketIO } from 'socket.io';
 import {WebSocketServer} from 'ws';
 // Middleware
-import { sessionMiddleware, wrap } from './modules/session-middleware.js';
+import { createSessionMiddleware, wrap } from './modules/session-middleware.js';
 import passport from './strategies/user.strategy.js';
 // Route includes
 import userRouter from './routes/user.router.js';
@@ -21,10 +21,12 @@ import notificationsRouter from './routes/notifications.router.js';
 import { robot } from './modules/robot.js';
 import { devLog } from './modules/utilities.js';
 import { dbUpgrade } from './modules/databaseClient.js';
+import { startServerMaintenanceJobs } from './modules/serverMaintenance.js';
 
 await dbUpgrade();
 
 devLog('!!!!!!!! you are running in DEVELOPMENT mode !!!!!!!!');
+const sessionMiddleware = createSessionMiddleware();
 // create the express app
 const app = express();
 const server = http.createServer(app);
@@ -54,7 +56,7 @@ app.use(passport.session());
 // ws server
 const wss = new WebSocketServer({ server });
 
-setUpWebsocket(wss);
+setUpWebsocket(wss, sessionMiddleware);
 
 // REST API Routes
 app.use('/api/user', userRouter);
@@ -68,9 +70,6 @@ app.use('/api/notifications', notificationsRouter);
 // Serve static files from the React app build folder
 app.use(express.static('../client/dist'));
 
-// Start the robot
-robot.startSync();
-
 // // Initialize the socket.io server
 // setupSocketIO(io);
 
@@ -80,6 +79,15 @@ const PORT = process.env.PORT || 5000;
 // Start the server listening on the port
 server.listen(PORT, () => {
   console.log(`Listening on port: ${PORT}`);
+
+  // Start runtime loops only after the HTTP/WebSocket server is accepting
+  // connections. New-user registration happens through this server, so those
+  // per-user loops do not need an additional startup readiness delay.
+  robot.startSync();
+
+  // Start global runtime maintenance after schema bootstrap and server listen.
+  // These jobs are intentionally separate from migrations and user trading loops.
+  startServerMaintenanceJobs();
 });
 
 export default server;
