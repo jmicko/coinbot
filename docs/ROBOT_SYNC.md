@@ -44,6 +44,8 @@ Coinbase work should only happen when all of these are true:
 
 Recent guard code treats missing API credentials as a disabled Coinbase client, not as a reason to mark the user inactive. This keeps the user/account state independent from credential availability.
 
+Maintenance mode is the development and operations no-trade switch. Automated order sync/processing paths must not place, replace, or reorder trades while it is on. Direct route handlers that create new exposure, such as manual market trades and auto setup, should also reject requests while maintenance is on. Read-only connections such as browser websockets, Coinbase websocket subscriptions, and candle refreshes may still run as long as their handlers do not trigger trade placement. Cancel/delete routes are safety controls and may remain available.
+
 ## Main Sync Loop
 
 `syncOrders(userID)` is the main repeating REST loop.

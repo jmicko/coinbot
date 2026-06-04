@@ -171,6 +171,14 @@ router.post('/autoSetup', rejectUnauthenticated, async (req, res) => {
   devLog('in auto setup route! SHOULD NOT HAPPEN DURING SIMULATION======================');
   // POST route code here
   const user = req.user;
+  if (botSettings.maintenance) {
+    messenger[user.id]?.newError({
+      errorText: 'Auto setup was blocked because maintenance mode is on.'
+    });
+    res.sendStatus(503);
+    return;
+  }
+
   if (user.active && user.approved) {
     // get the user available funds
     try {

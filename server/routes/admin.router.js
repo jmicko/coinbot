@@ -254,7 +254,7 @@ router.put('/maintenance', rejectUnauthenticated, async (req, res) => {
       robot.alertAllUsers('Toggling maintenance mode!');
 
       // refresh cache
-      botSettings.refresh()
+      await botSettings.refresh()
 
       res.sendStatus(200);
     } catch (err) {

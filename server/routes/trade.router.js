@@ -3,7 +3,7 @@ const router = express.Router();
 import { rejectUnauthenticated, } from '../modules/authentication-middleware.js';
 import { databaseClient } from '../modules/databaseClient.js';
 import { robot } from '../modules/robot.js';
-import { userStorage, cbClients, messenger } from '../modules/cache.js';
+import { userStorage, cbClients, messenger, botSettings } from '../modules/cache.js';
 import { devLog, sleep } from '../modules/utilities.js';
 import { fork } from 'child_process';
 import path from 'path';
@@ -21,6 +21,15 @@ router.post('/market', rejectUnauthenticated, async (req, res) => {
   const user = req.user;
   const userID = req.user.id;
   const order = req.body;
+
+  if (botSettings.maintenance) {
+    messenger[userID]?.newError({
+      errorText: 'Trade was blocked because maintenance mode is on.'
+    });
+    res.sendStatus(503);
+    return;
+  }
+
   if (user.active && user.approved) {
     // tradeDetails const should take in values sent from trade component form
     const tradeDetails = {
