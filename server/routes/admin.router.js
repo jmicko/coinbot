@@ -6,6 +6,7 @@ import { databaseClient } from '../modules/databaseClient.js';
 import { userStorage, messenger, botSettings } from '../modules/runtime/index.js';
 import { devLog } from '../modules/utilities.js';
 import { getDbMetricsSnapshot, resetDbMetrics } from '../modules/dbMetrics.js';
+import { getLogDayFileSelection, getLogDownloadFilename, getRecentLogs, getTodayLogDateID, listLogFiles, readTail, streamLogDay } from '../modules/logger.js';
 
 const router = express.Router();
 
@@ -16,6 +17,28 @@ function getMetricsLimit(req) {
 function getMetricsFilename() {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   return `coinbot-db-metrics-${timestamp}.json`;
+}
+
+function getLogDate(req) {
+  return req.query.date || getTodayLogDateID();
+}
+
+function getLogBucket(req) {
+  return req.query.bucket || 'app';
+}
+
+function getLogTimeZone(req) {
+  return req.query.timeZone || 'UTC';
+}
+
+function requireLogUserID(req, res) {
+  if (getLogBucket(req) !== 'user') return true;
+  if (/^\d+$/.test(String(req.query.userID || ''))) return true;
+
+  res.status(400).send({
+    errorText: 'A numeric userID is required when requesting user logs.',
+  });
+  return false;
 }
 
 /**
@@ -111,6 +134,106 @@ router.delete('/dbMetrics', rejectUnauthenticated, async (req, res) => {
 
   resetDbMetrics();
   res.sendStatus(204);
+});
+
+/**
+ * GET route to inspect recent process-local logs.
+ */
+router.get('/logs/recent', rejectUnauthenticated, async (req, res) => {
+  if (!req.user.admin) {
+    res.sendStatus(403);
+    return;
+  }
+
+  res.status(200).send(getRecentLogs({
+    limit: req.query.limit,
+    level: req.query.level,
+    userID: req.query.userID,
+  }));
+});
+
+/**
+ * GET route to list available structured log files.
+ */
+router.get('/logs/files', rejectUnauthenticated, async (req, res) => {
+  if (!req.user.admin) {
+    res.sendStatus(403);
+    return;
+  }
+
+  try {
+    const files = await listLogFiles({
+      bucket: getLogBucket(req),
+      userID: req.query.userID,
+    });
+    res.status(200).send(files);
+  } catch (err) {
+    devLog(err, 'error listing log files');
+    res.sendStatus(400);
+  }
+});
+
+/**
+ * GET route to tail a structured log file without loading the whole file.
+ */
+router.get('/logs/tail', rejectUnauthenticated, async (req, res) => {
+  if (!req.user.admin) {
+    res.sendStatus(403);
+    return;
+  }
+  if (!requireLogUserID(req, res)) return;
+
+  try {
+    const result = await readTail({
+      bucket: getLogBucket(req),
+      date: getLogDate(req),
+      timeZone: getLogTimeZone(req),
+      userID: req.query.userID,
+      lines: req.query.lines,
+    });
+    res.status(200).send(result);
+  } catch (err) {
+    devLog(err, 'error tailing log file');
+    res.sendStatus(500);
+  }
+});
+
+/**
+ * GET route to download one structured log file.
+ */
+router.get('/logs/download', rejectUnauthenticated, async (req, res) => {
+  if (!req.user.admin) {
+    res.sendStatus(403);
+    return;
+  }
+  if (!requireLogUserID(req, res)) return;
+
+  try {
+    const bucket = getLogBucket(req);
+    const date = getLogDate(req);
+    const timeZone = getLogTimeZone(req);
+    const userID = req.query.userID;
+    getLogDayFileSelection({
+      bucket,
+      date,
+      timeZone,
+      userID,
+    });
+    const filename = getLogDownloadFilename({ bucket, date, timeZone, userID });
+
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.type('application/x-ndjson');
+    await streamLogDay({ bucket, date, timeZone, userID, writable: res });
+    res.end();
+  } catch (err) {
+    devLog(err, 'error downloading log file');
+    if (res.headersSent) {
+      res.destroy(err);
+      return;
+    }
+    res.sendStatus(404);
+  }
 });
 
 
@@ -302,7 +425,6 @@ router.put('/order_sync_quantity', rejectUnauthenticated, async (req, res) => {
     }
   }
 });
-
 
 /**
  * PUT route toggling maintenance mode

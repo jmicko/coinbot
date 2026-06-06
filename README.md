@@ -21,6 +21,7 @@ This repo now has first-pass maintenance notes for the cleanup work:
 
 - [`docs/PROJECT_MAP.md`](./docs/PROJECT_MAP.md): current architecture, runtime flow, and development entry points.
 - [`docs/DATABASE_AND_CACHE.md`](./docs/DATABASE_AND_CACHE.md): current schema/bootstrap state and caching layers.
+- [`docs/LOGGING.md`](./docs/LOGGING.md): structured file logging, dedupe, and admin log access.
 - [`docs/ROADMAP.md`](./docs/ROADMAP.md): prioritized cleanup plan, starting with safe local dev and database migrations.
 - [`docs/DEV_ENVIRONMENT.md`](./docs/DEV_ENVIRONMENT.md): local Podman PostgreSQL setup and old-dev database clone workflow.
 - [`docs/ROBOT_SYNC.md`](./docs/ROBOT_SYNC.md): current robot loop, local ledger, and Coinbase sync-risk notes.

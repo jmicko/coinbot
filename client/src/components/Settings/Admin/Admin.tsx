@@ -8,6 +8,35 @@ import usePutFetch from '../../../hooks/usePutFetch';
 import { useUser } from '../../../hooks/useUser.js';
 import Collapser from '../../Collapser/Collapser.js';
 
+interface ServerLogEntry {
+  ts?: string;
+  level?: string;
+  message?: string;
+  userID?: string | number | null;
+  context?: {
+    name?: string;
+    scope?: string;
+  };
+  suppressedCount?: number;
+  raw?: string;
+}
+
+interface LogTailResponse {
+  file: string;
+  files?: string[];
+  size: number;
+  truncated: boolean;
+  entries: ServerLogEntry[];
+}
+
+function getLocalDateInputValue(date = new Date()) {
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().split('T')[0];
+}
+
+function getBrowserTimeZone() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+}
 
 function Admin(props: { tips: boolean }) {
 
@@ -81,6 +110,19 @@ function Admin(props: { tips: boolean }) {
   const [syncQuantity, setSyncQuantity] = useState(100);
   const [metricsDownloading, setMetricsDownloading] = useState(false);
   const [metricsError, setMetricsError] = useState('');
+  const [logsBucket, setLogsBucket] = useState('app');
+  const [logsDate, setLogsDate] = useState(getLocalDateInputValue());
+  const [logsUserSearch, setLogsUserSearch] = useState('');
+  const [logsLines, setLogsLines] = useState(200);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsError, setLogsError] = useState('');
+  const [logsMeta, setLogsMeta] = useState('');
+  const [logs, setLogs] = useState<ServerLogEntry[]>([]);
+  const selectedLogUser = useMemo(() => {
+    const search = logsUserSearch.trim().toLowerCase();
+    return allUsers.find(user => user.username.toLowerCase() === search) || null;
+  }, [allUsers, logsUserSearch]);
+  const userLogSelectionMissing = logsBucket === 'user' && !selectedLogUser;
   // const [resettingOrders, setResettingOrders] = useState(false);
   // const [factoryResetting, setFactoryResetting] = useState(false);
 
@@ -159,6 +201,122 @@ function Admin(props: { tips: boolean }) {
       setMetricsError(err instanceof Error ? err.message : 'Download failed');
     } finally {
       setMetricsDownloading(false);
+    }
+  }
+
+  function getLogQuery(includeLines = false) {
+    const params = new URLSearchParams({
+      bucket: logsBucket,
+      date: logsDate,
+      timeZone: getBrowserTimeZone(),
+    });
+
+    if (includeLines) {
+      params.set('lines', String(logsLines));
+    }
+
+    if (logsBucket === 'user' && selectedLogUser) {
+      params.set('userID', String(selectedLogUser.id));
+    }
+
+    return params.toString();
+  }
+
+  function formatLogEntry(entry: ServerLogEntry) {
+    if (entry.raw) return entry.raw;
+    const userText = entry.userID ? ` user:${entry.userID}` : '';
+    const contextText = entry.context?.name ? ` ${entry.context.name}` : '';
+    const duplicateText = entry.suppressedCount ? ` (${entry.suppressedCount} suppressed)` : '';
+    return `${entry.ts || ''} ${(entry.level || 'info').toUpperCase()}${userText}${contextText} ${entry.message || ''}${duplicateText}`;
+  }
+
+  async function loadRecentLogs() {
+    if (userLogSelectionMissing) {
+      setLogsError('Select a user before loading user logs.');
+      return;
+    }
+
+    setLogsLoading(true);
+    setLogsError('');
+    setLogsMeta('');
+
+    try {
+      const params = new URLSearchParams({ limit: String(logsLines) });
+      if (logsBucket === 'user' && selectedLogUser) {
+        params.set('userID', String(selectedLogUser.id));
+      }
+      if (logsBucket === 'errors') params.set('level', 'error');
+      const response = await fetch(`api/admin/logs/recent?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error(`Recent logs failed with status ${response.status}`);
+      }
+      const data = await response.json() as ServerLogEntry[];
+      setLogs(data);
+      setLogsMeta(`Showing ${data.length} recent in-memory log entries`);
+    } catch (err) {
+      setLogsError(err instanceof Error ? err.message : 'Recent logs failed');
+    } finally {
+      setLogsLoading(false);
+    }
+  }
+
+  async function tailLogs() {
+    if (userLogSelectionMissing) {
+      setLogsError('Select a user before loading user logs.');
+      return;
+    }
+
+    setLogsLoading(true);
+    setLogsError('');
+    setLogsMeta('');
+
+    try {
+      const response = await fetch(`api/admin/logs/tail?${getLogQuery(true)}`);
+      if (!response.ok) {
+        throw new Error(`Tail logs failed with status ${response.status}`);
+      }
+      const data = await response.json() as LogTailResponse;
+      setLogs(data.entries);
+      setLogsMeta(`${data.file} - ${data.size} bytes${data.files ? ` - ${data.files.length} UTC hour file${data.files.length === 1 ? '' : 's'}` : ''}${data.truncated ? ' - showing file tail' : ''}`);
+    } catch (err) {
+      setLogsError(err instanceof Error ? err.message : 'Tail logs failed');
+    } finally {
+      setLogsLoading(false);
+    }
+  }
+
+  async function downloadLogs() {
+    if (userLogSelectionMissing) {
+      setLogsError('Select a user before downloading user logs.');
+      return;
+    }
+
+    setLogsLoading(true);
+    setLogsError('');
+
+    try {
+      const response = await fetch(`api/admin/logs/download?${getLogQuery()}`);
+      if (!response.ok) {
+        throw new Error(`Download logs failed with status ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const filenameMatch = contentDisposition?.match(/filename="([^"]+)"/);
+      const filename = filenameMatch?.[1] || `coinbot-${logsBucket}-logs-${logsDate}-${getBrowserTimeZone().replace(/[^a-z0-9_-]+/gi, '_')}.jsonl`;
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      setLogsError(err instanceof Error ? err.message : 'Download logs failed');
+    } finally {
+      setLogsLoading(false);
     }
   }
 
@@ -248,6 +406,91 @@ function Admin(props: { tips: boolean }) {
             {metricsDownloading ? 'Downloading...' : 'Download metrics'}
           </button>
           {metricsError && <p>{metricsError}</p>}
+        </div>
+      </Collapser>
+
+      <div className={`divider ${theme}`} />
+
+      {/* SERVER LOGS */}
+      <Collapser title='Server Logs' >
+        <div className='left-border'>
+          {props.tips && <p>
+            Recent logs come from server memory. Tail reads from the end of the selected JSONL file without loading the whole file.
+          </p>}
+          <div className='admin-log-controls'>
+            <label htmlFor='admin-log-bucket'>File:</label>
+            <select
+              id='admin-log-bucket'
+              value={logsBucket}
+              onChange={(event) => setLogsBucket(event.target.value)}
+            >
+              <option value='app'>App</option>
+              <option value='errors'>Errors</option>
+              <option value='user'>User</option>
+            </select>
+            <label htmlFor='admin-log-date'>Date:</label>
+            <input
+              id='admin-log-date'
+              type='date'
+              value={logsDate}
+              onChange={(event) => setLogsDate(event.target.value)}
+            />
+            {logsBucket === 'user' && <>
+              <label htmlFor='admin-log-user'>User:</label>
+              <input
+                id='admin-log-user'
+                type='search'
+                list='admin-log-users'
+                value={logsUserSearch}
+                placeholder='Search username'
+                autoComplete='off'
+                onChange={(event) => setLogsUserSearch(event.target.value)}
+              />
+              <datalist id='admin-log-users'>
+                {allUsers.map(user => (
+                  <option key={user.id} value={user.username} />
+                ))}
+              </datalist>
+              {selectedLogUser && <span>#{selectedLogUser.id}</span>}
+            </>}
+            <label htmlFor='admin-log-lines'>Lines:</label>
+            <input
+              id='admin-log-lines'
+              type='number'
+              min={10}
+              max={1000}
+              value={logsLines}
+              onChange={(event) => setLogsLines(Number(event.target.value))}
+            />
+          </div>
+          <div className='admin-log-actions'>
+            <button
+              className={`btn-blue btn-reinvest medium ${theme}`}
+              disabled={logsLoading || userLogSelectionMissing}
+              onClick={loadRecentLogs}
+            >
+              Recent
+            </button>
+            <button
+              className={`btn-blue btn-reinvest medium ${theme}`}
+              disabled={logsLoading || userLogSelectionMissing}
+              onClick={tailLogs}
+            >
+              Tail day
+            </button>
+            <button
+              className={`btn-blue btn-reinvest medium ${theme}`}
+              disabled={logsLoading || userLogSelectionMissing}
+              onClick={downloadLogs}
+            >
+              Download day
+            </button>
+          </div>
+          {logsMeta && <p>{logsMeta}</p>}
+          {logsError && <p>{logsError}</p>}
+          <pre className={`admin-log-viewer ${theme}`}>
+            {logs.map(formatLogEntry).join('\n')}
+          </pre>
         </div>
       </Collapser>
 

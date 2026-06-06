@@ -23,6 +23,7 @@ import { devLog } from './modules/utilities.js';
 import { dbUpgrade } from './modules/databaseClient.js';
 import { startServerMaintenanceJobs } from './modules/serverMaintenance.js';
 import { dbMetricsMiddleware } from './modules/dbMetrics.js';
+import { logContextMiddleware } from './modules/logger.js';
 
 await dbUpgrade();
 
@@ -48,6 +49,7 @@ app.use(sessionMiddleware);
 // Start up passport sessions
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(logContextMiddleware);
 
 // // Attach the socket.io server to the express server
 // const io = new socketIO(server, options);

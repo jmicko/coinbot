@@ -1,0 +1,41 @@
+.admin-log-controls,
+.admin-log-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+  margin: 8px 0;
+}
+
+.admin-log-controls input,
+.admin-log-controls select {
+  max-width: 160px;
+}
+
+.admin-log-controls input[type="number"] {
+  max-width: 90px;
+}
+
+.admin-log-controls input[type="search"] {
+  min-width: 180px;
+}
+
+.admin-log-viewer {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 180px;
+  max-height: 360px;
+  overflow: auto;
+  margin: 8px 0 0;
+  padding: 8px;
+  border: 1px solid #555;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.admin-log-viewer.darkTheme {
+  background: #111;
+  color: #eee;
+}

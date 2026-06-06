@@ -1,3 +1,40 @@
 .btn-reinvest{
   margin: .2rem auto;
 }
+
+.user-log-controls,
+.user-log-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+  margin: 8px 0;
+}
+
+.user-log-controls input {
+  max-width: 160px;
+}
+
+.user-log-controls input[type="number"] {
+  max-width: 90px;
+}
+
+.user-log-viewer {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 160px;
+  max-height: 320px;
+  overflow: auto;
+  margin: 8px 0 0;
+  padding: 8px;
+  border: 1px solid #555;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.user-log-viewer.darkTheme {
+  background: #111;
+  color: #eee;
+}

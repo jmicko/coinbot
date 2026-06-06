@@ -495,6 +495,47 @@ button.medium {
   background-color: #7773b398;
 }
 
+.btn-blue:disabled,
+.btn-red:disabled,
+.btn-green:disabled,
+.btn-warn:disabled,
+.btn-black:disabled {
+  color           : #686868;
+  background-color: #a5a5a5;
+  box-shadow      : inset 1px 1px #ffffff66, inset -1px -1px #00000066;
+  cursor          : not-allowed;
+  filter          : grayscale(1);
+  opacity         : .72;
+}
+
+.btn-blue.darkTheme:disabled,
+.btn-red.darkTheme:disabled,
+.btn-green.darkTheme:disabled,
+.btn-warn.darkTheme:disabled,
+.btn-black.darkTheme:disabled {
+  color           : #8b8b8b;
+  background-color: #3d3d3d;
+}
+
+.btn-blue:disabled:hover,
+.btn-red:disabled:hover,
+.btn-green:disabled:hover,
+.btn-warn:disabled:hover,
+.btn-black:disabled:hover {
+  color           : #686868;
+  background-color: #a5a5a5;
+  box-shadow      : inset 1px 1px #ffffff66, inset -1px -1px #00000066;
+}
+
+.btn-blue.darkTheme:disabled:hover,
+.btn-red.darkTheme:disabled:hover,
+.btn-green.darkTheme:disabled:hover,
+.btn-warn.darkTheme:disabled:hover,
+.btn-black.darkTheme:disabled:hover {
+  color           : #8b8b8b;
+  background-color: #3d3d3d;
+}
+
 .btn-black {
   color           : #ffffff;
   background-color: #4b4b4b;

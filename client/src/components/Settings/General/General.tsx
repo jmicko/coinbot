@@ -12,6 +12,35 @@ import { CaratWaveLoader } from '../../Loading.js';
 import Confirm from '../../Confirm/Confirm.js';
 const themes: { [key: string]: string } = { original: 'Original', darkTheme: 'Dark' };
 
+interface UserLogEntry {
+  ts?: string;
+  level?: string;
+  message?: string;
+  context?: {
+    name?: string;
+    scope?: string;
+  };
+  suppressedCount?: number;
+  raw?: string;
+}
+
+interface UserLogTailResponse {
+  file: string;
+  files?: string[];
+  size: number;
+  truncated: boolean;
+  entries: UserLogEntry[];
+}
+
+function getLocalDateInputValue(date = new Date()) {
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().split('T')[0];
+}
+
+function getBrowserTimeZone() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+}
+
 function General(props: { tips: boolean }) {
   const { productID, refreshProfit, refreshProducts } = useData();
   const { user, theme, refreshUser, deleteYourself } = useUser();
@@ -99,8 +128,14 @@ function General(props: { tips: boolean }) {
     // get current timezone of user
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   });
-  const [newDate, setNewDate] = useState(new Date().toISOString().slice(0, 10));
+  const [newDate, setNewDate] = useState(getLocalDateInputValue());
   const [deleting, setDeleting] = useState(false);
+  const [logsDate, setLogsDate] = useState(getLocalDateInputValue());
+  const [logsLines, setLogsLines] = useState(200);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsError, setLogsError] = useState('');
+  const [logsMeta, setLogsMeta] = useState('');
+  const [logs, setLogs] = useState<UserLogEntry[]>([]);
 
   const convertDate = useMemo(() => (dateString: string) => {
     // convert date to mm/dd/yyyy
@@ -166,6 +201,95 @@ function General(props: { tips: boolean }) {
       // setApiKeyFile(file);
     }
   };
+
+  function getLogQuery(includeLines = false) {
+    const params = new URLSearchParams({
+      date: logsDate,
+      timeZone: getBrowserTimeZone(),
+    });
+    if (includeLines) {
+      params.set('lines', String(logsLines));
+    }
+    return params.toString();
+  }
+
+  function formatLogEntry(entry: UserLogEntry) {
+    if (entry.raw) return entry.raw;
+    const contextText = entry.context?.name ? ` ${entry.context.name}` : '';
+    const duplicateText = entry.suppressedCount ? ` (${entry.suppressedCount} suppressed)` : '';
+    return `${entry.ts || ''} ${(entry.level || 'info').toUpperCase()}${contextText} ${entry.message || ''}${duplicateText}`;
+  }
+
+  async function loadRecentLogs() {
+    setLogsLoading(true);
+    setLogsError('');
+    setLogsMeta('');
+
+    try {
+      const params = new URLSearchParams({ limit: String(logsLines) });
+      const response = await fetch(`/api/user/logs/recent?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error(`Recent logs failed with status ${response.status}`);
+      }
+      const data = await response.json() as UserLogEntry[];
+      setLogs(data);
+      setLogsMeta(`Showing ${data.length} recent in-memory log entries`);
+    } catch (err) {
+      setLogsError(err instanceof Error ? err.message : 'Recent logs failed');
+    } finally {
+      setLogsLoading(false);
+    }
+  }
+
+  async function tailLogs() {
+    setLogsLoading(true);
+    setLogsError('');
+    setLogsMeta('');
+
+    try {
+      const response = await fetch(`/api/user/logs/tail?${getLogQuery(true)}`);
+      if (!response.ok) {
+        throw new Error(`Tail logs failed with status ${response.status}`);
+      }
+      const data = await response.json() as UserLogTailResponse;
+      setLogs(data.entries);
+      setLogsMeta(`${data.file} - ${data.size} bytes${data.files ? ` - ${data.files.length} UTC hour file${data.files.length === 1 ? '' : 's'}` : ''}${data.truncated ? ' - showing file tail' : ''}`);
+    } catch (err) {
+      setLogsError(err instanceof Error ? err.message : 'Tail logs failed');
+    } finally {
+      setLogsLoading(false);
+    }
+  }
+
+  async function downloadLogs() {
+    setLogsLoading(true);
+    setLogsError('');
+
+    try {
+      const response = await fetch(`/api/user/logs/download?${getLogQuery()}`);
+      if (!response.ok) {
+        throw new Error(`Download logs failed with status ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const filenameMatch = contentDisposition?.match(/filename="([^"]+)"/);
+      const filename = filenameMatch?.[1] || `coinbot-user-logs-${logsDate}-${getBrowserTimeZone().replace(/[^a-z0-9_-]+/gi, '_')}.jsonl`;
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      setLogsError(err instanceof Error ? err.message : 'Download logs failed');
+    } finally {
+      setLogsLoading(false);
+    }
+  }
 
   return (
     <div className="General settings-panel scrollable">
@@ -451,6 +575,64 @@ function General(props: { tips: boolean }) {
               <p>{'status' in apiKeyError && apiKeyError.status === 401 ? "Invalid API Details!" : "Unknown Error"}</p>
             </div>
           }
+        </div>
+      </Collapser>
+
+      <div className={`divider ${theme}`} />
+
+      {/* MY LOGS */}
+      <Collapser title='My Logs'>
+        <div className='left-border'>
+          {props.tips &&
+            <p>
+              These are server logs associated with your user account. Recent reads from server memory. Tail reads from the end of your selected log file.
+            </p>}
+          <div className='user-log-controls'>
+            <label htmlFor='user-log-date'>Date:</label>
+            <input
+              id='user-log-date'
+              type='date'
+              value={logsDate}
+              onChange={(event) => setLogsDate(event.target.value)}
+            />
+            <label htmlFor='user-log-lines'>Lines:</label>
+            <input
+              id='user-log-lines'
+              type='number'
+              min={10}
+              max={1000}
+              value={logsLines}
+              onChange={(event) => setLogsLines(Number(event.target.value))}
+            />
+          </div>
+          <div className='user-log-actions'>
+            <button
+              className={`btn-blue medium ${user.theme}`}
+              disabled={logsLoading}
+              onClick={loadRecentLogs}
+            >
+              Recent
+            </button>
+            <button
+              className={`btn-blue medium ${user.theme}`}
+              disabled={logsLoading}
+              onClick={tailLogs}
+            >
+              Tail day
+            </button>
+            <button
+              className={`btn-blue medium ${user.theme}`}
+              disabled={logsLoading}
+              onClick={downloadLogs}
+            >
+              Download day
+            </button>
+          </div>
+          {logsMeta && <p>{logsMeta}</p>}
+          {logsError && <p>{logsError}</p>}
+          <pre className={`user-log-viewer ${theme}`}>
+            {logs.map(formatLogEntry).join('\n')}
+          </pre>
         </div>
       </Collapser>
 

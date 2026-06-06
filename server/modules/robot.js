@@ -8,6 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { devLog } from "./utilities.js";
 import { runWithDbContext } from './dbMetrics.js';
+import { runWithLogContext } from './logger.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -17,7 +18,11 @@ const ORDER_NOT_FOUND_REORDER_THRESHOLD = 10;
 
 function runRobotDbContext(name, userID, callback) {
   const contextName = userID ? `robot.${name} user:${userID}` : `robot.${name}`;
-  return runWithDbContext(contextName, callback);
+  return runWithDbContext(contextName, () => runWithLogContext({
+    name: contextName,
+    scope: 'robot',
+    userID,
+  }, callback));
 }
 
 function hasCoinbaseClient(userID) {

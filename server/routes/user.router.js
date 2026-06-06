@@ -8,6 +8,7 @@ import { robot } from '../modules/robot.js';
 import { databaseClient } from '../modules/databaseClient.js';
 import { userStorage, messenger, botSettings } from '../modules/runtime/index.js';
 import { devLog } from '../modules/utilities.js';
+import { getLogDayFileSelection, getLogDownloadFilename, getRecentLogs, getTodayLogDateID, readTail, streamLogDay } from '../modules/logger.js';
 
 const router = express.Router();
 
@@ -229,6 +230,85 @@ router.put('/approve', rejectUnauthenticated, async (req, res) => {
   } catch (err) {
     devLog(err, 'error in approve put route');
     res.sendStatus(500);
+  }
+});
+
+function getLogDate(req) {
+  return req.query.date || getTodayLogDateID();
+}
+
+function getLogTimeZone(req) {
+  return req.query.timeZone || 'UTC';
+}
+
+/**
+ * GET route to inspect recent process-local logs for the authenticated user.
+ */
+router.get('/logs/recent', rejectUnauthenticated, async (req, res) => {
+  res.status(200).send(getRecentLogs({
+    limit: req.query.limit,
+    level: req.query.level,
+    userID: req.user.id,
+  }));
+});
+
+/**
+ * GET route to tail the authenticated user's structured log file.
+ */
+router.get('/logs/tail', rejectUnauthenticated, async (req, res) => {
+  try {
+    const result = await readTail({
+      bucket: 'user',
+      userID: req.user.id,
+      date: getLogDate(req),
+      timeZone: getLogTimeZone(req),
+      lines: req.query.lines,
+    });
+    res.status(200).send(result);
+  } catch (err) {
+    devLog(err, 'error tailing own user log file');
+    res.sendStatus(404);
+  }
+});
+
+/**
+ * GET route to download the authenticated user's structured log file.
+ */
+router.get('/logs/download', rejectUnauthenticated, async (req, res) => {
+  try {
+    const date = getLogDate(req);
+    const timeZone = getLogTimeZone(req);
+    getLogDayFileSelection({
+      bucket: 'user',
+      userID: req.user.id,
+      date,
+      timeZone,
+    });
+    const filename = getLogDownloadFilename({
+      bucket: 'user',
+      userID: req.user.id,
+      date,
+      timeZone,
+    });
+
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.type('application/x-ndjson');
+    await streamLogDay({
+      bucket: 'user',
+      userID: req.user.id,
+      date,
+      timeZone,
+      writable: res,
+    });
+    res.end();
+  } catch (err) {
+    devLog(err, 'error downloading own user log file');
+    if (res.headersSent) {
+      res.destroy(err);
+      return;
+    }
+    res.sendStatus(404);
   }
 });
 

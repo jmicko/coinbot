@@ -614,8 +614,7 @@ router.put('/updateAPIKey', rejectUnauthenticated, async (req, res) => {
     }
     const key_name = apiKey.name;
     const key_secret = apiKey.privateKey;
-    devLog(key_name, 'key name');
-    devLog(key_secret, 'key secret');
+    devLog('testing uploaded Coinbase API key', { userID, key_name });
 
 
     const request_method = "GET";
@@ -642,8 +641,6 @@ router.put('/updateAPIKey', rejectUnauthenticated, async (req, res) => {
         },
       }
     );
-    console.log("export JWT=" + token);
-
     const response = await axios.request({
       method: 'GET',
       timeout: 10000,
