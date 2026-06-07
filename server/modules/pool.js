@@ -53,7 +53,7 @@ function isCallback(value) {
 function trackDbQueryWithCallback(query, callback) {
   const start = performance.now();
   return (err, result) => {
-    recordDbQueryResult(query, performance.now() - start, Boolean(err));
+    recordDbQueryResult(query, performance.now() - start, Boolean(err), result);
     callback(err, result);
   };
 }

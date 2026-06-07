@@ -27,6 +27,7 @@ import {
   getUnsettledTradesByProduct,
   getReorders,
   getDeSyncs,
+  getSpentByProducts,
   // checkIfCancelling,
   storeTrade,
   updateTrade,
@@ -132,48 +133,6 @@ export const getSpentUSD = (userID, makerFee) => {
         const [volume_usd] = results.rows;
         // promise returns promise from pool if success
         resolve(volume_usd);
-      })
-      .catch((err) => {
-        // or promise relays errors from pool to parent
-        reject(err);
-      })
-  });
-}
-
-
-// get the total USD that is on trade-pairs in the DB. This should be higher or the same as what is reported by CBP
-// because the bot stores more "open" orders than CBP will allow for
-export const getSpentQuote = (userID, takerFee, product_id) => {
-  return new Promise((resolve, reject) => {
-    let sqlText = `SELECT sum("limit_price"*"base_size"*$1)
-    FROM "limit_orders"
-    WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "userID"=$2 AND "product_id"=$3;`;
-    pool.query(sqlText, [takerFee, userID, product_id])
-      .then((results) => {
-        const [volume_quote] = results.rows;
-        // promise returns promise from pool if success
-        resolve(Number(volume_quote.sum));
-      })
-      .catch((err) => {
-        // or promise relays errors from pool to parent
-        reject(err);
-      })
-  });
-}
-
-
-// get the total BTC that is on trade-pairs in the DB. This should be higher or the same as what is reported by CBP
-// because the bot stores more "open" orders than CBP will allow for
-export const getSpentBase = (userID, product_id) => {
-  return new Promise((resolve, reject) => {
-    let sqlText = `SELECT sum("base_size")
-    FROM "limit_orders"
-    WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "userID"=$1 AND "product_id"=$2;`;
-    pool.query(sqlText, [userID, product_id])
-      .then((results) => {
-        const [volume_base] = results.rows;
-        // promise returns promise from pool if success
-        resolve(Number(volume_base.sum));
       })
       .catch((err) => {
         // or promise relays errors from pool to parent
@@ -643,8 +602,7 @@ const databaseClient = {
 
   getSpentUSD,
   getSpentBTC,
-  getSpentBase,
-  getSpentQuote,
+  getSpentByProducts,
 
 
   // bot settings

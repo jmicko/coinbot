@@ -480,30 +480,47 @@ class Coinbase {
     });
   }
 
-  async getAllProducts() {
-    const products = [];
+  async getAllProducts({ limit = 1000, pageDelayMs = 200 } = {}) {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 1000) {
+      throw new Error('Coinbase products page limit must be an integer from 1 to 1000');
+    }
+
+    const productsByID = new Map();
     const seenCursors = new Set();
+    let pageCount = 0;
+    let rawProductCount = 0;
     let cursor;
 
     while (true) {
-      const params = { limit: 1000 };
+      const params = { limit };
       if (cursor) {
         params.cursor = cursor;
       }
 
       const result = await this.getProducts(params);
+      pageCount += 1;
       if (!Array.isArray(result.products)) {
         throw new Error('Coinbase products response did not contain a products array');
       }
-      products.push(...result.products);
+      rawProductCount += result.products.length;
+      result.products.forEach((product) => {
+        if (!product?.product_id) {
+          throw new Error('Coinbase products response contained a product without product_id');
+        }
+        productsByID.set(product.product_id, product);
+      });
 
       const pagination = result.pagination || {};
       const hasNext = pagination.has_next ?? result.has_next ?? false;
       if (!hasNext) {
+        const products = [...productsByID.values()];
         return {
           ...result,
           products,
           num_products: products.length,
+          page_count: pageCount,
+          raw_num_products: rawProductCount,
+          duplicate_product_count: rawProductCount - products.length,
         };
       }
 
@@ -513,7 +530,7 @@ class Coinbase {
       }
       seenCursors.add(nextCursor);
       cursor = nextCursor;
-      await sleep(200);
+      await sleep(pageDelayMs);
     }
   }
 

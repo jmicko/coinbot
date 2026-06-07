@@ -54,8 +54,11 @@ Current order:
 
 1. Increment the user's loop counter.
 2. Send a heartbeat to the browser.
-3. If the runtime product catalog is empty, load it before trading; every `full_sync * 10` loops after that, refresh it.
+3. If the runtime product catalog is empty, load it before trading. After a successful load, refresh it no more than once every 15 minutes from inside the same main loop.
    - Catalog readiness and metadata are tracked separately for each user.
+   - The refresh timestamp is process-local and resets on server restart.
+   - Concurrent refresh requests for the same user share one in-flight operation.
+   - The previous catalog remains available until a complete replacement succeeds.
    - Persist only new or changed product identity fields.
    - Mark products missing from that user's latest catalog unavailable without deleting their rows.
    - Keep volatile Coinbase fields and precomputed decimal helpers in memory.
@@ -64,6 +67,8 @@ Current order:
    - otherwise run `quickSync()` and then `deSync()`
 5. Run `updateMultipleOrders()` against the user's queued `ordersToCheck`.
 6. Refresh available funds if the user is active/approved and maintenance is off.
+   - Reserved base and quote totals for all active products are retrieved in one grouped database query.
+   - The subsequent currency ledger calculation remains unchanged.
 7. Schedule the next loop after rate-limit padding and `loop_speed`.
 
 The loop is designed to keep Coinbase calls grouped and rate-limited, then update local records after gathering enough context.

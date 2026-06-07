@@ -202,6 +202,21 @@ Query metrics are grouped by context:
 - Robot loops are recorded at broad loop boundaries such as `robot.syncOrders user:1` and `robot.processingLoop user:1`.
 - Startup and background work without an explicit context is recorded as `uncategorized`.
 
+The exported report includes:
+
+- `schemaVersion: 2` so reports from the old and corrected collectors are distinguishable.
+- Overall query counts, database time, errors, slow queries, and query rates.
+- Read, write, transaction, and other-operation counts.
+- Rows returned and rows directly affected by writes.
+- Context invocation counts, elapsed time, and queries per completed invocation.
+- SQL grouped by a stable fingerprint of the full normalized statement.
+- A context-plus-SQL breakdown showing which statement each route or loop generated.
+- Recent slow queries with their operation, fingerprint, context, and row counts.
+
+Context attribution is active only while the route or robot-loop invocation is running. Timers and websocket callbacks that outlive their originating startup function are recorded as `uncategorized` instead of being incorrectly attributed to startup for the rest of the process lifetime.
+
+The report's `affectedRowCount` is populated for direct PostgreSQL `INSERT`, `UPDATE`, `DELETE`, and `MERGE` results. A write performed inside a CTE may report its returned summary row under `resultRowCount` without exposing the internal affected-row total to the generic query wrapper.
+
 Admin-only endpoints:
 
 - `GET /api/admin/dbMetrics?limit=20`: returns totals, top contexts, top SQL statements, and recent slow queries.
@@ -217,6 +232,18 @@ Environment flags:
 - `DB_METRICS_HTTP_LOG=true`: logs per-request database counts and timings after each HTTP response.
 
 This is deliberately process-local. Coinbot is intended to run as a small single-server app, and local counters are enough to see whether repeated route refreshes, robot loops, or specific SQL statements are responsible for database load.
+
+### Available Funds Aggregation
+
+Available-funds calculation still uses Coinbase account totals minus every relevant Coinbot order, including orders that are intentionally not synchronized to Coinbase.
+
+The database portion is now one grouped query per funds refresh:
+
+- SELL orders sum reserved base size by product.
+- BUY orders sum reserved quote value by product using the taker-fee multiplier.
+- All active products are requested together instead of issuing separate base and quote queries for each product.
+
+This changes only how the same ledger totals are retrieved. Coinbase account reads, currency-level accumulation, taker-fee conservatism, and the resulting per-product available-funds shape remain unchanged.
 
 ## Cache Cleanup Direction
 

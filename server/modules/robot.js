@@ -13,6 +13,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const missingCoinbaseClientNotices = new Set();
+const productUpdatesInFlight = new Map();
+const PRODUCT_REFRESH_INTERVAL_MS = 15 * 60 * 1000;
 const orderNotFoundCounts = new Map();
 const ORDER_NOT_FOUND_REORDER_THRESHOLD = 10;
 
@@ -204,12 +206,11 @@ async function syncOrders(userID) {
         requireProductCatalog: false,
       });
 
-      if (!productCatalog.isReady(userID) && canRefreshProducts) {
+      if (
+        canRefreshProducts
+        && productCatalog.isRefreshDue(userID, PRODUCT_REFRESH_INTERVAL_MS)
+      ) {
         await updateProducts(userID);
-      } else if ((((loopNumber - 1) % (botSettings.full_sync * 10)) === 0) && canRefreshProducts) {
-        // every 10 full syncs, refresh Coinbase product metadata
-        await updateProducts(userID);
-
       }
       // check that user is active, approved, and unpaused, and that the bot is not under maintenance
       if (canUseCoinbase(userID, user)) {
@@ -268,21 +269,53 @@ async function syncOrders(userID) {
 
 
 async function updateProducts(userID, identifier) {
-  return new Promise(async (resolve, reject) => {
+  const updateKey = String(userID);
+  const existingUpdate = productUpdatesInFlight.get(updateKey);
+  if (existingUpdate) {
+    return existingUpdate;
+  }
+
+  const update = (async () => {
+    const startedAt = performance.now();
     try {
       devLog('---- updating products ----');
-      productCatalog.clear(userID);
+
+      const fetchStartedAt = performance.now();
       const products = await cbClients[userID].getAllProducts();
-      await databaseClient.syncProductIdentities(products.products, userID);
+      const fetchMs = performance.now() - fetchStartedAt;
+
+      const syncStartedAt = performance.now();
+      const syncResult = await databaseClient.syncProductIdentities(
+        products.products,
+        userID
+      );
+      const syncMs = performance.now() - syncStartedAt;
+
       productCatalog.replace(userID, products.products);
       messenger[userID]?.instantMessage({ type: 'productUpdate', identifier });
-      resolve();
-      devLog('---- finished updating products ----');
+      const metrics = {
+        userID,
+        productCount: products.products.length,
+        rawProductCount: products.raw_num_products,
+        duplicateProductCount: products.duplicate_product_count,
+        pageCount: products.page_count,
+        fetchMs: Number(fetchMs.toFixed(2)),
+        syncMs: Number(syncMs.toFixed(2)),
+        totalMs: Number((performance.now() - startedAt).toFixed(2)),
+        ...syncResult,
+      };
+      devLog(metrics, '---- finished updating products ----');
+      return metrics;
     } catch (err) {
       devLog(err, 'error updating products');
-      reject(err);
+      throw err;
+    } finally {
+      productUpdatesInFlight.delete(updateKey);
     }
-  });
+  })();
+
+  productUpdatesInFlight.set(updateKey, update);
+  return update;
 }
 
 
@@ -1002,6 +1035,13 @@ async function getAvailableFunds(userID, userSettings) {
       // devLog(accounts.length, 'accounts in getAvailableFunds');
 
       const activeProducts = results[1];
+      const productSpending = new Map(
+        (await databaseClient.getSpentByProducts(
+          userID,
+          takerFee,
+          activeProducts.map((product) => product.product_id)
+        )).map((spending) => [spending.product_id, spending])
+      );
 
       // get the amount spent for the base and quote currencies for each product
       // and add them to an array of currency objects with the currency id and amount spent
@@ -1011,8 +1051,9 @@ async function getAvailableFunds(userID, userSettings) {
         const product = activeProducts[i];
         const baseCurrency = product.base_currency_id;
         const quoteCurrency = product.quote_currency_id;
-        const baseSpent = await databaseClient.getSpentBase(userID, product.product_id);
-        const quoteSpent = await databaseClient.getSpentQuote(userID, takerFee, product.product_id);
+        const spending = productSpending.get(product.product_id);
+        const baseSpent = spending?.base_spent || 0;
+        const quoteSpent = spending?.quote_spent || 0;
 
         // if the base currency is already in the array, add the amount spent to the existing amount spent
         if (currencyArray.some(currency => currency.currency_id === baseCurrency)) {
@@ -1020,7 +1061,7 @@ async function getAvailableFunds(userID, userSettings) {
           currencyArray[index].amount_spent += baseSpent;
         } else {
           // if the base currency is not in the array, add it
-          currencyArray.push({ currency_id: baseCurrency, amount_spent: baseSpent, quoteSpentOnProduct: quoteSpent })
+          currencyArray.push({ currency_id: baseCurrency, amount_spent: baseSpent })
         }
 
         // if the quote currency is already in the array, add the amount spent to the existing amount spent
@@ -1045,7 +1086,7 @@ async function getAvailableFunds(userID, userSettings) {
         // round to 16 decimal places
         const availableRounded = available.toFixed(16);
         // add the currency and available funds to the array
-        availableFundsNew.push({ currency_id: currency.currency_id, available: availableRounded, spent: currency.amount_spent, quote_spent_on_product: currency.quoteSpentOnProduct })
+        availableFundsNew.push({ currency_id: currency.currency_id, available: availableRounded, spent: currency.amount_spent })
       }
 
       // make an object with an object for each user's product with the product id as the key for each nested object 
@@ -1063,7 +1104,7 @@ async function getAvailableFunds(userID, userSettings) {
         const quoteAvailable = availableFundsNew.find(currency => currency.currency_id === quoteCurrency).available;
         const baseSpent = availableFundsNew.find(currency => currency.currency_id === baseCurrency).spent;
         const quoteSpent = availableFundsNew.find(currency => currency.currency_id === quoteCurrency).spent;
-        const quoteSpentOnProduct = availableFundsNew.find(currency => currency.currency_id === baseCurrency).quote_spent_on_product;
+        const quoteSpentOnProduct = productSpending.get(product.product_id)?.quote_spent || 0;
 
         availableFundsObject[product.product_id] = {
           base_currency: baseCurrency,

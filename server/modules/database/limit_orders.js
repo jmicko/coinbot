@@ -151,6 +151,38 @@ export const getTradesByIDs = (userID, IDs) => {
   });
 }
 
+export async function getSpentByProducts(userID, takerFee, productIDs) {
+  if (!Array.isArray(productIDs) || productIDs.length === 0) {
+    return [];
+  }
+
+  const result = await pool.query(
+    `SELECT
+      "product_id",
+      COALESCE(
+        SUM("base_size") FILTER (WHERE "side" = 'SELL'),
+        0
+      ) AS "base_spent",
+      COALESCE(
+        SUM("limit_price" * "base_size" * $2) FILTER (WHERE "side" = 'BUY'),
+        0
+      ) AS "quote_spent"
+    FROM "limit_orders"
+    WHERE "userID" = $1
+      AND "product_id" = ANY($3::varchar[])
+      AND "flipped" = false
+      AND "will_cancel" = false
+    GROUP BY "product_id";`,
+    [userID, takerFee, productIDs]
+  );
+
+  return result.rows.map((row) => ({
+    product_id: row.product_id,
+    base_spent: Number(row.base_spent),
+    quote_spent: Number(row.quote_spent),
+  }));
+}
+
 // This will get trades that have settled but not yet been flipped, meaning they need to be processed
 export const getSettledTrades = (userID) => {
   return new Promise(async (resolve, reject) => {
