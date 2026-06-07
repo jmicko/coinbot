@@ -146,7 +146,7 @@ This state is process-local. User/settings/API state is rebuilt from PostgreSQL 
 Defined inside database modules:
 
 - `server/modules/database/products.js`: per-user cache of durable product identity and activation rows. Reads merge those rows with `productCatalog`.
-- `server/modules/database/limit_orders.js`: per-user order query caches and single-order caches.
+- `server/modules/database/limit_orders.js`: per-user order query caches, single-order caches, reservation-total caches, and quick-sync reorder-window caches.
 - `server/modules/database/user.js`: per-user user/settings/API caches and all-users caches.
 - `server/modules/database/settings.js`: singleton bot settings cache.
 
@@ -194,7 +194,9 @@ Known issues:
 
 `server/modules/dbMetrics.js` instruments PostgreSQL calls in-process. It does not cache query results or change database behavior; it only records counts and timings so cache work can target the expensive paths first.
 
-Metrics are collected by wrapping checked-out `pg` clients in `server/modules/pool.js`. This covers normal `pool.query()` calls, explicit transaction clients, promise-style queries, and callback-style queries used by dependencies such as the session store.
+Metrics are collected by instrumenting the shared `pg` pool and explicitly checked-out clients in `server/modules/pool.js`. This covers normal `pool.query()` calls, explicit transaction clients, promise-style queries, and callback-style queries used by dependencies such as the session store.
+
+Normal `pool.query()` calls are measured at the pool-call boundary. This is important because PostgreSQL clients are reused: recording from the reused client's socket callback loses the `AsyncLocalStorage` context that started the query. Explicitly checked-out transaction clients are instrumented separately. This keeps query totals single-counted while preserving the originating HTTP or robot-loop context across client reuse.
 
 Query metrics are grouped by context:
 
@@ -204,13 +206,15 @@ Query metrics are grouped by context:
 
 The exported report includes:
 
-- `schemaVersion: 2` so reports from the old and corrected collectors are distinguishable.
+- `schemaVersion: 3` so reports from earlier collectors are distinguishable.
 - Overall query counts, database time, errors, slow queries, and query rates.
 - Read, write, transaction, and other-operation counts.
 - Rows returned and rows directly affected by writes.
 - Context invocation counts, elapsed time, and queries per completed invocation.
+- Attributed versus uncategorized query counts and the overall attribution rate.
 - SQL grouped by a stable fingerprint of the full normalized statement.
 - A context-plus-SQL breakdown showing which statement each route or loop generated.
+- Cache accesses, hits, misses, in-flight reuse, loads, invalidations, and hit rate.
 - Recent slow queries with their operation, fingerprint, context, and row counts.
 
 Context attribution is active only while the route or robot-loop invocation is running. Timers and websocket callbacks that outlive their originating startup function are recorded as `uncategorized` instead of being incorrectly attributed to startup for the rest of the process lifetime.
@@ -237,13 +241,54 @@ This is deliberately process-local. Coinbot is intended to run as a small single
 
 Available-funds calculation still uses Coinbase account totals minus every relevant Coinbot order, including orders that are intentionally not synchronized to Coinbase.
 
-The database portion is now one grouped query per funds refresh:
+On a reservation-cache miss, the database portion is one grouped query:
 
 - SELL orders sum reserved base size by product.
 - BUY orders sum reserved quote value by product using the taker-fee multiplier.
-- All active products are requested together instead of issuing separate base and quote queries for each product.
+- Every product for the user is aggregated together instead of issuing separate base and quote queries for each active product.
 
 This changes only how the same ledger totals are retrieved. Coinbase account reads, currency-level accumulation, taker-fee conservatism, and the resulting per-product available-funds shape remain unchanged.
+
+Reservation totals are cached per user and taker-fee multiplier:
+
+- Coinbase account balances are still fetched every funds refresh so deposits, withdrawals, and settlements remain visible.
+- The database aggregate is loaded on first use and reused until a reserve-affecting order mutation occurs.
+- Concurrent cache misses share one in-flight query.
+- An invalidation during an in-flight query forces the caller to retry, preventing the stale result from being returned or stored.
+- PostgreSQL still applies the taker-fee multiplier, preserving the previous numeric behavior.
+- Activating or deactivating products does not invalidate the aggregate. The cached result includes every product and the caller selects the active product IDs.
+
+Reservation totals are invalidated after:
+
+- Inserting or replacing an order.
+- Changing `product_id`, `base_size`, `limit_price`, `side`, `flipped`, or `will_cancel`.
+- Deleting one or more orders.
+- Deleting a user.
+
+Changes to reorder state, settlement state, status/fill metadata, and SELL-only ratio/price maintenance do not invalidate reservation totals because those fields do not change the current reservation formula.
+
+### Quick-Sync Reorder Window
+
+`getReorders()` now caches the reorder-marked orders inside the user's current quick-sync window.
+
+- The cache key contains the user, `sync_quantity`, and sorted active product IDs.
+- Repeated quick-sync passes reuse the cached rows.
+- Concurrent misses share one in-flight query.
+- The cache is invalidated when an order is inserted, deleted, marked for reorder, flipped, marked for cancellation, moved to another product or side, or repriced.
+- Active-product changes invalidate the user's cache. A changed `sync_quantity` naturally selects a different cache key.
+- Status, fill, fee, settlement, and size-only updates do not invalidate this cache because they do not affect the current SQL window.
+- Cache effectiveness is reported as `limit_orders.reorder_window` in database metrics.
+
+The old query passed an array to `product_id IN ($1)`. PostgreSQL treated that array as one value and returned no matching rows. It now uses `product_id = ANY($1::text[])`, which correctly checks every active product.
+
+The existing window definition is otherwise unchanged: one account-wide limit is applied to BUY rows and one to SELL rows across all active products. That means absolute prices from different products are compared directly. A product-aware or market-distance-based window would be a separate robot synchronization design change and should be handled cautiously.
+
+Run the focused server tests with:
+
+```sh
+cd server
+npm test
+```
 
 ## Cache Cleanup Direction
 

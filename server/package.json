@@ -23,6 +23,7 @@
   "scripts": {
     "server": "node --max-old-space-size=7000 --require dotenv/config server.js",
     "dev": "nodemon --max-old-space-size=7000 --require dotenv/config --watch ./ server.js",
-    "pm2server": "pm2 start --node-args='--max-old-space-size=7000 --require dotenv/config' server.js --name coinbot"
+    "pm2server": "pm2 start --node-args='--max-old-space-size=7000 --require dotenv/config' server.js --name coinbot",
+    "test": "node --test tests/*.test.js"
   }
 }

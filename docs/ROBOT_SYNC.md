@@ -67,7 +67,9 @@ Current order:
    - otherwise run `quickSync()` and then `deSync()`
 5. Run `updateMultipleOrders()` against the user's queued `ordersToCheck`.
 6. Refresh available funds if the user is active/approved and maintenance is off.
-   - Reserved base and quote totals for all active products are retrieved in one grouped database query.
+   - Coinbase account balances are fetched on every refresh.
+   - Reserved base and quote totals are read from a per-user cache backed by one grouped database query.
+   - The reservation cache is invalidated only when an order mutation can change the reserved amount.
    - The subsequent currency ledger calculation remains unchanged.
 7. Schedule the next loop after rate-limit padding and `loop_speed`.
 
@@ -96,10 +98,14 @@ Important behavior: a local order missing from Coinbase is not immediately assum
 1. Load recent Coinbase fills.
 2. Match fill order IDs against local unsettled orders.
 3. Patch `filled_at` for rows that were already marked settled but were missing fill time.
-4. Load DB orders already marked `reorder = true` near the spread.
+4. Load DB orders already marked `reorder = true` inside the current sync window.
+   - Repeated passes reuse a process-local cache keyed by user, active products, and `sync_quantity`.
+   - Order mutations that can change window membership or ordering invalidate the cache.
 5. Queue filled/unsettled orders and reorder candidates into `ordersToCheck`.
 
 This is intended to catch common settlement and reorder work without comparing the whole active Coinbase order set every time.
+
+The reorder query applies one BUY limit and one SELL limit across all active products, preserving the existing behavior. Because absolute prices are not comparable across products, this should eventually be revisited as a product-aware synchronization design rather than changed incidentally during cache cleanup.
 
 ## Update Multiple Orders
 

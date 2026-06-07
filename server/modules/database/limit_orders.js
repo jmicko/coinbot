@@ -3,6 +3,17 @@ import { devLog as devLogUtilities } from "../utilities.js";
 import { v4 as uuidv4 } from 'uuid';
 import { getActiveProductIDs } from "./products.js";
 import { cacheEvents, emitCacheEvent, onCacheEvent } from "../cacheEvents.js";
+import { recordCacheEvent } from "../dbMetrics.js";
+import {
+  createReservationTotalsCache,
+  orderUpdateAffectsReservationTotals,
+} from "./reservationTotalsCache.js";
+import {
+  createReorderWindowCache,
+  createReorderWindowKey,
+  orderUpdateAffectsReorderWindow,
+  parseReorderWindowKey,
+} from "./reorderWindowCache.js";
 
 let showLogs = false;
 const logTypes = {
@@ -47,6 +58,94 @@ const limitOrdersCache = {
   deletedTrades: {}, // userID -> count
 };
 
+async function loadReservationTotals(userID, takerFee) {
+  const result = await pool.query(
+    `SELECT
+      "product_id",
+      COALESCE(
+        SUM("base_size") FILTER (WHERE "side" = 'SELL'),
+        0
+      ) AS "base_spent",
+      COALESCE(
+        SUM("limit_price" * "base_size" * $2) FILTER (WHERE "side" = 'BUY'),
+        0
+      ) AS "quote_spent"
+    FROM "limit_orders"
+    WHERE "userID" = $1
+      AND "flipped" = false
+      AND "will_cancel" = false
+    GROUP BY "product_id";`,
+    [userID, takerFee]
+  );
+
+  return new Map(result.rows.map((row) => [
+    row.product_id,
+    {
+      base_spent: Number(row.base_spent),
+      quote_spent: Number(row.quote_spent),
+    },
+  ]));
+}
+
+const reservationTotalsCache = createReservationTotalsCache(
+  loadReservationTotals,
+  (event) => recordCacheEvent('limit_orders.reservation_totals', event)
+);
+
+function clearReservationTotalsCache(userID) {
+  reservationTotalsCache.invalidate(userID);
+}
+
+async function loadReorderWindow(userID, cacheKey) {
+  const { limit, productIDs } = parseReorderWindowKey(cacheKey);
+  if (!Number.isInteger(limit) || limit < 1 || productIDs.length === 0) {
+    return [];
+  }
+
+  const results = await pool.query(
+    `SELECT *
+    FROM (
+      (
+        SELECT "order_id", "will_cancel", "userID", "limit_price", "reorder"
+        FROM "limit_orders"
+        WHERE "side" = 'SELL'
+          AND "flipped" = false
+          AND "will_cancel" = false
+          AND "product_id" = ANY($1::text[])
+          AND "userID" = $2
+        ORDER BY "limit_price" ASC
+        LIMIT $3
+      )
+      UNION
+      (
+        SELECT "order_id", "will_cancel", "userID", "limit_price", "reorder"
+        FROM "limit_orders"
+        WHERE "side" = 'BUY'
+          AND "flipped" = false
+          AND "will_cancel" = false
+          AND "product_id" = ANY($1::text[])
+          AND "userID" = $2
+        ORDER BY "limit_price" DESC
+        LIMIT $3
+      )
+      ORDER BY "limit_price" DESC
+    ) AS "reorders"
+    WHERE "reorder" = true;`,
+    [productIDs, userID, limit]
+  );
+
+  return results.rows;
+}
+
+const reorderWindowCache = createReorderWindowCache(
+  loadReorderWindow,
+  (event) => recordCacheEvent('limit_orders.reorder_window', event)
+);
+
+function clearReorderWindowCache(userID) {
+  reorderWindowCache.invalidate(userID);
+}
+
 // get the user cache for a user
 function getUserTradesCache(userID) {
   if (!limitOrdersCache.userTrades.has(userID)) {
@@ -78,6 +177,12 @@ function clearAllUserCaches(userID) {
 onCacheEvent(cacheEvents.LIMIT_ORDERS_UPDATED, (userID) => {
   devLog('LIMIT_ORDERS_UPDATED event received', userID);
   clearAllUserCaches(userID);
+  clearReservationTotalsCache(userID);
+  clearReorderWindowCache(userID);
+});
+
+onCacheEvent(cacheEvents.PRODUCTS_UPDATED, (userID) => {
+  clearReorderWindowCache(userID);
 });
 
 function getSingleTradeCache(userID, order_id) {
@@ -156,31 +261,15 @@ export async function getSpentByProducts(userID, takerFee, productIDs) {
     return [];
   }
 
-  const result = await pool.query(
-    `SELECT
-      "product_id",
-      COALESCE(
-        SUM("base_size") FILTER (WHERE "side" = 'SELL'),
-        0
-      ) AS "base_spent",
-      COALESCE(
-        SUM("limit_price" * "base_size" * $2) FILTER (WHERE "side" = 'BUY'),
-        0
-      ) AS "quote_spent"
-    FROM "limit_orders"
-    WHERE "userID" = $1
-      AND "product_id" = ANY($3::varchar[])
-      AND "flipped" = false
-      AND "will_cancel" = false
-    GROUP BY "product_id";`,
-    [userID, takerFee, productIDs]
-  );
-
-  return result.rows.map((row) => ({
-    product_id: row.product_id,
-    base_spent: Number(row.base_spent),
-    quote_spent: Number(row.quote_spent),
-  }));
+  const totals = await reservationTotalsCache.get(userID, takerFee);
+  return productIDs.map((productID) => {
+    const productTotals = totals.get(productID);
+    return {
+      product_id: productID,
+      base_spent: productTotals?.base_spent || 0,
+      quote_spent: productTotals?.quote_spent || 0,
+    };
+  });
 }
 
 // This will get trades that have settled but not yet been flipped, meaning they need to be processed
@@ -488,43 +577,17 @@ export const getUnsettledTradesByProduct = (side, product, userID, max_trade_loa
   });
 }
 
-// get [limit] number of orders closest to the spread
-export const getReorders = (userID, limit) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      devLog('GETTER', 'getReorders');
-      // first get active products
-      const products = await getActiveProductIDs(userID);
-      // first select the closest trades on either side according to the limit (which is in the bot settings table)
-      // then select from the results any that need to be reordered
-      let sqlText = `SELECT * FROM (
-        (
-        SELECT "order_id", "will_cancel", "userID", "limit_price", "reorder", "userID" 
-        FROM "limit_orders" 
-        WHERE "side"='SELL' AND "flipped"=false AND "will_cancel"=false AND "product_id" IN ($1) AND "userID"=$2 
-        ORDER BY "limit_price" ASC LIMIT $3)
-        UNION
-        (
-        SELECT "order_id", "will_cancel", "userID", "limit_price", "reorder", "userID" 
-        FROM "limit_orders" 
-        WHERE "side"='BUY' AND "flipped"=false AND "will_cancel"=false AND "product_id" IN ($1) AND "userID"=$2 
-        ORDER BY "limit_price" DESC LIMIT $3)
-        ORDER BY "limit_price" DESC
-        ) as reorders
-        WHERE "reorder"=true;`;
-      const results = await pool.query(sqlText, [products, userID, limit]);
-      // get the results from the DB for all products
+// Get reorder-marked orders within the nearest [limit] rows on each side.
+export async function getReorders(userID, limit) {
+  devLog('GETTER', 'getReorders');
+  const products = await getActiveProductIDs(userID);
+  if (products.length === 0) {
+    return [];
+  }
 
-      // .then((results) => {
-      const reorders = results.rows;
-      // promise returns promise from pool if success
-      resolve(reorders);
-      // })
-    } catch (err) {
-      // or promise relays errors from pool to parent
-      reject(err);
-    }
-  });
+  const cacheKey = createReorderWindowKey(limit, products);
+  const reorders = await reorderWindowCache.get(userID, cacheKey);
+  return reorders.map((order) => ({ ...order }));
 }
 
 // get all the trades that are outside the limit of the synced orders qty setting, 
@@ -721,6 +784,8 @@ export const storeTrade = (newOrder, originalDetails, flipped_at) => {
       ]);
       // update the user cache
       clearAllUserCaches(originalDetails.userID);
+      clearReservationTotalsCache(originalDetails.userID);
+      clearReorderWindowCache(originalDetails.userID);
       resolve(results);
     } catch (err) {
       reject(err);
@@ -921,6 +986,12 @@ export const updateTrade = (order) => {
       const results = await pool.query(finalSqlText, columns)
       // update the user cache
       clearAllUserCaches(order.userID);
+      if (orderUpdateAffectsReservationTotals(order)) {
+        clearReservationTotalsCache(order.userID);
+      }
+      if (orderUpdateAffectsReorderWindow(order)) {
+        clearReorderWindowCache(order.userID);
+      }
       resolve(results.rows[0]);
       resolve();
     } catch (err) {
@@ -940,6 +1011,7 @@ export async function setSingleReorder(order_id, userID) {
       await pool.query(sqlText, [order_id]);
       // update the user cache
       clearAllUserCaches(userID);
+      clearReorderWindowCache(userID);
       resolve();
     } catch (err) {
       reject(err);
@@ -961,6 +1033,7 @@ export async function setManyReorders(idArray, userID) {
       await pool.query(sqlText, [idArray]);
       // update the user cache
       clearAllUserCaches(userID);
+      clearReorderWindowCache(userID);
       resolve();
     } catch (err) {
       devLog('failed to set many reorders', 'ERROR');
@@ -979,6 +1052,7 @@ export async function setReorder(userID) {
       await pool.query(sqlText, [userID]);
       // update the user cache
       clearAllUserCaches(userID);
+      clearReorderWindowCache(userID);
       resolve();
     } catch (err) {
       reject(err);
@@ -996,6 +1070,8 @@ export async function markAsFlipped(order_id, userID) {
       let result = await pool.query(sqlText, [order_id]);
       // update the user cache
       clearAllUserCaches(userID);
+      clearReservationTotalsCache(userID);
+      clearReorderWindowCache(userID);
       resolve(result);
     } catch (err) {
       reject(err);
@@ -1013,6 +1089,8 @@ export async function deleteTrade(order_id, userID) {
       let result = await pool.query(queryText, [order_id]);
       // update the user cache
       clearAllUserCaches(userID);
+      clearReservationTotalsCache(userID);
+      clearReorderWindowCache(userID);
       resolve(result);
     } catch (err) {
       reject(err)
@@ -1077,6 +1155,8 @@ export async function markForCancel(userID, order_id) {
       incrementDeletedTradeCount(userID);
       // update the user cache
       clearAllUserCaches(userID);
+      clearReservationTotalsCache(userID);
+      clearReorderWindowCache(userID);
       resolve(result.rows[0]);
     } catch (err) {
       reject(err)
@@ -1100,6 +1180,8 @@ export async function deleteMarkedOrders(userID) {
       devLog(result.rows, 'deleteMarkedOrders result');
       // update the user cache
       clearAllUserCaches(userID);
+      clearReservationTotalsCache(userID);
+      clearReorderWindowCache(userID);
       resolve(result.rows);
       decrementDeletedTradeCount(userID);
     } catch (err) {
@@ -1141,4 +1223,7 @@ export async function bulkUpdateTradePairRatio(userID, product_id, bulk_pair_rat
     AND "userID" = $2;`,
     [product_id, userID]
   );
+
+  clearAllUserCaches(userID);
+  clearReorderWindowCache(userID);
 }

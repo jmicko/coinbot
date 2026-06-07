@@ -11,6 +11,7 @@ const totals = createQueryMetric();
 const contexts = new Map();
 const queries = new Map();
 const contextQueries = new Map();
+const caches = new Map();
 const recentSlowQueries = [];
 
 function createOperationCounts() {
@@ -37,6 +38,16 @@ function createQueryMetric(metadata = {}) {
     completedInvocationCount: 0,
     totalElapsedMs: 0,
     maxElapsedMs: 0,
+  };
+}
+
+function createCacheMetric() {
+  return {
+    hitCount: 0,
+    missCount: 0,
+    inFlightHitCount: 0,
+    loadCount: 0,
+    invalidationCount: 0,
   };
 }
 
@@ -90,6 +101,31 @@ function getActiveContext() {
 
 function getContextName() {
   return getActiveContext()?.name || 'uncategorized';
+}
+
+function captureDbContext() {
+  return getActiveContext();
+}
+
+function runInDbContext(context, callback) {
+  if (!context) {
+    return callback();
+  }
+  return dbContextStorage.run(context, callback);
+}
+
+function recordCacheEvent(name, event) {
+  if (!caches.has(name)) {
+    caches.set(name, createCacheMetric());
+  }
+  const metric = caches.get(name);
+
+  if (event === 'hit') metric.hitCount += 1;
+  else if (event === 'miss') metric.missCount += 1;
+  else if (event === 'inFlightHit') metric.inFlightHitCount += 1;
+  else if (event === 'load') metric.loadCount += 1;
+  else if (event === 'invalidation') metric.invalidationCount += 1;
+  else throw new Error(`Unknown cache metric event: ${event}`);
 }
 
 function getResultCounts(result, operation) {
@@ -194,8 +230,7 @@ function completeContext(context) {
   metric.maxElapsedMs = Math.max(metric.maxElapsedMs, elapsedMs);
 }
 
-function recordDbQuery(query, durationMs, hasError, result) {
-  const context = getActiveContext();
+function recordDbQuery(query, durationMs, hasError, result, context) {
   const contextName = context?.name || 'uncategorized';
   const details = getQueryDetails(query);
   const isSlow = durationMs >= slowQueryThresholdMs;
@@ -274,19 +309,26 @@ function recordDbQuery(query, durationMs, hasError, result) {
   }
 }
 
-function recordDbQueryResult(query, durationMs, hasError = false, result) {
-  recordDbQuery(query, durationMs, hasError, result);
+function recordDbQueryResult(
+  query,
+  durationMs,
+  hasError = false,
+  result,
+  context = captureDbContext()
+) {
+  recordDbQuery(query, durationMs, hasError, result, context);
 }
 
 async function trackDbQuery(query, runQuery) {
   const start = performance.now();
+  const context = captureDbContext();
 
   try {
     const result = await runQuery();
-    recordDbQuery(query, performance.now() - start, false, result);
+    recordDbQuery(query, performance.now() - start, false, result, context);
     return result;
   } catch (err) {
-    recordDbQuery(query, performance.now() - start, true);
+    recordDbQuery(query, performance.now() - start, true, undefined, context);
     throw err;
   }
 }
@@ -340,6 +382,9 @@ function dbMetricsMiddleware(req, res, next) {
 function getDbMetricsSnapshot({ limit = 20 } = {}) {
   const rawUptimeSeconds = (Date.now() - startedAt.getTime()) / 1000;
   const uptimeSeconds = Number(rawUptimeSeconds.toFixed(1));
+  const uncategorizedQueryCount =
+    contexts.get('uncategorized')?.queryCount || 0;
+  const attributedQueryCount = totals.queryCount - uncategorizedQueryCount;
   const contextMetrics = [...contexts.entries()]
     .map(toPublicMetric)
     .sort((a, b) => b.totalMs - a.totalMs)
@@ -352,9 +397,29 @@ function getDbMetricsSnapshot({ limit = 20 } = {}) {
     .map(toPublicMetric)
     .sort((a, b) => b.totalMs - a.totalMs)
     .slice(0, limit);
+  const cacheMetrics = [...caches.entries()]
+    .map(([name, metric]) => {
+      const accessCount =
+        metric.hitCount + metric.missCount + metric.inFlightHitCount;
+      return {
+        name,
+        accessCount,
+        hitCount: metric.hitCount,
+        missCount: metric.missCount,
+        inFlightHitCount: metric.inFlightHitCount,
+        loadCount: metric.loadCount,
+        invalidationCount: metric.invalidationCount,
+        hitRate: accessCount
+          ? Number(
+            ((metric.hitCount + metric.inFlightHitCount) / accessCount).toFixed(4)
+          )
+          : 0,
+      };
+    })
+    .sort((a, b) => b.accessCount - a.accessCount);
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     startedAt,
     uptimeSeconds,
     slowQueryThresholdMs,
@@ -380,9 +445,17 @@ function getDbMetricsSnapshot({ limit = 20 } = {}) {
         ? Number((totals.totalMs / rawUptimeSeconds).toFixed(2))
         : 0,
     },
+    attribution: {
+      attributedQueryCount,
+      uncategorizedQueryCount,
+      attributedRate: totals.queryCount
+        ? Number((attributedQueryCount / totals.queryCount).toFixed(4))
+        : 0,
+    },
     contexts: contextMetrics,
     queries: queryMetrics,
     contextQueries: contextQueryMetrics,
+    caches: cacheMetrics,
     recentSlowQueries,
   };
 }
@@ -393,15 +466,19 @@ function resetDbMetrics() {
   contexts.clear();
   queries.clear();
   contextQueries.clear();
+  caches.clear();
   recentSlowQueries.length = 0;
 }
 
 export {
+  captureDbContext,
   dbMetricsMiddleware,
   getDbMetricsSnapshot,
   getContextName,
   resetDbMetrics,
+  recordCacheEvent,
   recordDbQueryResult,
+  runInDbContext,
   runWithDbContext,
   trackDbQuery,
 };
