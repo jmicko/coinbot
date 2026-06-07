@@ -136,7 +136,13 @@ function LimitOrder() {
     })
   }
 
-  if (!currentProduct) return null;
+  if (!currentProduct.base_increment || !currentProduct.quote_increment) {
+    return (
+      <div className='Trade'>
+        <p>loading...</p>
+      </div>
+    );
+  }
 
   return (
     // <div className="Trade scrollable boxed" >

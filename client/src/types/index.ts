@@ -149,6 +149,7 @@ export interface Product {
   [key: string]: string | number | boolean | null | undefined;
   activated_at: string;
   active_for_user: boolean;
+  available_for_user: boolean;
   auction_mode: boolean;
   average: string;
   base_currency_id: string;

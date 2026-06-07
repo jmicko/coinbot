@@ -58,7 +58,7 @@ import {
   getActiveProducts,
   getActiveProductIDs,
   getUserProducts,
-  insertProducts,
+  syncProductIdentities,
   updateProductActiveStatus,
 } from './database/products.js';
 // import user functions
@@ -574,7 +574,7 @@ export async function getAllSubscriptions() {
 const databaseClient = {
 
   // products
-  insertProducts,
+  syncProductIdentities,
   getProduct,
   getActiveProducts,
   getActiveProductIDs,

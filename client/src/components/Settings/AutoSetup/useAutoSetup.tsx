@@ -29,6 +29,13 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
   const [recentInput, setRecentInput] = useState(false);
   const availableQuote = Number(user.availableFunds?.[productID]?.quote_available)
 
+  useEffect(() => {
+    setOptions((currentOptions) => ({
+      ...currentOptions,
+      product: currentProduct,
+    }));
+  }, [currentProduct]);
+
   const setResultIfValid = (result: AutoSetupResult) => {
     if (resultStillValid.current) {
       setResult(result)
@@ -63,6 +70,7 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
         product,
         ignoreFunds,
       } = options;
+      const baseInverseIncrement = Number(product?.base_inverse_increment);
 
       // starting values for the big loop
       // let availableFunds = options.availableQuote;
@@ -88,9 +96,12 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
         tradePairRatio <= 0 ||
         steepness <= 0 ||
         maxSize <= 0 ||
-        currentPrice <= 0) {
+        currentPrice <= 0 ||
+        !Number.isFinite(baseInverseIncrement) ||
+        baseInverseIncrement <= 0) {
         setResultIfValid(null);
         setCalculating(false);
+        setRecentInput(false);
         return;
       }
 
@@ -125,8 +136,8 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
           // okay why does this multiply by product.base_inverse_increment??
           // because later on, the actualSize is divided by product.base_inverse_increment before returning it
           // was this originally a rounding thing the just got lost in the loop?
-          btcToBuy += (actualSize * product.base_inverse_increment)
-          console.log(product.base_inverse_increment, '< product.base_inverse_increment');
+          btcToBuy += (actualSize * baseInverseIncrement)
+          console.log(baseInverseIncrement, '< product.base_inverse_increment');
 
         }
 
@@ -226,7 +237,7 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
         cost: cost,
         orderList: orderList,
         lastBuyPrice: orderList[orderList.length - 1]?.original_buy_price || 0,
-        btcToBuy: (btcToBuy / product.base_inverse_increment),
+        btcToBuy: (btcToBuy / baseInverseIncrement),
         options: options,
         quoteToReserve: quoteToReserve,
         buyCount: buyCount,
@@ -289,7 +300,7 @@ function useAutoSetup(user: User, currentPrice: number, pqd: number) {
         if (sizeType === 'quote') {
           // if the size is in quote, convert it to base
           // use floor rounding because we can't ever round up or we risk overspending
-          const bii = product.base_inverse_increment;
+          const bii = baseInverseIncrement;
           const convertedToBase
             = Number(Math.floor((newSize / buyPrice) * bii)) / bii
           // devLog(convertedToBase, 'convertedToBase', buyPrice, 'buyPrice', product.base_inverse_increment, 'product.base_inverse_increment');

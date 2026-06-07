@@ -270,19 +270,38 @@ export async function setAutoSetupNumber(number, userID) {
 }
 
 // update the fees and 30 day trade volume
-export async function saveFees(fees, userID) {
+export async function saveFees(fees, userID, currentUser) {
   devLog('UPDATER', 'saveFees');
-  return new Promise(async (resolve, reject) => {
-    try {
-      const totalVolume = Number(fees.advanced_trade_only_volume) + Number(fees.coinbase_pro_volume);
-      const sqlText = `UPDATE "user_settings" SET "maker_fee" = $1, "taker_fee" = $2, "usd_volume" = $3  WHERE "userID" = $4`;
-      let result = await pool.query(sqlText, [fees.fee_tier.maker_fee_rate, fees.fee_tier.taker_fee_rate, totalVolume, userID]);
-      emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, userID);
-      resolve(result);
-    } catch (err) {
-      reject(err);
-    }
-  });
+  const feeValues = {
+    makerFee: Number(fees.fee_tier.maker_fee_rate),
+    takerFee: Number(fees.fee_tier.taker_fee_rate),
+    usdVolume:
+      Number(fees.advanced_trade_only_volume || 0)
+      + Number(fees.coinbase_pro_volume || 0),
+  };
+
+  const changed = !currentUser
+    || Number(currentUser.maker_fee) !== feeValues.makerFee
+    || Number(currentUser.taker_fee) !== feeValues.takerFee
+    || Number(currentUser.usd_volume) !== feeValues.usdVolume;
+
+  if (!changed) {
+    return { changed: false, feeValues };
+  }
+
+  const sqlText = `
+    UPDATE "user_settings"
+    SET "maker_fee" = $1, "taker_fee" = $2, "usd_volume" = $3
+    WHERE "userID" = $4;
+  `;
+  await pool.query(sqlText, [
+    feeValues.makerFee,
+    feeValues.takerFee,
+    feeValues.usdVolume,
+    userID,
+  ]);
+  emitCacheEvent(cacheEvents.USER_SETTINGS_UPDATED, userID);
+  return { changed: true, feeValues };
 }
 
 export async function setProfitReset(date, userID) {

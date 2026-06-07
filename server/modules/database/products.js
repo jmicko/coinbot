@@ -1,346 +1,208 @@
-import { addProductDecimals, devLog as devLogUtilities } from '../utilities.js';
 import { pool } from '../pool.js';
 import { cacheEvents, emitCacheEvent } from '../cacheEvents.js';
-
-let showLogs = false;
-
-// todo - add a panel in the admin page to toggle this
-export function toggleProductDBLogs(bool) {
-  showLogs = bool;
-}
-
-function devLog(...message) {
-  if (showLogs) {
-    devLogUtilities(...message);
-  }
-}
+import { productCatalog } from '../runtime/productCatalog.js';
 
 const productsCache = new Map();
 
-// helper functions
-
-// get a product cache for a user
 function getProductCache(userID) {
-  if (!productsCache.has(userID)) {
-    productsCache.set(userID, {
-      singleProducts: new Map(),
-      activeProducts: null,
-      activeProductIDs: null,
-      userProducts: null
+  const cacheKey = String(userID);
+  if (!productsCache.has(cacheKey)) {
+    productsCache.set(cacheKey, {
+      identities: null,
+      identityMap: null,
     });
   }
-  return productsCache.get(userID);
+  return productsCache.get(cacheKey);
 }
 
-// clear a product cache for a user
 function clearProductCache(userID) {
-  productsCache.delete(userID);
+  productsCache.delete(String(userID));
   emitCacheEvent(cacheEvents.PRODUCTS_UPDATED, userID);
-  console.log('products cache cleared for userID', userID, 'event emitted');
 }
 
+async function getProductIdentities(userID) {
+  const cache = getProductCache(userID);
+  if (cache.identities) {
+    return cache.identities;
+  }
 
-// get a product by product id
-export const getProduct = (productID, userID) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const cache = getProductCache(userID); // if cache is not found, it will be created by the getProductCache function
-      if (cache.singleProducts.has(productID)) {
-        devLog('product found in cache');
-        resolve(cache.singleProducts.get(productID));
-      } else {
-        devLog('product not found in cache, fetching from DB');
-        const sqlText = `SELECT * FROM "products" WHERE "product_id" = $1 AND "user_id" = $2;`;
-        const result = await pool.query(sqlText, [productID, userID]);
-        const product = result.rows[0];
-        if (product) {
-          cache.singleProducts.set(productID, product);
-        }
-        resolve(product);
-      }
-    } catch (error) {
-      devLog('Error in getProduct', error);
-      reject(error);
-    }
-  });
+  const result = await pool.query(
+    `SELECT *
+     FROM "products"
+     WHERE "user_id" = $1
+     ORDER BY "product_id" ASC;`,
+    [userID]
+  );
+
+  cache.identities = result.rows;
+  cache.identityMap = new Map(
+    result.rows.map((product) => [product.product_id, product])
+  );
+  return cache.identities;
 }
 
-
-// get all active products in the portfolio
-export const getActiveProducts = (userID) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const cache = getProductCache(userID);
-      if (cache.activeProducts) {
-        devLog('active products found in cache');
-        resolve(cache.activeProducts);
-      } else {
-        devLog('active products not found in cache, fetching from DB');
-        const sqlText = `SELECT * FROM "products" WHERE "user_id" = $1 AND "active_for_user" = true ORDER BY "activated_at" ASC;`;
-        const result = await pool.query(sqlText, [userID]);
-        cache.activeProducts = result.rows;
-        resolve(result.rows);
-      }
-    } catch (error) {
-      devLog('Error in getActiveProducts', error);
-      reject(error);
-    }
-  });
+async function getProductIdentityMap(userID) {
+  const cache = getProductCache(userID);
+  if (!cache.identityMap) {
+    await getProductIdentities(userID);
+  }
+  return cache.identityMap;
 }
 
-
-// get all active products in the portfolio
-export const getActiveProductIDs = (userID) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const cache = getProductCache(userID);
-      if (cache.activeProductIDs) {
-        devLog('active product IDs found in cache');
-        resolve(cache.activeProductIDs);
-      } else {
-        devLog('active product IDs not found in cache, fetching from DB');
-        const activeProducts = await getActiveProducts(userID);
-        // get the product ids from the results and put them in an array
-        const productIDs = [];
-        for (let product of activeProducts) {
-        productIDs.push(product.product_id);
-        }
-        cache.activeProductIDs = productIDs;
-        resolve(productIDs);
-      }
-    } catch (error) {
-      devLog('Error in getActiveProductIDs', error);
-      reject(error);
-    }
-  });
+function mergeCatalogData(userID, identity) {
+  return productCatalog.merge(userID, identity);
 }
 
-
-// get all products in the portfolio that have USD as the quote currency
-// this will be displayed in the client as available products to trade
-export const getUserProducts = (userID) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const cache = getProductCache(userID);
-      if (cache.userProducts) {
-        devLog('user products found in cache');
-        resolve(cache.userProducts);
-      } else {
-        devLog('user products not found in cache, fetching from DB');
-        // get which products are currently traded in the portfolio
-        const sqlText = `SELECT * FROM "products" WHERE "user_id"=$1 AND "quote_currency_id" = 'USD' AND "volume_24h" IS NOT NULL ORDER BY "volume_24h"*"price" DESC;`;
-        const products = await pool.query(sqlText, [userID]);
-        cache.userProducts = products.rows;
-        resolve(products.rows);
-      }
-    } catch (err) {
-      reject(err);
-    }
-  });
+export async function getProduct(productID, userID) {
+  const identities = await getProductIdentityMap(userID);
+  const identity = identities.get(productID);
+  return identity ? mergeCatalogData(userID, identity) : undefined;
 }
 
-
-// function to insert an array of products into the database for a user
-// if the product already exists for the user, everything EXCEPT "active_for_user" is updated.
-// if the product_id is BTC-USD, make sure to set active_for_user to true
-export const insertProducts = (products, userID) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // first get which products are in the portfolio
-      const productsSqlText = `SELECT "product_id" FROM "products" WHERE "user_id" = $1;`;
-      const results = await pool.query(productsSqlText, [userID]);
-      const productsInPortfolio = results.rows.map((row) => row.product_id);
-
-      // now loop through the products and insert them into the database
-      // if they already exist, update them
-      for (let i = 0; i < products.length; i++) {
-        // const product = products[i];
-        const product = addProductDecimals(products[i]);
-        if (productsInPortfolio.includes(product.product_id)) {
-          // devLog('product already exists for user, updating');
-          // update the product
-          const updateSqlText = `UPDATE "products" SET
-          "quote_currency_id" = $1,
-          "base_currency_id" = $2,
-          "price" = $3,
-          "price_percentage_change_24h" = $4,
-          "volume_24h" = $5,
-          "volume_percentage_change_24h" = $6,
-          "base_increment" = $7,
-          "quote_increment" = $8,
-          "quote_min_size" = $9,
-          "quote_max_size" = $10,
-          "base_min_size" = $11,
-          "base_max_size" = $12,
-          "base_name" = $13,
-          "quote_name" = $14,
-          "watched" = $15,
-          "is_disabled" = $16,
-          "new" = $17,
-          "status" = $18,
-          "cancel_only" = $19,
-          "limit_only" = $20,
-          "post_only" = $21,
-          "trading_disabled" = $22,
-          "auction_mode" = $23,
-          "product_type" = $24,
-          "fcm_trading_session_details" = $25,
-          "mid_market_price" = $26,
-          "base_increment_decimals" = $27,
-          "quote_increment_decimals" = $28,
-          "quote_inverse_increment" = $29,
-          "base_inverse_increment" = $30,
-          "price_rounding" = $31,
-          "pbd" = $32,
-          "pqd" = $33
-          WHERE "product_id" = $34 AND "user_id" = $35;`;
-          await pool.query(updateSqlText, [
-            product.quote_currency_id,
-            product.base_currency_id,
-            product.price || null,
-            product.price_percentage_change_24h || null,
-            product.volume_24h || null,
-            product.volume_percentage_change_24h || null,
-            product.base_increment || null,
-            product.quote_increment || null,
-            product.quote_min_size || null,
-            product.quote_max_size || null,
-            product.base_min_size || null,
-            product.base_max_size || null,
-            product.base_name,
-            product.quote_name,
-            product.watched,
-            product.is_disabled,
-            product.new,
-            product.status,
-            product.cancel_only,
-            product.limit_only,
-            product.post_only,
-            product.trading_disabled,
-            product.auction_mode,
-            product.product_type,
-            product.fcm_trading_session_details,
-            product.mid_market_price || null,
-            product.base_increment_decimals || null,
-            product.quote_increment_decimals || null,
-            product.quote_inverse_increment || null,
-            product.base_inverse_increment || null,
-            product.price_rounding || null,
-            product.pbd || null,
-            product.pqd || null,
-            product.product_id,
-            userID,
-          ]);
-        } else {
-          // devLog('product does not exist for user, inserting');
-          // insert the product
-          const insertSqlText = `INSERT INTO "products" (
-          "product_id",
-          "user_id",
-          "quote_currency_id",
-          "base_currency_id",
-          "price",
-          "price_percentage_change_24h",
-          "volume_24h",
-          "volume_percentage_change_24h",
-          "base_increment",
-          "quote_increment",
-          "quote_min_size",
-          "quote_max_size",
-          "base_min_size",
-          "base_max_size",
-          "base_name",
-          "quote_name",
-          "watched",
-          "is_disabled",
-          "new",
-          "status",
-          "cancel_only",
-          "limit_only",
-          "post_only",
-          "trading_disabled",
-          "auction_mode",
-          "product_type",
-          "fcm_trading_session_details",
-          "mid_market_price",
-          "base_increment_decimals",
-          "quote_increment_decimals",
-          "quote_inverse_increment",
-          "base_inverse_increment",
-          "price_rounding",
-          "pbd",
-          "pqd"
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28,$29,$30,$31,$32,$33,$34,$35);`;
-          await pool.query(insertSqlText, [
-            product.product_id,
-            userID,
-            product.quote_currency_id,
-            product.base_currency_id,
-            product.price || null,
-            product.price_percentage_change_24h || null,
-            product.volume_24h || null,
-            product.volume_percentage_change_24h || null,
-            product.base_increment || null,
-            product.quote_increment || null,
-            product.quote_min_size || null,
-            product.quote_max_size || null,
-            product.base_min_size || null,
-            product.base_max_size || null,
-            product.base_name,
-            product.quote_name,
-            product.watched,
-            product.is_disabled,
-            product.new,
-            product.status,
-            product.cancel_only,
-            product.limit_only,
-            product.post_only,
-            product.trading_disabled,
-            product.auction_mode,
-            product.product_type,
-            product.fcm_trading_session_details,
-            product.mid_market_price || null,
-            product.base_increment_decimals || null,
-            product.quote_increment_decimals || null,
-            product.quote_inverse_increment || null,
-            product.base_inverse_increment || null,
-            product.price_rounding || null,
-            product.pbd || null,
-            product.pqd || null,
-          ]);
-          // if the product_id is BTC-USD, set active_for_user to true
-          if (product.product_id === 'BTC-USD') {
-            const updateSqlText = `UPDATE "products" SET "active_for_user" = true WHERE "product_id" = $1 AND "user_id" = $2;`;
-            await pool.query(updateSqlText, [product.product_id, userID]);
-          }
-        }
-      }
-      devLog('clearing product cache');
-      clearProductCache(userID);
-      resolve();
-    } catch (error) {
-      devLog('Error in updateProducts', error);
-      reject(error);
-    }
-  });
+export async function getActiveProducts(userID) {
+  const identities = await getProductIdentities(userID);
+  return identities
+    .filter((product) => product.active_for_user)
+    .sort((a, b) => {
+      const aTime = a.activated_at ? new Date(a.activated_at).getTime() : 0;
+      const bTime = b.activated_at ? new Date(b.activated_at).getTime() : 0;
+      return aTime - bTime;
+    })
+    .map((identity) => mergeCatalogData(userID, identity));
 }
 
+export async function getActiveProductIDs(userID) {
+  const identities = await getProductIdentities(userID);
+  return identities
+    .filter((product) => product.active_for_user)
+    .map((product) => product.product_id);
+}
 
+export async function getUserProducts(userID) {
+  const identities = await getProductIdentities(userID);
+  return identities
+    .filter((product) =>
+      product.available_for_user && product.quote_currency_id === 'USD'
+    )
+    .map((identity) => mergeCatalogData(userID, identity))
+    .sort((a, b) => {
+      const aVolume = Number(a.volume_24h || 0) * Number(a.price || 0);
+      const bVolume = Number(b.volume_24h || 0) * Number(b.price || 0);
+      return bVolume - aVolume || a.product_id.localeCompare(b.product_id);
+    });
+}
 
+export async function syncProductIdentities(products, userID) {
+  if (!Array.isArray(products) || products.length === 0) {
+    throw new Error(`Coinbase returned no products for user ${userID}`);
+  }
 
+  const identities = await getProductIdentityMap(userID);
+  const incomingProducts = [
+    ...new Map(products.map((product) => [
+      product.product_id,
+      {
+        product_id: product.product_id,
+        base_currency_id: product.base_currency_id,
+        quote_currency_id: product.quote_currency_id,
+      },
+    ])).values(),
+  ];
+  const incomingProductIDs = new Set(
+    incomingProducts.map((product) => product.product_id)
+  );
 
-// update the active_for_user column for a product
-export const updateProductActiveStatus = (userID, productID, active) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const sqlText = `UPDATE "products" SET "active_for_user" = $1, "activated_at" = now() WHERE "user_id" = $2 AND "product_id" = $3;`;
-      await pool.query(sqlText, [active, userID, productID]);
-      devLog('clearing product cache');
-      clearProductCache(userID);
-      resolve();
-    } catch (error) {
-      devLog('Error in updateProductActiveStatus', error);
-      reject(error);
-    }
+  const changedProducts = incomingProducts.filter((product) => {
+    const existing = identities.get(product.product_id);
+    return !existing
+      || !existing.available_for_user
+      || existing.base_currency_id !== product.base_currency_id
+      || existing.quote_currency_id !== product.quote_currency_id;
   });
+  const unavailableProductCount = [...identities.values()].filter((product) =>
+    product.available_for_user && !incomingProductIDs.has(product.product_id)
+  ).length;
+
+  if (changedProducts.length === 0 && unavailableProductCount === 0) {
+    return { changedProductCount: 0, unavailableProductCount: 0 };
+  }
+
+  const sqlText = `
+    WITH incoming AS (
+      SELECT *
+      FROM jsonb_to_recordset($1::jsonb) AS product (
+        product_id text,
+        base_currency_id text,
+        quote_currency_id text
+      )
+    ),
+    upserted AS (
+      INSERT INTO "products" (
+        "product_id",
+        "user_id",
+        "active_for_user",
+        "available_for_user",
+        "base_currency_id",
+        "quote_currency_id"
+      )
+      SELECT
+        product_id,
+        $2,
+        product_id = 'BTC-USD',
+        true,
+        base_currency_id,
+        quote_currency_id
+      FROM incoming
+      ON CONFLICT ("user_id", "product_id") DO UPDATE
+      SET
+        "available_for_user" = true,
+        "base_currency_id" = EXCLUDED."base_currency_id",
+        "quote_currency_id" = EXCLUDED."quote_currency_id"
+      WHERE NOT "products"."available_for_user"
+         OR "products"."base_currency_id" IS DISTINCT FROM EXCLUDED."base_currency_id"
+         OR "products"."quote_currency_id" IS DISTINCT FROM EXCLUDED."quote_currency_id"
+      RETURNING 1
+    ),
+    made_unavailable AS (
+      UPDATE "products"
+      SET "available_for_user" = false
+      WHERE "user_id" = $2
+        AND "available_for_user" = true
+        AND NOT EXISTS (
+          SELECT 1
+          FROM incoming
+          WHERE incoming.product_id = "products"."product_id"
+        )
+      RETURNING 1
+    )
+    SELECT
+      (SELECT count(*) FROM upserted) AS changed_product_count,
+      (SELECT count(*) FROM made_unavailable) AS unavailable_product_count;
+  `;
+
+  const result = await pool.query(sqlText, [
+    JSON.stringify(incomingProducts),
+    userID,
+  ]);
+  clearProductCache(userID);
+  return {
+    changedProductCount: Number(result.rows[0].changed_product_count),
+    unavailableProductCount: Number(result.rows[0].unavailable_product_count),
+  };
+}
+
+export async function updateProductActiveStatus(userID, productID, active) {
+  const sqlText = `
+    UPDATE "products"
+    SET "active_for_user" = $1, "activated_at" = now()
+    WHERE "user_id" = $2
+      AND "product_id" = $3
+      AND ($1 = false OR "available_for_user" = true)
+    RETURNING "product_id";
+  `;
+  const result = await pool.query(sqlText, [active, userID, productID]);
+  if (result.rowCount === 0) {
+    throw new Error(`Product ${productID} is not available for user ${userID}`);
+  }
+  clearProductCache(userID);
 }

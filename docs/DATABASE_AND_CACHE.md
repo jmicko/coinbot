@@ -13,11 +13,13 @@ The database is PostgreSQL. Startup now uses a migration runner for schema setup
 - `server/modules/serverMaintenance.js`: starts global runtime maintenance jobs after schema bootstrap.
 - `connect-pg-simple`: expects a `session` table compatible with its session store.
 
-The new baseline migration was verified against a separate blank local database, `coinbot_bootstrap_test`, and the generated schema matched the cloned dev database on tables, columns, data types, defaults, nullability, constraints, and indexes.
+The baseline and product cleanup migrations have been verified against blank databases and disposable copies of the old dev/prod-shaped database.
 
-It was also verified against a disposable database loaded from the legacy `database.sql` snapshot, `coinbot_legacy_sql_test`. Running the migration on that legacy-shaped database produced the same schema shape as the cloned dev database. Existing `bot_settings` rows are preserved; only a truly blank database gets the default seed row with `maintenance = false`.
+Migration `002_simplify_products` intentionally makes the new schema differ from the legacy snapshot. It preserves product identity and activation rows, removes volatile Coinbase snapshot columns, deduplicates legacy rows, adds per-user availability state, and adds a unique index on `(user_id, product_id)`.
 
-The current cold-start database, `coinbot_cold_start`, was compared against the preserved old clone, `coinbot_dev`, with `scripts/dev-db-compare-schema.sh`; the schemas matched when ignoring `schema_migrations`. A local template copy of the old clone, `coinbot_prod_shape_smoke`, was then started through the server, migrated successfully, served HTTP on port `5505`, and still matched `coinbot_cold_start`.
+Migration `001_baseline_schema` remains unchanged from the version already applied to existing installations. A fresh installation runs `001` and then `002`; this is intentionally less compact than rewriting an applied migration, but it keeps migration history deterministic and safe.
+
+The migration has also been tested with deliberately duplicated product rows. Active state was preserved, inactive duplicates retained the most recent activation timestamp, and the final unique index was created successfully.
 
 ## Startup Upgrade Flow
 
@@ -75,7 +77,8 @@ It also creates indexes:
 
 Important differences from the old manual snapshot:
 
-- `products` needs additional columns beyond `database.sql`: `base_increment_decimals`, `quote_increment_decimals`, `quote_inverse_increment`, `base_inverse_increment`, `price_rounding`, `pbd`, and `pqd`.
+- `products` now persists only `product_id`, `user_id`, `active_for_user`, `available_for_user`, `activated_at`, `quote_currency_id`, and `base_currency_id`.
+- Volatile product fields and decimal helpers are held in the process-local product catalog instead of PostgreSQL.
 - `user_api` needs additional columns beyond `database.sql`: `name` and `privateKey`.
 - `bot_settings` needs additional column beyond `database.sql`: `registration_open`.
 - `messages` is absent from `database.sql`.
@@ -85,7 +88,7 @@ Important differences from the old manual snapshot:
 
 - `database.sql` is destructive and easy to misuse.
 - `bot_settings` is treated as a singleton, but the table does not enforce a single row.
-- `products` has no primary key or unique constraint, even though the code treats `(user_id, product_id)` as unique.
+- `products` uses a unique index on `(user_id, product_id)`.
 - Several foreign-key relationships are missing or added after the fact.
 
 ## Recommended Migration Direction
@@ -93,7 +96,7 @@ Important differences from the old manual snapshot:
 For this branch, the remaining clean target should be:
 
 1. Add automated migration tests for blank and prod-shaped databases.
-2. Add intentional schema integrity migrations for singleton `bot_settings`, product identity, and known foreign keys.
+2. Add intentional schema integrity migrations for singleton `bot_settings` and known foreign keys.
 3. Keep `database.sql` only as a generated/schema-reference artifact or remove it after replacement.
 
 ## Local Dev Database Target
@@ -132,8 +135,9 @@ Defined in `server/modules/runtime/`:
 - `userStorage.js`: per-user runtime status, funds, cancel sets, order check queues, loop status, export/simulation state, and websocket status.
 - `messenger.js`: per-user browser websocket fan-out plus in-memory message/error windows.
 - `coinbaseClients.js`: per-user Coinbase client registry and API credential hydration.
+- `productCatalog.js`: per-user Coinbase product metadata and precomputed increment/rounding helpers, keyed by user ID and product ID.
 
-This state is process-local and is rebuilt on server start from database users/settings/API rows. It is not treated as the database caching strategy.
+This state is process-local. User/settings/API state is rebuilt from PostgreSQL during startup; the product catalog is loaded from Coinbase when maintenance and credentials allow it. It is not treated as durable database state.
 
 `userStorage.js` stores user runtime state internally in a `Map` and exposes explicit module methods such as `getUser()`, `getAvailableFunds()`, `queueOrdersToCheck()`, and `updateStatus()`. Route and robot code should use those methods rather than direct keyed property access.
 
@@ -141,12 +145,28 @@ This state is process-local and is rebuilt on server start from database users/s
 
 Defined inside database modules:
 
-- `server/modules/database/products.js`: per-user product caches.
+- `server/modules/database/products.js`: per-user cache of durable product identity and activation rows. Reads merge those rows with `productCatalog`.
 - `server/modules/database/limit_orders.js`: per-user order query caches and single-order caches.
 - `server/modules/database/user.js`: per-user user/settings/API caches and all-users caches.
 - `server/modules/database/settings.js`: singleton bot settings cache.
 
 These caches reduce database calls but make write-path invalidation critical.
+
+### Product Persistence
+
+The products table is no longer a current-market snapshot.
+
+- PostgreSQL owns user/product identity, activation state, and whether Coinbase currently lists the product for that user.
+- Each user has an independent `productCatalog` containing volatile Coinbase fields such as price, volume, limits, status, and increments.
+- Decimal helpers are calculated once when a Coinbase catalog response is loaded.
+- Product refreshes compare identity and availability fields against the per-user identity cache.
+- An unchanged refresh performs no product write.
+- Products missing from one user's latest non-empty Coinbase response are marked unavailable only for that user. Their rows are retained for existing orders and history.
+- Missing runtime market data is valid during maintenance-mode cold starts. Product menus still load from PostgreSQL, while trade controls wait for the runtime catalog.
+
+Robot trading paths require that user's populated product catalog. The catalog refresh itself is allowed before that gate so disabling maintenance can load metadata before order processing resumes. A user whose refresh has not succeeded cannot be unblocked by another user's catalog.
+
+Fee summaries use the same write-suppression rule: Coinbase may still be checked at the normal frequency, but `user_settings` is updated and invalidated only when maker fee, taker fee, or volume changed.
 
 ### Database Cache Events
 

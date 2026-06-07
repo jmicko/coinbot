@@ -4,7 +4,7 @@ This is a first-pass orientation document based on the current `db-cache` branch
 
 ## Purpose
 
-Coinbot is a self-hosted Coinbase trading bot with a browser UI. The core trading strategy stores local trade-pair records, places a limit order on Coinbase, and flips the order to the opposite side after settlement. The database is the durable source of truth for users, settings, products, local order records, messages, candles, sessions, feedback, and push subscriptions.
+Coinbot is a self-hosted Coinbase trading bot with a browser UI. The core trading strategy stores local trade-pair records, places a limit order on Coinbase, and flips the order to the opposite side after settlement. The database is the durable source of truth for users, settings, per-user product identity/availability/activation, local order records, messages, candles, sessions, feedback, and push subscriptions. Current Coinbase product metadata is process-local and isolated per user.
 
 Because the app can place real orders, dev work should use an isolated local database and either mocked Coinbase calls or a deliberately limited test account. Do not point a fresh dev checkout at production data.
 
@@ -63,7 +63,7 @@ In development, `client/vite.config.ts` proxies `/api` to `http://localhost:5000
 - `modules/database/*.js`: table-oriented query functions and some table-specific cache logic.
 - `modules/database/migrator.js`: migration runner for cold-start and upgrade schema setup.
 - `modules/serverMaintenance.js`: delayed daily runtime maintenance jobs, currently old non-chat message cleanup.
-- `modules/runtime/*.js`: process-local runtime state for the bot settings snapshot, per-user loop state, Coinbase clients, and websocket/message fan-out.
+- `modules/runtime/*.js`: process-local runtime state for the bot settings snapshot, per-user loop state, Coinbase clients, current product catalog, and websocket/message fan-out.
 - `modules/cacheEvents.js`: process-local event emitter for database cache invalidation events.
 - `modules/robot.js`: main trading/sync loops, product updates, order settlement processing, reordering, and available-funds refresh.
 - `modules/websocket.js`: browser websocket server setup and Coinbase websocket startup per active approved user.
@@ -90,7 +90,7 @@ Routes are mounted in `server/server.js`:
 1. Browser fetches durable state through REST hooks in `client/src/hooks`.
 2. Server route handlers call `databaseClient`, `robot`, runtime state modules, and Coinbase client methods.
 3. Database modules read and write PostgreSQL through the shared `pool`.
-4. Long-running bot loops maintain per-user runtime state in `userStorage`, `messenger`, `cbClients`, and `botSettings`.
+4. Long-running bot loops maintain runtime state in `userStorage`, `messenger`, `cbClients`, `botSettings`, and `productCatalog`.
 5. Server websocket messages notify the browser about updates, heartbeats, tickers, and Coinbase socket status.
 6. Browser refresh handlers refetch affected REST resources after websocket invalidation messages.
 

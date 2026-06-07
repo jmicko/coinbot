@@ -39,6 +39,8 @@ function SingleTrade(props: SingleTradeProps) {
   const limit_price = props.order.limit_price;
   const trade_pair_ratio = props.order.trade_pair_ratio;
   const order_id = 'order_id' in props.order ? props.order.order_id : '';
+  const baseInverseIncrement = Number(currentProduct.base_inverse_increment) || (10 ** pbd);
+  const quoteInverseIncrement = Number(currentProduct.quote_inverse_increment) || (10 ** pqd);
 
 
   useEffect(() => {
@@ -48,11 +50,14 @@ function SingleTrade(props: SingleTradeProps) {
     const buyFee = (maker_fee_rate * original_buy_price * base_size)
 
     // calculate profits
-    const profit = Math.round((((original_sell_price * base_size - original_buy_price * base_size)) - (buyFee + sellFee)) * currentProduct.base_inverse_increment) / currentProduct.base_inverse_increment;
+    const profit = Math.round(
+      (((original_sell_price * base_size - original_buy_price * base_size)) - (buyFee + sellFee))
+      * baseInverseIncrement
+    ) / baseInverseIncrement;
     setProfit(profit);
     setBuyFee(buyFee)
     setSellFee(sellFee)
-  }, [original_sell_price, original_buy_price, base_size, user.maker_fee, currentProduct.base_inverse_increment, maker_fee_rate]);
+  }, [original_sell_price, original_buy_price, base_size, maker_fee_rate, baseInverseIncrement]);
 
   function syncTrade() {
     syncPair({
@@ -117,8 +122,8 @@ function SingleTrade(props: SingleTradeProps) {
         <div>
           <strong>Value: </strong>
           ${numberWithCommas((
-            Math.round((limit_price * base_size) * currentProduct.quote_inverse_increment)
-            / currentProduct.quote_inverse_increment).toFixed(pqd))}
+            Math.round((limit_price * base_size) * quoteInverseIncrement)
+            / quoteInverseIncrement).toFixed(pqd))}
         </div>
 
         <div><strong>Profit</strong> ${profit.toFixed(3)}</div>

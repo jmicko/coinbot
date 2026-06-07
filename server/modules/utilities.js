@@ -40,7 +40,13 @@ function addProductDecimals(product) {
   return productWithDecimals;
 
   function findDecimals(number) {
-    return number?.split('.')[1]?.split('').findIndex((char) => char !== '0') + 1;
+    const decimalPlaces = String(number ?? '').split('.')[1];
+    if (!decimalPlaces) {
+      return 0;
+    }
+
+    const firstNonZero = decimalPlaces.split('').findIndex((char) => char !== '0');
+    return firstNonZero === -1 ? 0 : firstNonZero + 1;
   }
 }
 

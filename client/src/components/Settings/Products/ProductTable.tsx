@@ -7,16 +7,21 @@ import { useMemo } from 'react';
 
 interface ProductsProps {
   active_for_user: boolean;
+  available_for_user: boolean;
   product_id: string;
-  price: string;
-  volume_24h: string;
-  average: string;
+  price?: string;
+  volume_24h?: string;
+  average?: string;
   quote_currency_id: string;
-  price_percentage_change_24h: string;
+  price_percentage_change_24h?: string;
   base_currency_id: string;
-  quote_increment: string;
+  quote_increment?: string;
   volume_in_quote?: string;
-  pqd: number;
+  pqd?: number;
+}
+
+function hasNumber(value: string | number | undefined) {
+  return value !== undefined && value !== '' && Number.isFinite(Number(value));
 }
 
 function ProductTable(props: { products: ProductsProps[], parent: string, padNumbers?: boolean }) {
@@ -33,7 +38,14 @@ function ProductTable(props: { products: ProductsProps[], parent: string, padNum
 
   const longestPriceDecimals = useMemo(() => {
     return products.reduce((acc, product) => {
-      return Math.max(acc, Number(product.price).toFixed(product.pqd).split('.')[1]?.length || 0)
+      if (!hasNumber(product.price)) {
+        return acc;
+      }
+
+      return Math.max(
+        acc,
+        Number(product.price).toFixed(product.pqd || 2).split('.')[1]?.length || 0
+      )
     }, 0)
   }, [products])
 
@@ -78,15 +90,27 @@ function ProductTable(props: { products: ProductsProps[], parent: string, padNum
       </thead>
       <tbody>
         {products.map((product) => {
+          const hasPrice = hasNumber(product.price);
+          const hasVolume = hasNumber(product.volume_in_quote);
+          const hasPriceChange = hasNumber(product.price_percentage_change_24h);
+          const priceDecimals = product.pqd || 2;
 
-          const decimalPadding = longestPriceDecimals - (Number(product.price).toFixed(product.pqd).split('.')[1]?.length || -1);
+          const formattedPrice = hasPrice
+            ? numberWithCommas(Number(product.price).toFixed(priceDecimals))
+            : '--';
+          const decimalPadding = hasPrice
+            ? longestPriceDecimals - (Number(product.price).toFixed(priceDecimals).split('.')[1]?.length || 0)
+            : 0;
           // const volumePadding = longestVolumeDec - (Number(product.volume_in_quote).toFixed(product.pqd).split('.')[1]?.length || -1);
           // shorten volume in quote to b, m, k for billions, millions, thousands
           // count the number of commas
-          const volumeInQuoteCommas = numberWithCommas(Number(product.volume_in_quote).toFixed(0)).split('').filter(char => char === ',').length;
+          const formattedVolume = hasVolume
+            ? numberWithCommas(Number(product.volume_in_quote).toFixed(0))
+            : '--';
+          const volumeInQuoteCommas = formattedVolume.split('').filter(char => char === ',').length;
           // console.log(volumeInQuoteCommas, '< volumeInQuoteCommas');
           // split at the first comma
-          const volumeInQuoteSplit = numberWithCommas(Number(product.volume_in_quote).toFixed(0)).split(',')[0];
+          const volumeInQuoteSplit = formattedVolume.split(',')[0];
           // pick which letter to use based on the number of commas. if there are no commas, use the whole number
           const volumeSuffixes: { [key: number]: string } = {
             0: '',
@@ -107,7 +131,9 @@ function ProductTable(props: { products: ProductsProps[], parent: string, padNum
             // okay look kid, I don't think coinbase is ever going to support anything past 14 commas.
           };
 
-          const volumeInQuoteShortened = volumeInQuoteSplit + volumeSuffixes[volumeInQuoteCommas] || '';
+          const volumeInQuoteShortened = hasVolume
+            ? volumeInQuoteSplit + (volumeSuffixes[volumeInQuoteCommas] || '')
+            : '--';
 
           const productPaddingBase = longestProductBase - product.base_currency_id.length > 0 ? longestProductBase - product.base_currency_id.length : 0;
           // const productPaddingQuote = longestProductQuote - product.quote_currency_id.length > 0 ? longestProductQuote - product.quote_currency_id.length : 0;
@@ -127,11 +153,13 @@ function ProductTable(props: { products: ProductsProps[], parent: string, padNum
                 {/* PRODUCT ID */}
                 {/* <td className='table-product-id'> */}
                 {/* {'\u00A0'.repeat(productPaddingQuote)} */}
-                &nbsp;{product.base_currency_id}{'\u00A0'.repeat(productPaddingBase)}
+                &nbsp;{product.base_currency_id}
+                {!product.available_for_user && ' (unavailable)'}
+                {'\u00A0'.repeat(productPaddingBase)}
               </td>
               {/* PRICE */}
               <td className='number table-price'>
-                {numberWithCommas(Number(product.price).toFixed(product.pqd))}{props.padNumbers && '\u00A0'.repeat(decimalPadding)}
+                {formattedPrice}{props.padNumbers && '\u00A0'.repeat(decimalPadding)}
               </td>
               {/* 6 HOUR AVERAGE VARIANCE */}
               {products[0]?.average &&
@@ -141,14 +169,16 @@ function ProductTable(props: { products: ProductsProps[], parent: string, padNum
               {/* VOLUME 24H */}
               <td className='number table-volume'>
                 {props.padNumbers
-                  ? numberWithCommas((Number(product.volume_in_quote).toFixed(0)))
+                  ? formattedVolume
                   : volumeInQuoteShortened}
                 {/* {props.padNumbers && '\u00A0'.repeat(volumePadding + 1)} */}
                 {/* {product.quote_currency_id} */}
               </td>
               {/* PRICE % CHANGE 24H */}
               <td className='number table-price-percentage-change'>
-                {Number(product.price_percentage_change_24h).toFixed(2)}%
+                {hasPriceChange
+                  ? `${Number(product.price_percentage_change_24h).toFixed(2)}%`
+                  : '--'}
               </td>
             </tr>
           )

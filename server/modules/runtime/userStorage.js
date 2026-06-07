@@ -189,6 +189,13 @@ const userStorage = {
     requireRuntimeUser(userID).availableFunds = funds;
   },
 
+  updateFees(userID, { makerFee, takerFee, usdVolume }) {
+    const state = requireRuntimeUser(userID);
+    state.maker_fee = makerFee;
+    state.taker_fee = takerFee;
+    state.usd_volume = usdVolume;
+  },
+
   queueOrdersToCheck(userID, orders) {
     requireRuntimeUser(userID).ordersToCheck = orders;
   },

@@ -54,7 +54,11 @@ Current order:
 
 1. Increment the user's loop counter.
 2. Send a heartbeat to the browser.
-3. Every `full_sync * 10` loops, refresh Coinbase products and save them locally.
+3. If the runtime product catalog is empty, load it before trading; every `full_sync * 10` loops after that, refresh it.
+   - Catalog readiness and metadata are tracked separately for each user.
+   - Persist only new or changed product identity fields.
+   - Mark products missing from that user's latest catalog unavailable without deleting their rows.
+   - Keep volatile Coinbase fields and precomputed decimal helpers in memory.
 4. If the user may trade:
    - run `fullSync()` every `full_sync` loops
    - otherwise run `quickSync()` and then `deSync()`
@@ -71,7 +75,7 @@ The loop is designed to keep Coinbase calls grouped and rate-limited, then updat
 1. Load a limited set of local unsettled orders near the spread.
 2. Load Coinbase open orders.
 3. Load Coinbase fee/volume summary.
-4. Save fee data locally.
+4. Save fee data locally only when maker fee, taker fee, or volume changed.
 5. Load active product IDs.
 6. Ignore Coinbase orders for inactive products.
 7. Compare local DB order IDs against Coinbase open order IDs.
@@ -113,7 +117,7 @@ Detection and replacement are staged separately because placing a replacement in
 `reorder(orderToReorder)`:
 
 1. Reloads the current DB row.
-2. Loads product increment/rounding details.
+2. Loads persisted product identity merged with runtime increment/rounding details.
 3. Builds a new order using the same side, price, size, and product.
 4. Places the order on Coinbase.
 5. Fetches the newly placed Coinbase order details.

@@ -13,7 +13,7 @@ import Confirm from "../../Confirm/Confirm.js";
 import { useWebSocket } from "../../../hooks/useWebsocket.js";
 
 function AutoSetup(props: { tips: boolean }) {
-  const { productID, baseID, quoteID, pqd, pbd, refreshOrders } = useData();
+  const { productID, currentProduct, baseID, quoteID, pqd, pbd, refreshOrders } = useData();
   const { currentPrice: currentPriceString } = useWebSocket();
   const currentPriceTicker = Number(currentPriceString);
   // const currentPriceTicker = tickers[productID]?.price;
@@ -57,9 +57,9 @@ function AutoSetup(props: { tips: boolean }) {
     }
   }, [currentPriceTicker, currentPrice])
 
-  if (!currentPriceTicker) return (
+  if (!currentPriceTicker || !currentProduct.base_inverse_increment) return (
     <div className="AutoSetup settings-panel scrollable">
-      <p>Waiting for price data<DotLoader /></p>
+      <p>Waiting for product data<DotLoader /></p>
     </div>
   )
 

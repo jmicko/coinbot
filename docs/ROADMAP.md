@@ -38,7 +38,7 @@ This is the initial priority list after reviewing the current branch. It is bias
 ## P1: Schema Integrity
 
 - Add or confirm primary keys and unique constraints for tables the code treats as unique.
-- Add a unique constraint for `products` on `(user_id, product_id)` if that is the intended identity.
+- [x] Add a unique constraint for `products` on `(user_id, product_id)`.
 - Enforce singleton semantics for `bot_settings`.
 - Add foreign keys for user-owned tables where deletion behavior is known.
 - Decide whether `limit_orders.userID` should be nullable after user deletion or cascade/deletion should be handled differently.
@@ -71,6 +71,7 @@ This is the initial priority list after reviewing the current branch. It is bias
 - Keep process-runtime bot state separate from read-through database caches.
 - Consider removing caches that duplicate cheap indexed queries.
 - Add targeted indexes before adding cache complexity.
+- [x] Stop persisting volatile Coinbase product snapshots and suppress unchanged product/fee writes.
 
 ## P2: Data Access Cleanup
 

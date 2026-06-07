@@ -102,7 +102,9 @@ router.put('/products', rejectUnauthenticated, async (req, res) => {
     // add each product_id to an array product ids
     const productIds = [];
     products.forEach(product => {
-      productIds.push(product.product_id);
+      if (product.available_for_user) {
+        productIds.push(product.product_id);
+      }
     });
     // update cbClient with new product ids
     cbClients[userID].setProducts(productIds);
@@ -671,8 +673,7 @@ router.put('/updateAPIKey', rejectUnauthenticated, async (req, res) => {
       emitCacheEvent(cacheEvents.USER_API_UPDATED, userID);
       // refresh the process-local Coinbase client/runtime state
       await cbClients.updateAPI(result.rows[0].id, identifier);
-      await robot.updateProducts(userID);
-      messenger[userID]?.instantMessage({ type: 'productUpdate', identifier });
+      await robot.updateProducts(userID, identifier);
 
     } else {
       devLog('API key is invalid');
@@ -735,8 +736,7 @@ router.post('/storeApi', rejectUnauthenticated, async (req, res) => {
     emitCacheEvent(cacheEvents.USER_API_UPDATED, userID);
     // refresh the process-local Coinbase client/runtime state
     await cbClients.updateAPI(result.rows[0].id, identifier);
-    await robot.updateProducts(userID);
-    messenger[userID]?.instantMessage({ type: 'productUpdate', identifier });
+    await robot.updateProducts(userID, identifier);
 
     res.sendStatus(200);
   } catch (err) {

@@ -45,20 +45,38 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Products>({ allProducts: [], activeProducts: [] });
 
   useEffect(() => {
-    const newAllProducts = productsNoVolume.allProducts.slice(0).map(product => {
-      return ({
+    function addVolumeInQuote(product: Product): Product {
+      const volume = Number(product.volume_24h);
+      const price = Number(product.price);
+      const hasMarketData =
+        product.volume_24h !== undefined
+        && product.price !== undefined
+        && Number.isFinite(volume)
+        && Number.isFinite(price);
+
+      return {
         ...product,
-        volume_in_quote: (Number(product.volume_24h) * Number(product.price)).toFixed(product.pqd || 2),
-      })
+        volume_in_quote: hasMarketData
+          ? (volume * price).toFixed(product.pqd || 2)
+          : undefined,
+      };
+    }
+
+    const newAllProducts = productsNoVolume.allProducts.slice(0).map(product => {
+      return addVolumeInQuote(product);
     });
 
-    const newActiveProducts = productsNoVolume.activeProducts.slice(0).map(product => ({
-      ...product,
-      volume_in_quote: (Number(product.volume_24h) * Number(product.price)).toFixed(product.pqd || 2),
-    }));
+    const newActiveProducts = productsNoVolume.activeProducts.slice(0).map(addVolumeInQuote);
 
     setProducts({ allProducts: newAllProducts, activeProducts: newActiveProducts });
-    setProductID(productsNoVolume.activeProducts[0]?.product_id || 'DOGE-USD')
+    setProductID((currentProductID) => {
+      const currentProductIsActive = newActiveProducts.some(
+        (product) => product.product_id === currentProductID
+      );
+      return currentProductIsActive
+        ? currentProductID
+        : newActiveProducts[0]?.product_id || 'DOGE-USD';
+    });
 
   }, [productsNoVolume]);
 
@@ -179,12 +197,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // TRADE FUNCTIONS
   const currentProduct: Product = useMemo(() => {
     return (
-      products.allProducts.find((product) => product.product_id === productID) || {} as Product);
-  }, [products.allProducts, productID]);
+      products.allProducts.find((product) => product.product_id === productID)
+      || products.activeProducts.find((product) => product.product_id === productID)
+      || {} as Product
+    );
+  }, [products.activeProducts, products.allProducts, productID]);
   // console.log(currentProduct, '< currentProduct');
 
-  const pqd = currentProduct?.pqd;
-  const pbd = currentProduct?.pbd;
+  const pqd = Number(currentProduct?.pqd ?? 2);
+  const pbd = Number(currentProduct?.pbd ?? 8);
 
   // TRADE STATE
   const [collapseTradePanel, setCollapseTradePanel] = useLocalStorage<boolean>('collapseTradePanel', true);
@@ -197,6 +218,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [tradeType, setTradeType] = useState('Market Order');
 
   useEffect(() => {
+    if (currentProduct.base_min_size === undefined) {
+      return;
+    }
+
     setMarketOrder((prevMarketOrder: OrderParams) => {
       return { ...prevMarketOrder, base_size: Number(currentProduct.base_min_size) }
     })

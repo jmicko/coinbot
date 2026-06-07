@@ -43,7 +43,8 @@ async function downloadCandles(user) {
   }
 
   // first get the active products
-  const activeProducts = await databaseClient.getActiveProducts(userID);
+  const activeProducts = (await databaseClient.getActiveProducts(userID))
+    .filter((product) => product.available_for_user);
 
   // update candles like 1000 times. Can change this number to adjust how frequently maintenance is done
   for (let j = 0; j < 1000; j++) {

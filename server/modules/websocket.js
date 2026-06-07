@@ -94,7 +94,9 @@ async function startWebsocket(userID) {
     // add each product_id to an array product ids
     const productIds = [];
     products.forEach(product => {
-      productIds.push(product.product_id);
+      if (product.available_for_user) {
+        productIds.push(product.product_id);
+      }
     });
     return productIds;
   }

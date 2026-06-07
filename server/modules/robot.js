@@ -1,5 +1,5 @@
 import { databaseClient } from "./databaseClient.js";
-import { botSettings, userStorage, messenger, cbClients } from "./runtime/index.js";
+import { botSettings, userStorage, messenger, cbClients, productCatalog } from "./runtime/index.js";
 import { startWebsocket } from "./websocket.js";
 import { resetAtMidnight } from './push.js';
 import { sleep, addProductDecimals } from "./utilities.js";
@@ -40,7 +40,11 @@ function reportMissingCoinbaseClient(userID) {
   }
 }
 
-function canUseCoinbase(userID, user, { requireUnpaused = true } = {}) {
+function canUseCoinbase(
+  userID,
+  user,
+  { requireUnpaused = true, requireProductCatalog = true } = {}
+) {
   if (!user?.active || !user?.approved || botSettings.maintenance) {
     return false;
   }
@@ -51,6 +55,10 @@ function canUseCoinbase(userID, user, { requireUnpaused = true } = {}) {
 
   if (!hasCoinbaseClient(userID)) {
     reportMissingCoinbaseClient(userID);
+    return false;
+  }
+
+  if (requireProductCatalog && !productCatalog.isReady(userID)) {
     return false;
   }
 
@@ -113,7 +121,10 @@ async function initializeUserLoops(user) {
       // not have credentials yet, so avoid blocking registration on this delay.
       user = userStorage.getUser(userID);
       // devLog(user, '<- user while init loops')
-      if (canUseCoinbase(userID, user, { requireUnpaused: false })) {
+      if (canUseCoinbase(userID, user, {
+        requireUnpaused: false,
+        requireProductCatalog: false,
+      })) {
         await sleep(10000);
         await updateFunds(userID);
         devLog('FUNDS INITED')
@@ -188,8 +199,15 @@ async function syncOrders(userID) {
       if (user) {
         heartBeat(userID, 'heart');
       }
-      if ((((loopNumber - 1) % (botSettings.full_sync * 10)) === 0) && canUseCoinbase(userID, user, { requireUnpaused: false })) {
-        // every 10 full syncs, update the products in the database
+      const canRefreshProducts = canUseCoinbase(userID, user, {
+        requireUnpaused: false,
+        requireProductCatalog: false,
+      });
+
+      if (!productCatalog.isReady(userID) && canRefreshProducts) {
+        await updateProducts(userID);
+      } else if ((((loopNumber - 1) % (botSettings.full_sync * 10)) === 0) && canRefreshProducts) {
+        // every 10 full syncs, refresh Coinbase product metadata
         await updateProducts(userID);
 
       }
@@ -249,12 +267,15 @@ async function syncOrders(userID) {
 }
 
 
-async function updateProducts(userID) {
+async function updateProducts(userID, identifier) {
   return new Promise(async (resolve, reject) => {
     try {
       devLog('---- updating products ----');
-      const products = await cbClients[userID].getProducts();
-      await databaseClient.insertProducts(products.products, userID);
+      productCatalog.clear(userID);
+      const products = await cbClients[userID].getAllProducts();
+      await databaseClient.syncProductIdentities(products.products, userID);
+      productCatalog.replace(userID, products.products);
+      messenger[userID]?.instantMessage({ type: 'productUpdate', identifier });
       resolve();
       devLog('---- finished updating products ----');
     } catch (err) {
@@ -361,7 +382,11 @@ async function fullSync(userID) {
 
       // need to save the fees for more accurate Available funds reporting
       // fees don't change frequently so only need to do this during full sync
-      await databaseClient.saveFees(fees, userID);
+      const feeUpdate = await databaseClient.saveFees(fees, userID, user);
+      if (feeUpdate.changed) {
+        userStorage.updateFees(userID, feeUpdate.feeValues);
+        messenger[userID]?.userUpdate();
+      }
 
       // remove any orders from cbOrders that have a product id that is not active for the user
       // first get the list of active products
@@ -851,6 +876,15 @@ async function reorder(orderToReorder) {
       // get the product from the db
       const product = await databaseClient.getProduct(upToDateDbOrder.product_id, userID);
       devLog(product, 'product in reorder');
+      if (
+        !product?.available_for_user
+        || !product.base_increment
+        || !product.quote_increment
+      ) {
+        throw new Error(
+          `Cannot reorder ${upToDateDbOrder.product_id}: product metadata is unavailable for user ${userID}`
+        );
+      }
       // get the number of decimals for the base_increment of the product. This is used to round the base_size
       const decimals = addProductDecimals(product);
 

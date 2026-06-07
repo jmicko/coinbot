@@ -1,8 +1,10 @@
 import { pool } from '../pool.js';
 import baselineSchema from './migrations/001_baseline_schema.js';
+import simplifyProducts from './migrations/002_simplify_products.js';
 
 const migrations = [
   baselineSchema,
+  simplifyProducts,
 ];
 
 const MIGRATION_LOCK_ID = 73194201;

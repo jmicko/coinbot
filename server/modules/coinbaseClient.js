@@ -249,15 +249,15 @@ class Coinbase {
   }
 
   addParams(endpoint, params) {
-    // this function is only called if there are params, so add a ? to the url string
-    endpoint.url = endpoint.url + `?`;
-    // Iterate over each object key/value pair, adding them to the url
-    Object.keys(params).forEach(key => {
-      // add new param
-      endpoint.url += `${key}=${params[key]}&`;
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach((item) => searchParams.append(key, item));
+      } else if (value !== undefined && value !== null) {
+        searchParams.append(key, value);
+      }
     });
-    // cut off the last & symbol
-    endpoint.url = endpoint.url.slice(0, -1)
+    endpoint.url = `${endpoint.url}?${searchParams.toString()}`;
   }
 
   createAuthToken(method, path) {
@@ -478,6 +478,43 @@ class Coinbase {
         reject(err);
       }
     });
+  }
+
+  async getAllProducts() {
+    const products = [];
+    const seenCursors = new Set();
+    let cursor;
+
+    while (true) {
+      const params = { limit: 1000 };
+      if (cursor) {
+        params.cursor = cursor;
+      }
+
+      const result = await this.getProducts(params);
+      if (!Array.isArray(result.products)) {
+        throw new Error('Coinbase products response did not contain a products array');
+      }
+      products.push(...result.products);
+
+      const pagination = result.pagination || {};
+      const hasNext = pagination.has_next ?? result.has_next ?? false;
+      if (!hasNext) {
+        return {
+          ...result,
+          products,
+          num_products: products.length,
+        };
+      }
+
+      const nextCursor = pagination.next_cursor || result.cursor;
+      if (!nextCursor || seenCursors.has(nextCursor)) {
+        throw new Error('Coinbase products pagination returned an invalid cursor');
+      }
+      seenCursors.add(nextCursor);
+      cursor = nextCursor;
+      await sleep(200);
+    }
   }
 
 
