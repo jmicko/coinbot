@@ -80,6 +80,9 @@ The loop is designed to keep Coinbase calls grouped and rate-limited, then updat
 `fullSync(userID)` does the heavier reconciliation pass:
 
 1. Load a limited set of local unsettled orders near the spread.
+   - The local result contains only `order_id`, `reorder`, and `will_cancel`; reconciliation does not need complete order details.
+   - Repeated full-sync passes reuse a process-local cache keyed by user, active products, and `sync_quantity`.
+   - A cache miss loads every product's BUY and SELL window in one PostgreSQL query.
 2. Load Coinbase open orders.
 3. Load Coinbase fee/volume summary.
 4. Save fee data locally only when maker fee, taker fee, or volume changed.
@@ -90,6 +93,8 @@ The loop is designed to keep Coinbase calls grouped and rate-limited, then updat
 9. Cancel Coinbase orders that are not present in the local DB window and mark local matches for reorder.
 
 Important behavior: a local order missing from Coinbase is not immediately assumed settled. It is queued for detail lookup by `updateMultipleOrders()`.
+
+The local full-sync window remains limited independently for each active product and side. Order mutations that can change membership or price ordering invalidate the cached window before the next reconciliation.
 
 ## Quick Sync
 

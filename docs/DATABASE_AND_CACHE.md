@@ -146,7 +146,7 @@ This state is process-local. User/settings/API state is rebuilt from PostgreSQL 
 Defined inside database modules:
 
 - `server/modules/database/products.js`: per-user cache of durable product identity and activation rows. Reads merge those rows with `productCatalog`.
-- `server/modules/database/limit_orders.js`: per-user order query caches, single-order caches, reservation-total caches, and quick-sync reorder-window caches.
+- `server/modules/database/limit_orders.js`: per-user order query caches, single-order caches, reservation-total caches, quick-sync reorder-window caches, and full-sync limited-order-window caches.
 - `server/modules/database/user.js`: per-user user/settings/API caches and all-users caches.
 - `server/modules/database/settings.js`: singleton bot settings cache.
 
@@ -282,6 +282,22 @@ Changes to reorder state, settlement state, status/fill metadata, and SELL-only 
 The old query passed an array to `product_id IN ($1)`. PostgreSQL treated that array as one value and returned no matching rows. It now uses `product_id = ANY($1::text[])`, which correctly checks every active product.
 
 The existing window definition is otherwise unchanged: one account-wide limit is applied to BUY rows and one to SELL rows across all active products. That means absolute prices from different products are compared directly. A product-aware or market-distance-based window would be a separate robot synchronization design change and should be handled cautiously.
+
+### Full-Sync Limited Order Window
+
+`getLimitedUnsettledTrades()` now caches the minimal order controls needed to synchronize with Coinbase.
+
+- The window remains independent for each active product and side.
+- One PostgreSQL lateral query replaces one query per active product.
+- The query returns only `order_id`, `reorder`, and `will_cancel`. Full-sync comparison needs the ID, while queued reconciliation uses the two control flags.
+- The cache key contains the user, `sync_quantity`, and active products in activation order.
+- Concurrent misses share one in-flight query.
+- Inserts, deletes, reorder changes, repricing, product/side changes, flips, settlements, and cancellation marking invalidate the cache.
+- Size, status, fee, and fill metadata changes do not invalidate it because they do not affect membership, ordering, or queued control behavior.
+- Active-product changes invalidate the cache. A changed `sync_quantity` selects a different cache key.
+- Cache effectiveness is reported as `limit_orders.limited_unsettled`.
+
+The consolidated query preserves the old per-product result order. It was compared against the old query on a prod-shaped database before deployment.
 
 Run the focused server tests with:
 

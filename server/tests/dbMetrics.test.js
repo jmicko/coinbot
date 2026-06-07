@@ -59,3 +59,24 @@ test('database queries remain attributed to their originating context', async ()
     false
   );
 });
+
+test('parenthesized SELECT statements are classified as reads', async () => {
+  resetDbMetrics();
+
+  await trackDbQuery(
+    '(SELECT 1) UNION ALL (SELECT 2)',
+    async () => ({
+      command: 'SELECT',
+      rowCount: 2,
+      rows: [{ value: 1 }, { value: 2 }],
+    })
+  );
+
+  const snapshot = getDbMetricsSnapshot();
+  assert.deepEqual(snapshot.totals.operationCounts, {
+    read: 1,
+    write: 0,
+    transaction: 0,
+    other: 0,
+  });
+});

@@ -14,6 +14,12 @@ import {
   orderUpdateAffectsReorderWindow,
   parseReorderWindowKey,
 } from "./reorderWindowCache.js";
+import {
+  createLimitedOrderWindowCache,
+  createLimitedOrderWindowKey,
+  orderUpdateAffectsLimitedOrderWindow,
+  parseLimitedOrderWindowKey,
+} from "./limitedOrderWindowCache.js";
 
 let showLogs = false;
 const logTypes = {
@@ -146,6 +152,65 @@ function clearReorderWindowCache(userID) {
   reorderWindowCache.invalidate(userID);
 }
 
+async function loadLimitedOrderWindow(userID, cacheKey) {
+  const { limit, productIDs } = parseLimitedOrderWindowKey(cacheKey);
+  if (!Number.isInteger(limit) || limit < 1 || productIDs.length === 0) {
+    return [];
+  }
+
+  const results = await pool.query(
+    `SELECT
+      "order_window"."order_id",
+      "order_window"."reorder",
+      "order_window"."will_cancel"
+    FROM unnest($2::text[]) WITH ORDINALITY
+      AS "active_product"("product_id", "product_position")
+    CROSS JOIN LATERAL (
+      (
+        SELECT "order_id", "limit_price", "reorder", "will_cancel"
+        FROM "limit_orders"
+        WHERE "side" = 'SELL'
+          AND "flipped" = false
+          AND "settled" = false
+          AND "will_cancel" = false
+          AND "userID" = $1
+          AND "product_id" = "active_product"."product_id"
+        ORDER BY "limit_price" ASC
+        LIMIT $3
+      )
+      UNION ALL
+      (
+        SELECT "order_id", "limit_price", "reorder", "will_cancel"
+        FROM "limit_orders"
+        WHERE "side" = 'BUY'
+          AND "flipped" = false
+          AND "settled" = false
+          AND "will_cancel" = false
+          AND "userID" = $1
+          AND "product_id" = "active_product"."product_id"
+        ORDER BY "limit_price" DESC
+        LIMIT $3
+      )
+      ORDER BY "limit_price" DESC
+    ) AS "order_window"
+    ORDER BY
+      "active_product"."product_position",
+      "order_window"."limit_price" DESC;`,
+    [userID, productIDs, limit]
+  );
+
+  return results.rows;
+}
+
+const limitedOrderWindowCache = createLimitedOrderWindowCache(
+  loadLimitedOrderWindow,
+  (event) => recordCacheEvent('limit_orders.limited_unsettled', event)
+);
+
+function clearLimitedOrderWindowCache(userID) {
+  limitedOrderWindowCache.invalidate(userID);
+}
+
 // get the user cache for a user
 function getUserTradesCache(userID) {
   if (!limitOrdersCache.userTrades.has(userID)) {
@@ -179,10 +244,12 @@ onCacheEvent(cacheEvents.LIMIT_ORDERS_UPDATED, (userID) => {
   clearAllUserCaches(userID);
   clearReservationTotalsCache(userID);
   clearReorderWindowCache(userID);
+  clearLimitedOrderWindowCache(userID);
 });
 
 onCacheEvent(cacheEvents.PRODUCTS_UPDATED, (userID) => {
   clearReorderWindowCache(userID);
+  clearLimitedOrderWindowCache(userID);
 });
 
 function getSingleTradeCache(userID, order_id) {
@@ -363,36 +430,17 @@ export const getUnsettledTrades = (side, userID, max_trade_load) => {
   });
 }
 
-// gets all open orders in db based on a specified limit. 
-// The limit is for each side, so the results will potentially double that
-export const getLimitedUnsettledTrades = (userID, limit) => {
-  return new Promise(async (resolve, reject) => {
-    // get limit of buys
-    // get limit of sells
-    try {
-      devLog('GETTER', 'getLimitedUnsettledTrades');
-      // first get which products are in the portfolio
-      const products = await getActiveProductIDs(userID);
-      // devLog('products', products);
-      let sqlText = `
-      (SELECT * FROM "limit_orders" 
-      WHERE "side" = 'SELL' AND "flipped" = false AND "settled" = false AND "will_cancel" = false AND "userID" = $1 AND "product_id" = $2 ORDER BY "limit_price" ASC LIMIT $3)
-      UNION
-      (SELECT * FROM "limit_orders" 
-      WHERE "side" = 'BUY' AND "flipped" = false AND "settled" = false AND "will_cancel" = false AND "userID" = $1 AND "product_id" = $2 ORDER BY "limit_price" DESC LIMIT $3)
-      ORDER BY "limit_price" DESC; `;
-      let results = [];
-      for (let i = 0; i < products.length; i++) {
-        const product = products[i];
-        const productResults = await pool.query(sqlText,
-          [userID, product, limit]);
-        results = [...results, ...productResults.rows];
-      }
-      resolve(results);
-    } catch (err) {
-      reject(err);
-    }
-  });
+// Gets order controls inside the per-product, per-side Coinbase sync window.
+export async function getLimitedUnsettledTrades(userID, limit) {
+  devLog('GETTER', 'getLimitedUnsettledTrades');
+  const products = await getActiveProductIDs(userID);
+  if (products.length === 0) {
+    return [];
+  }
+
+  const cacheKey = createLimitedOrderWindowKey(limit, products);
+  const orders = await limitedOrderWindowCache.get(userID, cacheKey);
+  return orders.map((order) => ({ ...order }));
 }
 
 // get all details of an array of order IDs
@@ -786,6 +834,7 @@ export const storeTrade = (newOrder, originalDetails, flipped_at) => {
       clearAllUserCaches(originalDetails.userID);
       clearReservationTotalsCache(originalDetails.userID);
       clearReorderWindowCache(originalDetails.userID);
+      clearLimitedOrderWindowCache(originalDetails.userID);
       resolve(results);
     } catch (err) {
       reject(err);
@@ -992,6 +1041,9 @@ export const updateTrade = (order) => {
       if (orderUpdateAffectsReorderWindow(order)) {
         clearReorderWindowCache(order.userID);
       }
+      if (orderUpdateAffectsLimitedOrderWindow(order)) {
+        clearLimitedOrderWindowCache(order.userID);
+      }
       resolve(results.rows[0]);
       resolve();
     } catch (err) {
@@ -1012,6 +1064,7 @@ export async function setSingleReorder(order_id, userID) {
       // update the user cache
       clearAllUserCaches(userID);
       clearReorderWindowCache(userID);
+      clearLimitedOrderWindowCache(userID);
       resolve();
     } catch (err) {
       reject(err);
@@ -1034,6 +1087,7 @@ export async function setManyReorders(idArray, userID) {
       // update the user cache
       clearAllUserCaches(userID);
       clearReorderWindowCache(userID);
+      clearLimitedOrderWindowCache(userID);
       resolve();
     } catch (err) {
       devLog('failed to set many reorders', 'ERROR');
@@ -1053,6 +1107,7 @@ export async function setReorder(userID) {
       // update the user cache
       clearAllUserCaches(userID);
       clearReorderWindowCache(userID);
+      clearLimitedOrderWindowCache(userID);
       resolve();
     } catch (err) {
       reject(err);
@@ -1072,6 +1127,7 @@ export async function markAsFlipped(order_id, userID) {
       clearAllUserCaches(userID);
       clearReservationTotalsCache(userID);
       clearReorderWindowCache(userID);
+      clearLimitedOrderWindowCache(userID);
       resolve(result);
     } catch (err) {
       reject(err);
@@ -1091,6 +1147,7 @@ export async function deleteTrade(order_id, userID) {
       clearAllUserCaches(userID);
       clearReservationTotalsCache(userID);
       clearReorderWindowCache(userID);
+      clearLimitedOrderWindowCache(userID);
       resolve(result);
     } catch (err) {
       reject(err)
@@ -1157,6 +1214,7 @@ export async function markForCancel(userID, order_id) {
       clearAllUserCaches(userID);
       clearReservationTotalsCache(userID);
       clearReorderWindowCache(userID);
+      clearLimitedOrderWindowCache(userID);
       resolve(result.rows[0]);
     } catch (err) {
       reject(err)
@@ -1182,6 +1240,7 @@ export async function deleteMarkedOrders(userID) {
       clearAllUserCaches(userID);
       clearReservationTotalsCache(userID);
       clearReorderWindowCache(userID);
+      clearLimitedOrderWindowCache(userID);
       resolve(result.rows);
       decrementDeletedTradeCount(userID);
     } catch (err) {
@@ -1226,4 +1285,5 @@ export async function bulkUpdateTradePairRatio(userID, product_id, bulk_pair_rat
 
   clearAllUserCaches(userID);
   clearReorderWindowCache(userID);
+  clearLimitedOrderWindowCache(userID);
 }

@@ -68,7 +68,8 @@ function getSql(query) {
 
 function getQueryDetails(query) {
   const sql = getSql(query);
-  const firstKeyword = sql.match(/^[A-Za-z]+/)?.[0]?.toUpperCase() || 'OTHER';
+  const firstKeyword =
+    sql.match(/^[\s(]*([A-Za-z]+)/)?.[1]?.toUpperCase() || 'OTHER';
   const containsWrite = /\b(INSERT|UPDATE|DELETE|MERGE)\b/i.test(sql);
 
   let operation = 'other';
