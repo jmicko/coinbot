@@ -127,6 +127,9 @@ async function startWebsocket(userID) {
           orderIds.push(order.order_id)
         }
       })
+      if (orderIds.length === 0) {
+        return;
+      }
       // find unsettled orders in the db based on the IDs array
       const unsettledOrders = await databaseClient.getUnsettledTradesByIDs(userID, orderIds);
 

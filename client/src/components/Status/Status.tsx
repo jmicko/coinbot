@@ -43,6 +43,8 @@ function Status() {
   const [feeDisplay, setFeeDisplay] = useLocalStorage<string>('feeDisplay', 'true');
 
   const profitAccuracy = user?.profit_accuracy;
+  const productFunds = user?.availableFunds?.[productID];
+  const fundsAreReady = Boolean(productFunds);
 
   const { width } = useWindowDimensions();
 
@@ -103,17 +105,19 @@ function Status() {
           value={availableFundsDisplay}
           onChange={(e) => { setAvailableFundsDisplay(e.target.value) }}
         >
-          <option value={'true'}>Available {user?.availableFunds?.[productID]?.base_currency}</option>
-          <option value={'false'}>Available {user?.availableFunds?.[productID]?.quote_currency}</option>
+          <option value={'true'}>Available {productFunds?.base_currency || ''}</option>
+          <option value={'false'}>Available {productFunds?.quote_currency || ''}</option>
 
         </select>
         {width > 800 ? <br /> : <div className='spacer' />}
 
-        {availableFundsDisplay === "true"
-          ? `${numberWithCommas(Number(availableBase).toFixed(pbd))}`
-          : `${user?.availableFunds?.[productID]?.quote_currency === 'USD' && "$"}${numberWithCommas(Number(availableQuote)
-            .toFixed(pqd))}
-            ${user?.availableFunds?.[productID]?.quote_currency !== 'USD' ? user?.availableFunds?.[productID]?.quote_currency : ''}`
+        {!fundsAreReady
+          ? 'loading...'
+          : availableFundsDisplay === "true"
+            ? `${numberWithCommas(Number(availableBase).toFixed(pbd))}`
+            : `${productFunds.quote_currency === 'USD' ? '$' : ''}${numberWithCommas(Number(availableQuote)
+              .toFixed(pqd))}
+              ${productFunds.quote_currency !== 'USD' ? productFunds.quote_currency : ''}`
         }
       </div>
 

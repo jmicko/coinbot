@@ -257,6 +257,9 @@ Reservation totals are cached per user and taker-fee multiplier:
 - An invalidation during an in-flight query forces the caller to retry, preventing the stale result from being returned or stored.
 - PostgreSQL still applies the taker-fee multiplier, preserving the previous numeric behavior.
 - Activating or deactivating products does not invalidate the aggregate. The cached result includes every product and the caller selects the active product IDs.
+- A reserve-affecting write also advances a process-local funds-publication epoch. An account snapshot started before that write is discarded, and publication remains deferred briefly while Coinbase account balances catch up with the local order transition.
+- Funds publication is skipped while settled, unflipped rows are waiting for the processing loop.
+- Coinbase account pagination rejects missing or repeated cursors instead of allowing one user's robot loop to wait indefinitely.
 
 Reservation totals are invalidated after:
 
@@ -298,6 +301,19 @@ The existing window definition is otherwise unchanged: one account-wide limit is
 - Cache effectiveness is reported as `limit_orders.limited_unsettled`.
 
 The consolidated query preserves the old per-product result order. It was compared against the old query on a prod-shaped database before deployment.
+
+### Other Limit-Order Query Caches
+
+The former `limitOrdersCache` catch-all object has been removed. Its unfinished single-order cache and unused placeholders were deleted, while the four active query caches now use the same versioned per-user cache helper as the reservation and sync-window caches:
+
+- `limit_orders.settled_unflipped`
+- `limit_orders.unsettled_by_ids`
+- `limit_orders.unfilled_settled_by_ids`
+- `limit_orders.desync_window`
+
+Each cache shares concurrent in-flight reads and retries when invalidated during a load. Order-ID cache keys are derived internally from a sorted, deduplicated ID list, so callers cannot accidentally reuse results by omitting or constructing an inconsistent key. Empty ID lists return immediately without querying PostgreSQL.
+
+The pending order-deletion counter remains process-local runtime state, but it is now separate from database query caches.
 
 Run the focused server tests with:
 

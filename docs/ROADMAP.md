@@ -85,8 +85,12 @@ This is the initial priority list after reviewing the current branch. It is bias
 - Make robot loop startup explicit and configurable.
 - Review loop timing and rate-limit handling after tests exist.
 - Add tests around `fullSync`, `quickSync`, `updateMultipleOrders`, and `reorder` before changing loop ordering.
+- Instrument and optimize sync/desync latency, especially the per-product BUY/SELL desync queries and Coinbase cancellation work during fast markets.
+- Measure whether Coinbase websocket settlement detection provides enough latency benefit to justify its duplicate REST reconciliation path.
 - Add tests around reinvestment reserve calculations and multiple simultaneous sell-to-buy flips.
 - Add tests for fee policy: internal availability/reinvestment gates should reserve with taker assumptions, while expected-profit displays may use maker assumptions.
+- Replace the fixed post-reservation funds grace period with an explicit Coinbase/local-ledger convergence check if production logs show that account settlement regularly takes longer than the grace window.
+- Export active robot-loop stage and age in runtime metrics so a stuck user loop can be diagnosed without relying only on warning logs.
 - Make child-process lifecycle for candle imports visible and stoppable.
 - Add tests around server maintenance jobs such as old-message retention.
 - Investigate repeated `unknown error getting candles` logs from `candleMaker` during startup against the cloned dev database.

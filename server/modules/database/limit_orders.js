@@ -20,6 +20,8 @@ import {
   orderUpdateAffectsLimitedOrderWindow,
   parseLimitedOrderWindowKey,
 } from "./limitedOrderWindowCache.js";
+import { createVersionedUserCache } from "./versionedUserCache.js";
+import { fundsRefreshGuard } from "../runtime/fundsRefreshGuard.js";
 
 let showLogs = false;
 const logTypes = {
@@ -44,25 +46,126 @@ function devLog(...message) {
   }
 }
 
-// cache
-const limitOrdersCache = {
-  // For single trades by order_id
-  singleTrades: new Map(), // userID -> order_id -> trade
+const pendingDeletionCounts = new Map();
 
-  // For user-based queries
-  userTrades: new Map(),   // userID -> {
-  // settled: null,         //   Settled trades for user
-  // unsettled: null,      //   Unsettled trades for user
-  // limited: null,        //   Limited unsettled trades
-  // all: null             //   All orders for user
-  // }
+function getUserCacheKey(userID) {
+  return String(userID);
+}
 
-  // for counting deleted trades
-  // when the delete trade route is called, it will increment the count for the userID
-  // then when deleteMarkedOrders is called, it will decrement the count for the userID
-  // deleteMarkedOrders will only run if the count is greater than 0
-  deletedTrades: {}, // userID -> count
-};
+function normalizeOrderIDs(IDs) {
+  if (!Array.isArray(IDs)) {
+    return [];
+  }
+
+  return [...new Set(IDs.filter(Boolean).map(String))].sort();
+}
+
+export function createOrderIDCacheKey(IDs) {
+  return JSON.stringify(normalizeOrderIDs(IDs));
+}
+
+function parseOrderIDCacheKey(cacheKey) {
+  return JSON.parse(cacheKey);
+}
+
+function createDeSyncCacheKey(limit, side) {
+  return JSON.stringify([Number(limit), side]);
+}
+
+function parseDeSyncCacheKey(cacheKey) {
+  const [limit, side] = JSON.parse(cacheKey);
+  return { limit, side };
+}
+
+function invalidateUserCache(cache, userID) {
+  if (userID === undefined || userID === null) {
+    cache.clear();
+    return;
+  }
+
+  cache.invalidate(userID);
+}
+
+async function loadSettledTrades(userID) {
+  const sqlText = `SELECT * FROM "limit_orders" WHERE "settled"=true AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
+  const results = await pool.query(sqlText, [userID]);
+  return results.rows;
+}
+
+const settledTradesCache = createVersionedUserCache(
+  loadSettledTrades,
+  (event) => recordCacheEvent('limit_orders.settled_unflipped', event)
+);
+
+async function loadUnsettledTradesByIDs(userID, cacheKey) {
+  const orderIDs = parseOrderIDCacheKey(cacheKey);
+  if (orderIDs.length === 0) {
+    return [];
+  }
+
+  const sqlText = `select *
+    from limit_orders
+    where order_id = ANY ($1) and settled=false and "userID" = $2;`;
+  const result = await pool.query(sqlText, [orderIDs, userID]);
+  return result.rows;
+}
+
+const unsettledTradesByIDsCache = createVersionedUserCache(
+  loadUnsettledTradesByIDs,
+  (event) => recordCacheEvent('limit_orders.unsettled_by_ids', event)
+);
+
+async function loadUnfilledTradesByIDs(userID, cacheKey) {
+  const orderIDs = parseOrderIDCacheKey(cacheKey);
+  if (orderIDs.length === 0) {
+    return [];
+  }
+
+  const sqlText = `select *
+    from limit_orders
+    where order_id = ANY ($1) and filled_at IS NULL and settled=true and "userID" = $2;`;
+  const result = await pool.query(sqlText, [orderIDs, userID]);
+  return result.rows;
+}
+
+const unfilledTradesByIDsCache = createVersionedUserCache(
+  loadUnfilledTradesByIDs,
+  (event) => recordCacheEvent('limit_orders.unfilled_settled_by_ids', event)
+);
+
+async function loadDeSyncs(userID, cacheKey) {
+  const { limit, side } = parseDeSyncCacheKey(cacheKey);
+  const orderSide = side.slice(0, -1).toUpperCase();
+  const sqlText = `SELECT * FROM "limit_orders"
+    WHERE "side"=$1
+    AND "flipped"=false
+    AND "will_cancel"=false
+    AND "reorder"=false
+    AND "userID"=$2
+    AND "product_id"=$3
+    ORDER BY "limit_price" ${orderSide === 'BUY' ? 'DESC' : 'ASC'}
+    OFFSET $4;`;
+
+  const products = await getActiveProductIDs(userID);
+  let results = [];
+
+  for (const product of products) {
+    const productResults = await pool.query(sqlText, [
+      orderSide,
+      userID,
+      product,
+      limit,
+    ]);
+    results = [...results, ...productResults.rows];
+  }
+
+  return results;
+}
+
+const deSyncsCache = createVersionedUserCache(
+  loadDeSyncs,
+  (event) => recordCacheEvent('limit_orders.desync_window', event)
+);
 
 async function loadReservationTotals(userID, takerFee) {
   const result = await pool.query(
@@ -99,7 +202,13 @@ const reservationTotalsCache = createReservationTotalsCache(
 );
 
 function clearReservationTotalsCache(userID) {
-  reservationTotalsCache.invalidate(userID);
+  invalidateUserCache(reservationTotalsCache, userID);
+  if (userID !== undefined && userID !== null) {
+    fundsRefreshGuard.defer(
+      userID,
+      'local order reservations changed'
+    );
+  }
 }
 
 async function loadReorderWindow(userID, cacheKey) {
@@ -149,7 +258,7 @@ const reorderWindowCache = createReorderWindowCache(
 );
 
 function clearReorderWindowCache(userID) {
-  reorderWindowCache.invalidate(userID);
+  invalidateUserCache(reorderWindowCache, userID);
 }
 
 async function loadLimitedOrderWindow(userID, cacheKey) {
@@ -208,85 +317,48 @@ const limitedOrderWindowCache = createLimitedOrderWindowCache(
 );
 
 function clearLimitedOrderWindowCache(userID) {
-  limitedOrderWindowCache.invalidate(userID);
+  invalidateUserCache(limitedOrderWindowCache, userID);
 }
 
-// get the user cache for a user
-function getUserTradesCache(userID) {
-  if (!limitOrdersCache.userTrades.has(userID)) {
-    limitOrdersCache.userTrades.set(userID, {
-      settled: null,
-      unsettled: null,
-      unsettledTradesByIDs: new Map(),
-      unfilledTradesByIDs: new Map(),
-      deSyncs: new Map(),
-      limited: null,
-      all: null
-    });
-  }
-  return limitOrdersCache.userTrades.get(userID);
-}
-
-// clear the user cache for a user
-function clearUserTradesCache(userID) {
-  if (userID) {
-    limitOrdersCache.userTrades.delete(userID);
-  }
-}
-
-function clearAllUserCaches(userID) {
-  clearUserTradesCache(userID);
-  clearSingleTradeCache(userID);
+function clearOrderQueryCaches(userID) {
+  invalidateUserCache(settledTradesCache, userID);
+  invalidateUserCache(unsettledTradesByIDsCache, userID);
+  invalidateUserCache(unfilledTradesByIDsCache, userID);
+  invalidateUserCache(deSyncsCache, userID);
 }
 
 onCacheEvent(cacheEvents.LIMIT_ORDERS_UPDATED, (userID) => {
   devLog('LIMIT_ORDERS_UPDATED event received', userID);
-  clearAllUserCaches(userID);
+  clearOrderQueryCaches(userID);
   clearReservationTotalsCache(userID);
   clearReorderWindowCache(userID);
   clearLimitedOrderWindowCache(userID);
 });
 
 onCacheEvent(cacheEvents.PRODUCTS_UPDATED, (userID) => {
+  invalidateUserCache(deSyncsCache, userID);
   clearReorderWindowCache(userID);
   clearLimitedOrderWindowCache(userID);
 });
 
-function getSingleTradeCache(userID, order_id) {
-  if (!limitOrdersCache.singleTrades.has(userID)) {
-    limitOrdersCache.singleTrades.set(userID, new Map());
-  }
-  return limitOrdersCache.singleTrades.get(userID).get(order_id);
+function getPendingDeletionCount(userID) {
+  return pendingDeletionCounts.get(getUserCacheKey(userID)) || 0;
 }
 
-// clear the single trade cache for an order_id
-function clearSingleTradeCache(userID) {
-  if (userID) {
-    limitOrdersCache.singleTrades.delete(userID);
-  }
+function incrementPendingDeletionCount(userID) {
+  const userKey = getUserCacheKey(userID);
+  pendingDeletionCounts.set(userKey, getPendingDeletionCount(userID) + 1);
 }
 
-// helper function to get the count of deleted trades for a user
-function getDeletedTradeCount(userID) {
-  if (!limitOrdersCache.deletedTrades[userID]) {
-    limitOrdersCache.deletedTrades[userID] = 0;
+function decrementPendingDeletionCount(userID, amount = 1) {
+  const userKey = getUserCacheKey(userID);
+  const nextCount = Math.max(0, getPendingDeletionCount(userID) - amount);
+  if (nextCount === 0) {
+    pendingDeletionCounts.delete(userKey);
+    return;
   }
-  return limitOrdersCache.deletedTrades[userID];
-}
 
-// helper function to increment the count of deleted trades for a user
-function incrementDeletedTradeCount(userID) {
-  if (limitOrdersCache.deletedTrades[userID] === undefined) {
-    limitOrdersCache.deletedTrades[userID] = 0;
-  }
-  limitOrdersCache.deletedTrades[userID]++;
-}
-
-// helper function to decrement the count of deleted trades for a user
-function decrementDeletedTradeCount(userID) {
-  if (limitOrdersCache.deletedTrades[userID] > 0) {
-    limitOrdersCache.deletedTrades[userID]--;
-  }
+  pendingDeletionCounts.set(userKey, nextCount);
 }
 
 // get all details of an order
@@ -340,34 +412,9 @@ export async function getSpentByProducts(userID, takerFee, productIDs) {
 }
 
 // This will get trades that have settled but not yet been flipped, meaning they need to be processed
-export const getSettledTrades = (userID) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const userCache = getUserTradesCache(userID);
-      if (userCache.settled) {
-        // devLog('GETTER', 'getSettledTrades CACHE HIT');
-        resolve(userCache.settled);
-        return;
-      }
-      devLog('GETTER', 'getSettledTrades CACHE MISS');
-      // check all trades in db that are both settled and NOT flipped
-      const sqlText = `SELECT * FROM "limit_orders" WHERE "settled"=true AND "flipped"=false AND "will_cancel"=false AND "userID"=$1;`;
-
-      const results = await pool.query(sqlText, [userID])
-      // .then((results) => {
-      const settled = results.rows;
-      // update the user cache
-      userCache.settled = settled;
-      // promise returns promise from pool if success
-      devLog('GETTER', 'getSettledTrades CACHE SET');
-      resolve(settled);
-    } catch (err) {
-      // or promise relays errors from pool to parent
-      reject(err);
-    }
-    // const end = performance.now();
-    // devLog(`getSettledTrades took ${end - start}ms`);
-  });
+export async function getSettledTrades(userID) {
+  devLog('GETTER', 'getSettledTrades');
+  return settledTradesCache.get(userID, 'settled');
 }
 
 // get a number of open orders in DB based on side. This will return them whether or not they are synced with CBP
@@ -444,26 +491,13 @@ export async function getLimitedUnsettledTrades(userID, limit) {
 }
 
 // get all details of an array of order IDs
-export const getUnsettledTradesByIDs = (userID, IDs, IDsString) => {
-  return new Promise(async (resolve, reject) => {
-    // devLog('GETTER', 'getUnsettledTradesByIDs', IDsString);
-    const cache = getUserTradesCache(userID);
-    const cacheKey = `${userID}-${IDsString}`;
-    if (cache.unsettledTradesByIDs.has(cacheKey)) {
-      resolve(cache.unsettledTradesByIDs.get(cacheKey));
-      return;
-    }
-    const sqlText = `select *
-    from limit_orders
-    where order_id = ANY ($1) and settled=false and "userID" = $2;`;
-    try {
-      let result = await pool.query(sqlText, [IDs, userID]);
-      cache.unsettledTradesByIDs.set(cacheKey, result.rows);
-      resolve(result.rows);
-    } catch (err) {
-      reject(err);
-    }
-  });
+export async function getUnsettledTradesByIDs(userID, IDs) {
+  const cacheKey = createOrderIDCacheKey(IDs);
+  if (parseOrderIDCacheKey(cacheKey).length === 0) {
+    return [];
+  }
+
+  return unsettledTradesByIDsCache.get(userID, cacheKey);
 }
 
 // This will get trades that have settled but not yet been flipped, meaning they need to be processed
@@ -487,27 +521,13 @@ export const getAllSettledTrades = (userID) => {
 }
 
 // get all details of an array of order IDs
-export const getUnfilledTradesByIDs = (userID, IDs, IDsString) => {
-  return new Promise(async (resolve, reject) => {
-    const cache = getUserTradesCache(userID);
-    const cacheKey = `${userID}-${IDsString}`;
-    if (cache.unfilledTradesByIDs.has(cacheKey)) {
-      // devLog('GETTER', 'getUnfilledTradesByIDs CACHE HIT');
-      resolve(cache.unfilledTradesByIDs.get(cacheKey));
-      return;
-    }
-    // devLog('GETTER', 'getUnfilledTradesByIDs CACHE MISS');
-    const sqlText = `select *
-    from limit_orders
-    where order_id = ANY ($1) and filled_at IS NULL and settled=true and "userID" = $2;`;
-    try {
-      let result = await pool.query(sqlText, [IDs, userID]);
-      cache.unfilledTradesByIDs.set(cacheKey, result.rows);
-      resolve(result.rows);
-    } catch (err) {
-      reject(err);
-    }
-  });
+export async function getUnfilledTradesByIDs(userID, IDs) {
+  const cacheKey = createOrderIDCacheKey(IDs);
+  if (parseOrderIDCacheKey(cacheKey).length === 0) {
+    return [];
+  }
+
+  return unfilledTradesByIDsCache.get(userID, cacheKey);
 }
 
 // This will get orders for a user
@@ -641,44 +661,8 @@ export async function getReorders(userID, limit) {
 // get all the trades that are outside the limit of the synced orders qty setting, 
 // but all still probably synced with CB (based on reorder=false)
 export async function getDeSyncs(userID, limit, side) {
-  const cache = getUserTradesCache(userID);
-  const cacheKey = `${userID}-${limit}-${side}`;
-
-  return new Promise(async (resolve, reject) => {
-    if (cache.deSyncs.has(cacheKey)) {
-      resolve(cache.deSyncs.get(cacheKey));
-      return;
-    }
-
-    try {
-      // Convert 'buys'/'sells' to 'BUY'/'SELL'
-      const orderSide = side.slice(0, -1).toUpperCase();
-
-      const sqlText = `SELECT * FROM "limit_orders" 
-        WHERE "side"=$1 
-        AND "flipped"=false 
-        AND "will_cancel"=false 
-        AND "reorder"=false 
-        AND "userID"=$2 
-        AND "product_id"=$3
-        ORDER BY "limit_price" ${orderSide === 'BUY' ? 'DESC' : 'ASC'}
-        OFFSET $4;`;
-
-      const products = await getActiveProductIDs(userID);
-      let results = [];
-
-      for (const product of products) {
-        const productResults = await pool.query(sqlText,
-          [orderSide, userID, product, limit]);
-        results = [...results, ...productResults.rows];
-      }
-
-      cache.deSyncs.set(cacheKey, results);
-      resolve(results);
-    } catch (err) {
-      reject(err);
-    }
-  });
+  const cacheKey = createDeSyncCacheKey(limit, side);
+  return deSyncsCache.get(userID, cacheKey);
 }
 
 // check to see if a trade is being canceled by the user
@@ -831,7 +815,7 @@ export const storeTrade = (newOrder, originalDetails, flipped_at) => {
         newOrder.cancel_message,
       ]);
       // update the user cache
-      clearAllUserCaches(originalDetails.userID);
+      clearOrderQueryCaches(originalDetails.userID);
       clearReservationTotalsCache(originalDetails.userID);
       clearReorderWindowCache(originalDetails.userID);
       clearLimitedOrderWindowCache(originalDetails.userID);
@@ -1034,7 +1018,7 @@ export const updateTrade = (order) => {
     try {
       const results = await pool.query(finalSqlText, columns)
       // update the user cache
-      clearAllUserCaches(order.userID);
+      clearOrderQueryCaches(order.userID);
       if (orderUpdateAffectsReservationTotals(order)) {
         clearReservationTotalsCache(order.userID);
       }
@@ -1062,7 +1046,7 @@ export async function setSingleReorder(order_id, userID) {
       const sqlText = `UPDATE "limit_orders" SET "reorder" = true WHERE "order_id" = $1;`;
       await pool.query(sqlText, [order_id]);
       // update the user cache
-      clearAllUserCaches(userID);
+      clearOrderQueryCaches(userID);
       clearReorderWindowCache(userID);
       clearLimitedOrderWindowCache(userID);
       resolve();
@@ -1085,7 +1069,7 @@ export async function setManyReorders(idArray, userID) {
 
       await pool.query(sqlText, [idArray]);
       // update the user cache
-      clearAllUserCaches(userID);
+      clearOrderQueryCaches(userID);
       clearReorderWindowCache(userID);
       clearLimitedOrderWindowCache(userID);
       resolve();
@@ -1105,7 +1089,7 @@ export async function setReorder(userID) {
       const sqlText = `UPDATE "limit_orders" SET "reorder" = true WHERE "settled"=false AND "userID" = $1;`;
       await pool.query(sqlText, [userID]);
       // update the user cache
-      clearAllUserCaches(userID);
+      clearOrderQueryCaches(userID);
       clearReorderWindowCache(userID);
       clearLimitedOrderWindowCache(userID);
       resolve();
@@ -1124,7 +1108,7 @@ export async function markAsFlipped(order_id, userID) {
       const sqlText = `UPDATE "limit_orders" SET "flipped" = true WHERE "order_id"=$1;`;
       let result = await pool.query(sqlText, [order_id]);
       // update the user cache
-      clearAllUserCaches(userID);
+      clearOrderQueryCaches(userID);
       clearReservationTotalsCache(userID);
       clearReorderWindowCache(userID);
       clearLimitedOrderWindowCache(userID);
@@ -1144,7 +1128,7 @@ export async function deleteTrade(order_id, userID) {
       const queryText = `DELETE from "limit_orders" WHERE "order_id"=$1;`;
       let result = await pool.query(queryText, [order_id]);
       // update the user cache
-      clearAllUserCaches(userID);
+      clearOrderQueryCaches(userID);
       clearReservationTotalsCache(userID);
       clearReorderWindowCache(userID);
       clearLimitedOrderWindowCache(userID);
@@ -1209,9 +1193,9 @@ export async function markForCancel(userID, order_id) {
       WHERE "order_id"=$1
       RETURNING *;`;
       let result = await pool.query(queryText, [order_id]);
-      incrementDeletedTradeCount(userID);
+      incrementPendingDeletionCount(userID);
       // update the user cache
-      clearAllUserCaches(userID);
+      clearOrderQueryCaches(userID);
       clearReservationTotalsCache(userID);
       clearReorderWindowCache(userID);
       clearLimitedOrderWindowCache(userID);
@@ -1224,7 +1208,7 @@ export async function markForCancel(userID, order_id) {
 
 // delete all orders that are marked to be cancelled
 export async function deleteMarkedOrders(userID) {
-  const deletedCount = getDeletedTradeCount(userID);
+  const deletedCount = getPendingDeletionCount(userID);
   if (deletedCount === 0) {
     return;
   }
@@ -1237,12 +1221,16 @@ export async function deleteMarkedOrders(userID) {
       let result = await pool.query(queryText, [userID]);
       devLog(result.rows, 'deleteMarkedOrders result');
       // update the user cache
-      clearAllUserCaches(userID);
+      clearOrderQueryCaches(userID);
       clearReservationTotalsCache(userID);
       clearReorderWindowCache(userID);
       clearLimitedOrderWindowCache(userID);
+      const completedPendingCount = Math.min(
+        deletedCount,
+        Math.max(1, result.rowCount)
+      );
+      decrementPendingDeletionCount(userID, completedPendingCount);
       resolve(result.rows);
-      decrementDeletedTradeCount(userID);
     } catch (err) {
       reject(err)
     }
@@ -1283,7 +1271,7 @@ export async function bulkUpdateTradePairRatio(userID, product_id, bulk_pair_rat
     [product_id, userID]
   );
 
-  clearAllUserCaches(userID);
+  clearOrderQueryCaches(userID);
   clearReorderWindowCache(userID);
   clearLimitedOrderWindowCache(userID);
 }

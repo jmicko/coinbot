@@ -332,30 +332,65 @@ class Coinbase {
     })
   }
 
-  // Get all accounts. Call the above, and if it has_next, call this recursively with the cursor we get back until it doesn't have_next
-  // this will return an array of all accounts
-  async getAllAccounts(prevCursor) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        devLog('getAllAccounts');
-        // if there is a prevCursor, add it to the params, always limit to 250
-        const params = { limit: 250 };
-        if (prevCursor) { params.cursor = prevCursor };
-        // get the accounts
-        const result = await this.getAccounts(params);
-        // if there is a next cursor, call this function again with the cursor
-        if (result.has_next) {
-          await sleep(200);
-          const nextAccounts = await this.getAllAccounts(result.cursor);
-          // combine the two arrays
-          result.accounts = result.accounts.concat(nextAccounts.accounts);
-        }
-        // devLog(result, 'GET ALL ACCOUNTS result');
-        resolve(result);
-      } catch (err) {
-        reject(err);
+  async getAllAccounts({
+    limit = 250,
+    maxPages = 100,
+    pageDelayMs = 200,
+  } = {}) {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 250) {
+      throw new Error('Coinbase accounts page limit must be an integer from 1 to 250');
+    }
+    if (!Number.isInteger(maxPages) || maxPages < 1) {
+      throw new Error('Coinbase accounts max pages must be a positive integer');
+    }
+
+    devLog('getAllAccounts');
+    const accounts = [];
+    const seenCursors = new Set();
+    let cursor;
+    let lastResult;
+    let pageCount = 0;
+
+    while (true) {
+      const params = { limit };
+      if (cursor) {
+        params.cursor = cursor;
       }
-    })
+
+      const result = await this.getAccounts(params);
+      lastResult = result;
+      pageCount += 1;
+
+      if (!Array.isArray(result.accounts)) {
+        throw new Error('Coinbase accounts response did not contain an accounts array');
+      }
+
+      accounts.push(...result.accounts);
+
+      const pagination = result.pagination || {};
+      const hasNext = pagination.has_next ?? result.has_next ?? false;
+      if (!hasNext) {
+        return {
+          ...lastResult,
+          accounts,
+          has_next: false,
+          page_count: pageCount,
+          num_accounts: accounts.length,
+        };
+      }
+      if (pageCount >= maxPages) {
+        throw new Error(`Coinbase accounts pagination exceeded ${maxPages} pages`);
+      }
+
+      const nextCursor = pagination.next_cursor || result.cursor;
+      if (!nextCursor || seenCursors.has(nextCursor)) {
+        throw new Error('Coinbase accounts pagination returned an invalid cursor');
+      }
+
+      seenCursors.add(nextCursor);
+      cursor = nextCursor;
+      await sleep(pageDelayMs);
+    }
   }
 
 

@@ -177,6 +177,22 @@ The Coinbase balance call is only the external baseline. It cannot replace Coinb
 
 Known risk: this is still a snapshot. Deposits, withdrawals, manual Coinbase activity, fills, and API delays can change balances while the loop is running.
 
+### Reservation Transition Guard
+
+When an order flips, Coinbot changes local reservations immediately:
+
+- a settled `SELL` stops reserving base currency locally;
+- the replacement `BUY` starts reserving quote currency locally;
+- Coinbase account balances may still report the previous settlement state for a short period.
+
+That can temporarily show the base currency as too high and the quote currency as too low. A live LTC-USD incident on June 8, 2026 matched this shape: available USD went negative while available LTC went positive by roughly the flipped trade size.
+
+To avoid publishing that crossing snapshot, reservation-affecting order writes now defer available-funds publication for a short process-local grace period. `updateFunds()` also refuses to publish while there are local `settled = true` / `flipped = false` rows waiting for `processOrders()`, and it discards an in-flight Coinbase account snapshot if a reservation mutation happens before publication.
+
+This does not change the order-placement or flip logic. It only keeps the previous available-funds snapshot visible until the local ledger and Coinbase account baseline are less likely to be in different settlement states.
+
+The June 8 metrics also showed one `robot.syncOrders user:1` invocation that started and did not complete, while another user's loop kept running. The old metrics could not identify the exact await. The sync loop now logs a warning with the current stage if a single invocation runs longer than 30 seconds. Coinbase account pagination also guards against missing or repeated cursors so a bad paginated response fails, logs, and lets the next loop retry instead of waiting forever.
+
 ## Fees And Reservations
 
 Fee rates are refreshed during `fullSync()`:
@@ -247,7 +263,23 @@ This behavior is useful, but it should not be heavily refactored until the datab
 
 The Coinbase websocket can catch order fills faster than REST polling. When it receives filled order updates, it calls a websocket-local `updateMultipleOrders()` implementation to fetch and update those order rows.
 
-This helps reduce latency, but it does not remove the need for REST reconciliation. Websockets can disconnect, miss data during restarts, or be unavailable when credentials are missing.
+The websocket payload is treated as an early settlement signal, not a complete settlement record. Coinbot still calls the REST `getOrder` endpoint before updating the local order because the websocket event has historically omitted information needed by the flip and profit paths. The processing loop remains responsible for flipping settled rows.
+
+This can reduce detection latency, but it duplicates part of the main-loop reconciliation path and does not remove the need for REST polling. Websockets can disconnect, miss data during restarts, or be unavailable when credentials are missing. Before expanding this path, measure whether its latency benefit is meaningful enough to justify maintaining two settlement detectors. A future simplification could have the websocket enqueue order IDs for the main reconciliation code instead of maintaining a second `updateMultipleOrders()` implementation.
+
+## Sync/Desync Latency
+
+On quick-sync iterations, `quickSync()` is followed by `deSync()`. The current desync query checks every active product on both sides for orders outside the user's Coinbase sync window. Cache hits make this cheap during stable periods, but an order mutation invalidates the cache and the next calculation can issue two queries per active product before Coinbase cancellation work begins.
+
+During rapid price movement, this reconciliation and cancellation work can delay later order checks. Improving this path is likely more valuable than making websocket settlement handling more elaborate.
+
+Future work should:
+
+- instrument time spent in `quickSync`, `deSync`, Coinbase cancellation, and `updateMultipleOrders` separately;
+- replace per-product desync reads with one set-based query while preserving per-product limits;
+- avoid repeating desync work when the local order window has not changed;
+- test whether settlement checks should run before, after, or concurrently with desync work without changing reservation or reorder semantics;
+- keep Coinbase rate limits and per-user request ordering explicit.
 
 ## Known Sync Risks
 
@@ -272,6 +304,8 @@ Useful next improvements:
 - Add a no-trade startup mode for repeatable smoke tests.
 - Make the sync loop state machine explicit and tested.
 - Add tests for `fullSync`, `quickSync`, `updateMultipleOrders`, and `reorder` with mocked Coinbase responses.
+- Add timing metrics and focused tests around sync/desync behavior during bursts of fills and price movement.
+- Consolidate websocket and main-loop settlement reconciliation if the websocket path does not provide a meaningful measured latency improvement.
 - Add explicit portfolio awareness once Coinbase portfolio IDs are available through the API paths used here.
 - Record enough local ledger events to explain why funds were considered available at the moment an order was placed.
 - Add focused tests around reinvestment, reserves, max-trade behavior, and multiple simultaneous sell-to-buy flips.

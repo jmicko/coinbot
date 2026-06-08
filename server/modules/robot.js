@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 import { devLog } from "./utilities.js";
 import { runWithDbContext } from './dbMetrics.js';
 import { runWithLogContext } from './logger.js';
+import { fundsRefreshGuard } from './runtime/fundsRefreshGuard.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -17,6 +18,7 @@ const productUpdatesInFlight = new Map();
 const PRODUCT_REFRESH_INTERVAL_MS = 15 * 60 * 1000;
 const orderNotFoundCounts = new Map();
 const ORDER_NOT_FOUND_REORDER_THRESHOLD = 10;
+const SYNC_LOOP_WARNING_MS = 30 * 1000;
 
 function runRobotDbContext(name, userID, callback) {
   const contextName = userID ? `robot.${name} user:${userID}` : `robot.${name}`;
@@ -128,6 +130,11 @@ async function initializeUserLoops(user) {
         requireProductCatalog: false,
       })) {
         await sleep(10000);
+        try {
+          await updateProducts(userID);
+        } catch (err) {
+          devLog(err, `initial product refresh failed for user ${userID}`);
+        }
         await updateFunds(userID);
         devLog('FUNDS INITED')
         await sleep(5000);
@@ -182,8 +189,18 @@ async function processingLoop(userID) {
 // repeating loop to find orders that have settled on coinbase via REST API
 async function syncOrders(userID) {
   return runRobotDbContext('syncOrders', userID, async () => {
+    let syncStage = 'starting';
+    const syncStartedAt = Date.now();
+    const warningTimer = setTimeout(() => {
+      devLog({
+        userID,
+        stage: syncStage,
+        elapsedMs: Date.now() - syncStartedAt,
+      }, 'sync loop has not completed after 30 seconds');
+    }, SYNC_LOOP_WARNING_MS);
     const user = userStorage.getUser(userID)
     if (!user || user.deleting) {
+      clearTimeout(warningTimer);
       return
     }
     // increase the loop number tracker at the beginning of the loop
@@ -210,6 +227,7 @@ async function syncOrders(userID) {
         canRefreshProducts
         && productCatalog.isRefreshDue(userID, PRODUCT_REFRESH_INTERVAL_MS)
       ) {
+        syncStage = 'refreshing products';
         await updateProducts(userID);
       }
       // check that user is active, approved, and unpaused, and that the bot is not under maintenance
@@ -221,17 +239,21 @@ async function syncOrders(userID) {
           // *** FULL SYNC ***
           // full sync compares all trades that should be on CB with DB,
           // and does other less frequent maintenance tasks
+          syncStage = 'full sync';
           await fullSync(userID);
         } else {
 
           // *** QUICK SYNC ***
           //  quick sync only checks fills endpoint and has fewer functions for less CPU usage
+          syncStage = 'quick sync';
           await quickSync(userID);
           // desync extra orders
+          syncStage = 'desync';
           await deSync(userID)
         } // end which sync
 
         // *** UPDATE ORDERS IN DATABASE ***
+        syncStage = 'updating queued orders';
         await updateMultipleOrders(userID);
         // update funds after everything has been processed
         // await updateFunds(userID);
@@ -242,11 +264,14 @@ async function syncOrders(userID) {
       }
       // update funds if the user is all of the above except for maintenance
       if (canUseCoinbase(userID, user, { requireUnpaused: false })) {
+        syncStage = 'updating available funds';
         await updateFunds(userID);
       }
     } catch (err) {
       MainLoopErrors(userID, err);
     } finally {
+      clearTimeout(warningTimer);
+      syncStage = 'scheduling next loop';
       // when everything is done, call the sync again if the user still exists
       if (user) {
         const endTime = performance.now();
@@ -462,18 +487,16 @@ async function quickSync(userID) {
       const fills = response.fills; //this is the same as allFills
       // get an array of just the IDs
       const fillsIds = []
-      let fillsString = '';
       fills.forEach(fill => {
         fillsIds.push(fill.order_id);
-        fillsString += fill.order_id;
       })
       // find unsettled orders in the db based on the IDs array
-      const unsettledFills = await databaseClient.getUnsettledTradesByIDs(userID, fillsIds, fillsString);
+      const unsettledFills = await databaseClient.getUnsettledTradesByIDs(userID, fillsIds);
 
 
 
       // get any fills that are not filled but are settled in the db. This will likely be from the previous loop
-      const unfilled = await databaseClient.getUnfilledTradesByIDs(userID, fillsIds, fillsString);
+      const unfilled = await databaseClient.getUnfilledTradesByIDs(userID, fillsIds);
 
       unfilled.forEach(async trade => {
 
@@ -523,6 +546,10 @@ async function processOrders(userID) {
       const tradeList = await databaseClient.getSettledTrades(userID);
       // if there is at least one trade...
       if (tradeList.length > 0) {
+        fundsRefreshGuard.defer(
+          userID,
+          'settled orders are waiting to be flipped'
+        );
         // loop through all the settled orders and flip them
         for (let i = 0; i < tradeList.length; i++) {
           // ...take the first trade that needs to be flipped, 
@@ -1011,169 +1038,152 @@ function orderElimination(dbOrders, cbOrders) {
 
 async function getAvailableFunds(userID, userSettings) {
   userStorage.updateStatus(userID, 'get available funds');
-  return new Promise(async (resolve, reject) => {
-    try {
-      // devLog('get available funds');
-      if (!userSettings?.active) {
-        devLog('not active!');
-        reject('user is not active')
-        return;
-      }
-      const takerFee = Number(userSettings.taker_fee) + 1;
+  if (!userSettings?.active) {
+    devLog('not active!');
+    throw new Error('user is not active');
+  }
 
-      const results = await Promise.all([
-        cbClients[userID].getAllAccounts(),
-        // funds are withheld in usd when a buy is placed, so the maker fee is needed to subtract fees
-        // databaseClient.getSpentUSD(userID, takerFee),
-        // funds are taken from the sale once settled, so the maker fee is not needed on the buys
-        // databaseClient.getSpentBTC(userID),
-        // get a list of products that the user has active
-        databaseClient.getActiveProducts(userID),
-      ]);
-      const accounts = results[0].accounts;
+  const takerFee = Number(userSettings.taker_fee) + 1;
+  const [accountResponse, activeProducts] = await Promise.all([
+    cbClients[userID].getAllAccounts(),
+    databaseClient.getActiveProducts(userID),
+  ]);
+  const accounts = accountResponse.accounts;
+  const productSpending = new Map(
+    (await databaseClient.getSpentByProducts(
+      userID,
+      takerFee,
+      activeProducts.map((product) => product.product_id)
+    )).map((spending) => [spending.product_id, spending])
+  );
 
-      // devLog(accounts.length, 'accounts in getAvailableFunds');
+  const currencies = new Map();
+  for (const product of activeProducts) {
+    const spending = productSpending.get(product.product_id);
+    const baseSpent = spending?.base_spent || 0;
+    const quoteSpent = spending?.quote_spent || 0;
 
-      const activeProducts = results[1];
-      const productSpending = new Map(
-        (await databaseClient.getSpentByProducts(
-          userID,
-          takerFee,
-          activeProducts.map((product) => product.product_id)
-        )).map((spending) => [spending.product_id, spending])
-      );
+    currencies.set(
+      product.base_currency_id,
+      (currencies.get(product.base_currency_id) || 0) + baseSpent
+    );
+    currencies.set(
+      product.quote_currency_id,
+      (currencies.get(product.quote_currency_id) || 0) + quoteSpent
+    );
+  }
 
-      // get the amount spent for the base and quote currencies for each product
-      // and add them to an array of currency objects with the currency id and amount spent
-      // if the currency already exists in the array, add the amount spent to the amount spent for that currency
-      const currencyArray = [];
-      for (let i = 0; i < activeProducts.length; i++) {
-        const product = activeProducts[i];
-        const baseCurrency = product.base_currency_id;
-        const quoteCurrency = product.quote_currency_id;
-        const spending = productSpending.get(product.product_id);
-        const baseSpent = spending?.base_spent || 0;
-        const quoteSpent = spending?.quote_spent || 0;
+  const availableByCurrency = new Map();
+  for (const [currencyID, amountSpent] of currencies) {
+    const account = accounts.find((entry) => entry.currency === currencyID);
+    const totalFunds =
+      Number(account?.available_balance?.value || 0)
+      + Number(account?.hold?.value || 0);
 
-        // if the base currency is already in the array, add the amount spent to the existing amount spent
-        if (currencyArray.some(currency => currency.currency_id === baseCurrency)) {
-          const index = currencyArray.findIndex(currency => currency.currency_id === baseCurrency);
-          currencyArray[index].amount_spent += baseSpent;
-        } else {
-          // if the base currency is not in the array, add it
-          currencyArray.push({ currency_id: baseCurrency, amount_spent: baseSpent })
-        }
+    availableByCurrency.set(currencyID, {
+      available: (totalFunds - amountSpent).toFixed(16),
+      spent: amountSpent,
+    });
+  }
 
-        // if the quote currency is already in the array, add the amount spent to the existing amount spent
-        if (currencyArray.some(currency => currency.currency_id === quoteCurrency)) {
-          const index = currencyArray.findIndex(currency => currency.currency_id === quoteCurrency);
-          currencyArray[index].amount_spent += quoteSpent;
-        } else {
-          // if the quote currency is not in the array, add it
-          currencyArray.push({ currency_id: quoteCurrency, amount_spent: quoteSpent })
-        }
-      }
-      // calculate the available funds for each currency rounded to 16 decimal places
-      const availableFundsNew = [];
-      for (let i = 0; i < currencyArray.length; i++) {
-        const currency = currencyArray[i];
-        // get the currency from the accounts
-        const [account] = accounts.filter(account => account.currency === currency.currency_id);
+  const availableFunds = {};
+  for (const product of activeProducts) {
+    const baseFunds = availableByCurrency.get(product.base_currency_id);
+    const quoteFunds = availableByCurrency.get(product.quote_currency_id);
 
-        // devLog(account, 'account in getAvailableFunds');
-        // calculate the available funds
-        const available = Number(account?.available_balance?.value || 0) + Number(account?.hold?.value || 0) - currency.amount_spent;
-        // round to 16 decimal places
-        const availableRounded = available.toFixed(16);
-        // add the currency and available funds to the array
-        availableFundsNew.push({ currency_id: currency.currency_id, available: availableRounded, spent: currency.amount_spent })
-      }
+    availableFunds[product.product_id] = {
+      base_currency: product.base_currency_id,
+      base_available: baseFunds.available,
+      base_increment: product.base_increment,
+      quote_currency: product.quote_currency_id,
+      quote_available: quoteFunds.available,
+      quote_increment: product.quote_increment,
+      base_spent: baseFunds.spent,
+      quote_spent: quoteFunds.spent,
+      quote_spent_on_product:
+        productSpending.get(product.product_id)?.quote_spent || 0,
+    };
+  }
 
-      // make an object with an object for each user's product with the product id as the key for each nested object 
-      // each nested object has the available funds for the base and quote currencies, along with the name of the currency
-      // oh no
-      // this is bad
-      // what was I thinking
-      // there are so many objects being turned into other objects and arrays and back again and beyond
-      const availableFundsObject = {};
-      for (let i = 0; i < activeProducts.length; i++) {
-        const product = activeProducts[i];
-        const baseCurrency = product.base_currency_id;
-        const quoteCurrency = product.quote_currency_id;
-        const baseAvailable = availableFundsNew.find(currency => currency.currency_id === baseCurrency).available;
-        const quoteAvailable = availableFundsNew.find(currency => currency.currency_id === quoteCurrency).available;
-        const baseSpent = availableFundsNew.find(currency => currency.currency_id === baseCurrency).spent;
-        const quoteSpent = availableFundsNew.find(currency => currency.currency_id === quoteCurrency).spent;
-        const quoteSpentOnProduct = productSpending.get(product.product_id)?.quote_spent || 0;
-
-        availableFundsObject[product.product_id] = {
-          base_currency: baseCurrency,
-          base_available: baseAvailable,
-          base_increment: product.base_increment,
-          quote_currency: quoteCurrency,
-          quote_available: quoteAvailable,
-          quote_increment: product.quote_increment,
-          base_spent: baseSpent,
-          quote_spent: quoteSpent,
-          quote_spent_on_product: quoteSpentOnProduct,
-        }
-      }
-
-      resolve(availableFundsObject)
-    } catch (err) {
-      messenger[userID].newError({
-        errorText: 'error getting available funds',
-        data: err
-      })
-      reject(err)
-    }
-  })
+  return availableFunds;
 }
 
 async function updateFunds(userID, identifier) {
   userStorage.updateStatus(userID, 'begin update funds');
-  return new Promise(async (resolve, reject) => {
-    try {
-      const userSettings = await databaseClient.getUserAndSettings(userID, 'updateFunds');
-      if (!canUseCoinbase(userID, userSettings, { requireUnpaused: false })) {
-        resolve();
-        return;
-      }
-      const available = await getAvailableFunds(userID, userSettings);
-      const previousAvailable = userStorage.getAvailableFunds(userID);
-
-      // update the user's available funds in runtime state
-      userStorage.updateAvailableFunds(userID, available);
-
-      // compare the previous available funds to the new available funds
-      const availableFundsChanged = compareAvailableFunds(previousAvailable, available);
-
-      // if the available funds have changed, update the DOM
-      if (availableFundsChanged) {
-        devLog('sending order update from updateFunds after available funds changed');
-        messenger[userID].userUpdate(identifier);
-      }
-      resolve()
-    } catch (err) {
-      messenger[userID].newError({
-        errorText: 'error getting available funds',
-        data: err
-      })
-      reject(err)
+  try {
+    const userSettings = await databaseClient.getUserAndSettings(userID, 'updateFunds');
+    if (!canUseCoinbase(userID, userSettings, { requireUnpaused: false })) {
+      return;
     }
-  })
+
+    const initialGuard = fundsRefreshGuard.begin(userID);
+    if (initialGuard.deferred) {
+      return;
+    }
+
+    const pendingSettledTrades = await databaseClient.getSettledTrades(userID);
+    if (pendingSettledTrades.length > 0) {
+      fundsRefreshGuard.defer(
+        userID,
+        'settled orders are waiting to be flipped'
+      );
+      return;
+    }
+
+    const publicationToken = fundsRefreshGuard.begin(userID);
+    if (publicationToken.deferred) {
+      return;
+    }
+    const available = await getAvailableFunds(userID, userSettings);
+    if (!fundsRefreshGuard.canPublish(userID, publicationToken)) {
+      return;
+    }
+
+    const previousAvailable = userStorage.getAvailableFunds(userID);
+
+    // update the user's available funds in runtime state
+    userStorage.updateAvailableFunds(userID, available);
+
+    // compare the previous available funds to the new available funds
+    const availableFundsChanged = compareAvailableFunds(previousAvailable, available);
+
+    // if the available funds have changed, update the DOM
+    if (availableFundsChanged) {
+      devLog('sending order update from updateFunds after available funds changed');
+      messenger[userID].userUpdate(identifier);
+    }
+  } catch (err) {
+    messenger[userID].newError({
+      errorText: 'error getting available funds',
+      data: err
+    });
+    throw err;
+  }
 }
 
 function compareAvailableFunds(previousAvailable, availableFunds) {
-  // return true if the available funds have changed or if there are no previous available, false if they have not changed
-  for (let product in availableFunds) {
-    if (!previousAvailable[product]) {
+  const previousProducts = Object.keys(previousAvailable || {});
+  const availableProducts = Object.keys(availableFunds || {});
+  if (previousProducts.length !== availableProducts.length) {
+    return true;
+  }
+
+  const comparedFields = [
+    'base_available',
+    'base_currency',
+    'base_increment',
+    'quote_available',
+    'quote_currency',
+    'quote_increment',
+  ];
+
+  for (const product of availableProducts) {
+    if (!previousAvailable?.[product]) {
       return true;
     }
-    if (previousAvailable[product].base_available !== availableFunds[product].base_available) {
-      return true;
-    }
-    if (previousAvailable[product].quote_available !== availableFunds[product].quote_available) {
+    if (comparedFields.some(
+      (field) => previousAvailable[product][field] !== availableFunds[product][field]
+    )) {
       return true;
     }
   }
