@@ -816,176 +816,169 @@ function isOrderNotFoundError(err) {
 
 // this should just update the status of each trade in the ordersToCheck cached array
 async function updateMultipleOrders(userID, params) {
-  return new Promise(async (resolve, reject) => {
-    userStorage.updateStatus(userID, 'start updateMultipleOrders (UMO)');
-    // get the orders that need processing. This will have been taken directly from the db and include all details
-    const ordersArray = params?.ordersArray
-      ? params.ordersArray
-      : userStorage.getOrdersToCheck(userID);
+  userStorage.updateStatus(userID, 'start updateMultipleOrders (UMO)');
+  // get the orders that need processing. This will have been taken directly from the db and include all details
+  const ordersArray = params?.ordersArray
+    ? params.ordersArray
+    : userStorage.getOrdersToCheck(userID);
 
-    if (ordersArray?.length > 0) {
-      messenger[userID].newMessage({
-        type: 'general',
-        text: `There are ${ordersArray.length} orders that need to be synced`
-      });
-    } else {
-      resolve()
-      return
-    }
-    // loop over the array and update each trade
-    for (let i = 0; i < ordersArray.length; i++) {
-      // keep track of how long each loop takes. Helps prevent rate limiting
-      const startTime = performance.now();
-      messenger[userID].newMessage({
-        type: 'general',
-        text: `Syncing ${i + 1} of ${ordersArray.length} orders that need to be synced`
-      });
-      // set up loop
-      const orderToCheck = ordersArray[i];
-      // set up loop DONE
-      try {
-        if (orderToCheck.reorder && !orderToCheck.will_cancel) {
-          // if it should be reordered and is not being canceled by the user, reorder it
-          await reorder(orderToCheck);
-          clearOrderNotFoundCount(userID, orderToCheck.order_id);
-        } else {
-          // if not a reorder, look up the full details on CB
-          // devLog(orderToCheck, 'order to check BIG PROBLEM');
-          let updatedOrder = await cbClients[userID].getOrder(orderToCheck.order_id);
-          clearOrderNotFoundCount(userID, orderToCheck.order_id);
-          // if it was cancelled, set it for reorder
-          if (updatedOrder.order.status === 'CANCELLED') {
-            devLog('was canceled but should not have been!')
-            updatedOrder.order.reorder = true;
-          } else if (updatedOrder.order.status === 'FAILED') {
-            devLog('original order failed! reordering')
-            updatedOrder.order.reorder = true;
-          }
-          // then update db with current status
-          updatedOrder.order.userID = userID;
-          await databaseClient.updateTrade(updatedOrder.order);
+  if (ordersArray?.length > 0) {
+    messenger[userID].newMessage({
+      type: 'general',
+      text: `There are ${ordersArray.length} orders that need to be synced`
+    });
+  } else {
+    return;
+  }
+  // loop over the array and update each trade
+  for (let i = 0; i < ordersArray.length; i++) {
+    // keep track of how long each loop takes. Helps prevent rate limiting
+    const startTime = performance.now();
+    messenger[userID].newMessage({
+      type: 'general',
+      text: `Syncing ${i + 1} of ${ordersArray.length} orders that need to be synced`
+    });
+    // set up loop
+    const orderToCheck = ordersArray[i];
+    // set up loop DONE
+    try {
+      if (orderToCheck.reorder && !orderToCheck.will_cancel) {
+        // Full-sync rows intentionally contain only order controls, so pass
+        // ownership from the loop instead of expecting it on the cached row.
+        await reorder(orderToCheck, userID);
+        clearOrderNotFoundCount(userID, orderToCheck.order_id);
+      } else {
+        // if not a reorder, look up the full details on CB
+        // devLog(orderToCheck, 'order to check BIG PROBLEM');
+        let updatedOrder = await cbClients[userID].getOrder(orderToCheck.order_id);
+        clearOrderNotFoundCount(userID, orderToCheck.order_id);
+        // if it was cancelled, set it for reorder
+        if (updatedOrder.order.status === 'CANCELLED') {
+          devLog('was canceled but should not have been!')
+          updatedOrder.order.reorder = true;
+        } else if (updatedOrder.order.status === 'FAILED') {
+          devLog('original order failed! reordering')
+          updatedOrder.order.reorder = true;
         }
-      } catch (err) {
-        devLog(err, 'error in updateMultipleOrders loop');
-        let handledError = false;
-        let errorText = `Error updating order details`;
-        const errorDetails = getCoinbaseErrorDetails(err);
+        // then update db with current status
+        updatedOrder.order.userID = userID;
+        await databaseClient.updateTrade(updatedOrder.order);
+      }
+    } catch (err) {
+      devLog(err, 'error in updateMultipleOrders loop');
+      let handledError = false;
+      let errorText = `Error updating order details`;
+      const errorDetails = getCoinbaseErrorDetails(err);
 
-        if (!orderToCheck.reorder && isOrderNotFoundError(err)) {
-          const notFoundCount = incrementOrderNotFoundCount(userID, orderToCheck.order_id);
-          handledError = true;
+      if (!orderToCheck.reorder && isOrderNotFoundError(err)) {
+        const notFoundCount = incrementOrderNotFoundCount(userID, orderToCheck.order_id);
+        handledError = true;
 
-          if (notFoundCount >= ORDER_NOT_FOUND_REORDER_THRESHOLD) {
-            try {
-              await databaseClient.setSingleReorder(orderToCheck.order_id, userID);
-              clearOrderNotFoundCount(userID, orderToCheck.order_id);
-              messenger[userID].newMessage({
-                type: 'general',
-                text: `Order was not found on Coinbase ${notFoundCount} times and was marked for reorder`,
-                orderUpdate: true,
-              });
-            } catch (markReorderErr) {
-              handledError = false;
-              devLog(markReorderErr, 'error marking missing Coinbase order for reorder');
-              const markReorderErrorDetails = getCoinbaseErrorDetails(markReorderErr);
-              errorText = `Order was not found on Coinbase, but could not be marked for reorder`;
-              if (markReorderErrorDetails?.message) {
-                errorText = errorText + '. Reason: ' + markReorderErrorDetails.message;
-              }
-            }
-          } else if (notFoundCount === 1) {
+        if (notFoundCount >= ORDER_NOT_FOUND_REORDER_THRESHOLD) {
+          try {
+            await databaseClient.setSingleReorder(orderToCheck.order_id, userID);
+            clearOrderNotFoundCount(userID, orderToCheck.order_id);
             messenger[userID].newMessage({
               type: 'general',
-              text: `Order was not found on Coinbase. The bot will retry before marking it for reorder.`,
+              text: `Order was not found on Coinbase ${notFoundCount} times and was marked for reorder`,
+              orderUpdate: true,
             });
+          } catch (markReorderErr) {
+            handledError = false;
+            devLog(markReorderErr, 'error marking missing Coinbase order for reorder');
+            const markReorderErrorDetails = getCoinbaseErrorDetails(markReorderErr);
+            errorText = `Order was not found on Coinbase, but could not be marked for reorder`;
+            if (markReorderErrorDetails?.message) {
+              errorText = errorText + '. Reason: ' + markReorderErrorDetails.message;
+            }
           }
-        } else {
-          clearOrderNotFoundCount(userID, orderToCheck.order_id);
+        } else if (notFoundCount === 1) {
+          messenger[userID].newMessage({
+            type: 'general',
+            text: `Order was not found on Coinbase. The bot will retry before marking it for reorder.`,
+          });
         }
-
-        if (!handledError) {
-          await sleep(1000);
-          if (errorDetails?.message) {
-            errorText = errorText + '. Reason: ' + errorDetails.message
-          }
-          messenger[userID].newError({
-            errorData: orderToCheck,
-            errorText: errorText
-          })
-        }
-      } // end catch
-      const endTime = performance.now();
-      // API is limited to 10/sec, so make sure the bot waits that long between loops
-      if (100 - (endTime - startTime) > 0) {
-        await sleep(100 - (endTime - startTime));
+      } else {
+        clearOrderNotFoundCount(userID, orderToCheck.order_id);
       }
-    } // end for loop
-    // delete orders to check since they have now been checked
-    userStorage.clearOrdersToCheck(userID);
-    resolve();
-  })
+
+      if (!handledError) {
+        await sleep(1000);
+        if (errorDetails?.message) {
+          errorText = errorText + '. Reason: ' + errorDetails.message
+        }
+        messenger[userID].newError({
+          errorData: orderToCheck,
+          errorText: errorText
+        })
+      }
+    } // end catch
+    const endTime = performance.now();
+    // API is limited to 10/sec, so make sure the bot waits that long between loops
+    if (100 - (endTime - startTime) > 0) {
+      await sleep(100 - (endTime - startTime));
+    }
+  } // end for loop
+  // delete orders to check since they have now been checked
+  userStorage.clearOrdersToCheck(userID);
 }
 
 // Reorder a trade and delete the old from the db
-async function reorder(orderToReorder) {
-  return new Promise(async (resolve, reject) => {
-    const userID = orderToReorder.userID;
-    userStorage.updateStatus(userID, 'begin reorder');
-    try {
-      const upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.order_id, userID);
-      // get the product from the db
-      const product = await databaseClient.getProduct(upToDateDbOrder.product_id, userID);
-      devLog(product, 'product in reorder');
-      if (
-        !product?.available_for_user
-        || !product.base_increment
-        || !product.quote_increment
-      ) {
-        throw new Error(
-          `Cannot reorder ${upToDateDbOrder.product_id}: product metadata is unavailable for user ${userID}`
-        );
-      }
-      // get the number of decimals for the base_increment of the product. This is used to round the base_size
-      const decimals = addProductDecimals(product);
-
-      // make new tradeDetails so client id is not passed from old order
-      const tradeDetails = {
-        side: upToDateDbOrder.side,
-        limit_price: Number(upToDateDbOrder.limit_price).toFixed(decimals.quote_increment_decimals), // quote currency
-        base_size: Number(upToDateDbOrder.base_size).toFixed(decimals.base_increment_decimals), // base currency
-        product_id: upToDateDbOrder.product_id,
-      };
-      // send the new order with the trade details
-      let pendingTrade = await cbClients[userID].placeOrder(tradeDetails);
-      if (pendingTrade.success) {
-        // devLog(pendingTrade, '<- pendingTrade, should be a success and we need the id')
-        let newTrade = await cbClients[userID].getOrder(pendingTrade.success_response.order_id)
-        // because the storeDetails function will see the upToDateDbOrder as the "old order", need to store previous_total_fees as just total_fees
-        upToDateDbOrder.total_fees = upToDateDbOrder.previous_total_fees;
-        // store the new trade in the db. the trade details are also sent to store trade position prices
-        // when reordering a trade, bring the old flipped_at value through so it doesn't change the "Time" on screen
-        let results = await databaseClient.storeTrade(newTrade.order, upToDateDbOrder, upToDateDbOrder.flipped_at);
-
-        // delete the old order from the db
-        await databaseClient.deleteTrade(orderToReorder.order_id, userID);
-        // tell the DOM to update
-        messenger[userID].newMessage({
-          type: 'general',
-          text: `trade was reordered`,
-          orderUpdate: true,
-        });
-        resolve({ results: results })
-      } else {
-        devLog(pendingTrade, 'success false error in reorder function in robot.js');
-        reject(pendingTrade);
-      }
-    } catch (err) {
-      devLog(err, 'error in reorder function in robot.js');
-      await sleep(1000);
-      reject(err)
+async function reorder(orderToReorder, userID) {
+  userStorage.updateStatus(userID, 'begin reorder');
+  try {
+    const upToDateDbOrder = await databaseClient.getSingleTrade(orderToReorder.order_id, userID);
+    // get the product from the db
+    const product = await databaseClient.getProduct(upToDateDbOrder.product_id, userID);
+    devLog(product, 'product in reorder');
+    if (
+      !product?.available_for_user
+      || !product.base_increment
+      || !product.quote_increment
+    ) {
+      throw new Error(
+        `Cannot reorder ${upToDateDbOrder.product_id}: product metadata is unavailable for user ${userID}`
+      );
     }
-    resolve();
-  });
+    // get the number of decimals for the base_increment of the product. This is used to round the base_size
+    const decimals = addProductDecimals(product);
+
+    // make new tradeDetails so client id is not passed from old order
+    const tradeDetails = {
+      side: upToDateDbOrder.side,
+      limit_price: Number(upToDateDbOrder.limit_price).toFixed(decimals.quote_increment_decimals), // quote currency
+      base_size: Number(upToDateDbOrder.base_size).toFixed(decimals.base_increment_decimals), // base currency
+      product_id: upToDateDbOrder.product_id,
+    };
+    // send the new order with the trade details
+    let pendingTrade = await cbClients[userID].placeOrder(tradeDetails);
+    if (!pendingTrade.success) {
+      devLog(pendingTrade, 'success false error in reorder function in robot.js');
+      throw pendingTrade;
+    }
+
+    // devLog(pendingTrade, '<- pendingTrade, should be a success and we need the id')
+    let newTrade = await cbClients[userID].getOrder(pendingTrade.success_response.order_id)
+    // because the storeDetails function will see the upToDateDbOrder as the "old order", need to store previous_total_fees as just total_fees
+    upToDateDbOrder.total_fees = upToDateDbOrder.previous_total_fees;
+    // store the new trade in the db. the trade details are also sent to store trade position prices
+    // when reordering a trade, bring the old flipped_at value through so it doesn't change the "Time" on screen
+    let results = await databaseClient.storeTrade(newTrade.order, upToDateDbOrder, upToDateDbOrder.flipped_at);
+
+    // delete the old order from the db
+    await databaseClient.deleteTrade(orderToReorder.order_id, userID);
+    // tell the DOM to update
+    messenger[userID].newMessage({
+      type: 'general',
+      text: `trade was reordered`,
+      orderUpdate: true,
+    });
+    return { results: results };
+  } catch (err) {
+    devLog(err, 'error in reorder function in robot.js');
+    await sleep(1000);
+    throw err;
+  }
 }
 
 // cancels orders on coinbase. If they are in the db, it will set them as reorders.
