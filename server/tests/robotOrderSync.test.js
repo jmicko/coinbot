@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { databaseClient } from '../modules/databaseClient.js';
-import { robot } from '../modules/robot.js';
+import { flipTrade, robot } from '../modules/robot.js';
 import {
   cbClients,
   messenger,
@@ -116,4 +116,44 @@ test('full-sync control rows can reorder using the loop user ID', async (t) => {
   });
 
   assert.deepEqual(calls, ['placed', 'stored', 'deleted', 'cleared']);
+});
+
+test('flipTrade uses product metadata when available funds are not ready', () => {
+  const flippedOrder = flipTrade(
+    {
+      order_id: 'settled-sell',
+      userID: 42,
+      product_id: 'LTC-USD',
+      side: 'SELL',
+      base_size: '0.51095528',
+      trade_pair_ratio: '5',
+      original_buy_price: '40.55',
+      original_sell_price: '42.58',
+      limit_price: '42.58',
+      next_client_order_id: 'next-order',
+      total_fees: '0.12',
+      previous_total_fees: '0.12',
+    },
+    {
+      id: 42,
+      reinvest: true,
+      reinvest_ratio: 100,
+      post_max_reinvest_ratio: 50,
+      max_trade_size: 200,
+      maker_fee: 0.006,
+      reserve: 0,
+      availableQuote: undefined,
+    },
+    [],
+    true,
+    {
+      base_increment: '0.00000001',
+      quote_increment: '0.01',
+    }
+  );
+
+  assert.equal(flippedOrder.side, 'BUY');
+  assert.equal(flippedOrder.product_id, 'LTC-USD');
+  assert.equal(flippedOrder.limit_price, '40.55');
+  assert.equal(flippedOrder.base_size, '0.51095528');
 });

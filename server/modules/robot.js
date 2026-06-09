@@ -556,8 +556,9 @@ async function processOrders(userID) {
           let dbOrder = tradeList[i];
           // get the user of the trade
           let user = await databaseClient.getUserAndSettings(dbOrder.userID, 'processOrders');
+          const product = await databaseClient.getProduct(dbOrder.product_id, userID);
           // ...flip the trade details
-          let tradeDetails = flipTrade(dbOrder, user, tradeList);
+          let tradeDetails = flipTrade(dbOrder, user, tradeList, false, product);
           // ...send the new trade
           try {
 
@@ -629,7 +630,7 @@ async function processOrders(userID) {
 
 // function for flipping sides on a trade
 // Returns the tradeDetails object needed to send trade to CB
-function flipTrade(dbOrder, user, allFlips, simulation) {
+function flipTrade(dbOrder, user, allFlips, simulation, productMetadata) {
   const userID = user.id
   !simulation && userStorage.updateStatus(userID, 'start flip trade');
   const reinvestRatio = user.reinvest_ratio / 100;
@@ -654,10 +655,16 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
   const prodFunds = avail[tradeDetails.product_id]
   // devLog(dbOrder, '<- dbOrder... needs to flip. Price is too many decimals?', prodFunds, '<- prodfunds', avail, '<- avail')
 
-  // get decimals after .
-  const base_increment_decimals = prodFunds.base_increment.split('.')[1]?.split('').findIndex((char) => char !== '0') + 1;
-  // devLog(base_increment_decimals, 'base inc dec')
-  const quote_increment_decimals = prodFunds.quote_increment.split('.')[1]?.split('').findIndex((char) => char !== '0') + 1;
+  const product = productMetadata || prodFunds;
+  if (!product?.base_increment || !product?.quote_increment) {
+    throw new Error(
+      `Cannot flip ${dbOrder.order_id}: product metadata is unavailable for ${dbOrder.product_id}`
+    );
+  }
+  const {
+    base_increment_decimals,
+    quote_increment_decimals,
+  } = addProductDecimals(product);
 
   // add buy/sell requirement and price
   if (dbOrder.side === "BUY") {
@@ -684,6 +691,9 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
       const availableUSD = !simulation
         ? availableFunds[productID]?.quote_available
         : user.availableQuote;
+      const canReinvest = availableUSD !== undefined
+        && availableUSD !== null
+        && Number.isFinite(Number(availableUSD));
 
       // find out how much profit there was
       const BTCprofit = calculateProfitBTC(dbOrder);
@@ -709,7 +719,11 @@ function flipTrade(dbOrder, user, allFlips, simulation) {
       devLog(maxSizeBTC, 'maxSizeBTC', maxTradeSize, 'maxTradeSize');
 
       // now check if the new base_size after reinvesting is higher than the user set max
-      if ((newSize > maxSizeBTC) && (maxTradeSize > 0)) {
+      if (!canReinvest) {
+        devLog(
+          `Skipping reinvestment for ${dbOrder.order_id}: available ${productID} quote funds are not ready`
+        );
+      } else if ((newSize > maxSizeBTC) && (maxTradeSize > 0)) {
         // add up all values of trades that just settled and subtract that from "actualavailable_usd"
         let allFlipsValue = 0;
         allFlips.forEach(trade => {
